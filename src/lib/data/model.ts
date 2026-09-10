@@ -83,6 +83,40 @@ export type RawRegistry = {
     meta: RegistryMeta;
 };
 
+/**
+ * One entry of one collection as it was read. Every key the YAML map held is present untouched;
+ * the reader adds only `source`. The entry's identity, its `key` when it has one and its `title`
+ * otherwise, is left where it was read and is derived by O4, not here.
+ */
+export interface RawEntry {
+    [key: string]: unknown;
+    /** Absolute path of the collection file, and the entry's position in the file's entry list. */
+    source: { file: string; index: number };
+}
+
+/**
+ * One collection as read: the file it came from, its entries in file order, and every top-level
+ * key other than `entries` untouched as `meta` (`title`, `intro` and `schema` are the ones the
+ * hub's eight collection files carry).
+ */
+export type RawCollection = {
+    /** The key the caller asked for the file under, from the `collections:` list. */
+    key: string;
+    /** Absolute path of the collection file. */
+    file: string;
+    meta: Record<string, unknown>;
+    entries: RawEntry[];
+};
+
+/** Whether one of the fixed project documents is on disk, by existence only; nothing is read. */
+export type DocPresence = {
+    /** Folder-relative path, one of the fixed list in sources/docs.ts. */
+    name: string;
+    /** Absolute path the document would sit at, whether or not it is there. */
+    path: string;
+    present: boolean;
+};
+
 /** A status chip: a word from the vocabulary, resolved to colour and glyph by the view. */
 export type Chip = string;
 
@@ -195,4 +229,34 @@ export type Funding = {
     tags: string[];
     projectIds: Id[];
     programIds: Id[];
+};
+
+/**
+ * One entry of one collection, as O4 fills it from a RawEntry. `id` is the entry's `key` when the
+ * YAML had one and its `title` otherwise, so it is unique inside its collection and nowhere wider.
+ * `fields` holds every key the YAML had, `title` and `key` included, so a view can render a
+ * collection from its file's own `schema` without the model naming each field.
+ */
+export type Entry = {
+    id: Id;
+    title: string;
+    fields: Record<string, unknown>;
+    /** Absolute path of the collection file, and the entry's position in its entry list. */
+    file: string;
+    index: number;
+};
+
+/**
+ * One collection: a hub file of like records that are not entities and that nothing else points
+ * at. Its entries are held inline rather than by id, since an entry belongs to exactly one
+ * collection and no relation runs the other way, so no cycle can form.
+ */
+export type Collection = {
+    /** The key from the `collections:` list, `funding` or `events`. */
+    id: Id;
+    title: string;
+    intro?: string;
+    /** Absolute path of the collection file. */
+    file: string;
+    entries: Entry[];
 };

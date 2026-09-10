@@ -14,7 +14,7 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 - In the git worktree the brief names, never in the main checkout. The worktree was created at main's head by the orchestrator. Every path in the brief is relative to that worktree.
 - You never run a git command. Not `add`, not `commit`, not `stash`, not `checkout`, not `status`. The orchestrator reads your diff and lands it.
 - You never edit anything under `tools/oculus/.scratch/`. The plan, the state file and the briefs are the orchestrator's.
-- You never write under `feeds/`, `projects/`, `registries/`, `funding/` or any other hub data folder, and never a `project.yml`. Tests use synthetic fixtures in a temporary directory and assert the resolved path is inside it before any write.
+- You never write under `feeds/`, `projects/`, `registries/`, `funding/` or any other hub data folder, and never a `project.yml`. Tests use synthetic fixtures in a temporary directory and assert the resolved path is inside it before any write. Two things read the real hub and nothing else: `tests/integrity.test.ts` and `tests/data/real-hub.probe.ts`, both read only; a finding either of them produces is reported, never repaired.
 - You never start a server on port 8787, and never kill, signal or restart the process that holds it. The oculus dev server uses the port the brief names. You never send a signal to any pid found in `~/.claude/sessions/`.
 
 ## What every package obeys

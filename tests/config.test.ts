@@ -1,10 +1,10 @@
-// loadLocal against synthetic local.yml files in a temporary directory.
+// loadLocal and loadConfig against synthetic files in a temporary directory.
 
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_PORT, loadLocal } from '../src/lib/data/sources/config.ts';
+import { DEFAULT_PORT, loadConfig, loadLocal } from '../src/lib/data/sources/config.ts';
 
 function scratch(): string {
     const dir = mkdtempSync(join(tmpdir(), 'oculus-config-'));
@@ -16,6 +16,16 @@ function writeLocal(dir: string, body: string): void {
     const file = join(dir, 'local.yml');
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
     writeFileSync(file, body);
+}
+
+/** Write one file into <engine>/config, creating the directory the first time. */
+function writeConfig(engine: string, name: string, body: string): string {
+    const dir = join(engine, 'config');
+    const file = join(dir, name);
+    expect(resolve(file).startsWith(resolve(engine) + sep)).toBe(true);
+    mkdirSync(dir, { recursive: true });
+    writeFileSync(file, body);
+    return file;
 }
 
 describe('loadLocal', () => {
@@ -53,5 +63,81 @@ describe('loadLocal', () => {
         const dir = scratch();
         writeLocal(dir, 'port: eight\n');
         expect(() => loadLocal(dir)).toThrow(/port must be an integer/);
+    });
+});
+
+describe('loadConfig', () => {
+    it('merges the top-level keys of every file in name order', () => {
+        const engine = scratch();
+        writeConfig(engine, 'behavior.yml', 'stale_days: 30\nread_limits: { lines: 400 }\n');
+        writeConfig(engine, 'vocab.yml', 'palette: [teal, amber]\n');
+        // Not a .yml file, so it is not merged.
+        writeConfig(engine, 'notes.md', 'palette: ignored\n');
+
+        const { config, findings } = loadConfig(engine);
+        expect(Object.keys(config).sort()).toEqual(['palette', 'read_limits', 'stale_days']);
+        expect(config.stale_days).toBe(30);
+        expect(config.read_limits).toEqual({ lines: 400 });
+        expect(config.palette).toEqual(['teal', 'amber']);
+        expect(findings).toEqual([]);
+    });
+
+    it('reports a top-level key two files define and takes the value from the later one', () => {
+        const engine = scratch();
+        writeConfig(engine, 'a-first.yml', 'palette: [teal]\nonly_here: 1\n');
+        const later = writeConfig(engine, 'b-later.yml', 'palette: [amber]\n');
+
+        const { config, findings } = loadConfig(engine);
+        expect(config.palette).toEqual(['amber']);
+        expect(config.only_here).toBe(1);
+        expect(findings).toEqual([
+            {
+                file: later,
+                key: 'palette',
+                message: 'key palette is already defined in a-first.yml; b-later.yml wins'
+            }
+        ]);
+    });
+
+    it('reports a file that does not parse and merges the rest', () => {
+        const engine = scratch();
+        writeConfig(engine, 'broken.yml', 'title: "unterminated\n  - [\n');
+        writeConfig(engine, 'good.yml', 'text: { app: { title: oculus } }\n');
+
+        const { config, findings } = loadConfig(engine);
+        expect(config.text).toEqual({ app: { title: 'oculus' } });
+        expect(findings.length).toBe(1);
+        expect(findings[0].file).toBe(join(engine, 'config', 'broken.yml'));
+        expect(findings[0].message).toMatch(/^does not parse: /);
+    });
+
+    it('reports a file that is not a map and treats an empty file as no keys', () => {
+        const engine = scratch();
+        writeConfig(engine, 'listy.yml', '- one\n- two\n');
+        writeConfig(engine, 'nothing.yml', '');
+
+        const { config, findings } = loadConfig(engine);
+        expect(config).toEqual({});
+        expect(findings).toEqual([
+            {
+                file: join(engine, 'config', 'listy.yml'),
+                key: '',
+                message: 'is not a map of keys'
+            }
+        ]);
+    });
+
+    it('reports a missing config directory and returns an empty map', () => {
+        const engine = scratch();
+        const { config, findings } = loadConfig(engine);
+
+        expect(config).toEqual({});
+        expect(findings).toEqual([
+            {
+                file: join(engine, 'config'),
+                key: '',
+                message: 'config directory does not exist'
+            }
+        ]);
     });
 });

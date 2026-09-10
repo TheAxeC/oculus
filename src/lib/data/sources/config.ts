@@ -3,10 +3,11 @@
 // No environment variable is consulted anywhere; a caller passes the engine directory, and
 // engineDir() derives it from this module's own location so dev and the built server agree.
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
+import type { Finding } from '../model.ts';
 
 export type LocalConfig = {
     /** Absolute path of the research hub whose YAML the portfolio is built from. */
@@ -71,6 +72,64 @@ export function loadLocal(engine: string): LocalConfig {
         config.port = record.port as number;
     }
     return config;
+}
+
+/**
+ * Merge every config/*.yml into one map, each file contributing its top-level keys. This is the
+ * map O4's validate and O5's catalog read, so a rule can move between files without either of them
+ * knowing. Files are merged in name order, so the result does not depend on the directory's order
+ * on disk. Two files defining the same top-level key is a finding naming both, and the later file
+ * in name order wins. A file that does not parse or is not a map is a finding and contributes
+ * nothing; a missing config directory is a finding and an empty map. Nothing here throws.
+ */
+export function loadConfig(engine: string): {
+    config: Record<string, unknown>;
+    findings: Finding[];
+} {
+    const dir = join(engine, 'config');
+    const config: Record<string, unknown> = {};
+    const findings: Finding[] = [];
+    /** Which file each top-level key came from, so a clash can name both sides. */
+    const from: Record<string, string> = {};
+
+    let names: string[];
+    try {
+        names = readdirSync(dir)
+            .filter((name) => name.endsWith('.yml'))
+            .sort();
+    } catch {
+        findings.push({ file: dir, key: '', message: 'config directory does not exist' });
+        return { config, findings };
+    }
+
+    for (const name of names) {
+        const file = join(dir, name);
+        let parsed: unknown;
+        try {
+            parsed = parse(readFileSync(file, 'utf8')) ?? {};
+        } catch (error) {
+            const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
+            findings.push({ file, key: '', message: `does not parse: ${message}` });
+            continue;
+        }
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+            findings.push({ file, key: '', message: 'is not a map of keys' });
+            continue;
+        }
+        for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+            if (key in config) {
+                findings.push({
+                    file,
+                    key,
+                    message: `key ${key} is already defined in ${from[key]}; ${name} wins`
+                });
+            }
+            config[key] = value;
+            from[key] = name;
+        }
+    }
+
+    return { config, findings };
 }
 
 /** Flatten a nested map of strings to dotted keys. Values are strings; anything else is an error. */
