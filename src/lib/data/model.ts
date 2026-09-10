@@ -136,6 +136,35 @@ export type DocPresence = {
 export type Chip = string;
 
 /**
+ * A project's code deposit, the `code_availability` map of a manifest. `status` is the word the
+ * card's badge reads (`deposited`, `review-anon`, `none`); the rest is where the deposit lives.
+ * The manifest's remaining keys under that map (the repo's description, homepage, topics and
+ * visibility) are the deposit tool's and no view reads them, so they are not carried.
+ */
+export type CodeAvailability = {
+    status?: string;
+    date?: string;
+    url?: string;
+    doi?: string;
+    repo?: string;
+};
+
+/** When the pipeline was last re-run to regenerate the committed numbers, and what that covered. */
+export type Reproduced = {
+    date?: string;
+    note?: string;
+};
+
+/**
+ * One of the fixed project documents, by presence only. The absolute path of DocPresence is not
+ * carried: a view shows which documents a project has and asks the server for one by name.
+ */
+export type DocFlag = {
+    name: string;
+    present: boolean;
+};
+
+/**
  * A project. The relation fields hold ids; O4 fills them from the manifest's `venue_id`,
  * `funding`, `datasets`, `program` and `domain` keys, and leaves them empty when it has none.
  */
@@ -150,6 +179,8 @@ export type Project = {
     /** A list of names in most manifests and one free-text line in seven of them; both are kept. */
     authors?: string | string[];
     year?: number;
+    /** `pin: true` floats the card to the top of its board. False and absent are both no pin. */
+    pin?: boolean;
     chips: Chip[];
     statusLine?: string;
     focus?: string;
@@ -161,6 +192,10 @@ export type Project = {
     deadline?: string;
     doi?: string;
     outcome?: string;
+    /** Where the headline results are produced: `hpc` or `local`. */
+    compute?: string;
+    codeAvailability?: CodeAvailability;
+    reproduced?: Reproduced;
     /** Ids of other projects this one is related to. */
     relatedIds: Id[];
     venueId?: Id;
@@ -168,6 +203,16 @@ export type Project = {
     datasetIds: Id[];
     programIds: Id[];
     domainIds: Id[];
+    /** Keys of the `collaborations` collection. Not a relation table: the entries are not entities. */
+    collaborators: Id[];
+    /**
+     * The free-text venue prose, for a manifest that names no `venue_id`. The manifest schema does
+     * not name a `venue` key today, so a manifest carrying one is a finding and this is unset on
+     * every project of the hub; it is here for the model to hold what the field means.
+     */
+    venue?: string;
+    /** The six fixed project documents, in the order sources/docs.ts lists them, presence only. */
+    docs: DocFlag[];
     /** Folder relative to the hub, and the manifest's absolute path. */
     folder: string;
     file: string;
@@ -292,6 +337,12 @@ export type RawPortfolio = {
     manifests: RawManifest[];
     registries: Record<RegistryName, RawRegistry>;
     collections: Record<string, RawCollection>;
+    /**
+     * Which documents each project folder holds, by project id, from sources/docs.ts. It is here
+     * rather than on the manifest record because no manifest key says it: it is read from the
+     * folder, and a reader that put it on the record would be adding a key no schema names.
+     */
+    docs: Record<Id, DocPresence[]>;
     findings: Finding[];
 };
 

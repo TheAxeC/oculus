@@ -9,6 +9,7 @@
 
 import Findings from '$lib/views/Findings.svelte';
 import Gallery from '$lib/views/Gallery.svelte';
+import Projects from '$lib/views/Projects.svelte';
 import Status from '$lib/views/Status.svelte';
 import { registerView } from '$lib/views/registry';
 
@@ -31,4 +32,27 @@ registerView({
     label: 'views.gallery',
     glyph: 'views.gallery_glyph',
     component: Gallery
+});
+
+// One board over three tier sets, registered once per set. The component reads which board it is
+// from the id of the instance's view, so the three differ in their registration and nowhere else.
+registerView({
+    id: 'projects',
+    label: 'views.projects',
+    glyph: 'views.projects_glyph',
+    component: Projects
+});
+
+registerView({
+    id: 'archive',
+    label: 'views.archive',
+    glyph: 'views.archive_glyph',
+    component: Projects
+});
+
+registerView({
+    id: 'coauthor',
+    label: 'views.coauthor',
+    glyph: 'views.coauthor_glyph',
+    component: Projects
 });

@@ -82,7 +82,12 @@ function portfolio(over: Partial<RawPortfolio> = {}): RawPortfolio {
             domains: registry('domains', ['heart']),
             funding: registry('funding', ['FAIR'])
         },
-        collections: {},
+        collections: {
+            collaborations: collection('collaborations', [
+                { key: 'someone', title: 'Someone Else' }
+            ])
+        },
+        docs: {},
         findings: [],
         ...over
     };
@@ -194,6 +199,22 @@ describe('validate', () => {
             'program: program must be a list, not a string',
             'related: related must be a list, not a string',
             'venue_id: venue_id must be a string or null, not a number'
+        ]);
+    });
+
+    it('reports a collaborator that names no entry of the collaborations collection', () => {
+        expect(lines({ collaborators: ['someone', 'nobody'] })).toEqual([
+            'collaborators: collaborators names no collaborator: nobody'
+        ]);
+    });
+
+    it('reports every collaborator when the collaborations collection is not there', () => {
+        const raw = portfolio({
+            manifests: [manifest({ collaborators: ['someone'] })],
+            collections: {}
+        });
+        expect(validate(raw, RULES).map((finding) => finding.message)).toEqual([
+            'collaborators names no collaborator: someone'
         ]);
     });
 

@@ -24,6 +24,7 @@ let statusPalette: Record<string, string> = {};
 let typeColor: Record<string, string> = {};
 let legend: Record<string, Legend> = {};
 let themeColor: Record<string, string> = {};
+let themeText: Record<string, string> = {};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -36,8 +37,12 @@ function stringAt(node: unknown, key: string): string | undefined {
     return typeof value === 'string' ? value : undefined;
 }
 
-/** A map of name to hex, from a map whose values are either a hex or a record holding one. */
-function colourMap(node: unknown, key: string | null): Record<string, string> {
+/**
+ * A map of name to string, from a map whose values are either that string (`key` null) or a record
+ * holding it at `key`. It reads the hexes of `palette` and `type_color`, and the `color` and the
+ * `label` of a `themes` entry, which are the same shape read twice.
+ */
+function stringMap(node: unknown, key: string | null): Record<string, string> {
     const map: Record<string, string> = {};
     if (!isRecord(node)) return map;
     for (const [name, value] of Object.entries(node)) {
@@ -55,10 +60,11 @@ function colourMap(node: unknown, key: string | null): Record<string, string> {
  * unknown case rather than throwing: a half-read config still renders a page.
  */
 export function setVocab(config: Record<string, unknown>): void {
-    palette = colourMap(config.palette, null);
-    statusPalette = colourMap(config.status_palette, 'color');
-    typeColor = colourMap(config.type_color, null);
-    themeColor = colourMap(config.themes, 'color');
+    palette = stringMap(config.palette, null);
+    statusPalette = stringMap(config.status_palette, 'color');
+    typeColor = stringMap(config.type_color, null);
+    themeColor = stringMap(config.themes, 'color');
+    themeText = stringMap(config.themes, 'label');
 
     legend = {};
     const rows = config.status_legend;
@@ -103,6 +109,15 @@ export function typeTone(type: string): string {
 export function themeTone(theme: string): string {
     const hex = themeColor[String(theme).toLowerCase()];
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
+}
+
+/**
+ * A research theme's words, the `label` of its `themes` entry ("Cardiology | ECG"), and the theme's
+ * own key for one the config does not list. This is the domain label a project card carries; the
+ * appearance theme's name in the picker is themeLabel() of state/text.ts, which is another thing.
+ */
+export function themeLabel(theme: string): string {
+    return themeText[String(theme).toLowerCase()] ?? theme;
 }
 
 /** The character a status chip is drawn with, and nothing for a chip the legend does not list. */

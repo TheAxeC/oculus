@@ -5,14 +5,19 @@
 // Server side only, because the sources read the filesystem. What comes back is JSON-safe and is
 // what the socket carries; the caller owns the version number and increments it on every rebuild.
 
+import { join } from 'node:path';
 import { readManifests } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
 import { readCollections } from './sources/collections.ts';
+import { projectDocs } from './sources/docs.ts';
 import { normalise } from './normalise.ts';
 import { validate } from './validate.ts';
 import type {
     CollectionFile,
+    DocPresence,
+    Id,
     PortfolioConfig,
+    RawManifest,
     RawPortfolio,
     RegistryFiles,
     ScanRule,
@@ -99,6 +104,16 @@ export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioC
 }
 
 /**
+ * Which of the fixed documents each project folder holds, by project id. It is existence only, six
+ * `stat` calls per folder, so it runs on every rebuild beside the manifests themselves.
+ */
+function documents(hub: string, manifests: RawManifest[]): Record<Id, DocPresence[]> {
+    const found: Record<Id, DocPresence[]> = {};
+    for (const manifest of manifests) found[manifest.id] = projectDocs(join(hub, manifest.folder));
+    return found;
+}
+
+/**
  * Read the hub, check what was read, and hand back the snapshot. The three steps are the three
  * modules: the sources say what is on disk, validate says what is wrong with it, and normalise
  * turns it into the wire model with the findings carried inside it.
@@ -112,6 +127,7 @@ export function buildPortfolio(hub: string, config: PortfolioConfig, version = 0
         manifests: manifests.manifests,
         registries,
         collections: collections.collections,
+        docs: documents(hub, manifests.manifests),
         findings: [...manifests.findings, ...registries.findings, ...collections.findings]
     };
 

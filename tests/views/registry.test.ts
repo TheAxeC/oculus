@@ -72,8 +72,22 @@ describe('the real registrations', () => {
         return views().filter((view) => !view.id.startsWith('probe-'));
     }
 
-    it('registers status, findings and the gallery, in that order', () => {
-        expect(real().map((view) => view.id)).toEqual(['status', 'findings', 'gallery']);
+    it('registers every view the application has, in registration order', () => {
+        expect(real().map((view) => view.id)).toEqual([
+            'status',
+            'findings',
+            'gallery',
+            'projects',
+            'archive',
+            'coauthor'
+        ]);
+    });
+
+    it('registers the one board component under all three of its ids', () => {
+        const board = real().filter((view) =>
+            ['projects', 'archive', 'coauthor'].includes(view.id)
+        );
+        expect(new Set(board.map((view) => view.component)).size).toBe(1);
     });
 
     it('names a label key config/text.yml holds', () => {

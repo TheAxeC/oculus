@@ -26,9 +26,15 @@
          * strip too narrow to hold them. Only useful together with a glyph.
          */
         compact?: boolean;
+        /**
+         * Which way the list opens. `up` is the default, for a menu at the foot of the window; a
+         * menu in a header opens `down`, or its list is drawn above the top of what holds it and
+         * is clipped away.
+         */
+        placement?: 'up' | 'down';
     };
 
-    let { label, items, onpick, glyph, compact = false }: Props = $props();
+    let { label, items, onpick, glyph, compact = false, placement = 'up' }: Props = $props();
 
     let open = $state(false);
     let box: HTMLDivElement | undefined = $state(undefined);
@@ -99,7 +105,7 @@
         {/if}
     </button>
     {#if open}
-        <div class="list" role="menu" aria-label={label}>
+        <div class="list" class:down={placement === 'down'} role="menu" aria-label={label}>
             {#each items as item, index (item.id)}
                 <button
                     type="button"
@@ -164,6 +170,13 @@
         border-radius: var(--radius-sm);
         background: var(--panel);
         box-shadow: var(--shadow);
+    }
+
+    .list.down {
+        top: 100%;
+        bottom: auto;
+        margin-top: 4px;
+        margin-bottom: 0;
     }
 
     /* A compact menu sits in a strip too narrow for the list, so the list opens beside the button

@@ -29,6 +29,14 @@ type IdSets = {
     projects: Set<string>;
 };
 
+/**
+ * The collection whose entry keys a manifest's `collaborators` names, and the word a finding uses
+ * for one of its entries. The collaborators are not a registry and their entries are not entities,
+ * so the check resolves against the collection's own keys rather than through IdSets.
+ */
+const COLLABORATIONS = 'collaborations';
+const COLLABORATOR = 'collaborator';
+
 /** A relation field of a manifest, the kind it points at, and the set that kind's ids live in. */
 const REFERENCES: { field: string; kind: keyof IdSets; what: string; single: boolean }[] = [
     { field: 'venue_id', kind: 'venues', what: 'venue', single: true },
@@ -190,6 +198,36 @@ function checkReferences(manifest: RawManifest, ids: IdSets, findings: Finding[]
 }
 
 /**
+ * The keys of the `collaborations` collection. A collection the config does not name reaches here
+ * as no keys, and every collaborator a manifest names is then a finding: an id that resolves
+ * against nothing is exactly what this check is for, and the reader has already reported the
+ * missing file on its own.
+ */
+function collaboratorKeys(raw: RawPortfolio): Set<string> {
+    const keys = new Set<string>();
+    const collection = raw.collections[COLLABORATIONS];
+    if (collection === undefined) return keys;
+    for (const entry of collection.entries) {
+        if (typeof entry.key === 'string' && entry.key.length > 0) keys.add(entry.key);
+    }
+    return keys;
+}
+
+/** Every id in `collaborators` names an entry of the collaborations collection. */
+function checkCollaborators(manifest: RawManifest, keys: Set<string>, findings: Finding[]): void {
+    const value = manifest.collaborators;
+    if (!Array.isArray(value)) return;
+    for (const item of value) {
+        if (typeof item !== 'string' || keys.has(item)) continue;
+        findings.push({
+            file: manifest.file,
+            key: 'collaborators',
+            message: `collaborators names no ${COLLABORATOR}: ${item}`
+        });
+    }
+}
+
+/**
  * `status.chips` is a list of strings, and each chip is in the chip vocabulary when the config
  * holds one. When it does not, `chips` is absent from the vocabulary and a chip is a free string.
  */
@@ -283,6 +321,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     const findings: Finding[] = [...raw.findings];
     const schema = schemaKeys(rules.schema);
     const ids = idSets(raw);
+    const collaborators = collaboratorKeys(raw);
     const vocab: Vocabulary = rules.vocab;
 
     for (const manifest of raw.manifests) {
@@ -290,6 +329,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
         checkType(manifest, vocab.types, findings);
         checkShapes(manifest, findings);
         checkReferences(manifest, ids, findings);
+        checkCollaborators(manifest, collaborators, findings);
         checkChips(manifest, vocab.chips, findings);
     }
     checkFundingIdentity(raw, findings);

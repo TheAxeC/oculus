@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { normalise } from '../../src/lib/data/normalise.ts';
 import type {
+    DocPresence,
     RawCollection,
     RawManifest,
     RawPortfolio,
@@ -11,6 +12,15 @@ import type {
     RawRegistryEntry,
     RegistryName
 } from '../../src/lib/data/model.ts';
+
+/** What sources/docs.ts hands the build for one folder: the fixed names, with a path and a flag. */
+function documents(id: string, present: string[]): DocPresence[] {
+    return ['README.md', 'code/README.md'].map((name) => ({
+        name,
+        path: `/hub/projects/active/${id}/${name}`,
+        present: present.includes(name)
+    }));
+}
 
 function manifest(data: Record<string, unknown>, id: string): RawManifest {
     return {
@@ -74,7 +84,18 @@ function portfolio(): RawPortfolio {
                     funding: ['FAIR'],
                     related: ['beta'],
                     collaborators: ['someone'],
-                    compute: 'hpc'
+                    compute: 'hpc',
+                    pin: true,
+                    priority: 'high',
+                    code_availability: {
+                        status: 'deposited',
+                        date: '2026-08-01',
+                        url: 'https://example.invalid/alpha',
+                        doi: '10.0/code',
+                        repo: 'alpha-code',
+                        visibility: 'public'
+                    },
+                    reproduced: { date: '2026-08-02', note: 'needs a GPU' }
                 },
                 'alpha'
             ),
@@ -83,7 +104,11 @@ function portfolio(): RawPortfolio {
                     title: 'Beta',
                     authors: 'Faes and others',
                     venue_id: 'nowhere',
-                    related: ['ghost']
+                    related: ['ghost'],
+                    pin: false,
+                    venue: 'a journal with no catalogue entry',
+                    code_availability: { visibility: 'private' },
+                    reproduced: 'not a map'
                 },
                 'beta'
             )
@@ -113,6 +138,7 @@ function portfolio(): RawPortfolio {
             funding: collection('funding', [{ title: 'Flanders AI' }]),
             events: collection('events', [{ title: 'A talk', status: 'planned' }])
         },
+        docs: { alpha: documents('alpha', ['README.md']) },
         findings: []
     };
 }
@@ -142,12 +168,27 @@ describe('normalise, the field mapping', () => {
             deadline: '2026-11-17',
             doi: '10.0/alpha',
             outcome: 'in review',
+            compute: 'hpc',
+            pin: true,
+            codeAvailability: {
+                status: 'deposited',
+                date: '2026-08-01',
+                url: 'https://example.invalid/alpha',
+                doi: '10.0/code',
+                repo: 'alpha-code'
+            },
+            reproduced: { date: '2026-08-02', note: 'needs a GPU' },
             relatedIds: ['beta'],
             venueId: 'bspc',
             fundingIds: ['FAIR'],
             datasetIds: ['mimic'],
             programIds: ['federated'],
             domainIds: ['heart'],
+            collaborators: ['someone'],
+            docs: [
+                { name: 'README.md', present: true },
+                { name: 'code/README.md', present: false }
+            ],
             folder: 'projects/active/alpha',
             file: '/hub/projects/active/alpha/project.yml'
         });
@@ -157,9 +198,25 @@ describe('normalise, the field mapping', () => {
         expect(snapshot.entities.projects.beta.authors).toBe('Faes and others');
     });
 
+    it('keeps the free-text venue prose of a manifest that has one', () => {
+        expect(snapshot.entities.projects.beta.venue).toBe('a journal with no catalogue entry');
+        expect('venue' in alpha).toBe(false);
+    });
+
+    it('drops a pin that is not set, a deposit with nothing the model declares, and a bad map', () => {
+        const beta = snapshot.entities.projects.beta;
+        expect('pin' in beta).toBe(false);
+        expect('codeAvailability' in beta).toBe(false);
+        expect('reproduced' in beta).toBe(false);
+    });
+
+    it('leaves a project with no documents read an empty list rather than nothing', () => {
+        expect(snapshot.entities.projects.beta.docs).toEqual([]);
+    });
+
     it('carries no manifest key the model does not declare', () => {
-        expect('compute' in alpha).toBe(false);
-        expect('collaborators' in alpha).toBe(false);
+        expect('priority' in alpha).toBe(false);
+        expect('visibility' in (alpha.codeAvailability ?? {})).toBe(false);
     });
 
     it('fills the registry entities, hpc_path and retrieval included', () => {

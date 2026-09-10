@@ -383,6 +383,10 @@ text:
     facet_reproduced: "Reproduced"
     facet_code: "Code"
     filter_by: "Filter by {0}"
+    search_default: "Search"    # oculus: the search box's words when `board.search` names none for this board.
+    toolbar: "Board controls"   # oculus: the accessible name of the strip the search, the modes and the facets sit in.
+    view: "View"                # oculus: the cards / list group's name.
+    labels: "Title length"      # oculus: the short / full title group's name.
     no_year: "No year"
     no_funding: "No funding"
     compute_hpc: "HPC"
@@ -396,11 +400,14 @@ text:
     repro_no: "not reproduced"
     view_cards: "Cards"
     view_cards_tip: "card view"
+    view_cards_glyph: "cards"   # oculus: glyph names, not characters - a name in the `glyphs:` map.
     view_list: "List"
     view_list_tip: "list view"
+    view_list_glyph: "list"
     expand_all: "expand all"
     collapse: "collapse"
     empty: "No entries match."
+    empty_glyph: "circle_empty"
 
   memories:                    # Memories photo-wall tab (render/memories.py). {0} = interpolated arg.
     add_photo_title: "add a photo to the wall"
@@ -414,6 +421,8 @@ text:
     stale_tip: "docs changed {0} | {1}d after the manifest was last touched - re-touch project.yml"
     stale_behind: "{0}d behind"
     dl_submitted_tip: "{0} (submitted)"
+    due_days: "{0}d"            # oculus: the deadline badge inside the last fortnight, days only.
+    documents: "Documents"      # oculus: the heading over the six project documents on an open card.
     overdue: "overdue {0}d"
     ghost_badge_tip: "no project.yml - run /project-new"
     no_manifest: "no manifest"
@@ -448,6 +457,19 @@ text:
     local_tip: "regenerates on a laptop - no cluster needed"
     local_label: "local"
     toggle_tip: "expand / collapse"
+    # oculus: glyph names, not characters - each value is a name in the `glyphs:` map of glyphs.yml.
+    deadline_glyph: "deadline"
+    pin_glyph: "pin"
+    expand_glyph: "expand"
+    collapse_glyph: "collapse"
+    code_glyph: "published"
+    repro_glyph: "check"
+    hpc_glyph: "hpc"
+    author_glyph: "author"
+    funding_glyph: "funding"
+    program_glyph: "program"
+    dataset_glyph: "data"
+    collaborator_glyph: "collab"
 
   actions:                     # served-mode card/row action buttons (render/actions.py). {0}/{1} = args.
     set_status: "set status: {0}"
@@ -851,6 +873,14 @@ text:
     findings_none: "No findings: every id resolves and every status is in the vocabulary."
     gallery: "Gallery"
     gallery_glyph: "cards"
+    # The one project board, registered three times over three tier sets. The words are the `tabs:`
+    # entries of layout.yml, which is what the cockpit's three tabs are called.
+    projects: "Projects"
+    projects_glyph: "focus"
+    archive: "Archive"
+    archive_glyph: "archived"
+    coauthor: "Coauthor"
+    coauthor_glyph: "author"
 
   gallery:                     # the living style sheet: every primitive with sample data, in every theme.
     title: "Gallery"
