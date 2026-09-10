@@ -825,3 +825,8 @@ text:
     domains: "Domains: {0}"
     funding: "Funding schemes: {0}"
     collections: "Collections: {0}"
+    pane_path: "Pane at {0}"
+    tabs: "Tabs: {0}"
+
+  ui:                          # oculus's primitives: the strings a domain-blind component needs, and no more.
+    sash: "Resize"
