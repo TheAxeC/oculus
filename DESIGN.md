@@ -1,0 +1,254 @@
+# oculus, design
+
+The successor to the research cockpit (`tools/cockpit`). Same job: a private, local dashboard over the research portfolio, its projects, venues, funding, data, and the Claude Code sessions working on it. Different construction: one language, three layers, one definition per screen, live data pushed by the server rather than polled by the page, and an arrangement you edit in the app.
+
+Written 2026-09-10. This is the artefact every later step is measured against. When the code and this file disagree, one of them is wrong and the disagreement is a finding, never something to paper over.
+
+The name: the eye, alongside `iris`, `scotoma` and `umbra`; and the opening at the top of a dome that lets the light in, alongside `cathedra`.
+
+## Why a new tool
+
+The cockpit is a Python static-site generator that emits one 8.8 MB HTML file with all CSS and JS inlined, plus a Python dev server that patches the page in place when files change. That shape was chosen so the output would be a single portable file with no build step. The file is never opened; only the served app is used. Every awkward thing in the cockpit follows from a constraint that no longer applies:
+
+- 3668 lines of Python build HTML through f-strings, and 3477 lines of client JS render the live half of the same screens. The Sessions tab is defined in both.
+- A live-reload "morph" patches the generated document in place, with `data-skipmorph` escape hatches so it does not wipe what the client rendered, and MutationObservers to re-apply client decoration after it does.
+- A hand-rolled module system (`window.CK`, load-order rules, a custom test) stands in for a bundler.
+- Config is read into module-level singletons at import, so a config edit re-execs the whole process.
+
+None of these are bugs. They are the cost of the constraint. oculus drops the constraint and therefore the cost. Nothing in the cockpit is thrown away carelessly: the data files are kept as they are, the configuration files are copied over and keep their roles, the palette and themes port unchanged, the gates port as tests, and the Sessions work (cockpit roadmap B, complete) ports rather than being rebuilt.
+
+## Non-goals
+
+- Not multi-user, not remote, not peered. Clodex-style fleet features are out.
+- Not a general editor. It reads the portfolio and drives sessions; it does not replace an editor.
+- Not a rewrite of the data. The YAML in the hub is the source of truth and its shape does not change for oculus.
+
+## The three layers
+
+**Data.** Reads files, produces a typed, validated model. Knows nothing about screens. Runs on the server.
+
+**Code.** Everything between the model and the pixels. Split by where it can run: the server-pinned half touches the filesystem, git, processes and the socket; the client half holds state and computes joins and filters. Neither half renders anything.
+
+**View.** Components. Split into primitives that know no domain, a shell that knows no view, and views that know no layout.
+
+The rule that keeps this honest is an import-graph test (`tests/boundaries.test.ts`) plus one boundary SvelteKit enforces itself. See Boundaries below.
+
+## Repository layout
+
+```
+tools/oculus/
+  DESIGN.md                    this file
+  README.md                    how to run it
+  .scratch/migration/          the migration's ledger (plan.md), state file (orchestrator-state.md) and agent material (agents/); tracked; deleted at step 8
+  config/                      the interface described as data, copied from the cockpit; no link back
+    meta.yml                   owner name, cluster host, ports
+    vocab.yml                  status vocabulary and colours
+    layout.yml                 tier scan paths, default arrangement
+    glyphs.yml                 the icon vocabulary
+    text.yml                   every user-facing string, keyed
+    manifest-schema.yml        the project.yml edit form
+    behavior.yml               thresholds and timings
+  local.yml                    machine-local values (the hub path), gitignored
+  src/
+    routes/
+      +page.svelte             mounts <Workbench/>; nothing else
+      api/docs/+server.ts      one markdown document, on demand
+      api/write/+server.ts     the write endpoints (dismiss, pin, rename; later commit, deposit)
+    lib/
+      data/                    LAYER 1
+        model.ts               the types; no logic
+        sources/
+          manifests.ts         walk the tiers, parse every project.yml
+          registries.ts        venues, datasets, programs, funding
+          collections.ts       the generic collection shape (events, education, tasks, ...)
+          docs.ts              markdown and frontmatter, on demand only
+          config.ts            merge config/*.yml and local.yml
+        validate.ts            the integrity gate: every key resolves, every status is in vocab
+        normalise.ts           entities by id plus relation tables, JSON-safe
+        index.ts               buildPortfolio(root): composition only
+      server/                  LAYER 2, server-pinned; Kit forbids client imports of this folder
+        socket.ts              the one WebSocket: channels, subscribe, push
+        watch/
+          portfolio.ts         watch the hub's yaml, rebuild, push
+          sessions.ts          watch ~/.claude/projects and ~/.claude/sessions, push
+          git.ts               watch each workspace's git state, push
+        sessions/
+          transcripts.ts       incremental JSONL reader with byte-offset cache (ports cockpit B1)
+          registry.ts          ~/.claude/sessions/<pid>.json, liveness by pid and procStart
+          group.ts             workspace and area scoring (ports cockpit B2)
+        git.ts                 four read-only commands, nothing else, ever
+        pty.ts                 tmux attach (step 6)
+        auth.ts                origin check and the write token
+      state/                   LAYER 2, client
+        entities.svelte.ts     what the socket delivers, by channel
+        selectors.svelte.ts    the joins: projects with their venue, funding, sessions
+        layout.svelte.ts       the layout tree, persisted
+        ui.svelte.ts           theme, per-view-instance selection and filters, persisted
+        socket.svelte.ts       the client end: subscribe, reconnect, status
+        text.ts                t("group.key"), reading config/text.yml
+      ui/                      LAYER 3, primitives, domain-blind
+        Card.svelte Chip.svelte Meter.svelte Table.svelte Pane.svelte Tabs.svelte Sash.svelte Empty.svelte Toolbar.svelte
+      shell/                   LAYER 3, the workbench, view-blind
+        Workbench.svelte ActivityRail.svelte Panel.svelte SplitView.svelte
+      views/                   LAYER 3, domain-aware, layout-blind; one file per surface
+        Focus.svelte Projects.svelte Archive.svelte Venues.svelte Funding.svelte ...
+        sessions/
+          SessionList.svelte SessionDetail.svelte Terminal.svelte Timeline.svelte Changes.svelte Agents.svelte
+      themes/
+        tokens.css             the palette, ported from the cockpit unchanged
+        themes.css             the fifteen themes, ported unchanged
+    server.ts                  the Node entry: http server with the WebSocket attached
+  tests/
+    contrast.test.ts           every text/background pair, every theme, at least 4.5:1
+    integrity.test.ts          the model validates against the real hub with zero findings
+    keys.test.ts               every t("...") key used in a component exists in config/text.yml
+    boundaries.test.ts         the import graph respects the layers
+    data/*.test.ts             per-source unit tests on synthetic fixtures
+    server/*.test.ts           transcripts, registry, grouping, git parser
+```
+
+The mapping to the three layers is literal: `lib/data` is layer 1; `lib/server` and `lib/state` are the two halves of layer 2; `lib/ui`, `lib/shell`, `lib/views` are layer 3. `routes/` is SvelteKit's required entry and stays thin.
+
+## Configuration
+
+The seven files under `config/` are the interface described as data, exactly as in the cockpit, and they are treated alike. Colours and statuses in `vocab.yml`, icons in `glyphs.yml`, every user-facing string in `text.yml` read through `t("group.key")`, the edit form in `manifest-schema.yml`, thresholds in `behavior.yml`, the owner's name and the cluster host in `meta.yml`. No component contains a literal user-facing string, a raw colour, or a literal glyph. `tests/keys.test.ts` fails on a `t()` key that does not exist, so a typo is caught before it renders blank, which is the same gate the cockpit has.
+
+Paths resolve without environment variables: a command-line argument, then `local.yml`, then a default derived from the file's own location. The hub path is the one value every machine must set and it lives in `local.yml`, gitignored, so the tree carries no machine path. Roots the file browser may serve (step 7) are set in the app and stored in config; nothing outside a root is ever served.
+
+## Layer 1, data
+
+**Sources.** One module per kind of file. Each exposes one function that takes a root and returns raw records, and each is unit-tested against synthetic fixtures in a temporary directory. No source knows another exists.
+
+**Model.** `model.ts` holds the types and nothing else. The core entities are `Project`, `Venue`, `Dataset`, `Program`, `Domain`, `Funding`, `Collection`, `Entry`, `Doc`. A project carries the ids of its relations (`venueId`, `fundingIds`, `datasetIds`), never resolved objects: a project points at its funding and the funding points back at its projects, and that loop cannot be turned into JSON.
+
+**Validate.** Every id referenced resolves to an entity; every status is in the vocabulary; every manifest field is one the schema names. Failures are reported with file and key, and a run against the real hub must report zero. This is the cockpit's `selftest.py` referential check, ported. It runs on every rebuild, so a bad manifest edit shows in the app within a second, as a finding, never a crash.
+
+**Normalise.** What goes over the wire:
+
+```ts
+type Snapshot = {
+  version: number                         // increments on every rebuild
+  entities: { projects: Record<Id, Project>; venues: Record<Id, Venue>; ... }
+  relations: { projectFunding: [Id, Id][]; projectDataset: [Id, Id][]; ... }
+  findings: Finding[]                     // from validate
+}
+```
+
+Flat, JSON-safe, small: the whole hub is a few hundred kilobytes. Documents are not in it; `api/docs` serves one when a view opens it. That is the reason the cockpit's page is 8.8 MB and this one is not.
+
+## Layer 2, code
+
+### Server
+
+**The socket.** One WebSocket per open page. Messages are `{channel, version, payload}`. Channels: `portfolio`, `sessions`, `git`, `slurm`, later `pty:<id>`. A page subscribes to the channels it needs; the server sends the current payload on subscribe and pushes on change. If a page falls behind, the server keeps only the latest payload per channel: the newest state is the only one that matters.
+
+**Watchers.** Each channel has one watcher module that owns its `fs.watch` handles, debounces, rebuilds only what changed, and pushes. Portfolio watches the hub's YAML directories. Sessions watches `~/.claude/projects` (transcripts) and `~/.claude/sessions` (the registry). Git watches each workspace's `.git/index` and worktree and re-reads on change, no more often than every two seconds.
+
+**Sessions.** Ports the cockpit's B1, B2 and B5 with their tests. Facts that cost real time to establish and must not be rediscovered:
+
+- Transcripts: `~/.claude/projects/<slug>/<id>.jsonl`, 490 files and 1.2 GB on this machine. A 48 MB transcript folds in 0.2 s, so there is no size bound on a first read; a byte-offset cache means a later read takes only what was appended. Any change to the accumulator's shape bumps the cache version.
+- Subagents are `tool_use` blocks named `Agent`, paired to their `tool_result` by id. `isSidechain` is false on every record everywhere and carries no information.
+- The live registry: `~/.claude/sessions/<pid>.json`, with `sessionId`, `status` (`busy` or `idle`), `name`, `cwd`. Liveness is `kill(pid, 0)` plus a `procStart` match; the registry writes that stamp in UTC and `ps` reports local time, so the match parses both and allows two seconds.
+- Grouping: workspace by walking up to `.git`; area scored from touched files with the cwd counting double, directories clamped to two segments below the workspace root, known project folders exempt from the clamp.
+- Context occupancy is the last assistant turn's `input + cache_creation + cache_read`, never the lifetime sums.
+
+**Git.** Exactly four read-only commands (`rev-parse --abbrev-ref HEAD`, `rev-list --left-right --count`, `status --porcelain=v1 -z`, `diff --numstat -z`), one subprocess call site, a five-second timeout, list arguments only. No writing subcommand appears in the module, and a test asserts it. Git writes are Axel's alone; the commit action (step 6) runs `git commit` only from an explicit click carrying the write token, and nothing else in the application can reach that endpoint.
+
+**PTY** (step 6). Sessions run inside tmux (`tmux new-session -d -s ock-<id> claude`), so they outlive the server. oculus attaches a pty to the tmux session and bridges it over the `pty:<id>` channel; the page renders it with xterm.js. A session started elsewhere is observed (transcript only) until Axel explicitly resumes it into tmux with `claude --resume <id>`; nothing migrates on its own. The server sends no signal to any registry pid other than the liveness probe.
+
+**Auth.** The server binds 127.0.0.1. Every request is checked against `Origin` and `Sec-Fetch-Site`; a request from another origin is refused, since any page open in the browser can address localhost. Writes additionally carry a token minted at server start and delivered to the page once. The socket accepts nothing from the page except subscriptions and, later, terminal input.
+
+### Client state
+
+Svelte 5 state modules (`.svelte.ts`). `entities` holds the latest payload per channel. `selectors` computes the joins (`projects` with venue, funding, datasets; `sessionsByProject`; `workspaces`). `layout` holds the tree below. `ui` holds theme and per-view-instance state such as selection and filters. `layout` and `ui` persist to `localStorage` under one versioned key. Views read selectors and write `ui`; they never touch `entities` directly.
+
+## Layer 3, view
+
+**Primitives** (`ui/`): `Card`, `Chip`, `Meter`, `Table`, `Pane`, `Tabs`, `Sash`, `Empty`, `Toolbar`. Props are values and callbacks; a `Chip` takes a label and a tone. Nothing here imports state or knows what a project is.
+
+**Shell** (`shell/`): the workbench. An activity rail on the left selecting what the rail lists; a main area with tabs; a panel that docks right, bottom, or hidden; sashes between all of them. The shell renders the layout tree and mounts whatever view instance a pane names. It does not import any view by name; views register themselves in a registry keyed by `ViewId`.
+
+**Views** (`views/`): one file per surface. A view reads selectors, composes primitives, writes its own instance state. It does not know whether it sits in the main area or the panel, and it has no internal multi-pane layout. Sessions is therefore six views, arranged by a saved default layout, not one view with three panes inside.
+
+**Boundaries**, enforced by `tests/boundaries.test.ts` over the import graph:
+
+| From | May import | May not import |
+|---|---|---|
+| `ui/` | `ui/`, `themes/`, `state/text` | `state/*` otherwise, `views/`, `shell/`, `server/` |
+| `shell/` | `ui/`, `state/layout`, `state/ui`, `state/text`, the view registry | any view by name, `server/` |
+| `views/` | `ui/`, `state/` | `shell/`, `server/`, other views |
+| `state/` | `data/model` | `server/`, anything in layer 3 |
+| `data/`, `server/` | `data/` | anything client-side |
+
+SvelteKit enforces the last row's server half by refusing client imports of `$lib/server`.
+
+## Layout as data
+
+```ts
+type ViewId   = 'focus' | 'projects' | 'archive' | 'venues' | ... | 'session-list' | 'terminal' | 'timeline' | 'changes' | 'agents'
+type Instance = { id: string; view: ViewId; state: unknown }
+type Layout =
+  | { kind: 'split'; dir: 'row' | 'col'; sizes: number[]; children: Layout[] }
+  | { kind: 'pane';  tabs: Instance[]; active: string }
+```
+
+The shell renders the tree; a sash drag edits `sizes`; opening a view appends an `Instance`; a drop moves an `Instance` between panes. The saved arrangement is the serialised tree. This is decided now, even though the first release offers only right, bottom and hidden for the panel, so that free-form docking later is an interaction added to existing data rather than a new model. Two instances of the same view have separate state by construction.
+
+## Theming
+
+`tokens.css` and `themes.css` port from the cockpit unchanged: colours, type scale, radii, fifteen theme blocks that override tokens and nothing else. The contrast test walks every text-on-background pair the primitives declare, under every theme, and fails below 4.5:1. Primitives use tokens only; a raw hex in a component is a test failure.
+
+## Hot reload
+
+Three kinds of change, three mechanisms, no restart in any of them.
+
+| Change | Mechanism |
+|---|---|
+| a component, a selector, a primitive | Vite swaps the module in the open page; state survives |
+| a server module or an endpoint | Kit's dev server reloads it; the socket reconnects |
+| a YAML file in the hub or in `config/` | the watcher rebuilds and pushes; identical in production |
+
+## Relationship to the cockpit
+
+- The cockpit is frozen at what it does on 2026-09-10, plus bug fixes. Nothing new is built there.
+- No code is shared. oculus copies the config YAML into `config/` and the memory-tab images into its own assets; the copies are then oculus's.
+- Both read the hub's data. After cockpit roadmap H (the private feeds move out of `tools/cockpit/data/` into the hub proper), the hub has one documented data path and oculus reads it from `local.yml`.
+- The cockpit retires when the last view it still has and oculus does not has moved. The `.app` launcher then points at oculus.
+
+## Conventions
+
+- Every source file under 1000 lines. A file approaching it is split by concern, never by line count.
+- ASCII only in every authored file. Glyphs come from `glyphs.yml`, strings from `text.yml`, colours from `tokens.css`.
+- One continuous line per paragraph and per bullet in Markdown and YAML; no hard wrapping.
+- Plain prose in docs and comments; a comment says why, not what.
+- No git command that writes is run by the application or by an agent working on it. Commits are Axel's, one request per commit.
+- Work proceeds from the ledger in `.scratch/migration/` (the `.scratch/<feature>/` convention shared with cathedra): `plan.md` is the package list in execution order, `orchestrator-state.md` is read first after any compaction, and every package has a brief under `agents/briefs/` written from `agents/spec.md` and checked against the tree before dispatch. One agent at a time, Opus 5 or lower, never Fable, working in a git worktree at main's head; the result lands on main only by the orchestrator's `git cherry-pick` after the whole diff was read and the verification commands ran, and one package is one commit. Agents never run git and never edit the plan files.
+
+## Migration order
+
+Each step names what "done" means. Nothing visual before step 3.
+
+1. **Cockpit H.** Private feeds moved to the hub proper; path resolution without environment variables. Done when the cockpit runs from the new paths and `tools/cockpit/data/` holds only config.
+2. **Scaffold.** SvelteKit with the Node adapter, Svelte 5, Vitest. `lib/data` complete with per-source tests; `validate` reports zero findings on the real hub; `normalise` produces a snapshot; `server/socket` pushes it; the boundaries, contrast and keys tests pass on the ported tokens and catalog. Done when a bare page shows the snapshot's version number updating as a manifest is edited.
+3. **The shell** (cockpit roadmap A). Workbench, activity rail, tabs, panel with right/bottom/hidden, sashes, the layout tree persisted, theme switching. Done when an empty view can be opened, arranged, and the arrangement survives a reload.
+4. **Projects.** The first real view: cards, filters, the manifest edit form writing back through `api/write`. Proves the design system and the data layer on a static, simple case. Done at parity with the cockpit's Projects tab.
+5. **Sessions** (cockpit roadmap B, D's read side, and E). The six session views and their default arrangement; the `sessions` and `git` channels; dismissal and pinning through `api/write`; the `Notification` and `Stop` hooks posting to the server (permission granted 2026-09-09) and the server firing a macOS notification through `osascript` the moment a session wants you. Done at parity with the cockpit's Sessions tab plus the notifications.
+6. **Terminal** (cockpit roadmap C, then D's write side and G). tmux, the `pty` channel, xterm.js, the composer, explicit migration of an existing session. Then the git panel with staging and the token-guarded commit, then the deposit action with its dry run and the Data view's per-dataset recovery command.
+7. **The remaining views** (cockpit roadmap F among them), in the order they are used: Focus, Archive, Coauthor, Venues, Funding, Data (with the per-dataset recovery command), Lit Watch, Leads, Inbox, LinkedIn, Live HPC, the file browser with bookmarks and notes, Memories, Help, Audit, Config.
+8. **Retire the cockpit.** Launcher repointed; `tools/cockpit` archived; hub docs updated.
+
+## Decisions taken
+
+- 2026-09-10, name: `oculus`, at `research-hub/tools/oculus`.
+- 2026-09-10, stack: SvelteKit with the Node adapter, Svelte 5, Vite, Vitest, TypeScript. The one enforced boundary (`$lib/server`) is the reason for Kit over bare Vite.
+- 2026-09-10, live data: one WebSocket with channels, the server watches and pushes; no polling. Writes are `fetch` POSTs.
+- 2026-09-10, wire model: entities and relations, joins in client selectors, documents on demand.
+- 2026-09-10, layout: a serialisable tree from day one; the first release offers right, bottom and hidden for the panel.
+- 2026-09-10, order: shell, then Projects, then Sessions. The simple view proves the stack before the complex one.
+- 2026-09-10, sessions are six views, not one.
+- 2026-09-10, the cockpit is frozen; B ports rather than being rebuilt.
+- 2026-09-09, tmux is the session backend (installed, 3.7c); migration of a running session is explicit and per session.
+
+## Still undecided, and not needed yet
+
+**The native window.** Whether the app eventually runs in its own window with a Dock icon and its own keyboard shortcuts rather than in a browser tab. Node makes Electron and Tauri candidates alongside pywebview. It is chosen after step 6, from how much the browser actually gets in the way with a terminal in it. Nothing before then depends on it.

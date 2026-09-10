@@ -1,0 +1,36 @@
+# Standing specification for every oculus package
+
+Every agent dispatched on an oculus package runs under this file plus one brief in `briefs/`. The brief names the package, the files to read in full, the exact deliverable, and the verification commands with their expected output. Nothing in a brief overrides anything here.
+
+## Read first, in full, before changing anything
+
+1. `tools/oculus/DESIGN.md`. It is the artefact the package is measured against. Where the brief and the design disagree, stop and report the disagreement; do not pick a side.
+2. The brief for this package.
+3. The hub `CLAUDE.md`, the sections "Hard rules" and "Working rules".
+4. Every file the brief lists, in full.
+
+## Where you work
+
+- In the git worktree the brief names, never in the main checkout. The worktree was created at main's head by the orchestrator. Every path in the brief is relative to that worktree.
+- You never run a git command. Not `add`, not `commit`, not `stash`, not `checkout`, not `status`. The orchestrator reads your diff and lands it.
+- You never edit anything under `tools/oculus/.scratch/`. The plan, the state file and the briefs are the orchestrator's.
+- You never write under `feeds/`, `projects/`, `registries/`, `funding/` or any other hub data folder, and never a `project.yml`. Tests use synthetic fixtures in a temporary directory and assert the resolved path is inside it before any write.
+- You never start a server on port 8787, and never kill, signal or restart the process that holds it. The oculus dev server uses the port the brief names. You never send a signal to any pid found in `~/.claude/sessions/`.
+
+## What every package obeys
+
+- One source file under 1000 lines. A file approaching it is split by concern.
+- ASCII only in every file you author. Glyphs come from `config/glyphs.yml`; every user-facing string from `config/text.yml` through `t("group.key")`; colours from `themes/tokens.css`. A literal string, a raw hex or a literal glyph in a component is a defect.
+- The layer boundaries in `DESIGN.md`: `ui/` imports no state and no view; `shell/` imports no view by name; `views/` imports no shell and no other view; nothing client-side imports `lib/server/`. `tests/boundaries.test.ts` enforces them and must pass.
+- One line per paragraph or bullet in any Markdown or YAML you edit. No hard wrapping.
+- No dependency the brief did not name. `npm install` of something new is a report, not an action.
+- A test never asserts a known defect. A threshold is never loosened to make a check pass; a check that only passes after loosening is a finding to report.
+- The cockpit under `tools/cockpit` is a cautionary reference for what its code got wrong, never a justification. Port its facts (the transcript format, the registry, the grouping clamp, the four git commands), not its structure.
+
+## Verify before you report
+
+Run every command the brief lists, from `tools/oculus` in the worktree, and fix until each passes. At minimum: `npm test`, `npm run check`, `npm run build`. Then `LC_ALL=C grep -n '[^ -~]'` over every file you touched, which must print nothing.
+
+## Report
+
+First line: anything NOT done, or "Everything in the brief is done". Then a DONE / NOT DONE table, one row per deliverable in the brief, each naming the command that proves it and its output. Then: files changed with line counts; every judgment call the brief did not cover, as a decision the orchestrator may reverse; anything in the brief or the design that turned out wrong or impossible, said plainly; every limitation, sharp edge or compromise you know of, however small. Never present partial work as complete; never state a measurement you did not take.
