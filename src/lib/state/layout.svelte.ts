@@ -13,14 +13,26 @@ import {
     activate,
     clampPanel,
     closeInstance,
+    closePane,
     defaultWorkbench,
     findView,
+    focusedPane,
+    maximise,
     newInstance,
     openInstance,
+    paneAt,
     parseLayout,
+    restore,
     serialiseLayout,
+    settleFocus,
+    splitWith,
+    transfer,
     type Dock,
+    type Edge,
+    type Focus,
+    type Instance,
     type Layout,
+    type Pane,
     type Target,
     type ViewId,
     type Workbench
@@ -124,7 +136,67 @@ export function activateInstance(target: Target, id: string): void {
 /** Close an instance, and forget it if it was the tree's active one. */
 export function closeInstanceIn(target: Target, id: string): void {
     if (lastActive[target] === id) lastActive[target] = null;
-    change(target, (tree) => closeInstance(tree, id));
+    apply(settleFocus(withTree(target, closeInstance(layout(target), id))));
+}
+
+/** The arrangement with one of its trees replaced, which is what an operation on a tree returns. */
+function withTree(target: Target, tree: Layout): Workbench {
+    const current = store.current;
+    return target === 'main' ? { ...current, main: tree } : { ...current, panel: tree };
+}
+
+/** Close a whole pane, with every tab it holds. */
+export function closePaneIn(target: Target, path: number[]): void {
+    const pane = paneAt(layout(target), path);
+    if (pane === null) return;
+    const held = lastActive[target];
+    if (held !== null && pane.tabs.some((tab) => tab.id === held)) lastActive[target] = null;
+    apply(settleFocus(withTree(target, closePane(layout(target), path))));
+}
+
+/**
+ * What a tab landing in a tree needs of the rest of the arrangement: a maximised pane in the other
+ * tree hides the one it is landing in, and a hidden panel hides it altogether. Either way the tab
+ * would be moved out of sight, which is the one thing a move must not look like.
+ */
+function reveal(target: Target): Workbench {
+    const current = store.current;
+    const focus = focusedPane(current);
+    const shown = focus !== null && focus.target !== target ? restore(current) : current;
+    return target === 'panel' && shown.dock === 'hidden' ? { ...shown, dock: 'right' } : shown;
+}
+
+/** Move an instance to a pane's tab strip, from whichever of the two trees holds it now. */
+export function transferInstance(id: string, target: Target, path: number[], index: number): void {
+    const from = reveal(target);
+    const next = transfer(from, id, target, path, index);
+    if (next === from) return;
+    lastActive[target] = id;
+    apply(next);
+}
+
+/** Move an instance into a new pane on one edge of a pane, from whichever tree holds it now. */
+export function splitInstance(id: string, target: Target, path: number[], edge: Edge): void {
+    const from = reveal(target);
+    const next = splitWith(from, id, target, path, edge);
+    if (next === from) return;
+    lastActive[target] = id;
+    apply(next);
+}
+
+/** Show one pane alone, with the rest of the workbench put away. */
+export function maximisePane(target: Target, path: number[]): void {
+    apply(maximise(store.current, target, path));
+}
+
+/** Show every pane again. */
+export function restorePanes(): void {
+    apply(restore(store.current));
+}
+
+/** The maximised pane, or null when every pane is shown. */
+export function focused(): Focus | null {
+    return focusedPane(store.current);
 }
 
 /**
@@ -134,16 +206,32 @@ export function closeInstanceIn(target: Target, id: string): void {
  * into something invisible would look like nothing happening.
  */
 export function openView(view: ViewId, where: Target): void {
+    // A maximised pane hides everything else, so a view opened into the other tree would land out
+    // of sight; opening it is what the rail was clicked for, so the arrangement comes back instead.
+    const focus = focusedPane(store.current);
+    if (focus !== null && focus.target !== where) restorePanes();
+
     const tree = layout(where);
-    const existing = findView(tree, view);
+    const into = focus !== null && focus.target === where ? focus.path : null;
+    const inside = into === null ? null : paneAt(tree, into);
+    const existing = inside === null ? findView(tree, view) : findIn(inside, view);
     if (existing !== null) {
         activateInstance(where, existing.id);
         if (where === 'panel' && store.current.dock === 'hidden') dock('right');
         return;
     }
     const instance = newInstance(view);
-    const path = activePath(tree, lastActive[where]);
+    const path = into !== null && inside !== null ? into : activePath(tree, lastActive[where]);
     lastActive[where] = instance.id;
     change(where, (current) => openInstance(current, path, instance));
     if (where === 'panel' && store.current.dock === 'hidden') dock('right');
+}
+
+/**
+ * The instance of a view in one pane, or null when it holds none. While a pane is maximised it is
+ * the only pane a view can be opened into, so it is the only one an already-open instance may be
+ * found in: activating a tab of a pane nobody can see would look like nothing happening.
+ */
+function findIn(pane: Pane, view: ViewId): Instance | null {
+    return pane.tabs.find((tab) => tab.view === view) ?? null;
 }

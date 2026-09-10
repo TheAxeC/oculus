@@ -175,7 +175,7 @@ Svelte 5 state modules (`.svelte.ts`). `entities` holds the latest payload per c
 | From | May import | May not import |
 |---|---|---|
 | `ui/` | `ui/`, `themes/`, `state/text` | `state/*` otherwise, `views/`, `shell/`, `server/` |
-| `shell/` | `ui/`, `state/layout`, `state/ui`, `state/text`, the view registry | any view by name, `server/` |
+| `shell/` | `ui/`, `state/layout`, `state/drag`, `state/ui`, `state/text`, the view registry | any view by name, `server/` |
 | `views/` | `ui/`, `state/` | `shell/`, `server/`, other views |
 | `state/` | `data/model` | `server/`, anything in layer 3 |
 | `data/`, `server/` | `data/` | anything client-side |
@@ -245,6 +245,7 @@ Each step names what "done" means. Nothing visual before step 3.
 - 2026-09-10, live data: one WebSocket with channels, the server watches and pushes; no polling. Writes are `fetch` POSTs.
 - 2026-09-10, wire model: entities and relations, joins in client selectors, documents on demand.
 - 2026-09-10, layout: a serialisable tree from day one; the first release offers right, bottom and hidden for the panel.
+- 2026-09-10, configuration regrouped, after Axel read the copied files: one concern per file (`sources`, `vocab`, `layout`, `behavior`, `appearance`, `meta`, `glyphs`, `text`, `manifest-schema`), the research domains' colours keyed `domains`, the UI theme list in `appearance.yml` as data rather than catalog strings, four cockpit-only keys dropped; package O10c. Appearance, in the same conversation: VS Code Dark Modern and Light Modern as two more themes, the wallpaper behind the panels, the glyph or ASCII toggle; package O10d.
 - 2026-09-10, docking, after the workbench was first used: tabs drag between panes and across the main and panel trees, a drop on a pane's edge splits it, a pane can be closed whole and maximised, all with keyboard equivalents; package O10b, on the tree operations O7 already has. The panel's own dock stays right, bottom or hidden.
 - 2026-09-10, order: shell, then Projects, then Sessions. The simple view proves the stack before the complex one.
 - 2026-09-10, sessions are six views, not one.

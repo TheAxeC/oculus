@@ -864,6 +864,16 @@ text:
     dock_bottom: "Panel along the bottom"
     dock_hidden: "Panel hidden"
     dock_glyph: "cards"
+    pane_menu: "Pane"
+    pane_menu_glyph: "list"    # a name in `glyphs:`: the opener at the right of a tab strip.
+    pane_close: "Close pane"
+    pane_maximise: "Maximise pane"
+    pane_restore: "Restore panes"
+    move_to_panel: "Move tab to the panel"
+    move_to_main: "Move tab to the main area"
+    split_right: "Split tab to the right"
+    split_down: "Split tab downwards"
+    drag_hint: "Moving {0}"
 
   views:                       # oculus's views: one label per registered view, and the glyph name it is drawn with.
     status: "Status"

@@ -1,14 +1,26 @@
 // The workbench rendered to HTML on the server: the rail, both trees, a tab strip over every pane,
-// the sashes, and the view each pane is showing. Two views are registered here rather than the
-// application's own, so what is checked is the shell and not what a view happens to draw.
+// the sashes, the view each pane is showing, and the one pane a maximised workbench draws instead
+// of all of them. Two views are registered here rather than the application's own, so what is
+// checked is the shell and not what a view happens to draw.
 //
 // What this does NOT cover: the theme effect, the menus opening, the drags. There is no DOM in this
 // suite, so an $effect never runs and a pointer is never pressed; applyTheme is covered on its own
-// in tests/ui/theme.test.ts, and the interactions are checked in a browser.
+// in tests/ui/theme.test.ts, the drag store is tests/state/drag.test.ts, and the drag itself is
+// checked in a browser. The insertion mark below is rendered from a prop, not from a pointer.
 
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
+import DropLayer from '../../src/lib/shell/DropLayer.svelte';
 import Workbench from '../../src/lib/shell/Workbench.svelte';
+import Tabs, { insertionIndex } from '../../src/lib/ui/Tabs.svelte';
+import {
+    THRESHOLD,
+    cancel,
+    hover,
+    move,
+    start,
+    type Drop
+} from '../../src/lib/state/drag.svelte.ts';
 import Alpha from './fixtures/Alpha.svelte';
 import Beta from './fixtures/Beta.svelte';
 import {
@@ -115,6 +127,142 @@ describe('the workbench', () => {
     it('draws no heading for a group no registered view belongs to', () => {
         const grouped = html('right', [{ label: 'Nothing here', keys: ['sessions'] }]);
         expect(grouped).not.toContain('Nothing here');
+    });
+
+    // A Menu draws its opener and nothing else until it is opened, so the items behind it (close,
+    // maximise, the two moves and the two splits) are not in this HTML. They are checked in the
+    // browser, where the menu can be opened.
+    it('puts a pane menu at the right of every tab strip', () => {
+        expect([...docked.matchAll(/aria-label="Pane"/g)]).toHaveLength(3);
+        expect([...docked.matchAll(/aria-haspopup="menu"/g)]).toHaveLength(5);
+    });
+});
+
+describe('a maximised pane', () => {
+    /** The workbench of the tests above with one of the two main panes maximised. */
+    function zoomed(path: number[], target: 'main' | 'panel'): string {
+        apply({ ...bench('right'), focus: { target, path } });
+        return render(Workbench, { props: { groups: [] } }).body;
+    }
+
+    const one = zoomed([1], 'main');
+
+    it('draws the focused pane and no other', () => {
+        expect(one).toContain('data-beta="two"');
+        expect(one).not.toContain('data-alpha="one"');
+        expect(one).not.toContain('data-beta="three"');
+        expect([...one.matchAll(/role="tablist"/g)]).toHaveLength(1);
+    });
+
+    it('draws neither sash: no split is shown and the panel is not beside it', () => {
+        expect([...one.matchAll(/role="separator"/g)]).toHaveLength(0);
+    });
+
+    it('carries the pane menu of the one pane it draws', () => {
+        expect([...one.matchAll(/aria-label="Pane"/g)]).toHaveLength(1);
+    });
+
+    it('draws a maximised pane of the panel the same way', () => {
+        const panel = zoomed([], 'panel');
+        expect(panel).toContain('data-beta="three"');
+        expect(panel).not.toContain('data-alpha="one"');
+    });
+
+    it('draws the whole workbench again when the focus names no pane', () => {
+        // [0, 0] is inside a pane, which is no node at all, and the arrangement is drawn whole.
+        const stale = zoomed([0, 0], 'main');
+        expect([...stale.matchAll(/role="tablist"/g)]).toHaveLength(3);
+    });
+});
+
+// The layer is rendered from the drag store, so a drag driven by its own calls is enough to draw
+// one. What is checked is the rectangle it puts over the pane body, which is where a drop on an
+// edge says the new pane would go.
+describe('the drop layer', () => {
+    const body = { x: 100, y: 50, width: 400, height: 200 };
+
+    function layer(drop: Drop | null): string {
+        cancel();
+        start('one', 'main', 'Status', { x: 0, y: 0 });
+        move({ x: THRESHOLD, y: 0 });
+        if (drop !== null) hover(drop, body);
+        const html = render(DropLayer, { props: {} }).body;
+        cancel();
+        return html;
+    }
+
+    function style(html: string): string {
+        return html.match(/class="target[^"]*" style="([^"]*)"/)?.[1] ?? '';
+    }
+
+    it('draws the ghost beside the pointer, with the tab it is carrying', () => {
+        expect(layer(null)).toContain('Moving Status');
+    });
+
+    it('covers the half of the body a new pane would take, on each edge', () => {
+        const at = (edge: 'left' | 'right' | 'top' | 'bottom') =>
+            style(layer({ kind: 'edge', target: 'main', path: [], edge }));
+        expect(at('left')).toBe('left: 100px; top: 50px; width: 200px; height: 200px');
+        expect(at('right')).toBe('left: 300px; top: 50px; width: 200px; height: 200px');
+        expect(at('top')).toBe('left: 100px; top: 50px; width: 400px; height: 100px');
+        expect(at('bottom')).toBe('left: 100px; top: 150px; width: 400px; height: 100px');
+    });
+
+    it('covers the whole body for a drop in the middle of it', () => {
+        expect(style(layer({ kind: 'centre', target: 'main', path: [] }))).toBe(
+            'left: 100px; top: 50px; width: 400px; height: 200px'
+        );
+    });
+
+    it('draws no rectangle for a drop on a strip, which draws its own mark', () => {
+        expect(style(layer({ kind: 'strip', target: 'main', path: [], index: 0 }))).toBe('');
+    });
+
+    it('draws nothing at all when no drag is in progress', () => {
+        cancel();
+        expect(render(DropLayer, { props: {} }).body).not.toContain('Moving');
+    });
+});
+
+describe('the insertion mark', () => {
+    function strip(dropIndex: number | null): string {
+        return render(Tabs, {
+            props: {
+                tabs: [
+                    { id: 'one', label: 'One' },
+                    { id: 'two', label: 'Two' }
+                ],
+                active: 'one',
+                onselect: () => {},
+                onclose: () => {},
+                dropIndex
+            }
+        }).body;
+    }
+
+    /** The mark carries svelte's scoping class beside its own, so the class list is matched. */
+    const MARK = /class="mark[^"]*"/g;
+
+    it('is drawn where a dropped tab would land, and nowhere when nothing is hovered', () => {
+        expect([...strip(0).matchAll(MARK)]).toHaveLength(1);
+        expect([...strip(null).matchAll(MARK)]).toHaveLength(0);
+    });
+
+    it('is drawn at the end of the strip for an index past the last tab', () => {
+        const end = strip(2);
+        expect(end.search(MARK)).toBeGreaterThan(end.indexOf('Two'));
+        const front = strip(0);
+        expect(front.search(MARK)).toBeLessThan(front.indexOf('One'));
+    });
+
+    it('lands before the tab whose middle the pointer has not passed', () => {
+        const midpoints = [20, 60, 100];
+        expect(insertionIndex(midpoints, 0)).toBe(0);
+        expect(insertionIndex(midpoints, 19)).toBe(0);
+        expect(insertionIndex(midpoints, 21)).toBe(1);
+        expect(insertionIndex(midpoints, 99)).toBe(2);
+        expect(insertionIndex(midpoints, 400)).toBe(3);
+        expect(insertionIndex([], 400)).toBe(0);
     });
 });
 

@@ -16,9 +16,22 @@ const LAYERS = ['data', 'server', 'state', 'ui', 'shell', 'views', 'themes'];
 // One entry per row of the table. A pattern ending in /** matches the folder and everything
 // under it; any other pattern matches exactly. The view registry is the one module the shell
 // and the views share, so a view can register itself without importing another view.
+//
+// The shell's row names the state modules the workbench is made of, one at a time: `state/drag`
+// joined `state/layout` and `state/ui` with the docking of O10b, since the one drag in progress is
+// state the shell reads and writes and no view has any business in. DESIGN.md's Boundaries table
+// still lists the first three, and the row here is the one this test enforces.
 const ALLOWED: Record<string, string[]> = {
     ui: ['ui/**', 'themes/**', 'state/text'],
-    shell: ['shell/**', 'ui/**', 'state/layout', 'state/ui', 'state/text', 'views/registry'],
+    shell: [
+        'shell/**',
+        'ui/**',
+        'state/layout',
+        'state/drag',
+        'state/ui',
+        'state/text',
+        'views/registry'
+    ],
     views: ['ui/**', 'state/**', 'views/registry'],
     state: ['state/**', 'data/model'],
     data: ['data/**'],

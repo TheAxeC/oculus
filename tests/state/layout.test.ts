@@ -15,17 +15,24 @@ import {
     checkLayout,
     checkWorkbench,
     closeInstance,
+    closePane,
     defaultWorkbench,
     equalSizes,
     findInstance,
+    focusedPane,
+    holderOf,
+    maximise,
     moveInstance,
     openInstance,
     paneAt,
     panes,
     parseLayout,
     resize,
+    restore,
     serialiseLayout,
     splitPane,
+    splitWith,
+    transfer,
     type Dock,
     type Instance,
     type Layout,
@@ -37,13 +44,19 @@ import {
     apply,
     change,
     closeInstanceIn,
+    closePaneIn,
     dock,
     dockedAt,
+    focused,
     layout,
     loadLayout,
+    maximisePane,
     openView,
     panelSize,
     resizePanel,
+    restorePanes,
+    splitInstance,
+    transferInstance,
     workbench
 } from '../../src/lib/state/layout.svelte.ts';
 
@@ -198,6 +211,35 @@ describe('closeInstance', () => {
     });
 });
 
+describe('closePane', () => {
+    it('takes every tab of a leaf pane with it and renormalises what is left', () => {
+        const tree = split('row', [0.2, 0.5, 0.3], [pane(['a']), pane(['b', 'c']), pane(['d'])]);
+        const next = closePane(tree, [1]);
+        expect(next).toEqual(split('row', [0.4, 0.6], [pane(['a']), pane(['d'])]));
+        expect(checkLayout(next)).toEqual([]);
+    });
+
+    it('collapses a split left with one child into that child', () => {
+        const tree = split('row', [0.5, 0.5], [pane(['a']), pane(['b', 'c'])]);
+        expect(closePane(tree, [1])).toEqual(pane(['a']));
+    });
+
+    it('empties the root pane rather than removing it', () => {
+        expect(closePane(pane(['a', 'b']), [])).toEqual({ kind: 'pane', tabs: [], active: '' });
+    });
+
+    it('leaves the tree alone when the path names a split or nothing', () => {
+        const tree = three();
+        expect(closePane(tree, [1])).toBe(tree);
+        expect(closePane(tree, [9])).toBe(tree);
+    });
+
+    it('is the whole pane, where closing its tabs one at a time is the same tree', () => {
+        const tree = split('row', [0.5, 0.5], [pane(['a']), pane(['b', 'c'])]);
+        expect(closePane(tree, [1])).toEqual(closeInstance(closeInstance(tree, 'b'), 'c'));
+    });
+});
+
 describe('activate', () => {
     it('names the instance active in the pane that holds it', () => {
         const tree = split('row', [0.5, 0.5], [pane(['a', 'b']), pane(['c'])]);
@@ -302,6 +344,157 @@ describe('splitPane', () => {
     it('leaves the tree alone when the path names no pane', () => {
         const tree = three();
         expect(splitPane(tree, [1], 'row', instance('d'))).toBe(tree);
+    });
+});
+
+describe('transfer', () => {
+    it('moves a tab inside one tree, exactly as moveInstance does', () => {
+        const main = split('row', [0.5, 0.5], [pane(['a']), pane(['b', 'c'])]);
+        const start = bench(main, pane(['p']));
+        const next = transfer(start, 'a', 'main', [1], 1);
+        expect(next.main).toEqual(moveInstance(main, 'a', [1], 1));
+        expect(next.panel).toBe(start.panel);
+        expect(checkWorkbench(next)).toEqual([]);
+    });
+
+    it('moves a tab from the main area to the panel, at the index it names', () => {
+        const start = bench(pane(['a', 'b']), pane(['p', 'q']));
+        const next = transfer(start, 'a', 'panel', [], 1);
+        expect(next.main).toEqual(pane(['b'], 'b'));
+        expect(next.panel).toEqual({
+            kind: 'pane',
+            tabs: [instance('p'), instance('a'), instance('q')],
+            active: 'a'
+        });
+        expect(checkWorkbench(next)).toEqual([]);
+    });
+
+    it('cleans the pane a tab left, back to the panel', () => {
+        const panel = split('col', [0.5, 0.5], [pane(['p']), pane(['q'])]);
+        const start = bench(pane(['a']), panel);
+        const next = transfer(start, 'q', 'main', [], 0);
+        expect(next.panel).toEqual(pane(['p']));
+        expect(next.main).toEqual({
+            kind: 'pane',
+            tabs: [instance('q'), instance('a')],
+            active: 'q'
+        });
+        expect(checkWorkbench(next)).toEqual([]);
+    });
+
+    it('clamps an index past the end of the strip', () => {
+        const start = bench(pane(['a']), pane(['p', 'q']));
+        const next = transfer(start, 'a', 'panel', [], 99);
+        expect(paneAt(next.panel, [])?.tabs.map((tab) => tab.id)).toEqual(['p', 'q', 'a']);
+    });
+
+    it('leaves the arrangement alone when it names no instance or no pane', () => {
+        const start = bench(pane(['a']), pane(['p']));
+        expect(transfer(start, 'z', 'panel', [], 0)).toBe(start);
+        expect(transfer(start, 'a', 'panel', [3], 0)).toBe(start);
+    });
+
+    it('says which tree holds an instance', () => {
+        const start = bench(pane(['a']), pane(['p']));
+        expect(holderOf(start, 'a')).toBe('main');
+        expect(holderOf(start, 'p')).toBe('panel');
+        expect(holderOf(start, 'z')).toBe(null);
+    });
+});
+
+describe('splitWith', () => {
+    it('puts the new pane after the split one on the right edge and before it on the left', () => {
+        const start = bench(pane(['a', 'b']), pane(['p']));
+        expect(splitWith(start, 'b', 'main', [], 'right').main).toEqual(
+            split('row', [0.5, 0.5], [pane(['a']), pane(['b'])])
+        );
+        expect(splitWith(start, 'b', 'main', [], 'left').main).toEqual(
+            split('row', [0.5, 0.5], [pane(['b']), pane(['a'])])
+        );
+    });
+
+    it('makes a column on the bottom edge and on the top edge', () => {
+        const start = bench(pane(['a', 'b']), pane(['p']));
+        expect(splitWith(start, 'b', 'main', [], 'bottom').main).toEqual(
+            split('col', [0.5, 0.5], [pane(['a']), pane(['b'])])
+        );
+        expect(splitWith(start, 'b', 'main', [], 'top').main).toEqual(
+            split('col', [0.5, 0.5], [pane(['b']), pane(['a'])])
+        );
+    });
+
+    it('adds a sibling to a split of the same direction, taking half the pane share', () => {
+        const main = split('row', [0.6, 0.4], [pane(['a']), pane(['b', 'c'])]);
+        const next = splitWith(bench(main, pane(['p'])), 'c', 'main', [0], 'right');
+        expect(next.main).toEqual(
+            split('row', [0.3, 0.3, 0.4], [pane(['a']), pane(['c']), pane(['b'], 'b')])
+        );
+        expect(checkWorkbench(next)).toEqual([]);
+    });
+
+    it('puts the sibling in front of the pane on the left edge', () => {
+        const main = split('row', [0.6, 0.4], [pane(['a']), pane(['b', 'c'])]);
+        const next = splitWith(bench(main, pane(['p'])), 'c', 'main', [0], 'left');
+        expect(next.main).toEqual(
+            split('row', [0.3, 0.3, 0.4], [pane(['c']), pane(['a']), pane(['b'], 'b')])
+        );
+    });
+
+    it('collapses the pane the tab left, without losing the pane it made', () => {
+        const main = split('row', [0.5, 0.5], [pane(['a']), pane(['b'])]);
+        const next = splitWith(bench(main, pane(['p'])), 'b', 'main', [0], 'bottom');
+        expect(next.main).toEqual(split('col', [0.5, 0.5], [pane(['a']), pane(['b'])]));
+        expect(checkWorkbench(next)).toEqual([]);
+    });
+
+    it('splits a pane of the panel with a tab of the main area', () => {
+        const start = bench(pane(['a', 'b']), pane(['p']));
+        const next = splitWith(start, 'a', 'panel', [], 'bottom');
+        expect(next.panel).toEqual(split('col', [0.5, 0.5], [pane(['p']), pane(['a'])]));
+        expect(next.main).toEqual(pane(['b'], 'b'));
+        expect(checkWorkbench(next)).toEqual([]);
+    });
+
+    it('leaves a pane alone when its own only tab is dropped on its edge', () => {
+        const start = bench(pane(['a']), pane(['p']));
+        expect(splitWith(start, 'a', 'main', [], 'right')).toBe(start);
+    });
+
+    it('leaves the arrangement alone when it names no instance or no pane', () => {
+        const start = bench(three(), pane(['p']));
+        expect(splitWith(start, 'z', 'main', [0], 'right')).toBe(start);
+        expect(splitWith(start, 'a', 'main', [1], 'right')).toBe(start);
+    });
+});
+
+describe('maximise and restore', () => {
+    it('names the pane that is shown alone, and gives it back', () => {
+        const start = bench(three(), pane(['p']));
+        const zoomed = maximise(start, 'main', [1, 0]);
+        expect(zoomed.focus).toEqual({ target: 'main', path: [1, 0] });
+        expect(focusedPane(zoomed)).toEqual({ target: 'main', path: [1, 0] });
+        expect(checkWorkbench(zoomed)).toEqual([]);
+        expect(restore(zoomed)).toEqual(start);
+        expect(focusedPane(start)).toBe(null);
+    });
+
+    it('maximises a pane of the panel too', () => {
+        const start = bench(pane(['a']), split('col', [0.5, 0.5], [pane(['p']), pane(['q'])]));
+        expect(maximise(start, 'panel', [1]).focus).toEqual({ target: 'panel', path: [1] });
+    });
+
+    it('leaves the arrangement alone when the path names a split or nothing', () => {
+        const start = bench(three(), pane(['p']));
+        expect(maximise(start, 'main', [1])).toBe(start);
+        expect(maximise(start, 'panel', [4])).toBe(start);
+        expect(restore(start)).toBe(start);
+    });
+
+    it('reports a focus that names no pane and drops it when the pane goes', () => {
+        const start = maximise(bench(three(), pane(['p'])), 'main', [1, 1]);
+        const gone = { ...start, main: closePane(start.main, [1, 1]) };
+        expect(checkWorkbench(gone)).toEqual(['focus names main [1, 1], which is not a pane']);
+        expect(focusedPane(gone)).toBe(null);
     });
 });
 
@@ -462,6 +655,34 @@ describe('serialiseLayout and parseLayout', () => {
         expect(parseLayout(envelope({ panelSize: 'wide' }))).toBe(null);
     });
 
+    it('reads back the maximised pane, and a workbench with none', () => {
+        const zoomed = maximise(bench(three(), pane(['p'])), 'main', [1, 1]);
+        expect(parseLayout(serialiseLayout(zoomed))).toEqual(zoomed);
+        const plain = bench(three(), pane(['p']));
+        const read = parseLayout(serialiseLayout(plain));
+        expect(read).toEqual(plain);
+        expect(read !== null && 'focus' in read).toBe(false);
+    });
+
+    it('drops a focus that names no pane rather than refusing the arrangement', () => {
+        const zoomed = maximise(bench(three(), pane(['p'])), 'main', [1, 1]);
+        const saved = JSON.parse(serialiseLayout(zoomed));
+        // The pane it named is closed by a later release, or by a hand edit of the saved value.
+        saved.workbench.main = closePane(zoomed.main, [1, 1]);
+        const read = parseLayout(saved);
+        expect(read?.focus).toBe(undefined);
+        expect(read?.main).toEqual(closePane(zoomed.main, [1, 1]));
+    });
+
+    it('drops a focus that is not a target and a path', () => {
+        for (const focus of ['main', { target: 'left', path: [] }, { target: 'main' }, null]) {
+            expect(parseLayout(envelope({ focus }))?.focus).toBe(undefined);
+        }
+        expect(parseLayout(envelope({ focus: { target: 'main', path: ['x'] } }))?.focus).toBe(
+            undefined
+        );
+    });
+
     it('refuses what is not an envelope at all', () => {
         expect(parseLayout('not json')).toBe(null);
         expect(parseLayout(null)).toBe(null);
@@ -597,5 +818,129 @@ describe('the store', () => {
         closeInstanceIn('main', 'a');
         expect(layout('main')).toEqual(pane(['b'], 'b'));
         expect(layout('panel')).toEqual(pane(['p']));
+    });
+});
+
+describe('the store: docking', () => {
+    /** A two-pane main area and a one-pane panel, loaded and saved through a fake storage. */
+    function load(main: Layout = split('row', [0.5, 0.5], [pane(['a']), pane(['b', 'c'])])) {
+        const storage = fakeStorage(serialiseLayout(bench(main, pane(['p']))));
+        loadLayout(storage);
+        return storage;
+    }
+
+    it('closes a whole pane and saves what is left', () => {
+        const storage = load();
+        closePaneIn('main', [1]);
+        expect(layout('main')).toEqual(pane(['a']));
+        expect(parseLayout(storage.held[LAYOUT_KEY])).toEqual(workbench());
+    });
+
+    it('moves a tab to the panel and saves it there', () => {
+        const storage = load();
+        transferInstance('c', 'panel', [], 0);
+        expect(layout('panel')).toEqual({
+            kind: 'pane',
+            tabs: [instance('c'), instance('p')],
+            active: 'c'
+        });
+        expect(layout('main')).toEqual(split('row', [0.5, 0.5], [pane(['a']), pane(['b'], 'b')]));
+        expect(parseLayout(storage.held[LAYOUT_KEY])).toEqual(workbench());
+    });
+
+    it('splits a pane with a tab and saves the new arrangement', () => {
+        const storage = load();
+        splitInstance('c', 'main', [0], 'bottom');
+        expect(layout('main')).toEqual(
+            split(
+                'row',
+                [0.5, 0.5],
+                [split('col', [0.5, 0.5], [pane(['a']), pane(['c'])]), pane(['b'], 'b')]
+            )
+        );
+        expect(parseLayout(storage.held[LAYOUT_KEY])).toEqual(workbench());
+    });
+
+    it('shows a hidden panel when a tab is moved into it', () => {
+        load();
+        dock('hidden');
+        transferInstance('c', 'panel', [], 0);
+        expect(dockedAt()).toBe('right');
+    });
+
+    it('leaves the dock alone when the move performs nothing', () => {
+        load();
+        dock('hidden');
+        transferInstance('nobody', 'panel', [], 0);
+        expect(dockedAt()).toBe('hidden');
+    });
+
+    it('maximises a pane, saves it, and restores', () => {
+        const storage = load();
+        maximisePane('main', [1]);
+        expect(focused()).toEqual({ target: 'main', path: [1] });
+        expect(parseLayout(storage.held[LAYOUT_KEY])?.focus).toEqual({
+            target: 'main',
+            path: [1]
+        });
+        restorePanes();
+        expect(focused()).toBe(null);
+        expect(parseLayout(storage.held[LAYOUT_KEY])?.focus).toBe(undefined);
+    });
+
+    it('drops the focus when the maximised pane is closed', () => {
+        load();
+        maximisePane('main', [1]);
+        closePaneIn('main', [1]);
+        expect(focused()).toBe(null);
+        expect(layout('main')).toEqual(pane(['a']));
+        expect(checkWorkbench(workbench())).toEqual([]);
+    });
+
+    it('opens a view into the maximised pane rather than the pane last activated', () => {
+        load();
+        activateInstance('main', 'a');
+        maximisePane('main', [1]);
+        openView('venues', 'main');
+        expect(paneAt(layout('main'), [0])?.tabs.map((tab) => tab.view)).toEqual(['projects']);
+        expect(paneAt(layout('main'), [1])?.tabs.map((tab) => tab.view)).toEqual([
+            'projects',
+            'projects',
+            'venues'
+        ]);
+        expect(focused()).toEqual({ target: 'main', path: [1] });
+    });
+
+    it('opens a second instance of a view that is open in a pane nobody can see', () => {
+        load(
+            split(
+                'row',
+                [0.5, 0.5],
+                [{ kind: 'pane', tabs: [instance('a', 'venues')], active: 'a' }, pane(['b'])]
+            )
+        );
+        maximisePane('main', [1]);
+        openView('venues', 'main');
+        expect(paneAt(layout('main'), [1])?.tabs.map((tab) => tab.view)).toEqual([
+            'projects',
+            'venues'
+        ]);
+        expect(paneAt(layout('main'), [0])?.tabs.map((tab) => tab.view)).toEqual(['venues']);
+    });
+
+    it('restores rather than opening a view into a tree nobody can see', () => {
+        load();
+        maximisePane('main', [1]);
+        openView('venues', 'panel');
+        expect(focused()).toBe(null);
+        expect(viewsOf(layout('panel'))).toEqual(['projects', 'venues']);
+    });
+
+    it('brings the arrangement back when a tab is moved out of the maximised tree', () => {
+        load();
+        maximisePane('main', [1]);
+        transferInstance('c', 'panel', [], 0);
+        expect(focused()).toBe(null);
+        expect(viewsOf(layout('panel'))).toEqual(['projects', 'projects']);
     });
 });

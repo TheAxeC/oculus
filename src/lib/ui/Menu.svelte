@@ -32,9 +32,22 @@
          * is clipped away.
          */
         placement?: 'up' | 'down';
+        /**
+         * Which edge of the button the list lines up with. `left` is the default; a menu at the
+         * right edge of the window lines up `right`, or its list runs off the screen.
+         */
+        align?: 'left' | 'right';
     };
 
-    let { label, items, onpick, glyph, compact = false, placement = 'up' }: Props = $props();
+    let {
+        label,
+        items,
+        onpick,
+        glyph,
+        compact = false,
+        placement = 'up',
+        align = 'left'
+    }: Props = $props();
 
     let open = $state(false);
     let box: HTMLDivElement | undefined = $state(undefined);
@@ -105,7 +118,13 @@
         {/if}
     </button>
     {#if open}
-        <div class="list" class:down={placement === 'down'} role="menu" aria-label={label}>
+        <div
+            class="list"
+            class:down={placement === 'down'}
+            class:right={align === 'right'}
+            role="menu"
+            aria-label={label}
+        >
             {#each items as item, index (item.id)}
                 <button
                     type="button"
@@ -179,10 +198,17 @@
         margin-bottom: 0;
     }
 
-    /* A compact menu sits in a strip too narrow for the list, so the list opens beside the button
-       rather than above it and is not clipped by the strip. */
-    .opener.compact + .list {
+    .list.right {
+        left: auto;
+        right: 0;
+    }
+
+    /* A compact menu that opens upward sits in a strip too narrow for the list, so the list opens
+       beside the button rather than above it and is not clipped by the strip. A compact menu that
+       opens downward (a pane's menu) keeps its placement. */
+    .opener.compact + .list:not(.down) {
         left: 100%;
+        right: auto;
         bottom: 0;
         margin-bottom: 0;
         margin-left: 4px;

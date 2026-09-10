@@ -31,15 +31,29 @@ export type Layout = Split | Pane;
 /** Where the panel sits beside the main area, or that it is not shown. */
 export type Dock = 'right' | 'bottom' | 'hidden';
 
-/**
- * The whole arrangement, which is what is saved: two trees, where the second one sits, and how much
- * of the window it takes. The panel is a tree of its own rather than a pane, so a panel can be split
- * exactly as the main area can and every operation applies to either of them.
- */
-export type Workbench = { main: Layout; panel: Layout; dock: Dock; panelSize: number };
-
 /** Which of the workbench's two trees an operation applies to. */
 export type Target = 'main' | 'panel';
+
+/** The one pane shown alone while the rest of the workbench is put away. */
+export type Focus = { target: Target; path: number[] };
+
+/**
+ * The whole arrangement, which is what is saved: two trees, where the second one sits, how much of
+ * the window it takes, and the pane that is maximised if one is. The panel is a tree of its own
+ * rather than a pane, so a panel can be split exactly as the main area can and every operation
+ * applies to either of them.
+ */
+export type Workbench = {
+    main: Layout;
+    panel: Layout;
+    dock: Dock;
+    panelSize: number;
+    /** The maximised pane, or nothing when every pane is shown. */
+    focus?: Focus;
+};
+
+/** The side of a pane a dropped tab takes, which is what says where the new pane goes. */
+export type Edge = 'left' | 'right' | 'top' | 'bottom';
 
 /** The smallest share of a split one child may hold, so a drag can never take a pane to nothing. */
 export const MIN_SIZE = 0.1;
@@ -266,6 +280,28 @@ export function closeInstance(layout: Layout, id: string): Layout {
     return removeTab(layout, found.path, found.index);
 }
 
+/**
+ * Remove a whole pane and every tab it holds. The split it leaves with one child collapses into
+ * that child, exactly as closing its last tab one at a time would leave it, and the root pane is
+ * emptied rather than removed, since a tree is always at least one pane.
+ */
+export function closePane(layout: Layout, path: number[]): Layout {
+    if (paneAt(layout, path) === null) return layout;
+    return removePane(layout, path);
+}
+
+/** The tree with one instance under a different id, which is how a move keeps a path valid. */
+function renameInstance(layout: Layout, from: string, to: string): Layout {
+    const found = findInstance(layout, from);
+    if (found === null) return layout;
+    const edit = (node: Layout): Layout => {
+        if (node.kind !== 'pane') return node;
+        const tabs = node.tabs.map((tab) => (tab.id === from ? { ...tab, id: to } : tab));
+        return { kind: 'pane', tabs, active: node.active === from ? to : node.active };
+    };
+    return rewrite(layout, found.path, edit) ?? layout;
+}
+
 /** Make an instance the active tab of the pane holding it. */
 export function activate(layout: Layout, id: string): Layout {
     const found = findInstance(layout, id);
@@ -305,12 +341,16 @@ export function moveInstance(layout: Layout, id: string, path: number[], index: 
  * same direction gains a sibling there, taking half the pane's share, so a row of panes stays one
  * row; anything else is replaced by a split of itself and the new pane, half each. A split already
  * holding MAX_CHILDREN cannot give a further child MIN_SIZE, so that one nests instead.
+ *
+ * The new pane comes after the one it was split from, and `before` puts it in front of it instead,
+ * which is what a drop on the left or the top edge of a pane asks for.
  */
 export function splitPane(
     layout: Layout,
     path: number[],
     dir: 'row' | 'col',
-    instance: Instance
+    instance: Instance,
+    before = false
 ): Layout {
     if (paneAt(layout, path) === null) return layout;
     const fresh: Pane = { kind: 'pane', tabs: [instance], active: instance.id };
@@ -325,10 +365,11 @@ export function splitPane(
         parent.children.length < MAX_CHILDREN
     ) {
         const share = parent.sizes[at] ?? 1 / parent.children.length;
+        const insert = before ? at : at + 1;
         const children = [
-            ...parent.children.slice(0, at + 1),
+            ...parent.children.slice(0, insert),
             fresh,
-            ...parent.children.slice(at + 1)
+            ...parent.children.slice(insert)
         ];
         const sizes = [
             ...parent.sizes.slice(0, at),
@@ -344,7 +385,7 @@ export function splitPane(
         kind: 'split',
         dir,
         sizes: [0.5, 0.5],
-        children: [node, fresh]
+        children: before ? [fresh, node] : [node, fresh]
     });
     return rewrite(layout, path, edit) ?? layout;
 }
@@ -393,6 +434,143 @@ function normaliseSizes(raw: number[]): number[] {
         });
     }
     return sizes.some((value) => value < MIN_SIZE - EPS) ? equalSizes(count) : sizes;
+}
+
+// ---------------------------------------------------------------------------------------------
+// Operations on the whole workbench
+//
+// A tab crosses from one tree to the other, so these take the arrangement rather than one tree.
+// Each of them returns its argument unchanged when it names no pane or no instance, which is the
+// same rule the one-tree operations follow for a stale path.
+
+/** One of the two trees. */
+function treeOf(workbench: Workbench, target: Target): Layout {
+    return target === 'main' ? workbench.main : workbench.panel;
+}
+
+/** The arrangement with one of its trees replaced. */
+function withTree(workbench: Workbench, target: Target, tree: Layout): Workbench {
+    return target === 'main' ? { ...workbench, main: tree } : { ...workbench, panel: tree };
+}
+
+/** Which tree holds an instance, or null when neither does. */
+export function holderOf(workbench: Workbench, id: string): Target | null {
+    if (findInstance(workbench.main, id) !== null) return 'main';
+    if (findInstance(workbench.panel, id) !== null) return 'panel';
+    return null;
+}
+
+/** The maximised pane, or null when none is or the one that was is gone. */
+export function focusedPane(workbench: Workbench): Focus | null {
+    const focus = workbench.focus;
+    if (focus === undefined) return null;
+    return paneAt(treeOf(workbench, focus.target), focus.path) === null ? null : focus;
+}
+
+/**
+ * The arrangement without a focus that names no pane. Every operation that can remove a pane ends
+ * here, so a maximised pane that was closed or collapsed leaves the workbench shown whole rather
+ * than showing nothing.
+ */
+export function settleFocus(workbench: Workbench): Workbench {
+    if (workbench.focus === undefined) return workbench;
+    if (focusedPane(workbench) !== null) return workbench;
+    return restore(workbench);
+}
+
+/**
+ * Move an instance to `index` of the pane at `path` in `target`, from whichever tree holds it. It
+ * becomes that pane's active tab and the pane it left is cleaned as closeInstance cleans it. Within
+ * one tree this is moveInstance; across the two, the insertion and the removal touch different
+ * trees, so neither can invalidate the other's path.
+ */
+export function transfer(
+    workbench: Workbench,
+    id: string,
+    target: Target,
+    path: number[],
+    index: number
+): Workbench {
+    const source = holderOf(workbench, id);
+    if (source === null) return workbench;
+    const destination = paneAt(treeOf(workbench, target), path);
+    if (destination === null) return workbench;
+
+    if (source === target) {
+        const moved = moveInstance(treeOf(workbench, target), id, path, index);
+        return settleFocus(withTree(workbench, target, moved));
+    }
+
+    const from = treeOf(workbench, source);
+    const found = findInstance(from, id);
+    if (found === null) return workbench;
+    const at = clamp(index, 0, destination.tabs.length);
+    const tabs = [...destination.tabs.slice(0, at), found.instance, ...destination.tabs.slice(at)];
+    const inserted = rewrite(treeOf(workbench, target), path, () => ({
+        kind: 'pane',
+        tabs,
+        active: id
+    }));
+    if (inserted === null) return workbench;
+    const cleaned = removeTab(from, found.path, found.index);
+    const next = withTree(withTree(workbench, target, inserted), source, cleaned);
+    return settleFocus(next);
+}
+
+/**
+ * Split the pane at `path` in `target` and put an instance alone in the new pane, taking it out of
+ * whichever tree holds it. A drop on the left or the right edge makes a row and one on the top or
+ * the bottom edge a column, with the new pane before the split one for `left` and `top`.
+ *
+ * Within one tree the split has to happen first: removing the instance can empty its pane and
+ * collapse a split, which would leave `path` naming another node. The new pane therefore holds the
+ * instance under a temporary id until the original is gone, so no tree ever holds the id twice.
+ */
+export function splitWith(
+    workbench: Workbench,
+    id: string,
+    target: Target,
+    path: number[],
+    edge: Edge
+): Workbench {
+    const source = holderOf(workbench, id);
+    if (source === null) return workbench;
+    if (paneAt(treeOf(workbench, target), path) === null) return workbench;
+    const found = findInstance(treeOf(workbench, source), id);
+    if (found === null) return workbench;
+    const dir: 'row' | 'col' = edge === 'left' || edge === 'right' ? 'row' : 'col';
+    const before = edge === 'left' || edge === 'top';
+
+    const holder = paneAt(treeOf(workbench, source), found.path);
+    const alone = holder !== null && holder.tabs.length === 1;
+    // Splitting a pane away from its own only tab would put the pane back where it already is.
+    if (source === target && alone && samePath(found.path, path)) return workbench;
+
+    if (source !== target) {
+        const split = splitPane(treeOf(workbench, target), path, dir, found.instance, before);
+        const cleaned = removeTab(treeOf(workbench, source), found.path, found.index);
+        const next = withTree(withTree(workbench, target, split), source, cleaned);
+        return settleFocus(next);
+    }
+
+    const temporary: Instance = { ...found.instance, id: `${id}#moving` };
+    let tree = splitPane(treeOf(workbench, target), path, dir, temporary, before);
+    tree = closeInstance(tree, id);
+    tree = renameInstance(tree, temporary.id, id);
+    return settleFocus(withTree(workbench, target, tree));
+}
+
+/** Show one pane alone. A path naming no pane leaves the arrangement as it was. */
+export function maximise(workbench: Workbench, target: Target, path: number[]): Workbench {
+    if (paneAt(treeOf(workbench, target), path) === null) return workbench;
+    return { ...workbench, focus: { target, path: [...path] } };
+}
+
+/** Show every pane again. */
+export function restore(workbench: Workbench): Workbench {
+    if (workbench.focus === undefined) return workbench;
+    const { main, panel, dock, panelSize } = workbench;
+    return { main, panel, dock, panelSize };
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -538,6 +716,10 @@ export function checkWorkbench(workbench: Workbench): string[] {
     if (workbench.panelSize < PANEL_MIN || workbench.panelSize > PANEL_MAX) {
         problems.push(`panelSize is ${workbench.panelSize}, outside ${PANEL_MIN} to ${PANEL_MAX}`);
     }
+    const focus = workbench.focus;
+    if (focus !== undefined && focusedPane(workbench) === null) {
+        problems.push(`focus names ${focus.target} ${show(focus.path)}, which is not a pane`);
+    }
     return problems;
 }
 
@@ -577,7 +759,27 @@ export function parseLayout(value: unknown): Workbench | null {
     if (typeof panelSize !== 'number' || !Number.isFinite(panelSize)) return null;
     if (panelSize < PANEL_MIN || panelSize > PANEL_MAX) return null;
     if (main === null || panel === null || problems.length > 0) return null;
-    return { main, panel, dock: dock as Dock, panelSize };
+    const workbench: Workbench = { main, panel, dock: dock as Dock, panelSize };
+    const focus = readFocus(saved.focus);
+    if (focus === null) return workbench;
+    return settleFocus({ ...workbench, focus });
+}
+
+/**
+ * The maximised pane of a saved envelope, or null when the value does not name one. A focus that no
+ * longer names a pane is dropped rather than refused: the arrangement around it is still the one the
+ * browser had, and a pane closed in an older release is not a reason to lose it.
+ */
+function readFocus(value: unknown): Focus | null {
+    if (!isRecord(value)) return null;
+    const target = value.target;
+    if (target !== 'main' && target !== 'panel') return null;
+    const path = value.path;
+    if (!Array.isArray(path)) return null;
+    if (!path.every((step) => typeof step === 'number' && Number.isInteger(step) && step >= 0)) {
+        return null;
+    }
+    return { target, path: path as number[] };
 }
 
 /** One of the two trees of a saved envelope, its problems named by which tree they are in. */

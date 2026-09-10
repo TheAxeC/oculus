@@ -8,13 +8,23 @@
     // window against the main area's.
 
     import ActivityRail, { type NavGroup } from './ActivityRail.svelte';
+    import DropLayer from './DropLayer.svelte';
     import PaneView from './PaneView.svelte';
     import SplitView from './SplitView.svelte';
     import Sash, { SASH_PX } from '$lib/ui/Sash.svelte';
     import { applyTheme } from '$lib/ui/theme';
-    import { change, dockedAt, layout, panelSize, resizePanel } from '$lib/state/layout.svelte';
+    import {
+        change,
+        dockedAt,
+        focused,
+        layout,
+        panelSize,
+        resizePanel,
+        restorePanes
+    } from '$lib/state/layout.svelte';
+    import { dragging } from '$lib/state/drag.svelte';
     import { crt, theme } from '$lib/state/ui.svelte';
-    import { PANEL_DEFAULT, resize, type Layout } from '$lib/state/layout';
+    import { PANEL_DEFAULT, paneAt, resize, type Layout } from '$lib/state/layout';
     import { t, themeClass } from '$lib/state/text';
 
     type Props = {
@@ -30,6 +40,21 @@
     const share = $derived(panelSize());
     /** The panel sits under the main area when it is docked at the bottom, and beside it otherwise. */
     const direction = $derived<'row' | 'col'>(dock === 'bottom' ? 'col' : 'row');
+
+    /** The maximised pane, when one is: it is drawn alone and the rest of the workbench is not drawn. */
+    const focus = $derived(focused());
+    const zoomed = $derived(focus === null ? null : paneAt(layout(focus.target), focus.path));
+
+    /**
+     * Escape restores the arrangement. A drag in progress consumes its own Escape on the document,
+     * where the drag store's listener calls preventDefault, so the two never both act on one press.
+     */
+    function keys(event: KeyboardEvent): void {
+        if (event.key !== 'Escape' || event.defaultPrevented) return;
+        if (dragging() !== null || focus === null) return;
+        event.preventDefault();
+        restorePanes();
+    }
 
     $effect(() => {
         applyTheme(document, themeClass(theme()), crt());
@@ -49,41 +74,51 @@
     }
 </script>
 
-{#snippet mainPane(node: Layout)}
-    <PaneView {node} target="main" />
+{#snippet mainPane(node: Layout, path: number[])}
+    <PaneView {node} target="main" {path} />
 {/snippet}
 
-{#snippet panelPane(node: Layout)}
-    <PaneView {node} target="panel" />
+{#snippet panelPane(node: Layout, path: number[])}
+    <PaneView {node} target="panel" {path} />
 {/snippet}
+
+<svelte:window onkeydown={keys} />
 
 <div class="workbench">
     <ActivityRail {groups} />
     <div class="area {direction}" bind:this={area}>
-        <div class="tree" style="flex: {dock === 'hidden' ? 1 : 1 - share} 1 0">
-            <SplitView
-                layout={layout('main')}
-                pane={mainPane}
-                onresize={(path, sizes) => change('main', (tree) => resize(tree, path, sizes))}
-            />
-        </div>
-        {#if dock !== 'hidden'}
-            <Sash
-                dir={direction}
-                share={1 - share}
-                onresize={panelMoved}
-                onreset={() => resizePanel(PANEL_DEFAULT)}
-            />
-            <section class="tree panel" style="flex: {share} 1 0" aria-label={t('ui.panel')}>
+        {#if zoomed !== null && focus !== null}
+            <div class="tree" style="flex: 1 1 0">
+                <PaneView node={zoomed} target={focus.target} path={focus.path} />
+            </div>
+        {:else}
+            <div class="tree" style="flex: {dock === 'hidden' ? 1 : 1 - share} 1 0">
                 <SplitView
-                    layout={layout('panel')}
-                    pane={panelPane}
-                    onresize={(path, sizes) => change('panel', (tree) => resize(tree, path, sizes))}
+                    layout={layout('main')}
+                    pane={mainPane}
+                    onresize={(path, sizes) => change('main', (tree) => resize(tree, path, sizes))}
                 />
-            </section>
+            </div>
+            {#if dock !== 'hidden'}
+                <Sash
+                    dir={direction}
+                    share={1 - share}
+                    onresize={panelMoved}
+                    onreset={() => resizePanel(PANEL_DEFAULT)}
+                />
+                <section class="tree panel" style="flex: {share} 1 0" aria-label={t('ui.panel')}>
+                    <SplitView
+                        layout={layout('panel')}
+                        pane={panelPane}
+                        onresize={(path, sizes) =>
+                            change('panel', (tree) => resize(tree, path, sizes))}
+                    />
+                </section>
+            {/if}
         {/if}
     </div>
 </div>
+<DropLayer />
 
 <style>
     .workbench {
