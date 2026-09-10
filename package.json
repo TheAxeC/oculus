@@ -1,27 +1,31 @@
 {
-  "name": "oculus",
-  "private": true,
-  "version": "0.0.1",
-  "type": "module",
-  "scripts": {
-    "dev": "vite dev",
-    "build": "vite build",
-    "preview": "vite preview",
-    "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
-    "test": "vitest run"
-  },
-  "devDependencies": {
-    "@sveltejs/adapter-node": "^5.5.7",
-    "@sveltejs/kit": "^2.63.0",
-    "@sveltejs/vite-plugin-svelte": "^7.1.2",
-    "@types/node": "^24.13.4",
-    "svelte": "^5.56.1",
-    "svelte-check": "^4.6.0",
-    "typescript": "^6.0.3",
-    "vite": "^8.0.16",
-    "vitest": "^4.1.8"
-  },
-  "dependencies": {
-    "yaml": "^2.9.0"
-  }
+    "name": "oculus",
+    "private": true,
+    "version": "0.0.1",
+    "type": "module",
+    "scripts": {
+        "dev": "vite dev",
+        "build": "vite build",
+        "preview": "vite preview",
+        "check": "svelte-kit sync && svelte-check --tsconfig ./tsconfig.json",
+        "test": "vitest run",
+        "format": "prettier --write .",
+        "format:check": "prettier --check ."
+    },
+    "devDependencies": {
+        "@sveltejs/adapter-node": "^5.5.7",
+        "@sveltejs/kit": "^2.63.0",
+        "@sveltejs/vite-plugin-svelte": "^7.1.2",
+        "@types/node": "^24.13.4",
+        "prettier": "^3.9.6",
+        "prettier-plugin-svelte": "^4.1.1",
+        "svelte": "^5.56.1",
+        "svelte-check": "^4.6.0",
+        "typescript": "^6.0.3",
+        "vite": "^8.0.16",
+        "vitest": "^4.1.8"
+    },
+    "dependencies": {
+        "yaml": "^2.9.0"
+    }
 }

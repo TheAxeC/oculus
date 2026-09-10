@@ -2,4 +2,4 @@
 # The server flattens this to dotted keys and ships it to the page as data; the browser never fetches the file.
 
 app:
-  title: oculus
+    title: oculus

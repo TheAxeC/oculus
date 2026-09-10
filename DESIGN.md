@@ -218,6 +218,7 @@ Three kinds of change, three mechanisms, no restart in any of them.
 ## Conventions
 
 - Every source file under 1000 lines. A file approaching it is split by concern, never by line count.
+- Four-space indentation in every source file, by Axel's instruction of 2026-09-10. Prettier is the formatter, pinned in `.prettierrc` (`tabWidth: 4`, `useTabs: false`), with `npm run format` to apply it and `npm run format:check` as the fourth verification command beside `npm test`, `npm run check` and `npm run build`. A hand-formatted file is never the answer to a failing check.
 - ASCII only in every authored file. Glyphs come from `glyphs.yml`, strings from `text.yml`, colours from `tokens.css`.
 - One continuous line per paragraph and per bullet in Markdown and YAML; no hard wrapping.
 - Plain prose in docs and comments; a comment says why, not what.

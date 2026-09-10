@@ -11,18 +11,18 @@ import type { Finding, RegistryName, ScanRule } from '../../src/lib/data/model.t
 
 // The five rules of the hub's layout config, by hand: O5 copies the config file itself.
 const SCAN: ScanRule[] = [
-  { dir: 'projects/ideas', type: 'idea' },
-  { dir: 'projects/active', type: 'active' },
-  { dir: 'projects/manuscripts', type: 'manuscript' },
-  { dir: 'projects/coauthor', nested: true },
-  { dir: 'projects/archive', nested: true }
+    { dir: 'projects/ideas', type: 'idea' },
+    { dir: 'projects/active', type: 'active' },
+    { dir: 'projects/manuscripts', type: 'manuscript' },
+    { dir: 'projects/coauthor', nested: true },
+    { dir: 'projects/archive', nested: true }
 ];
 
 const REGISTRIES: RegistryName[] = ['venues', 'datasets', 'programs', 'domains', 'funding'];
 
 function report(label: string, findings: Finding[]): void {
-  console.log(`${label} findings: ${findings.length}`);
-  for (const f of findings) console.log(`  ${f.file} [${f.key}] ${f.message}`);
+    console.log(`${label} findings: ${findings.length}`);
+    for (const f of findings) console.log(`  ${f.file} [${f.key}] ${f.message}`);
 }
 
 const hub = loadLocal(engineDir()).hub;
@@ -31,14 +31,16 @@ console.log(`hub: ${hub}`);
 const { manifests, findings } = readManifests(hub, SCAN);
 console.log(`manifests: ${manifests.length}`);
 for (const rule of SCAN) {
-  const tier = rule.dir.split('/').pop();
-  console.log(`  ${tier}: ${manifests.filter((m) => m.tier === tier).length}`);
+    const tier = rule.dir.split('/').pop();
+    console.log(`  ${tier}: ${manifests.filter((m) => m.tier === tier).length}`);
 }
 report('manifest', findings);
 
 const registries = readRegistries(hub);
 for (const name of REGISTRIES) {
-  const reg = registries[name];
-  console.log(`${name}: ${reg.entries.length} entries, meta keys ${Object.keys(reg.meta).join(', ')}`);
+    const reg = registries[name];
+    console.log(
+        `${name}: ${reg.entries.length} entries, meta keys ${Object.keys(reg.meta).join(', ')}`
+    );
 }
 report('registry', registries.findings);

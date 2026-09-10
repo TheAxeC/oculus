@@ -20,6 +20,7 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 ## What every package obeys
 
 - One source file under 1000 lines. A file approaching it is split by concern.
+- Four-space indentation everywhere. Prettier is pinned in `.prettierrc`; run `npm run format` on what you wrote and `npm run format:check` before you report. Never hand-format to satisfy the check.
 - ASCII only in every file you author. Glyphs come from `config/glyphs.yml`; every user-facing string from `config/text.yml` through `t("group.key")`; colours from `themes/tokens.css`. A literal string, a raw hex or a literal glyph in a component is a defect.
 - The layer boundaries in `DESIGN.md`: `ui/` imports no state and no view; `shell/` imports no view by name; `views/` imports no shell and no other view; nothing client-side imports `lib/server/`. `tests/boundaries.test.ts` enforces them and must pass.
 - One line per paragraph or bullet in any Markdown or YAML you edit. No hard wrapping.
@@ -29,7 +30,7 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 
 ## Verify before you report
 
-Run every command the brief lists, from `tools/oculus` in the worktree, and fix until each passes. At minimum: `npm test`, `npm run check`, `npm run build`. Then `LC_ALL=C grep -n '[^ -~]'` over every file you touched, which must print nothing.
+Run every command the brief lists, from `tools/oculus` in the worktree, and fix until each passes. At minimum: `npm test`, `npm run check`, `npm run build`, `npm run format:check`. Then `LC_ALL=C grep -n '[^ -~]'` over every file you touched, which must print nothing.
 
 ## Report
 

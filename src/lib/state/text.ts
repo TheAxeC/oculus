@@ -7,7 +7,7 @@ let catalog: Record<string, string> = {};
 
 /** Install the catalog the page was given. Called once per load, again on every push. */
 export function setCatalog(next: Record<string, string>): void {
-  catalog = next;
+    catalog = next;
 }
 
 /**
@@ -15,10 +15,10 @@ export function setCatalog(next: Record<string, string>): void {
  * A key that is not in the catalog throws, so a typo fails loudly instead of rendering blank.
  */
 export function t(key: string, ...args: (string | number)[]): string {
-  const template = catalog[key];
-  if (template === undefined) throw new Error(`text key not in config/text.yml: ${key}`);
-  return template.replace(/\{(\d+)\}/g, (placeholder, index: string) => {
-    const arg = args[Number(index)];
-    return arg === undefined ? placeholder : String(arg);
-  });
+    const template = catalog[key];
+    if (template === undefined) throw new Error(`text key not in config/text.yml: ${key}`);
+    return template.replace(/\{(\d+)\}/g, (placeholder, index: string) => {
+        const arg = args[Number(index)];
+        return arg === undefined ? placeholder : String(arg);
+    });
 }

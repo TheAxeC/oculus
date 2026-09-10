@@ -16,5 +16,5 @@ const { handler } = (await import(built)) as { handler: Handler };
 
 const server = createServer(handler);
 server.listen(local.port, '127.0.0.1', () => {
-  console.log(`oculus on http://127.0.0.1:${local.port} over hub ${local.hub}`);
+    console.log(`oculus on http://127.0.0.1:${local.port} over hub ${local.hub}`);
 });
