@@ -22,6 +22,21 @@ export type Tier = 'ideas' | 'active' | 'manuscripts' | 'coauthor' | 'archive';
 /** The five registries, one per file readRegistries is given. */
 export type RegistryName = 'venues' | 'datasets' | 'programs' | 'domains' | 'funding';
 
+/** The five hub-relative registry paths, one per registry. Declared here, used by sources/registries. */
+export type RegistryFiles = {
+    venues: string;
+    datasets: string;
+    programs: string;
+    domains: string;
+    funding: string;
+};
+
+/** One entry of the `collections:` list in the layout config: a key and a hub-relative path. */
+export type CollectionFile = {
+    key: string;
+    file: string;
+};
+
 /**
  * One scan rule, the shape of an entry under `scan:` in the layout config.
  * A flat rule (no `nested`) reads `<hub>/<dir>/<name>/project.yml` and gives every manifest the
@@ -132,7 +147,8 @@ export type Project = {
     title: string;
     short?: string;
     lead?: string;
-    authors?: string;
+    /** A list of names in most manifests and one free-text line in seven of them; both are kept. */
+    authors?: string | string[];
     year?: number;
     chips: Chip[];
     statusLine?: string;
@@ -164,15 +180,18 @@ export type Venue = {
     short?: string;
     tier?: string;
     category?: string;
-    jif?: number;
+    /** Text, not a number: the registry writes "5.9" and "~1.8" alike. */
+    jif?: string;
     quartile?: string;
-    wos?: boolean;
-    scopus?: boolean;
-    free?: boolean;
+    /** Indexing and cost are prose in the registry ("free (subscription)"), never flags. */
+    wos?: string;
+    scopus?: string;
+    free?: string;
     format?: string;
     wants?: string;
     link?: string;
-    domainIds: Id[];
+    /** The venue registry's own theme words (`core-ml`, `clinical`), which are not domain keys. */
+    themes: string[];
 };
 
 /** A dataset from registries/data.yml, whose entry list is under `datasets`. */
@@ -184,9 +203,11 @@ export type Dataset = {
     size?: string;
     access?: string;
     source?: string;
-    retrieval?: string;
+    /** How the dataset is fetched: a map of `method`, `notes` and per-dataset keys, carried as read. */
+    retrieval?: Record<string, unknown>;
     hpcPath?: string;
-    domainIds: Id[];
+    /** The dataset registry's own theme words (`ecg`, `single-cell`), which are not domain keys. */
+    themes: string[];
     /** Projects that name this dataset; filled by O4 from the other side of the relation. */
     projectIds: Id[];
 };
@@ -198,6 +219,7 @@ export type Program = {
     kind?: string;
     goal?: string;
     blurb?: string;
+    /** Funding schemes reached through the projects on this line; programs.yml holds no funding key. */
     fundingIds: Id[];
     projectIds: Id[];
 };
@@ -259,4 +281,83 @@ export type Collection = {
     /** Absolute path of the collection file. */
     file: string;
     entries: Entry[];
+};
+
+/**
+ * Everything the sources read, before anything is validated or resolved. This is what validate
+ * reads and what normalise turns into the snapshot; the findings are the ones the sources
+ * themselves reported, carried so that validate can pass them through rather than re-derive them.
+ */
+export type RawPortfolio = {
+    manifests: RawManifest[];
+    registries: Record<RegistryName, RawRegistry>;
+    collections: Record<string, RawCollection>;
+    findings: Finding[];
+};
+
+/**
+ * The controlled vocabularies validate checks values against, each a list of the allowed words.
+ * `types` is a manifest's `type`, `statuses` a collection entry's `status`. `chips` is absent when
+ * the config holds no chip vocabulary, and chips are then free strings and are not checked.
+ */
+export type Vocabulary = {
+    types: string[];
+    statuses: string[];
+    chips?: string[];
+};
+
+/**
+ * What validate needs and nothing more. `schema` is the config's `manifest_schema` value, taken
+ * unparsed because its shape is the config's business: validate reads the field names out of it.
+ */
+export type ValidationRules = {
+    schema: unknown;
+    vocab: Vocabulary;
+};
+
+/** Everything buildPortfolio needs: where to read, and what to check what it read against. */
+export type PortfolioConfig = {
+    scan: ScanRule[];
+    registries: RegistryFiles;
+    collections: CollectionFile[];
+    schema: unknown;
+    vocab: Vocabulary;
+};
+
+/** The entities of one snapshot, each kind keyed by its own id. */
+export type Entities = {
+    projects: Record<Id, Project>;
+    venues: Record<Id, Venue>;
+    datasets: Record<Id, Dataset>;
+    programs: Record<Id, Program>;
+    domains: Record<Id, Domain>;
+    funding: Record<Id, Funding>;
+    collections: Record<Id, Collection>;
+};
+
+/**
+ * The relation tables, each a list of `[from, to]` id pairs sorted by the pair. They hold what the
+ * entities' own id fields hold, from the other side: a table is what a join reads, an entity's id
+ * list is what a card reads, and both come from the same pass so they cannot disagree.
+ */
+export type Relations = {
+    projectVenue: [Id, Id][];
+    projectFunding: [Id, Id][];
+    projectDataset: [Id, Id][];
+    projectProgram: [Id, Id][];
+    projectDomain: [Id, Id][];
+    projectRelated: [Id, Id][];
+    fundingProgram: [Id, Id][];
+};
+
+/**
+ * What goes over the wire (DESIGN.md, "Normalise"). Flat, JSON-safe and small: no value in it is
+ * anything but a string, a number, a boolean, null, a list or a plain object, so it survives
+ * JSON.stringify and JSON.parse unchanged. `version` increments on every rebuild.
+ */
+export type Snapshot = {
+    version: number;
+    entities: Entities;
+    relations: Relations;
+    findings: Finding[];
 };

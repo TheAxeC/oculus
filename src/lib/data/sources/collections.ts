@@ -11,13 +11,10 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import type { Finding, RawCollection, RawEntry } from '../model.ts';
+import type { CollectionFile, Finding, RawCollection, RawEntry } from '../model.ts';
 
-/** One entry of the `collections:` list in the layout config: a key and a hub-relative path. */
-export type CollectionFile = {
-    key: string;
-    file: string;
-};
+/** A key and a hub-relative path from the `collections:` list; declared with the other types. */
+export type { CollectionFile } from '../model.ts';
 
 /** The key every collection file holds its records under. */
 const LIST = 'entries';

@@ -10,18 +10,13 @@ import type {
     Finding,
     RawRegistry,
     RawRegistryEntry,
+    RegistryFiles,
     RegistryMeta,
     RegistryName
 } from '../model.ts';
 
-/** The five hub-relative paths, one per registry. */
-export type RegistryFiles = {
-    venues: string;
-    datasets: string;
-    programs: string;
-    domains: string;
-    funding: string;
-};
+/** The five hub-relative paths, one per registry; declared with the other types in model.ts. */
+export type { RegistryFiles } from '../model.ts';
 
 /** The paths on the hub today; a caller may pass its own. */
 export const REGISTRY_FILES: RegistryFiles = {

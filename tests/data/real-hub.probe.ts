@@ -8,33 +8,16 @@ import { engineDir, loadConfig, loadLocal } from '../../src/lib/data/sources/con
 import { readManifests } from '../../src/lib/data/sources/manifests.ts';
 import { readRegistries } from '../../src/lib/data/sources/registries.ts';
 import { readCollections } from '../../src/lib/data/sources/collections.ts';
-import type { CollectionFile } from '../../src/lib/data/sources/collections.ts';
 import { PROJECT_DOCS, projectDocs } from '../../src/lib/data/sources/docs.ts';
-import type { Finding, RegistryName, ScanRule } from '../../src/lib/data/model.ts';
+import { HUB_CONFIG_TODAY, buildPortfolio } from '../../src/lib/data/index.ts';
+import type { Finding, RegistryName } from '../../src/lib/data/model.ts';
 import { join } from 'node:path';
 
-// The five rules of the hub's layout config, by hand: O5 copies the config file itself.
-const SCAN: ScanRule[] = [
-    { dir: 'projects/ideas', type: 'idea' },
-    { dir: 'projects/active', type: 'active' },
-    { dir: 'projects/manuscripts', type: 'manuscript' },
-    { dir: 'projects/coauthor', nested: true },
-    { dir: 'projects/archive', nested: true }
-];
+// The hub's layout config typed by hand, until O5 copies the config file itself.
+const SCAN = HUB_CONFIG_TODAY.scan;
+const COLLECTIONS = HUB_CONFIG_TODAY.collections;
 
 const REGISTRIES: RegistryName[] = ['venues', 'datasets', 'programs', 'domains', 'funding'];
-
-// The eight entries of the layout config's `collections:` list, by hand for the same reason.
-const COLLECTIONS: CollectionFile[] = [
-    { key: 'statements', file: 'registries/boilerplate.yml' },
-    { key: 'funding', file: 'funding/funding.yml' },
-    { key: 'events', file: 'network/events.yml' },
-    { key: 'education', file: 'education/education.yml' },
-    { key: 'applications', file: 'applications/applications.yml' },
-    { key: 'collaborations', file: 'network/collaborations.yml' },
-    { key: 'tasks', file: 'tasks/tasks.yml' },
-    { key: 'code', file: 'registries/repos.yml' }
-];
 
 function report(label: string, findings: Finding[]): void {
     console.log(`${label} findings: ${findings.length}`);
@@ -84,3 +67,16 @@ for (const name of PROJECT_DOCS) console.log(`  ${name}: ${counts.get(name)}`);
 const config = loadConfig(engineDir());
 console.log(`config keys: ${Object.keys(config.config).join(', ')}`);
 report('config', config.findings);
+
+// The whole of layer 1: read, validate, normalise. Read only, like everything above it.
+const snapshot = buildPortfolio(hub, HUB_CONFIG_TODAY);
+console.log(`snapshot version: ${snapshot.version}`);
+console.log('entities:');
+for (const [kind, entities] of Object.entries(snapshot.entities)) {
+    console.log(`  ${kind}: ${Object.keys(entities).length}`);
+}
+console.log('relations:');
+for (const [name, table] of Object.entries(snapshot.relations)) {
+    console.log(`  ${name}: ${table.length}`);
+}
+report('snapshot', snapshot.findings);
