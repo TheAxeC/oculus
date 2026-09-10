@@ -245,6 +245,7 @@ Each step names what "done" means. Nothing visual before step 3.
 - 2026-09-10, live data: one WebSocket with channels, the server watches and pushes; no polling. Writes are `fetch` POSTs.
 - 2026-09-10, wire model: entities and relations, joins in client selectors, documents on demand.
 - 2026-09-10, layout: a serialisable tree from day one; the first release offers right, bottom and hidden for the panel.
+- 2026-09-10, docking, after the workbench was first used: tabs drag between panes and across the main and panel trees, a drop on a pane's edge splits it, a pane can be closed whole and maximised, all with keyboard equivalents; package O10b, on the tree operations O7 already has. The panel's own dock stays right, bottom or hidden.
 - 2026-09-10, order: shell, then Projects, then Sessions. The simple view proves the stack before the complex one.
 - 2026-09-10, sessions are six views, not one.
 - 2026-09-10, the cockpit is frozen; B ports rather than being rebuilt.

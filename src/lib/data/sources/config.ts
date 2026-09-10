@@ -158,6 +158,21 @@ export function textCatalog(config: Record<string, unknown>): Record<string, str
     return flattenText(config.text ?? {});
 }
 
+/** The keys of the merged config that state/tones.ts reads: the colours and the chip vocabulary. */
+export const VOCAB_KEYS = ['palette', 'status_palette', 'type_color', 'status_legend', 'themes'];
+
+/**
+ * The slice of the merged config the tone lookups need, shipped as the page's data beside the
+ * catalog and the glyphs. The whole merged config goes over the `config` channel afterwards and
+ * setVocab reads the same five keys out of it, so this is the first load only and carries no more
+ * than those keys.
+ */
+export function vocabCatalog(config: Record<string, unknown>): Record<string, unknown> {
+    const vocab: Record<string, unknown> = {};
+    for (const key of VOCAB_KEYS) if (config[key] !== undefined) vocab[key] = config[key];
+    return vocab;
+}
+
 /**
  * The glyph vocabulary held in the merged config's `glyphs` key: one character per name, flat. It
  * ships with the catalog as the page's data and is pushed on the `config` channel afterwards, so a

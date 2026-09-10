@@ -72,8 +72,8 @@ describe('the real registrations', () => {
         return views().filter((view) => !view.id.startsWith('probe-'));
     }
 
-    it('registers status and findings, in that order', () => {
-        expect(real().map((view) => view.id)).toEqual(['status', 'findings']);
+    it('registers status, findings and the gallery, in that order', () => {
+        expect(real().map((view) => view.id)).toEqual(['status', 'findings', 'gallery']);
     });
 
     it('names a label key config/text.yml holds', () => {

@@ -8,6 +8,7 @@
 // is the only module in the application that names a view.
 
 import Findings from '$lib/views/Findings.svelte';
+import Gallery from '$lib/views/Gallery.svelte';
 import Status from '$lib/views/Status.svelte';
 import { registerView } from '$lib/views/registry';
 
@@ -23,4 +24,11 @@ registerView({
     label: 'views.findings',
     glyph: 'views.findings_glyph',
     component: Findings
+});
+
+registerView({
+    id: 'gallery',
+    label: 'views.gallery',
+    glyph: 'views.gallery_glyph',
+    component: Gallery
 });

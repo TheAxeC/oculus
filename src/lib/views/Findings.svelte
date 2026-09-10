@@ -67,7 +67,10 @@
         word-break: break-all;
     }
 
+    /* No fallback to `--c-amber`: a hue's own value on the panel is a pair tests/contrast.test.ts
+       never measured, so the colour rule refuses it. Until applyTheme has set the derived tokens the
+       declaration computes to the inherited ink, which is what the rest of the view is painted in. */
     .message {
-        color: var(--c-amber-txt, var(--c-amber));
+        color: var(--c-amber-txt);
     }
 </style>
