@@ -14,11 +14,11 @@ Execution ledger for `tools/oculus/DESIGN.md`. One bullet is one package of work
 - ✅ C9 cockpit B6: Timeline and Agents views, re-exec path fix (1 commit)
 - ✅ C10 cockpit B7: Changes view over four read-only git commands (1 commit)
 - ✅ C11 cockpit B8: project cards link to their sessions, tests README (1 commit)
-- ✅ C12 cockpit H1: feeds out of the engine folder into hub-root `feeds/`, runbook and search spec beside the skill, `email-tracker.md` deleted (1 commit, not yet committed)
-- ✅ C13 cockpit H2: no environment variable configures the engine; `config.init(argv)`, `cockpit.local.yml`, flags; `setstatus` resolves against the configured root only; `COLL_STATUS` NameError fixed (1 commit, not yet committed)
-- ✅ R1 hub: working rules in `CLAUDE.md`, git allowlist in `.claude/settings.local.json` (1 commit, not yet committed; orchestrator)
-- ✅ O0 oculus: `DESIGN.md` and this folder (1 commit, not yet committed; orchestrator)
-- S1 hub: a generic plan-orchestration skill under `.agents/skills/`, the cathedra one with its cathedra specifics removed (1 commit)
+- ✅ C12 cockpit H1: feeds out of the engine folder into hub-root `feeds/`, runbook and search spec beside the skill, `email-tracker.md` deleted (commit fc6d299, with C13)
+- ✅ C13 cockpit H2: no environment variable configures the engine; `config.init(argv)`, `cockpit.local.yml`, flags; `setstatus` resolves against the configured root only; `COLL_STATUS` NameError fixed (commit fc6d299, with C12)
+- ✅ R1 hub: working rules in `CLAUDE.md`, git allowlist in `.claude/settings.local.json` (commit f8af492, with O0; orchestrator)
+- ✅ O0 oculus: `DESIGN.md` and this folder (commit f8af492, with R1; orchestrator)
+- S1 hub: a generic plan-orchestration skill under `.agents/skills/plan-orchestration/`: the cathedra skill's mechanics with every cathedra specific read from the ledger folder instead (verification commands, executor per package, sparse paths, standards file); usable for code tools, research projects, funding proposals and manuscripts, where the executor for a manuscript package is the `academic-paper` skill and never a raw agent (1 commit)
 - O1 scaffold: SvelteKit with the Node adapter, Svelte 5, Vitest, TypeScript; `local.yml` resolution with the hub path; `tests/boundaries.test.ts`; an empty `+page.svelte` that renders (1 commit)
 - O2 data sources, part one: `lib/data/model.ts`, `sources/manifests.ts`, `sources/registries.ts`, per-source tests on synthetic fixtures (1 commit)
 - O3 data sources, part two: `sources/collections.ts`, `sources/docs.ts`, `sources/config.ts`, tests (1 commit)
@@ -58,8 +58,10 @@ Independent of each other; the standing rule of one agent at a time still serial
 - O12 with O7 to O11.
 - O22 to O28 with each other once O10 has landed.
 
+## Rulings (2026-09-10)
+- Agent work and `/rewind`: an agent works in a git worktree at main's head, its result lands only by the orchestrator's `git cherry-pick -n` after the diff is read, one package is one commit, and undoing a package is `git revert` of that commit. Agreed by Axel; unblocks O1.
+- S1 is wanted, generic across code tools, research projects, funding proposals and manuscripts, and meant to be installable user-level so cathedra and game-engine can replace their local copies. Agreed by Axel.
+
 ## Blocked, and by what
-- O1 and everything after it: the rewind mechanism for agent work is Axel's to confirm. `/rewind` cannot undo an agent's edits or a commit; the proposed substitute is a worktree per package at main's head, landed by the orchestrator's cherry-pick after the diff is read, one commit per package, so undoing a package is `git revert` of one commit.
-- S1: Axel raised the generic skill as a possibility; whether to build it is his call.
-- O16: the settings.json edit was permitted on 2026-09-09; the exact JSON is shown before it is written, so this waits for that moment, not for a decision.
+- O16: no `hooks` key exists in any of the four settings files on 2026-09-10 (`.claude/settings.json` absent, `.claude/settings.local.json`, `~/.claude/settings.json`, `~/.claude/settings.local.json` absent), so the hooks are still to be written; the exact JSON is shown before the write, per the 2026-09-09 permission. Waits for its moment, not for a decision.
 - O30: decided after O19 from experience, by design.
