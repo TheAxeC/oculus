@@ -31,8 +31,11 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 - 2026-09-10. C1 to C13, R1 and O0 are done and committed: fc6d299 (C12 and C13, one commit because H1 and H2 both touched eight of the same files) and f8af492 (R1 and O0). Working tree clean after both.
 - Verified before fc6d299: `python3 build.py --selftest` PASS, `python3 build.py --dummy` builds, `bash tests/run.sh` PASS (5 + 29 + 24 + 19 Python tests, 11 JS modules). `grep -rn os.environ tools/cockpit/src tools/cockpit/build.py` finds only the `ANTHROPIC_API_KEY` read. The 8787 server answers 200 with zero `COCKPIT_` variables in its environment.
-- Next package: S1 (the generic skill, wanted by Axel) or O1 (the scaffold); both unblocked. S1 first, since it defines how every oculus package is briefed and landed, and O1 is then the first package run under it.
-- Open on Axel's side: none. O16's hooks are not yet on disk (verified across the four settings files); that is a moment, not a decision.
+- S1 landed 2026-09-10 from worktree `s1` (branch at d90aca7, wip ec22009, `git cherry-pick -n s1` onto main): `.agents/skills/plan-orchestration/` with `SKILL.md` and four templates, plus the `.claude/skills` symlink. Six checks green in the worktree and again on main after two wording fixes by the orchestrator (the brief's `rite\b` pattern had matched "write"; its hard-wrap awk had fired on the frontmatter). The commit follows this rewrite; then the worktree and branch are removed. The skill is visible to the harness as `plan-orchestration`.
+- Usage table: S1, one Opus agent, 100522 tokens, 20 tool uses, 289 s.
+- O1 brief written (`agents/briefs/O1.md`, not yet committed) while S1 runs. O1 bakes three user-visible decisions, put to Axel before dispatch and recorded in `DESIGN.md`: `local.yml` keys `hub` and `port` with default port 8790; verification commands `npm test`, `npm run check`, `npm run build`; the text catalog reaching the browser as page data.
+- The three O1 decisions were agreed by Axel on 2026-09-10; decision 3 reworded: page data at load, socket push afterwards from O6, the server reads the catalog per request until then.
+- O16's hooks are on disk since 2026-09-10 in the hub's `.claude/settings.local.json` (project scope, port 8790, `-m 1`, `|| true`, timeout 5; verified by parsing all four settings files). Open on Axel's side: whether to move the block to `~/.claude/settings.json` so sessions in other repositories report hook state too.
 
 ## Journal
 
