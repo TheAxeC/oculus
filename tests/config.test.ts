@@ -1,11 +1,19 @@
 // loadLocal and loadConfig against synthetic files in a temporary directory.
 
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import {
+    existsSync,
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    readdirSync,
+    writeFileSync
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_PORT, engineDir, loadConfig, loadLocal } from '../src/lib/data/sources/config.ts';
+import { readRoots, rootsFile } from '../src/lib/server/files.ts';
 
 function scratch(): string {
     const dir = mkdtempSync(join(tmpdir(), 'oculus-config-'));
@@ -195,6 +203,7 @@ describe("oculus's own config directory", () => {
             'board',
             'tab_rollup',
             'nav_live',
+            'bookmarks',
             'focus_label_mode',
             'project_label_mode',
             'archive_label_mode',
@@ -215,7 +224,8 @@ describe("oculus's own config directory", () => {
             'radar_file',
             'publications_file',
             'linkedin_dir',
-            'career_file'
+            'career_file',
+            'roots'
         ],
         'text.yml': ['text'],
         'vocab.yml': [
@@ -250,6 +260,35 @@ describe("oculus's own config directory", () => {
         const { config } = loadConfig(engineDir());
         const expected = Object.values(EXPECTED).flat().sort();
         expect(Object.keys(config).sort()).toEqual(expected);
+    });
+
+    // The two roots of sources.yml sit under the home directory of whoever runs this, and a
+    // checkout on a machine without those two repositories has neither. The check is skipped there
+    // with the directories named, rather than failing over a fact about the machine.
+    const ROOTS = readRoots(loadConfig(engineDir()).config, rootsFile()).roots;
+    const MISSING = ROOTS.filter((root) => !existsSync(root.dir));
+    if (MISSING.length > 0) {
+        console.log(
+            `config.test.ts: skipping the roots check; no directory at ${MISSING.map((root) => root.dir).join(', ')}`
+        );
+    }
+
+    it.skipIf(MISSING.length > 0)('names roots that are on this machine', () => {
+        expect(ROOTS.map((root) => root.key)).toEqual(['cathedra', 'game-engine']);
+        expect(readRoots(loadConfig(engineDir()).config, rootsFile()).findings).toEqual([]);
+    });
+
+    it('names a root of its own for every bookmark, and a path under it', () => {
+        const { config } = loadConfig(engineDir());
+        const keys = ROOTS.map((root) => root.key);
+        const bookmarks = config.bookmarks as { label: string; root: string; path: string }[];
+        expect(bookmarks.map((mark) => mark.root)).toEqual(['cathedra', 'game-engine']);
+        for (const mark of bookmarks) {
+            expect(keys).toContain(mark.root);
+            expect(mark.path.startsWith('/')).toBe(false);
+            expect(mark.path.includes('..')).toBe(false);
+            expect(mark.label.length).toBeGreaterThan(0);
+        }
     });
 
     it('reads each file on its own and finds its own keys there and nowhere else', () => {

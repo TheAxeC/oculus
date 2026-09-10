@@ -850,6 +850,7 @@ text:
     dock_bottom: "Panel along the bottom"
     dock_hidden: "Panel hidden"
     dock_glyph: "cards"
+    docs: "Docs"              # the rail section of `bookmarks:` (layout.yml): one button per local document.
     pane_menu: "Pane"
     pane_menu_glyph: "list"    # a name in `glyphs:`: the opener at the right of a tab strip.
     pane_close: "Close pane"
@@ -883,6 +884,10 @@ text:
     project_glyph: "folder"
     editor: "Editor"
     editor_glyph: "edit"
+    # A local HTML file under one of the `roots:` of sources.yml, opened as its own tab from the rail's
+    # Docs section. Registered once, opened once per bookmark.
+    document: "Document"
+    document_glyph: "paper"
 
   gallery:                     # the living style sheet: every primitive with sample data, in every theme.
     title: "Gallery"
@@ -921,6 +926,12 @@ text:
     unknown: "The snapshot holds no project with the id {0}."
     doc_loading: "loading the document ..."
     doc_failed: "the document was not read: {0}"
+
+  document:                    # oculus: one local HTML file as its own tab, in an iframe over api/file.
+    toolbar: "Document controls"
+    open_outside: "Open in a browser tab"
+    none: "No document chosen. Open one from the Docs section of the rail."
+    none_glyph: "paper"
 
   editor:                      # the project.yml edit form: the words round the widgets manifest-schema.yml describes.
     title: "Manifest"

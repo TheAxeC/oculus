@@ -4,6 +4,31 @@
     /** One group of the rail: a heading and the view ids it claims, as `nav_groups` in the config. */
     export type NavGroup = { label: string; keys: string[] };
 
+    /**
+     * One entry of the rail's Docs section, as `bookmarks` in the config: a local file under one of
+     * the roots of sources.yml, which the `document` view opens as a tab of its own.
+     */
+    export type Bookmark = { label: string; root: string; path: string };
+
+    /**
+     * What openView is handed for a bookmark. The `id` is what makes two bookmarks two tabs: a state
+     * carrying one names which instance is wanted, so a second click on the same bookmark activates
+     * the tab it already has and a click on the other one opens a second tab beside it.
+     */
+    export function documentState(mark: Bookmark): {
+        id: string;
+        root: string;
+        path: string;
+        label: string;
+    } {
+        return {
+            id: `${mark.root}/${mark.path}`,
+            root: mark.root,
+            path: mark.path,
+            label: mark.label
+        };
+    }
+
     /** The rail as it is drawn: a group's registrations, or the ungrouped ones under no heading. */
     type Section = { label: string | null; items: Registration[] };
 
@@ -61,6 +86,8 @@
     type Props = {
         /** The `nav_groups`-shaped list from the merged config; the page reads it and passes it on. */
         groups?: NavGroup[];
+        /** The `bookmarks` list of the merged config; the page reads it and passes it on. */
+        bookmarks?: Bookmark[];
         /**
          * The `arrangements.sessions` node of the merged config, unread: state/layout.ts is what
          * turns it into a workbench, and the shell may not read the config itself.
@@ -68,7 +95,7 @@
         arrangement?: unknown;
     };
 
-    let { groups = [], arrangement = null }: Props = $props();
+    let { groups = [], bookmarks = [], arrangement = null }: Props = $props();
 
     /** The id of the control that swaps the workbench for the saved arrangement, and back. */
     const ARRANGE = 'arrange';
@@ -138,6 +165,25 @@
                 </Tooltip>
             {/each}
         {/each}
+
+        <!-- The documents of config/layout.yml. They are not registrations, so they sit under a
+             heading of their own rather than in a section arrange() built. -->
+        {#if bookmarks.length > 0}
+            <p class="group">{t('ui.docs')}</p>
+            {#each bookmarks as mark (`${mark.root}/${mark.path}`)}
+                <Tooltip text={mark.label} placement="beside">
+                    <button
+                        type="button"
+                        class="view"
+                        data-bookmark={`${mark.root}/${mark.path}`}
+                        aria-label={mark.label}
+                        onclick={() => openView('document', 'main', documentState(mark))}
+                    >
+                        <Glyph name={t('views.document_glyph')} />
+                    </button>
+                </Tooltip>
+            {/each}
+        {/if}
     </div>
 
     <div class="controls">

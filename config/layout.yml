@@ -99,3 +99,10 @@ project_label_mode: short    # Projects tab cards / list rows (live Aa toggle ov
 archive_label_mode: short    # Archive tab cards / list rows (live Aa toggle overrides)
 
 map_label_mode: short        # Map tab nodes
+
+
+# Documents in the rail's Docs section - a local HTML file under one of `roots:` (sources.yml), opened as
+# its own tab by the `document` view. `root` is a key of that list, `path` is relative to the root's dir.
+bookmarks:
+  - { label: "cathedra manual",    root: cathedra,    path: docs/user/manual.html }
+  - { label: "game-engine manual", root: game-engine, path: docs/user/manual.html }

@@ -7,6 +7,7 @@
 // the table is not widened for a barrel. Here it is outside `src/lib` and outside the table, and it
 // is the only module in the application that names a view.
 
+import Document from '$lib/views/Document.svelte';
 import Editor from '$lib/views/Editor.svelte';
 import Findings from '$lib/views/Findings.svelte';
 import Gallery from '$lib/views/Gallery.svelte';
@@ -82,6 +83,16 @@ registerView({
     label: 'views.editor',
     glyph: 'views.editor_glyph',
     component: Editor
+});
+
+// One local HTML file as its own tab, opened by a bookmark in the rail's Docs section. Registered
+// once and opened once per bookmark: the root and path in an instance's state are what tell two of
+// them apart, so a second click on the same bookmark activates the tab it already has.
+registerView({
+    id: 'document',
+    label: 'views.document',
+    glyph: 'views.document_glyph',
+    component: Document
 });
 
 // Sessions, which DESIGN.md's decision of 2026-09-10 makes six views rather than one. They are tied

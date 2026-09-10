@@ -11,7 +11,7 @@
     // its derived tokens, the wallpaper's layer and the properties its translucent surfaces read,
     // and which of the two glyph vocabularies renders.
 
-    import ActivityRail, { type NavGroup } from './ActivityRail.svelte';
+    import ActivityRail, { type Bookmark, type NavGroup } from './ActivityRail.svelte';
     import DropLayer from './DropLayer.svelte';
     import PaneView from './PaneView.svelte';
     import SplitView from './SplitView.svelte';
@@ -40,11 +40,13 @@
     type Props = {
         /** The `nav_groups`-shaped list from the merged config, for the rail. */
         groups?: NavGroup[];
+        /** The `bookmarks` list of the merged config, for the rail's Docs section. */
+        bookmarks?: Bookmark[];
         /** The `arrangements.sessions` node of the merged config, unread, for the rail's control. */
         arrangement?: unknown;
     };
 
-    let { groups = [], arrangement = null }: Props = $props();
+    let { groups = [], bookmarks = [], arrangement = null }: Props = $props();
 
     let area: HTMLDivElement | undefined = $state(undefined);
 
@@ -118,7 +120,7 @@
              negative depth paints over the page's own background and under every panel. -->
         <div class="wallpaper" style={image}></div>
     {/if}
-    <ActivityRail {groups} {arrangement} />
+    <ActivityRail {groups} {bookmarks} {arrangement} />
     <div class="area {direction}" bind:this={area}>
         {#if zoomed !== null && focus !== null}
             <div class="tree" style="flex: 1 1 0">

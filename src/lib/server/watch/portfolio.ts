@@ -22,6 +22,7 @@ import type { FSWatcher } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { buildPortfolio, portfolioConfigFrom } from '../../data/index.ts';
 import { loadConfig, textCatalog } from '../../data/sources/config.ts';
+import { readRoots, rootsFile } from '../files.ts';
 import type { ConfigPayload, PortfolioConfig } from '../../data/model.ts';
 import type { Hub } from '../channels.ts';
 
@@ -108,7 +109,14 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
         try {
             const { config, findings } = loadConfig(paths.engine);
             if (withConfig) {
-                const payload: ConfigPayload = { config, text: textCatalog(config), findings };
+                // The roots of sources.yml are checked here rather than in loadConfig, which merges
+                // files and never touches the disk: a root whose directory is not on this machine is
+                // a fact about the machine, and it belongs on the same channel as the rest.
+                const payload: ConfigPayload = {
+                    config,
+                    text: textCatalog(config),
+                    findings: [...findings, ...readRoots(config, rootsFile(paths.engine)).findings]
+                };
                 hub.publish('config', payload);
             }
             const portfolio = portfolioConfigFrom(config);
