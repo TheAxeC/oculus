@@ -81,8 +81,8 @@ export interface RawManifest {
  */
 export interface RawRegistryEntry {
     [key: string]: unknown;
-    /** Which registry the entry came from. */
-    source: RegistryName;
+    /** Which registry the entry came from. Not `source`: a dataset entry's own `source` is its URL. */
+    registry: RegistryName;
     /** The entry's id, or the empty string when the registry's id field was missing or not a string. */
     key: Id;
     /** Absolute path of the registry file. */

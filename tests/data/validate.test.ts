@@ -56,7 +56,7 @@ function manifest(data: Record<string, unknown> = {}, id = 'alpha'): RawManifest
 
 function registry(name: RegistryName, keys: string[]): RawRegistry {
     return {
-        entries: keys.map((key) => ({ source: name, key, file: `/hub/${name}.yml`, title: key })),
+        entries: keys.map((key) => ({ registry: name, key, file: `/hub/${name}.yml`, title: key })),
         meta: {}
     };
 }
@@ -243,7 +243,9 @@ describe('validate', () => {
             registries: {
                 ...portfolio().registries,
                 funding: {
-                    entries: [{ source: 'funding', key: '', file: '/hub/funding.yml', note: 'a' }],
+                    entries: [
+                        { registry: 'funding', key: '', file: '/hub/funding.yml', note: 'a' }
+                    ],
                     meta: {}
                 }
             }

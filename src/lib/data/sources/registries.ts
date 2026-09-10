@@ -108,7 +108,7 @@ function readRegistry(
         else if (shape.idRequired) {
             findings.push({ file, key: where, message: `entry has no string ${shape.idField}` });
         }
-        entries.push({ ...raw, source: name, key, file } as RawRegistryEntry);
+        entries.push({ ...raw, registry: name, key, file } as RawRegistryEntry);
     });
 
     return { entries, meta };
@@ -116,7 +116,7 @@ function readRegistry(
 
 /**
  * Read the five registries. Each returns its entries and the file's other top-level keys as `meta`,
- * both untouched apart from the `source`, `key` and `file` provenance added to every entry. A file
+ * both untouched apart from the `registry`, `key` and `file` provenance added to every entry. A file
  * that is missing, does not parse, is not a map, or has no entry list gives an empty list and one
  * finding; nothing here throws and no entry is repaired.
  */

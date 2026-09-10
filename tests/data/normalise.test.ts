@@ -27,7 +27,7 @@ function entries(name: RegistryName, items: Record<string, unknown>[]): RawRegis
     const file = `/hub/${name}.yml`;
     return {
         entries: items.map(
-            (item) => ({ ...item, source: name, key: item.key ?? '', file }) as RawRegistryEntry
+            (item) => ({ ...item, registry: name, key: item.key ?? '', file }) as RawRegistryEntry
         ),
         meta: {}
     };
@@ -96,6 +96,7 @@ function portfolio(): RawPortfolio {
                 {
                     key: 'mimic',
                     name: 'MIMIC-IV',
+                    source: 'https://example.invalid/mimic',
                     hpc_path: '/data/mimic',
                     retrieval: { method: 'wget', notes: 'credentialed' },
                     themes: ['ecg']
@@ -172,6 +173,7 @@ describe('normalise, the field mapping', () => {
         expect(snapshot.entities.datasets.mimic).toEqual({
             id: 'mimic',
             name: 'MIMIC-IV',
+            source: 'https://example.invalid/mimic',
             hpcPath: '/data/mimic',
             retrieval: { method: 'wget', notes: 'credentialed' },
             themes: ['ecg'],

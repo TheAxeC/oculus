@@ -46,7 +46,7 @@ function buildHub(): string {
             'theme_labels: { eeg: EEG }',
             'schema: []',
             'datasets:',
-            '  - { key: mimic, name: MIMIC-IV }',
+            '  - { key: mimic, name: MIMIC-IV, source: https://example.invalid/mimic }',
             '  - { name: nameless }',
             ''
         ].join('\n')
@@ -72,14 +72,14 @@ describe('readRegistries', () => {
                 id: 'bspc',
                 name: 'BSPC',
                 jif: 4.9,
-                source: 'venues',
+                registry: 'venues',
                 key: 'bspc',
                 file: join(hub, REGISTRY_FILES.venues)
             },
             {
                 id: 'media',
                 name: 'MedIA',
-                source: 'venues',
+                registry: 'venues',
                 key: 'media',
                 file: join(hub, REGISTRY_FILES.venues)
             }
@@ -94,7 +94,9 @@ describe('readRegistries', () => {
         const out = readRegistries(hub);
 
         expect(out.datasets.entries.map((e) => e.name)).toEqual(['MIMIC-IV', 'nameless']);
-        expect(out.datasets.entries[0].source).toBe('datasets');
+        expect(out.datasets.entries[0].registry).toBe('datasets');
+        // The entry's own `source` (its URL) is not the provenance key and survives the read.
+        expect(out.datasets.entries[0].source).toBe('https://example.invalid/mimic');
         expect(out.datasets.meta).toEqual({
             intro: 'the local caches',
             theme_labels: { eeg: 'EEG' },
