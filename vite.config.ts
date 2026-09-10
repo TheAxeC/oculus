@@ -45,6 +45,16 @@ export default defineConfig({
         }),
         oculusSocket()
     ],
+    // The dev server listens where the built server does, on 127.0.0.1 at the port from local.yml
+    // (8790 by default), so the Claude Code hooks that post to that port reach whichever of the two
+    // is running, and a page's `ws://127.0.0.1:<port>/ws` connects in development as in production.
+    // Only one of the two can hold the port; strictPort makes a clash an error rather than a silent
+    // move to another port the hooks do not know.
+    server: {
+        host: '127.0.0.1',
+        port: loadLocal(engineDir()).port,
+        strictPort: true
+    },
     test: {
         environment: 'node',
         include: ['tests/**/*.test.ts'],
