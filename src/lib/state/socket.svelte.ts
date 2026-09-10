@@ -8,7 +8,7 @@
 // catalog the server shipped as page data, and every later edit of config/text.yml comes this way.
 
 import { receive } from './entities.svelte.ts';
-import { setCatalog } from './text.ts';
+import { setCatalog, setGlyphs } from './text.ts';
 import type { ConfigPayload, Message, Subscription } from '../data/model.ts';
 
 export type Status = 'connecting' | 'open' | 'closed';
@@ -107,8 +107,17 @@ function handle(data: string): void {
     receive(message);
     if (message.channel === 'config') {
         const payload = message.payload as ConfigPayload | null;
-        if (payload !== null && typeof payload === 'object' && payload.text) {
-            setCatalog(payload.text);
+        if (payload === null || typeof payload !== 'object') return;
+        if (payload.text) setCatalog(payload.text);
+        // The glyph vocabulary rides on the same channel: it is one key of the merged config, so an
+        // edit to config/glyphs.yml reaches the page by the push that already carries the strings.
+        const glyphs = payload.config?.glyphs;
+        if (typeof glyphs === 'object' && glyphs !== null && !Array.isArray(glyphs)) {
+            const map: Record<string, string> = {};
+            for (const [name, value] of Object.entries(glyphs)) {
+                if (typeof value === 'string') map[name] = value;
+            }
+            setGlyphs(map);
         }
     }
 }

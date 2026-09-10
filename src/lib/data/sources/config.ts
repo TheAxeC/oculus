@@ -157,3 +157,19 @@ export function flattenText(node: unknown, prefix = ''): Record<string, string> 
 export function textCatalog(config: Record<string, unknown>): Record<string, string> {
     return flattenText(config.text ?? {});
 }
+
+/**
+ * The glyph vocabulary held in the merged config's `glyphs` key: one character per name, flat. It
+ * ships with the catalog as the page's data and is pushed on the `config` channel afterwards, so a
+ * glyph is edited in config/glyphs.yml and nowhere else. A value that is not a string is dropped
+ * rather than thrown on: the map is a vocabulary and one bad entry is not worth losing the rest.
+ */
+export function glyphCatalog(config: Record<string, unknown>): Record<string, string> {
+    const raw = config.glyphs;
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
+    const glyphs: Record<string, string> = {};
+    for (const [name, value] of Object.entries(raw as Record<string, unknown>)) {
+        if (typeof value === 'string') glyphs[name] = value;
+    }
+    return glyphs;
+}

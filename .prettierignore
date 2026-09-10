@@ -5,8 +5,10 @@ package-lock.json
 .scratch/
 *.md
 
-# Copied from the cockpit byte for byte and kept that way; a formatter pass would rewrite the
-# indentation and the comment columns, and cmp against the source is the check that they match.
+# Five of these are copied from the cockpit byte for byte and kept that way; cmp against the source
+# is the check that they match. text.yml is the cockpit's file plus oculus's own groups, written in
+# the cockpit's two-space style. A formatter pass would rewrite the indentation and the comment
+# columns of all six.
 config/behavior.yml
 config/glyphs.yml
 config/layout.yml

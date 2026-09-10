@@ -10,6 +10,10 @@
 //
 // Every operation returns a new tree and never mutates its argument. It returns the argument itself
 // when there is nothing to change, which is still a tree the caller may not mutate.
+//
+// What is saved is not one tree but the Workbench: the main tree, the panel tree, where the panel is
+// docked and how much of the window it takes. Every operation still works on one tree, and the store
+// is told which of the two it is editing.
 
 /**
  * The view a pane's tab mounts. The view registry (O8) is its vocabulary. A saved layout may name a
@@ -24,14 +28,36 @@ export type Split = { kind: 'split'; dir: 'row' | 'col'; sizes: number[]; childr
 export type Pane = { kind: 'pane'; tabs: Instance[]; active: string };
 export type Layout = Split | Pane;
 
+/** Where the panel sits beside the main area, or that it is not shown. */
+export type Dock = 'right' | 'bottom' | 'hidden';
+
+/**
+ * The whole arrangement, which is what is saved: two trees, where the second one sits, and how much
+ * of the window it takes. The panel is a tree of its own rather than a pane, so a panel can be split
+ * exactly as the main area can and every operation applies to either of them.
+ */
+export type Workbench = { main: Layout; panel: Layout; dock: Dock; panelSize: number };
+
+/** Which of the workbench's two trees an operation applies to. */
+export type Target = 'main' | 'panel';
+
 /** The smallest share of a split one child may hold, so a drag can never take a pane to nothing. */
 export const MIN_SIZE = 0.1;
 
 /** The most children a split can hold and still give each of them MIN_SIZE. */
 export const MAX_CHILDREN = Math.floor(1 / MIN_SIZE);
 
+/** The panel's share of the window: the least, the most, and what it starts at. */
+export const PANEL_MIN = 0.1;
+export const PANEL_MAX = 0.6;
+export const PANEL_DEFAULT = 0.3;
+
+/** The view the main area starts on, and the one the panel starts on. */
+export const MAIN_VIEW = 'status';
+export const PANEL_VIEW = 'findings';
+
 /** The envelope version serialiseLayout writes and parseLayout demands. */
-export const LAYOUT_VERSION = 1;
+export const LAYOUT_VERSION = 2;
 
 /** Sizes must sum to 1 within this; a float sum of ten tenths is not exactly 1. */
 const SUM_EPS = 1e-6;
@@ -62,6 +88,54 @@ function clamp(value: number, low: number, high: number): number {
 /** The layout O7 starts from: one root pane holding no tabs. */
 export function defaultLayout(): Layout {
     return emptyPane();
+}
+
+/** A fresh instance of a view, with the id every operation addresses it by and no state yet. */
+export function newInstance(view: ViewId): Instance {
+    return { id: crypto.randomUUID(), view, state: {} };
+}
+
+/** One pane holding one new instance of a view, which is what each tree of the default holds. */
+function paneOf(view: ViewId): Pane {
+    const instance = newInstance(view);
+    return { kind: 'pane', tabs: [instance], active: instance.id };
+}
+
+/** The arrangement a browser that has never held one starts from. */
+export function defaultWorkbench(): Workbench {
+    return {
+        main: paneOf(MAIN_VIEW),
+        panel: paneOf(PANEL_VIEW),
+        dock: 'right',
+        panelSize: PANEL_DEFAULT
+    };
+}
+
+/** The panel's share, held between PANEL_MIN and PANEL_MAX; anything that is not a number is the default. */
+export function clampPanel(fraction: number): number {
+    if (!Number.isFinite(fraction)) return PANEL_DEFAULT;
+    return clamp(fraction, PANEL_MIN, PANEL_MAX);
+}
+
+/**
+ * The path of the pane an opened view lands in: the pane holding the instance that was last
+ * activated, and the first pane when that instance is gone or none has been activated yet.
+ */
+export function activePath(layout: Layout, id: string | null): number[] {
+    if (id !== null && id !== '') {
+        const found = findInstance(layout, id);
+        if (found !== null) return found.path;
+    }
+    return panes(layout)[0]?.path ?? [];
+}
+
+/** The instance of this view in the tree, or null when the tree holds none. */
+export function findView(layout: Layout, view: ViewId): Instance | null {
+    for (const { pane } of panes(layout)) {
+        const found = pane.tabs.find((tab) => tab.view === view);
+        if (found !== undefined) return found;
+    }
+    return null;
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -446,18 +520,41 @@ function readPane(
     return { kind: 'pane', tabs, active };
 }
 
+const DOCKS: Dock[] = ['right', 'bottom', 'hidden'];
+
+/**
+ * Everything that must hold of a whole arrangement: both trees, the dock, and the panel's share.
+ * An instance id is unique across the workbench and not only within one tree, since a view's own
+ * state is kept by instance id and the two trees are shown at once.
+ */
+export function checkWorkbench(workbench: Workbench): string[] {
+    const problems: string[] = [];
+    const ids = new Set<string>();
+    readTree(workbench.main, 'main', problems, ids);
+    readTree(workbench.panel, 'panel', problems, ids);
+    if (!DOCKS.includes(workbench.dock)) {
+        problems.push(`dock is ${JSON.stringify(workbench.dock)}, not right, bottom or hidden`);
+    }
+    if (workbench.panelSize < PANEL_MIN || workbench.panelSize > PANEL_MAX) {
+        problems.push(`panelSize is ${workbench.panelSize}, outside ${PANEL_MIN} to ${PANEL_MAX}`);
+    }
+    return problems;
+}
+
 /** The saved form: the envelope, so a later version can be told apart from this one. */
-export function serialiseLayout(layout: Layout): string {
-    return JSON.stringify({ version: LAYOUT_VERSION, layout });
+export function serialiseLayout(workbench: Workbench): string {
+    return JSON.stringify({ version: LAYOUT_VERSION, workbench });
 }
 
 /**
- * The tree in a saved envelope, or null when anything about it is wrong: another version, a broken
- * shape, or an invariant a hand edit or an older release left violated. A tree that fails here never
- * reaches the shell, which is why the shell never checks the shape of what it renders. A string is
- * read as JSON first, so the caller can hand over what storage returned.
+ * The arrangement in a saved envelope, or null when anything about it is wrong: another version, a
+ * broken shape, or an invariant a hand edit or an older release left violated. A version 1 envelope
+ * held one tree and no panel, so it is another version and the browser falls back to the default.
+ * An arrangement that fails here never reaches the shell, which is why the shell never checks the
+ * shape of what it renders. A string is read as JSON first, so the caller can hand over what storage
+ * returned.
  */
-export function parseLayout(value: unknown): Layout | null {
+export function parseLayout(value: unknown): Workbench | null {
     let envelope: unknown = value;
     if (typeof envelope === 'string') {
         try {
@@ -467,7 +564,31 @@ export function parseLayout(value: unknown): Layout | null {
         }
     }
     if (!isRecord(envelope) || envelope.version !== LAYOUT_VERSION) return null;
+    const saved = envelope.workbench;
+    if (!isRecord(saved)) return null;
+
     const problems: string[] = [];
-    const tree = readNode(envelope.layout, [], problems, new Set());
-    return problems.length === 0 ? tree : null;
+    const ids = new Set<string>();
+    const main = readTree(saved.main, 'main', problems, ids);
+    const panel = readTree(saved.panel, 'panel', problems, ids);
+    const dock = saved.dock;
+    if (typeof dock !== 'string' || !DOCKS.includes(dock as Dock)) return null;
+    const panelSize = saved.panelSize;
+    if (typeof panelSize !== 'number' || !Number.isFinite(panelSize)) return null;
+    if (panelSize < PANEL_MIN || panelSize > PANEL_MAX) return null;
+    if (main === null || panel === null || problems.length > 0) return null;
+    return { main, panel, dock: dock as Dock, panelSize };
+}
+
+/** One of the two trees of a saved envelope, its problems named by which tree they are in. */
+function readTree(
+    value: unknown,
+    which: string,
+    problems: string[],
+    ids: Set<string>
+): Layout | null {
+    const found: string[] = [];
+    const tree = readNode(value, [], found, ids);
+    for (const problem of found) problems.push(`${which} ${problem}`);
+    return tree;
 }

@@ -830,3 +830,22 @@ text:
 
   ui:                          # oculus's primitives: the strings a domain-blind component needs, and no more.
     sash: "Resize"
+    close_tab: "Close tab"
+    close_glyph: "dismiss"     # a name in `glyphs:`, not a character: the close control's icon.
+    unknown_view: "Unknown view: {0}"
+    rail: "Views"
+    theme: "Theme"
+    theme_glyph: "darkmode"
+    crt: "CRT overlay: scanlines and vignette, cosmetic only"
+    panel: "Panel"
+    dock_right: "Panel on the right"
+    dock_bottom: "Panel along the bottom"
+    dock_hidden: "Panel hidden"
+    dock_glyph: "cards"
+
+  views:                       # oculus's views: one label per registered view, and the glyph name it is drawn with.
+    status: "Status"
+    status_glyph: "now"
+    findings: "Findings"
+    findings_glyph: "warn"
+    findings_none: "No findings: every id resolves and every status is in the vocabulary."

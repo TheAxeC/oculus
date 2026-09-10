@@ -32,12 +32,16 @@ function layerOf(id: string): string {
     return id.split('/')[0];
 }
 
+// An exact pattern also covers the runes module of the same name: `state/layout` is one module in
+// two files, the pure half in state/layout.ts and the store in state/layout.svelte.ts, and the row
+// names the module. It covers that one name and no other, so `state/entities.svelte` is still
+// refused to the shell, which the synthetic case below shows.
 function matches(pattern: string, id: string): boolean {
     if (pattern.endsWith('/**')) {
         const folder = pattern.slice(0, -3);
         return id === folder || id.startsWith(`${folder}/`);
     }
-    return id === pattern;
+    return id === pattern || id === `${pattern}.svelte`;
 }
 
 function sourceFiles(root: string, prefix = ''): string[] {
@@ -105,6 +109,8 @@ describe('layer boundaries', () => {
         write('ui/Card.svelte', '<span></span>');
         write('ui/Bad.svelte', "<script>\nimport Focus from '../views/Focus.svelte';\n</script>");
         write('shell/Bad.ts', "import { branch } from '$lib/server/git';");
+        write('shell/Runes.ts', "import { portfolio } from '$lib/state/entities.svelte';");
+        write('shell/Store.ts', "import { apply } from '$lib/state/layout.svelte';");
         write('views/Focus.svelte', "<script>\nimport Other from './Other.svelte';\n</script>");
         write('views/Other.svelte', '<span></span>');
         write('state/bad.svelte.ts', "import { read } from '$lib/data/sources/config';");
@@ -112,6 +118,7 @@ describe('layer boundaries', () => {
 
         expect(findViolations(dir)).toEqual([
             'shell/Bad.ts imports server/git',
+            'shell/Runes.ts imports state/entities.svelte',
             'state/bad.svelte.ts imports data/sources/config',
             'ui/Bad.svelte imports views/Focus.svelte',
             'views/Focus.svelte imports views/Other.svelte'

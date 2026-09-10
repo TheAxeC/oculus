@@ -5,11 +5,17 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    LAYOUT_VERSION,
     MAX_CHILDREN,
     MIN_SIZE,
+    PANEL_DEFAULT,
+    PANEL_MAX,
+    PANEL_MIN,
     activate,
     checkLayout,
+    checkWorkbench,
     closeInstance,
+    defaultWorkbench,
     equalSizes,
     findInstance,
     moveInstance,
@@ -20,10 +26,26 @@ import {
     resize,
     serialiseLayout,
     splitPane,
+    type Dock,
     type Instance,
-    type Layout
+    type Layout,
+    type Workbench
 } from '../../src/lib/state/layout.ts';
-import { LAYOUT_KEY, apply, layout, loadLayout } from '../../src/lib/state/layout.svelte.ts';
+import {
+    LAYOUT_KEY,
+    activateInstance,
+    apply,
+    change,
+    closeInstanceIn,
+    dock,
+    dockedAt,
+    layout,
+    loadLayout,
+    openView,
+    panelSize,
+    resizePanel,
+    workbench
+} from '../../src/lib/state/layout.svelte.ts';
 
 function instance(id: string, view = 'projects'): Instance {
     return { id, view, state: null };
@@ -45,6 +67,24 @@ function three(): Layout {
         [0.5, 0.5],
         [pane(['a']), split('col', [0.5, 0.5], [pane(['b']), pane(['c'])])]
     );
+}
+
+/** A whole arrangement around two trees, which is the unit that is saved. */
+function bench(main: Layout, panel: Layout, dockedAt: Dock = 'right', share = PANEL_DEFAULT) {
+    return { main, panel, dock: dockedAt, panelSize: share };
+}
+
+/** A current envelope over a workbench that is valid except for the fields handed in. */
+function envelope(over: Record<string, unknown>): unknown {
+    return {
+        version: LAYOUT_VERSION,
+        workbench: { ...bench(pane(['a']), pane(['b'])), ...over }
+    };
+}
+
+/** The view of every tab in a tree, depth first, which is what a store test is about. */
+function viewsOf(tree: Layout): string[] {
+    return panes(tree).flatMap(({ pane: node }) => node.tabs.map((tab) => tab.view));
 }
 
 /** A fake Storage: what the store needs of one, and a window on what it wrote. */
@@ -371,63 +411,82 @@ describe('checkLayout', () => {
 });
 
 describe('serialiseLayout and parseLayout', () => {
-    it('reads back what it wrote', () => {
-        const tree = three();
-        expect(parseLayout(serialiseLayout(tree))).toEqual(tree);
-        expect(parseLayout(JSON.parse(serialiseLayout(tree)))).toEqual(tree);
+    it('reads back the whole workbench', () => {
+        const saved = bench(three(), pane(['p']), 'bottom', 0.42);
+        expect(parseLayout(serialiseLayout(saved))).toEqual(saved);
+        expect(parseLayout(JSON.parse(serialiseLayout(saved)))).toEqual(saved);
     });
 
     it('keeps a view the registry may not know and the instance state', () => {
-        const tree: Layout = {
-            kind: 'pane',
-            tabs: [{ id: 'a', view: 'from-2027', state: { at: 3 } }],
-            active: 'a'
-        };
-        expect(parseLayout(serialiseLayout(tree))).toEqual(tree);
+        const saved = bench(
+            { kind: 'pane', tabs: [{ id: 'a', view: 'from-2027', state: { at: 3 } }], active: 'a' },
+            pane(['p'])
+        );
+        expect(parseLayout(serialiseLayout(saved))).toEqual(saved);
     });
 
-    it('refuses another version', () => {
-        const tree = three();
-        expect(parseLayout({ version: 2, layout: tree })).toBe(null);
-        expect(parseLayout({ layout: tree })).toBe(null);
+    it('refuses version 1, which held one tree and no panel, and an envelope with no version', () => {
+        const saved = bench(three(), pane(['p']));
+        expect(parseLayout({ version: 1, layout: three() })).toBe(null);
+        expect(parseLayout({ version: 1, workbench: saved })).toBe(null);
+        expect(parseLayout({ workbench: saved })).toBe(null);
+        expect(parseLayout({ version: LAYOUT_VERSION, layout: three() })).toBe(null);
     });
 
     it('refuses a wrong kind, a split with one child, and sizes that do not sum to 1', () => {
-        expect(parseLayout({ version: 1, layout: { kind: 'box' } })).toBe(null);
+        expect(parseLayout(envelope({ main: { kind: 'box' } }))).toBe(null);
         expect(
-            parseLayout({
-                version: 1,
-                layout: { kind: 'split', dir: 'row', sizes: [1], children: [pane(['a'])] }
-            })
+            parseLayout(
+                envelope({
+                    main: { kind: 'split', dir: 'row', sizes: [1], children: [pane(['a'])] }
+                })
+            )
         ).toBe(null);
         expect(
-            parseLayout({
-                version: 1,
-                layout: split('row', [0.5, 0.4], [pane(['a']), pane(['b'])])
-            })
+            parseLayout(envelope({ panel: split('row', [0.5, 0.4], [pane(['x']), pane(['y'])]) }))
         ).toBe(null);
     });
 
-    it('refuses a duplicate instance id and a size under the minimum', () => {
+    it('refuses an instance id repeated across the two trees, and a size under the minimum', () => {
+        expect(parseLayout(envelope({ main: pane(['a']), panel: pane(['a']) }))).toBe(null);
         expect(
-            parseLayout({
-                version: 1,
-                layout: split('row', [0.5, 0.5], [pane(['a']), pane(['a'])])
-            })
+            parseLayout(envelope({ main: split('row', [0.95, 0.05], [pane(['a']), pane(['b'])]) }))
         ).toBe(null);
-        expect(
-            parseLayout({
-                version: 1,
-                layout: split('row', [0.95, 0.05], [pane(['a']), pane(['b'])])
-            })
-        ).toBe(null);
+    });
+
+    it('refuses a dock and a panel share it does not know', () => {
+        expect(parseLayout(envelope({ dock: 'left' }))).toBe(null);
+        expect(parseLayout(envelope({ dock: 1 }))).toBe(null);
+        expect(parseLayout(envelope({ panelSize: PANEL_MAX + 0.1 }))).toBe(null);
+        expect(parseLayout(envelope({ panelSize: PANEL_MIN - 0.01 }))).toBe(null);
+        expect(parseLayout(envelope({ panelSize: 'wide' }))).toBe(null);
     });
 
     it('refuses what is not an envelope at all', () => {
         expect(parseLayout('not json')).toBe(null);
         expect(parseLayout(null)).toBe(null);
         expect(parseLayout([1, 2])).toBe(null);
-        expect(parseLayout('{"version":1}')).toBe(null);
+        expect(parseLayout(`{"version":${LAYOUT_VERSION}}`)).toBe(null);
+    });
+});
+
+describe('checkWorkbench', () => {
+    it('says nothing about the default', () => {
+        expect(checkWorkbench(defaultWorkbench())).toEqual([]);
+    });
+
+    it('names the tree a problem is in, and reports the dock and the share', () => {
+        const broken: Workbench = {
+            main: { kind: 'pane', tabs: [], active: 'x' },
+            panel: pane(['p']),
+            dock: 'left' as Dock,
+            panelSize: 0.9
+        };
+        expect(checkWorkbench(broken)).toEqual([
+            'main node at []: an empty pane calls x active',
+            'dock is "left", not right, bottom or hidden',
+            `panelSize is 0.9, outside ${PANEL_MIN} to ${PANEL_MAX}`
+        ]);
     });
 });
 
@@ -435,33 +494,108 @@ describe('the store', () => {
     it('starts from the default when storage holds nothing, and says so', () => {
         const storage = fakeStorage();
         expect(loadLayout(storage)).toBe(false);
-        expect(layout()).toEqual({ kind: 'pane', tabs: [], active: '' });
+        expect(viewsOf(layout('main'))).toEqual(['status']);
+        expect(viewsOf(layout('panel'))).toEqual(['findings']);
+        expect(dockedAt()).toBe('right');
+        expect(panelSize()).toBe(PANEL_DEFAULT);
     });
 
     it('restores a saved arrangement', () => {
-        const tree = three();
-        const storage = fakeStorage(serialiseLayout(tree));
+        const saved = bench(three(), pane(['p']), 'bottom', 0.4);
+        const storage = fakeStorage(serialiseLayout(saved));
         expect(loadLayout(storage)).toBe(true);
-        expect(layout()).toEqual(tree);
+        expect(workbench()).toEqual(saved);
     });
 
-    it('falls back to the default on a saved value that fails parseLayout, and overwrites it on the next apply', () => {
+    it('falls back to the default on a saved value that fails parseLayout, and overwrites it on the next change', () => {
         const storage = fakeStorage(JSON.stringify({ version: 1, layout: { kind: 'box' } }));
         expect(loadLayout(storage)).toBe(false);
-        expect(layout()).toEqual({ kind: 'pane', tabs: [], active: '' });
+        expect(viewsOf(layout('main'))).toEqual(['status']);
 
-        const tree = three();
-        apply(tree);
-        expect(layout()).toEqual(tree);
-        expect(storage.held[LAYOUT_KEY]).toBe(serialiseLayout(tree));
-        expect(parseLayout(storage.held[LAYOUT_KEY])).toEqual(tree);
+        const saved = bench(three(), pane(['p']));
+        apply(saved);
+        expect(workbench()).toEqual(saved);
+        expect(storage.held[LAYOUT_KEY]).toBe(serialiseLayout(saved));
+        expect(parseLayout(storage.held[LAYOUT_KEY])).toEqual(saved);
     });
 
-    it('saves every applied tree under the one key', () => {
+    it('applies an operation to the tree it is told and saves the whole workbench under the one key', () => {
+        const storage = fakeStorage(serialiseLayout(bench(pane(['a']), pane(['p']))));
+        loadLayout(storage);
+        change('panel', (tree) => openInstance(tree, [], instance('q')));
+        expect(Object.keys(storage.held)).toEqual([LAYOUT_KEY]);
+        expect(layout('main')).toEqual(pane(['a']));
+        expect(layout('panel')).toEqual(pane(['p', 'q'], 'q'));
+        expect(parseLayout(storage.held[LAYOUT_KEY])).toEqual(workbench());
+    });
+
+    it('docks the panel and saves where it went', () => {
         const storage = fakeStorage();
         loadLayout(storage);
-        apply(openInstance(layout(), [], instance('a')));
-        expect(Object.keys(storage.held)).toEqual([LAYOUT_KEY]);
-        expect(parseLayout(storage.held[LAYOUT_KEY])).toEqual(pane(['a'], 'a'));
+        dock('bottom');
+        expect(dockedAt()).toBe('bottom');
+        expect(parseLayout(storage.held[LAYOUT_KEY])?.dock).toBe('bottom');
+        dock('hidden');
+        expect(dockedAt()).toBe('hidden');
+    });
+
+    it('holds the panel share inside its range', () => {
+        loadLayout(fakeStorage());
+        resizePanel(0.45);
+        expect(panelSize()).toBe(0.45);
+        resizePanel(0.9);
+        expect(panelSize()).toBe(PANEL_MAX);
+        resizePanel(0.01);
+        expect(panelSize()).toBe(PANEL_MIN);
+        resizePanel(Number.NaN);
+        expect(panelSize()).toBe(PANEL_DEFAULT);
+    });
+
+    it('activates the instance a view already has rather than opening a second', () => {
+        loadLayout(fakeStorage());
+        const before = layout('main');
+        const held = before.kind === 'pane' ? before.tabs[0].id : '';
+        openView('status', 'main');
+        const after = layout('main');
+        expect(viewsOf(after)).toEqual(['status']);
+        expect(after.kind === 'pane' ? after.active : '').toBe(held);
+    });
+
+    it('opens a view the tree does not hold in the pane last activated', () => {
+        const two = split('row', [0.5, 0.5], [pane(['a']), pane(['b'])]);
+        loadLayout(fakeStorage(serialiseLayout(bench(two, pane(['p'])))));
+        activateInstance('main', 'b');
+        openView('venues', 'main');
+        expect(paneAt(layout('main'), [0])?.tabs.map((tab) => tab.view)).toEqual(['projects']);
+        expect(paneAt(layout('main'), [1])?.tabs.map((tab) => tab.view)).toEqual([
+            'projects',
+            'venues'
+        ]);
+    });
+
+    it('opens into the first pane when nothing has been activated since the load', () => {
+        const two = split('row', [0.5, 0.5], [pane(['a']), pane(['b'])]);
+        loadLayout(fakeStorage(serialiseLayout(bench(two, pane(['p'])))));
+        openView('venues', 'main');
+        expect(paneAt(layout('main'), [0])?.tabs.map((tab) => tab.view)).toEqual([
+            'projects',
+            'venues'
+        ]);
+    });
+
+    it('shows a hidden panel when a view is opened into it', () => {
+        loadLayout(fakeStorage());
+        dock('hidden');
+        openView('venues', 'panel');
+        expect(dockedAt()).toBe('right');
+        expect(viewsOf(layout('panel'))).toEqual(['findings', 'venues']);
+        expect(viewsOf(layout('main'))).toEqual(['status']);
+    });
+
+    it('closes an instance in the tree it names', () => {
+        loadLayout(fakeStorage(serialiseLayout(bench(pane(['a', 'b']), pane(['p'])))));
+        closeInstanceIn('main', 'a');
+        expect(layout('main')).toEqual(pane(['b'], 'b'));
+        expect(layout('panel')).toEqual(pane(['p']));
     });
 });
