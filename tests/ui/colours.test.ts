@@ -28,7 +28,8 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { deriveTokens, ratio } from '../../src/lib/themes/derive.ts';
 import { parseBlocks, resolveTheme } from '../../src/lib/themes/parse.ts';
-import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
+import { setAppearance, themeClass, themes } from '../../src/lib/state/appearance.ts';
 
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src');
 
@@ -408,14 +409,14 @@ describe('the surfaces a component may fill and paint on', () => {
     const blocks = parseBlocks(
         `${readFileSync(join(THEMES_DIR, 'tokens.css'), 'utf8')}\n${readFileSync(join(THEMES_DIR, 'themes.css'), 'utf8')}`
     );
-    const catalog = textCatalog(loadConfig(engineDir()).config);
-    const names = catalog['js.theme.order'].split(',');
+    setAppearance(loadConfig(engineDir()).config);
+    const names = themes().map((entry) => entry.name);
 
     it('keeps every --on-<surface> on its surface at 4.5:1, under every theme', () => {
         const failures: string[] = [];
         let measured = 0;
         for (const name of names) {
-            const theme = resolveTheme(blocks, catalog[`js.theme.class_${name}`]);
+            const theme = resolveTheme(blocks, themeClass(name));
             const all: Record<string, string> = { ...theme, ...deriveTokens(theme) };
             for (const surface of SURFACES) {
                 const on = `--on-${surface.slice(2)}`;

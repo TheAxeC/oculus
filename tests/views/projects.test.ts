@@ -216,8 +216,8 @@ describe('a card', () => {
     });
 
     it('draws the domain label of the vocabulary, not the domain key', () => {
-        const themes = config.themes as Record<string, { label: string }>;
-        expect(body).toContain(themes.heart.label);
+        const domains = config.domains as Record<string, { label: string }>;
+        expect(body).toContain(domains.heart.label);
     });
 
     it('draws the venue as name, quartile, JIF and cost', () => {

@@ -6,7 +6,7 @@
 // It saves the same way the layout store does, under its own key and through the same small slice of
 // Storage, so a test hands it a plain object and no test touches localStorage.
 
-import { themeOrder } from './text.ts';
+import { themes } from './appearance.ts';
 
 /** The key the appearance and the per-instance state are saved under. */
 export const UI_KEY = 'oculus.ui.v1';
@@ -36,7 +36,7 @@ const store: { current: Ui } = $state({ current: defaultUi() });
 /** Where save() writes, once loadUi has named it. Nothing is saved before that. */
 let backing: Storable | null = null;
 
-/** The theme's name, one of the names in `js.theme.order`. */
+/** The theme's name, one of the names config/appearance.yml lists. */
 export function theme(): string {
     return store.current.theme;
 }
@@ -51,10 +51,10 @@ export function instanceState(id: string): unknown {
     return store.current.instances[id];
 }
 
-/** A theme name the catalog lists, and the default for one it does not. */
+/** A theme name config/appearance.yml lists, and the default for one it does not. */
 function known(name: unknown): string {
     if (typeof name !== 'string') return DEFAULT_THEME;
-    return themeOrder().includes(name) ? name : DEFAULT_THEME;
+    return themes().some((entry) => entry.name === name) ? name : DEFAULT_THEME;
 }
 
 /**
@@ -107,7 +107,7 @@ function save(next: Ui): void {
     }
 }
 
-/** Switch to a theme. A name the catalog does not list is the default theme. */
+/** Switch to a theme. A name config/appearance.yml does not list is the default theme. */
 export function setTheme(name: string): void {
     save({ ...store.current, theme: known(name) });
 }

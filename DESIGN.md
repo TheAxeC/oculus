@@ -40,14 +40,16 @@ tools/oculus/
   DESIGN.md                    this file
   README.md                    how to run it
   .scratch/migration/          the migration's ledger (plan.md), state file (orchestrator-state.md) and agent material (agents/); tracked; deleted at step 8
-  config/                      the interface described as data, copied from the cockpit; no link back
-    meta.yml                   owner name, cluster host, ports
-    vocab.yml                  status vocabulary and colours
-    layout.yml                 tier scan paths, default arrangement
+  config/                      the interface described as data, one concern per file; no link back
+    meta.yml                   the tool's own identity
+    sources.yml                what the portfolio reads: scan paths, registries, collections, docs, feeds
+    vocab.yml                  words and their colours: palette, domains, statuses, lanes, tiers
+    layout.yml                 how things are arranged: rail groups, board chrome, rollups, label modes
+    behavior.yml               thresholds and horizons
+    appearance.yml             the UI theme list, the wallpaper, the CRT default
     glyphs.yml                 the icon vocabulary
     text.yml                   every user-facing string, keyed
     manifest-schema.yml        the project.yml edit form
-    behavior.yml               thresholds and timings
   local.yml                    machine-local values (the hub path), gitignored
   src/
     routes/
@@ -111,7 +113,7 @@ The mapping to the three layers is literal: `lib/data` is layer 1; `lib/server` 
 
 ## Configuration
 
-The seven files under `config/` are the interface described as data, exactly as in the cockpit, and they are treated alike. Colours and statuses in `vocab.yml`, icons in `glyphs.yml`, every user-facing string in `text.yml` read through `t("group.key")`, the edit form in `manifest-schema.yml`, thresholds in `behavior.yml`, the owner's name and the cluster host in `meta.yml`. No component contains a literal user-facing string, a raw colour, or a literal glyph. `tests/keys.test.ts` fails on a `t()` key that does not exist, so a typo is caught before it renders blank, which is the same gate the cockpit has.
+The nine files under `config/` are the interface described as data, one concern to a file, and they are treated alike. What the portfolio reads in `sources.yml` (the tier scan paths, the registry and collection files, the document and feed paths); words and their colours in `vocab.yml` (the palette, the research `domains`, the status legend and palette, the focus lanes, the venue tiers, the radar buckets); how things are arranged in `layout.yml` (the rail's groups, the board chrome, the tab rollups, the live badges, which title a surface draws); thresholds and horizons in `behavior.yml`; the UI theme list, the wallpaper and the CRT default in `appearance.yml`; icons in `glyphs.yml`; every user-facing string in `text.yml` read through `t("group.key")`; the edit form in `manifest-schema.yml`; the tool's own identity in `meta.yml`. `loadConfig` merges every file's top-level keys into one map and reports a key two files define, so a key moves between files without a reader noticing and no key sits in two. No component contains a literal user-facing string, a raw colour, or a literal glyph. `tests/keys.test.ts` fails on a `t()` key that does not exist, so a typo is caught before it renders blank, which is the same gate the cockpit has.
 
 Paths resolve without environment variables: a command-line argument, then `local.yml`, then a default derived from the file's own location. The hub path is the one value every machine must set and it lives in `local.yml`, gitignored, so the tree carries no machine path. Roots the file browser may serve (step 7) are set in the app and stored in config; nothing outside a root is ever served.
 
@@ -175,7 +177,7 @@ Svelte 5 state modules (`.svelte.ts`). `entities` holds the latest payload per c
 | From | May import | May not import |
 |---|---|---|
 | `ui/` | `ui/`, `themes/`, `state/text` | `state/*` otherwise, `views/`, `shell/`, `server/` |
-| `shell/` | `ui/`, `state/layout`, `state/drag`, `state/ui`, `state/text`, the view registry | any view by name, `server/` |
+| `shell/` | `ui/`, `state/layout`, `state/drag`, `state/ui`, `state/text`, `state/appearance`, the view registry | any view by name, `server/` |
 | `views/` | `ui/`, `state/` | `shell/`, `server/`, other views |
 | `state/` | `data/model` | `server/`, anything in layer 3 |
 | `data/`, `server/` | `data/` | anything client-side |

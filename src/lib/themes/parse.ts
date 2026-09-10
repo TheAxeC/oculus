@@ -71,8 +71,8 @@ export function parseBlocks(css: string): ThemeBlocks {
 }
 
 /**
- * The tokens in force for a body carrying `classes`, a space-separated class string as
- * `text.js.theme.class_<name>` gives it. An empty string is the light theme: `:root` alone.
+ * The tokens in force for a body carrying `classes`, a space-separated class string as a theme's
+ * `class` in config/appearance.yml gives it. An empty string is the light theme: `:root` alone.
  */
 export function resolveTheme(blocks: ThemeBlocks, classes: string): Record<string, string> {
     const wanted = new Set(classes.split(/\s+/).filter((name) => name.length > 0));

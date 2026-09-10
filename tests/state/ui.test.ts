@@ -1,11 +1,11 @@
 // The appearance store: the theme, the CRT overlay and what each view instance remembers, read and
 // written through a fake storage. Nothing here touches localStorage, and the theme names it accepts
-// are the ones config/text.yml lists, so a theme that was dropped from the catalog cannot come back
-// out of a browser that still holds it.
+// are the ones config/appearance.yml lists, so a theme that was dropped from that file cannot come
+// back out of a browser that still holds it.
 
 import { describe, expect, it } from 'vitest';
-import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
-import { setCatalog, themeOrder } from '../../src/lib/state/text.ts';
+import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
+import { setAppearance, themes } from '../../src/lib/state/appearance.ts';
 import {
     DEFAULT_THEME,
     UI_KEY,
@@ -19,9 +19,9 @@ import {
     theme
 } from '../../src/lib/state/ui.svelte.ts';
 
-// The store checks a stored theme against the catalog, so the catalog the server ships is installed
+// The store checks a stored theme against the theme list, so the list the server ships is installed
 // first, exactly as the page installs it before the workbench renders.
-setCatalog(textCatalog(loadConfig(engineDir()).config));
+setAppearance(loadConfig(engineDir()).config);
 
 /** A fake Storage: what the store needs of one, and a window on what it wrote. */
 function fakeStorage(seed?: unknown) {
@@ -89,7 +89,7 @@ describe('the appearance store', () => {
         expect(instanceState('two')).toEqual({ pick: 'b' });
     });
 
-    it('falls back to the default theme for a stored name the catalog does not list', () => {
+    it('falls back to the default theme for a stored name the theme list does not hold', () => {
         const storage = fakeStorage({
             version: UI_VERSION,
             theme: 'chartreuse',
@@ -102,7 +102,7 @@ describe('the appearance store', () => {
         expect(instanceState('a')).toBe(1);
     });
 
-    it('refuses a name the catalog does not list when it is set as well', () => {
+    it('refuses a name the theme list does not hold when it is set as well', () => {
         loadUi(fakeStorage());
         setTheme('mocha');
         setTheme('chartreuse');
@@ -125,11 +125,11 @@ describe('the appearance store', () => {
         expect(instanceState('a')).toBe(undefined);
     });
 
-    it('accepts every theme the catalog lists', () => {
+    it('accepts every theme config/appearance.yml lists', () => {
         loadUi(fakeStorage());
-        for (const name of themeOrder()) {
-            setTheme(name);
-            expect(theme()).toBe(name);
+        for (const entry of themes()) {
+            setTheme(entry.name);
+            expect(theme()).toBe(entry.name);
         }
     });
 });

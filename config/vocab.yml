@@ -1,6 +1,8 @@
 # ===========================================================================
 # vocab.yml
-# Part of the split cockpit config - merged by cockpit.config.load_config() (cockpit.yml + config/*.yml).
+# oculus's own configuration - words and their colours, and nothing else: the palette every hex maps
+# onto, the research domains, the chip and status vocabularies, and the lane/tier/bucket words the
+# surfaces group by. Merged with the other config/*.yml by loadConfig().
 # ===========================================================================
 
 
@@ -52,8 +54,11 @@ palette:
   "#6b7280": c-grey-d
   "#475569": c-slate
 
+# The research domains: the colour and the label a project card carries, keyed by the `domain:` its
+# manifest names. Called `themes:` in the cockpit; renamed here because the UI themes in
+# appearance.yml are also themes and the two were told apart only by which file they sat in.
 # Shared palette with tools/present/content/present.yml.
-themes:
+domains:
   heart:     { color: "#e2374d", label: "Cardiology | ECG" }
   liver:     { color: "#0d9488", label: "Hepatology | imaging" }
   liverfl:   { color: "#0d9488", label: "Hepatology | federated" }
@@ -66,6 +71,13 @@ themes:
   brainbci:  { color: "#7c3aed", label: "Neuroscience | BCI" }
   cs:        { color: "#0891b2", label: "Computer Science" }
   meta:      { color: "#64748b", label: "Meta-science" }
+
+
+# Project-card colours: by tier (type_color) or by archive outcome (arch_color).
+type_color: { active: "#ea580c", manuscript: "#0d9488", idea: "#7c5cff", published: "#16a34a", submitted: "#0ea5e9", in-prep: "#a16207", tech-report: "#0891b2", software: "#7c3aed", abandoned: "#6b7280", nogo: "#b45309", dropped: "#9ca3af", disproved: "#dc2626", exploring: "#f59e0b", phd: "#6366f1" }
+
+# Primary board button order: every tab (Projects / Archive / Coauthor) splits its first-class button row by `type`, in THIS order.
+type_order: [active, manuscript, idea, published, submitted, in-prep, tech-report, software, nogo, dropped, disproved, abandoned, exploring, phd]
 
 
 # Status chips - the per-project project.yml manifests are the source of truth for status.
@@ -222,13 +234,6 @@ archive_dead: [nogo, dropped, disproved, abandoned, parked]
 leads_fit: { strong: "#16a34a", moderate: "#b45309", reach: "#9ca3af" }
 
 
-# Project-card colours: by tier (type_color) or by archive outcome (arch_color).
-type_color: { active: "#ea580c", manuscript: "#0d9488", idea: "#7c5cff", published: "#16a34a", submitted: "#0ea5e9", in-prep: "#a16207", tech-report: "#0891b2", software: "#7c3aed", abandoned: "#6b7280", nogo: "#b45309", dropped: "#9ca3af", disproved: "#dc2626", exploring: "#f59e0b", phd: "#6366f1" }
-
-# Primary board button order: every tab (Projects / Archive / Coauthor) splits its first-class button row by `type`, in THIS order.
-type_order: [active, manuscript, idea, published, submitted, in-prep, tech-report, software, nogo, dropped, disproved, abandoned, exploring, phd]
-
-
 # Project lifecycle vocab - the single source for the status guardrails in selftest.py. `archive_outcomes` =
 # the `type:` set on archiving, and the conventional archive/<outcome>/ filing folder (archive is a NESTED
 # tier, so the folder is a convention here, not a rule the engine reads). `live_chips` = in-flight chips a
@@ -238,23 +243,6 @@ lifecycle:
   archive_outcomes: [published, nogo, dropped, disproved, phd]
   live_chips: [submit-ready, submitted, revision, accepted, in-prep, blocked, numbers-pending, results-positive, admin-prep]
   terminal_types: [published, nogo, dropped, disproved, abandoned, phd, tech-report, software]
-
-# Tab-button count rollups: the little N|N|N split on the Archive/Coauthor tab buttons (like the projects
-# active/manuscript/idea one). Each segment = a bucket of type/chip keys; buckets are mutually exclusive and
-# cover every card (a card lands in the FIRST bucket whose keys its type or one of its chips matches).
-tab_rollup:
-  projects:
-    - { label: "in progress", keys: [active, manuscript], color: "#16a34a" }
-    - { label: idea,          keys: [idea],               color: "#7c5cff" }
-  archive:
-    - { label: papers,        keys: [journal, conference],                             color: "#db2777" }
-    - { label: outputs,       keys: [thesis, abstract, poster, tech-report, software], color: "#0ea5e9" }
-    - { label: dead-ends,     keys: [nogo, dropped, disproved, abandoned],             color: "#9ca3af" }
-  coauthor:
-    - { label: "in progress", keys: [submitted, in-prep, exploring],                   color: "#16a34a" }
-    - { label: papers,        keys: [journal, conference],                             color: "#db2777" }
-    - { label: outputs,       keys: [abstract, poster, tech-report, software],         color: "#0ea5e9" }
-    - { label: dead-ends,     keys: [nogo, dropped, disproved, abandoned],             color: "#9ca3af" }
 
 arch_color:
   published: "#16a34a"
@@ -284,6 +272,10 @@ venue_tiers:
   - { key: unrated,    color: "#94a3b8", label: "unrated", assignable: false }
 
 
-# Venue kind - the controlled vocabulary for a venue's `category:` (registries/venues.yml); drives the
-# Journals / Conferences grouping on the Venues tab and the category dropdown in the venue edit form.
-venue_categories: [journal, conference]
+# Lit-Watch radar buckets: (key, glyph name, label, colour). New papers per project are classified into one
+# of these; `glyph` is a `glyphs:` key. Edit a label/colour HERE (was hardcoded in config.py before 2026-07).
+radar_buckets:
+  - { key: preemption,    glyph: red,    label: "Pre-emption risk", color: "#dc2626" }
+  - { key: idea,          glyph: purple, label: "Idea sparks",      color: "#7c5cff" }
+  - { key: cite_baseline, glyph: green,  label: "Cite / baseline",  color: "#16a34a" }
+  - { key: adjacent,      glyph: white,  label: "Adjacent",         color: "#94a3b8" }

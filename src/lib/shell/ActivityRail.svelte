@@ -36,7 +36,8 @@
     import Menu from '$lib/ui/Menu.svelte';
     import { dock, dockedAt, openView } from '$lib/state/layout.svelte';
     import { crt, setCrt, setTheme, theme } from '$lib/state/ui.svelte';
-    import { lookup, t, themeLabel, themeOrder } from '$lib/state/text';
+    import { lookup, t } from '$lib/state/text';
+    import { themes as themeList } from '$lib/state/appearance';
     import { views } from '$lib/views/registry';
     import type { Dock } from '$lib/state/layout';
 
@@ -50,10 +51,10 @@
     const sections = $derived(arrange(views(), groups));
 
     const themes = $derived(
-        themeOrder().map((name) => ({
-            id: name,
-            label: themeLabel(name),
-            active: name === theme()
+        themeList().map((entry) => ({
+            id: entry.name,
+            label: entry.label,
+            active: entry.name === theme()
         }))
     );
 
@@ -104,7 +105,7 @@
             aria-pressed={crt()}
             onclick={() => setCrt(!crt())}
         >
-            {lookup('js.theme.crt_on')}
+            {t('ui.crt_on')}
         </button>
         <Menu
             label={dockLabel}

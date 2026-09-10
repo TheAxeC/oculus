@@ -9,6 +9,7 @@
 
 import { receive } from './entities.svelte.ts';
 import { setCatalog, setGlyphs } from './text.ts';
+import { setAppearance } from './appearance.ts';
 import { setVocab } from './tones.ts';
 import type { ConfigPayload, Message, Subscription } from '../data/model.ts';
 
@@ -110,9 +111,13 @@ function handle(data: string): void {
         const payload = message.payload as ConfigPayload | null;
         if (payload === null || typeof payload !== 'object') return;
         if (payload.text) setCatalog(payload.text);
-        // The colours and the chip vocabulary ride the same push: they are five keys of the merged
-        // config, so an edit to config/vocab.yml recolours the page without a reload.
-        if (payload.config) setVocab(payload.config);
+        // The colours and the chip vocabulary ride the same push: they are keys of the merged
+        // config, so an edit to config/vocab.yml recolours the page without a reload, and an edit
+        // to config/appearance.yml changes the theme picker's list the same way.
+        if (payload.config) {
+            setVocab(payload.config);
+            setAppearance(payload.config);
+        }
         // The glyph vocabulary rides on the same channel: it is one key of the merged config, so an
         // edit to config/glyphs.yml reaches the page by the push that already carries the strings.
         const glyphs = payload.config?.glyphs;

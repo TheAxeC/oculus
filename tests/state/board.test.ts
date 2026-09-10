@@ -40,7 +40,7 @@ import type {
 setVocab({
     palette: { '#7c5cff': 'c-violet', '#0d9488': 'c-teal', '#e2374d': 'c-crimson' },
     type_color: { active: '#0d9488', manuscript: '#7c5cff', idea: '#e2374d' },
-    themes: {
+    domains: {
         heart: { color: '#e2374d', label: 'Cardiology | ECG' },
         brain: { color: '#7c5cff', label: 'Neuroscience | EEG' }
     },
@@ -330,7 +330,7 @@ describe('boardItems, the joins', () => {
         expect(item('bravo').venue).toBe(null);
     });
 
-    it('joins the domain theme, its words and its hue', () => {
+    it('joins the domain, its words and its hue', () => {
         expect(item('alpha').domain).toEqual({
             id: 'heart',
             label: 'Cardiology | ECG',

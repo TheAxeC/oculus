@@ -10,7 +10,8 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { CRT_CLASS, applyTheme, type Themeable } from '../../src/lib/ui/theme.ts';
-import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
+import { setAppearance, themeClass } from '../../src/lib/state/appearance.ts';
 
 const THEMES_DIR = resolve(
     dirname(fileURLToPath(import.meta.url)),
@@ -22,7 +23,7 @@ const THEMES_DIR = resolve(
 );
 const TOKENS = readFileSync(join(THEMES_DIR, 'tokens.css'), 'utf8');
 const THEMES = readFileSync(join(THEMES_DIR, 'themes.css'), 'utf8');
-const catalog = textCatalog(loadConfig(engineDir()).config);
+setAppearance(loadConfig(engineDir()).config);
 
 /** A document as applyTheme needs one, with everything it was handed kept. */
 function fakeDocument() {
@@ -42,7 +43,7 @@ function fakeDocument() {
 
 function apply(name: string, crt = false) {
     const { document, set } = fakeDocument();
-    applyTheme(document, catalog[`js.theme.class_${name}`], crt, TOKENS, THEMES);
+    applyTheme(document, themeClass(name), crt, TOKENS, THEMES);
     return { className: document.body.className, set };
 }
 

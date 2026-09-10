@@ -18,10 +18,9 @@ export function setGlyphs(next: Record<string, string>): void {
 
 /**
  * The catalog entry for a dotted key, with no interpolation. It exists for the keys that are named
- * by data rather than by a call site: the theme names listed in `js.theme.order` and the label and
- * glyph keys a view hands the registry. tests/keys.test.ts can only check a literal key, so those
- * two families are checked instead by tests/views/registry.test.ts and tests/state/ui.test.ts, and
- * this throws on a missing key exactly as t() does.
+ * by data rather than by a call site: the label and glyph keys a view hands the registry.
+ * tests/keys.test.ts can only check a literal key, so that family is checked instead by
+ * tests/views/registry.test.ts, and this throws on a missing key exactly as t() does.
  */
 export function lookup(key: string): string {
     const value = catalog[key];
@@ -49,22 +48,4 @@ export function glyph(name: string): string {
     const character = glyphs[name];
     if (character === undefined) throw new Error(`glyph not in config/glyphs.yml: ${name}`);
     return character;
-}
-
-/** The theme names, in the order the picker lists them. */
-export function themeOrder(): string[] {
-    return lookup('js.theme.order')
-        .split(',')
-        .map((name) => name.trim())
-        .filter((name) => name.length > 0);
-}
-
-/** A theme's label in the picker. */
-export function themeLabel(name: string): string {
-    return lookup(`js.theme.label_${name}`);
-}
-
-/** The body class string a theme lands on the document as. The light theme's is empty. */
-export function themeClass(name: string): string {
-    return lookup(`js.theme.class_${name}`);
 }

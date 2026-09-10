@@ -23,8 +23,8 @@ let palette: Record<string, string> = {};
 let statusPalette: Record<string, string> = {};
 let typeColor: Record<string, string> = {};
 let legend: Record<string, Legend> = {};
-let themeColor: Record<string, string> = {};
-let themeText: Record<string, string> = {};
+let domainColor: Record<string, string> = {};
+let domainText: Record<string, string> = {};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -40,7 +40,7 @@ function stringAt(node: unknown, key: string): string | undefined {
 /**
  * A map of name to string, from a map whose values are either that string (`key` null) or a record
  * holding it at `key`. It reads the hexes of `palette` and `type_color`, and the `color` and the
- * `label` of a `themes` entry, which are the same shape read twice.
+ * `label` of a `domains` entry, which are the same shape read twice.
  */
 function stringMap(node: unknown, key: string | null): Record<string, string> {
     const map: Record<string, string> = {};
@@ -55,16 +55,16 @@ function stringMap(node: unknown, key: string | null): Record<string, string> {
 
 /**
  * Install the vocabulary from the merged config: `palette` (hex to token name), `status_palette`
- * and `type_color` (a name to a hex), `status_legend` (the chips) and `themes` (the research
- * themes). A key the config does not hold installs as empty, so every lookup answers with its
+ * and `type_color` (a name to a hex), `status_legend` (the chips) and `domains` (the research
+ * domains). A key the config does not hold installs as empty, so every lookup answers with its
  * unknown case rather than throwing: a half-read config still renders a page.
  */
 export function setVocab(config: Record<string, unknown>): void {
     palette = stringMap(config.palette, null);
     statusPalette = stringMap(config.status_palette, 'color');
     typeColor = stringMap(config.type_color, null);
-    themeColor = stringMap(config.themes, 'color');
-    themeText = stringMap(config.themes, 'label');
+    domainColor = stringMap(config.domains, 'color');
+    domainText = stringMap(config.domains, 'label');
 
     legend = {};
     const rows = config.status_legend;
@@ -105,19 +105,19 @@ export function typeTone(type: string): string {
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
-/** The tone of a research theme, through `themes`. */
-export function themeTone(theme: string): string {
-    const hex = themeColor[String(theme).toLowerCase()];
+/** The tone of a research domain, through `domains`. */
+export function domainTone(domain: string): string {
+    const hex = domainColor[String(domain).toLowerCase()];
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
 /**
- * A research theme's words, the `label` of its `themes` entry ("Cardiology | ECG"), and the theme's
- * own key for one the config does not list. This is the domain label a project card carries; the
- * appearance theme's name in the picker is themeLabel() of state/text.ts, which is another thing.
+ * A research domain's words, the `label` of its `domains` entry ("Cardiology | ECG"), and the
+ * domain's own key for one the config does not list. This is the label a project card carries; a UI
+ * theme's name in the picker is themeLabel() of state/appearance.ts, which is another thing.
  */
-export function themeLabel(theme: string): string {
-    return themeText[String(theme).toLowerCase()] ?? theme;
+export function domainLabel(domain: string): string {
+    return domainText[String(domain).toLowerCase()] ?? domain;
 }
 
 /** The character a status chip is drawn with, and nothing for a chip the legend does not list. */

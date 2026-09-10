@@ -1,8 +1,9 @@
 // loadLocal and loadConfig against synthetic files in a temporary directory.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
+import { parse } from 'yaml';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_PORT, engineDir, loadConfig, loadLocal } from '../src/lib/data/sources/config.ts';
 
@@ -142,30 +143,107 @@ describe('loadConfig', () => {
     });
 });
 
-// The seven files that ship with the tool, read the way the server reads them. The keys listed are
-// the ones the code already asks for by name; a file may hold more and usually does.
+// The nine files that ship with the tool, read the way the server reads them. EXPECTED is the whole
+// top-level key set after the regrouping of O10c, so a key that is dropped, renamed or added shows
+// up here as well as wherever it is read.
 describe("oculus's own config directory", () => {
-    const REQUIRED = [
-        'meta',
-        'text',
-        'glyphs',
-        'ascii',
-        'palette',
-        'status_palette',
-        'type_color',
-        'scan',
-        'collections',
-        'manifest_schema',
-        'read_limits',
-        'stale_days'
-    ];
+    /** Every top-level key the nine files hold, by the file it now sits in. */
+    const EXPECTED: Record<string, string[]> = {
+        'appearance.yml': ['themes', 'wallpaper', 'crt'],
+        'behavior.yml': [
+            'read_limits',
+            'stale_days',
+            'data_domains',
+            'stale_lag_days',
+            'refresh_stale_days',
+            'deadline_horizon_days',
+            'leads_horizon_days',
+            'conf_horizon_months',
+            'leads_badge_days',
+            'venue_conc_warn',
+            'linkedin_cadence_days',
+            'file_index',
+            'slurm',
+            'chat'
+        ],
+        'glyphs.yml': ['glyphs', 'ascii'],
+        'layout.yml': [
+            'nav_groups',
+            'board',
+            'tab_rollup',
+            'nav_live',
+            'focus_label_mode',
+            'project_label_mode',
+            'archive_label_mode',
+            'map_label_mode'
+        ],
+        'manifest-schema.yml': ['manifest_schema'],
+        'meta.yml': ['meta'],
+        'sources.yml': [
+            'scan',
+            'venues_file',
+            'datasets_file',
+            'programs_file',
+            'domains_file',
+            'collections',
+            'docs',
+            'indexes',
+            'leads_file',
+            'radar_file',
+            'publications_file',
+            'linkedin_dir',
+            'career_file'
+        ],
+        'text.yml': ['text'],
+        'vocab.yml': [
+            'palette',
+            'domains',
+            'type_color',
+            'type_order',
+            'status_legend',
+            'status_palette',
+            'focus_lanes',
+            'holding_color',
+            'priority_levels',
+            'fund_stages',
+            'career_host_status',
+            'career_score_dims',
+            'archive_categories',
+            'archive_dead',
+            'leads_fit',
+            'lifecycle',
+            'arch_color',
+            'data_access',
+            'venue_tiers',
+            'radar_buckets'
+        ]
+    };
 
-    it('merges without a finding', () => {
+    it('merges without a finding, so no key is defined in two files', () => {
         expect(loadConfig(engineDir()).findings).toEqual([]);
     });
 
-    it('holds every top-level key the app reads', () => {
+    it('holds exactly the expected top-level keys, and no more', () => {
         const { config } = loadConfig(engineDir());
-        expect(REQUIRED.filter((key) => !(key in config))).toEqual([]);
+        const expected = Object.values(EXPECTED).flat().sort();
+        expect(Object.keys(config).sort()).toEqual(expected);
+    });
+
+    it('reads each file on its own and finds its own keys there and nowhere else', () => {
+        const dir = join(engineDir(), 'config');
+        const seen: Record<string, string> = {};
+        for (const [name, keys] of Object.entries(EXPECTED)) {
+            const parsed = parse(readFileSync(join(dir, name), 'utf8')) as Record<string, unknown>;
+            expect(Object.keys(parsed).sort()).toEqual([...keys].sort());
+            for (const key of keys) {
+                expect(seen[key]).toBe(undefined);
+                seen[key] = name;
+            }
+        }
+        expect(
+            readdirSync(dir)
+                .filter((name) => name.endsWith('.yml'))
+                .sort()
+        ).toEqual(Object.keys(EXPECTED).sort());
     });
 });

@@ -13,7 +13,7 @@ import {
     chipLabel,
     setVocab,
     statusTone,
-    themeTone,
+    domainTone,
     toneOf,
     typeTone
 } from '../../src/lib/state/tones.ts';
@@ -37,7 +37,7 @@ const SYNTHETIC = {
         { key: 'bare', label: 'no icon at all' },
         { icon: 'X', label: 'no key at all' }
     ],
-    themes: { heart: { color: '#7c5cff', label: 'Cardiology' }, blank: { label: 'no colour' } }
+    domains: { heart: { color: '#7c5cff', label: 'Cardiology' }, blank: { label: 'no colour' } }
 };
 
 function synthetic(): void {
@@ -72,26 +72,26 @@ describe('toneOf', () => {
     });
 });
 
-describe('the tone of a status, a type and a theme', () => {
+describe('the tone of a status, a type and a research domain', () => {
     it('reads each through its own map', () => {
         synthetic();
         expect(statusTone('submitted')).toBe('violet');
         expect(typeTone('manuscript')).toBe('teal');
-        expect(themeTone('heart')).toBe('violet');
+        expect(domainTone('heart')).toBe('violet');
     });
 
     it('gives the unknown tone for a name no map holds', () => {
         synthetic();
         expect(statusTone('nonesuch')).toBe(UNKNOWN_TONE);
         expect(typeTone('nonesuch')).toBe(UNKNOWN_TONE);
-        expect(themeTone('nonesuch')).toBe(UNKNOWN_TONE);
+        expect(domainTone('nonesuch')).toBe(UNKNOWN_TONE);
     });
 
     it('gives the unknown tone for an entry with no colour, and for a colour off the palette', () => {
         synthetic();
         expect(statusTone('broken')).toBe(UNKNOWN_TONE);
         expect(statusTone('withdrawn')).toBe(UNKNOWN_TONE);
-        expect(themeTone('blank')).toBe(UNKNOWN_TONE);
+        expect(domainTone('blank')).toBe(UNKNOWN_TONE);
     });
 });
 
@@ -139,8 +139,9 @@ describe('a vocabulary that is missing or wrongly shaped', () => {
 describe('the real config/vocab.yml', () => {
     const vocab = vocabCatalog(loadConfig(engineDir()).config);
 
-    it('carries all five keys the lookups read', () => {
+    it('carries all six keys the client state reads at first load', () => {
         expect(Object.keys(vocab).sort()).toEqual([
+            'domains',
             'palette',
             'status_legend',
             'status_palette',
@@ -156,10 +157,10 @@ describe('the real config/vocab.yml', () => {
         expect(typeTone('published')).toBe('green');
     });
 
-    it('gives a hue to a status and a research theme', () => {
+    it('gives a hue to a status and a research domain', () => {
         setVocab(vocab);
         expect(statusTone('submitted')).toBe('amber');
-        expect(themeTone('heart')).toBe('crimson');
+        expect(domainTone('heart')).toBe('crimson');
     });
 
     it('gives every chip in the legend a label, and most of them a character', () => {

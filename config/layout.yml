@@ -1,25 +1,10 @@
 # ===========================================================================
 # layout.yml
-# Part of the split cockpit config - merged by cockpit.config.load_config() (cockpit.yml + config/*.yml).
+# oculus's own configuration - how things are arranged: the rail's groups, the board chrome, the
+# tab-button rollups, the live count badges, and which title a surface draws.
+# Merged with the other config/*.yml by loadConfig().
 # ===========================================================================
 
-
-# Where to find projects (paths relative to research/). A project is any subfolder that contains a
-# project.yml; its tier/outcome comes from the LOCATION below (mirrored in the manifest). Folder == id.
-scan:
-  - { dir: projects/ideas,       type: idea,       tier: projects }
-  - { dir: projects/active,      type: active,     tier: projects }
-  - { dir: projects/manuscripts, type: manuscript, tier: projects }
-  - { dir: projects/coauthor,    nested: true, tier: coauthor }   # nested; type (the outcome) read from each manifest
-  - { dir: projects/archive,     nested: true, tier: archive }    # nested; type (the outcome) read from each manifest
-
-
-# Top-bar tab order (moved out of page.py, 2026-07). `primary` = shown inline in the nav; `more` = under the
-# "More" dropdown; every other registered tab (collections / registries) falls under "Collections". Keys
-# match page.py's tab registry (`reg(key, ...)`). Add a new primary tab HERE, not in the Python.
-nav:
-  primary: [focus, projects, archive, coauthor, inbox, radar, leads, linkedin, slurm, sessions]
-  more:    [approach, agents, memories, hpc, help, audit, config]
 
 # Optional divider headers inside the Collections / More dropdowns - group related tabs so the long list reads
 # clearly. Each group = { label, keys }; a key not in any group trails at the end (ungrouped). Order = groups
@@ -32,30 +17,6 @@ nav_groups:
   more:
     - { label: "Personal",    keys: [approach, agents, memories] }
     - { label: "System",      keys: [hpc, help, audit, config] }
-
-
-# Top-bar tab LABELS (the words; order is `nav:` above, icons are `glyphs:`). Fixed-word tabs read their
-# label here via T-style lookup in page.py; counts/rollups stay dynamic. docs:/collections:/indexes: carry
-# their own `title:`, so they are not repeated here. Edit a tab's wording HERE, not in page.py.
-tabs:
-  focus:    { label: Focus }
-  projects: { label: Projects }
-  archive:  { label: Archive }
-  coauthor: { label: Coauthor }
-  map:      { label: Map }
-  programs: { label: Pillars }
-  domains:  { label: Domains }
-  leads:    { label: Position Leads }
-  linkedin: { label: LinkedIn }
-  radar:    { label: Lit Watch }
-  data:     { label: Data }
-  venues:   { label: Venues }
-  memories: { label: Memories }
-  slurm:    { label: Live HPC }
-  sessions: { label: Sessions }
-  help:     { label: Help }
-  audit:    { label: Audit }
-  config:   { label: Config }
 
 
 # Board (Projects / Archive / Coauthor) chrome: list-view column headers, the per-board search placeholder,
@@ -72,24 +33,22 @@ board:
     sub: "Projects with no grant attached - auto-aggregated."
 
 
-# Lit-Watch radar buckets: (key, glyph name, label, colour). New papers per project are classified into one
-# of these; `glyph` is a `glyphs:` key. Edit a label/colour HERE (was hardcoded in config.py before 2026-07).
-radar_buckets:
-  - { key: preemption,    glyph: red,    label: "Pre-emption risk", color: "#dc2626" }
-  - { key: idea,          glyph: purple, label: "Idea sparks",      color: "#7c5cff" }
-  - { key: cite_baseline, glyph: green,  label: "Cite / baseline",  color: "#16a34a" }
-  - { key: adjacent,      glyph: white,  label: "Adjacent",         color: "#94a3b8" }
-
-
-# Interactive collection file map (collection key -> its YAML path, relative to research/). Drives the
-# served edit forms + the radar/deadline scan. Add a new editable collection HERE.
-coll_files:
-  education:      education/education.yml
-  events:        network/events.yml
-  funding:       funding/funding.yml
-  applications:  applications/applications.yml
-  collaborations: network/collaborations.yml
-  tasks:         tasks/tasks.yml
+# Tab-button count rollups: the little N|N|N split on the Archive/Coauthor tab buttons (like the projects
+# active/manuscript/idea one). Each segment = a bucket of type/chip keys; buckets are mutually exclusive and
+# cover every card (a card lands in the FIRST bucket whose keys its type or one of its chips matches).
+tab_rollup:
+  projects:
+    - { label: "in progress", keys: [active, manuscript], color: "#16a34a" }
+    - { label: idea,          keys: [idea],               color: "#7c5cff" }
+  archive:
+    - { label: papers,        keys: [journal, conference],                             color: "#db2777" }
+    - { label: outputs,       keys: [thesis, abstract, poster, tech-report, software], color: "#0ea5e9" }
+    - { label: dead-ends,     keys: [nogo, dropped, disproved, abandoned],             color: "#9ca3af" }
+  coauthor:
+    - { label: "in progress", keys: [submitted, in-prep, exploring],                   color: "#16a34a" }
+    - { label: papers,        keys: [journal, conference],                             color: "#db2777" }
+    - { label: outputs,       keys: [abstract, poster, tech-report, software],         color: "#0ea5e9" }
+    - { label: dead-ends,     keys: [nogo, dropped, disproved, abandoned],             color: "#9ca3af" }
 
 
 # Live-count badges on collection nav tabs: `match` = the entry statuses that count, `label` = the tooltip word.
@@ -103,77 +62,13 @@ nav_live:
   tasks:          { match: [todo, doing], label: open, tone: amber }
 
 
-# Collection tabs - a generic card list from one YAML (entries: title/sub/status/date/meta/tags/related/link/url/note).
-# Schema: README.md. Files are editable in served mode. `related:` ids cross-link to project cards.
-collections:
-  - { key: statements,     title: "Statements",         icon: "§", file: "registries/boilerplate.yml" }
-  - { key: funding,        title: "Funding",            icon: "◈", file: "funding/funding.yml" }
-  - { key: events,         title: "Talks & Events",     icon: "🗓", file: "network/events.yml" }
-  - { key: education,      title: "Education & Service", icon: "🏫", file: "education/education.yml" }
-  - { key: applications,   title: "Applications",       icon: "▤", file: "applications/applications.yml" }
-  - { key: collaborations, title: "Collaborations",     icon: "🤝", file: "network/collaborations.yml" }
-  - { key: tasks,          title: "Tasks & Service",    icon: "🧷", file: "tasks/tasks.yml" }
-  - { key: code,           title: "Code",               icon: "💻", file: "registries/repos.yml" }
+# Project-title label mode per surface - `short` = a manifest's `short:` if set, else the full title (NO id is
+# ever shown); `full` = always the full title. Projects + Archive also have a live Aa toggle in the UI that
+# overrides their default below (persisted per browser). The full title is always on hover.
+focus_label_mode: short      # 🎯 Focus board cards + "This week" ticker
 
+project_label_mode: short    # Projects tab cards / list rows (live Aa toggle overrides)
 
-# Full-markdown tabs (each may concatenate several files; missing files flagged).
-docs:
-  - { key: inbox,     title: "📨 Inbox",  after_map: true, paths: ["feeds/inbox.yml"] }   # private email; tracked since 2026-08-10, never leaves this repo
-  - { key: hpc,       title: "HPC - UTwente",   paths: ["HPC-UTwente-howto.md"] }
-  - { key: approach,  title: "🧭 Research Approach", paths: ["RESEARCH-APPROACH.md"] }   # how I do research + how it differs (private strategy prose)
-  - { key: agents,    title: "🧰 Agent Approach",    paths: ["AGENT-APPROACH.md"] }       # how I work with agents: modes, context budget, enforcement (private)
+archive_label_mode: short    # Archive tab cards / list rows (live Aa toggle overrides)
 
-
-# Auto-index tabs - a searchable file listing from a folder scan (no curation, no YAML).
-# Shape: { key, title, icon, dir, ext: [".pdf"] }. Keep this an explicit [] when empty; a bare
-# "indexes:" parses as null and page.py iterates it directly.
-# The Literature tab was dropped 2026-08-10 with the literature/ PDF library it scanned. The Lit
-# Watch radar below is a DIFFERENT thing (research intel, feeds/literature-radar.yml) and stays.
-indexes: []
-
-
-# Programs registry -> the Programs tab (membership computed from manifests' `program:`). key must match.
-programs_file: registries/programs.yml
-
-# Domains tab (group projects by the `domain:` field -> application area). key matches a domain value.
-domains_file: registries/domains.yml
-
-
-# Dataset registry tab (Data) - provenance + recovery recipe per dataset (registries/data.yml).
-# `used_by:` ids cross-link to project cards; the re-downloader (tools/data/redownload.py) reads the same file.
-datasets_file: registries/data.yml
-
-
-# Venue catalogue tab (Venues, in Collections) - journals + conferences (registries/venues.yml).
-venues_file: registries/venues.yml
-
-
-# Position Leads tab: the scout's YAML, rendered as cards (build.py leads_cards_html). Moved into the
-# hub's feeds/ on 2026-09-10 (it was in the cockpit's own data/ from 2026-08-08, and before that a
-# separate git clone at applications/academic-position-leads/).
-# The search spec the scout reads sits beside the skill: .agents/skills/research-cockpit/position-leads-readme.md.
-leads_file: feeds/position-leads.yml
-
-
-# Lit Watch tab: the literature-scout radar (build.py radar_tab_html). New papers per active/manuscript
-# project, classified pre-emption / cite-baseline / adjacent, plus cross-pollination idea sparks. Entries
-# accumulate (/research-cockpit litwatch dedups by url + appends). Local tab only - no email/cron.
-radar_file: feeds/literature-radar.yml
-
-# Public website publications feed, cross-checked in the Audit tab (missing / leaked / wrong-section / untracked).
-# Separate repo dir - if it is not checked out, the check is skipped silently.
-publications_file: theaxec.github.io/_data/publications.yml
-
-# LinkedIn tab: posts pipeline from the website (_linkedin/: numbered = posted, xx- = ideas).
-linkedin_dir: theaxec.github.io/_linkedin
-
-# Career tab: per-scheme `statement:` fields surface on the Funding tab; the strategy
-# (order of work | hosts | eligibility | dropped) lives in CAREER.yml and surfaces on the Focus "Career strategy" panel.
-career_file: CAREER.yml
-
-
-# Repos to `git pull --ff-only` before each build (keeps embedded clones fresh). Best-effort: a
-# non-repo / offline / diverged path just warns. Paths are relative to the research root.
-# Empty since 2026-08-08: the only entry was the position-leads clone, now folded into data/. Add a
-# path here if a future embedded clone needs refreshing before a build.
-git_sync: []
+map_label_mode: short        # Map tab nodes

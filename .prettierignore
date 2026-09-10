@@ -5,13 +5,15 @@ package-lock.json
 .scratch/
 *.md
 
-# Five of these are copied from the cockpit byte for byte and kept that way; cmp against the source
-# is the check that they match. text.yml is the cockpit's file plus oculus's own groups, written in
-# the cockpit's two-space style. A formatter pass would rewrite the indentation and the comment
-# columns of all six.
+# The configuration is oculus's own: regrouped one concern to a file in O10c, written in the
+# two-space style the cockpit's copies arrived in and kept there so a key still reads beside the
+# comment block that explains it. A formatter pass would rewrite the indentation and the comment
+# columns of all eight. meta.yml is not listed: it is oculus's own from the start and is formatted.
+config/appearance.yml
 config/behavior.yml
 config/glyphs.yml
 config/layout.yml
 config/manifest-schema.yml
+config/sources.yml
 config/text.yml
 config/vocab.yml

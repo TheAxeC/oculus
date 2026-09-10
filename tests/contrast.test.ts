@@ -12,17 +12,18 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { deriveTokens, ratio } from '../src/lib/themes/derive.ts';
 import { parseBlocks, resolveTheme } from '../src/lib/themes/parse.ts';
-import { engineDir, loadConfig, textCatalog } from '../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig } from '../src/lib/data/sources/config.ts';
+import { setAppearance, themeClass, themes } from '../src/lib/state/appearance.ts';
 
 const THEMES_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src', 'lib', 'themes');
 const TOKENS = readFileSync(join(THEMES_DIR, 'tokens.css'), 'utf8');
 const THEMES = readFileSync(join(THEMES_DIR, 'themes.css'), 'utf8');
 
 const blocks = parseBlocks(`${TOKENS}\n${THEMES}`);
-const catalog = textCatalog(loadConfig(engineDir()).config);
+setAppearance(loadConfig(engineDir()).config);
 
 /** The themes the picker offers, each with the class string it puts on the body. */
-const NAMES = catalog['js.theme.order'].split(',');
+const NAMES = themes().map((entry) => entry.name);
 const MINIMUM = 4.5;
 
 /** The three surfaces any text can land on. */
@@ -32,7 +33,7 @@ type Pair = { fg: string; bg: string; ratio: number };
 
 /** Every pair one theme declares: the token names, and the ratio between their two colours. */
 function pairs(name: string): Pair[] {
-    const theme = resolveTheme(blocks, catalog[`js.theme.class_${name}`]);
+    const theme = resolveTheme(blocks, themeClass(name));
     const derived = deriveTokens(theme);
     const all: Record<string, string> = { ...theme, ...derived };
     const found: Pair[] = [];

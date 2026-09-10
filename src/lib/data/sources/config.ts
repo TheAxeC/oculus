@@ -149,7 +149,7 @@ export function flattenText(node: unknown, prefix = ''): Record<string, string> 
 }
 
 /**
- * The flat catalog held in the merged config's `text` key. The catalog is one of the seven config
+ * The flat catalog held in the merged config's `text` key. The catalog is one of the nine config
  * files and is read like the others, so a string can move between files without this knowing.
  * Called per request until O6's watcher keeps an in-memory copy and pushes it, so editing the file
  * and reloading the browser shows the change.
@@ -158,14 +158,26 @@ export function textCatalog(config: Record<string, unknown>): Record<string, str
     return flattenText(config.text ?? {});
 }
 
-/** The keys of the merged config that state/tones.ts reads: the colours and the chip vocabulary. */
-export const VOCAB_KEYS = ['palette', 'status_palette', 'type_color', 'status_legend', 'themes'];
+/**
+ * The keys of the merged config the client state installs before the page renders: the colours and
+ * the chip vocabulary state/tones.ts reads, and the UI theme list state/appearance.ts reads.
+ * `domains` is the research domains of config/vocab.yml; `themes` is the picker's list in
+ * config/appearance.yml, which is a different thing under a name the two files no longer share.
+ */
+export const VOCAB_KEYS = [
+    'palette',
+    'status_palette',
+    'type_color',
+    'status_legend',
+    'domains',
+    'themes'
+];
 
 /**
- * The slice of the merged config the tone lookups need, shipped as the page's data beside the
- * catalog and the glyphs. The whole merged config goes over the `config` channel afterwards and
- * setVocab reads the same five keys out of it, so this is the first load only and carries no more
- * than those keys.
+ * The slice of the merged config the tone lookups and the theme picker need, shipped as the page's
+ * data beside the catalog and the glyphs. The whole merged config goes over the `config` channel
+ * afterwards and setVocab and setAppearance read the same keys out of it, so this is the first load
+ * only and carries no more than those keys.
  */
 export function vocabCatalog(config: Record<string, unknown>): Record<string, unknown> {
     const vocab: Record<string, unknown> = {};

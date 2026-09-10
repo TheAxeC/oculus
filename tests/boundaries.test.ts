@@ -19,8 +19,9 @@ const LAYERS = ['data', 'server', 'state', 'ui', 'shell', 'views', 'themes'];
 //
 // The shell's row names the state modules the workbench is made of, one at a time: `state/drag`
 // joined `state/layout` and `state/ui` with the docking of O10b, since the one drag in progress is
-// state the shell reads and writes and no view has any business in. DESIGN.md's Boundaries table
-// still lists the first three, and the row here is the one this test enforces.
+// state the shell reads and writes and no view has any business in. `state/appearance` joined them
+// with O10c, since the theme picker at the foot of the rail is the shell's own control and the list
+// it offers is config the shell reads and no view does.
 const ALLOWED: Record<string, string[]> = {
     ui: ['ui/**', 'themes/**', 'state/text'],
     shell: [
@@ -30,6 +31,7 @@ const ALLOWED: Record<string, string[]> = {
         'state/drag',
         'state/ui',
         'state/text',
+        'state/appearance',
         'views/registry'
     ],
     views: ['ui/**', 'state/**', 'views/registry'],

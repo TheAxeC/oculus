@@ -21,8 +21,8 @@ export type Themeable = {
 export const CRT_CLASS = 'crt';
 
 /**
- * Put a theme on the document: `classes` is the theme's own body class string, from
- * `js.theme.class_<name>`, and the CRT class joins it when the overlay is on. The tokens the
+ * Put a theme on the document: `classes` is the theme's own body class string, the `class` of its
+ * config/appearance.yml entry, and the CRT class joins it when the overlay is on. The tokens the
  * components paint text with are derived from the theme the two sheets resolve to and set on the
  * root element, since a stylesheet cannot compute them.
  */

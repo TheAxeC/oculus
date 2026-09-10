@@ -10,7 +10,7 @@
 // columns, the order its types sort in and the buckets it rolls up stay in config/layout.yml,
 // config/vocab.yml and config/behavior.yml.
 
-import { chipKeys, chipLabel, themeLabel, themeTone, typeTone } from './tones.ts';
+import { chipKeys, chipLabel, domainLabel, domainTone, typeTone } from './tones.ts';
 import type { Id, Project, Snapshot, Tier, Venue } from '../data/model.ts';
 
 /** The value a facet gives what has none: no year, no funding, no compute, no code deposit. */
@@ -349,7 +349,7 @@ function itemOf(
         domain:
             domainId === undefined
                 ? null
-                : { id: domainId, label: themeLabel(domainId), tone: themeTone(domainId) },
+                : { id: domainId, label: domainLabel(domainId), tone: domainTone(domainId) },
         venue:
             venue === undefined
                 ? null
@@ -436,7 +436,7 @@ function facetLabel(facet: string, value: string, preset: BoardPreset): string {
     if (facet === 'category') {
         return preset.rollup.find((bucket) => bucket.id === value)?.label ?? value;
     }
-    if (facet === 'domain') return themeLabel(value);
+    if (facet === 'domain') return domainLabel(value);
     if (facet === 'status') return chipLabel(value);
     return value;
 }

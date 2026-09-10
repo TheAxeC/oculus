@@ -1,0 +1,85 @@
+# ===========================================================================
+# sources.yml
+# oculus's own configuration - what the portfolio reads: where the projects are, and which registry,
+# collection, document and feed file each surface is built from. Merged with the other config/*.yml
+# by loadConfig(); every key here is a top-level key of the merged map.
+# ===========================================================================
+
+
+# Where to find projects (paths relative to research/). A project is any subfolder that contains a
+# project.yml; its tier/outcome comes from the LOCATION below (mirrored in the manifest). Folder == id.
+scan:
+  - { dir: projects/ideas,       type: idea,       tier: projects }
+  - { dir: projects/active,      type: active,     tier: projects }
+  - { dir: projects/manuscripts, type: manuscript, tier: projects }
+  - { dir: projects/coauthor,    nested: true, tier: coauthor }   # nested; type (the outcome) read from each manifest
+  - { dir: projects/archive,     nested: true, tier: archive }    # nested; type (the outcome) read from each manifest
+
+
+# Venue catalogue tab (Venues, in Collections) - journals + conferences (registries/venues.yml).
+venues_file: registries/venues.yml
+
+
+# Dataset registry tab (Data) - provenance + recovery recipe per dataset (registries/data.yml).
+# `used_by:` ids cross-link to project cards; the re-downloader (tools/data/redownload.py) reads the same file.
+datasets_file: registries/data.yml
+
+
+# Programs registry -> the Programs tab (membership computed from manifests' `program:`). key must match.
+programs_file: registries/programs.yml
+
+# Domains tab (group projects by the `domain:` field -> application area). key matches a domain value.
+domains_file: registries/domains.yml
+
+
+# Collection tabs - a generic card list from one YAML (entries: title/sub/status/date/meta/tags/related/link/url/note).
+# Schema: README.md. Files are editable in served mode. `related:` ids cross-link to project cards.
+collections:
+  - { key: statements,     title: "Statements",         icon: "§", file: "registries/boilerplate.yml" }
+  - { key: funding,        title: "Funding",            icon: "◈", file: "funding/funding.yml" }
+  - { key: events,         title: "Talks & Events",     icon: "🗓", file: "network/events.yml" }
+  - { key: education,      title: "Education & Service", icon: "🏫", file: "education/education.yml" }
+  - { key: applications,   title: "Applications",       icon: "▤", file: "applications/applications.yml" }
+  - { key: collaborations, title: "Collaborations",     icon: "🤝", file: "network/collaborations.yml" }
+  - { key: tasks,          title: "Tasks & Service",    icon: "🧷", file: "tasks/tasks.yml" }
+  - { key: code,           title: "Code",               icon: "💻", file: "registries/repos.yml" }
+
+
+# Full-markdown tabs (each may concatenate several files; missing files flagged).
+docs:
+  - { key: inbox,     title: "📨 Inbox",  after_map: true, paths: ["feeds/inbox.yml"] }   # private email; tracked since 2026-08-10, never leaves this repo
+  - { key: hpc,       title: "HPC - UTwente",   paths: ["HPC-UTwente-howto.md"] }
+  - { key: approach,  title: "🧭 Research Approach", paths: ["RESEARCH-APPROACH.md"] }   # how I do research + how it differs (private strategy prose)
+  - { key: agents,    title: "🧰 Agent Approach",    paths: ["AGENT-APPROACH.md"] }       # how I work with agents: modes, context budget, enforcement (private)
+
+
+# Auto-index tabs - a searchable file listing from a folder scan (no curation, no YAML).
+# Shape: { key, title, icon, dir, ext: [".pdf"] }. Keep this an explicit [] when empty; a bare
+# "indexes:" parses as null and page.py iterates it directly.
+# The Literature tab was dropped 2026-08-10 with the literature/ PDF library it scanned. The Lit
+# Watch radar below is a DIFFERENT thing (research intel, feeds/literature-radar.yml) and stays.
+indexes: []
+
+
+# Position Leads tab: the scout's YAML, rendered as cards (build.py leads_cards_html). Moved into the
+# hub's feeds/ on 2026-09-10 (it was in the cockpit's own data/ from 2026-08-08, and before that a
+# separate git clone at applications/academic-position-leads/).
+# The search spec the scout reads sits beside the skill: .agents/skills/research-cockpit/position-leads-readme.md.
+leads_file: feeds/position-leads.yml
+
+
+# Lit Watch tab: the literature-scout radar (build.py radar_tab_html). New papers per active/manuscript
+# project, classified pre-emption / cite-baseline / adjacent, plus cross-pollination idea sparks. Entries
+# accumulate (/research-cockpit litwatch dedups by url + appends). Local tab only - no email/cron.
+radar_file: feeds/literature-radar.yml
+
+# Public website publications feed, cross-checked in the Audit tab (missing / leaked / wrong-section / untracked).
+# Separate repo dir - if it is not checked out, the check is skipped silently.
+publications_file: theaxec.github.io/_data/publications.yml
+
+# LinkedIn tab: posts pipeline from the website (_linkedin/: numbered = posted, xx- = ideas).
+linkedin_dir: theaxec.github.io/_linkedin
+
+# Career tab: per-scheme `statement:` fields surface on the Funding tab; the strategy
+# (order of work | hosts | eligibility | dropped) lives in CAREER.yml and surfaces on the Focus "Career strategy" panel.
+career_file: CAREER.yml

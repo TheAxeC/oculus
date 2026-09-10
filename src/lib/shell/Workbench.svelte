@@ -25,7 +25,8 @@
     import { dragging } from '$lib/state/drag.svelte';
     import { crt, theme } from '$lib/state/ui.svelte';
     import { PANEL_DEFAULT, paneAt, resize, type Layout } from '$lib/state/layout';
-    import { t, themeClass } from '$lib/state/text';
+    import { t } from '$lib/state/text';
+    import { themeClass } from '$lib/state/appearance';
 
     type Props = {
         /** The `nav_groups`-shaped list from the merged config, for the rail. */
