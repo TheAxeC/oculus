@@ -8,7 +8,7 @@
 // component. A $derived created inside a function would be a second derived per call and would say
 // nothing more.
 
-import { boardItems, presetFor } from './board.ts';
+import { BOARDS, boardItems, presetFor } from './board.ts';
 import { config, git, portfolio, sessions } from './entities.svelte.ts';
 import { choicesFor, formFields, formSections } from './schema.ts';
 import { pinnedSession, selected } from './selection.svelte.ts';
@@ -47,6 +47,23 @@ export function boardPreset(view: string): BoardPreset {
 export function board(preset: BoardPreset): BoardItem[] {
     const snapshot = portfolio();
     return snapshot === null ? [] : boardItems(snapshot, preset);
+}
+
+/**
+ * One project as a board card shows it, whichever board holds its tier. The project view draws the
+ * same card as the board does and has no board of its own, so the preset is found by the project's
+ * tier rather than by a view id; a tier no board claims falls back to the first board, exactly as
+ * presetFor does with a view id it does not know.
+ */
+export function boardItemOf(id: Id): BoardItem | null {
+    const snapshot = portfolio();
+    if (snapshot === null) return null;
+    const project = snapshot.entities.projects[id];
+    if (project === undefined) return null;
+    const merged = configMap();
+    const view = BOARDS.find((name) => presetFor(name, merged).tiers.includes(project.tier));
+    const preset = presetFor(view ?? BOARDS[0], merged);
+    return boardItems(snapshot, preset).find((item) => item.id === id) ?? null;
 }
 
 /** One project of the snapshot, or null before the first one arrives and for an id it does not hold. */

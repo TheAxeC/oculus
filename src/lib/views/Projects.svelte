@@ -274,7 +274,12 @@
     {@const due = deadline(item)}
     {@const short = label(item) !== item.project.title}
     <div class="slot" title={short ? item.project.title : undefined}>
-        <Card title={label(item)} tone={item.tone} pinned={item.project.pin === true}>
+        <Card
+            title={label(item)}
+            tone={item.tone}
+            pinned={item.project.pin === true}
+            ontitle={() => openView('project', 'main', { id: item.id })}
+        >
             {#snippet meta()}
                 {#if item.project.type}
                     <Chip label={item.project.type} tone={item.tone} filled />

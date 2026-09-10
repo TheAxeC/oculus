@@ -10,6 +10,7 @@
 import Editor from '$lib/views/Editor.svelte';
 import Findings from '$lib/views/Findings.svelte';
 import Gallery from '$lib/views/Gallery.svelte';
+import Project from '$lib/views/Project.svelte';
 import Projects from '$lib/views/Projects.svelte';
 import Status from '$lib/views/Status.svelte';
 import Agents from '$lib/views/sessions/Agents.svelte';
@@ -62,6 +63,16 @@ registerView({
     label: 'views.coauthor',
     glyph: 'views.coauthor_glyph',
     component: Projects
+});
+
+// One project as its own tab, opened by the title of a card. It is registered once and opened once
+// per project: the id in an instance's state is what tells two of them apart, so a second click on
+// the same card activates the tab it already has.
+registerView({
+    id: 'project',
+    label: 'views.project',
+    glyph: 'views.project_glyph',
+    component: Project
 });
 
 // The manifest edit form. It is opened for one project, by the edit control of a card, which is what

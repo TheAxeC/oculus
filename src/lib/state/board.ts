@@ -103,6 +103,9 @@ const TIERS: Record<string, Tier[]> = {
     coauthor: ['coauthor']
 };
 
+/** The board view ids, in the order presetFor knows them. A project sits on exactly one of them. */
+export const BOARDS = Object.keys(TIERS);
+
 /** Which `board:` column list a board takes its headings from. */
 const COLUMN_KEY: Record<string, string> = {
     projects: 'cols_project',

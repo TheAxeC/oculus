@@ -877,6 +877,10 @@ text:
     archive_glyph: "archived"
     coauthor: "Coauthor"
     coauthor_glyph: "author"
+    # One project as its own tab, opened from the title of a card. Registered once, opened once per
+    # project: two projects are two instances of this one view.
+    project: "Project"
+    project_glyph: "folder"
     editor: "Editor"
     editor_glyph: "edit"
 
@@ -906,6 +910,17 @@ text:
     empty: "Empty state"
     empty_message: "Nothing matches the filter."
     empty_glyph: "circle_empty"
+
+  project:                     # oculus: one project as its own tab - its card, its documents, its sessions.
+    documents: "Documents"
+    sessions: "Sessions"
+    no_documents: "This project has none of the four Markdown documents."
+    no_sessions: "No session has worked in this folder."
+    none: "No project chosen. Open a project from the title of its card."
+    none_glyph: "folder"
+    unknown: "The snapshot holds no project with the id {0}."
+    doc_loading: "loading the document ..."
+    doc_failed: "the document was not read: {0}"
 
   editor:                      # the project.yml edit form: the words round the widgets manifest-schema.yml describes.
     title: "Manifest"

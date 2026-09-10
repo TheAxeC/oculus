@@ -263,11 +263,16 @@ describe('a card', () => {
         expect(submitted).not.toContain('overdue');
     });
 
+    // The title is a button since O14b: it opens the project as its own tab.
     it('shows the short handle in short mode and the full title in full mode', () => {
-        expect(html('projects', { labels: 'short' })).toContain('>Alpha<!----></h3>');
-        expect(html('projects', { labels: 'full' })).toContain(
-            '>Alpha, the whole title<!----></h3>'
+        expect(html('projects', { labels: 'short' })).toMatch(/class="open[^"]*">Alpha</);
+        expect(html('projects', { labels: 'full' })).toMatch(
+            /class="open[^"]*">Alpha, the whole title</
         );
+    });
+
+    it('draws the title as the control that opens the project as its own tab', () => {
+        expect([...html('projects').matchAll(/class="open svelte-/g)]).toHaveLength(2);
     });
 
     it('keeps the full title as the tooltip when the head shows the short handle', () => {

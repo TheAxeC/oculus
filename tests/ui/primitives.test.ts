@@ -9,6 +9,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
+import { createRawSnippet } from 'svelte';
 import type { Component } from 'svelte';
 import Card from '../../src/lib/ui/Card.svelte';
 import Chip from '../../src/lib/ui/Chip.svelte';
@@ -20,6 +21,7 @@ import Segment from '../../src/lib/ui/Segment.svelte';
 import Table, { order, type Column } from '../../src/lib/ui/Table.svelte';
 import Toolbar from '../../src/lib/ui/Toolbar.svelte';
 import ToolButton from '../../src/lib/ui/ToolButton.svelte';
+import Tooltip from '../../src/lib/ui/Tooltip.svelte';
 import Gallery from '../../src/lib/views/Gallery.svelte';
 import {
     engineDir,
@@ -228,9 +230,19 @@ describe('Pane, Empty, Toolbar, ToolButton, Segment and Search', () => {
             onclick: () => {}
         });
         expect(body).toContain('Reset');
-        expect(body).toContain('title="Put it back"');
+        // The words are the tooltip's, not the browser's `title`, which waits about a second and
+        // never appears for a control reached by keyboard.
+        expect(body).not.toContain('title="Put it back"');
+        expect(body).toContain('role="tooltip"');
+        expect(body).toContain('Put it back');
         expect(body).toContain('active');
         expect(body).not.toContain('role="radio"');
+    });
+
+    it('draws no tooltip for a tool button that was given no words', () => {
+        const body = html(ToolButton, { label: 'Reset', onclick: () => {} });
+        expect(body).not.toContain('role="tooltip"');
+        expect(body).not.toContain('aria-describedby');
     });
 
     it('is a radio only inside an exclusive group', () => {
@@ -255,6 +267,42 @@ describe('Pane, Empty, Toolbar, ToolButton, Segment and Search', () => {
         expect(body).toContain('type="search"');
         expect(body).toContain('aria-label="Filter"');
         expect(body).toContain('value="bt"');
+    });
+});
+
+describe('Tooltip', () => {
+    /** The control a tooltip wraps. Every use of it wraps exactly one. */
+    const control = createRawSnippet(() => ({ render: () => '<button type="button">Go</button>' }));
+
+    /** A wrapper round one button, which is every way it is used. */
+    function tip(props: Record<string, unknown>): string {
+        return render(Tooltip, { props: { text: 'Put it back', children: control, ...props } })
+            .body;
+    }
+
+    it('links its bubble to the control it wraps, and draws it hidden', () => {
+        const body = tip({});
+        const described = /aria-describedby="(tip-\d+)"/.exec(body);
+        expect(described).not.toBe(null);
+        const id = described === null ? '' : described[1];
+        expect(body).toContain(`id="${id}"`);
+        expect(body).toContain('role="tooltip"');
+        expect(body).toContain('hidden');
+        expect(body).toContain('Put it back');
+    });
+
+    it('describes nothing when it was given no words', () => {
+        const body = tip({ text: '' });
+        expect(body).not.toContain('aria-describedby');
+        expect(body).not.toContain('role="tooltip"');
+        expect(body).toContain('<button');
+    });
+
+    it('is presentational where the control it wraps is owned by its parent', () => {
+        const body = tip({ presentational: true });
+        expect(body).toContain('role="presentation"');
+        expect(body).not.toContain('aria-describedby');
+        expect(body).toContain('role="tooltip"');
     });
 });
 

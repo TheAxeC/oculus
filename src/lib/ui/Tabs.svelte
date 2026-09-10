@@ -34,6 +34,7 @@
 
     import type { Snippet } from 'svelte';
     import Glyph from './Glyph.svelte';
+    import Tooltip from './Tooltip.svelte';
     import { t } from '$lib/state/text';
 
     type Props = {
@@ -105,28 +106,31 @@
                 role="presentation"
                 bind:this={faces[index]}
             >
-                <button
-                    type="button"
-                    class="face"
-                    role="tab"
-                    aria-selected={tab.id === active}
-                    onclick={() => onselect(tab.id)}
-                    onpointerdown={(event) => down(tab.id, event)}
-                >
-                    {#if tab.glyph !== undefined}
-                        <Glyph name={tab.glyph} />
-                    {/if}
-                    <span class="label">{tab.label}</span>
-                </button>
-                <button
-                    type="button"
-                    class="close"
-                    title={t('ui.close_tab')}
-                    aria-label={t('ui.close_tab')}
-                    onclick={() => onclose(tab.id)}
-                >
-                    <Glyph name={t('ui.close_glyph')} />
-                </button>
+                <Tooltip text={tab.label} presentational>
+                    <button
+                        type="button"
+                        class="face"
+                        role="tab"
+                        aria-selected={tab.id === active}
+                        onclick={() => onselect(tab.id)}
+                        onpointerdown={(event) => down(tab.id, event)}
+                    >
+                        {#if tab.glyph !== undefined}
+                            <Glyph name={tab.glyph} />
+                        {/if}
+                        <span class="label">{tab.label}</span>
+                    </button>
+                </Tooltip>
+                <Tooltip text={t('ui.close_tab')} presentational>
+                    <button
+                        type="button"
+                        class="close"
+                        aria-label={t('ui.close_tab')}
+                        onclick={() => onclose(tab.id)}
+                    >
+                        <Glyph name={t('ui.close_glyph')} />
+                    </button>
+                </Tooltip>
             </div>
         {/each}
         {#if dropIndex !== null && dropIndex >= tabs.length}

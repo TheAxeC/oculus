@@ -147,10 +147,30 @@ export function activePath(layout: Layout, id: string | null): number[] {
     return panes(layout)[0]?.path ?? [];
 }
 
-/** The instance of this view in the tree, or null when the tree holds none. */
-export function findView(layout: Layout, view: ViewId): Instance | null {
+/**
+ * The `id` an instance state carries, or null for a state that carries none. It is what makes two
+ * projects two instances of one view: the project view is registered once, so the view id alone no
+ * longer says which tab is which, and the id in the state does.
+ */
+export function stateId(state: unknown): string | null {
+    if (typeof state !== 'object' || state === null || Array.isArray(state)) return null;
+    const held = (state as Record<string, unknown>).id;
+    return typeof held === 'string' && held !== '' ? held : null;
+}
+
+/** Whether a tab is the instance being looked for: its view, and its state id when one is wanted. */
+export function isInstanceOf(tab: Instance, view: ViewId, id: string | null = null): boolean {
+    if (tab.view !== view) return false;
+    return id === null || stateId(tab.state) === id;
+}
+
+/**
+ * The instance of this view in the tree, or null when the tree holds none. Given a state id, only an
+ * instance opened for that id counts, so a second project opens a second tab.
+ */
+export function findView(layout: Layout, view: ViewId, id: string | null = null): Instance | null {
     for (const { pane } of panes(layout)) {
-        const found = pane.tabs.find((tab) => tab.view === view);
+        const found = pane.tabs.find((tab) => isInstanceOf(tab, view, id));
         if (found !== undefined) return found;
     }
     return null;

@@ -17,6 +17,7 @@ import {
     defaultWorkbench,
     findView,
     focusedPane,
+    isInstanceOf,
     maximise,
     newInstance,
     openInstance,
@@ -28,6 +29,7 @@ import {
     serialiseLayout,
     settleFocus,
     splitWith,
+    stateId,
     transfer,
     type Dock,
     type Edge,
@@ -273,8 +275,10 @@ export function focused(): Focus | null {
  * pane. The panel is shown when a view is opened into it and it was hidden, since opening a view
  * into something invisible would look like nothing happening.
  *
- * `state` is what the opener has to say to the view: the project a card wants edited. Given one, an
- * instance that is already open is retargeted rather than left showing what it was showing.
+ * `state` is what the opener has to say to the view: the project a card wants opened or edited. A
+ * state carrying an `id` names which instance is wanted, so opening one project twice activates the
+ * tab it is already in and opening a second project opens a second tab; a state carrying no `id`
+ * retargets whatever instance of the view is open, as it did before.
  */
 export function openView(view: ViewId, where: Target, state?: unknown): void {
     // A maximised pane hides everything else, so a view opened into the other tree would land out
@@ -285,7 +289,8 @@ export function openView(view: ViewId, where: Target, state?: unknown): void {
     const tree = layout(where);
     const into = focus !== null && focus.target === where ? focus.path : null;
     const inside = into === null ? null : paneAt(tree, into);
-    const existing = inside === null ? findView(tree, view) : findIn(inside, view);
+    const wanted = stateId(state);
+    const existing = inside === null ? findView(tree, view, wanted) : findIn(inside, view, wanted);
     if (existing !== null) {
         if (state !== undefined) change(where, (current) => restate(current, existing.id, state));
         activateInstance(where, existing.id);
@@ -302,8 +307,9 @@ export function openView(view: ViewId, where: Target, state?: unknown): void {
 /**
  * The instance of a view in one pane, or null when it holds none. While a pane is maximised it is
  * the only pane a view can be opened into, so it is the only one an already-open instance may be
- * found in: activating a tab of a pane nobody can see would look like nothing happening.
+ * found in: activating a tab of a pane nobody can see would look like nothing happening. A state id
+ * narrows it the same way findView does.
  */
-function findIn(pane: Pane, view: ViewId): Instance | null {
-    return pane.tabs.find((tab) => tab.view === view) ?? null;
+function findIn(pane: Pane, view: ViewId, id: string | null = null): Instance | null {
+    return pane.tabs.find((tab) => isInstanceOf(tab, view, id)) ?? null;
 }

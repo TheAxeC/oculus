@@ -34,6 +34,7 @@
 
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu from '$lib/ui/Menu.svelte';
+    import Tooltip from '$lib/ui/Tooltip.svelte';
     import {
         applyArrangement,
         arranged,
@@ -124,16 +125,17 @@
                 <p class="group">{section.label}</p>
             {/if}
             {#each section.items as view (view.id)}
-                <button
-                    type="button"
-                    class="view"
-                    data-view={view.id}
-                    title={lookup(view.label)}
-                    aria-label={lookup(view.label)}
-                    onclick={(event) => openView(view.id, event.shiftKey ? 'panel' : 'main')}
-                >
-                    <Glyph name={lookup(view.glyph)} />
-                </button>
+                <Tooltip text={lookup(view.label)} placement="beside">
+                    <button
+                        type="button"
+                        class="view"
+                        data-view={view.id}
+                        aria-label={lookup(view.label)}
+                        onclick={(event) => openView(view.id, event.shiftKey ? 'panel' : 'main')}
+                    >
+                        <Glyph name={lookup(view.glyph)} />
+                    </button>
+                </Tooltip>
             {/each}
         {/each}
     </div>
@@ -146,35 +148,38 @@
             items={themes}
             onpick={(name) => setTheme(name)}
         />
-        <button
-            type="button"
-            class="toggle"
-            title={t('ui.crt')}
-            aria-pressed={crt()}
-            onclick={() => setCrt(!crt())}
-        >
-            {t('ui.crt_on')}
-        </button>
-        {#if offersWallpaper}
+        <Tooltip text={t('ui.crt')} placement="beside">
             <button
                 type="button"
                 class="toggle"
-                title={t('ui.wallpaper_title')}
-                aria-pressed={wallpaper()}
-                onclick={() => setWallpaper(!wallpaper())}
+                aria-pressed={crt()}
+                onclick={() => setCrt(!crt())}
             >
-                {t('ui.wallpaper')}
+                {t('ui.crt_on')}
             </button>
+        </Tooltip>
+        {#if offersWallpaper}
+            <Tooltip text={t('ui.wallpaper_title')} placement="beside">
+                <button
+                    type="button"
+                    class="toggle"
+                    aria-pressed={wallpaper()}
+                    onclick={() => setWallpaper(!wallpaper())}
+                >
+                    {t('ui.wallpaper')}
+                </button>
+            </Tooltip>
         {/if}
-        <button
-            type="button"
-            class="toggle"
-            title={t('ui.unicode_title')}
-            aria-pressed={unicode()}
-            onclick={() => setUnicode(!unicode())}
-        >
-            {t('ui.unicode')}
-        </button>
+        <Tooltip text={t('ui.unicode_title')} placement="beside">
+            <button
+                type="button"
+                class="toggle"
+                aria-pressed={unicode()}
+                onclick={() => setUnicode(!unicode())}
+            >
+                {t('ui.unicode')}
+            </button>
+        </Tooltip>
         <Menu
             label={dockLabel}
             glyph={lookup('ui.dock_glyph')}

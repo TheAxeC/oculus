@@ -744,6 +744,39 @@ describe('the store', () => {
         expect(after.kind === 'pane' ? after.active : '').toBe(held);
     });
 
+    // One view, one instance per project: the project view is registered once, so the state's `id`
+    // is what tells two of its tabs apart.
+    it('activates the instance opened for the same state rather than opening a second', () => {
+        loadLayout(fakeStorage());
+        openView('project', 'main', { id: 'alpha' });
+        const opened = layout('main');
+        const held = opened.kind === 'pane' ? opened.active : '';
+        openView('project', 'main', { id: 'alpha' });
+        const after = layout('main');
+        expect(viewsOf(after)).toEqual(['status', 'project']);
+        expect(after.kind === 'pane' ? after.active : '').toBe(held);
+    });
+
+    it('opens a second instance of one view for a second state', () => {
+        loadLayout(fakeStorage());
+        openView('project', 'main', { id: 'alpha' });
+        openView('project', 'main', { id: 'bravo' });
+        const after = layout('main');
+        expect(viewsOf(after)).toEqual(['status', 'project', 'project']);
+        const states = after.kind === 'pane' ? after.tabs.map((tab) => tab.state) : [];
+        expect(states).toEqual([{}, { id: 'alpha' }, { id: 'bravo' }]);
+    });
+
+    it('still retargets the one instance when the state names no id', () => {
+        loadLayout(fakeStorage());
+        openView('editor', 'main', { field: 'title' });
+        openView('editor', 'main', { field: 'venue' });
+        const after = layout('main');
+        expect(viewsOf(after)).toEqual(['status', 'editor']);
+        const states = after.kind === 'pane' ? after.tabs.map((tab) => tab.state) : [];
+        expect(states).toEqual([{}, { field: 'venue' }]);
+    });
+
     it('opens a view the tree does not hold in the pane last activated', () => {
         const two = split('row', [0.5, 0.5], [pane(['a']), pane(['b'])]);
         loadLayout(fakeStorage(serialiseLayout(bench(two, pane(['p'])))));

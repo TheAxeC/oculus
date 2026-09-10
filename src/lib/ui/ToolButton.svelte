@@ -7,6 +7,7 @@
     // Segment.svelte needs and a lone button does not.
 
     import Glyph from './Glyph.svelte';
+    import Tooltip from './Tooltip.svelte';
 
     type Props = {
         /** The button's words, already translated by the view. */
@@ -16,7 +17,7 @@
         /** Draw it as the one in force. */
         active?: boolean;
         onclick: () => void;
-        /** The tooltip, when it should say more than the label does. */
+        /** The tooltip, when it should say more than the label does. A button with none shows none. */
         title?: string;
         /** One of an exclusive group: the button becomes a radio and reports this as its state. */
         checked?: boolean;
@@ -25,20 +26,23 @@
     let { label, glyph, active = false, onclick, title, checked }: Props = $props();
 </script>
 
-<button
-    type="button"
-    class="tool"
-    class:active
-    role={checked === undefined ? undefined : 'radio'}
-    aria-checked={checked}
-    {title}
-    {onclick}
->
-    {#if glyph !== undefined}
-        <Glyph name={glyph} />
-    {/if}
-    <span class="label">{label}</span>
-</button>
+<!-- A button of an exclusive group is a radio its group owns, and a radiogroup owns radios: a
+     wrapper with semantics of its own between them would leave the group with no radios in it. -->
+<Tooltip text={title ?? ''} presentational={checked !== undefined}>
+    <button
+        type="button"
+        class="tool"
+        class:active
+        role={checked === undefined ? undefined : 'radio'}
+        aria-checked={checked}
+        {onclick}
+    >
+        {#if glyph !== undefined}
+            <Glyph name={glyph} />
+        {/if}
+        <span class="label">{label}</span>
+    </button>
+</Tooltip>
 
 <style>
     .tool {

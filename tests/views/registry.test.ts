@@ -80,6 +80,7 @@ describe('the real registrations', () => {
             'projects',
             'archive',
             'coauthor',
+            'project',
             'editor',
             'session-list',
             'session-detail',

@@ -13,6 +13,7 @@
     // several menus adds one listener at a time and none when they are all closed.
 
     import Glyph from './Glyph.svelte';
+    import Tooltip from './Tooltip.svelte';
 
     type Props = {
         /** The button's own words. */
@@ -99,27 +100,31 @@
 </script>
 
 <div class="menu" bind:this={box}>
-    <button
-        type="button"
-        class="opener"
-        class:compact
-        bind:this={button}
-        aria-haspopup="menu"
-        aria-expanded={open}
-        aria-label={label}
-        title={label}
-        onclick={toggle}
-    >
-        {#if glyph !== undefined}
-            <Glyph name={glyph} />
-        {/if}
-        {#if !compact}
-            <span class="label">{label}</span>
-        {/if}
-    </button>
+    <!-- A compact menu is an icon in a narrow column, so its words go beside it; a menu that shows
+         its label has room underneath. -->
+    <Tooltip text={label} placement={compact ? 'beside' : 'below'} presentational>
+        <button
+            type="button"
+            class="opener"
+            class:compact
+            bind:this={button}
+            aria-haspopup="menu"
+            aria-expanded={open}
+            aria-label={label}
+            onclick={toggle}
+        >
+            {#if glyph !== undefined}
+                <Glyph name={glyph} />
+            {/if}
+            {#if !compact}
+                <span class="label">{label}</span>
+            {/if}
+        </button>
+    </Tooltip>
     {#if open}
         <div
             class="list"
+            class:compact
             class:down={placement === 'down'}
             class:right={align === 'right'}
             role="menu"
@@ -217,8 +222,10 @@
        above the top of a short window and its first entries could not be reached. Under a
        wallpaper the rail's backdrop filter makes the rail the containing block instead of the
        viewport; the rail spans the window's height from its left edge, so the two agree. A compact
-       menu that opens downward (a pane's menu) keeps its placement. */
-    .opener.compact + .list:not(.down) {
+       menu that opens downward (a pane's menu) keeps its placement. The list carries `compact`
+       itself: the tooltip wrapper sits between the opener and the list, so a sibling selector on
+       the opener would no longer reach it. */
+    .list.compact:not(.down) {
         position: fixed;
         left: calc(var(--rail-width) + 4px);
         right: auto;

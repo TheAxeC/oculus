@@ -17,6 +17,11 @@
         pinned?: boolean;
         /** The heading level, so a card inside a section is not always an h3. */
         level?: number;
+        /**
+         * What a click on the title does. Given one, the title's words become a button inside the
+         * heading; a card with none draws the words as text, which is what every other card does.
+         */
+        ontitle?: () => void;
         /** The row under the title, where chips go. */
         meta?: Snippet;
         /** The body. */
@@ -25,7 +30,16 @@
         footer?: Snippet;
     };
 
-    let { title, tone, pinned = false, level = 3, meta, children, footer }: Props = $props();
+    let {
+        title,
+        tone,
+        pinned = false,
+        level = 3,
+        ontitle,
+        meta,
+        children,
+        footer
+    }: Props = $props();
 
     const heading = $derived(`h${Math.min(6, Math.max(1, Math.trunc(level)))}`);
     const style = $derived(tone === undefined ? undefined : `--tone: var(--c-${tone})`);
@@ -36,7 +50,13 @@
         <span class="bar"></span>
     {/if}
     <div class="face">
-        <svelte:element this={heading} class="title">{title}</svelte:element>
+        <svelte:element this={heading} class="title">
+            {#if ontitle === undefined}
+                {title}
+            {:else}
+                <button type="button" class="open" onclick={ontitle}>{title}</button>
+            {/if}
+        </svelte:element>
         {#if meta}
             <div class="meta">{@render meta()}</div>
         {/if}
@@ -82,6 +102,29 @@
         font-size: var(--fs-lg);
         font-weight: 700;
         color: var(--ink-txt, var(--ink));
+    }
+
+    /* The title as a control: the heading's own words, underlined only under the pointer, so the
+       card still reads as a card rather than as a link. */
+    .open {
+        display: inline;
+        margin: 0;
+        padding: 0;
+        border: none;
+        background: none;
+        color: inherit;
+        font: inherit;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .open:hover {
+        text-decoration: underline;
+    }
+
+    .open:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 2px;
     }
 
     .meta {
