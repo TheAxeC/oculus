@@ -361,3 +361,28 @@ export type Snapshot = {
     relations: Relations;
     findings: Finding[];
 };
+
+/**
+ * One message on the socket (DESIGN.md, "The socket"). The types of the wire live here with the
+ * snapshot because both halves of layer 2 need them and the boundary table lets `state/` import
+ * `data/model` and nothing else of `data/`.
+ */
+export type Message = {
+    channel: string;
+    /** The channel's version, 1 on the first publish and one higher on each later one. */
+    version: number;
+    payload: unknown;
+};
+
+/** The one message a client sends: the channels it wants. */
+export type Subscription = {
+    type: 'subscribe';
+    channels: string[];
+};
+
+/** The payload of the `config` channel: the merged map, the flat catalog, and what was wrong. */
+export type ConfigPayload = {
+    config: Record<string, unknown>;
+    text: Record<string, string>;
+    findings: Finding[];
+};

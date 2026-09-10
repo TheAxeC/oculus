@@ -812,3 +812,16 @@ text:
 
   app:                         # oculus's own group: the strings the cockpit has no place for, the document title among them.
     title: "oculus"
+    socket: "Socket: {0}"
+    socket_connecting: "connecting"
+    socket_open: "open"
+    socket_closed: "closed"
+    version: "Snapshot version {0}"
+    waiting: "Waiting for the first snapshot"
+    projects: "Projects: {0}"
+    venues: "Venues: {0}"
+    datasets: "Datasets: {0}"
+    programs: "Pillars: {0}"
+    domains: "Domains: {0}"
+    funding: "Funding schemes: {0}"
+    collections: "Collections: {0}"
