@@ -1,0 +1,621 @@
+/* The themes, ported from the cockpit's assets/css/08-themes.css and 01-base.css, values unchanged.
+   A theme is a block of token overrides and nothing else, so no component knows a theme exists. The
+   body carries one palette class; the thirteen terminal palettes additionally carry `rice`, which
+   holds the shape they share (square corners, no shadow, monospace chrome, one step down the type
+   scale). `crt` is an independent overlay that goes on any of them.
+   The theme names and the class string each one puts on the body are text.theme.class_<name> in
+   config/text.yml; light is :root alone and carries no class. */
+
+body.dark {
+    --bg: #0b1120;
+    --panel: #121a2b;
+    --ink: #e7ecf3;
+    --muted: #94a3b8;
+    --line: #243049;
+    --chip: #1b2638;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+    --c-red-bg: #3b1212;
+    --c-red-s: #7f1d1d;
+    --c-amber-bg: #3b2f0b;
+    --c-amber-s: #5c4a14;
+}
+
+/* --- Catppuccin Mocha ---------------------------------------------------- */
+body.mocha {
+    --bg: #181825;
+    --panel: #1e1e2e;
+    --ink: #cdd6f4;
+    --muted: #7f849c;
+    --line: #313244;
+    --chip: #292c3c;
+    --shadow: none;
+    --accent: #f5a97f;
+    --c-red: #f38ba8;
+    --c-red-d: #eba0ac;
+    --c-red-s: #4b2b38;
+    --c-red-bg: #33222c;
+    --c-red-t: #f5c2d0;
+    --c-amber: #fab387;
+    --c-amber-s: #4a3a26;
+    --c-amber-bg: #332a1f;
+    --c-gold: #f9e2af;
+    --c-orange: #fab387;
+    --c-green: #a6e3a1;
+    --c-green-d: #94d68f;
+    --c-lime: #c6e79a;
+    --c-teal: #94e2d5;
+    --c-cyan: #89dceb;
+    --c-sky: #89dceb;
+    --c-blue: #89b4fa;
+    --c-indigo: #b4befe;
+    --c-violet: #cba6f7;
+    --c-purple: #cba6f7;
+    --c-magenta: #dd9ce8;
+    --c-pink: #f5c2e7;
+    --c-mauve: #e5a3c6;
+    --c-on: #181825;
+}
+
+/* --- Gruvbox dark -------------------------------------------------------- */
+body.gruvbox {
+    --bg: #1d2021;
+    --panel: #282828;
+    --ink: #ebdbb2;
+    --muted: #928374;
+    --line: #3c3836;
+    --chip: #32302f;
+    --shadow: none;
+    --accent: #fe8019;
+    --c-red: #fb4934;
+    --c-red-d: #cc241d;
+    --c-red-s: #5a201a;
+    --c-red-bg: #3c1f1c;
+    --c-red-t: #fb7c6c;
+    --c-amber: #fabd2f;
+    --c-amber-s: #4d3b16;
+    --c-amber-bg: #37301a;
+    --c-gold: #d79921;
+    --c-orange: #fe8019;
+    --c-green: #b8bb26;
+    --c-green-d: #98971a;
+    --c-lime: #b8bb26;
+    --c-teal: #8ec07c;
+    --c-cyan: #83a598;
+    --c-sky: #83a598;
+    --c-blue: #458588;
+    --c-indigo: #83a598;
+    --c-violet: #d3869b;
+    --c-purple: #b16286;
+    --c-magenta: #d3869b;
+    --c-pink: #d3869b;
+    --c-mauve: #d3869b;
+    --c-on: #1d2021;
+}
+
+/* --- Nord ---------------------------------------------------------------- */
+body.nord {
+    --bg: #2e3440;
+    --panel: #3b4252;
+    --ink: #eceff4;
+    --muted: #8b96aa;
+    --line: #434c5e;
+    --chip: #434c5e;
+    --shadow: none;
+    --accent: #88c0d0;
+    --c-red: #bf616a;
+    --c-red-d: #a5545c;
+    --c-red-s: #4a2f34;
+    --c-red-bg: #3d2b30;
+    --c-red-t: #d08a92;
+    --c-amber: #ebcb8b;
+    --c-amber-s: #4b432c;
+    --c-amber-bg: #3b3728;
+    --c-gold: #d0b06a;
+    --c-orange: #d08770;
+    --c-green: #a3be8c;
+    --c-green-d: #8ba876;
+    --c-lime: #b5cc9c;
+    --c-teal: #8fbcbb;
+    --c-cyan: #88c0d0;
+    --c-sky: #88c0d0;
+    --c-blue: #5e81ac;
+    --c-indigo: #81a1c1;
+    --c-violet: #b48ead;
+    --c-purple: #a37b9c;
+    --c-magenta: #b48ead;
+    --c-pink: #c295b8;
+    --c-mauve: #b48ead;
+    --c-on: #2e3440;
+}
+
+/* --- Tokyo Night (folke/tokyonight.nvim) --------------------------------- */
+body.tokyonight {
+    --bg: #16161e;
+    --panel: #1a1b26;
+    --ink: #c0caf5;
+    --muted: #565f89;
+    --line: #292e42;
+    --chip: #20222f;
+    --shadow: none;
+    --accent: #7aa2f7;
+    --c-red: #f7768e;
+    --c-red-d: #f7768e;
+    --c-red-s: #292e42;
+    --c-red-bg: #20222f;
+    --c-red-t: #f7768e;
+    --c-amber: #e0af68;
+    --c-amber-s: #292e42;
+    --c-amber-bg: #20222f;
+    --c-gold: #e0af68;
+    --c-orange: #ff9e64;
+    --c-honey: #e0af68;
+    --c-brass: #e0af68;
+    --c-green: #9ece6a;
+    --c-green-d: #9ece6a;
+    --c-lime: #9ece6a;
+    --c-teal: #73daca;
+    --c-cyan: #7dcfff;
+    --c-cyan-d: #7dcfff;
+    --c-sky: #7dcfff;
+    --c-blue: #7aa2f7;
+    --c-indigo: #7aa2f7;
+    --c-violet: #bb9af7;
+    --c-purple: #bb9af7;
+    --c-magenta: #bb9af7;
+    --c-pink: #ff75a0;
+    --c-rose: #ff75a0;
+    --c-mauve: #c0a4e0;
+    --c-crimson: #f7768e;
+    --c-slate: #565f89;
+    --c-grey: #565f89;
+    --c-grey-d: #565f89;
+    --c-on: #16161e;
+}
+
+/* --- Rose Pine (rosepinetheme.com) --------------------------------------- */
+body.rosepine {
+    --bg: #191724;
+    --panel: #1f1d2e;
+    --ink: #e0def4;
+    --muted: #6e6a86;
+    --line: #26233a;
+    --chip: #232135;
+    --shadow: none;
+    --accent: #ebbcba;
+    --c-red: #eb6f92;
+    --c-red-d: #eb6f92;
+    --c-red-s: #26233a;
+    --c-red-bg: #232135;
+    --c-red-t: #eb6f92;
+    --c-amber: #f6c177;
+    --c-amber-s: #26233a;
+    --c-amber-bg: #232135;
+    --c-gold: #f6c177;
+    --c-orange: #ebbcba;
+    --c-honey: #f6c177;
+    --c-brass: #f6c177;
+    --c-green: #9ccfd8;
+    --c-green-d: #9ccfd8;
+    --c-lime: #a3be8c;
+    --c-teal: #9ccfd8;
+    --c-cyan: #31748f;
+    --c-cyan-d: #31748f;
+    --c-sky: #9ccfd8;
+    --c-blue: #31748f;
+    --c-indigo: #c4a7e7;
+    --c-violet: #c4a7e7;
+    --c-purple: #c4a7e7;
+    --c-magenta: #eb6f92;
+    --c-pink: #ebbcba;
+    --c-rose: #ebbcba;
+    --c-mauve: #c4a7e7;
+    --c-crimson: #eb6f92;
+    --c-slate: #6e6a86;
+    --c-grey: #6e6a86;
+    --c-grey-d: #6e6a86;
+    --c-on: #191724;
+}
+
+/* --- Everforest (sainnhe/everforest) ------------------------------------- */
+body.everforest {
+    --bg: #272e33;
+    --panel: #2d353b;
+    --ink: #d3c6aa;
+    --muted: #859289;
+    --line: #3d484d;
+    --chip: #343f44;
+    --shadow: none;
+    --accent: #a7c080;
+    --c-red: #e67e80;
+    --c-red-d: #e67e80;
+    --c-red-s: #3d484d;
+    --c-red-bg: #343f44;
+    --c-red-t: #e67e80;
+    --c-amber: #dbbc7f;
+    --c-amber-s: #3d484d;
+    --c-amber-bg: #343f44;
+    --c-gold: #dbbc7f;
+    --c-orange: #e69875;
+    --c-honey: #dbbc7f;
+    --c-brass: #dbbc7f;
+    --c-green: #a7c080;
+    --c-green-d: #a7c080;
+    --c-lime: #a7c080;
+    --c-teal: #83c092;
+    --c-cyan: #7fbbb3;
+    --c-cyan-d: #7fbbb3;
+    --c-sky: #7fbbb3;
+    --c-blue: #7fbbb3;
+    --c-indigo: #d699b6;
+    --c-violet: #d699b6;
+    --c-purple: #d699b6;
+    --c-magenta: #d699b6;
+    --c-pink: #d699b6;
+    --c-rose: #d699b6;
+    --c-mauve: #d699b6;
+    --c-crimson: #e67e80;
+    --c-slate: #859289;
+    --c-grey: #859289;
+    --c-grey-d: #859289;
+    --c-on: #272e33;
+}
+
+/* --- Dracula (draculatheme.com) ------------------------------------------ */
+body.dracula {
+    --bg: #21222c;
+    --panel: #282a36;
+    --ink: #f8f8f2;
+    --muted: #6272a4;
+    --line: #44475a;
+    --chip: #343746;
+    --shadow: none;
+    --accent: #bd93f9;
+    --c-red: #ff5555;
+    --c-red-d: #ff5555;
+    --c-red-s: #44475a;
+    --c-red-bg: #343746;
+    --c-red-t: #ff5555;
+    --c-amber: #ffb86c;
+    --c-amber-s: #44475a;
+    --c-amber-bg: #343746;
+    --c-gold: #f1fa8c;
+    --c-orange: #ffb86c;
+    --c-honey: #f1fa8c;
+    --c-brass: #f1fa8c;
+    --c-green: #50fa7b;
+    --c-green-d: #50fa7b;
+    --c-lime: #50fa7b;
+    --c-teal: #8be9fd;
+    --c-cyan: #8be9fd;
+    --c-cyan-d: #8be9fd;
+    --c-sky: #8be9fd;
+    --c-blue: #6272a4;
+    --c-indigo: #bd93f9;
+    --c-violet: #bd93f9;
+    --c-purple: #bd93f9;
+    --c-magenta: #ff79c6;
+    --c-pink: #ff79c6;
+    --c-rose: #ff79c6;
+    --c-mauve: #ff79c6;
+    --c-crimson: #ff5555;
+    --c-slate: #6272a4;
+    --c-grey: #6272a4;
+    --c-grey-d: #6272a4;
+    --c-on: #21222c;
+}
+
+/* --- Latte (light) (catppuccin.com) -------------------------------------- */
+body.latte {
+    --bg: #eff1f5;
+    --panel: #ffffff;
+    --ink: #4c4f69;
+    --muted: #7c7f93;
+    --line: #ccd0da;
+    --chip: #e6e9ef;
+    --shadow: none;
+    --accent: #fe640b;
+    --c-red: #d20f39;
+    --c-red-d: #d20f39;
+    --c-red-s: #ccd0da;
+    --c-red-bg: #e6e9ef;
+    --c-red-t: #d20f39;
+    --c-amber: #df8e1d;
+    --c-amber-s: #ccd0da;
+    --c-amber-bg: #e6e9ef;
+    --c-gold: #df8e1d;
+    --c-orange: #fe640b;
+    --c-honey: #df8e1d;
+    --c-brass: #df8e1d;
+    --c-green: #40a02b;
+    --c-green-d: #40a02b;
+    --c-lime: #40a02b;
+    --c-teal: #179299;
+    --c-cyan: #04a5e5;
+    --c-cyan-d: #04a5e5;
+    --c-sky: #04a5e5;
+    --c-blue: #1e66f5;
+    --c-indigo: #7287fd;
+    --c-violet: #8839ef;
+    --c-purple: #8839ef;
+    --c-magenta: #ea76cb;
+    --c-pink: #ea76cb;
+    --c-rose: #ea76cb;
+    --c-mauve: #dd7878;
+    --c-crimson: #d20f39;
+    --c-slate: #7c7f93;
+    --c-grey: #7c7f93;
+    --c-grey-d: #7c7f93;
+    --c-on: #eff1f5;
+}
+
+/* --- Solarized (ethanschoonover.com/solarized) --------------------------- */
+body.solarized {
+    --bg: #002b36;
+    --panel: #073642;
+    --ink: #93a1a1;
+    --muted: #586e75;
+    --line: #0b4451;
+    --chip: #0a3f4c;
+    --shadow: none;
+    --accent: #268bd2;
+    --c-red: #dc322f;
+    --c-red-d: #dc322f;
+    --c-red-s: #0b4451;
+    --c-red-bg: #0a3f4c;
+    --c-red-t: #dc322f;
+    --c-amber: #b58900;
+    --c-amber-s: #0b4451;
+    --c-amber-bg: #0a3f4c;
+    --c-gold: #b58900;
+    --c-orange: #cb4b16;
+    --c-honey: #b58900;
+    --c-brass: #b58900;
+    --c-green: #859900;
+    --c-green-d: #859900;
+    --c-lime: #859900;
+    --c-teal: #2aa198;
+    --c-cyan: #2aa198;
+    --c-cyan-d: #2aa198;
+    --c-sky: #268bd2;
+    --c-blue: #268bd2;
+    --c-indigo: #6c71c4;
+    --c-violet: #6c71c4;
+    --c-purple: #6c71c4;
+    --c-magenta: #d33682;
+    --c-pink: #d33682;
+    --c-rose: #d33682;
+    --c-mauve: #d33682;
+    --c-crimson: #dc322f;
+    --c-slate: #586e75;
+    --c-grey: #586e75;
+    --c-grey-d: #586e75;
+    --c-on: #002b36;
+}
+
+/* --- Kanagawa (rebelot/kanagawa.nvim) ------------------------------------ */
+body.kanagawa {
+    --bg: #1f1f28;
+    --panel: #2a2a37;
+    --ink: #dcd7ba;
+    --muted: #727169;
+    --line: #363646;
+    --chip: #31313f;
+    --shadow: none;
+    --accent: #ffa066;
+    --c-red: #c34043;
+    --c-red-d: #c34043;
+    --c-red-s: #363646;
+    --c-red-bg: #31313f;
+    --c-red-t: #c34043;
+    --c-amber: #dca561;
+    --c-amber-s: #363646;
+    --c-amber-bg: #31313f;
+    --c-gold: #e6c384;
+    --c-orange: #ffa066;
+    --c-honey: #e6c384;
+    --c-brass: #e6c384;
+    --c-green: #98bb6c;
+    --c-green-d: #98bb6c;
+    --c-lime: #98bb6c;
+    --c-teal: #7aa89f;
+    --c-cyan: #7fb4ca;
+    --c-cyan-d: #7fb4ca;
+    --c-sky: #7fb4ca;
+    --c-blue: #7e9cd8;
+    --c-indigo: #957fb8;
+    --c-violet: #957fb8;
+    --c-purple: #957fb8;
+    --c-magenta: #d27e99;
+    --c-pink: #d27e99;
+    --c-rose: #d27e99;
+    --c-mauve: #d27e99;
+    --c-crimson: #c34043;
+    --c-slate: #727169;
+    --c-grey: #727169;
+    --c-grey-d: #727169;
+    --c-on: #1f1f28;
+}
+
+/* --- Gruvbox Light (morhetz/gruvbox) ------------------------------------- */
+body.gruvboxlight {
+    --bg: #f9f5d7;
+    --panel: #fbf1c7;
+    --ink: #3c3836;
+    --muted: #7c6f64;
+    --line: #ebdbb2;
+    --chip: #f2e5bc;
+    --shadow: none;
+    --accent: #af3a03;
+    --c-red: #9d0006;
+    --c-red-d: #9d0006;
+    --c-red-s: #ebdbb2;
+    --c-red-bg: #f2e5bc;
+    --c-red-t: #9d0006;
+    --c-amber: #b57614;
+    --c-amber-s: #ebdbb2;
+    --c-amber-bg: #f2e5bc;
+    --c-gold: #b57614;
+    --c-orange: #af3a03;
+    --c-honey: #b57614;
+    --c-brass: #b57614;
+    --c-green: #79740e;
+    --c-green-d: #79740e;
+    --c-lime: #79740e;
+    --c-teal: #427b58;
+    --c-cyan: #427b58;
+    --c-cyan-d: #427b58;
+    --c-sky: #076678;
+    --c-blue: #076678;
+    --c-indigo: #8f3f71;
+    --c-violet: #8f3f71;
+    --c-purple: #8f3f71;
+    --c-magenta: #8f3f71;
+    --c-pink: #b16286;
+    --c-rose: #b16286;
+    --c-mauve: #b16286;
+    --c-crimson: #9d0006;
+    --c-slate: #7c6f64;
+    --c-grey: #7c6f64;
+    --c-grey-d: #7c6f64;
+    --c-on: #fbf1c7;
+}
+
+/* --- Synthwave '84 (robb0wen/synthwave-vscode) - neon, pairs with the CRT overlay --- */
+body.synthwave {
+    --bg: #241b2f;
+    --panel: #2a2139;
+    --ink: #f4eee4;
+    --muted: #848bbd;
+    --line: #463465;
+    --chip: #34294f;
+    --shadow: none;
+    --accent: #ff7edb;
+    --c-red: #fe4450;
+    --c-red-d: #fe4450;
+    --c-red-s: #463465;
+    --c-red-bg: #34294f;
+    --c-red-t: #fe4450;
+    --c-amber: #ffcc99;
+    --c-amber-s: #463465;
+    --c-amber-bg: #34294f;
+    --c-gold: #f9d423;
+    --c-orange: #ff8b39;
+    --c-honey: #f9d423;
+    --c-brass: #f9d423;
+    --c-green: #72f1b8;
+    --c-green-d: #72f1b8;
+    --c-lime: #72f1b8;
+    --c-teal: #36f9f6;
+    --c-cyan: #36f9f6;
+    --c-cyan-d: #36f9f6;
+    --c-sky: #36f9f6;
+    --c-blue: #03edf9;
+    --c-indigo: #b381c5;
+    --c-violet: #b381c5;
+    --c-purple: #b381c5;
+    --c-magenta: #ff7edb;
+    --c-pink: #ff7edb;
+    --c-rose: #ff7edb;
+    --c-mauve: #d5a6e0;
+    --c-crimson: #fe4450;
+    --c-slate: #848bbd;
+    --c-grey: #848bbd;
+    --c-grey-d: #848bbd;
+    --c-on: #241b2f;
+}
+
+/* --- Tokyo Neon (folke/tokyonight.nvim, neon) - neon, pairs with the CRT overlay --- */
+body.tokyoneon {
+    --bg: #0f0f17;
+    --panel: #16161e;
+    --ink: #c8d3f5;
+    --muted: #636da6;
+    --line: #252636;
+    --chip: #1c1d2b;
+    --shadow: none;
+    --accent: #c099ff;
+    --c-red: #ff007c;
+    --c-red-d: #ff007c;
+    --c-red-s: #252636;
+    --c-red-bg: #1c1d2b;
+    --c-red-t: #ff007c;
+    --c-amber: #ffc777;
+    --c-amber-s: #252636;
+    --c-amber-bg: #1c1d2b;
+    --c-gold: #ffc777;
+    --c-orange: #ff966c;
+    --c-honey: #ffc777;
+    --c-brass: #ffc777;
+    --c-green: #c3e88d;
+    --c-green-d: #c3e88d;
+    --c-lime: #c3e88d;
+    --c-teal: #4fd6be;
+    --c-cyan: #86e1fc;
+    --c-cyan-d: #86e1fc;
+    --c-sky: #86e1fc;
+    --c-blue: #82aaff;
+    --c-indigo: #c099ff;
+    --c-violet: #c099ff;
+    --c-purple: #c099ff;
+    --c-magenta: #ff007c;
+    --c-pink: #fca7ea;
+    --c-rose: #fca7ea;
+    --c-mauve: #fca7ea;
+    --c-crimson: #ff007c;
+    --c-slate: #636da6;
+    --c-grey: #636da6;
+    --c-grey-d: #636da6;
+    --c-on: #0f0f17;
+}
+
+/* --- Rice: the shape the thirteen terminal palettes share ---------------- */
+/* Terminal-ish rather than pixel-art: square corners, hairline borders, no shadows, monospace
+   chrome, one step down the type scale. The palette classes above carry the colour; this carries
+   the shape, and a component reads both through the tokens. */
+body.rice {
+    --fs-3xs: 8px;
+    --fs-xxs: 9px;
+    --fs-xs: 10px;
+    --fs-sm: 10.5px;
+    --fs-md: 11.5px;
+    --fs-lg: 12.5px;
+    --fs-xl: 13.5px;
+    --fs-2xl: 16px;
+    --fs-3xl: 20px;
+    --radius: 3px;
+    --radius-sm: 2px;
+    --radius-pill: 3px;
+    --shadow: none;
+    --font-ui: var(--font-mono);
+    font-family: var(--font-mono);
+    font-size: var(--fs-md);
+}
+
+/* --- CRT overlay (opt-in, any palette) ----------------------------------- */
+/* Scanlines, a vignette, and nothing that eats a click: pointer-events off on both layers. */
+body.crt::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    pointer-events: none;
+    background: repeating-linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0.16) 0 1px,
+        transparent 1px 3px
+    );
+    mix-blend-mode: multiply;
+}
+body.crt::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: 9998;
+    pointer-events: none;
+    background: radial-gradient(ellipse at center, transparent 55%, rgba(0, 0, 0, 0.38) 100%);
+}
+@media (prefers-reduced-motion: reduce) {
+    body.crt::after {
+        background: none;
+    }
+}

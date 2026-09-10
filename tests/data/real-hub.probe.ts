@@ -9,13 +9,9 @@ import { readManifests } from '../../src/lib/data/sources/manifests.ts';
 import { readRegistries } from '../../src/lib/data/sources/registries.ts';
 import { readCollections } from '../../src/lib/data/sources/collections.ts';
 import { PROJECT_DOCS, projectDocs } from '../../src/lib/data/sources/docs.ts';
-import { HUB_CONFIG_TODAY, buildPortfolio } from '../../src/lib/data/index.ts';
+import { buildPortfolio, portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import type { Finding, RegistryName } from '../../src/lib/data/model.ts';
 import { join } from 'node:path';
-
-// The hub's layout config typed by hand, until O5 copies the config file itself.
-const SCAN = HUB_CONFIG_TODAY.scan;
-const COLLECTIONS = HUB_CONFIG_TODAY.collections;
 
 const REGISTRIES: RegistryName[] = ['venues', 'datasets', 'programs', 'domains', 'funding'];
 
@@ -24,8 +20,15 @@ function report(label: string, findings: Finding[]): void {
     for (const f of findings) console.log(`  ${f.file} [${f.key}] ${f.message}`);
 }
 
-const hub = loadLocal(engineDir()).hub;
+const engine = engineDir();
+const hub = loadLocal(engine).hub;
 console.log(`hub: ${hub}`);
+
+// The hub's layout as the copied config/ describes it. Nothing is typed by hand here any more.
+const config = loadConfig(engine);
+const portfolio = portfolioConfigFrom(config.config);
+const SCAN = portfolio.scan;
+const COLLECTIONS = portfolio.collections;
 
 const { manifests, findings } = readManifests(hub, SCAN);
 console.log(`manifests: ${manifests.length}`);
@@ -35,7 +38,7 @@ for (const rule of SCAN) {
 }
 report('manifest', findings);
 
-const registries = readRegistries(hub);
+const registries = readRegistries(hub, portfolio.registries);
 for (const name of REGISTRIES) {
     const reg = registries[name];
     console.log(
@@ -64,12 +67,11 @@ for (const manifest of manifests) {
 console.log(`project documents, over ${manifests.length} project folders:`);
 for (const name of PROJECT_DOCS) console.log(`  ${name}: ${counts.get(name)}`);
 
-const config = loadConfig(engineDir());
 console.log(`config keys: ${Object.keys(config.config).join(', ')}`);
 report('config', config.findings);
 
 // The whole of layer 1: read, validate, normalise. Read only, like everything above it.
-const snapshot = buildPortfolio(hub, HUB_CONFIG_TODAY);
+const snapshot = buildPortfolio(hub, portfolio);
 console.log(`snapshot version: ${snapshot.version}`);
 console.log('entities:');
 for (const [kind, entities] of Object.entries(snapshot.entities)) {

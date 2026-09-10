@@ -1,0 +1,70 @@
+/* The palette, ported from the cockpit's assets/css/01-base.css :root block, values unchanged.
+   Two layers of colour:
+     - chrome  (--bg/--panel/--ink/--muted/--line/--chip/--accent/--shadow), the surfaces;
+     - palette (--c-*), the status hues shared by the sheets and the config vocabulary.
+   A theme is a block of overrides on these tokens and never a per-rule edit; themes.css holds the
+   fourteen blocks. Every colour a component uses resolves through a token here, so the contrast test
+   can walk them all. The -txt and --on-* tokens the components read are derived from these by
+   derive.ts, the way the cockpit derived them at build time. */
+:root {
+    --bg: #f1f5f9;
+    --panel: #fff;
+    --ink: #0f172a;
+    --muted: #64748b;
+    --line: #e2e8f0;
+    --chip: #f1f5f9;
+    --shadow: 0 1px 3px rgba(15, 23, 42, 0.08), 0 1px 2px rgba(15, 23, 42, 0.04);
+    --accent: #bd5d38;
+    /* palette */
+    --c-red: #dc2626;
+    --c-red-d: #b91c1c;
+    --c-red-s: #f5b5b5;
+    --c-red-bg: #fee2e2;
+    --c-red-t: #fca5a5;
+    --c-amber: #b45309;
+    --c-amber-s: #f5d98e;
+    --c-amber-bg: #fef3c7;
+    --c-gold: #a16207;
+    --c-orange: #ea580c;
+    --c-green: #16a34a;
+    --c-green-d: #1a9e54;
+    --c-lime: #65a30d;
+    --c-teal: #0d9488;
+    --c-cyan: #0891b2;
+    --c-sky: #0ea5e9;
+    --c-blue: #2563eb;
+    --c-indigo: #6366f1;
+    --c-violet: #7c5cff;
+    --c-purple: #7c3aed;
+    --c-magenta: #a21caf;
+    --c-pink: #ec4899;
+    --c-rose: #db2777;
+    --c-mauve: #b5638a;
+    --c-crimson: #e2374d;
+    --c-cyan-d: #0e7490;
+    --c-honey: #f59e0b;
+    --c-brass: #d4a017;
+    --c-slate: #475569;
+    --c-grey: #9ca3af;
+    --c-grey-d: #6b7280;
+    --c-on: #fff; /* text sitting on a filled status chip */
+    /* shape + type */
+    --radius: 10px;
+    --radius-sm: 6px;
+    --radius-pill: 999px;
+    --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+    --font-num: var(--font-mono); /* counts, dates, ids - mono in every theme */
+    /* Type scale. Every font-size resolves through these nine steps, so a theme rescales the whole
+       UI by overriding them here and no rule carries its own px value. */
+    --fs-3xs: 8.5px;
+    --fs-xxs: 9.5px;
+    --fs-xs: 10.5px;
+    --fs-sm: 11.5px;
+    --fs-md: 12.5px;
+    --fs-lg: 13.5px;
+    --fs-xl: 15px;
+    --fs-2xl: 19px;
+    --fs-3xl: 24px;
+    --scan: none; /* CRT scanline layer, opt-in per theme */
+}

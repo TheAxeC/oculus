@@ -4,7 +4,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_PORT, loadConfig, loadLocal } from '../src/lib/data/sources/config.ts';
+import { DEFAULT_PORT, engineDir, loadConfig, loadLocal } from '../src/lib/data/sources/config.ts';
 
 function scratch(): string {
     const dir = mkdtempSync(join(tmpdir(), 'oculus-config-'));
@@ -139,5 +139,33 @@ describe('loadConfig', () => {
                 message: 'config directory does not exist'
             }
         ]);
+    });
+});
+
+// The seven files that ship with the tool, read the way the server reads them. The keys listed are
+// the ones the code already asks for by name; a file may hold more and usually does.
+describe("oculus's own config directory", () => {
+    const REQUIRED = [
+        'meta',
+        'text',
+        'glyphs',
+        'ascii',
+        'palette',
+        'status_palette',
+        'type_color',
+        'scan',
+        'collections',
+        'manifest_schema',
+        'read_limits',
+        'stale_days'
+    ];
+
+    it('merges without a finding', () => {
+        expect(loadConfig(engineDir()).findings).toEqual([]);
+    });
+
+    it('holds every top-level key the app reads', () => {
+        const { config } = loadConfig(engineDir());
+        expect(REQUIRED.filter((key) => !(key in config))).toEqual([]);
     });
 });

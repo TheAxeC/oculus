@@ -149,10 +149,11 @@ export function flattenText(node: unknown, prefix = ''): Record<string, string> 
 }
 
 /**
- * Read config/text.yml as a flat catalog. Called per request until O6's watcher keeps an
- * in-memory copy and pushes it, so editing the file and reloading the browser shows the change.
+ * The flat catalog held in the merged config's `text` key. The catalog is one of the seven config
+ * files and is read like the others, so a string can move between files without this knowing.
+ * Called per request until O6's watcher keeps an in-memory copy and pushes it, so editing the file
+ * and reloading the browser shows the change.
  */
-export function loadTextCatalog(engine: string): Record<string, string> {
-    const file = join(engine, 'config', 'text.yml');
-    return flattenText(parse(readFileSync(file, 'utf8')) ?? {});
+export function textCatalog(config: Record<string, unknown>): Record<string, string> {
+    return flattenText(config.text ?? {});
 }

@@ -1,0 +1,103 @@
+# ===========================================================================
+# behavior.yml
+# Part of the split cockpit config - merged by cockpit.config.load_config() (cockpit.yml + config/*.yml).
+# ===========================================================================
+
+
+# Manifest readability soft-limits (chars) for the audit warnings.
+read_limits: { status.line: 220, next: 300, latest: 200, eli5: 360, results: 300 }
+
+
+# Hand-triggered feed staleness nudges (days).
+stale_days: { litwatch: 14, inbox: 10, scout: 7, audit: 7 }
+
+# domains for which a project is EXPECTED to have a dataset (the audit flags a missing Data section); the
+# theory/method/meta lines legitimately have none. Author-specific, so it lives here (config default is empty).
+data_domains: [heart, liver, liverfl, liversurv, immune, brain, brainbci]
+
+
+# Project staleness (honest / filesystem-based): a manifest counts as "stale" when its `updated:` date is
+# this many days BEHIND the newest mtime of the project's content docs (CONTEXT/RESULTS/NEXT/notes/... - i.e.
+# you edited the project but didn't refresh the manifest). Drives the per-card "Nd behind" badge, the
+# stale filter, the "This week" line, and an Audit finding. Raise it (e.g. 3) if filesystem-sync jitter
+# makes 1-day lags noisy. (Replaces the old `updated:`-age `staleness_days`.)
+stale_lag_days: 1
+
+
+# "This week" refresh nudges - the Projects-tab strip reminds you (with the exact command) when a live
+# feed is older than N days. Edit a number to change how long before it nudges; omit a key to use the
+# default (litwatch 14 | inbox 10 | scout 7). Set high (e.g. 999) to effectively silence one.
+# (No audit key: the audit is deterministic and regenerates every build, so it is never "stale".)
+refresh_stale_days:
+  litwatch: 14   # 🔭 /research-cockpit litwatch  (meta.last_run in literature-radar.yml)
+  inbox: 2      # 📨 /research-cockpit inbox      (`meta.run` in inbox.yml)
+  scout: 7       # 🎓 /research-cockpit scout      (newest meta.log date in position-leads.yml)
+
+
+# "This week" Deadlines look-ahead windows - how far out each kind of date appears on the Focus strip.
+# Slower, high-value dates get a long planning horizon; fast-moving job leads get a tight one. All optional;
+# omit a key to use the default shown.
+deadline_horizon_days: 90    # 📄 your project-manifest `deadline:` + 🎤 talks / 🏫 teaching (default 90)
+
+leads_horizon_days: 21       # ⏰ academic-position-lead deadlines from position-leads.yml (default 21)
+
+conf_horizon_months: 1       # 🎤 venues.yml conference deadlines, in whole months ahead (default 1 = this/next)
+
+leads_badge_days: 14         # amber count badge on the Projects tab, leads due within N days (default 14)
+
+
+# Project-title label mode per surface - `short` = a manifest's `short:` if set, else the full title (NO id is
+# ever shown); `full` = always the full title. Projects + Archive also have a live Aa toggle in the UI that
+# overrides their default below (persisted per browser). The full title is always on hover.
+focus_label_mode: short      # 🎯 Focus board cards + "This week" ticker
+
+project_label_mode: short    # Projects tab cards / list rows (live Aa toggle overrides)
+
+archive_label_mode: short    # Archive tab cards / list rows (live Aa toggle overrides)
+
+map_label_mode: short        # Map tab nodes
+
+venue_conc_warn: 4           # ⚠ "venue load" Focus nudge when >= N in-flight papers target one venue
+
+linkedin_cadence_days: 30   # nudge/red badge when it's been longer than this since the last post
+
+
+# === Per-project file finder ================================================
+# Each project card carries a searchable list of its own files (cockpit/files.py). Bounded on purpose:
+# only these extensions, at most `max_per_project` files (newest first), noise dirs skipped. Set
+# `enabled: false` to drop the feature entirely.
+file_index:
+  enabled: true
+  max_per_project: 400
+  ext: [".pdf", ".tex", ".bib", ".md", ".yml", ".yaml", ".py", ".sh", ".slurm", ".ipynb",
+        ".csv", ".json", ".png", ".jpg", ".svg", ".txt"]
+
+
+# === Wallpaper ==============================================================
+# The images live in `tools/cockpit/assets/wallpaper/` (in the repo, so the cockpit is self-contained).
+# No image there = no backdrop, and none of these settings apply. `dir:` can point elsewhere, but the
+# default keeps everything inside the repo.
+wallpaper:
+  file: "wallhaven-83"       # name the image to use (full name or any unique part of it). Empty = use `pick:` below
+  pick: first    # `first` = the first image in the folder | `random` = a different one each build
+  dim: 0.72      # 0 = raw image, 1 = fully hidden. Busy images want 0.7-0.85
+  blur: 0        # px of blur on the IMAGE itself. 0 = sharp; raise it only if the picture is busy
+  themes: rice   # `rice` = terminal themes only | `all` = light and dark too
+  panel_opacity: 0.76   # how solid the windows stay over the image (1 = opaque, 0.8 = see-through)
+  popover_opacity: 0.97  # dropdowns (Collections / More / theme) - they float OVER a panel, so at
+                           # `panel_opacity` you read them through two translucent layers. Unset =
+                           # three quarters of the way from `panel_opacity` to solid.
+  panel_blur: 2         # px of backdrop blur behind each window (keeps text crisp without smearing the image)
+  max_width: 2560   # the build downscales through `sips` before inlining (a 6 MB PNG would triple the page)
+  quality: 78
+# === Served mode: live SLURM poller + in-page chat ==========================
+# Cadences for the Live HPC tab's background threads, in minutes, and the model the Ask-the-portfolio
+# chat uses. `prewarm: false` stops the server resolving finished-job log paths ahead of the first click.
+# `model:` empty means let the `claude` CLI pick its own default (the API fallback uses claude-sonnet-4-6).
+slurm:
+  poll_min: 20
+  quota_min: 60
+  prewarm: true
+
+chat:
+  model: ""

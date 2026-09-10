@@ -1,7 +1,7 @@
 // The catalog: flattening on the server, lookup and interpolation on the client.
 
 import { describe, expect, it } from 'vitest';
-import { engineDir, flattenText, loadTextCatalog } from '../src/lib/data/sources/config.ts';
+import { engineDir, flattenText, loadConfig, textCatalog } from '../src/lib/data/sources/config.ts';
 import { setCatalog, t } from '../src/lib/state/text.ts';
 
 describe('flattenText', () => {
@@ -13,9 +13,19 @@ describe('flattenText', () => {
     });
 });
 
-describe('loadTextCatalog', () => {
-    it('reads config/text.yml', () => {
-        expect(loadTextCatalog(engineDir())['app.title']).toBe('oculus');
+describe('textCatalog', () => {
+    it('flattens the text key of the merged config', () => {
+        expect(textCatalog({ text: { app: { title: 'oculus' } }, palette: ['teal'] })).toEqual({
+            'app.title': 'oculus'
+        });
+    });
+
+    it('is empty when the config holds no text', () => {
+        expect(textCatalog({})).toEqual({});
+    });
+
+    it('reads the catalog out of the real config directory', () => {
+        expect(textCatalog(loadConfig(engineDir()).config)['app.title']).toBe('oculus');
     });
 });
 

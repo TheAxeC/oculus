@@ -1,0 +1,289 @@
+# ===========================================================================
+# vocab.yml
+# Part of the split cockpit config - merged by cockpit.config.load_config() (cockpit.yml + config/*.yml).
+# ===========================================================================
+
+
+# === Palette tokens ========================================================
+# Every hex an author writes in this config (theme colours, status colours, type colours) is mapped
+# at BUILD time onto the CSS variable named here, wherever it lands in a `style="..."` attribute or
+# in the stylesheet. That is what makes a theme possible: one override block in `assets/css/08-themes.css`
+# recolours the whole cockpit, and nobody has to hunt inline styles. Write hex here, get a token there.
+# The token names must exist in `:root` in `assets/css/01-base.css` - `--selftest` fails the build if one
+# does not. Hexes NOT listed here are passed through untouched (a one-off colour stays a one-off colour).
+palette:
+  "#dc2626": c-red
+  "#e2374d": c-crimson
+  "#b91c1c": c-red-d
+  "#c0392b": c-red-d
+  "#f5b5b5": c-red-s
+  "#fee2e2": c-red-bg
+  "#fecaca": c-red-t
+  "#fca5a5": c-red-t
+  "#b45309": c-amber
+  "#d97706": c-amber
+  "#f5d98e": c-amber-s
+  "#fef3c7": c-amber-bg
+  "#a16207": c-gold
+  "#b9890a": c-gold
+  "#d9a406": c-gold
+  "#d4a017": c-brass
+  "#f59e0b": c-honey
+  "#ea580c": c-orange
+  "#16a34a": c-green
+  "#1a9e54": c-green-d
+  "#65a30d": c-lime
+  "#0d9488": c-teal
+  "#0891b2": c-cyan
+  "#0e7490": c-cyan-d
+  "#06b6d4": c-sky
+  "#0ea5e9": c-sky
+  "#2563eb": c-blue
+  "#6366f1": c-indigo
+  "#7c5cff": c-violet
+  "#7c3aed": c-purple
+  "#a21caf": c-magenta
+  "#ec4899": c-pink
+  "#db2777": c-rose
+  "#b5638a": c-mauve
+  "#64748b": muted
+  "#94a3b8": muted
+  "#9ca3af": c-grey
+  "#6b7280": c-grey-d
+  "#475569": c-slate
+
+# Shared palette with tools/present/content/present.yml.
+themes:
+  heart:     { color: "#e2374d", label: "Cardiology | ECG" }
+  liver:     { color: "#0d9488", label: "Hepatology | imaging" }
+  liverfl:   { color: "#0d9488", label: "Hepatology | federated" }
+  liversurv: { color: "#0d9488", label: "Hepatology | survival" }
+  privacy:   { color: "#2563eb", label: "Privacy | vertical FL" }
+  theory:    { color: "#2563eb", label: "Privacy | theory" }
+  immune:    { color: "#7c5cff", label: "Immunology | federated" }
+  method:    { color: "#ea580c", label: "Methods frontier" }
+  brain:     { color: "#7c3aed", label: "Neuroscience | EEG" }
+  brainbci:  { color: "#7c3aed", label: "Neuroscience | BCI" }
+  cs:        { color: "#0891b2", label: "Computer Science" }
+  meta:      { color: "#64748b", label: "Meta-science" }
+
+
+# Status chips - the per-project project.yml manifests are the source of truth for status.
+status_legend:
+  - { key: submit-ready,    icon: "🟢", label: "submit-ready" }
+  - { key: submitted,       icon: "🟤", label: "submitted / under review" }
+  - { key: revision,        icon: "🟧", label: "major revision (back with the authors)" }
+  - { key: accepted,        icon: "🟩", label: "accepted (camera-ready pending)" }
+  - { key: published,       icon: "✅", label: "published" }
+  - { key: in-prep,         icon: "✍", label: "in preparation" }
+  - { key: abandoned,       icon: "❌", label: "abandoned" }
+  - { key: tech-report,     icon: "📄", label: "tech report (not peer-reviewed)" }
+  - { key: software,        icon: "📦", label: "software / framework (not a paper)" }
+  - { key: coauthor,        icon: "🤝", label: "co-author" }
+  - { key: lead,            icon: "👤", label: "first author" }
+  - { key: phd,             icon: "🎓", label: "PhD thesis" }
+  - { key: nogo,            icon: "⛔", label: "no-go (failed gate)" }
+  - { key: dropped,         icon: "🗑", label: "dropped" }
+  - { key: disproved,       icon: "❎", label: "disproved" }
+  - { key: results-positive, icon: "⚪", label: "positive result (pre-writeup)" }
+  - { key: admin-prep,      icon: "🟡", label: "admin/prep" }
+  - { key: numbers-pending, icon: "🔵", label: "numbers pending" }
+  - { key: ai-tells,        icon: "🔴", label: "AI-writing tells" }
+  - { key: blocked,         icon: "🟣", label: "blocked (external)" }
+  - { key: exploring,      icon: "🟠", label: "exploring" }
+  - { key: parked,          icon: "⚫", label: "parked" }
+  # publication-type chips (on published works) - orthogonal to outcome/role; feed the Status facet
+  - { key: journal,         icon: "📰", label: "journal article" }
+  - { key: conference,      icon: "🎤", label: "conference paper" }
+  - { key: thesis,          icon: "📘", label: "thesis" }
+  - { key: abstract,        icon: "📃", label: "extended abstract" }
+  - { key: poster,          icon: "🪧", label: "poster" }
+
+
+# Collection-entry status vocabulary: colour + whether it drops the entry off the deadline radar.
+# Add a status/colour HERE (not in build.py). `terminal: true` = done / closed / not-a-live-state, so it
+# leaves the ticker; absent = live (still counts down). `deadline_met: true` = still live, but the deliverable
+# is IN (a submitted grant is under review), so its own `deadline:` stops nagging Deadlines/Overdue while the
+# entry keeps its card countdown. Each collection's schema `options:` must be a subset.
+status_palette:
+  # live / in-flight (still shows on the deadline radar)
+  planned:         { color: "#7c5cff" }
+  in-prep:         { color: "#7c5cff" }
+  "in prep":       { color: "#7c5cff" }
+  preparing:       { color: "#7c5cff" }
+  draft:           { color: "#7c5cff" }
+  submitted:       { color: "#b45309", deadline_met: true }
+  revision:        { color: "#b45309" }
+  pending:         { color: "#b45309" }
+  under-review:    { color: "#b45309", deadline_met: true }
+  "under review":  { color: "#b45309", deadline_met: true }
+  upcoming:        { color: "#b45309" }
+  exploring:       { color: "#7c5cff" }
+  active:          { color: "#16a34a" }
+  collaborator:    { color: "#0891b2" }
+  todo:            { color: "#b45309" }
+  doing:           { color: "#16a34a" }
+  # terminal / done / closed (drops off the deadline radar)
+  ongoing:         { color: "#16a34a", terminal: true, live_subtasks: true }
+  completed:       { color: "#0ea5e9", terminal: true }
+  published:       { color: "#0ea5e9", terminal: true }
+  done:            { color: "#0ea5e9", terminal: true }
+  awarded:         { color: "#16a34a", terminal: true }
+  granted:         { color: "#16a34a", terminal: true }
+  accepted:        { color: "#2563eb", terminal: true }
+  contributing:    { color: "#0891b2", terminal: true }
+  rejected:        { color: "#dc2626", terminal: true }
+  "not funded":    { color: "#dc2626", terminal: true }
+  declined:        { color: "#ea580c", terminal: true }
+  dropped:         { color: "#ea580c", terminal: true }
+  withdrawn:       { color: "#475569", terminal: true }
+  "not applied":   { color: "#9ca3af", terminal: true }
+  not-applied:     { color: "#9ca3af", terminal: true }
+  "not attending": { color: "#9ca3af", terminal: true }
+  not-attending:   { color: "#9ca3af", terminal: true }
+  cancelled:       { color: "#9ca3af", terminal: true }
+  canceled:        { color: "#9ca3af", terminal: true }
+  past:            { color: "#9ca3af", terminal: true }
+  skipped:         { color: "#9ca3af", terminal: true }
+  passed:          { color: "#9ca3af", terminal: true }
+  ready:           { color: "#16a34a" }
+  finished:        { color: "#0ea5e9", terminal: true }
+  archived:        { color: "#9ca3af", terminal: true }
+  applied: { color: "#0891b2", terminal: true }
+
+
+# --- vocabulary + thresholds (moved out of build.py in step 7; edit HERE, then rebuild) ---
+# Focus-board lanes read as one lifecycle left-to-right, each named by the NEXT ACTION, in three clusters:
+# `now` (your move) over `parked` (on others / on ice) over `incubate` (idea -> project). Thread:
+# Build -> Run -> Push -> Revise -> [submit = a high-priority flag] -> Review / Blocked, Backburner to ice one.
+# (Keep in sync with `_FOCUS_LANES_DEFAULT` in cockpit/config.py.)
+focus_lanes:
+  - { key: run,        label: Run,        sub: "experiments / getting the numbers", color: "#16a34a", cluster: now }
+  - { key: push,       label: Push,       sub: "drafting toward first submission",  color: "#2563eb", cluster: now }
+  - { key: revise,     label: Revise,     sub: "back from a venue (R&R or reject)",  color: "#b45309", cluster: now }
+  - { key: review,     label: Review,     sub: "under peer review, hands off",       color: "#7c5cff", cluster: parked }
+  - { key: blocked,    label: Blocked,    sub: "waiting on you / coauthor",          color: "#dc2626", cluster: parked }
+  - { key: backburner, label: Backburner, sub: "deprioritized, not being worked",    color: "#64748b", cluster: parked }
+  - { key: scope,      label: Scope,      sub: "shaping + novelty check",            color: "#0e7490", cluster: incubate }
+  - { key: derisk,     label: De-risk,    sub: "Tier-0 go / no-go pilot",            color: "#6366f1", cluster: incubate }
+  - { key: build,      label: Build,      sub: "strongest version -> manuscript",    color: "#0d9488", cluster: incubate }
+
+# `holding` is NOT a board lane (ideas sit in the ideas-tier backlog, not on a lane); this is the colour for
+# the ideas-holding section header AND the `holding` focus pill. Distinct from every lane colour above.
+# (Keep in sync with the `.fl-holding` rule in assets/css/cockpit.css.)
+holding_color: "#b5638a"
+
+
+# Per-card priority = a click-to-cycle 🔥 flame badge on the focus card; `flames` = how many 🔥 render
+# (High 3 | Med 2 | Low 1). OPTIONAL manifest `priority:` field, unset = no flames. Does NOT reorder cards
+# (it is a glance badge, not a sort key). In served mode, click the flames to cycle unset -> Low -> Med -> High.
+priority_levels:
+  - { key: high, label: High, flames: 3 }
+  - { key: med,  label: Med,  flames: 2 }
+  - { key: low,  label: Low,  flames: 1 }
+
+
+# Funding stages stacked inside the Focus Funding column (label / colour / the statuses each matches).
+fund_stages:
+  - { label: "In prep",   color: "#d4a017", statuses: [in-prep, "in prep"] }
+  - { label: "Submitted", color: "#16a34a", statuses: [submitted, under-review, "under review"] }
+  - { label: "Planned",   color: "#0891b2", statuses: [planned] }
+
+
+# Career host-pipeline statuses (Focus career card): status -> icon / label / colour.
+career_host_status:
+  awaiting:  { icon: "📨", label: "sent, awaiting", color: "#0891b2" }
+  warm:      { icon: "🔥", label: "warm",           color: "#ea580c" }
+  candidate: { icon: "⚪", label: "candidate",      color: "#64748b" }
+  drafted:   { icon: "✍", label: "drafted",         color: "#b45309" }
+  dropped:   { icon: "✗", label: "dropped",         color: "#9ca3af" }
+
+
+# Career score dimensions (Focus career card host chips): `field` = the CAREER.yml host key scored, `badge` =
+# the terse chip letter, `label` = the hover tooltip. Author-specific (the host-scoring axes).
+career_score_dims:
+  - { field: proposal,     badge: "P",  label: "proposal" }
+  - { field: ai_fl_clinic, badge: "AF", label: "AI+FL+clinic" }
+  - { field: backing,      badge: "B",  label: "backing" }
+  - { field: after,        badge: "Z",  label: "after / ZAP" }
+
+
+# Archive OUTCOME categories (order = grouping), and which of them count as REAL outputs (vs dead-ends).
+archive_categories: [published, submitted, in-prep, abandoned, nogo, dropped, disproved, tech-report, software]
+
+# Dead / paused outcomes = the ONLY things that count as "not real" (the Pillars Archival band, excluded from
+# membership). DENYLIST by design: any other type (published/submitted/in-prep/tech-report/software/phd/exploring
+# or a future live type) is real by DEFAULT - so a new active type never silently falls into Archival. Order = the
+# Archival card's category order. (Single source of truth: `_is_real`, `_xlink_groups`, and the Archival card.)
+archive_dead: [nogo, dropped, disproved, abandoned, parked]
+
+
+# Position-lead fit -> chip colour.
+leads_fit: { strong: "#16a34a", moderate: "#b45309", reach: "#9ca3af" }
+
+
+# Project-card colours: by tier (type_color) or by archive outcome (arch_color).
+type_color: { active: "#ea580c", manuscript: "#0d9488", idea: "#7c5cff", published: "#16a34a", submitted: "#0ea5e9", in-prep: "#a16207", tech-report: "#0891b2", software: "#7c3aed", abandoned: "#6b7280", nogo: "#b45309", dropped: "#9ca3af", disproved: "#dc2626", exploring: "#f59e0b", phd: "#6366f1" }
+
+# Primary board button order: every tab (Projects / Archive / Coauthor) splits its first-class button row by `type`, in THIS order.
+type_order: [active, manuscript, idea, published, submitted, in-prep, tech-report, software, nogo, dropped, disproved, abandoned, exploring, phd]
+
+
+# Project lifecycle vocab - the single source for the status guardrails in selftest.py. `archive_outcomes` =
+# the `type:` set on archiving, and the conventional archive/<outcome>/ filing folder (archive is a NESTED
+# tier, so the folder is a convention here, not a rule the engine reads). `live_chips` = in-flight chips a
+# terminal project must not still carry - clear them when you archive, or the guardrail flags it.
+# `terminal_types` = done/closed outcomes.
+lifecycle:
+  archive_outcomes: [published, nogo, dropped, disproved, phd]
+  live_chips: [submit-ready, submitted, revision, accepted, in-prep, blocked, numbers-pending, results-positive, admin-prep]
+  terminal_types: [published, nogo, dropped, disproved, abandoned, phd, tech-report, software]
+
+# Tab-button count rollups: the little N|N|N split on the Archive/Coauthor tab buttons (like the projects
+# active/manuscript/idea one). Each segment = a bucket of type/chip keys; buckets are mutually exclusive and
+# cover every card (a card lands in the FIRST bucket whose keys its type or one of its chips matches).
+tab_rollup:
+  projects:
+    - { label: "in progress", keys: [active, manuscript], color: "#16a34a" }
+    - { label: idea,          keys: [idea],               color: "#7c5cff" }
+  archive:
+    - { label: papers,        keys: [journal, conference],                             color: "#db2777" }
+    - { label: outputs,       keys: [thesis, abstract, poster, tech-report, software], color: "#0ea5e9" }
+    - { label: dead-ends,     keys: [nogo, dropped, disproved, abandoned],             color: "#9ca3af" }
+  coauthor:
+    - { label: "in progress", keys: [submitted, in-prep, exploring],                   color: "#16a34a" }
+    - { label: papers,        keys: [journal, conference],                             color: "#db2777" }
+    - { label: outputs,       keys: [abstract, poster, tech-report, software],         color: "#0ea5e9" }
+    - { label: dead-ends,     keys: [nogo, dropped, disproved, abandoned],             color: "#9ca3af" }
+
+arch_color:
+  published: "#16a34a"
+  submitted: "#0ea5e9"
+  in-prep: "#a16207"
+  tech-report: "#0891b2"
+  software: "#7c3aed"
+  abandoned: "#6b7280"
+  nogo: "#b45309"
+  dropped: "#9ca3af"
+  disproved: "#dc2626"
+
+
+# Dataset access -> chip colour.
+data_access: { open: "#16a34a", registration: "#b45309", credentialed: "#dc2626", private: "#475569" }
+
+
+# Venue prestige tiers - the controlled vocabulary + colours for a venue's `tier:` (registries/venues.yml).
+# A curated JUDGMENT, NOT derived from JIF (so AAAI/TSP read flagship with no JIF, and a wide JIF band
+# isn't flattened into one label). Order = ranking (best first). The venues edit form's tier dropdown pulls
+# its options from the ASSIGNABLE keys here; the Pillars tab colours its tier spread from these. `unrated`
+# is the computed fallback (no venue / no tier), `assignable: false` so it's not offered as a choice.
+venue_tiers:
+  - { key: flagship,   color: "#7c3aed", label: "flagship" }
+  - { key: strong,     color: "#0d9488", label: "strong" }
+  - { key: specialist, color: "#0891b2", label: "specialist" }
+  - { key: unrated,    color: "#94a3b8", label: "unrated", assignable: false }
+
+
+# Venue kind - the controlled vocabulary for a venue's `category:` (registries/venues.yml); drives the
+# Journals / Conferences grouping on the Venues tab and the category dropdown in the venue edit form.
+venue_categories: [journal, conference]
