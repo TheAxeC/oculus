@@ -10,7 +10,10 @@ import { readRegistries } from '../../src/lib/data/sources/registries.ts';
 import { readCollections } from '../../src/lib/data/sources/collections.ts';
 import { PROJECT_DOCS, projectDocs } from '../../src/lib/data/sources/docs.ts';
 import { buildPortfolio, portfolioConfigFrom } from '../../src/lib/data/index.ts';
+import { sessions } from '../../src/lib/server/sessions/index.ts';
 import type { Finding, RegistryName } from '../../src/lib/data/model.ts';
+import { mkdtempSync } from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const REGISTRIES: RegistryName[] = ['venues', 'datasets', 'programs', 'domains', 'funding'];
@@ -82,3 +85,31 @@ for (const [name, table] of Object.entries(snapshot.relations)) {
     console.log(`  ${name}: ${table.length}`);
 }
 report('snapshot', snapshot.findings);
+
+// The session stores, read only. The cache and the overrides live in a temporary directory, never
+// in ~/.oculus: a probe measures what a scan costs and leaves no state of its own behind.
+const scratch = mkdtempSync(join(tmpdir(), 'oculus-probe-'));
+const options = {
+    hub,
+    snapshot,
+    cachePath: join(scratch, 'transcript-cache.json'),
+    overridesPath: join(scratch, 'sessions.json')
+};
+const cold = Date.now();
+const first = sessions(options);
+const coldMs = Date.now() - cold;
+const warm = Date.now();
+const second = sessions(options);
+const warmMs = Date.now() - warm;
+
+const count = (tool: string): number => first.records.filter((r) => r.tool === tool).length;
+const live = first.records.filter((record) => record.live).length;
+console.log(
+    `sessions: ${first.records.length} records (claude ${count('claude')}, codex ${count('codex')}), ` +
+        `${live} live, ${first.workspaces.length} workspaces, ${coldMs} ms cold, ${warmMs} ms warm`
+);
+console.log(`sessions warm read: ${second.records.length} records, cache at ${options.cachePath}`);
+for (const workspace of first.workspaces) {
+    const areas = workspace.areas.map((area) => `${area.short} ${area.sessions.length}`).join(', ');
+    console.log(`  ${workspace.name || '(unknown)'}: ${areas}`);
+}

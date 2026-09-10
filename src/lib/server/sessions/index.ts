@@ -1,0 +1,53 @@
+// Layer 2, server. The sessions payload: scan both stores, group what came back, and stop.
+// Composition only, so the order of the two steps is the whole content of this file.
+
+import { join } from 'node:path';
+import type { Project, SessionRecord, Snapshot, Workspace } from '../../data/model.ts';
+import { group, type ProjectFolder } from './group.ts';
+import { defaultOverridesPath } from './overrides.ts';
+import { scan, type ScanOptions } from './transcripts.ts';
+
+export type SessionsOptions = ScanOptions & {
+    /** Absolute path of the research hub, which is what a project's folder is relative to. */
+    hub?: string;
+    /** The portfolio, from which every project's folder and title is taken. */
+    snapshot?: Snapshot;
+    /** Project folders given directly, when there is no snapshot to read them from. */
+    projectFolders?: ProjectFolder[];
+    roots?: string[];
+    /** The sessions oculus drives itself, rather than only reading their transcripts. */
+    attachedIds?: string[];
+};
+
+export type SessionsPayload = {
+    records: SessionRecord[];
+    workspaces: Workspace[];
+};
+
+/** Every project's absolute folder with its title, which is what the area scoring is given. */
+export function projectFolders(hub: string, snapshot: Snapshot): ProjectFolder[] {
+    const folders: ProjectFolder[] = [];
+    for (const project of Object.values(snapshot.entities.projects) as Project[]) {
+        if (typeof project.folder !== 'string' || !project.folder) continue;
+        folders.push([join(hub, project.folder), project.title ?? '']);
+    }
+    return folders;
+}
+
+/** The records, newest first, and the tree they group into. */
+export function sessions(options: SessionsOptions = {}): SessionsPayload {
+    const records = scan(options);
+    const folders =
+        options.projectFolders ??
+        (options.snapshot !== undefined && options.hub !== undefined
+            ? projectFolders(options.hub, options.snapshot)
+            : []);
+    const workspaces = group(
+        records,
+        folders,
+        options.roots ?? null,
+        options.attachedIds ?? [],
+        options.overridesPath ?? defaultOverridesPath()
+    );
+    return { records, workspaces };
+}

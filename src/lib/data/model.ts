@@ -437,3 +437,159 @@ export type ConfigPayload = {
     text: Record<string, string>;
     findings: Finding[];
 };
+
+// ------------------------------------------------------------------ sessions
+// The session record and the tree it is grouped into. They live here with the snapshot because
+// they go over the socket the same way, and because the boundary table lets `state/` import
+// `data/model` and nothing else of `data/`. Every type below is JSON-safe.
+
+/** Which agent wrote the transcript a record was folded from. */
+export type SessionTool = 'claude' | 'codex';
+
+/** One file the session touched, with the tool that last touched it and when. */
+export type SessionFile = {
+    path: string;
+    /** The name of the tool that last touched the path, `Edit` or `FileChange`. */
+    tool: string;
+    count: number;
+    last: string | null;
+};
+
+/** One subagent the session dispatched. */
+export type SessionAgent = {
+    /** The tool-use id on a Claude transcript, the agent's path on a Codex rollout. */
+    id: string;
+    description: string;
+    subagentType: string;
+    model: string | null;
+    started: string | null;
+    ended: string | null;
+    /** `running`, `done` or `error`. */
+    status: string;
+    /** Length of the result the agent came back with, in characters. */
+    resultChars: number;
+};
+
+/** One thing that happened, for the timeline: `prompt`, `tool`, `edit`, `turn`, `bust`, `compaction`. */
+export type SessionEvent = {
+    ts: string | null;
+    kind: string;
+    text: string;
+};
+
+/** Lifetime token sums over the whole transcript. Never the context occupancy. */
+export type SessionTokens = {
+    input: number;
+    output: number;
+    cacheRead: number;
+    cacheCreation: number;
+    thinking: number;
+};
+
+/** The prompt cache's window: its TTL, when it was last written and read, and how often it broke. */
+export type SessionCache = {
+    ttl: string | null;
+    lastCreation: string | null;
+    lastRead: string | null;
+    busts: number;
+};
+
+/**
+ * One session, folded from one transcript. The live fields (`live`, `liveStatus`, `pid`,
+ * `registryName`, `hidden`, and `state` when the registry has an opinion) come from the registry
+ * or the process probe, not from the file; a bare read leaves them at the not-live defaults.
+ */
+export type SessionRecord = {
+    id: Id;
+    /** Absolute path of the transcript or rollout. */
+    path: string;
+    /** The store folder the file sits in: the project slug for Claude, the date folder for Codex. */
+    slug: string;
+    tool: SessionTool;
+    cwd: string | null;
+    branch: string | null;
+    title: string;
+    lastPrompt: string;
+    model: string | null;
+    effort: string | null;
+    permissionMode: string | null;
+    version: string | null;
+    entrypoint: string | null;
+    started: string | null;
+    lastActivity: string | null;
+    /** `working`, `idle`, `ended`, `unknown`, or whatever else the registry reports. */
+    state: string;
+    live: boolean;
+    liveStatus: string | null;
+    pid: number | null;
+    registryName: string | null;
+    hidden: boolean;
+    prompts: number;
+    messages: number;
+    tokens: SessionTokens;
+    /** What the model carried on the last turn, which is what a context meter measures. */
+    contextTokens: number;
+    /** The model's context window when the transcript states it; Codex does, Claude does not. */
+    contextWindow: number | null;
+    cache: SessionCache;
+    /** Tool name to the number of times it was called. */
+    tools: Record<string, number>;
+    files: SessionFile[];
+    agents: SessionAgent[];
+    timeline: SessionEvent[];
+    /** True when the file was too large for a first read and nothing was folded. */
+    truncated: boolean;
+};
+
+/** One entry of Claude Code's session registry, for a session whose process is running. */
+export type LiveEntry = {
+    /** Null for Codex, which keeps no registry and whose liveness comes from a process probe. */
+    pid: number | null;
+    status: string;
+    name: string;
+    kind: string;
+    entrypoint: string;
+    cwd: string;
+    startedAt: number;
+};
+
+/** One area a session also scored on, below the one it was filed under. */
+export type SecondaryArea = {
+    key: string;
+    short: string;
+};
+
+/** A session as grouping files it: the record, plus where it landed and how it got there. */
+export type GroupedSession = SessionRecord & {
+    /** Absolute path of the workspace, empty for a record with no cwd. */
+    workspace: string;
+    /** Absolute path of the area, or `<workspace>/(general)` when nothing scored. */
+    area: string;
+    secondaryAreas: SecondaryArea[];
+    /** `attached` when oculus drives the session, `observed` when it only reads its transcript. */
+    kind: string;
+    /** True when an override pinned the area rather than the score choosing it. */
+    pinned: boolean;
+};
+
+/** One area inside a workspace: the project the sessions in it are working on. */
+export type Area = {
+    /** Absolute path of the area. */
+    key: string;
+    /** The area's path relative to its workspace, which is what a label shows. */
+    short: string;
+    /** The project's title when the area is a known project folder, the short label otherwise. */
+    full: string;
+    known: boolean;
+    lastActivity: string | null;
+    sessions: GroupedSession[];
+};
+
+/** One workspace: the checkout the sessions in it are sitting in. */
+export type Workspace = {
+    /** Absolute path of the workspace, empty for the unknown workspace. */
+    key: string;
+    name: string;
+    lastActivity: string | null;
+    areas: Area[];
+};

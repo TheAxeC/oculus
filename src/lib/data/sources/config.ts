@@ -14,12 +14,22 @@ export type LocalConfig = {
     hub: string;
     /** Port the oculus server listens on, bound to 127.0.0.1. */
     port: number;
+    /**
+     * Where the session layer keeps its byte-offset cache, `sessions_cache` in the file. Absent
+     * unless the machine sets it, and the sessions layer then uses ~/.oculus/transcript-cache.json.
+     */
+    sessionsCache?: string;
+    /**
+     * Where the per-session overrides live, `sessions_overrides` in the file. Absent unless the
+     * machine sets it, and the sessions layer then uses ~/.oculus/sessions.json.
+     */
+    sessionsOverrides?: string;
 };
 
 /** 8787 belongs to the cockpit and is never used. */
 export const DEFAULT_PORT = 8790;
 
-const LOCAL_KEYS = ['hub', 'port'];
+const LOCAL_KEYS = ['hub', 'port', 'sessions_cache', 'sessions_overrides'];
 
 /**
  * Walk up from a starting file until a directory holds both package.json and config/.
@@ -70,6 +80,19 @@ export function loadLocal(engine: string): LocalConfig {
     if (record.port !== undefined) {
         if (!Number.isInteger(record.port)) throw new Error(`${file}: port must be an integer`);
         config.port = record.port as number;
+    }
+    // The two session paths are absent unless the machine names them, so a config that says
+    // nothing about sessions leaves the defaults to the module that owns them.
+    for (const [key, field] of [
+        ['sessions_cache', 'sessionsCache'],
+        ['sessions_overrides', 'sessionsOverrides']
+    ] as const) {
+        if (record[key] === undefined) continue;
+        if (typeof record[key] !== 'string' || record[key] === '') {
+            throw new Error(`${file}: ${key} must be a path`);
+        }
+        const value = record[key] as string;
+        config[field] = isAbsolute(value) ? value : resolve(engine, value);
     }
     return config;
 }

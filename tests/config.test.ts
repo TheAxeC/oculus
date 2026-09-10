@@ -65,6 +65,27 @@ describe('loadLocal', () => {
         writeLocal(dir, 'port: eight\n');
         expect(() => loadLocal(dir)).toThrow(/port must be an integer/);
     });
+
+    it('takes the two session paths when the machine names them', () => {
+        const dir = scratch();
+        writeLocal(
+            dir,
+            'hub: /srv/research-hub\nsessions_cache: /srv/state/cache.json\nsessions_overrides: state/sessions.json\n'
+        );
+        expect(loadLocal(dir)).toEqual({
+            hub: '/srv/research-hub',
+            port: DEFAULT_PORT,
+            sessionsCache: '/srv/state/cache.json',
+            sessionsOverrides: join(dir, 'state', 'sessions.json')
+        });
+        expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('refuses a session path that is not a path', () => {
+        const dir = scratch();
+        writeLocal(dir, 'sessions_cache: 17\n');
+        expect(() => loadLocal(dir)).toThrow(/sessions_cache must be a path/);
+    });
 });
 
 describe('loadConfig', () => {
