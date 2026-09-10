@@ -593,3 +593,39 @@ export type Workspace = {
     lastActivity: string | null;
     areas: Area[];
 };
+
+/** The payload of the `sessions` channel: every record and the tree they group into. */
+export type SessionsPayload = {
+    records: SessionRecord[];
+    workspaces: Workspace[];
+};
+
+// ------------------------------------------------------------------ git
+// The read-only git state of a workspace, as server/git.ts produces it and the `git` channel
+// carries it. JSON-safe like everything above.
+
+/** One path git reported, with the line counts when the worktree diff has them. */
+export type GitEntry = {
+    path: string;
+    /** git's own letter: `M`, `A`, `D`, `R`, `C`, or `?` for an untracked path. */
+    status: string;
+    /** Null where git reported a binary file, and 0 where no count applies. */
+    added: number | null;
+    deleted: number | null;
+};
+
+/** One workspace's git state. Every field is filled, `error` saying why when the rest is empty. */
+export type GitState = {
+    /** The branch name, `HEAD` when nothing is checked out, empty when git said nothing. */
+    branch: string;
+    ahead: number;
+    behind: number;
+    detached: boolean;
+    staged: GitEntry[];
+    unstaged: GitEntry[];
+    untracked: GitEntry[];
+    error: string | null;
+};
+
+/** The payload of the `git` channel: one state per workspace root. */
+export type GitPayload = Record<string, GitState>;

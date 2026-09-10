@@ -3,7 +3,7 @@
     // and how many of each entity that snapshot carries. It is the smallest real view there is and
     // it is the one that says whether the data layer underneath is alive.
 
-    import { portfolio } from '$lib/state/entities.svelte';
+    import { git, portfolio, sessions } from '$lib/state/entities.svelte';
     import { status } from '$lib/state/socket.svelte';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
@@ -11,6 +11,11 @@
     let { instance }: ViewProps = $props();
 
     const snapshot = $derived(portfolio());
+    // The two live channels, counted rather than drawn: O14 draws them. Until then this is what
+    // says on screen that both are arriving.
+    const records = $derived(sessions()?.records ?? []);
+    const live = $derived(records.filter((record) => record.live).length);
+    const workspaces = $derived(Object.keys(git() ?? {}).length);
 
     function socketLabel(): string {
         const state = status();
@@ -40,6 +45,8 @@
             <li>{t('app.collections', count('collections'))}</li>
         </ul>
     {/if}
+    <p>{t('app.sessions', records.length, live)}</p>
+    <p>{t('app.git', workspaces)}</p>
 </div>
 
 <style>

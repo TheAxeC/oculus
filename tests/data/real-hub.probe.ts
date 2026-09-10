@@ -11,6 +11,7 @@ import { readCollections } from '../../src/lib/data/sources/collections.ts';
 import { PROJECT_DOCS, projectDocs } from '../../src/lib/data/sources/docs.ts';
 import { buildPortfolio, portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { sessions } from '../../src/lib/server/sessions/index.ts';
+import { statusFor } from '../../src/lib/server/git.ts';
 import type { Finding, RegistryName } from '../../src/lib/data/model.ts';
 import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -113,3 +114,12 @@ for (const workspace of first.workspaces) {
     const areas = workspace.areas.map((area) => `${area.short} ${area.sessions.length}`).join(', ');
     console.log(`  ${workspace.name || '(unknown)'}: ${areas}`);
 }
+
+// The hub's own git state, through server/git.ts's four read-only commands and nothing else. It
+// reads the repository and changes nothing in it, like everything else in this file.
+const state = statusFor([hub])[hub];
+console.log(
+    `git ${hub}: branch ${state.branch || '(none)'}, ahead ${state.ahead}, behind ${state.behind}, ` +
+        `staged ${state.staged.length}, unstaged ${state.unstaged.length}, ` +
+        `untracked ${state.untracked.length}, error ${state.error ?? 'none'}`
+);

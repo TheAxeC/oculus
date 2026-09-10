@@ -2,7 +2,7 @@
 // Composition only, so the order of the two steps is the whole content of this file.
 
 import { join } from 'node:path';
-import type { Project, SessionRecord, Snapshot, Workspace } from '../../data/model.ts';
+import type { Project, SessionsPayload, Snapshot } from '../../data/model.ts';
 import { group, type ProjectFolder } from './group.ts';
 import { defaultOverridesPath } from './overrides.ts';
 import { scan, type ScanOptions } from './transcripts.ts';
@@ -19,10 +19,9 @@ export type SessionsOptions = ScanOptions & {
     attachedIds?: string[];
 };
 
-export type SessionsPayload = {
-    records: SessionRecord[];
-    workspaces: Workspace[];
-};
+// The payload's own shape lives in data/model.ts with the rest of the wire, since the `sessions`
+// channel carries it and the client state reads it there.
+export type { SessionsPayload };
 
 /** Every project's absolute folder with its title, which is what the area scoring is given. */
 export function projectFolders(hub: string, snapshot: Snapshot): ProjectFolder[] {

@@ -39,7 +39,7 @@
     }
 
     onMount(() => {
-        connect(['portfolio', 'config']);
+        connect(['portfolio', 'config', 'sessions', 'git']);
         loadUi();
         loadLayout();
         return () => disconnect();

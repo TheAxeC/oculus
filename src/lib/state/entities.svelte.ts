@@ -6,7 +6,13 @@
 // connection, but a reconnect subscribes again and the server sends the current message of every
 // channel, so the page can be handed a message it already has; the check makes that harmless.
 
-import type { ConfigPayload, Message, Snapshot } from '../data/model.ts';
+import type {
+    ConfigPayload,
+    GitPayload,
+    Message,
+    SessionsPayload,
+    Snapshot
+} from '../data/model.ts';
 
 const messages: Record<string, Message> = $state({});
 
@@ -32,4 +38,16 @@ export function portfolio(): Snapshot | null {
 export function config(): ConfigPayload | null {
     const held = messages.config;
     return held === undefined ? null : (held.payload as ConfigPayload);
+}
+
+/** Every session record and the workspace tree they group into, or null before the first scan. */
+export function sessions(): SessionsPayload | null {
+    const held = messages.sessions;
+    return held === undefined ? null : (held.payload as SessionsPayload);
+}
+
+/** The git state of every workspace the sessions payload names, keyed by root. */
+export function git(): GitPayload | null {
+    const held = messages.git;
+    return held === undefined ? null : (held.payload as GitPayload);
 }

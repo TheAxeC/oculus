@@ -804,6 +804,8 @@ text:
     domains: "Domains: {0}"
     funding: "Funding schemes: {0}"
     collections: "Collections: {0}"
+    sessions: "Sessions: {0}, {1} live"
+    git: "Workspaces with git state: {0}"
     pane_path: "Pane at {0}"
     tabs: "Tabs: {0}"
 
