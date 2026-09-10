@@ -104,9 +104,13 @@ export function defaultLayout(): Layout {
     return emptyPane();
 }
 
-/** A fresh instance of a view, with the id every operation addresses it by and no state yet. */
-export function newInstance(view: ViewId): Instance {
-    return { id: crypto.randomUUID(), view, state: {} };
+/**
+ * A fresh instance of a view, with the id every operation addresses it by. The state is the view's
+ * own and is empty unless the opener has something to say: the editor is opened for one project, so
+ * the card that opens it hands over which.
+ */
+export function newInstance(view: ViewId, state: unknown = {}): Instance {
+    return { id: crypto.randomUUID(), view, state };
 }
 
 /** One pane holding one new instance of a view, which is what each tree of the default holds. */
@@ -298,6 +302,22 @@ function renameInstance(layout: Layout, from: string, to: string): Layout {
         if (node.kind !== 'pane') return node;
         const tabs = node.tabs.map((tab) => (tab.id === from ? { ...tab, id: to } : tab));
         return { kind: 'pane', tabs, active: node.active === from ? to : node.active };
+    };
+    return rewrite(layout, found.path, edit) ?? layout;
+}
+
+/**
+ * The tree with one instance's state replaced. It is what an already-open view is retargeted by:
+ * a second click on another card's edit control opens no second editor, it points the one that is
+ * open at the other project.
+ */
+export function restate(layout: Layout, id: string, state: unknown): Layout {
+    const found = findInstance(layout, id);
+    if (found === null) return layout;
+    const edit = (node: Layout): Layout => {
+        if (node.kind !== 'pane') return node;
+        const tabs = node.tabs.map((tab) => (tab.id === id ? { ...tab, state } : tab));
+        return { kind: 'pane', tabs, active: node.active };
     };
     return rewrite(layout, found.path, edit) ?? layout;
 }

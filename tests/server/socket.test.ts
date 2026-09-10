@@ -10,7 +10,8 @@ import type { AddressInfo } from 'node:net';
 import { afterEach, describe, expect, it } from 'vitest';
 import WebSocket from 'ws';
 import { Hub } from '../../src/lib/server/channels.ts';
-import { allowedOrigin, attachSocket, subscriptionChannels } from '../../src/lib/server/socket.ts';
+import { allowedOrigin } from '../../src/lib/server/auth.ts';
+import { attachSocket, subscriptionChannels } from '../../src/lib/server/socket.ts';
 import type { Attached } from '../../src/lib/server/socket.ts';
 import type { Message } from '../../src/lib/data/model.ts';
 

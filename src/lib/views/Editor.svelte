@@ -1,0 +1,274 @@
+<script lang="ts">
+    // Layer 3, view. The project.yml edit form of DESIGN.md's step 4: the sections of
+    // config/manifest-schema.yml in order, one widget per field, and a Save that posts only what was
+    // changed. The form is data: this file names no field, no section and no list of choices.
+    //
+    // What it holds of its own is the edits, not the values. A field reads the project's current
+    // value until it is edited, and the edit sits over it until it is saved or reverted; so nothing
+    // has to be copied when the project changes, and what Save posts is exactly the map of edits.
+    // The page sees its own write when O6's watcher pushes the rebuilt snapshot, at which point the
+    // edits equal the values and the form is clean again.
+
+    import Chip from '$lib/ui/Chip.svelte';
+    import Checkbox from '$lib/ui/Checkbox.svelte';
+    import DateInput from '$lib/ui/DateInput.svelte';
+    import Empty from '$lib/ui/Empty.svelte';
+    import Field from '$lib/ui/Field.svelte';
+    import MultiSelect from '$lib/ui/MultiSelect.svelte';
+    import Pane from '$lib/ui/Pane.svelte';
+    import Select from '$lib/ui/Select.svelte';
+    import TextArea from '$lib/ui/TextArea.svelte';
+    import TextInput from '$lib/ui/TextInput.svelte';
+    import Toolbar from '$lib/ui/Toolbar.svelte';
+    import ToolButton from '$lib/ui/ToolButton.svelte';
+    import {
+        fieldChoices,
+        manifestFields,
+        manifestSections,
+        projectOf
+    } from '$lib/state/selectors.svelte';
+    import {
+        NOT_IN_MODEL,
+        NOT_WRITTEN,
+        asList,
+        asText,
+        fieldValues,
+        type FormField
+    } from '$lib/state/schema';
+    import { t } from '$lib/state/text';
+    import { pending, writeManifest } from '$lib/state/writes.svelte';
+    import type { ViewProps } from './registry';
+
+    let { instance }: ViewProps = $props();
+
+    /** How tall the prose boxes open. */
+    const ROWS = 3;
+
+    /** The project this instance was opened for, from the state the card handed openView. */
+    const id = $derived(readId(instance.state));
+    const project = $derived(id === '' ? null : projectOf(id));
+    const values = $derived(project === null ? {} : fieldValues(project));
+    const fields = $derived(manifestFields());
+    const sections = $derived(manifestSections());
+
+    /** The edits over the project's own values, by field name. Cleared by Revert and by a save. */
+    let edits = $state<Record<string, unknown>>({});
+    /** What the last save said, as lines the pane shows under the form. */
+    let result = $state<string[]>([]);
+
+    const dirty = $derived(fields.filter((one) => changed(one.field)));
+
+    function readId(state: unknown): string {
+        if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
+        const held = (state as Record<string, unknown>).id;
+        return typeof held === 'string' ? held : '';
+    }
+
+    /** The value a control shows: the edit when there is one, the project's value otherwise. */
+    function valueOf(field: string): unknown {
+        return field in edits ? edits[field] : values[field];
+    }
+
+    /**
+     * Whether a field has an edit that says something other than what the project says. The two are
+     * compared trimmed, because the write trims: an edit that differs from the file by a space at
+     * the end is an edit the server would answer with nothing changed, and a row that says it is
+     * waiting to be saved when nothing will be written says the wrong thing.
+     */
+    function changed(field: string): boolean {
+        if (!(field in edits)) return false;
+        return asText(edits[field]).trim() !== asText(values[field]).trim();
+    }
+
+    function edit(field: string, value: unknown): void {
+        edits = { ...edits, [field]: value };
+    }
+
+    function revert(): void {
+        edits = {};
+        result = [];
+    }
+
+    /** The fields the form posts: the changed ones, and the read-only ones never. */
+    function payload(): Record<string, unknown> {
+        const body: Record<string, unknown> = {};
+        for (const one of dirty) {
+            if (NOT_WRITTEN.includes(one.field)) continue;
+            body[one.field] = edits[one.field];
+        }
+        return body;
+    }
+
+    /** What the toolbar says about the form: how much is waiting to be saved. */
+    function summary(): string {
+        return dirty.length === 0 ? t('editor.clean') : t('editor.dirty', dirty.length);
+    }
+
+    async function save(): Promise<void> {
+        const body = payload();
+        if (Object.keys(body).length === 0) {
+            result = [t('editor.saved_none')];
+            return;
+        }
+        const answer = await writeManifest(id, body);
+        if (!answer.ok) {
+            result = [t('editor.failed', answer.error ?? '')];
+            return;
+        }
+        result = [
+            t('editor.saved', answer.changed.join(', ')),
+            ...answer.refused.map((one) => t('editor.refused', one.field, one.reason))
+        ];
+    }
+
+    /** A field the schema names but the snapshot does not carry: the form opens it empty. */
+    function noteFor(field: FormField): string | undefined {
+        return NOT_IN_MODEL.includes(field.field) ? t('editor.not_in_model') : undefined;
+    }
+</script>
+
+{#snippet control(field: FormField)}
+    {#if field.type === 'readonly' || NOT_WRITTEN.includes(field.field)}
+        <TextInput
+            value={asText(valueOf(field.field))}
+            label={field.label}
+            readonly
+            oninput={() => {}}
+        />
+    {:else if field.type === 'checkbox'}
+        <Checkbox
+            checked={valueOf(field.field) === true}
+            label={field.label}
+            onchange={(on) => edit(field.field, on)}
+        />
+    {:else if field.type === 'select'}
+        <Select
+            value={asText(valueOf(field.field))}
+            label={field.label}
+            empty={t('editor.empty_choice')}
+            choices={fieldChoices(field)}
+            onchange={(value) => edit(field.field, value)}
+        />
+    {:else if field.type === 'chips' || field.type === 'tags'}
+        <MultiSelect
+            values={asList(valueOf(field.field))}
+            label={field.label}
+            choices={fieldChoices(field)}
+            onchange={(list) => edit(field.field, list)}
+            search={t('editor.search')}
+            remove={t('editor.remove')}
+            removeGlyph={t('editor.remove_glyph')}
+            free={field.type === 'tags'}
+            none={t('editor.no_choices')}
+        />
+    {:else if field.type === 'textarea' || field.type === 'lines'}
+        <TextArea
+            value={asText(valueOf(field.field))}
+            label={field.label}
+            rows={ROWS}
+            oninput={(value) =>
+                edit(field.field, field.type === 'lines' ? value.split('\n') : value)}
+        />
+    {:else if field.type === 'date'}
+        <DateInput
+            value={asText(valueOf(field.field))}
+            label={field.label}
+            oninput={(value) => edit(field.field, value)}
+        />
+    {:else if field.type === 'keymap'}
+        <TextInput
+            value={asText(valueOf(field.field))}
+            label={field.label}
+            readonly
+            oninput={() => {}}
+        />
+    {:else}
+        <TextInput
+            value={asText(valueOf(field.field))}
+            label={field.label}
+            oninput={(value) => edit(field.field, value)}
+        />
+    {/if}
+{/snippet}
+
+{#snippet tools()}
+    <Toolbar label={t('editor.toolbar')}>
+        <Chip label={pending() ? t('editor.saving') : summary()} />
+        <ToolButton
+            label={t('editor.save')}
+            glyph={t('editor.save_glyph')}
+            active={dirty.length > 0}
+            onclick={save}
+        />
+        <ToolButton label={t('editor.revert')} glyph={t('editor.revert_glyph')} onclick={revert} />
+    </Toolbar>
+{/snippet}
+
+<Pane title={project === null ? t('editor.title') : project.title} toolbar={tools}>
+    <div class="editor" data-instance={instance.id} data-project={id}>
+        {#if id === ''}
+            <Empty message={t('editor.none')} glyph={t('editor.none_glyph')} />
+        {:else if project === null}
+            <Empty message={t('editor.unknown', id)} glyph={t('editor.none_glyph')} />
+        {:else}
+            {#each sections as section (section)}
+                {@const own = fields.filter((one) => one.section === section)}
+                {#if own.length > 0}
+                    <section class="group">
+                        <h3 class="heading">{section}</h3>
+                        {#each own as field (field.field)}
+                            <Field
+                                label={field.label}
+                                help={field.help}
+                                note={noteFor(field)}
+                                dirty={changed(field.field)}
+                            >
+                                {@render control(field)}
+                            </Field>
+                        {/each}
+                    </section>
+                {/if}
+            {/each}
+            {#if result.length > 0}
+                <p class="result">
+                    {#each result as line, at (`${at}:${line}`)}
+                        <span class="line">{line}</span>
+                    {/each}
+                </p>
+            {/if}
+        {/if}
+    </div>
+</Pane>
+
+<style>
+    .group {
+        margin-bottom: 12px;
+    }
+
+    .heading {
+        margin: 0 0 4px;
+        font-size: var(--fs-sm);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--accent-txt, var(--accent));
+        border-bottom: 1px solid var(--line);
+    }
+
+    .result {
+        margin: 0;
+        padding-top: 8px;
+        border-top: 1px solid var(--line);
+        font-size: var(--fs-sm);
+        color: var(--muted-txt, var(--muted));
+    }
+
+    .line {
+        display: block;
+    }
+
+    :global(body.rice) .heading {
+        text-transform: none;
+        letter-spacing: 0.06em;
+    }
+</style>

@@ -22,6 +22,7 @@ import {
     openInstance,
     paneAt,
     parseLayout,
+    restate,
     restore,
     serialiseLayout,
     settleFocus,
@@ -204,8 +205,11 @@ export function focused(): Focus | null {
  * opens a second copy of the same view, and otherwise a new instance opens in that tree's active
  * pane. The panel is shown when a view is opened into it and it was hidden, since opening a view
  * into something invisible would look like nothing happening.
+ *
+ * `state` is what the opener has to say to the view: the project a card wants edited. Given one, an
+ * instance that is already open is retargeted rather than left showing what it was showing.
  */
-export function openView(view: ViewId, where: Target): void {
+export function openView(view: ViewId, where: Target, state?: unknown): void {
     // A maximised pane hides everything else, so a view opened into the other tree would land out
     // of sight; opening it is what the rail was clicked for, so the arrangement comes back instead.
     const focus = focusedPane(store.current);
@@ -216,11 +220,12 @@ export function openView(view: ViewId, where: Target): void {
     const inside = into === null ? null : paneAt(tree, into);
     const existing = inside === null ? findView(tree, view) : findIn(inside, view);
     if (existing !== null) {
+        if (state !== undefined) change(where, (current) => restate(current, existing.id, state));
         activateInstance(where, existing.id);
         if (where === 'panel' && store.current.dock === 'hidden') dock('right');
         return;
     }
-    const instance = newInstance(view);
+    const instance = newInstance(view, state ?? {});
     const path = into !== null && inside !== null ? into : activePath(tree, lastActive[where]);
     lastActive[where] = instance.id;
     change(where, (current) => openInstance(current, path, instance));

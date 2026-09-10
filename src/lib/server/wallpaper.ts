@@ -14,7 +14,7 @@ import { createReadStream, readdirSync, statSync } from 'node:fs';
 import { extname, join, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 import { engineDir, loadConfig, loadLocal } from '../data/sources/config.ts';
-import { allowedOrigin } from './socket.ts';
+import { allowedOrigin } from './auth.ts';
 
 /** Where the images sit when config/appearance.yml names no `dir`, relative to the hub. */
 export const DEFAULT_DIR = join('tools', 'cockpit', 'assets', 'wallpaper');

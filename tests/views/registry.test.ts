@@ -79,7 +79,8 @@ describe('the real registrations', () => {
             'gallery',
             'projects',
             'archive',
-            'coauthor'
+            'coauthor',
+            'editor'
         ]);
     });
 

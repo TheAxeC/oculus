@@ -6,12 +6,14 @@
 // The origin check is the read half of DESIGN.md's "Auth". The server binds 127.0.0.1, but any page
 // open in the browser can address 127.0.0.1, so a connection is refused unless its Origin names
 // this machine. A missing Origin is refused with the rest: a browser always sends one on a
-// WebSocket handshake, so its absence is not a browser tab.
+// WebSocket handshake, so its absence is not a browser tab. The rule itself is server/auth.ts's,
+// where the write half of "Auth" is, and this uses it rather than holding a second copy.
 
 import type { IncomingMessage, Server } from 'node:http';
 import type { Duplex } from 'node:stream';
 import { WebSocketServer } from 'ws';
 import type { WebSocket } from 'ws';
+import { allowedOrigin } from './auth.ts';
 import type { Hub, Sink } from './channels.ts';
 
 export type SocketOptions = {
@@ -23,18 +25,6 @@ export type Attached = {
     /** Stop listening for upgrades and close every open connection. */
     close(): void;
 };
-
-/** Whether an Origin header names this machine. Any port, since dev and the built server differ. */
-export function allowedOrigin(origin: string | undefined): boolean {
-    if (origin === undefined || origin === '') return false;
-    let url: URL;
-    try {
-        url = new URL(origin);
-    } catch {
-        return false;
-    }
-    return url.hostname === '127.0.0.1' || url.hostname === 'localhost';
-}
 
 /** The channels of a subscribe message, or null when the message is not one. */
 export function subscriptionChannels(data: string): string[] | null {

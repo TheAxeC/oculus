@@ -32,6 +32,7 @@
         type FacetValue
     } from '$lib/state/board';
     import { board, boardPreset } from '$lib/state/selectors.svelte';
+    import { openView } from '$lib/state/layout.svelte';
     import { lookup, t } from '$lib/state/text';
     import { chipGlyph, chipLabel, statusTone } from '$lib/state/tones';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
@@ -292,6 +293,11 @@
                     glyph={open ? t('cards.collapse_glyph') : t('cards.expand_glyph')}
                     active={open}
                     onclick={() => toggleCard(item.id)}
+                />
+                <ToolButton
+                    label={t('cards.edit_manifest')}
+                    glyph={t('cards.edit_glyph')}
+                    onclick={() => openView('editor', 'panel', { id: item.id })}
                 />
             {/snippet}
 

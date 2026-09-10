@@ -10,7 +10,10 @@
 
 import { boardItems, presetFor } from './board.ts';
 import { config, portfolio } from './entities.svelte.ts';
+import { choicesFor, formFields, formSections } from './schema.ts';
 import type { BoardItem, BoardPreset } from './board.ts';
+import type { Choice, FormField } from './schema.ts';
+import type { Id, Project } from '../data/model.ts';
 
 /** The merged config the `config` channel delivered, or an empty map before the first message. */
 export function configMap(): Record<string, unknown> {
@@ -29,4 +32,24 @@ export function boardPreset(view: string): BoardPreset {
 export function board(preset: BoardPreset): BoardItem[] {
     const snapshot = portfolio();
     return snapshot === null ? [] : boardItems(snapshot, preset);
+}
+
+/** One project of the snapshot, or null before the first one arrives and for an id it does not hold. */
+export function projectOf(id: Id): Project | null {
+    return portfolio()?.entities.projects[id] ?? null;
+}
+
+/** The edit form as config/manifest-schema.yml describes it, in file order. */
+export function manifestFields(): FormField[] {
+    return formFields(configMap());
+}
+
+/** The form's sections, in the order the schema lists them. */
+export function manifestSections(): string[] {
+    return formSections(configMap());
+}
+
+/** What one field of choices may be set to, over the snapshot and the vocabulary as they stand. */
+export function fieldChoices(field: FormField): Choice[] {
+    return choicesFor(field, portfolio(), configMap());
 }

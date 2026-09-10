@@ -7,6 +7,7 @@
 // the table is not widened for a barrel. Here it is outside `src/lib` and outside the table, and it
 // is the only module in the application that names a view.
 
+import Editor from '$lib/views/Editor.svelte';
 import Findings from '$lib/views/Findings.svelte';
 import Gallery from '$lib/views/Gallery.svelte';
 import Projects from '$lib/views/Projects.svelte';
@@ -55,4 +56,13 @@ registerView({
     label: 'views.coauthor',
     glyph: 'views.coauthor_glyph',
     component: Projects
+});
+
+// The manifest edit form. It is opened for one project, by the edit control of a card, which is what
+// its instance state holds; opened from the rail it has none and says so.
+registerView({
+    id: 'editor',
+    label: 'views.editor',
+    glyph: 'views.editor_glyph',
+    component: Editor
 });
