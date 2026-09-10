@@ -192,7 +192,7 @@
         justify-content: space-between;
         gap: 8px;
         flex: 0 0 auto;
-        width: 52px;
+        width: var(--rail-width);
         padding: 6px 4px;
         box-sizing: border-box;
         background: var(--bg);
@@ -212,6 +212,13 @@
 
     .views {
         overflow-y: auto;
+    }
+
+    /* On a short window the view list is what gives way, and it scrolls. Without this the foot
+       shrinks with it, its buttons pile over each other and the last ones fall below the window,
+       which is how the theme menu and the arrangement control came to be unreachable. */
+    .controls {
+        flex-shrink: 0;
     }
 
     .group {

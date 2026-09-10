@@ -211,15 +211,23 @@
         right: 0;
     }
 
-    /* A compact menu that opens upward sits in a strip too narrow for the list, so the list opens
-       beside the button rather than above it and is not clipped by the strip. A compact menu that
-       opens downward (a pane's menu) keeps its placement. */
+    /* A compact menu that opens upward sits in the rail, a strip too narrow for the list, so the
+       list opens beside the rail rather than above the button. It is fixed to the window's foot
+       and bounded by the window's height: anchored to the button, a list of seventeen themes ran
+       above the top of a short window and its first entries could not be reached. Under a
+       wallpaper the rail's backdrop filter makes the rail the containing block instead of the
+       viewport; the rail spans the window's height from its left edge, so the two agree. A compact
+       menu that opens downward (a pane's menu) keeps its placement. */
     .opener.compact + .list:not(.down) {
-        left: 100%;
+        position: fixed;
+        left: calc(var(--rail-width) + 4px);
         right: auto;
-        bottom: 0;
-        margin-bottom: 0;
-        margin-left: 4px;
+        top: auto;
+        bottom: 8px;
+        max-height: calc(100vh - 16px);
+        overflow-y: auto;
+        box-sizing: border-box;
+        margin: 0;
     }
 
     .item {
