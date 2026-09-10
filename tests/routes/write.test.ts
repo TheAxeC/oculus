@@ -6,7 +6,7 @@
 // be inside it first. What this does NOT cover: the token actually reaching the page, and Kit
 // putting it on the event, which is exercised by the curl in the package's verification.
 
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -30,10 +30,22 @@ function target(): WriteTarget {
     mkdirSync(folder, { recursive: true });
     writeFileSync(join(folder, 'project.yml'), MANIFEST);
     const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+    // The overrides file is inside the same temporary directory, so a session write in this suite
+    // can never reach ~/.oculus/sessions.json.
+    const overrides = join(dir, 'sessions.json');
+    expect(resolve(overrides).startsWith(resolve(dir) + sep)).toBe(true);
     return {
         hub: dir,
-        config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] }
+        config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
+        overrides
     };
+}
+
+/** What the overrides file holds, or null when nothing has written it yet. */
+function overridesOf(into: WriteTarget): unknown {
+    const path = into.overrides as string;
+    if (!existsSync(path)) return null;
+    return JSON.parse(readFileSync(path, 'utf8'));
 }
 
 /** A request as the page makes it, with whatever headers and body a case wants instead. */
@@ -120,6 +132,42 @@ describe('the write endpoint', () => {
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({ ok: true, changed: ['status.line'], refused: [] });
         expect(manifestOf(into)).toBe(MANIFEST.replace('"the line"', '"a new line"'));
+    });
+
+    it('dismisses a session, and brings it back, in the overrides file', async () => {
+        const into = target();
+        const dismiss = { kind: 'session', id: 'sess-1', hidden: true };
+        const response = await handleWrite(request(dismiss), TOKEN, into);
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ ok: true, changed: ['hidden'], refused: [] });
+        expect(overridesOf(into)).toEqual({ sessions: { 'sess-1': { hidden: true } } });
+
+        const restore = { kind: 'session', id: 'sess-1', hidden: false };
+        expect((await handleWrite(request(restore), TOKEN, into)).status).toBe(200);
+        expect(overridesOf(into)).toEqual({ sessions: {} });
+    });
+
+    it('refuses a session write with no token, and writes nothing', async () => {
+        const into = target();
+        const body = { kind: 'session', id: 'sess-1', hidden: true };
+        const response = await handleWrite(request(body, { 'x-oculus-token': '' }), TOKEN, into);
+        expect(response.status).toBe(403);
+        expect(overridesOf(into)).toBe(null);
+    });
+
+    it('refuses a session write that names no id or no flag', async () => {
+        const into = target();
+        expect((await handleWrite(request({ kind: 'session', id: '' }), TOKEN, into)).status).toBe(
+            400
+        );
+        expect((await handleWrite(request({ kind: 'session', id: 'a' }), TOKEN, into)).status).toBe(
+            400
+        );
+        expect(
+            (await handleWrite(request({ kind: 'session', id: 'a', hidden: 'yes' }), TOKEN, into))
+                .status
+        ).toBe(400);
+        expect(overridesOf(into)).toBe(null);
     });
 
     it('carries a refusal back with the fields it did write', async () => {

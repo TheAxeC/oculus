@@ -18,12 +18,17 @@ import { engineDir, loadConfig, loadLocal } from '../data/sources/config.ts';
 import { readManifests } from '../data/sources/manifests.ts';
 import { fieldNames } from '../data/validate.ts';
 import { hasToken, sameOrigin } from './auth.ts';
+import { setHidden } from './sessions/overrides.ts';
 import { setFields } from './yaml-edit.ts';
 import type { FieldValue, Refusal } from './yaml-edit.ts';
 import type { PortfolioConfig } from '../data/model.ts';
 
-/** What a write needs to know: which hub to write in, and what its manifests are checked against. */
-export type WriteTarget = { hub: string; config: PortfolioConfig };
+/**
+ * What a write needs to know: which hub to write in, what its manifests are checked against, and
+ * where the per-session overrides file is. The overrides path is absent on a machine that has not
+ * set `sessions_overrides` in local.yml, and O12's own default is used then.
+ */
+export type WriteTarget = { hub: string; config: PortfolioConfig; overrides?: string };
 
 export type WriteOutcome = {
     /** False when the hub holds no project with that id; then nothing was read and nothing written. */
@@ -179,6 +184,9 @@ export function writeManifest(
 /** The body a write carries. `kind` is the discriminator later writes are added on. */
 type ManifestWrite = { kind: 'manifest'; id: string; fields: Record<string, unknown> };
 
+/** The other body: one session dismissed from the rail, or brought back to it. */
+type SessionWrite = { kind: 'session'; id: string; hidden: boolean };
+
 /** The body as a manifest write, or null when it is not one. */
 export function manifestWrite(body: unknown): ManifestWrite | null {
     if (typeof body !== 'object' || body === null || Array.isArray(body)) return null;
@@ -187,6 +195,15 @@ export function manifestWrite(body: unknown): ManifestWrite | null {
     const fields = held.fields;
     if (typeof fields !== 'object' || fields === null || Array.isArray(fields)) return null;
     return { kind: 'manifest', id: held.id, fields: fields as Record<string, unknown> };
+}
+
+/** The body as a session write, or null when it is not one. */
+export function sessionWrite(body: unknown): SessionWrite | null {
+    if (typeof body !== 'object' || body === null || Array.isArray(body)) return null;
+    const held = body as Record<string, unknown>;
+    if (held.kind !== 'session' || typeof held.id !== 'string' || held.id === '') return null;
+    if (typeof held.hidden !== 'boolean') return null;
+    return { kind: 'session', id: held.id, hidden: held.hidden };
 }
 
 function json(status: number, body: unknown): Response {
@@ -199,7 +216,12 @@ function json(status: number, body: unknown): Response {
 /** Where writes land on this machine: the hub of local.yml, read the way every other reader does. */
 export function target(): WriteTarget {
     const engine = engineDir();
-    return { hub: loadLocal(engine).hub, config: portfolioConfigFrom(loadConfig(engine).config) };
+    const local = loadLocal(engine);
+    return {
+        hub: local.hub,
+        config: portfolioConfigFrom(loadConfig(engine).config),
+        overrides: local.sessionsOverrides
+    };
 }
 
 /**
@@ -223,8 +245,19 @@ export async function handleWrite(
     } catch {
         return json(400, { error: 'the body is not JSON' });
     }
+    const session = sessionWrite(body);
+    if (session !== null) {
+        try {
+            setHidden(session.id, session.hidden, into.overrides);
+        } catch (error) {
+            const reason = error instanceof Error ? error.message : String(error);
+            return json(500, { error: `the dismissal could not be saved: ${reason}` });
+        }
+        return json(200, { ok: true, changed: ['hidden'], refused: [] });
+    }
+
     const write = manifestWrite(body);
-    if (write === null) return json(400, { error: 'the body is not a manifest write' });
+    if (write === null) return json(400, { error: 'the body is not a write this route knows' });
 
     const outcome = writeManifest(into.hub, into.config, write.id, write.fields);
     if (!outcome.found) return json(404, { error: `no project with the id ${write.id}` });

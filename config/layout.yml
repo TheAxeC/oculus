@@ -17,6 +17,33 @@ nav_groups:
   more:
     - { label: "Personal",    keys: [approach, agents, memories] }
     - { label: "System",      keys: [hpc, help, audit, config] }
+  sessions:
+    - { label: "Sessions",    keys: [session-list, session-detail, terminal, timeline, changes, agents] }
+
+
+# Saved arrangements: a whole workbench written by hand, applied by a control in the rail's panel menu.
+# A node is `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view
+# id or a list of them (the tabs of that pane); `dock` and `panel_size` are the panel's, and default to
+# right and 0.3. It is the layout tree of DESIGN.md with the instance ids left out, since those are
+# minted fresh every time the arrangement is applied. An arrangement that does not add up is ignored.
+arrangements:
+  sessions:
+    dock: right
+    main:
+      kind: split
+      dir: row
+      sizes: [0.28, 0.72]
+      children:
+        - { kind: pane, view: session-list }
+        - kind: split
+          dir: col
+          sizes: [0.6, 0.4]
+          children:
+            - { kind: pane, view: terminal }
+            - { kind: pane, view: timeline }
+    panel:
+      kind: pane
+      view: [session-detail, changes, agents]
 
 
 # Board (Projects / Archive / Coauthor) chrome: list-view column headers, the per-board search placeholder,

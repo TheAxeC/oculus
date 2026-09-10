@@ -80,7 +80,13 @@ describe('the real registrations', () => {
             'projects',
             'archive',
             'coauthor',
-            'editor'
+            'editor',
+            'session-list',
+            'session-detail',
+            'terminal',
+            'timeline',
+            'changes',
+            'agents'
         ]);
     });
 

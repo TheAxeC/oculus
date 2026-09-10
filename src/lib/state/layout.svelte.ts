@@ -21,6 +21,7 @@ import {
     newInstance,
     openInstance,
     paneAt,
+    parseArrangement,
     parseLayout,
     restate,
     restore,
@@ -42,10 +43,20 @@ import {
 /** The key the arrangement is saved under. The envelope inside it carries the version. */
 export const LAYOUT_KEY = 'oculus.layout.v1';
 
+/**
+ * The key the workbench a named arrangement replaced is kept under, so the control that applied the
+ * arrangement puts the user's own back. It holds a whole serialised workbench, or the empty string
+ * for none: the store never removes a key, so a Storage it is handed needs only get and set.
+ */
+export const PREVIOUS_KEY = 'oculus.layout.previous';
+
 /** What the store needs of a Storage, so a test can hand it a plain object. */
 type Storable = Pick<Storage, 'getItem' | 'setItem'>;
 
 const store: { current: Workbench } = $state({ current: defaultWorkbench() });
+
+/** The workbench a named arrangement replaced, serialised, or the empty string when none did. */
+const kept: { previous: string } = $state({ previous: '' });
 
 /** Where apply() saves, once loadLayout has named it. Nothing is saved before that. */
 let backing: Storable | null = null;
@@ -94,9 +105,65 @@ export function loadLayout(storage: Storable = localStorage): boolean {
     }
     const parsed = raw === null ? null : parseLayout(raw);
     store.current = parsed ?? defaultWorkbench();
+    let previous: string | null = null;
+    try {
+        previous = storage.getItem(PREVIOUS_KEY);
+    } catch {
+        previous = null;
+    }
+    kept.previous = previous ?? '';
     lastActive.main = null;
     lastActive.panel = null;
     return parsed !== null;
+}
+
+/** Write one string under a key, or do nothing when there is nowhere to write yet. */
+function remember(key: string, value: string): void {
+    if (backing === null) return;
+    try {
+        backing.setItem(key, value);
+    } catch {
+        // A full or refused storage forgets the arrangement at the next load and nothing else.
+    }
+}
+
+/** Whether a named arrangement is in force, which is to say a workbench is held to go back to. */
+export function arranged(): boolean {
+    return kept.previous !== '';
+}
+
+/**
+ * Show a named arrangement, keeping the workbench that was on screen so the same control puts it
+ * back. An arrangement that does not parse changes nothing and says so, and applying one while
+ * another is already in force keeps the workbench held first: what is remembered is the user's own
+ * arrangement, never a generated one.
+ */
+export function applyArrangement(raw: unknown): boolean {
+    const next = parseArrangement(raw);
+    if (next === null) return false;
+    if (kept.previous === '') {
+        const previous = serialiseLayout(store.current);
+        kept.previous = previous;
+        remember(PREVIOUS_KEY, previous);
+    }
+    apply(next);
+    return true;
+}
+
+/**
+ * Put the workbench a named arrangement replaced back. The held workbench is let go either way, so a
+ * saved value that no longer parses leaves the control saying what it now does rather than offering
+ * a restore that cannot happen.
+ */
+export function restoreArrangement(): boolean {
+    const previous = kept.previous;
+    kept.previous = '';
+    remember(PREVIOUS_KEY, '');
+    if (previous === '') return false;
+    const back = parseLayout(previous);
+    if (back === null) return false;
+    apply(back);
+    return true;
 }
 
 /** Make an arrangement current and save it. */

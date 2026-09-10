@@ -40,9 +40,11 @@
     type Props = {
         /** The `nav_groups`-shaped list from the merged config, for the rail. */
         groups?: NavGroup[];
+        /** The `arrangements.sessions` node of the merged config, unread, for the rail's control. */
+        arrangement?: unknown;
     };
 
-    let { groups = [] }: Props = $props();
+    let { groups = [], arrangement = null }: Props = $props();
 
     let area: HTMLDivElement | undefined = $state(undefined);
 
@@ -116,7 +118,7 @@
              negative depth paints over the page's own background and under every panel. -->
         <div class="wallpaper" style={image}></div>
     {/if}
-    <ActivityRail {groups} />
+    <ActivityRail {groups} {arrangement} />
     <div class="area {direction}" bind:this={area}>
         {#if zoomed !== null && focus !== null}
             <div class="tree" style="flex: 1 1 0">

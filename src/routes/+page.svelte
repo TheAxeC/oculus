@@ -20,6 +20,17 @@
      */
     const groups = $derived<NavGroup[]>(readGroups(config()?.config.nav_groups));
 
+    /**
+     * The `arrangements.sessions` node of config/layout.yml, handed on untouched. state/layout.ts
+     * reads its shape and refuses one that does not add up, so nothing here knows what is in it.
+     */
+    const arrangement = $derived(readArrangement(config()?.config.arrangements));
+
+    function readArrangement(raw: unknown): unknown {
+        if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
+        return (raw as Record<string, unknown>).sessions ?? null;
+    }
+
     function readGroups(raw: unknown): NavGroup[] {
         if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return [];
         const found: NavGroup[] = [];
@@ -46,4 +57,4 @@
     });
 </script>
 
-<Workbench {groups} />
+<Workbench {groups} {arrangement} />

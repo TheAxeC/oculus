@@ -2,12 +2,28 @@
 
 Every agent dispatched on an oculus package runs under this file plus one brief in `briefs/`. The brief names the package, the files to read in full, the exact deliverable, and the verification commands with their expected output. Nothing in a brief overrides anything here.
 
-## Read first, in full, before changing anything
+## Read first, before changing anything
 
-1. `tools/oculus/DESIGN.md`. It is the artefact the package is measured against. Where the brief and the design disagree, stop and report the disagreement; do not pick a side.
-2. The brief for this package.
-3. The hub `CLAUDE.md`, the sections "Hard rules" and "Working rules".
-4. Every file the brief lists, in full.
+1. The brief for this package. It names the sections of `tools/oculus/DESIGN.md` the package is measured against; read those sections and not the whole file. Where the brief and the design disagree, stop and report the disagreement; do not pick a side.
+2. The files the brief lists, and only those; where the brief gives a line range, read the range. Read them in one turn, not one per turn: every turn carries the whole context again, so the number of turns is what a package costs.
+3. Do not read the hub's `CLAUDE.md`; the rules that bind you are the ones below.
+
+## The working rules that bind every package (from the hub's CLAUDE.md, 2026-09-10)
+
+- A report states the end state: what is NOT done first, then a DONE / NOT DONE ledger naming the command that proves each row. No narration of wrong turns taken and backed out. Never present partial work as complete; never state a measurement not taken.
+- Every claim about behaviour, cost or timing names the command that produced it, or says "not verified".
+- A test never asserts a known defect, and no threshold is loosened to make a check pass; a check that passes only after loosening is a finding to report.
+- A risk you name is a task you own: fix it, or say plainly and prominently that it is unfixed. Pick a check by asking whether it would fail if the risk were real.
+- No silent design decisions: a user-visible shape (a config key, a wire format, a vocabulary) the brief does not name is reported as a decision the orchestrator may reverse, not baked in quietly. Internal, reversible details are chosen freely and listed.
+- Verify before asserting: read the source, cite `file:line`; never repeat another agent's summary as a fact.
+- Prose: plain, ASCII, no em dashes, no quips; name the actual function, file and line.
+- The cockpit is a cautionary reference, never a justification; every oculus choice is justified from `DESIGN.md`.
+
+## Token discipline
+
+- While working, run the one test file that covers what you are changing (`npx vitest run tests/<file>`), not the whole suite. Run `npm test` once at the end; use `npx vitest run --reporter=dot` for that, and the verbose reporter only for the lines the report quotes.
+- Batch independent reads into one turn. Do not re-read a file you wrote; the harness holds it.
+- Do not paste whole files into your reasoning or your report; quote the lines the report needs.
 
 ## Where you work
 

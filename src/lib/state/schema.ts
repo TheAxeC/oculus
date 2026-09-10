@@ -8,7 +8,7 @@
 // form with no code change.
 //
 // The current values come from the snapshot's Project, which carries what the model declares and no
-// more. Ten of the schema's fields are not in the model (NOT_IN_MODEL below), so the form opens them
+// more. Eleven of the schema's fields are not in the model (NOT_IN_MODEL below), so the form opens them
 // empty; the write itself handles them like any other, since it reads the manifest from disk.
 
 import type { Id, Project, Snapshot } from '../data/model.ts';
@@ -40,6 +40,7 @@ export const NOT_WRITTEN = ['id', 'tier', 'type'];
  * on the left of the edit. Model and schema are two vocabularies, and this is where they differ.
  */
 export const NOT_IN_MODEL = [
+    'subtasks',
     'priority',
     'waiting-on',
     'followup.do',

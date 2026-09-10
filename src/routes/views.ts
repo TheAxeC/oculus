@@ -12,6 +12,12 @@ import Findings from '$lib/views/Findings.svelte';
 import Gallery from '$lib/views/Gallery.svelte';
 import Projects from '$lib/views/Projects.svelte';
 import Status from '$lib/views/Status.svelte';
+import Agents from '$lib/views/sessions/Agents.svelte';
+import Changes from '$lib/views/sessions/Changes.svelte';
+import SessionDetail from '$lib/views/sessions/SessionDetail.svelte';
+import SessionList from '$lib/views/sessions/SessionList.svelte';
+import Terminal from '$lib/views/sessions/Terminal.svelte';
+import Timeline from '$lib/views/sessions/Timeline.svelte';
 import { registerView } from '$lib/views/registry';
 
 registerView({
@@ -65,4 +71,49 @@ registerView({
     label: 'views.editor',
     glyph: 'views.editor_glyph',
     component: Editor
+});
+
+// Sessions, which DESIGN.md's decision of 2026-09-10 makes six views rather than one. They are tied
+// together by the selection the list writes, and the arrangement in config/layout.yml is what puts
+// them on screen at once; each of them stands on its own in any pane it is opened into.
+registerView({
+    id: 'session-list',
+    label: 'sessions.rail_title',
+    glyph: 'sessions.rail_glyph',
+    component: SessionList
+});
+
+registerView({
+    id: 'session-detail',
+    label: 'sessions.detail_title',
+    glyph: 'sessions.detail_glyph',
+    component: SessionDetail
+});
+
+registerView({
+    id: 'terminal',
+    label: 'sessions.view_terminal',
+    glyph: 'sessions.terminal_glyph',
+    component: Terminal
+});
+
+registerView({
+    id: 'timeline',
+    label: 'sessions.view_timeline',
+    glyph: 'sessions.timeline_glyph',
+    component: Timeline
+});
+
+registerView({
+    id: 'changes',
+    label: 'sessions.view_changes',
+    glyph: 'sessions.changes_glyph',
+    component: Changes
+});
+
+registerView({
+    id: 'agents',
+    label: 'sessions.view_agents',
+    glyph: 'sessions.agents_glyph',
+    component: Agents
 });

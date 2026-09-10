@@ -174,6 +174,7 @@ describe("oculus's own config directory", () => {
         'behavior.yml': [
             'read_limits',
             'stale_days',
+            'context_window',
             'data_domains',
             'stale_lag_days',
             'refresh_stale_days',
@@ -190,6 +191,7 @@ describe("oculus's own config directory", () => {
         'glyphs.yml': ['glyphs', 'ascii'],
         'layout.yml': [
             'nav_groups',
+            'arrangements',
             'board',
             'tab_rollup',
             'nav_live',

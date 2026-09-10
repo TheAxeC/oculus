@@ -34,7 +34,14 @@
 
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu from '$lib/ui/Menu.svelte';
-    import { dock, dockedAt, openView } from '$lib/state/layout.svelte';
+    import {
+        applyArrangement,
+        arranged,
+        dock,
+        dockedAt,
+        openView,
+        restoreArrangement
+    } from '$lib/state/layout.svelte';
     import {
         crt,
         setCrt,
@@ -53,9 +60,17 @@
     type Props = {
         /** The `nav_groups`-shaped list from the merged config; the page reads it and passes it on. */
         groups?: NavGroup[];
+        /**
+         * The `arrangements.sessions` node of the merged config, unread: state/layout.ts is what
+         * turns it into a workbench, and the shell may not read the config itself.
+         */
+        arrangement?: unknown;
     };
 
-    let { groups = [] }: Props = $props();
+    let { groups = [], arrangement = null }: Props = $props();
+
+    /** The id of the control that swaps the workbench for the saved arrangement, and back. */
+    const ARRANGE = 'arrange';
 
     const sections = $derived(arrange(views(), groups));
 
@@ -70,10 +85,31 @@
     const docks = $derived([
         { id: 'right', label: t('ui.dock_right'), active: dockedAt() === 'right' },
         { id: 'bottom', label: t('ui.dock_bottom'), active: dockedAt() === 'bottom' },
-        { id: 'hidden', label: t('ui.dock_hidden'), active: dockedAt() === 'hidden' }
+        { id: 'hidden', label: t('ui.dock_hidden'), active: dockedAt() === 'hidden' },
+        {
+            id: ARRANGE,
+            label: arranged() ? t('ui.arrange_restore') : t('ui.arrange_sessions'),
+            active: arranged()
+        }
     ]);
 
-    const dockLabel = $derived(docks.find((item) => item.active)?.label ?? t('ui.dock_right'));
+    const dockLabel = $derived(
+        docks.find((item) => item.id !== ARRANGE && item.active)?.label ?? t('ui.dock_right')
+    );
+
+    /**
+     * The one control that is not a dock: it puts the sessions arrangement on screen, keeping the
+     * workbench that was there, and puts that workbench back the next time it is picked. A saved
+     * arrangement of the viewer's own is therefore never lost by opening this one.
+     */
+    function pick(id: string): void {
+        if (id !== ARRANGE) {
+            dock(id as Dock);
+            return;
+        }
+        if (arranged()) restoreArrangement();
+        else applyArrangement(arrangement);
+    }
 
     /** The wallpaper toggle is drawn only where there is one to switch: it is config and a theme. */
     const offersWallpaper = $derived(wallpaperOnTheme(theme()));
@@ -144,7 +180,7 @@
             glyph={lookup('ui.dock_glyph')}
             compact
             items={docks}
-            onpick={(where) => dock(where as Dock)}
+            onpick={(where) => pick(where)}
         />
     </div>
 </nav>

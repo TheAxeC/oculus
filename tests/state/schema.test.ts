@@ -127,7 +127,7 @@ function snapshot(): Snapshot {
 
 describe('the form the schema describes', () => {
     it('holds the whole manifest, one field at a time', () => {
-        expect(fields.length).toBe(45);
+        expect(fields.length).toBe(46);
     });
 
     it('names seven sections and puts every field in one of them', () => {
@@ -158,7 +158,7 @@ describe('the form the schema describes', () => {
 
     it('keeps the order the file has', () => {
         expect(fields.slice(0, 3).map((one) => one.field)).toEqual(['id', 'tier', 'type']);
-        expect(fields[fields.length - 1].field).toBe('paths');
+        expect(fields[fields.length - 1].field).toBe('subtasks');
     });
 });
 

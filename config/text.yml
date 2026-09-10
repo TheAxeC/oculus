@@ -771,6 +771,20 @@ text:
     detail_title: "Session"
     detail_empty: "Pick a session in the rail."
     note: "Run <code>python3 build.py --serve</code> to see live Claude Code sessions here. A static build has no session endpoint to read."
+    # oculus's own: the glyph each of the six session views is registered with (a name in `glyphs:`),
+    # and the words the six need that the cockpit's one tab had no place for.
+    rail_glyph: "list"
+    detail_glyph: "now"
+    terminal_glyph: "hpc"
+    timeline_glyph: "timing"
+    changes_glyph: "code"
+    agents_glyph: "collab"
+    list_toolbar: "Session list controls"
+    dismiss_glyph: "dismiss"
+    restore_glyph: "note_back"
+    ended_glyph: "disclosure"
+    empty_glyph: "circle_empty"
+    select_tip: "show this session in the other session views"
 
   config:                      # Config tab (render/surfaces.py config_tab_html) - the split config, raw-YAML editable.
     intro: "The cockpit config, split across these files and merged by <code>load_config()</code>. Edit any file as raw YAML (served mode) - the build and <code>--selftest</code> validate it on save. The <b>+ status</b> button (top bar) is the one-click shortcut for adding a status colour."
@@ -830,6 +844,8 @@ text:
     accent_title: "Accent colour - used for state (active tab, selection, focus). Same as :accent"
     accent_reset: "back to the theme's own accent"
     panel: "Panel"
+    arrange_sessions: "Arrange for sessions"
+    arrange_restore: "Back to my own arrangement"
     dock_right: "Panel on the right"
     dock_bottom: "Panel along the bottom"
     dock_hidden: "Panel hidden"

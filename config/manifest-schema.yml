@@ -71,3 +71,4 @@ manifest_schema:
     outcome:       { label: "Outcome (citation / why-not)", type: textarea, section: "Archive (archive tier)" }
     doi:           { label: "DOI", type: text, section: "Archive (archive tier)" }
     paths:         { label: "Path overrides", type: keymap, section: "Overrides (rare)", help: "non-canonical doc locations - the escape hatch" }
+    subtasks:      { label: "Subtasks", type: keymap, section: Dates, help: "a checklist of { do, deadline, done, snooze } lines, the same mechanism as on a collection entry; edited by its own control, never by this form" }

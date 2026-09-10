@@ -35,11 +35,11 @@ export function lastError(): string | null {
     return state.error;
 }
 
-async function post(id: string, fields: Record<string, unknown>): Promise<Response> {
+async function post(body: unknown): Promise<Response> {
     return fetch('/api/write', {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-oculus-token': token },
-        body: JSON.stringify({ kind: 'manifest', id, fields })
+        body: JSON.stringify(body)
     });
 }
 
@@ -51,16 +51,29 @@ export async function writeManifest(
     id: string,
     fields: Record<string, unknown>
 ): Promise<WriteAnswer> {
+    return send({ kind: 'manifest', id, fields });
+}
+
+/**
+ * Dismiss one session, or bring it back. It is the same endpoint and the same token as a manifest
+ * write; what it writes is the per-session overrides file rather than a project.yml.
+ */
+export async function writeSession(id: string, hidden: boolean): Promise<WriteAnswer> {
+    return send({ kind: 'session', id, hidden });
+}
+
+/** One write, with the one retry a stale token gets. */
+async function send(request: unknown): Promise<WriteAnswer> {
     state.pending += 1;
     state.error = null;
     try {
-        let response = await post(id, fields);
+        let response = await post(request);
         if (response.status === 403) {
             // The import is here rather than at the top so nothing but a stale token pulls Kit's
             // navigation module in, and a server-rendered page never touches it.
             const { invalidateAll } = await import('$app/navigation');
             await invalidateAll();
-            response = await post(id, fields);
+            response = await post(request);
         }
         const body = (await response.json()) as Partial<WriteAnswer>;
         if (!response.ok) {

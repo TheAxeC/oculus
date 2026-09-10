@@ -1,0 +1,144 @@
+<script lang="ts">
+    // Layer 3, view. What the session did, newest last: a clock, what kind of thing it was, and the
+    // thing itself. A path is shown as its basename with the whole of it in the tooltip; a prompt
+    // keeps its words, because a slash in a prompt is not a path.
+    //
+    // Where it is scrolled to is the one piece of behaviour here. A fresh session, or a view just
+    // opened, starts at the newest event, since that is what a timeline is read for. After that the
+    // reader is left where they are: a push arriving while somebody is reading upwards must not
+    // yank the column back down.
+
+    import Chip from '$lib/ui/Chip.svelte';
+    import Empty from '$lib/ui/Empty.svelte';
+    import Pane from '$lib/ui/Pane.svelte';
+    import { basename, clock, compactCount } from '$lib/state/format';
+    import { sessionFor, type SessionEvent } from '$lib/state/selectors.svelte';
+    import { t } from '$lib/state/text';
+    import type { ViewProps } from '$lib/views/registry';
+
+    let { instance }: ViewProps = $props();
+
+    /** The kinds with a hue of their own; anything else prints itself in the muted chip. */
+    const TONES: Record<string, string> = {
+        prompt: 'blue',
+        tool: 'teal',
+        edit: 'amber',
+        turn: 'green',
+        bust: 'red'
+    };
+
+    const record = $derived(sessionFor(instance.id));
+    const events = $derived(record?.timeline ?? []);
+
+    let column: HTMLDivElement | undefined = $state(undefined);
+
+    /** The session on screen. A change to it is what makes the column fresh and sends it to the foot. */
+    let shown = '';
+
+    $effect(() => {
+        const id = record?.id ?? '';
+        // The count is read here as well as the id, so a push on the session already shown re-runs
+        // this too; then the column follows the newest event only if the reader was at the foot.
+        const count = events.length;
+        const box = column;
+        if (box === undefined) return;
+        const fresh = id !== shown;
+        shown = id;
+        if (fresh || (count > 0 && atFoot(box))) box.scrollTop = box.scrollHeight;
+    });
+
+    /** Pixels from the foot that still count as reading the newest event. */
+    const SLACK = 24;
+
+    function atFoot(box: HTMLDivElement): boolean {
+        return box.scrollTop + box.clientHeight >= box.scrollHeight - SLACK;
+    }
+
+    /** The chip's word. The five known kinds have one; anything else says what it calls itself. */
+    function kindLabel(kind: string): string {
+        if (kind === 'prompt') return t('js.sessions.ev_k_prompt');
+        if (kind === 'tool') return t('js.sessions.ev_k_tool');
+        if (kind === 'edit') return t('js.sessions.ev_k_edit');
+        if (kind === 'turn') return t('js.sessions.ev_k_turn');
+        if (kind === 'bust') return t('js.sessions.ev_k_bust');
+        return kind;
+    }
+
+    /** What the row reads: a turn as its length, a bust as its size, a path as its basename. */
+    function text(event: SessionEvent): string {
+        const held = String(event.text ?? '');
+        if (event.kind === 'turn') {
+            return t('js.sessions.ev_turn', String(Math.round((Number(held) || 0) / 1000)));
+        }
+        if (event.kind === 'bust') {
+            return t('js.sessions.ev_bust', compactCount(Number(held) || 0));
+        }
+        if (event.kind === 'tool' || event.kind === 'edit') return basename(held);
+        return held;
+    }
+
+    /** The tooltip: the whole path, and nothing where the row already says everything it has. */
+    function tip(event: SessionEvent): string | undefined {
+        const held = String(event.text ?? '');
+        if (event.kind === 'turn' || event.kind === 'bust') return undefined;
+        if (event.kind === 'tool' || event.kind === 'edit') {
+            return basename(held) === held ? undefined : held;
+        }
+        return held;
+    }
+</script>
+
+<Pane title={t('sessions.view_timeline')}>
+    <div class="timeline" bind:this={column} data-instance={instance.id}>
+        {#if record === null}
+            <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
+        {:else if events.length === 0}
+            <Empty message={t('js.sessions.tl_empty')} glyph={t('sessions.empty_glyph')} />
+        {:else}
+            {#each events as event, at (`${at}:${event.ts ?? ''}`)}
+                <div class="event">
+                    <span class="ts">{clock(event.ts)}</span>
+                    <Chip label={kindLabel(event.kind)} tone={TONES[event.kind]} />
+                    <span class="tx" title={tip(event)}>{text(event)}</span>
+                </div>
+            {/each}
+        {/if}
+    </div>
+</Pane>
+
+<style>
+    .timeline {
+        display: flex;
+        flex-direction: column;
+        gap: 2px;
+        height: 100%;
+        overflow: auto;
+    }
+
+    .event {
+        display: flex;
+        align-items: baseline;
+        gap: 6px;
+        min-width: 0;
+        font-size: var(--fs-sm);
+    }
+
+    .ts {
+        flex: 0 0 auto;
+        color: var(--muted-txt, var(--muted));
+        font-family: var(--font-num);
+        font-size: var(--fs-xs);
+    }
+
+    .tx {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+
+    /* The terminal shape: a log, in the face a log is read in. */
+    :global(body.rice) .timeline {
+        font-family: var(--font-mono);
+    }
+</style>

@@ -13,6 +13,11 @@ read_limits: { status.line: 220, next: 300, latest: 200, eli5: 360, results: 300
 # Hand-triggered feed staleness nudges (days).
 stale_days: { litwatch: 14, inbox: 10, scout: 7, audit: 7 }
 
+
+# The context window the session detail's meter measures the last turn's occupancy against, in tokens.
+# A transcript that states its own window (Codex does, Claude does not) is measured against that instead.
+context_window: 1000000
+
 # domains for which a project is EXPECTED to have a dataset (the audit flags a missing Data section); the
 # theory/method/meta lines legitimately have none. Author-specific, so it lives here (config default is empty).
 data_domains: [heart, liver, liverfl, liversurv, immune, brain, brainbci]
