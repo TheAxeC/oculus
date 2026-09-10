@@ -8,7 +8,7 @@
 // catalog the server shipped as page data, and every later edit of config/text.yml comes this way.
 
 import { receive } from './entities.svelte.ts';
-import { setCatalog, setGlyphs } from './text.ts';
+import { setAscii, setCatalog, setGlyphs } from './text.ts';
 import { setAppearance } from './appearance.ts';
 import { setVocab } from './tones.ts';
 import type { ConfigPayload, Message, Subscription } from '../data/model.ts';
@@ -96,6 +96,16 @@ function open(): void {
     });
 }
 
+/** A map of strings out of a config key, or null when the key holds no map. */
+function strings(raw: unknown): Record<string, string> | null {
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
+    const map: Record<string, string> = {};
+    for (const [name, value] of Object.entries(raw)) {
+        if (typeof value === 'string') map[name] = value;
+    }
+    return map;
+}
+
 function handle(data: string): void {
     let parsed: unknown;
     try {
@@ -118,15 +128,12 @@ function handle(data: string): void {
             setVocab(payload.config);
             setAppearance(payload.config);
         }
-        // The glyph vocabulary rides on the same channel: it is one key of the merged config, so an
-        // edit to config/glyphs.yml reaches the page by the push that already carries the strings.
-        const glyphs = payload.config?.glyphs;
-        if (typeof glyphs === 'object' && glyphs !== null && !Array.isArray(glyphs)) {
-            const map: Record<string, string> = {};
-            for (const [name, value] of Object.entries(glyphs)) {
-                if (typeof value === 'string') map[name] = value;
-            }
-            setGlyphs(map);
-        }
+        // The glyph vocabulary and its ASCII stand-ins ride on the same channel: they are two keys
+        // of the merged config, so an edit to config/glyphs.yml reaches the page by the push that
+        // already carries the strings.
+        const glyphs = strings(payload.config?.glyphs);
+        if (glyphs !== null) setGlyphs(glyphs);
+        const ascii = strings(payload.config?.ascii);
+        if (ascii !== null) setAscii(ascii);
     }
 }

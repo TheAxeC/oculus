@@ -160,9 +160,9 @@ export function textCatalog(config: Record<string, unknown>): Record<string, str
 
 /**
  * The keys of the merged config the client state installs before the page renders: the colours and
- * the chip vocabulary state/tones.ts reads, and the UI theme list state/appearance.ts reads.
- * `domains` is the research domains of config/vocab.yml; `themes` is the picker's list in
- * config/appearance.yml, which is a different thing under a name the two files no longer share.
+ * the chip vocabulary state/tones.ts reads, and the theme list, the wallpaper and the CRT default
+ * state/appearance.ts reads. `domains` is the research domains of config/vocab.yml; `themes`,
+ * `wallpaper` and `crt` are config/appearance.yml's.
  */
 export const VOCAB_KEYS = [
     'palette',
@@ -170,7 +170,9 @@ export const VOCAB_KEYS = [
     'type_color',
     'status_legend',
     'domains',
-    'themes'
+    'themes',
+    'wallpaper',
+    'crt'
 ];
 
 /**
@@ -192,11 +194,25 @@ export function vocabCatalog(config: Record<string, unknown>): Record<string, un
  * rather than thrown on: the map is a vocabulary and one bad entry is not worth losing the rest.
  */
 export function glyphCatalog(config: Record<string, unknown>): Record<string, string> {
-    const raw = config.glyphs;
+    return stringMap(config.glyphs);
+}
+
+/**
+ * The ASCII stand-ins held in the merged config's `ascii` key: one short string per character, flat.
+ * It rides with the glyphs, since it is the other half of the same vocabulary and lives in the same
+ * file. Keyed by the character rather than by a glyph's name, so it reaches an icon that came from
+ * data as well as one that came from a name.
+ */
+export function asciiCatalog(config: Record<string, unknown>): Record<string, string> {
+    return stringMap(config.ascii);
+}
+
+/** A map of strings out of a config key, dropping anything that is not one. */
+function stringMap(raw: unknown): Record<string, string> {
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
-    const glyphs: Record<string, string> = {};
+    const map: Record<string, string> = {};
     for (const [name, value] of Object.entries(raw as Record<string, unknown>)) {
-        if (typeof value === 'string') glyphs[name] = value;
+        if (typeof value === 'string') map[name] = value;
     }
-    return glyphs;
+    return map;
 }

@@ -1,13 +1,22 @@
-// The appearance store: the theme, the CRT overlay and what each view instance remembers, read and
-// written through a fake storage. Nothing here touches localStorage, and the theme names it accepts
-// are the ones config/appearance.yml lists, so a theme that was dropped from that file cannot come
-// back out of a browser that still holds it.
+// The appearance store: the theme, the CRT overlay, the wallpaper, the glyph mode and what each
+// view instance remembers, read and written through a fake storage. Nothing here touches
+// localStorage, and the theme names it accepts are the ones config/appearance.yml lists, so a theme
+// that was dropped from that file cannot come back out of a browser that still holds it.
+//
+// What a browser that saved nothing starts on is config/appearance.yml's too, so the defaults are
+// asserted against that file rather than against a literal: the first theme of its list, its
+// `crt.default`, and a wallpaper wherever it configures one the starting theme shows it under.
 
 import { describe, expect, it } from 'vitest';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
-import { setAppearance, themes } from '../../src/lib/state/appearance.ts';
 import {
-    DEFAULT_THEME,
+    crtDefault,
+    defaultTheme,
+    setAppearance,
+    themes,
+    wallpaperOnTheme
+} from '../../src/lib/state/appearance.ts';
+import {
     UI_KEY,
     UI_VERSION,
     crt,
@@ -16,12 +25,18 @@ import {
     setCrt,
     setInstanceState,
     setTheme,
-    theme
+    setUnicode,
+    setWallpaper,
+    theme,
+    unicode,
+    wallpaper
 } from '../../src/lib/state/ui.svelte.ts';
 
 // The store checks a stored theme against the theme list, so the list the server ships is installed
 // first, exactly as the page installs it before the workbench renders.
 setAppearance(loadConfig(engineDir()).config);
+
+const DEFAULT_THEME = defaultTheme();
 
 /** A fake Storage: what the store needs of one, and a window on what it wrote. */
 function fakeStorage(seed?: unknown) {
@@ -42,19 +57,24 @@ function saved(storage: { held: Record<string, string> }): Record<string, unknow
 }
 
 describe('the appearance store', () => {
-    it('starts on the default theme with no overlay and nothing remembered', () => {
+    it('starts on what config/appearance.yml says, with nothing remembered', () => {
         const storage = fakeStorage();
         expect(loadUi(storage)).toBe(false);
         expect(theme()).toBe(DEFAULT_THEME);
-        expect(crt()).toBe(false);
+        expect(DEFAULT_THEME).toBe(themes()[0].name);
+        expect(crt()).toBe(crtDefault());
+        expect(wallpaper()).toBe(wallpaperOnTheme(DEFAULT_THEME));
+        expect(unicode()).toBe(false);
         expect(instanceState('a')).toBe(undefined);
     });
 
-    it('saves the theme, the overlay and one blob per instance under the one key', () => {
+    it('saves the four appearance flags and one blob per instance under the one key', () => {
         const storage = fakeStorage();
         loadUi(storage);
         setTheme('mocha');
         setCrt(true);
+        setWallpaper(true);
+        setUnicode(true);
         setInstanceState('a', { filter: 'active' });
         setInstanceState('b', 3);
 
@@ -63,8 +83,42 @@ describe('the appearance store', () => {
             version: UI_VERSION,
             theme: 'mocha',
             crt: true,
+            wallpaper: true,
+            unicode: true,
             instances: { a: { filter: 'active' }, b: 3 }
         });
+    });
+
+    it('reads the wallpaper and the glyph mode back, each on its own', () => {
+        const first = fakeStorage();
+        loadUi(first);
+        setWallpaper(true);
+        setUnicode(false);
+
+        const second = fakeStorage(saved(first));
+        expect(loadUi(second)).toBe(true);
+        expect(wallpaper()).toBe(true);
+        expect(unicode()).toBe(false);
+
+        setWallpaper(false);
+        setUnicode(true);
+        const third = fakeStorage(saved(second));
+        expect(loadUi(third)).toBe(true);
+        expect(wallpaper()).toBe(false);
+        expect(unicode()).toBe(true);
+    });
+
+    it('takes the two flags from the config when the saved appearance predates them', () => {
+        const storage = fakeStorage({
+            version: UI_VERSION,
+            theme: 'mocha',
+            crt: false,
+            instances: {}
+        });
+        expect(loadUi(storage)).toBe(true);
+        expect(theme()).toBe('mocha');
+        expect(wallpaper()).toBe(wallpaperOnTheme(DEFAULT_THEME));
+        expect(unicode()).toBe(false);
     });
 
     it('reads back what it wrote', () => {

@@ -14,6 +14,8 @@
 themes:
   - { name: light,        class: "",                   label: "◐ light" }
   - { name: dark,         class: "dark",               label: "◐ dark" }
+  - { name: vscode-dark-modern,  class: "vscode-dark-modern",  label: "vscode dark modern" }
+  - { name: vscode-light-modern, class: "vscode-light-modern", label: "vscode light modern" }
   - { name: mocha,        class: "rice mocha",         label: "◆ mocha" }
   - { name: gruvbox,      class: "rice gruvbox",       label: "◆ gruvbox" }
   - { name: nord,         class: "rice nord",          label: "◆ nord" }
@@ -30,9 +32,10 @@ themes:
 
 
 # === Wallpaper ==============================================================
-# The images live in `tools/cockpit/assets/wallpaper/` (in the repo, so the cockpit is self-contained).
-# No image there = no backdrop, and none of these settings apply. `dir:` can point elsewhere, but the
-# default keeps everything inside the repo.
+# The images live in `tools/cockpit/assets/wallpaper/` (in the repo, so the tool is self-contained).
+# No image there = no backdrop, and none of these settings apply. `dir:` is read relative to the hub
+# and can point elsewhere inside it; the default keeps everything in the repo. /api/wallpaper serves
+# the chosen file's own bytes, so there is no downscale step and no size setting.
 wallpaper:
   file: "wallhaven-83"       # name the image to use (full name or any unique part of it). Empty = use `pick:` below
   pick: first    # `first` = the first image in the folder | `random` = a different one each build
@@ -44,8 +47,6 @@ wallpaper:
                            # `panel_opacity` you read them through two translucent layers. Unset =
                            # three quarters of the way from `panel_opacity` to solid.
   panel_blur: 2         # px of backdrop blur behind each window (keeps text crisp without smearing the image)
-  max_width: 2560   # the build downscales through `sips` before inlining (a 6 MB PNG would triple the page)
-  quality: 78
 
 
 # The CRT overlay (scanlines and vignette, cosmetic only): what a browser that has never been told

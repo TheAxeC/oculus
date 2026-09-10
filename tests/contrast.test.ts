@@ -59,8 +59,8 @@ function pairs(name: string): Pair[] {
 const measured = new Map(NAMES.map((name) => [name, pairs(name)]));
 
 describe('contrast', () => {
-    it('offers fifteen themes', () => {
-        expect(NAMES.length).toBe(15);
+    it('offers seventeen themes', () => {
+        expect(NAMES.length).toBe(17);
     });
 
     for (const name of NAMES) {

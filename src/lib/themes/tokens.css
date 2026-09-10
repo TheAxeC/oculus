@@ -3,7 +3,7 @@
      - chrome  (--bg/--panel/--ink/--muted/--line/--chip/--accent/--shadow), the surfaces;
      - palette (--c-*), the status hues shared by the sheets and the config vocabulary.
    A theme is a block of overrides on these tokens and never a per-rule edit; themes.css holds the
-   fourteen blocks. Every colour a component uses resolves through a token here, so the contrast test
+   sixteen blocks. Every colour a component uses resolves through a token here, so the contrast test
    can walk them all. The -txt and --on-* tokens the components read are derived from these by
    derive.ts, the way the cockpit derived them at build time. */
 :root {

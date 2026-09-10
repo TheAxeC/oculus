@@ -55,6 +55,7 @@ tools/oculus/
     routes/
       +page.svelte             mounts <Workbench/>; nothing else
       api/docs/+server.ts      one markdown document, on demand
+      api/wallpaper/+server.ts the image behind the panels, from the configured directory alone
       api/write/+server.ts     the write endpoints (dismiss, pin, rename; later commit, deposit)
     lib/
       data/                    LAYER 1
@@ -98,7 +99,7 @@ tools/oculus/
           SessionList.svelte SessionDetail.svelte Terminal.svelte Timeline.svelte Changes.svelte Agents.svelte
       themes/
         tokens.css             the palette, ported from the cockpit unchanged
-        themes.css             the fifteen themes, ported unchanged
+        themes.css             the seventeen themes: fifteen ported unchanged, the two VS Code ones oculus's own
     server.ts                  the Node entry: http server with the WebSocket attached
   tests/
     contrast.test.ts           every text/background pair, every theme, at least 4.5:1
@@ -198,7 +199,11 @@ The shell renders the tree; a sash drag edits `sizes`; opening a view appends an
 
 ## Theming
 
-`tokens.css` and `themes.css` port from the cockpit unchanged: colours, type scale, radii, fifteen theme blocks that override tokens and nothing else. The contrast test walks every text-on-background pair the primitives declare, under every theme, and fails below 4.5:1. Primitives use tokens only; a raw hex in a component is a test failure.
+`tokens.css` and `themes.css` port from the cockpit unchanged: colours, type scale, radii, fifteen theme blocks that override tokens and nothing else. VS Code Dark Modern and Light Modern are two more blocks, authored for oculus rather than ported, which is why a contrast failure in one of them is fixed in the block and a failure in a ported one is a finding about the port. The contrast test walks every text-on-background pair the primitives declare, under every theme, and fails below 4.5:1. Primitives use tokens only; a raw hex in a component is a test failure.
+
+The wallpaper is one image behind everything, served by `api/wallpaper` from a directory `appearance.yml` names under the hub and nothing outside it. It is on where a theme's class carries `rice`, or under every theme where the config says `all`; the body then carries `wall`, and the panes, the rail and the menus keep a configured percentage of their own surface colour so the picture reads through them. The colour is still the token the contrast test measured.
+
+The glyph vocabulary has an ASCII half, `glyphs.yml`'s `ascii:` map, keyed by the character. A terminal theme draws it unless the viewer asks for the real glyphs. The swap is a lookup where a glyph renders, in `ui/Glyph.svelte` and in `ui/Chip.svelte`'s data icon, and never a pass over the document.
 
 ## Hot reload
 

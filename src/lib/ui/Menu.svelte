@@ -191,6 +191,14 @@
         box-shadow: var(--shadow);
     }
 
+    /* A list floats over a pane, so at the pane's own opacity it would be read through two
+       translucent layers and the picture. It keeps more of its colour than the pane does. */
+    :global(body.wall) .list {
+        background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
+
     .list.down {
         top: 100%;
         bottom: auto;

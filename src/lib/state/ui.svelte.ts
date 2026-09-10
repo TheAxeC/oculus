@@ -1,12 +1,16 @@
 // Layer 2, client state. What the page looks like and what each open view remembers: the theme, the
-// CRT overlay, and one blob of state per view instance, keyed by the instance id the layout gives
-// it. Two instances of the same view therefore remember different things, which is what DESIGN.md's
-// "Layout as data" means by separate state by construction.
+// CRT overlay, the wallpaper, the glyph mode, and one blob of state per view instance, keyed by the
+// instance id the layout gives it. Two instances of the same view therefore remember different
+// things, which is what DESIGN.md's "Layout as data" means by separate state by construction.
+//
+// The four appearance flags save together under the one key, so what a browser was left looking
+// like comes back whole. What they start as is config/appearance.yml's, read through
+// state/appearance.ts, and never a literal here.
 //
 // It saves the same way the layout store does, under its own key and through the same small slice of
 // Storage, so a test hands it a plain object and no test touches localStorage.
 
-import { themes } from './appearance.ts';
+import { crtDefault, defaultTheme, themes, wallpaperOnTheme } from './appearance.ts';
 
 /** The key the appearance and the per-instance state are saved under. */
 export const UI_KEY = 'oculus.ui.v1';
@@ -14,21 +18,34 @@ export const UI_KEY = 'oculus.ui.v1';
 /** The envelope version saveUi writes and loadUi demands. */
 export const UI_VERSION = 1;
 
-/** The theme a browser starts on, and what an unknown saved theme falls back to. */
-export const DEFAULT_THEME = 'light';
-
 /** What the store needs of a Storage, so a test can hand it a plain object. */
 type Storable = Pick<Storage, 'getItem' | 'setItem'>;
 
 type Ui = {
     theme: string;
     crt: boolean;
+    wallpaper: boolean;
+    unicode: boolean;
     /** One entry per view instance, by instance id. The shape of the value is the view's own. */
     instances: Record<string, unknown>;
 };
 
+/**
+ * What a browser that has saved nothing starts on. Three of the four come from
+ * config/appearance.yml rather than from a literal here: the theme is the first of its list, the
+ * overlay is its `crt.default`, and the wallpaper is on wherever one is configured and the theme it
+ * starts on is one the wallpaper shows under. The glyphs start as the theme's own, which is the
+ * ASCII stand-ins on a terminal palette; `unicode` is what turns that off.
+ */
 function defaultUi(): Ui {
-    return { theme: DEFAULT_THEME, crt: false, instances: {} };
+    const theme = defaultTheme();
+    return {
+        theme,
+        crt: crtDefault(),
+        wallpaper: wallpaperOnTheme(theme),
+        unicode: false,
+        instances: {}
+    };
 }
 
 const store: { current: Ui } = $state({ current: defaultUi() });
@@ -46,6 +63,20 @@ export function crt(): boolean {
     return store.current.crt;
 }
 
+/**
+ * Whether the viewer wants the wallpaper. Whether one is actually drawn is this and the theme
+ * together: the shell asks appearance.wallpaperOnTheme() as well, so switching to a theme the
+ * wallpaper does not show under hides it without forgetting this.
+ */
+export function wallpaper(): boolean {
+    return store.current.wallpaper;
+}
+
+/** Whether the real glyphs are kept on a terminal theme instead of their ASCII stand-ins. */
+export function unicode(): boolean {
+    return store.current.unicode;
+}
+
 /** What a view instance saved, or undefined when it has saved nothing yet. */
 export function instanceState(id: string): unknown {
     return store.current.instances[id];
@@ -53,8 +84,8 @@ export function instanceState(id: string): unknown {
 
 /** A theme name config/appearance.yml lists, and the default for one it does not. */
 function known(name: unknown): string {
-    if (typeof name !== 'string') return DEFAULT_THEME;
-    return themes().some((entry) => entry.name === name) ? name : DEFAULT_THEME;
+    if (typeof name !== 'string') return defaultTheme();
+    return themes().some((entry) => entry.name === name) ? name : defaultTheme();
 }
 
 /**
@@ -86,9 +117,12 @@ export function loadUi(storage: Storable = localStorage): boolean {
     if (held.version !== UI_VERSION) return false;
 
     const instances = held.instances;
+    const started = defaultUi();
     store.current = {
         theme: known(held.theme),
-        crt: held.crt === true,
+        crt: typeof held.crt === 'boolean' ? held.crt : started.crt,
+        wallpaper: typeof held.wallpaper === 'boolean' ? held.wallpaper : started.wallpaper,
+        unicode: held.unicode === true,
         instances:
             typeof instances === 'object' && instances !== null && !Array.isArray(instances)
                 ? { ...(instances as Record<string, unknown>) }
@@ -115,6 +149,16 @@ export function setTheme(name: string): void {
 /** Turn the CRT overlay on or off. */
 export function setCrt(on: boolean): void {
     save({ ...store.current, crt: on });
+}
+
+/** Turn the wallpaper on or off. */
+export function setWallpaper(on: boolean): void {
+    save({ ...store.current, wallpaper: on });
+}
+
+/** Keep the real glyphs on a terminal theme, or let it use the ASCII stand-ins. */
+export function setUnicode(on: boolean): void {
+    save({ ...store.current, unicode: on });
 }
 
 /** What a view instance wants remembered. */

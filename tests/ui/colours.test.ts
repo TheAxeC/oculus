@@ -1,7 +1,7 @@
 // Every colour a component paints is inside the set tests/contrast.test.ts measured.
 //
 // That test walks every `--<x>-txt` on `--bg`, `--panel` and `--chip`, every `--c-<hue>-txt` on its
-// own tint, and every `--on-c-<hue>` on `--c-<hue>`, under all fifteen themes. A component that only
+// own tint, and every `--on-c-<hue>` on `--c-<hue>`, under all seventeen themes. A component that only
 // ever paints text with a `-txt` token or an `--on-` token, and only ever fills with a surface or a
 // hue, can produce only pairs out of that set and the five `--on-<surface>` on `--<surface>` pairs
 // measured at the foot of this file. It reads the style of every component under ui/, shell/, views/
@@ -15,6 +15,14 @@
 //   background   a surface (--bg, --panel, --chip, --line, --accent), a hue (--c-<hue>) or its tint
 //                (--c-<hue>-bg), none, or transparent.
 //   anywhere     no raw colour: no hex, no rgb()/hsl()/lab()/oklch(), no named colour.
+//
+// One form is allowed past both rules, for `background` and nothing else: the panel surface with
+// some of its alpha taken out, `color-mix(in srgb, var(--panel) var(--wall-panel), transparent)`,
+// and the same with `--wall-popover`. That is how a surface goes translucent over the wallpaper.
+// The colour is still the panel's, so the pair the contrast test measured is the pair that paints;
+// what changes is how much of the picture shows through. The token is written as a percentage by
+// ui/theme.ts's applyWallpaper and by nothing else, and any other token inside a `color-mix` is
+// refused exactly as before, which the negative fixture at the foot of the file shows.
 //
 // A `var()` of a custom property the component sets itself is read through to what it was set from,
 // so the hue a Chip puts on `--tone` is checked exactly as if the rule named the hue. That covers
@@ -307,6 +315,13 @@ export function rawColour(value: string): boolean {
     return /#[0-9a-f]{3,8}\b/i.test(text) || FUNCTIONS.test(text) || NAMED_WORD.test(text);
 }
 
+/**
+ * The one `color-mix` a component may fill with: the panel surface at the wallpaper's opacity.
+ * Whitespace is whatever prettier leaves; the tokens and their order are the whole of the form.
+ */
+const WALL_MIX =
+    /^color-mix\(\s*in\s+srgb\s*,\s*var\(\s*--panel\s*\)\s+var\(\s*--wall-(?:panel|popover)\s*\)\s*,\s*transparent\s*\)$/i;
+
 /** A token a component may paint text with: the derived families and nothing else. */
 function textToken(name: string): boolean {
     return name.endsWith('-txt') || name.startsWith('--on-');
@@ -381,6 +396,7 @@ export function findColourViolations(base: string, roots: string[]): string[] {
             const say = (one: Declaration): string =>
                 `${root}/${rel}: ${one.selector}: ${one.property}: ${one.value}`;
             for (const one of found) {
+                if (one.property === 'background' && WALL_MIX.test(one.value.trim())) continue;
                 if (rawColour(one.value)) {
                     violations.push(`${say(one)} (raw colour)`);
                     continue;
@@ -463,6 +479,8 @@ describe('the colour rule', () => {
                 '    .b { color: var(--on-c-teal); background: var(--c-teal); }',
                 '    .c { color: inherit; background: none; border: 1px solid var(--line); }',
                 '    .d::before { content: "["; }',
+                '    .e { background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent); }',
+                '    .f { background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent); }',
                 '</style>'
             ].join('\n')
         );
@@ -475,6 +493,18 @@ describe('the colour rule', () => {
             '<span style="--tone: #ff0000"></span>\n<style>\n    .a { background: var(--tone); }\n</style>'
         );
         write('ui/Inline.svelte', '<span style="color: #00ff00"></span>');
+        // The allowance is the panel surface and no other: a hue mixed the same way is a colour the
+        // contrast test has no measurement for, and a `color-mix` as text is refused whatever it
+        // holds.
+        write(
+            'ui/Mix.svelte',
+            [
+                '<style>',
+                '    .a { background: color-mix(in srgb, var(--c-teal) var(--wall-panel), transparent); }',
+                '    .b { color: color-mix(in srgb, var(--panel) var(--wall-panel), transparent); }',
+                '</style>'
+            ].join('\n')
+        );
 
         expect(findColourViolations(dir, ['ui'])).toEqual([
             'ui/Hex.svelte: .a: color: #ff0000 (raw colour)',
@@ -482,6 +512,8 @@ describe('the colour rule', () => {
             'ui/Indirect.svelte: .a: background: var(--tone) (not a surface or a hue)',
             'ui/Indirect.svelte: style attribute: --tone: #ff0000 (raw colour)',
             'ui/Inline.svelte: style attribute: color: #00ff00 (raw colour)',
+            'ui/Mix.svelte: .a: background: color-mix(in srgb, var(--c-teal) var(--wall-panel), transparent) (raw colour)',
+            'ui/Mix.svelte: .b: color: color-mix(in srgb, var(--panel) var(--wall-panel), transparent) (raw colour)',
             'ui/Named.svelte: .a: border-color: rebeccapurple (raw colour)',
             'ui/Unset.svelte: .a: background: var(--nonesuch) (not a surface or a hue)'
         ]);

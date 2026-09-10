@@ -35,9 +35,18 @@
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import { dock, dockedAt, openView } from '$lib/state/layout.svelte';
-    import { crt, setCrt, setTheme, theme } from '$lib/state/ui.svelte';
+    import {
+        crt,
+        setCrt,
+        setTheme,
+        setUnicode,
+        setWallpaper,
+        theme,
+        unicode,
+        wallpaper
+    } from '$lib/state/ui.svelte';
     import { lookup, t } from '$lib/state/text';
-    import { themes as themeList } from '$lib/state/appearance';
+    import { themes as themeList, wallpaperOnTheme } from '$lib/state/appearance';
     import { views } from '$lib/views/registry';
     import type { Dock } from '$lib/state/layout';
 
@@ -65,6 +74,9 @@
     ]);
 
     const dockLabel = $derived(docks.find((item) => item.active)?.label ?? t('ui.dock_right'));
+
+    /** The wallpaper toggle is drawn only where there is one to switch: it is config and a theme. */
+    const offersWallpaper = $derived(wallpaperOnTheme(theme()));
 </script>
 
 <nav class="rail" aria-label={t('ui.rail')}>
@@ -100,12 +112,32 @@
         />
         <button
             type="button"
-            class="crt"
+            class="toggle"
             title={t('ui.crt')}
             aria-pressed={crt()}
             onclick={() => setCrt(!crt())}
         >
             {t('ui.crt_on')}
+        </button>
+        {#if offersWallpaper}
+            <button
+                type="button"
+                class="toggle"
+                title={t('ui.wallpaper_title')}
+                aria-pressed={wallpaper()}
+                onclick={() => setWallpaper(!wallpaper())}
+            >
+                {t('ui.wallpaper')}
+            </button>
+        {/if}
+        <button
+            type="button"
+            class="toggle"
+            title={t('ui.unicode_title')}
+            aria-pressed={unicode()}
+            onclick={() => setUnicode(!unicode())}
+        >
+            {t('ui.unicode')}
         </button>
         <Menu
             label={dockLabel}
@@ -169,30 +201,43 @@
         cursor: pointer;
     }
 
-    .crt {
+    /* The three switches at the foot: the overlay, the wallpaper and the glyphs. The rail is 52 px
+       wide and the words come from the catalog, so a long one wraps rather than being cut. */
+    .toggle {
         border: 1px solid var(--line);
         border-radius: var(--radius-sm);
         background: var(--chip);
         color: var(--ink-txt, var(--ink));
         font: inherit;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-3xs);
+        line-height: 1.3;
+        text-align: center;
+        overflow-wrap: anywhere;
         padding: 4px 2px;
         cursor: pointer;
     }
 
     .view:hover,
-    .crt:hover {
+    .toggle:hover {
         border-color: var(--accent);
     }
 
-    .crt[aria-pressed='true'] {
+    .toggle[aria-pressed='true'] {
         color: var(--accent-txt, var(--accent));
         border-color: var(--accent);
     }
 
     .view:focus-visible,
-    .crt:focus-visible {
+    .toggle:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: -2px;
+    }
+
+    /* Over a wallpaper the rail goes translucent with the panes, and takes the pane's colour while
+       it does: the two are one surface to the eye once the picture shows through them. */
+    :global(body.wall) .rail {
+        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
     }
 </style>

@@ -139,14 +139,16 @@ describe('a vocabulary that is missing or wrongly shaped', () => {
 describe('the real config/vocab.yml', () => {
     const vocab = vocabCatalog(loadConfig(engineDir()).config);
 
-    it('carries all six keys the client state reads at first load', () => {
+    it('carries all eight keys the client state reads at first load', () => {
         expect(Object.keys(vocab).sort()).toEqual([
+            'crt',
             'domains',
             'palette',
             'status_legend',
             'status_palette',
             'themes',
-            'type_color'
+            'type_color',
+            'wallpaper'
         ]);
     });
 

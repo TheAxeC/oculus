@@ -6,13 +6,17 @@
     // The panel is a second tree rather than a pane, so it splits exactly as the main area does.
     // Between them is the one sash the trees do not own, which trades the panel's share of the
     // window against the main area's.
+    //
+    // It is also where the appearance is put on the document, in one effect: the theme's class and
+    // its derived tokens, the wallpaper's layer and the properties its translucent surfaces read,
+    // and which of the two glyph vocabularies renders.
 
     import ActivityRail, { type NavGroup } from './ActivityRail.svelte';
     import DropLayer from './DropLayer.svelte';
     import PaneView from './PaneView.svelte';
     import SplitView from './SplitView.svelte';
     import Sash, { SASH_PX } from '$lib/ui/Sash.svelte';
-    import { applyTheme } from '$lib/ui/theme';
+    import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
     import {
         change,
         dockedAt,
@@ -23,10 +27,15 @@
         restorePanes
     } from '$lib/state/layout.svelte';
     import { dragging } from '$lib/state/drag.svelte';
-    import { crt, theme } from '$lib/state/ui.svelte';
+    import { crt, theme, unicode, wallpaper } from '$lib/state/ui.svelte';
     import { PANEL_DEFAULT, paneAt, resize, type Layout } from '$lib/state/layout';
-    import { t } from '$lib/state/text';
-    import { themeClass } from '$lib/state/appearance';
+    import { setGlyphMode, t } from '$lib/state/text';
+    import {
+        terminalTheme,
+        themeClass,
+        wallpaperOnTheme,
+        wallpaperSettings
+    } from '$lib/state/appearance';
 
     type Props = {
         /** The `nav_groups`-shaped list from the merged config, for the rail. */
@@ -57,8 +66,24 @@
         restorePanes();
     }
 
+    /** The wallpaper is drawn when the viewer wants one and the theme is one it shows under. */
+    const wall = $derived(wallpaper() && wallpaperOnTheme(theme()));
+    const paper = $derived(wallpaperSettings());
+
+    /**
+     * The image's own two numbers, as the properties its layer's filter reads: the dim is how much
+     * light is taken out of the picture, so the brightness left is what the filter wants.
+     */
+    const image = $derived(
+        `--wall-dim: ${paper === null ? 1 : 1 - paper.dim}; --wall-image-blur: ${paper === null ? 0 : paper.blur}px`
+    );
+
     $effect(() => {
-        applyTheme(document, themeClass(theme()), crt());
+        applyTheme(document, [themeClass(theme()), wall ? WALL_CLASS : ''].join(' '), crt());
+        applyWallpaper(document, paper, wall);
+        // The terminal palettes draw the ASCII stand-ins unless the viewer asked for the real
+        // glyphs; every other theme draws what config/glyphs.yml names.
+        setGlyphMode(terminalTheme(theme()) && !unicode() ? 'ascii' : 'unicode');
     });
 
     /** The space the two trees share along the dock's direction, the sash between them removed. */
@@ -86,6 +111,11 @@
 <svelte:window onkeydown={keys} />
 
 <div class="workbench">
+    {#if wall}
+        <!-- Behind everything the workbench draws, and behind nothing else: a fixed layer at a
+             negative depth paints over the page's own background and under every panel. -->
+        <div class="wallpaper" style={image}></div>
+    {/if}
     <ActivityRail {groups} />
     <div class="area {direction}" bind:this={area}>
         {#if zoomed !== null && focus !== null}
@@ -128,6 +158,18 @@
         width: 100%;
         height: 100vh;
         overflow: hidden;
+    }
+
+    .wallpaper {
+        position: fixed;
+        inset: 0;
+        z-index: -1;
+        background-image: url(/api/wallpaper);
+        background-position: center;
+        background-size: cover;
+        background-repeat: no-repeat;
+        filter: brightness(var(--wall-dim, 1)) blur(var(--wall-image-blur, 0px));
+        pointer-events: none;
     }
 
     .area {

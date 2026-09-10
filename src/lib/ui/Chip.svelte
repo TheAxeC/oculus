@@ -9,6 +9,7 @@
     // measures under every theme.
 
     import Glyph from './Glyph.svelte';
+    import { asciiOf } from '$lib/state/text';
 
     type Props = {
         /** The chip's words, already translated by the view. */
@@ -19,8 +20,9 @@
         glyph?: string;
         /**
          * A character the config already carries, for a chip whose icon is data rather than a name
-         * in config/glyphs.yml: the `icon` of a `status_legend` row, through chipGlyph(). It is
-         * decoration beside the label, so it is hidden from a screen reader like Glyph's own.
+         * in config/glyphs.yml: the `icon` of a `status_legend` row, through chipGlyph(). It goes
+         * through asciiOf() so a terminal theme swaps it for its stand-in like every other glyph. It
+         * is decoration beside the label, so it is hidden from a screen reader like Glyph's own.
          */
         icon?: string;
         /** Fill the chip with its hue instead of tinting the text. */
@@ -41,7 +43,7 @@
         <Glyph name={glyph} />
     {/if}
     {#if icon !== undefined && icon !== ''}
-        <span class="icon" aria-hidden="true">{icon}</span>
+        <span class="icon" aria-hidden="true">{asciiOf(icon)}</span>
     {/if}
     <span class="label">{label}</span>
 </span>

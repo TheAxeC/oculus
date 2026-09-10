@@ -1,10 +1,19 @@
-// Layer 2, client state. The text catalog and the glyph vocabulary as the page received them, and
-// the lookups every component uses. Nothing here touches the filesystem: the server reads
-// config/text.yml and config/glyphs.yml, ships them as the page's data, and O6's watcher pushes
-// later edits over the socket. The browser never fetches the YAML itself.
+// Layer 2, client state. The text catalog, the glyph vocabulary and its ASCII stand-ins as the page
+// received them, and the lookups every component uses. Nothing here touches the filesystem: the
+// server reads config/text.yml and config/glyphs.yml, ships them as the page's data, and O6's
+// watcher pushes later edits over the socket. The browser never fetches the YAML itself.
+//
+// The ASCII mode is a lookup at the moment a glyph renders, not a pass over the document: a glyph
+// reaches the DOM through ui/Glyph.svelte and a legend icon through ui/Chip.svelte's `icon`, so
+// those two calls are the whole of it.
+
+import { glyphMode, setGlyphMode } from './glyphmode.svelte.ts';
+
+export { setGlyphMode, type GlyphMode } from './glyphmode.svelte.ts';
 
 let catalog: Record<string, string> = {};
 let glyphs: Record<string, string> = {};
+let ascii: Record<string, string> = {};
 
 /** Install the catalog the page was given. Called once per load, again on every push. */
 export function setCatalog(next: Record<string, string>): void {
@@ -14,6 +23,15 @@ export function setCatalog(next: Record<string, string>): void {
 /** Install the glyph vocabulary the page was given, the `glyphs:` map of config/glyphs.yml. */
 export function setGlyphs(next: Record<string, string>): void {
     glyphs = next;
+}
+
+/**
+ * Install the ASCII stand-ins, the `ascii:` map of config/glyphs.yml. It is keyed by the character
+ * rather than by the glyph's name, so it also covers an icon that came from data: a status chip's
+ * own icon in config/vocab.yml, or an emoji somebody typed into a manifest.
+ */
+export function setAscii(next: Record<string, string>): void {
+    ascii = next;
 }
 
 /**
@@ -41,11 +59,22 @@ export function t(key: string, ...args: (string | number)[]): string {
 }
 
 /**
- * The glyph character a name stands for. A missing name throws like a missing text key: a glyph that
- * silently renders as nothing is a hole in a rail or a tab strip that nobody notices.
+ * The glyph character a name stands for, or its ASCII stand-in while the mode is `ascii`. A missing
+ * name throws like a missing text key: a glyph that silently renders as nothing is a hole in a rail
+ * or a tab strip that nobody notices. A character with no stand-in is drawn as it is.
  */
 export function glyph(name: string): string {
     const character = glyphs[name];
     if (character === undefined) throw new Error(`glyph not in config/glyphs.yml: ${name}`);
-    return character;
+    return asciiOf(character);
+}
+
+/**
+ * The same swap for a character that came from data rather than from a name in config/glyphs.yml: a
+ * status legend's `icon` through Chip. Unknown characters and every character while the mode is
+ * `unicode` come back unchanged, so this is safe on any string.
+ */
+export function asciiOf(character: string): string {
+    if (glyphMode() !== 'ascii') return character;
+    return ascii[character] ?? character;
 }

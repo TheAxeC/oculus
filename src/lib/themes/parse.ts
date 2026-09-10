@@ -10,8 +10,11 @@
 /** Tokens by block: the key is `:root` or the body class name (`dark`, `mocha`, `rice`). */
 export type ThemeBlocks = Record<string, Record<string, string>>;
 
-/** A selector this module reads. Anything else in the sheet belongs to a component, not a theme. */
-const SELECTOR = /^(?::root|body\.[a-z0-9]+)$/;
+/**
+ * A selector this module reads. Anything else in the sheet belongs to a component, not a theme.
+ * A hyphen is part of a class name here: `vscode-dark-modern` is one class, not two.
+ */
+const SELECTOR = /^(?::root|body\.[a-z0-9-]+)$/;
 
 function stripComments(css: string): string {
     return css.replace(/\/\*[\s\S]*?\*\//g, '');
