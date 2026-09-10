@@ -1,0 +1,5 @@
+# Every user-facing string, keyed by group, read through t("group.key"). No component holds a literal.
+# The server flattens this to dotted keys and ships it to the page as data; the browser never fetches the file.
+
+app:
+  title: oculus
