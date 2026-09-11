@@ -32,7 +32,7 @@ dispatch:
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24a/report.md
   exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24a/exit.txt
   pid: 95031
-  session_id: none
+  session_id: 01a091a0-7fd7-77e2-bc76-69f202c61832
   landing: not-started
   round: 0
 ```
