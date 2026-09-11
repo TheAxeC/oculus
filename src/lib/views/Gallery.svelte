@@ -16,6 +16,7 @@
     import Search from '$lib/ui/Search.svelte';
     import Segment from '$lib/ui/Segment.svelte';
     import Table, { type Column } from '$lib/ui/Table.svelte';
+    import Ticker from '$lib/ui/Ticker.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { t } from '$lib/state/text';
@@ -200,6 +201,19 @@
                     oncancel={() => (asking = false)}
                 />
             {/if}
+        </section>
+
+        <section>
+            <h3>{t('gallery.ticker')}</h3>
+            <Ticker
+                rows={rows.slice(0, 3).map((row) => ({
+                    id: row.tone,
+                    glyph: t('gallery.empty_glyph'),
+                    label: row.chip,
+                    tail: t('gallery.ticker_tail'),
+                    tone: row.tone
+                }))}
+            />
         </section>
 
         <section>

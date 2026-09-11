@@ -87,6 +87,14 @@ function portfolio(): RawPortfolio {
                     compute: 'hpc',
                     pin: true,
                     priority: 'high',
+                    'waiting-on': ['someone', 'A Free Name'],
+                    followup: [{ do: 'chase the coauthor', after: '2026-01-01' }, 'watch the call'],
+                    snooze: '2026-12-01',
+                    subtasks: {
+                        fig: { do: 'redraw figure 2', deadline: '2026-10-01' },
+                        ack: { do: 'add the funding line', done: true }
+                    },
+                    paths: { manuscript: 'ms' },
                     code_availability: {
                         status: 'deposited',
                         date: '2026-08-01',
@@ -108,14 +116,27 @@ function portfolio(): RawPortfolio {
                     pin: false,
                     venue: 'a journal with no catalogue entry',
                     code_availability: { visibility: 'private' },
-                    reproduced: 'not a map'
+                    reproduced: 'not a map',
+                    priority: 7,
+                    'waiting-on': 'not a list',
+                    followup: { after: '2026-01-01' },
+                    snooze: 12,
+                    subtasks: 'not a checklist'
                 },
                 'beta'
             )
         ],
         registries: {
             venues: entries('venues', [
-                { key: 'bspc', name: 'BSPC', jif: '4.9', free: 'APC', themes: ['signal'] }
+                {
+                    key: 'bspc',
+                    name: 'BSPC',
+                    jif: '4.9',
+                    free: 'APC',
+                    themes: ['signal'],
+                    deadline: '2026-09-01',
+                    deadline_month: 'Sep'
+                }
             ]),
             datasets: entries('datasets', [
                 {
@@ -160,12 +181,23 @@ describe('normalise, the field mapping', () => {
             chips: ['lead'],
             statusLine: 'submit-ready',
             focus: 'run',
+            priority: 'high',
             eli5: 'about alpha',
             next: 'run it',
             latest: 'ran it',
             results: ['one'],
             ideas: ['two'],
             deadline: '2026-11-17',
+            waitingOn: ['someone', 'A Free Name'],
+            followups: [
+                { do: 'chase the coauthor', after: '2026-01-01' },
+                { do: 'watch the call' }
+            ],
+            snooze: '2026-12-01',
+            subtasks: [
+                { key: 'fig', do: 'redraw figure 2', deadline: '2026-10-01', done: false },
+                { key: 'ack', do: 'add the funding line', done: true }
+            ],
             doi: '10.0/alpha',
             outcome: 'in review',
             compute: 'hpc',
@@ -215,8 +247,47 @@ describe('normalise, the field mapping', () => {
     });
 
     it('carries no manifest key the model does not declare', () => {
-        expect('priority' in alpha).toBe(false);
+        expect('paths' in alpha).toBe(false);
         expect('visibility' in (alpha.codeAvailability ?? {})).toBe(false);
+    });
+
+    it('drops a priority, a waiting-on, a follow-up, a snooze and a checklist of the wrong shape', () => {
+        const beta = snapshot.entities.projects.beta;
+        expect('priority' in beta).toBe(false);
+        expect('snooze' in beta).toBe(false);
+        expect(beta.waitingOn).toEqual([]);
+        expect(beta.followups).toEqual([]);
+        expect(beta.subtasks).toEqual([]);
+    });
+
+    it('numbers the lines of a checklist written as a list, since a list has no keys of its own', () => {
+        const one = normalise(
+            {
+                manifests: [
+                    manifest({ subtasks: ['first', { do: 'second', done: true }] }, 'solo')
+                ],
+                registries: {
+                    venues: entries('venues', []),
+                    datasets: entries('datasets', []),
+                    programs: entries('programs', []),
+                    domains: entries('domains', []),
+                    funding: entries('funding', [])
+                },
+                collections: {},
+                docs: {},
+                findings: []
+            },
+            []
+        );
+        expect(one.entities.projects.solo.subtasks).toEqual([
+            { key: '0', do: 'first', done: false },
+            { key: '1', do: 'second', done: true }
+        ]);
+    });
+
+    it('carries a conference call off the venue registry, by its date and by its month', () => {
+        expect(snapshot.entities.venues.bspc.deadline).toBe('2026-09-01');
+        expect(snapshot.entities.venues.bspc.deadlineMonth).toBe('Sep');
     });
 
     it('fills the registry entities, hpc_path and retrieval included', () => {
@@ -225,6 +296,8 @@ describe('normalise, the field mapping', () => {
             name: 'BSPC',
             jif: '4.9',
             free: 'APC',
+            deadline: '2026-09-01',
+            deadlineMonth: 'Sep',
             themes: ['signal']
         });
         expect(snapshot.entities.datasets.mimic).toEqual({

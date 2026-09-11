@@ -60,6 +60,9 @@ function project(over: Partial<Project> = {}): Project {
         statusLine: 'the line',
         results: ['one'],
         ideas: [],
+        waitingOn: [],
+        followups: [],
+        subtasks: [],
         relatedIds: ['bravo'],
         fundingIds: ['ZonMw'],
         datasetIds: [],
@@ -93,7 +96,15 @@ function snapshot(): Snapshot {
             },
             domains: { method: { id: 'method', title: 'Methods', projectIds: [] } },
             funding: {
-                ZonMw: { id: 'ZonMw', title: 'ZonMw AI', tags: [], projectIds: [], programIds: [] }
+                ZonMw: {
+                    id: 'ZonMw',
+                    title: 'ZonMw AI',
+                    followups: [],
+                    subtasks: [],
+                    tags: [],
+                    projectIds: [],
+                    programIds: []
+                }
             },
             collections: {
                 collaborations: {

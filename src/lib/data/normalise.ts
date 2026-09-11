@@ -17,6 +17,7 @@ import type {
     Domain,
     Entry,
     Finding,
+    Followup,
     Funding,
     Id,
     Program,
@@ -30,6 +31,7 @@ import type {
     Relations,
     SchemaField,
     Snapshot,
+    Subtask,
     Tier,
     Venue
 } from './model.ts';
@@ -127,6 +129,52 @@ function docs(found: DocPresence[] | undefined): DocFlag[] {
     return (found ?? []).map((doc) => ({ name: doc.name, present: doc.present }));
 }
 
+/**
+ * The `followup:` notes of a manifest or of a collection entry. The key holds one note as a string,
+ * one as a `{ do, after }` map, or a list of either; all three arrive here as a list. A note with no
+ * `do` is dropped in silence, the way str() drops a value of the wrong type.
+ */
+export function followups(value: unknown): Followup[] {
+    const items = Array.isArray(value) ? value : [value];
+    const out: Followup[] = [];
+    for (const item of items) {
+        const text = typeof item === 'string' ? item : isMap(item) ? str(item.do) : undefined;
+        if (text === undefined || text.trim() === '') continue;
+        const after = isMap(item) ? str(item.after) : undefined;
+        out.push(compact({ do: text, after }));
+    }
+    return out;
+}
+
+/**
+ * The `subtasks:` checklist of a manifest or of a collection entry. The key holds a map of key to
+ * line or a list of lines, and a line is a string or a `{ do, deadline, done, snooze }` map. The
+ * key a line is addressed by is the map's own key, or the position for a list, so a write knows
+ * which line it means whatever shape the file is written in.
+ */
+export function subtasks(value: unknown): Subtask[] {
+    const rows: [string, unknown][] = Array.isArray(value)
+        ? value.map((item, at) => [String(at), item])
+        : isMap(value)
+          ? Object.entries(value)
+          : [];
+    const out: Subtask[] = [];
+    for (const [key, item] of rows) {
+        const text = typeof item === 'string' ? item : isMap(item) ? str(item.do) : undefined;
+        if (text === undefined || text.trim() === '') continue;
+        out.push(
+            compact({
+                key,
+                do: text,
+                deadline: isMap(item) ? str(item.deadline) : undefined,
+                done: isMap(item) && item.done === true,
+                snooze: isMap(item) ? str(item.snooze) : undefined
+            })
+        );
+    }
+    return out;
+}
+
 /** A project. Every field comes from the manifest key of the same meaning, and nothing else does. */
 function project(manifest: RawManifest, found: DocPresence[] | undefined): Project {
     const status = isMap(manifest.status) ? manifest.status : {};
@@ -151,12 +199,17 @@ function project(manifest: RawManifest, found: DocPresence[] | undefined): Proje
         chips: strings(status.chips),
         statusLine: str(status.line),
         focus: str(manifest.focus),
+        priority: str(manifest.priority),
         eli5: str(manifest.eli5),
         next: str(manifest.next),
         latest: str(manifest.latest),
         results: strings(manifest.results),
         ideas: strings(manifest.ideas),
         deadline: str(manifest.deadline),
+        waitingOn: strings(manifest['waiting-on']),
+        followups: followups(manifest.followup),
+        snooze: str(manifest.snooze),
+        subtasks: subtasks(manifest.subtasks),
         doi: str(manifest.doi),
         outcome: str(manifest.outcome),
         compute: str(manifest.compute),
@@ -191,6 +244,8 @@ function venue(entry: RawRegistryEntry): Venue {
         format: str(entry.format),
         wants: str(entry.wants),
         link: str(entry.link),
+        deadline: str(entry.deadline),
+        deadlineMonth: str(entry.deadline_month),
         themes: strings(entry.themes)
     });
 }
@@ -247,6 +302,9 @@ function funding(entry: RawRegistryEntry): Funding {
         statement: str(entry.statement),
         link: str(entry.link),
         url: str(entry.url),
+        snooze: str(entry.snooze),
+        followups: followups(entry.followup),
+        subtasks: subtasks(entry.subtasks),
         tags: strings(entry.tags),
         projectIds: [],
         programIds: []

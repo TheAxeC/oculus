@@ -165,6 +165,29 @@ export type DocFlag = {
 };
 
 /**
+ * One standing "do this later" note, the manifest's `followup:` (manifest-schema.yml's
+ * `followup.do` and `followup.after`). `after` is an ISO date the note is hidden until; a note
+ * without one is always due.
+ */
+export type Followup = {
+    do: string;
+    after?: string;
+};
+
+/**
+ * One line of a checklist, the `subtasks:` of a manifest or of a collection entry. `key` is what
+ * the line is addressed by: the key of the map the manifest writes, or the position in the list
+ * for a manifest that writes a list.
+ */
+export type Subtask = {
+    key: string;
+    do: string;
+    deadline?: string;
+    done: boolean;
+    snooze?: string;
+};
+
+/**
  * A project. The relation fields hold ids; O4 fills them from the manifest's `venue_id`,
  * `funding`, `datasets`, `program` and `domain` keys, and leaves them empty when it has none.
  */
@@ -184,12 +207,26 @@ export type Project = {
     chips: Chip[];
     statusLine?: string;
     focus?: string;
+    /** The flame badge of the Focus card: `high`, `med` or `low`, the `priority_levels` of vocab.yml. */
+    priority?: string;
     eli5?: string;
     next?: string;
     latest?: string;
     results: string[];
     ideas: string[];
     deadline?: string;
+    /**
+     * Who the project is blocked on before it moves, the manifest's `waiting-on:`. An entry is a
+     * key of the collaborations collection or a free name for somebody with no entry, and the two
+     * are not told apart here: the Focus strip resolves what it can and shows the rest as written.
+     */
+    waitingOn: Id[];
+    /** The `followup:` notes. One note, a map, or a list of either all reach here as a list. */
+    followups: Followup[];
+    /** An ISO date the project's own dates are hidden from the Focus ticker until. */
+    snooze?: string;
+    /** The `subtasks:` checklist, done lines included; what is still open is the board's question. */
+    subtasks: Subtask[];
     doi?: string;
     outcome?: string;
     /** Where the headline results are produced: `hpc` or `local`. */
@@ -235,6 +272,10 @@ export type Venue = {
     format?: string;
     wants?: string;
     link?: string;
+    /** A conference's next call, as an ISO date; a journal carries none. */
+    deadline?: string;
+    /** A conference's usual deadline month ("Sep"), for a call whose exact date is not out yet. */
+    deadlineMonth?: string;
     /** The venue registry's own theme words (`core-ml`, `clinical`), which are not domain keys. */
     themes: string[];
 };
@@ -293,6 +334,12 @@ export type Funding = {
     statement?: string;
     link?: string;
     url?: string;
+    /** An ISO date the scheme's own deadline is hidden from the Focus ticker until. */
+    snooze?: string;
+    /** The `followup:` notes of the scheme's entry, the same three shapes a manifest writes. */
+    followups: Followup[];
+    /** The `subtasks:` checklist of the scheme's entry. */
+    subtasks: Subtask[];
     tags: string[];
     projectIds: Id[];
     programIds: Id[];

@@ -16,7 +16,7 @@
 # view's glyph.
 nav_groups:
   boards:
-    - { label: "Boards",        keys: [projects, coauthor, archive, programs, domains, map] }
+    - { label: "Boards",        keys: [focus, projects, coauthor, archive, programs, domains, map] }
   sessions:
     - { label: "Sessions",      glyph: chat,  keys: [session-list, session-detail, terminal, transcript, timeline, changes, agents] }
   collections:

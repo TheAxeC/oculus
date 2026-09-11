@@ -12,6 +12,7 @@ import Deposit from '$lib/views/Deposit.svelte';
 import Document from '$lib/views/Document.svelte';
 import Editor from '$lib/views/Editor.svelte';
 import Findings from '$lib/views/Findings.svelte';
+import Focus from '$lib/views/Focus.svelte';
 import Gallery from '$lib/views/Gallery.svelte';
 import Project from '$lib/views/Project.svelte';
 import Projects from '$lib/views/Projects.svelte';
@@ -44,6 +45,15 @@ registerView({
     label: 'views.gallery',
     glyph: 'views.gallery_glyph',
     component: Gallery
+});
+
+// The landing board, first of the boards group: the lanes each manifest's `focus:` puts it on,
+// under a ticker of everything the portfolio has a date for.
+registerView({
+    id: 'focus',
+    label: 'views.focus',
+    glyph: 'views.focus_glyph',
+    component: Focus
 });
 
 // One board over three tier sets, registered once per set. The component reads which board it is

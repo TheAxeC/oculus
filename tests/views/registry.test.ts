@@ -82,6 +82,7 @@ describe('the real registrations', () => {
             'status',
             'findings',
             'gallery',
+            'focus',
             'projects',
             'archive',
             'coauthor',

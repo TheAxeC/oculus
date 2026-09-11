@@ -542,8 +542,29 @@ text:
     teaching_lane: "{G.teaching} Teaching & supervision"
     teaching_sub: "this academic year"
     cards_group: "Funding | positions | teaching"
+    # oculus: the board's own controls, and clean twins of the keys above whose cockpit value carries
+    # a {G.x} glyph token or HTML. oculus's t() interpolates {0}/{1} and nothing else, and it renders
+    # text rather than markup, so a glyph is drawn from a *_glyph key naming an entry of glyphs.yml.
+    move_to: "Move to"
+    priority: "Priority"
+    priority_none: "No priority"
+    funding_label: "Funding"
+    funding_glyph: "coin"
+    jobs_label: "Job applications"
+    jobs_glyph: "scout"
+    teaching_label: "Teaching & supervision"
+    teaching_glyph: "teaching"
+    ideas_glyph: "idea"
+    now_glyph: "now"
+    wait_glyph: "focus"
+    fire_glyph: "fire"
+    venue_glyph: "arrow_to"
+    warn_glyph: "warn"
+    empty_glyph: "circle_empty"
+    working_now_plain: "- {0} projects, grouped into lanes by each manifest's manual focus: field"
+    hint_plain: "not on the board (set their focus: field)"
 
-  cc:                          # "This week" command-center strip (render/command_center.py). {0}/{1}=args.
+  cc:                        # "This week" command-center strip (render/command_center.py). {0}/{1}=args.
     never_run: "never run"
     last_refreshed: "last refreshed {0}d ago"
     refresh_litwatch: "Lit Watch - {0} | run <code>/research-cockpit litwatch</code>"
@@ -598,6 +619,21 @@ text:
     kind_other: "other"
     grp_followups: "{G.followup} Follow-ups"
     grp_refresh: "{G.refresh_live} Refresh live data"
+    # oculus: clean twins of the group headers above, and the glyph each is drawn with.
+    grp_overdue_label: "Overdue"
+    grp_overdue_glyph: "overdue"
+    grp_attention_label: "Needs attention"
+    grp_attention_glyph: "attention"
+    grp_deadlines_label: "Deadlines & dates"
+    grp_deadlines_glyph: "deadline"
+    grp_subtask_dl_label: "Subtask deadlines"
+    grp_open_subtasks_label: "Open subtasks"
+    grp_subtask_glyph: "pin"
+    grp_followups_label: "Follow-ups"
+    grp_followups_glyph: "followup"
+    snoozed_glyph: "snooze"
+    dlcat_event_label: "talks & events"
+    venue_count: "{0} x{1}"
 
   sf:                          # scout/feed tabs: inbox, audit, leads, radar, linkedin (render/surfaces.py).
     no_file: "No file at <code>{0}</code>."

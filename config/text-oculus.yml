@@ -181,6 +181,9 @@ text:
     gallery_glyph: "cards"
     # The one project board, registered three times over three tier sets. The words are the `tabs:`
     # entries of layout.yml, which is what the cockpit's three tabs are called.
+    # The landing board: what is being worked on now, in lanes, under a ticker of everything dated.
+    focus: "Focus"
+    focus_glyph: "now"
     projects: "Projects"
     projects_glyph: "focus"
     archive: "Archive"
@@ -241,6 +244,8 @@ text:
     col_tone: "Tone"
     col_chip: "Chip"
     col_count: "Chips"
+    ticker: "Ticker"
+    ticker_tail: "in 6d"
     empty: "Empty state"
     empty_message: "Nothing matches the filter."
     empty_glyph: "circle_empty"
