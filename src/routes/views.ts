@@ -73,7 +73,8 @@ registerView({
     id: 'project',
     label: 'views.project',
     glyph: 'views.project_glyph',
-    component: Project
+    component: Project,
+    listed: false
 });
 
 // The manifest edit form. It is opened for one project, by the edit control of a card, which is what
@@ -82,7 +83,8 @@ registerView({
     id: 'editor',
     label: 'views.editor',
     glyph: 'views.editor_glyph',
-    component: Editor
+    component: Editor,
+    listed: false
 });
 
 // One local HTML file as its own tab, opened by a bookmark in the rail's Docs section. Registered
@@ -92,7 +94,8 @@ registerView({
     id: 'document',
     label: 'views.document',
     glyph: 'views.document_glyph',
-    component: Document
+    component: Document,
+    listed: false
 });
 
 // Sessions, which DESIGN.md's decision of 2026-09-10 makes six views rather than one. They are tied

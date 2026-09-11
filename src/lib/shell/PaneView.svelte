@@ -60,16 +60,32 @@
     const other = $derived<Target>(target === 'main' ? 'panel' : 'main');
     const maximised = $derived(focused() !== null);
 
-    /** A tab per instance: the registry's words and glyph, or the view's own id when it has none. */
+    /**
+     * A tab per instance: the registry's words and glyph, or the view's own id when it has none. An
+     * instance whose state carries a `label` shows that instead of the view's name, which is how
+     * two documents or two projects read as two tabs rather than as "Document" twice.
+     */
     const tabs = $derived<Tab[]>(
         instances.map((instance) => {
             const found = viewFor(instance.view);
             if (found === undefined) {
                 return { id: instance.id, label: t('ui.unknown_view', instance.view) };
             }
-            return { id: instance.id, label: lookup(found.label), glyph: lookup(found.glyph) };
+            const own = stateLabel(instance.state);
+            return {
+                id: instance.id,
+                label: own ?? lookup(found.label),
+                glyph: lookup(found.glyph)
+            };
         })
     );
+
+    /** The `label` an instance state carries, or null for a state with none or an empty one. */
+    function stateLabel(state: unknown): string | null {
+        if (typeof state !== 'object' || state === null || Array.isArray(state)) return null;
+        const held = (state as Record<string, unknown>).label;
+        return typeof held === 'string' && held !== '' ? held : null;
+    }
 
     /** The drag, and where in this pane's own tabs the tab being dragged sits, if it is one of them. */
     const held = $derived(dragging());

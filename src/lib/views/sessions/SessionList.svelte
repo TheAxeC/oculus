@@ -362,10 +362,13 @@
         min-width: 0;
     }
 
+    /* The row's title at the list's own size: the page's base size is the largest step, and a
+       session's title is one line among many rather than a heading. */
     .top .nm {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+        font-size: var(--fs-md);
     }
 
     .meta {

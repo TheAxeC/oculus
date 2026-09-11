@@ -20,6 +20,12 @@ export type Registration = {
     /** A key in config/text.yml whose value is a name in the `glyphs:` map of config/glyphs.yml. */
     glyph: string;
     component: Component<ViewProps>;
+    /**
+     * Whether the rail offers the view. Every view is listed unless it says otherwise; one that is
+     * only ever opened for something (a project's editor, a project, a document) says `false`,
+     * since opened bare it can only report that it was opened for nothing.
+     */
+    listed?: boolean;
 };
 
 /** Insertion order is registration order, and a re-registration keeps the id's first position. */

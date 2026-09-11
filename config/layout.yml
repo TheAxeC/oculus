@@ -6,19 +6,22 @@
 # ===========================================================================
 
 
-# Optional divider headers inside the Collections / More dropdowns - group related tabs so the long list reads
-# clearly. Each group = { label, keys }; a key not in any group trails at the end (ungrouped). Order = groups
-# render top-to-bottom in the order listed here (overrides the raw registration order within the dropdown).
+# The rail's groups: each group = { label, keys } is drawn as a heading over the views it names, in the
+# order listed here; a view no group names trails at the end, and a group naming no registered view is
+# not drawn. A key is a view id; the ids under "Academic life", "Reference" and "Personal" are views a
+# later step registers. The heading sits in a 52 px strip, so a label drawn there is eight letters at
+# most; the longer ones belong to groups that open as one button with a menu (O14d).
 nav_groups:
+  boards:
+    - { label: "Boards",        keys: [projects, coauthor, archive, programs, domains, map] }
+  sessions:
+    - { label: "Sessions",      keys: [session-list, session-detail, terminal, timeline, changes, agents] }
   collections:
-    - { label: "Portfolio",     keys: [programs, domains, map] }
     - { label: "Academic life", keys: [funding, events, education, applications, collaborations, tasks] }
     - { label: "Reference",     keys: [venues, data, code, statements] }
   more:
-    - { label: "Personal",    keys: [approach, agents, memories] }
-    - { label: "System",      keys: [hpc, help, audit, config] }
-  sessions:
-    - { label: "Sessions",    keys: [session-list, session-detail, terminal, timeline, changes, agents] }
+    - { label: "Personal",      keys: [approach, agent-approach, memories] }
+    - { label: "System",        keys: [status, findings, gallery, hpc, help, audit, config] }
 
 
 # Saved arrangements: a whole workbench written by hand, applied by a control in the rail's panel menu.

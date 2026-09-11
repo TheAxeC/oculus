@@ -153,6 +153,12 @@
         return short;
     }
 
+    /** What the project's own tab is called in the strip: the short handle whenever there is one. */
+    function tabLabel(item: BoardItem): string {
+        const short = item.project.short;
+        return short === undefined || short === '' ? item.project.title : short;
+    }
+
     /** The deadline badge: the date once submitted, how overdue it is, or how long is left. */
     function deadline(item: BoardItem): { label: string; tone?: string } | null {
         const date = item.project.deadline;
@@ -278,7 +284,7 @@
             title={label(item)}
             tone={item.tone}
             pinned={item.project.pin === true}
-            ontitle={() => openView('project', 'main', { id: item.id })}
+            ontitle={() => openView('project', 'main', { id: item.id, label: tabLabel(item) })}
         >
             {#snippet meta()}
                 {#if item.project.type}

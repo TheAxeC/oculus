@@ -41,8 +41,15 @@
         const sections: Section[] = [];
         const taken = new Set<string>();
         for (const group of groups) {
-            const items = registrations.filter((view) => group.keys.includes(view.id));
-            for (const item of items) taken.add(item.id);
+            // In the group's own order, which is what the config promises; a key naming no
+            // registration, or one already drawn, contributes nothing.
+            const items: Registration[] = [];
+            for (const key of group.keys) {
+                const found = registrations.find((view) => view.id === key);
+                if (found === undefined || taken.has(found.id)) continue;
+                taken.add(found.id);
+                items.push(found);
+            }
             if (items.length > 0) sections.push({ label: group.label, items });
         }
         const rest = registrations.filter((view) => !taken.has(view.id));
@@ -100,7 +107,14 @@
     /** The id of the control that swaps the workbench for the saved arrangement, and back. */
     const ARRANGE = 'arrange';
 
-    const sections = $derived(arrange(views(), groups));
+    /* A view registered as not listed (the editor, a project, a document) is opened from a card or a
+       bookmark and has nothing to show when opened bare, so the rail draws no button for it. */
+    const sections = $derived(
+        arrange(
+            views().filter((view) => view.listed !== false),
+            groups
+        )
+    );
 
     const themes = $derived(
         themeList().map((entry) => ({
@@ -261,8 +275,15 @@
         min-height: 0;
     }
 
+    /* The list scrolls on a short window, with no scrollbar drawn: a bar in a 52 px strip covers the
+       glyphs it sits beside, and the wheel and the trackpad reach every entry without it. */
     .views {
         overflow-y: auto;
+        scrollbar-width: none;
+    }
+
+    .views::-webkit-scrollbar {
+        display: none;
     }
 
     /* On a short window the view list is what gives way, and it scrolls. Without this the foot
