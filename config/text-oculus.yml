@@ -184,6 +184,8 @@ text:
     why_busy: "A request is in flight."
 
   views:                     # oculus's views: one label per registered view, and the glyph name it is drawn with.
+    hpc: "Live HPC"
+    hpc_glyph: "hpc"
     status: "Status"
     status_glyph: "now"
     findings: "Findings"

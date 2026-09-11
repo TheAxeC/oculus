@@ -17,6 +17,8 @@ export type LocalConfig = {
     hub: string;
     /** Port the oculus server listens on, bound to 127.0.0.1. */
     port: number;
+    /** Per-machine ssh alias for the Live HPC view. */
+    hpcHost?: string;
     /**
      * Where the session layer keeps its byte-offset cache, `sessions_cache` in the file. Absent
      * unless the machine sets it, and the sessions layer then uses ~/.oculus/transcript-cache.json.
@@ -32,7 +34,7 @@ export type LocalConfig = {
 /** 8787 belongs to the cockpit and is never used. */
 export const DEFAULT_PORT = 8790;
 
-const LOCAL_KEYS = ['hub', 'port', 'sessions_cache', 'sessions_overrides'];
+const LOCAL_KEYS = ['hub', 'port', 'hpc_host', 'sessions_cache', 'sessions_overrides'];
 
 /**
  * Walk up from a starting file until a directory holds both package.json and config/.
@@ -106,6 +108,12 @@ export function loadLocal(engine: string): LocalConfig {
     if (record.port !== undefined) {
         if (!Number.isInteger(record.port)) throw new Error(`${file}: port must be an integer`);
         config.port = record.port as number;
+    }
+    if (record.hpc_host !== undefined) {
+        if (typeof record.hpc_host !== 'string' || record.hpc_host.length === 0) {
+            throw new Error(`${file}: hpc_host must be a non-empty string`);
+        }
+        config.hpcHost = record.hpc_host;
     }
     // The two session paths are absent unless the machine names them, so a config that says
     // nothing about sessions leaves the defaults to the module that owns them.

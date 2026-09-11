@@ -934,3 +934,55 @@ export type GitState = {
 
 /** The payload of the `git` channel: one state per workspace root. */
 export type GitPayload = Record<string, GitState>;
+
+// ------------------------------------------------------------------ hpc
+export type HpcStatus = 'starting' | 'ok' | 'unreachable' | 'error';
+export type HpcJob = {
+    id: string;
+    name: string;
+    partition: string;
+    state: string;
+    time: string;
+    limit: string;
+    nodes: string;
+    cpus: string;
+    gpus: string;
+    mem: string;
+    priority: string;
+    start: string;
+    reason: string;
+};
+export type HpcRecent = {
+    id: string;
+    name: string;
+    state: string;
+    exit: string;
+    elapsed: string;
+    end: string;
+    memPct: number | null;
+    memUsed: string;
+    memReq: string;
+    cpuPct: number | null;
+};
+export type HpcPartition = {
+    partition: string;
+    avail: string;
+    nodes: number;
+    state: string;
+    gres: string;
+};
+export type HpcQuotaItem = { name: string; used: string; limit: string; pct: number };
+export type HpcPayload = {
+    status: HpcStatus;
+    hint?: string;
+    jobs: HpcJob[];
+    running: number;
+    pending: number;
+    total: number;
+    recent: HpcRecent[];
+    sinfo: HpcPartition[];
+    quota: HpcQuotaItem[];
+    updated: string;
+    pollMin: number;
+    host: string;
+};

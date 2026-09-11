@@ -272,6 +272,34 @@ receive({ channel: 'portfolio', version: 1, payload: snapshot() });
 
 const body = html();
 
+describe('the Live HPC pill', () => {
+    it('is absent before a reachable non-empty queue arrives', () => {
+        expect(body).not.toContain('HPC job');
+    });
+
+    it('is present with counts from the shared HPC state', () => {
+        receive({
+            channel: 'hpc',
+            version: 1,
+            payload: {
+                status: 'ok',
+                jobs: [{ id: '1' }],
+                running: 1,
+                pending: 2,
+                total: 3,
+                recent: [],
+                sinfo: [],
+                quota: [],
+                updated: '2026-09-11T12:00:00.000Z',
+                pollMin: 20,
+                host: 'fixture'
+            }
+        });
+        expect(html()).toContain('1 HPC job running');
+        expect(html()).toContain('2 pending');
+    });
+});
+
 describe('the board', () => {
     it('carries its own words and the three cluster headers', () => {
         expect(body).toContain(catalog['views.focus']);

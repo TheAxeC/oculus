@@ -369,7 +369,6 @@ describe("oculus's own config directory", () => {
         'approach',
         'agent-approach',
         'memories',
-        'hpc',
         'help',
         'audit',
         'config'

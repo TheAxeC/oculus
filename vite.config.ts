@@ -3,7 +3,7 @@ import { sveltekit } from '@sveltejs/kit/vite';
 import { Server } from 'node:http';
 import { defineConfig } from 'vitest/config';
 import type { Plugin, ViteDevServer } from 'vite';
-import { engineDir, loadLocal } from './src/lib/data/sources/config.ts';
+import { engineDir, loadConfig, loadLocal } from './src/lib/data/sources/config.ts';
 import type { Snapshot } from './src/lib/data/model.ts';
 import { Hub } from './src/lib/server/channels.ts';
 import { projectFolders } from './src/lib/server/sessions/index.ts';
@@ -14,6 +14,7 @@ import { attachSocket } from './src/lib/server/socket.ts';
 import { bindGitWatcher, watchGit } from './src/lib/server/watch/git.ts';
 import { watchPortfolio } from './src/lib/server/watch/portfolio.ts';
 import { watchSessions } from './src/lib/server/watch/sessions.ts';
+import { bindHpcWatcher, watchHpc } from './src/lib/server/hpc/poll.ts';
 
 // The socket and the watcher in development. They are the same three lines as src/server.ts, on
 // Vite's own http server, so `npm run dev` pushes data exactly as the built server does and all
@@ -30,6 +31,13 @@ function oculusSocket(): Plugin {
             if (!(http instanceof Server)) return;
             const engine = engineDir();
             const local = loadLocal(engine);
+            const slurm = (loadConfig(engine).config.slurm ?? {}) as {
+                host: string;
+                days: number;
+                poll_min: number;
+                quota_min: number;
+                prewarm: boolean;
+            };
             const hub = new Hub();
             // O17's terminals, the same three lines as in src/server.ts.
             const terminals = new Terminals(hub);
@@ -54,7 +62,17 @@ function oculusSocket(): Plugin {
             // After the sessions watcher, so its subscription is answered with the first scan.
             const git = watchGit(hub);
             bindGitWatcher(git);
+            const hpc = watchHpc(hub, {
+                host: local.hpcHost ?? slurm.host,
+                days: slurm.days,
+                pollMin: slurm.poll_min,
+                quotaMin: slurm.quota_min,
+                prewarm: slurm.prewarm
+            });
+            bindHpcWatcher(hpc);
             http.on('close', () => {
+                bindHpcWatcher(null);
+                hpc.close();
                 bindGitWatcher(null);
                 git.close();
                 sessions.close();

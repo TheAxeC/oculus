@@ -74,6 +74,8 @@ file_index:
 # chat uses. `prewarm: false` stops the server resolving finished-job log paths ahead of the first click.
 # `model:` empty means let the `claude` CLI pick its own default (the API fallback uses claude-sonnet-4-6).
 slurm:
+  host: utwente
+  days: 3
   poll_min: 20
   quota_min: 60
   prewarm: true

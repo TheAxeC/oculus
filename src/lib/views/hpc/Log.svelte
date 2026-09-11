@@ -1,0 +1,56 @@
+<script lang="ts">
+    // Layer 3, view partial. The log box owns loading, output, empty, and failure states while its controls repeat or close the selected tail.
+    import ToolButton from '$lib/ui/ToolButton.svelte';
+    import { t } from '$lib/state/text';
+    let {
+        id,
+        status,
+        output,
+        onrefresh,
+        onclose
+    }: { id: string; status: string; output: string; onrefresh: () => void; onclose: () => void } =
+        $props();
+    const body = $derived(
+        status === 'loading'
+            ? t('js.slurm.loading')
+            : status === 'error' || status === 'timeout'
+              ? t('js.slurm.fetch_failed')
+              : output || t('js.slurm.no_output')
+    );
+</script>
+
+<section>
+    <header>
+        <b>{t('js.slurm.log_job', id)}</b><span
+            ><ToolButton label={t('hpc.tail')} onclick={onrefresh} /><ToolButton
+                label={t('hpc.close')}
+                onclick={onclose}
+            /></span
+        >
+    </header>
+    <pre>{body}</pre>
+</section>
+
+<style>
+    section {
+        border: 1px solid var(--line);
+        margin-top: 10px;
+    }
+    header {
+        display: flex;
+        justify-content: space-between;
+        padding: 6px;
+    }
+    header span {
+        display: flex;
+        gap: 4px;
+    }
+    pre {
+        max-height: 24em;
+        overflow: auto;
+        margin: 0;
+        padding: 8px;
+        background: var(--bg);
+        color: var(--ink-txt, var(--ink));
+    }
+</style>

@@ -121,6 +121,17 @@ describe('the rail, drawn', () => {
     });
 });
 
+describe('a rail badge', () => {
+    it('draws the registration badge beside its glyph', () => {
+        registerView({ ...probe('badged'), badge: () => '3 5' });
+        const body = render(ActivityRail, {
+            props: { groups: [{ label: 'Badge', keys: ['badged'] }] }
+        }).body;
+        expect(body).toMatch(/class="badge\s/);
+        expect(body).toContain('3 5');
+    });
+});
+
 describe('the groups of the real config', () => {
     /** The `nav_groups` of config/layout.yml, both of its lists flattened, as the page reads it. */
     function realGroups(): NavGroup[] {

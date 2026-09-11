@@ -96,7 +96,7 @@
     }
 
     onMount(() => {
-        connect(['portfolio', 'config', 'sessions', 'git']);
+        connect(['portfolio', 'config', 'sessions', 'git', 'hpc']);
         loadUi();
         loadLayout();
         return () => disconnect();

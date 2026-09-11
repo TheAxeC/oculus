@@ -4,7 +4,7 @@
 
 import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import { engineDir, loadLocal } from './lib/data/sources/config.ts';
+import { engineDir, loadConfig, loadLocal } from './lib/data/sources/config.ts';
 import type { Snapshot } from './lib/data/model.ts';
 import { Hub } from './lib/server/channels.ts';
 import { projectFolders } from './lib/server/sessions/index.ts';
@@ -15,11 +15,19 @@ import { attachSocket } from './lib/server/socket.ts';
 import { bindGitWatcher, watchGit } from './lib/server/watch/git.ts';
 import { watchPortfolio } from './lib/server/watch/portfolio.ts';
 import { watchSessions } from './lib/server/watch/sessions.ts';
+import { bindHpcWatcher, watchHpc } from './lib/server/hpc/poll.ts';
 
 type Handler = (req: IncomingMessage, res: ServerResponse) => void;
 
 const engine = engineDir();
 const local = loadLocal(engine);
+const slurm = (loadConfig(engine).config.slurm ?? {}) as {
+    host: string;
+    days: number;
+    poll_min: number;
+    quota_min: number;
+    prewarm: boolean;
+};
 
 // The specifier is built at run time because build/handler.js exists only after `npm run build`.
 const built = new URL('../build/handler.js', import.meta.url).href;
@@ -59,8 +67,18 @@ const git = watchGit(hub);
 // The git endpoint is in the built app's module graph, so the bridge is what lets a write re-read
 // its own root at once instead of waiting for the watcher's next event.
 bindGitWatcher(git);
+const hpc = watchHpc(hub, {
+    host: local.hpcHost ?? slurm.host,
+    days: slurm.days,
+    pollMin: slurm.poll_min,
+    quotaMin: slurm.quota_min,
+    prewarm: slurm.prewarm
+});
+bindHpcWatcher(hpc);
 
 server.on('close', () => {
+    bindHpcWatcher(null);
+    hpc.close();
     bindGitWatcher(null);
     git.close();
     sessions.close();

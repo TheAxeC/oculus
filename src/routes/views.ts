@@ -14,6 +14,7 @@ import Editor from '$lib/views/Editor.svelte';
 import Findings from '$lib/views/Findings.svelte';
 import Focus from '$lib/views/Focus.svelte';
 import Gallery from '$lib/views/Gallery.svelte';
+import Hpc from '$lib/views/Hpc.svelte';
 import Project from '$lib/views/Project.svelte';
 import Projects from '$lib/views/Projects.svelte';
 import Status from '$lib/views/Status.svelte';
@@ -25,6 +26,15 @@ import Terminal from '$lib/views/sessions/Terminal.svelte';
 import Timeline from '$lib/views/sessions/Timeline.svelte';
 import Transcript from '$lib/views/sessions/Transcript.svelte';
 import { registerView } from '$lib/views/registry';
+import { badgeText } from '$lib/state/hpc.svelte';
+
+registerView({
+    id: 'hpc',
+    label: 'views.hpc',
+    glyph: 'views.hpc_glyph',
+    component: Hpc,
+    badge: badgeText
+});
 
 registerView({
     id: 'status',

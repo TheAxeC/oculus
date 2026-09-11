@@ -9,6 +9,7 @@
 import type {
     ConfigPayload,
     GitPayload,
+    HpcPayload,
     Message,
     SessionsPayload,
     Snapshot
@@ -50,4 +51,10 @@ export function sessions(): SessionsPayload | null {
 export function git(): GitPayload | null {
     const held = messages.git;
     return held === undefined ? null : (held.payload as GitPayload);
+}
+
+/** The latest Live HPC state, or null before the server's starting message. */
+export function hpc(): HpcPayload | null {
+    const held = messages.hpc;
+    return held === undefined ? null : (held.payload as HpcPayload);
 }

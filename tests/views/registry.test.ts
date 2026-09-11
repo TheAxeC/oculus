@@ -79,6 +79,7 @@ describe('the real registrations', () => {
 
     it('registers every view the application has, in registration order', () => {
         expect(real().map((view) => view.id)).toEqual([
+            'hpc',
             'status',
             'findings',
             'gallery',

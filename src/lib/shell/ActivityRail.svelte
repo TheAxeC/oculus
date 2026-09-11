@@ -189,6 +189,11 @@
                                 openView(view.id, event.shiftKey ? 'panel' : 'main')}
                         >
                             <Glyph name={lookup(view.glyph)} />
+                            {#if view.badge?.()}
+                                <span class="badge" title={t('hpc.badge_title')}
+                                    >{view.badge()}</span
+                                >
+                            {/if}
                         </button>
                     </Tooltip>
                 {/each}
@@ -335,6 +340,18 @@
         font: inherit;
         font-size: var(--fs-xl);
         cursor: pointer;
+        position: relative;
+    }
+
+    .badge {
+        position: absolute;
+        right: -2px;
+        bottom: -2px;
+        padding: 0 3px;
+        border-radius: var(--radius-pill);
+        background: var(--chip);
+        color: var(--accent-txt, var(--accent));
+        font-size: var(--fs-3xs);
     }
 
     /* The three switches at the foot: the overlay, the wallpaper and the glyphs. The rail is 52 px

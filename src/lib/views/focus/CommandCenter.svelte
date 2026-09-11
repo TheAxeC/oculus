@@ -7,8 +7,9 @@
     // and what it can be written to (`kind` and `target`), and this file turns the first into a
     // sentence through config/text.yml and the second into buttons through state/writes.svelte.ts.
     //
-    // The right of the heading row is left empty on purpose: the live HPC pill docks there and is
-    // O26's, so the row already lays itself out for two children.
+    // The right of the heading row holds the live HPC pill (O26): the running and pending counts
+    // from state/hpc.svelte.ts, drawn only while the cluster answers and the queue is not empty,
+    // and a click on it opens the Live HPC view.
 
     import Glyph from '$lib/ui/Glyph.svelte';
     import Ticker, { type TickerAction, type TickerRow } from '$lib/ui/Ticker.svelte';
@@ -24,6 +25,8 @@
     import { portfolio } from '$lib/state/entities.svelte';
     import { openView } from '$lib/state/layout.svelte';
     import { t } from '$lib/state/text';
+    import ToolButton from '$lib/ui/ToolButton.svelte';
+    import { pillText } from '$lib/state/hpc.svelte';
     import {
         writeEntry,
         writeManifest,
@@ -389,7 +392,11 @@
     <section class="week">
         <div class="head">
             <b><Glyph name={t('cc.command_center_glyph')} />{t('cc.command_center')}</b>
-            <span class="pill"></span>
+            {#if pillText()}
+                <span class="pill">
+                    <ToolButton label={pillText()} onclick={() => openView('hpc', 'main')} />
+                </span>
+            {/if}
         </div>
 
         {@render group(t('cc.grp_overdue_label'), t('cc.grp_overdue_glyph'), view.overdue)}

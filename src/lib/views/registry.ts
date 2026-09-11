@@ -26,6 +26,8 @@ export type Registration = {
      * since opened bare it can only report that it was opened for nothing.
      */
     listed?: boolean;
+    /** Live text drawn beside the rail glyph; an empty string draws no badge. */
+    badge?: () => string;
 };
 
 /** Insertion order is registration order, and a re-registration keeps the id's first position. */
