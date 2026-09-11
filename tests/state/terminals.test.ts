@@ -125,6 +125,7 @@ function terminal(over: Partial<Terminal> = {}): Terminal {
         pid: 321,
         created: '2026-09-11T08:00:00.000Z',
         attached: true,
+        resumes: null,
         ...over
     };
 }

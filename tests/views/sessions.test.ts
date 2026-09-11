@@ -30,7 +30,7 @@ import { select } from '../../src/lib/state/selection.svelte.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
-import { area, git, payload, record, workspace } from '../sessions-fixture.ts';
+import { area, git, payload, record, terminal, workspace } from '../sessions-fixture.ts';
 import type { Component } from 'svelte';
 import type { Instance } from '../../src/lib/state/layout.ts';
 import type { ViewProps } from '../../src/lib/views/registry.ts';
@@ -518,16 +518,7 @@ describe('a hook event on a session', () => {
 // cover: xterm.js itself, which needs a DOM that `svelte/server` does not give it, so the grid here
 // is the mount point the browser fills and the assertions stop at it.
 describe('a terminal in the payload', () => {
-    const pane = {
-        id: 'a1b2c3-shell',
-        name: 'a1b2c3-shell',
-        kind: 'shell' as const,
-        cwd: `${ALPHA}/code`,
-        command: 'zsh',
-        pid: 991,
-        created: '2026-09-11T08:00:00.000Z',
-        attached: true
-    };
+    const pane = terminal('a1b2c3-shell', { cwd: `${ALPHA}/code`, pid: 991, attached: true });
 
     /** A fresh version each call, and the tree put back after, as the hook cases do above. */
     let version = 200;
@@ -557,5 +548,36 @@ describe('a terminal in the payload', () => {
         expect(body).toContain(pane.name);
         expect(body).toContain('code');
         expect(body).toContain(catalog['sessions.stop_terminal']);
+    });
+});
+
+// O19's resume control. What this does NOT cover: the click itself, and the menu's own list, which
+// Menu.svelte renders only while it is open; there is no DOM here to open it, so a row's menu is
+// checked by its opener and the confirm the second press shows is checked in the route test.
+describe('resuming a session into a terminal', () => {
+    it('offers the control on an ended session', () => {
+        select('ended-one');
+        const body = html(SessionDetail);
+        expect(body).toContain(catalog['sessions.resume_label']);
+        expect(body).toContain(catalog['sessions.resume']);
+        expect(body).not.toContain(catalog['sessions.resume_live']);
+        select(null);
+    });
+
+    it('says why a live session cannot be resumed, instead of the control', () => {
+        select('live-one');
+        const body = html(SessionDetail);
+        expect(body).toContain(catalog['sessions.resume_live']);
+        expect(body).not.toContain(catalog['sessions.resume']);
+        select(null);
+    });
+
+    it('puts a row menu on an ended row and none on a live one', () => {
+        const ended = html(SessionList, { ended: true });
+        expect(ended).toContain(`aria-label="${catalog['ui.row_menu']}"`);
+        // The default state leaves the ended section collapsed, so only live rows are drawn.
+        const liveOnly = html(SessionList);
+        expect(liveOnly).toContain('The live one');
+        expect(liveOnly).not.toContain(`aria-label="${catalog['ui.row_menu']}"`);
     });
 });

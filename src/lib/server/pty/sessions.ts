@@ -10,7 +10,7 @@
 import { randomBytes } from 'node:crypto';
 import { statSync } from 'node:fs';
 import { isAbsolute } from 'node:path';
-import type { Terminal, TerminalKind } from '../../data/model.ts';
+import type { Terminal, TerminalKind, TerminalResume } from '../../data/model.ts';
 import { run, type KeyChunk, type TmuxOptions } from './tmux.ts';
 
 /** Every tmux session oculus owns carries this prefix and nothing else does. */
@@ -29,6 +29,27 @@ export const MAX_GEOMETRY = 2000;
 const NAME_OPTION = '@oculus_name';
 
 /**
+ * Which session a terminal continues, kept as a tmux user option beside the name so tmux stays the
+ * only store: `<tool>:<session id>`, and unset on a terminal that continues nothing.
+ */
+const RESUMES_OPTION = '@oculus_resumes';
+
+/** The two tools whose sessions can be resumed. A shell has no session to continue. */
+export const RESUME_TOOLS: TerminalResume['tool'][] = ['claude', 'codex'];
+
+/**
+ * The id shape both tools use. Claude Code names a session by a UUID and Codex names a rollout by
+ * `session_meta.id`, which is a UUID too, so anything that is not one is refused before a command
+ * is built from it.
+ */
+const UUID = /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$/;
+
+/** Whether a value is a session id either tool could have written. Everything else is refused. */
+export function isSessionId(id: unknown): id is string {
+    return typeof id === 'string' && UUID.test(id);
+}
+
+/**
  * The fields a terminal is read from. The first six are the session and its active pane; the
  * seventh is the label the starter gave, kept as a tmux user option so tmux stays the only store.
  */
@@ -39,7 +60,8 @@ export const LIST_FORMAT = [
     '#{pane_current_command}',
     '#{pane_pid}',
     '#{pane_current_path}',
-    `#{${NAME_OPTION}}`
+    `#{${NAME_OPTION}}`,
+    `#{${RESUMES_OPTION}}`
 ].join('\t');
 
 export type StartRequest = {
@@ -48,9 +70,25 @@ export type StartRequest = {
     cols: number;
     rows: number;
     name?: string;
+    /**
+     * The session this terminal continues. With it the command is the tool's own resume command
+     * rather than a bare `claude` or `codex`, and the kind is that tool.
+     */
+    resume?: TerminalResume;
 };
 
-export type StartOptions = TmuxOptions & {
+/** One tmux call, the shape run() of tmux.ts has, for a test that records the argv instead. */
+export type Runner = (args: string[], options?: TmuxOptions) => Promise<string>;
+
+export type RunOptions = TmuxOptions & {
+    /**
+     * The tmux call to make. Server-side only: the endpoint never passes it, and
+     * tests/routes/terminal.test.ts uses it to record what would have been run.
+     */
+    run?: Runner;
+};
+
+export type StartOptions = RunOptions & {
     /**
      * The command to run instead of the one the kind names. Server-side only: the endpoint never
      * passes it, and tests/server/pty/sessions.test.ts uses it to run `cat` rather than a shell.
@@ -87,6 +125,35 @@ export function commandFor(kind: TerminalKind): string {
     if (kind === 'codex') return 'codex';
     const shell = process.env.SHELL;
     return shell === undefined || shell === '' ? '/bin/zsh' : shell;
+}
+
+/**
+ * The argv that continues one session: what the tool's own CLI is called with. `claude --resume
+ * <id>` and `codex resume <id>` are the documented forms, and the id is a UUID, so the argv holds
+ * nothing a shell would read as anything but three words.
+ */
+export function resumeArgs(resume: TerminalResume): string[] {
+    if (!RESUME_TOOLS.includes(resume.tool)) {
+        throw new Error(`tool must be one of ${RESUME_TOOLS.join(', ')}`);
+    }
+    if (!isSessionId(resume.id)) throw new Error(`not a session id: ${String(resume.id)}`);
+    if (resume.tool === 'claude') return ['claude', '--resume', resume.id];
+    return ['codex', 'resume', resume.id];
+}
+
+/** What the `@oculus_resumes` option holds for a resume, and what parseResumes reads back. */
+export function resumeOption(resume: TerminalResume): string {
+    return `${resume.tool}:${resume.id}`;
+}
+
+/** The option's value as a resume, or null when the terminal continues nothing. */
+export function parseResumes(value: string): TerminalResume | null {
+    const at = value.indexOf(':');
+    if (at < 0) return null;
+    const tool = value.slice(0, at) as TerminalResume['tool'];
+    const id = value.slice(at + 1);
+    if (!RESUME_TOOLS.includes(tool) || !isSessionId(id)) return null;
+    return { tool, id };
 }
 
 /** A fresh id: three random bytes as hex, then the kind, so the name carries what the pane runs. */
@@ -144,6 +211,7 @@ export function parseTerminal(line: string): Terminal | null {
     const command = fields[3] ?? '';
     const named = fields[6] ?? '';
     return {
+        resumes: parseResumes(fields[7] ?? ''),
         id,
         name: named === '' ? id : named,
         kind: kindOf(id, command),
@@ -170,9 +238,9 @@ export function parseTerminals(text: string): Terminal[] {
  * The terminals. A tmux server with no session at all exits non-zero on list-sessions, which is not
  * a failure here: it is the ordinary state of a machine where nothing was started yet.
  */
-export async function listTerminals(options: TmuxOptions = {}): Promise<Terminal[]> {
+export async function listTerminals(options: RunOptions = {}): Promise<Terminal[]> {
     try {
-        return parseTerminals(await run(listArgs(), options));
+        return parseTerminals(await (options.run ?? run)(listArgs(), options));
     } catch {
         return [];
     }
@@ -205,12 +273,26 @@ export async function startTerminal(
     const cwd = directory(request.cwd);
     const cols = geometry(request.cols, 'cols');
     const rows = geometry(request.rows, 'rows');
+    const resume = request.resume;
+    if (resume !== undefined && resume.tool !== kind) {
+        throw new Error(`kind must be the tool being resumed: ${resume.tool}`);
+    }
     const id = newId(kind);
     const name = label(request.name, id);
-    const command = options.command ?? commandFor(kind);
-    await run(startArgs(id, { kind, cwd, cols, rows }, command), options);
+    // The argv is joined into the one shell-command new-session takes. Both words of it are fixed
+    // and the third is a UUID, so there is nothing here for a shell to read as anything else.
+    const command =
+        options.command ?? (resume === undefined ? commandFor(kind) : resumeArgs(resume).join(' '));
+    const exec = options.run ?? run;
+    await exec(startArgs(id, { kind, cwd, cols, rows }, command), options);
     if (name !== id) {
-        await run(['set-option', '-t', sessionName(id), NAME_OPTION, name], options);
+        await exec(['set-option', '-t', sessionName(id), NAME_OPTION, name], options);
+    }
+    if (resume !== undefined) {
+        await exec(
+            ['set-option', '-t', sessionName(id), RESUMES_OPTION, resumeOption(resume)],
+            options
+        );
     }
     const terminals = await listTerminals(options);
     const found = terminals.find((terminal) => terminal.id === id);
@@ -227,10 +309,13 @@ export async function resizeTerminal(
     id: string,
     cols: number,
     rows: number,
-    options: TmuxOptions = {}
+    options: RunOptions = {}
 ): Promise<void> {
     if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
-    await run(resizeArgs(id, geometry(cols, 'cols'), geometry(rows, 'rows')), options);
+    await (options.run ?? run)(
+        resizeArgs(id, geometry(cols, 'cols'), geometry(rows, 'rows')),
+        options
+    );
 }
 
 /** The arguments that kill a terminal's session. */
@@ -238,9 +323,9 @@ export function stopArgs(id: string): string[] {
     return ['kill-session', '-t', sessionName(id)];
 }
 
-export async function stopTerminal(id: string, options: TmuxOptions = {}): Promise<void> {
+export async function stopTerminal(id: string, options: RunOptions = {}): Promise<void> {
     if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
-    await run(stopArgs(id), options);
+    await (options.run ?? run)(stopArgs(id), options);
 }
 
 /** The arguments that capture what the pane already shows, escape sequences and all. */
@@ -252,10 +337,10 @@ export function captureArgs(id: string, lines: number = SCROLLBACK_LINES): strin
 export async function scrollback(
     id: string,
     lines: number = SCROLLBACK_LINES,
-    options: TmuxOptions = {}
+    options: RunOptions = {}
 ): Promise<string> {
     if (!isTerminalId(id)) throw new Error(`not a terminal id: ${String(id)}`);
-    return run(captureArgs(id, lines), options);
+    return (options.run ?? run)(captureArgs(id, lines), options);
 }
 
 /**

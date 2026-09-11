@@ -14,12 +14,16 @@
     import TextInput from '$lib/ui/TextInput.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { clock, compactCount, modelShort, stamp } from '$lib/state/format';
+    import { openView, workbench } from '$lib/state/layout.svelte';
+    import { findView } from '$lib/state/layout';
+    import { select } from '$lib/state/selection.svelte';
     import {
         contextWindow,
         knownAreas,
         sessionFor,
         type GroupedSession
     } from '$lib/state/selectors.svelte';
+    import { resumeRefusal, resumeTerminal } from '$lib/state/terminals.svelte';
     import { t } from '$lib/state/text';
     import { writeSession } from '$lib/state/writes.svelte';
     import type { ViewProps } from '$lib/views/registry';
@@ -36,8 +40,14 @@
      */
     let draft = $state<Draft | null>(null);
 
-    /** What the last pin or rename answered, in words, or the empty string before either. */
+    /** What the last pin, rename or resume answered, in words, or the empty string before any. */
     let outcome = $state('');
+
+    /**
+     * Whether the resume control has been asked once. Resuming runs the agent again on the same
+     * transcript, which is DESIGN.md's explicit migration and never something a stray click does.
+     */
+    let armed = $state(false);
 
     /** Where the meter changes hue: a window under half full, then three quarters, then above it. */
     const MID = 0.5;
@@ -132,6 +142,35 @@
         draft = null;
         await write({ title: text });
     }
+
+    /** Whether a terminal view is already up, so a resume does not rearrange a workbench. */
+    function terminalOpen(): boolean {
+        const trees = [workbench().main, workbench().panel];
+        return trees.some((tree) => findView(tree, 'terminal') !== null);
+    }
+
+    /**
+     * Continue this session in a terminal. The first press arms the control and the second runs it;
+     * the server reads the directory and the title off the record, so only the tool and the id go
+     * out. On success the new terminal becomes the selection, and a terminal view opens when none
+     * is showing, since the pane it starts in would otherwise be nowhere.
+     */
+    async function resume(): Promise<void> {
+        if (record === null) return;
+        if (!armed) {
+            armed = true;
+            return;
+        }
+        armed = false;
+        outcome = '';
+        const answer = await resumeTerminal(record.tool, record.id);
+        if (!answer.ok) {
+            outcome = resumeRefusal(answer.error);
+            return;
+        }
+        select(answer.id);
+        if (!terminalOpen()) openView('terminal', 'main');
+    }
 </script>
 
 {#snippet field(label: string, value: string, tip: string)}
@@ -215,6 +254,24 @@
                         title={t('sessions.clear_title')}
                         onclick={() => rename('')}
                     />
+                </div>
+                <div class="ctl">
+                    <span class="lb">{t('sessions.resume_label')}</span>
+                    {#if record.live}
+                        <span class="outcome">{t('sessions.resume_live')}</span>
+                    {:else}
+                        <ToolButton
+                            label={armed
+                                ? t('sessions.resume_confirm', record.cwd ?? '')
+                                : t('sessions.resume')}
+                            glyph={t('sessions.resume_glyph')}
+                            title={armed
+                                ? t('sessions.resume_confirm', record.cwd ?? '')
+                                : t('sessions.resume')}
+                            active={armed}
+                            onclick={() => void resume()}
+                        />
+                    {/if}
                 </div>
                 {#if outcome !== ''}
                     <span class="outcome">{outcome}</span>

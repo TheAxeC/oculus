@@ -9,6 +9,7 @@ import type {
     GitState,
     GroupedSession,
     SessionsPayload,
+    Terminal,
     Workspace
 } from '../src/lib/data/model.ts';
 
@@ -54,6 +55,22 @@ export function record(id: string, over: Partial<GroupedSession> = {}): GroupedS
         secondaryAreas: [],
         kind: 'attached',
         pinned: false,
+        ...over
+    };
+}
+
+/** One terminal, as the `sessions` payload carries it. `resumes` is null unless a case says so. */
+export function terminal(id: string, over: Partial<Terminal> = {}): Terminal {
+    return {
+        id,
+        name: id,
+        kind: 'shell',
+        cwd: '/ws',
+        command: 'zsh',
+        pid: 0,
+        created: '2026-09-11T08:00:00.000Z',
+        attached: false,
+        resumes: null,
         ...over
     };
 }

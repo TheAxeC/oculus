@@ -15,6 +15,7 @@
 
 import { message } from './entities.svelte.ts';
 import { listen, send, subscribe, unsubscribe } from './socket.svelte.ts';
+import { t } from './text.ts';
 import { writeToken } from './writes.svelte.ts';
 import type {
     SessionsPayload,
@@ -22,13 +23,14 @@ import type {
     Terminal,
     TerminalKind,
     TerminalInput,
-    TerminalResize
+    TerminalResize,
+    TerminalResume
 } from '../data/model.ts';
 
-// The two model types a view needs of a terminal. The boundary table lets `state/` import
+// The three model types a view needs of a terminal. The boundary table lets `state/` import
 // `data/model` and lets a view import `state/`, so they reach a view from here, the way
 // state/selectors.svelte.ts re-exports the ones the session views read.
-export type { Terminal, TerminalKind } from '../data/model.ts';
+export type { Terminal, TerminalKind, TerminalResume } from '../data/model.ts';
 
 /** The prefix of a terminal's channel, the server's `ptyChannel` seen from the page. */
 const PREFIX = 'pty:';
@@ -137,6 +139,31 @@ export async function startTerminal(
     rows: number = ROWS
 ): Promise<TerminalAnswer> {
     return post({ action: 'start', kind, cwd, cols, rows });
+}
+
+/**
+ * Continue an observed session in a terminal: DESIGN.md's one explicit migration, which runs
+ * `claude --resume <id>` or `codex resume <id>` in the session's own directory. The server reads
+ * the directory off the record, so nothing about where it starts travels from the page.
+ */
+export async function resumeTerminal(
+    tool: TerminalResume['tool'],
+    id: string,
+    cols: number = COLS,
+    rows: number = ROWS
+): Promise<TerminalAnswer> {
+    return post({ action: 'resume', tool, id, cols, rows });
+}
+
+/**
+ * A refused resume in words. The endpoint answers the catalog key of the two refusals the page has
+ * words for, so the keys stay literal here and tests/keys.test.ts can still see them; anything else
+ * is already a sentence and is shown as it came.
+ */
+export function resumeRefusal(error: string): string {
+    if (error === 'sessions.resume_live') return t('sessions.resume_live');
+    if (error === 'sessions.resume_unknown') return t('sessions.resume_unknown');
+    return error;
 }
 
 /** Stop one terminal. Its tmux session ends, and with it everything running inside it. */

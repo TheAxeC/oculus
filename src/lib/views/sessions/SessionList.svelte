@@ -13,10 +13,13 @@
     import Chip from '$lib/ui/Chip.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
+    import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { clock, modelShort, stamp } from '$lib/state/format';
+    import { openView, workbench } from '$lib/state/layout.svelte';
+    import { findView } from '$lib/state/layout';
     import { select, selected } from '$lib/state/selection.svelte';
     import {
         sessionsByWorkspace,
@@ -27,6 +30,8 @@
     import { t } from '$lib/state/text';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import {
+        resumeRefusal,
+        resumeTerminal,
         stopTerminal,
         terminals,
         type Terminal,
@@ -55,6 +60,13 @@
      * tmux session and everything in it, so the control asks once before it acts.
      */
     let arming = $state('');
+
+    /**
+     * The session whose resume has been asked once, or the empty string. Resuming runs the agent
+     * again on the same transcript (DESIGN.md's explicit migration), so the row's menu asks twice:
+     * the first pick arms it and the item then reads what the second pick will do.
+     */
+    let armedResume = $state('');
 
     /** Read once, so the stamps of one rendering all agree on what day it is. */
     const now = Date.now();
@@ -163,6 +175,45 @@
         if (!answer.ok) failure = answer.error;
     }
 
+    /** What a row's menu offers: the resume, reading as the confirm once it has been armed. */
+    function rowItems(row: GroupedSession): MenuItem[] {
+        const confirm = t('sessions.resume_confirm', row.cwd ?? '');
+        return [
+            {
+                id: 'resume',
+                label: armedResume === row.id ? confirm : t('sessions.resume'),
+                glyph: t('sessions.resume_glyph')
+            }
+        ];
+    }
+
+    /** Whether a terminal view is already up, so a resume does not rearrange a workbench. */
+    function terminalOpen(): boolean {
+        const trees = [workbench().main, workbench().panel];
+        return trees.some((tree) => findView(tree, 'terminal') !== null);
+    }
+
+    /**
+     * Continue an ended session in a terminal. The server reads the directory and the title off the
+     * record, so only the tool and the id go out; on success the new terminal is the selection, and
+     * a terminal view opens when none is showing.
+     */
+    async function resume(row: GroupedSession): Promise<void> {
+        if (armedResume !== row.id) {
+            armedResume = row.id;
+            return;
+        }
+        armedResume = '';
+        failure = '';
+        const answer = await resumeTerminal(row.tool, row.id);
+        if (!answer.ok) {
+            failure = resumeRefusal(answer.error);
+            return;
+        }
+        select(answer.id);
+        if (!terminalOpen()) openView('terminal', 'main');
+    }
+
     /** Dismiss a row, or bring it back. The rail moves on the click; the write follows it. */
     async function dismiss(row: GroupedSession): Promise<void> {
         const next = !hidden(row);
@@ -222,6 +273,19 @@
             </span>
         </button>
         {#if !entry.live}
+            <div class="menu">
+                <Menu
+                    label={t('ui.row_menu')}
+                    items={rowItems(entry)}
+                    glyph={t('ui.pane_menu_glyph')}
+                    compact
+                    placement="down"
+                    align="right"
+                    onpick={(id) => {
+                        if (id === 'resume') void resume(entry);
+                    }}
+                />
+            </div>
             <button
                 type="button"
                 class="hide"
@@ -377,6 +441,11 @@
         margin: 0;
         color: var(--c-red-txt, var(--ink));
         font-size: var(--fs-sm);
+    }
+
+    .row .menu {
+        display: flex;
+        align-items: center;
     }
 
     .ws-h,

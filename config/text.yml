@@ -821,6 +821,13 @@ text:
     route_to: "Send to another terminal instead"
     stop_terminal: "Stop this terminal"
     confirm_stop: "Stopping ends the tmux session and everything running in it"
+    # oculus, O19: the one explicit migration - an observed session continued in a tmux terminal.
+    resume_label: "Resume"
+    resume: "Resume in a terminal"
+    resume_glyph: "goto"
+    resume_confirm: "Press again to run the agent again in {0}"
+    resume_live: "This session is still running. It can be resumed once it has ended."
+    resume_unknown: "The snapshot no longer holds this session."
 
   config:                      # Config tab (render/surfaces.py config_tab_html) - the split config, raw-YAML editable.
     intro: "The cockpit config, split across these files and merged by <code>load_config()</code>. Edit any file as raw YAML (served mode) - the build and <code>--selftest</code> validate it on save. The <b>+ status</b> button (top bar) is the one-click shortcut for adding a status colour."

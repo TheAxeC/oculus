@@ -12,11 +12,17 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, expect, it, vi } from 'vitest';
 import {
+    isSessionId,
     listTerminals,
+    parseTerminal,
+    resizeArgs,
     resizeTerminal,
+    resumeArgs,
+    resumeOption,
     scrollback,
     sendKeysArgs,
     sessionName,
+    startArgs,
     startTerminal,
     stopTerminal
 } from '../../../src/lib/server/pty/sessions.ts';
@@ -133,4 +139,59 @@ it.skipIf(!TMUX)('refuses a cwd that is not an absolute existing directory', asy
         startTerminal({ kind: 'shell', cwd: dir, cols: 0, rows: 24 }, options)
     ).rejects.toThrow('cols must be a whole number');
     await expect(stopTerminal('../elsewhere', options)).rejects.toThrow('not a terminal id');
+});
+
+// O19's resume, as pure functions: no tmux and no agent runs here, which is why these are not
+// skipped with the rest of the file when tmux is missing. What the two commands are is checked
+// against what `claude --help` and `codex resume --help` document, and the option a resumed
+// terminal carries is checked by reading a list line back.
+
+it('builds the resume command of each tool, and refuses an id of any other shape', () => {
+    const id = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
+    expect(resumeArgs({ tool: 'claude', id })).toEqual(['claude', '--resume', id]);
+    expect(resumeArgs({ tool: 'codex', id })).toEqual(['codex', 'resume', id]);
+    expect(isSessionId(id)).toBe(true);
+    expect(isSessionId('a1b2c3-claude')).toBe(false);
+    expect(isSessionId('2026/09/11/rollout-1')).toBe(false);
+    expect(isSessionId(null)).toBe(false);
+    expect(() => resumeArgs({ tool: 'claude', id: 'not-a-uuid' })).toThrow('not a session id');
+    expect(() => resumeArgs({ tool: 'claude', id: `${id}; rm -rf /` })).toThrow('not a session id');
+});
+
+it('starts a resumed terminal in the session directory, with the resume as its command', () => {
+    const id = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
+    const request = { kind: 'claude' as const, cwd: '/ws/alpha', cols: 100, rows: 30 };
+    const args = startArgs('a1b2c3-claude', request, resumeArgs({ tool: 'claude', id }).join(' '));
+    expect(args[args.indexOf('-c') + 1]).toBe('/ws/alpha');
+    expect(args[args.length - 1]).toBe(`claude --resume ${id}`);
+    // The tmux session name carries the terminal id and nothing more, which is what isTerminalId
+    // guards on every stop, resize and channel; what it resumes lives in the user option instead.
+    expect(args[args.indexOf('-s') + 1]).toBe('oculus-a1b2c3-claude');
+    expect(resizeArgs('a1b2c3-claude', 10, 20)[2]).toBe('oculus-a1b2c3-claude');
+});
+
+it('reads @oculus_resumes back out of a list line, and nothing out of a bad one', () => {
+    const id = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
+    const fields = [
+        'oculus-a1b2c3-claude',
+        '1757500000',
+        '0',
+        'claude',
+        '4242',
+        '/ws/alpha',
+        'A run',
+        resumeOption({ tool: 'claude', id })
+    ];
+    const terminal = parseTerminal(fields.join('\t'));
+    expect(terminal?.name).toBe('A run');
+    expect(terminal?.resumes).toEqual({ tool: 'claude', id });
+
+    // A terminal that continues nothing has the option unset, which tmux expands to nothing.
+    fields[7] = '';
+    expect(parseTerminal(fields.join('\t'))?.resumes).toBe(null);
+    // Neither a tool that is not an agent nor an id of the wrong shape reads as a resume.
+    fields[7] = `shell:${id}`;
+    expect(parseTerminal(fields.join('\t'))?.resumes).toBe(null);
+    fields[7] = 'claude:not-a-uuid';
+    expect(parseTerminal(fields.join('\t'))?.resumes).toBe(null);
 });

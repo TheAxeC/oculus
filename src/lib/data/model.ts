@@ -665,6 +665,16 @@ export type SessionsPayload = {
 /** What a terminal pane runs (DESIGN.md, decision of 2026-09-10 on the three things it runs). */
 export type TerminalKind = 'claude' | 'codex' | 'shell';
 
+/**
+ * Which agent session a terminal continues. A terminal started fresh carries none; one started by
+ * the resume action carries the tool it was resumed with and that session's own id, which is what
+ * `claude --resume <id>` and `codex resume <id>` were given.
+ */
+export type TerminalResume = {
+    tool: 'claude' | 'codex';
+    id: string;
+};
+
 /** One tmux session oculus started, as `tmux list-sessions` reports it. */
 export type Terminal = {
     /** The session name without the `oculus-` prefix; the `pty:<id>` channel is named from it. */
@@ -682,6 +692,8 @@ export type Terminal = {
     created: string;
     /** Whether any client (oculus or a terminal window) is attached to the tmux session. */
     attached: boolean;
+    /** The session this terminal continues, or null when it continues nothing. */
+    resumes: TerminalResume | null;
 };
 
 /** The payload of a `pty:<id>` message: a chunk of pane output, or the scrollback, as base64. */
