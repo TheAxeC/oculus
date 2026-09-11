@@ -18,7 +18,7 @@ import { createReadStream, realpathSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { extname, isAbsolute, join, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
-import { engineDir, loadConfig } from '../data/sources/config.ts';
+import { engineDir, loadConfig, loadLocal } from '../data/sources/config.ts';
 import { sameOrigin } from './auth.ts';
 import type { Finding } from '../data/model.ts';
 
@@ -173,12 +173,26 @@ export function rootsFile(engine: string = engineDir()): string {
     return join(engine, 'config', 'sources.yml');
 }
 
+/** The key the hub itself is served under, so a collection's `link` to a file in the hub opens. */
+export const HUB_ROOT = 'hub';
+
 /**
- * The configured roots. The config is read per request as everything else in this release is, so an
- * edit shows on a reload; the findings are published on the config channel by the watcher, which is
- * where the Findings view reads them from.
+ * The configured roots with the hub in front of them under the key `hub`, unless the config names
+ * that key itself, in which case the config's entry stands. The hub is where `local.yml` says it
+ * is, so the tracked config never carries it twice.
+ */
+export function withHub(list: Root[], hub: string): Root[] {
+    if (list.some((one) => one.key === HUB_ROOT)) return list;
+    return [{ key: HUB_ROOT, dir: hub }, ...list];
+}
+
+/**
+ * The roots api/file serves: the hub, then the configured ones. The config is read per request as
+ * everything else in this release is, so an edit shows on a reload; the findings are published on
+ * the config channel by the watcher, which is where the Findings view reads them from.
  */
 export function roots(): Root[] {
     const engine = engineDir();
-    return readRoots(loadConfig(engine).config, rootsFile(engine)).roots;
+    const configured = readRoots(loadConfig(engine).config, rootsFile(engine)).roots;
+    return withHub(configured, loadLocal(engine).hub);
 }

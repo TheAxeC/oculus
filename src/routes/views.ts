@@ -7,6 +7,7 @@
 // the table is not widened for a barrel. Here it is outside `src/lib` and outside the table, and it
 // is the only module in the application that names a view.
 
+import Collection from '$lib/views/Collection.svelte';
 import Document from '$lib/views/Document.svelte';
 import Editor from '$lib/views/Editor.svelte';
 import Findings from '$lib/views/Findings.svelte';
@@ -142,3 +143,22 @@ registerView({
     glyph: 'sessions.agents_glyph',
     component: Agents
 });
+
+// One collection view over every collection file, registered once per key. The keys come from the
+// page's data (config/sources.yml's `collections:`, minus the ones a registry already carries), so
+// a collection is added to the tool in config alone: a line in sources.yml, a label and a glyph in
+// text.yml, and the key in a group of nav_groups. The component reads which collection it is from
+// the id of the instance it was mounted as, exactly as the board reads which board it is.
+//
+// The page calls this in its script body, before the first render. Registering a key twice keeps the
+// id's first position, so a second call over the same keys changes nothing.
+export function registerCollections(keys: string[]): void {
+    for (const key of keys) {
+        registerView({
+            id: key,
+            label: `views.${key}`,
+            glyph: `views.${key}_glyph`,
+            component: Collection
+        });
+    }
+}

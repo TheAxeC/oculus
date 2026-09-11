@@ -8,6 +8,9 @@ import type { PageLoad } from './$types';
 // server read are installed before the page renders, so a component can call t(), glyph(), toneOf()
 // and themes() while it initialises. O6 replaces later reads with a push over the socket.
 //
+// The collection keys are not installed anywhere: they are handed to the page, which registers one
+// view per key. They are data rather than state because the registry is not a store.
+//
 // The write token is installed the same way. This load runs again on invalidateAll(), so the token a
 // restarted server minted replaces the stale one without the page being reloaded by hand.
 export const load: PageLoad = ({ data }) => {
@@ -17,5 +20,5 @@ export const load: PageLoad = ({ data }) => {
     setVocab(data.vocab);
     setAppearance(data.vocab);
     setToken(data.token);
-    return {};
+    return { collections: data.collections };
 };

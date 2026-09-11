@@ -4,14 +4,25 @@
     // saved stores. The rail's groups come from the merged config the socket delivers, since the
     // shell may not read entities itself.
 
-    import { onMount } from 'svelte';
+    import { onMount, untrack } from 'svelte';
     import Workbench from '$lib/shell/Workbench.svelte';
     import type { Bookmark, NavGroup } from '$lib/shell/ActivityRail.svelte';
     import { config } from '$lib/state/entities.svelte';
     import { loadLayout } from '$lib/state/layout.svelte';
     import { loadUi } from '$lib/state/ui.svelte';
     import { connect, disconnect } from '$lib/state/socket.svelte';
-    import './views.ts';
+    // Importing this module is what fills the registry with every view that is registered by name.
+    import { registerCollections } from './views.ts';
+    import type { PageData } from './$types';
+
+    let { data }: { data: PageData } = $props();
+
+    // The collection views, one per key of config/sources.yml's `collections:`, which the load
+    // function shipped with the catalog. It runs here in the script body rather than on mount: the
+    // rail draws what the registry holds on the first render, and a collection registered after it
+    // would be missing from that frame. The registry is a module map rather than state, so the keys
+    // are read once and not tracked; untrack says so, and is what keeps the read out of any effect.
+    untrack(() => registerCollections(data.collections));
 
     /**
      * The `nav_groups` map of config/layout.yml, both of its lists in order. Its entries are the
@@ -58,12 +69,16 @@
             if (!Array.isArray(list)) continue;
             for (const entry of list) {
                 if (typeof entry !== 'object' || entry === null) continue;
-                const group = entry as { label?: unknown; keys?: unknown };
+                const group = entry as { label?: unknown; keys?: unknown; glyph?: unknown };
                 if (typeof group.label !== 'string' || !Array.isArray(group.keys)) continue;
-                found.push({
+                const read: NavGroup = {
                     label: group.label,
                     keys: group.keys.filter((key): key is string => typeof key === 'string')
-                });
+                };
+                // The glyph a large group's one button carries. A value that is not a name is left
+                // off rather than drawn, and the rail then falls back to the first view's glyph.
+                if (typeof group.glyph === 'string') read.glyph = group.glyph;
+                found.push(read);
             }
         }
         return found;

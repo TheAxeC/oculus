@@ -12,8 +12,18 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { DEFAULT_PORT, engineDir, loadConfig, loadLocal } from '../src/lib/data/sources/config.ts';
+import {
+    DEFAULT_PORT,
+    collectionKeys,
+    engineDir,
+    loadConfig,
+    loadLocal
+} from '../src/lib/data/sources/config.ts';
 import { readRoots, rootsFile } from '../src/lib/server/files.ts';
+import { views } from '../src/lib/views/registry.ts';
+// Importing the barrel registers the application's views; the collections are registered from the
+// keys of sources.yml, the way the page does it, so the rail's keys are checked against both.
+import { registerCollections } from '../src/routes/views.ts';
 
 function scratch(): string {
     const dir = mkdtempSync(join(tmpdir(), 'oculus-config-'));
@@ -176,7 +186,7 @@ describe('loadConfig', () => {
 // top-level key set after the regrouping of O10c, so a key that is dropped, renamed or added shows
 // up here as well as wherever it is read.
 describe("oculus's own config directory", () => {
-    /** Every top-level key the nine files hold, by the file it now sits in. */
+    /** Every top-level key the ten files hold, by the file it now sits in. */
     const EXPECTED: Record<string, string[]> = {
         'appearance.yml': ['themes', 'wallpaper', 'crt'],
         'behavior.yml': [
@@ -228,6 +238,9 @@ describe("oculus's own config directory", () => {
             'roots'
         ],
         'text.yml': ['text'],
+        // The one key two files share: the catalog's groups are spread over the two so that each
+        // file stays under 1000 lines, and loadConfig folds them into one map of groups.
+        'text-oculus.yml': ['text'],
         'vocab.yml': [
             'palette',
             'domains',
@@ -258,8 +271,26 @@ describe("oculus's own config directory", () => {
 
     it('holds exactly the expected top-level keys, and no more', () => {
         const { config } = loadConfig(engineDir());
-        const expected = Object.values(EXPECTED).flat().sort();
+        const expected = [...new Set(Object.values(EXPECTED).flat())].sort();
         expect(Object.keys(config).sort()).toEqual(expected);
+    });
+
+    it('spreads the catalog over its two files with no group in both', () => {
+        const dir = join(engineDir(), 'config');
+        const groupsOf = (name: string): string[] => {
+            const parsed = parse(readFileSync(join(dir, name), 'utf8')) as {
+                text: Record<string, unknown>;
+            };
+            return Object.keys(parsed.text);
+        };
+        const ported = groupsOf('text.yml');
+        const own = groupsOf('text-oculus.yml');
+        expect(ported.filter((group) => own.includes(group))).toEqual([]);
+        expect(own).toContain('ui');
+        expect(ported).toContain('js');
+        const { config } = loadConfig(engineDir());
+        const merged = Object.keys(config.text as Record<string, unknown>);
+        expect(merged.sort()).toEqual([...ported, ...own].sort());
     });
 
     // The two roots of sources.yml sit under the home directory of whoever runs this, and a
@@ -291,6 +322,43 @@ describe("oculus's own config directory", () => {
         }
     });
 
+    // Every key under nav_groups either names a view that is registered now or one of the ids a
+    // later package of the migration will register. A key that is neither is a typo: the rail draws
+    // nothing for it and says nothing about it, which is the failure this catches.
+    const RESERVED = [
+        'programs',
+        'domains',
+        'map',
+        'funding',
+        'venues',
+        'data',
+        'approach',
+        'agent-approach',
+        'memories',
+        'hpc',
+        'help',
+        'audit',
+        'config'
+    ];
+
+    it('names a registered view or a reserved id in every key of every rail group', () => {
+        const { config } = loadConfig(engineDir());
+        registerCollections(collectionKeys(config));
+        const registered = new Set(views().map((view) => view.id));
+        const groups = Object.values(config.nav_groups as Record<string, { keys: string[] }[]>)
+            .flat()
+            .flatMap((group) => group.keys);
+        expect(groups.length).toBeGreaterThan(0);
+        expect(groups.filter((key) => !registered.has(key) && !RESERVED.includes(key))).toEqual([]);
+    });
+
+    it('reserves no id that is already registered, so the list stays the list of what is missing', () => {
+        const { config } = loadConfig(engineDir());
+        registerCollections(collectionKeys(config));
+        const registered = new Set(views().map((view) => view.id));
+        expect(RESERVED.filter((key) => registered.has(key))).toEqual([]);
+    });
+
     it('reads each file on its own and finds its own keys there and nowhere else', () => {
         const dir = join(engineDir(), 'config');
         const seen: Record<string, string> = {};
@@ -298,7 +366,9 @@ describe("oculus's own config directory", () => {
             const parsed = parse(readFileSync(join(dir, name), 'utf8')) as Record<string, unknown>;
             expect(Object.keys(parsed).sort()).toEqual([...keys].sort());
             for (const key of keys) {
-                expect(seen[key]).toBe(undefined);
+                // The catalog is the one key two files carry, by groups; every other key sits in
+                // exactly one file.
+                if (key !== 'text') expect(seen[key]).toBe(undefined);
                 seen[key] = name;
             }
         }

@@ -1,6 +1,10 @@
 <script module lang="ts">
-    /** One choice in the list. `active` marks the one in force, which the menu shows as checked. */
-    export type MenuItem = { id: string; label: string; active?: boolean };
+    /**
+     * One choice in the list. `active` marks the one in force, which the menu shows as checked, and
+     * `glyph` is a name in `glyphs:` drawn before the words, for a list whose choices are things
+     * that have an icon of their own (the views of a rail group).
+     */
+    export type MenuItem = { id: string; label: string; active?: boolean; glyph?: string };
 </script>
 
 <script lang="ts">
@@ -19,7 +23,12 @@
         /** The button's own words. */
         label: string;
         items: MenuItem[];
-        onpick: (id: string) => void;
+        /**
+         * What picking a choice means. The pointer event is passed on so a caller can read its
+         * modifiers: the rail opens a view in the main area, and in the panel when shift is held,
+         * whether the view was picked from a button or from a group's list.
+         */
+        onpick: (id: string, event: MouseEvent) => void;
         /** A glyph name drawn before the label, or nothing. */
         glyph?: string;
         /**
@@ -67,9 +76,42 @@
         return () => document.removeEventListener('pointerdown', outside, true);
     });
 
+    /** Whether the list opens beside its button rather than above or below it: a compact menu opening upward sits in the rail. */
+    const beside = $derived(compact && placement !== 'down');
+
+    /** The inline position of a list opening beside the rail, measured when it opens. */
+    let placed = $state('');
+
+    /** How far from the window's edge a list beside the rail may reach, and its gap from the rail. */
+    const EDGE = 8;
+    const GAP = 4;
+
+    /**
+     * Where a list beside the rail goes, in window coordinates: level with its button, hanging down
+     * from the button's top when the button is in the upper half of the window and rising from its
+     * bottom when it is in the lower half, and never taller than the room on that side. A list of
+     * seventeen themes at the foot therefore grows upward and scrolls, and a group's list at the top
+     * of the rail hangs beside its button rather than at the foot of the window.
+     */
+    function place(): string {
+        if (!beside || button === undefined || typeof window === 'undefined') return '';
+        const rect = button.getBoundingClientRect();
+        const left = `left: ${Math.round(rect.right + GAP)}px;`;
+        if (rect.top + rect.height / 2 < window.innerHeight / 2) {
+            const room = window.innerHeight - rect.top - EDGE;
+            return `${left} top: ${Math.round(rect.top)}px; max-height: ${Math.round(room)}px;`;
+        }
+        const room = rect.bottom - EDGE;
+        const bottom = window.innerHeight - rect.bottom;
+        return `${left} bottom: ${Math.round(bottom)}px; max-height: ${Math.round(room)}px;`;
+    }
+
     function toggle(): void {
         open = !open;
-        if (open) focusAt(0);
+        if (open) {
+            placed = place();
+            focusAt(0);
+        }
     }
 
     function focusAt(index: number): void {
@@ -77,10 +119,10 @@
         queueMicrotask(() => entries[index]?.focus());
     }
 
-    function pick(id: string): void {
+    function pick(id: string, event: MouseEvent): void {
         open = false;
         button?.focus();
-        onpick(id);
+        onpick(id, event);
     }
 
     function keys(event: KeyboardEvent, index: number): void {
@@ -124,9 +166,10 @@
     {#if open}
         <div
             class="list"
-            class:compact
+            class:beside
             class:down={placement === 'down'}
             class:right={align === 'right'}
+            style={placed}
             role="menu"
             aria-label={label}
         >
@@ -138,9 +181,12 @@
                     role="menuitem"
                     aria-current={item.active === true}
                     bind:this={entries[index]}
-                    onclick={() => pick(item.id)}
+                    onclick={(event) => pick(item.id, event)}
                     onkeydown={(event) => keys(event, index)}
                 >
+                    {#if item.glyph !== undefined}
+                        <Glyph name={item.glyph} />
+                    {/if}
                     <span class="label">{item.label}</span>
                 </button>
             {/each}
@@ -217,21 +263,18 @@
     }
 
     /* A compact menu that opens upward sits in the rail, a strip too narrow for the list, so the
-       list opens beside the rail rather than above the button. It is fixed to the window's foot
-       and bounded by the window's height: anchored to the button, a list of seventeen themes ran
-       above the top of a short window and its first entries could not be reached. Under a
-       wallpaper the rail's backdrop filter makes the rail the containing block instead of the
-       viewport; the rail spans the window's height from its left edge, so the two agree. A compact
-       menu that opens downward (a pane's menu) keeps its placement. The list carries `compact`
-       itself: the tooltip wrapper sits between the opener and the list, so a sibling selector on
-       the opener would no longer reach it. */
-    .list.compact:not(.down) {
+       list opens beside the rail rather than above the button: fixed to the window, level with its
+       button, and bounded by the room on that side, all of which place() measures when it opens and
+       writes as the inline style. Under a wallpaper the rail's backdrop filter makes the rail the
+       containing block instead of the viewport; the rail spans the window's height from its left
+       edge, so the two agree. A compact menu that opens downward (a pane's menu) keeps its
+       placement. The list carries `beside` itself: the tooltip wrapper sits between the opener and
+       the list, so a sibling selector on the opener would not reach it. */
+    .list.beside {
         position: fixed;
-        left: calc(var(--rail-width) + 4px);
         right: auto;
         top: auto;
-        bottom: 8px;
-        max-height: calc(100vh - 16px);
+        bottom: auto;
         overflow-y: auto;
         box-sizing: border-box;
         margin: 0;

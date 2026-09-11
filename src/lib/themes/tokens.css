@@ -52,8 +52,7 @@
     --radius: 10px;
     --radius-sm: 6px;
     --radius-pill: 999px;
-    /* The activity rail's width. A menu at the rail's foot opens beside it, fixed to the viewport,
-       so the rail and ui/Menu.svelte read the one value rather than each carrying 52px. */
+    /* The activity rail's width, the one place it is set. */
     --rail-width: 52px;
     --font-ui: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
     --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;

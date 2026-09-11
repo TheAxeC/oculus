@@ -7,6 +7,7 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    collectionKeys,
     engineDir,
     glyphCatalog,
     loadConfig,
@@ -14,12 +15,16 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { registerView, viewFor, views, type ViewProps } from '../../src/lib/views/registry.ts';
 import type { Component } from 'svelte';
-// Importing the barrel is what registers the real views, exactly as the page does it.
-import '../../src/routes/views.ts';
+// Importing the barrel is what registers the real views, exactly as the page does it, and the
+// collections are registered from the keys of sources.yml the way the page registers them.
+import { registerCollections } from '../../src/routes/views.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
 const glyphs = glyphCatalog(config);
+
+const COLLECTIONS = collectionKeys(config);
+registerCollections(COLLECTIONS);
 
 /** A stand-in for a view component; the registry stores it and never calls it. */
 const component = (() => {}) as unknown as Component<ViewProps>;
@@ -88,8 +93,37 @@ describe('the real registrations', () => {
             'terminal',
             'timeline',
             'changes',
-            'agents'
+            'agents',
+            'statements',
+            'events',
+            'education',
+            'applications',
+            'collaborations',
+            'tasks',
+            'code'
         ]);
+    });
+
+    it('registers the one collection component under every collection key of sources.yml', () => {
+        expect(COLLECTIONS).toEqual([
+            'statements',
+            'events',
+            'education',
+            'applications',
+            'collaborations',
+            'tasks',
+            'code'
+        ]);
+        const collections = real().filter((view) => COLLECTIONS.includes(view.id));
+        expect(collections.map((view) => view.id)).toEqual(COLLECTIONS);
+        expect(new Set(collections.map((view) => view.component)).size).toBe(1);
+        expect(collections.every((view) => view.listed !== false)).toBe(true);
+    });
+
+    it('keeps a collection in its first position when it is registered again', () => {
+        const before = real().map((view) => view.id);
+        registerCollections(COLLECTIONS);
+        expect(real().map((view) => view.id)).toEqual(before);
     });
 
     it('registers the one board component under all three of its ids', () => {

@@ -6,19 +6,22 @@
 # ===========================================================================
 
 
-# The rail's groups: each group = { label, keys } is drawn as a heading over the views it names, in the
-# order listed here; a view no group names trails at the end, and a group naming no registered view is
-# not drawn. A key is a view id; the ids under "Academic life", "Reference" and "Personal" are views a
-# later step registers. The heading sits in a 52 px strip, so a label drawn there is eight letters at
-# most; the longer ones belong to groups that open as one button with a menu (O14d).
+# The rail's groups: each group = { label, keys, glyph? } is drawn as a heading over the views it names,
+# in the order listed here; a view no group names trails at the end, and a group naming no registered
+# view is not drawn. A key is a view id; the ids under "Academic life", "Sources" and "Personal" are
+# views a later step registers. The heading sits in a 52 px strip, so a label drawn there is eight
+# letters at most; a group holding more than four registered views is drawn instead as one button with
+# the list beside it, and its label is that button's tooltip rather than a heading. `glyph` is a name in
+# glyphs.yml and is what that one button carries; a group drawn that way without one carries its first
+# view's glyph.
 nav_groups:
   boards:
     - { label: "Boards",        keys: [projects, coauthor, archive, programs, domains, map] }
   sessions:
-    - { label: "Sessions",      keys: [session-list, session-detail, terminal, timeline, changes, agents] }
+    - { label: "Sessions",      glyph: chat,  keys: [session-list, session-detail, terminal, timeline, changes, agents] }
   collections:
-    - { label: "Academic life", keys: [funding, events, education, applications, collaborations, tasks] }
-    - { label: "Reference",     keys: [venues, data, code, statements] }
+    - { label: "Academic life", glyph: scout, keys: [funding, events, education, applications, collaborations, tasks] }
+    - { label: "Sources",       keys: [venues, data, code, statements] }
   more:
     - { label: "Personal",      keys: [approach, agent-approach, memories] }
     - { label: "System",        keys: [status, findings, gallery, hpc, help, audit, config] }

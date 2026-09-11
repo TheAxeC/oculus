@@ -15,7 +15,15 @@ import { pinnedSession, selected } from './selection.svelte.ts';
 import { instanceState } from './ui.svelte.ts';
 import type { BoardItem, BoardPreset } from './board.ts';
 import type { Choice, FormField } from './schema.ts';
-import type { Area, GitState, GroupedSession, Id, Project, Workspace } from '../data/model.ts';
+import type {
+    Area,
+    Collection,
+    GitState,
+    GroupedSession,
+    Id,
+    Project,
+    Workspace
+} from '../data/model.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the session types the
 // six views name reach them from here, beside the selectors that return them.
@@ -47,6 +55,18 @@ export function boardPreset(view: string): BoardPreset {
 export function board(preset: BoardPreset): BoardItem[] {
     const snapshot = portfolio();
     return snapshot === null ? [] : boardItems(snapshot, preset);
+}
+
+/**
+ * One collection of the snapshot, by the key its file is read under, or null when the snapshot does
+ * not carry it: before the first message, and for a collection key that names a registry, which
+ * normalise leaves out. The collection view is registered once per key and reads its own by the id
+ * of the view it was mounted as, so this is the whole of its join.
+ */
+export function collectionOf(key: string): Collection | null {
+    const snapshot = portfolio();
+    if (snapshot === null) return null;
+    return snapshot.entities.collections[key] ?? null;
 }
 
 /**

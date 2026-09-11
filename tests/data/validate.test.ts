@@ -280,6 +280,28 @@ describe('validate', () => {
         ]);
     });
 
+    it('reports a collection file whose schema is not a list of field maps', () => {
+        const raw = portfolio();
+        raw.collections.collaborations.meta.schema = 'title, status';
+        expect(validate(raw, RULES)).toEqual([
+            {
+                file: '/hub/collaborations.yml',
+                key: 'schema',
+                message: 'schema a string is not a list of maps naming a field and a type'
+            }
+        ]);
+    });
+
+    it('reports nothing for a collection file whose schema is in order, or has none', () => {
+        const raw = portfolio();
+        raw.collections.collaborations.meta.schema = [
+            { field: 'title', type: 'text', required: true },
+            { field: 'status', type: 'select', options: ['active'] }
+        ];
+        expect(validate(raw, RULES)).toEqual([]);
+        expect(validate(portfolio(), RULES)).toEqual([]);
+    });
+
     it('passes the sources findings through without re-deriving them', () => {
         const source: Finding = { file: '/hub/a.yml', key: '', message: 'does not parse: bad' };
         expect(validate(portfolio({ findings: [source] }), RULES)).toEqual([source]);

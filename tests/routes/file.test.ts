@@ -11,7 +11,7 @@ import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { expandHome, readRoots, serveFile, typeOf } from '../../src/lib/server/files.ts';
+import { expandHome, readRoots, serveFile, typeOf, withHub } from '../../src/lib/server/files.ts';
 import type { Root } from '../../src/lib/server/files.ts';
 
 const HOST = '127.0.0.1:8791';
@@ -133,6 +133,21 @@ describe('serving a file under a root', () => {
             'sec-fetch-site': 'cross-site'
         });
         expect(serveFile(foreign, manual(), 'docs', 'docs/user/manual.html').status).toBe(403);
+    });
+});
+
+describe('the hub as a root', () => {
+    it('is served under the key hub in front of the configured roots', () => {
+        const found = withHub([{ key: 'docs', dir: '/elsewhere' }], '/the/hub');
+        expect(found).toEqual([
+            { key: 'hub', dir: '/the/hub' },
+            { key: 'docs', dir: '/elsewhere' }
+        ]);
+    });
+
+    it('yields to a root the config names hub itself', () => {
+        const own = [{ key: 'hub', dir: '/their/own' }];
+        expect(withHub(own, '/the/hub')).toEqual(own);
     });
 });
 

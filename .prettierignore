@@ -18,4 +18,5 @@ config/layout.yml
 config/manifest-schema.yml
 config/sources.yml
 config/text.yml
+config/text-oculus.yml
 config/vocab.yml

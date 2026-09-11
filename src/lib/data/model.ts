@@ -314,6 +314,24 @@ export type Entry = {
 };
 
 /**
+ * One field of a collection file's own `schema:` list, as the file writes it. It is the order and
+ * the vocabulary a collection is drawn by: the view walks the list and renders each field of an
+ * entry in this order, so the file decides what its records look like and the model names no field
+ * of any collection. `type` is the file's word (`text`, `select`, `tags`, `textarea`, `date`,
+ * `metalist` in the hub's seven files); a type a view does not know is drawn as text.
+ */
+export type SchemaField = {
+    field: string;
+    type: string;
+    /** The words over the field, when the file gives it words other than its own name. */
+    label?: string;
+    /** The allowed values of a `select`. */
+    options?: string[];
+    required?: boolean;
+    help?: string;
+};
+
+/**
  * One collection: a hub file of like records that are not entities and that nothing else points
  * at. Its entries are held inline rather than by id, since an entry belongs to exactly one
  * collection and no relation runs the other way, so no cycle can form.
@@ -325,6 +343,11 @@ export type Collection = {
     intro?: string;
     /** Absolute path of the collection file. */
     file: string;
+    /**
+     * The file's own `schema:`, absent when the file has none and when what it has is not a list
+     * of field maps; validate.ts reports the second case as a finding.
+     */
+    schema?: SchemaField[];
     entries: Entry[];
 };
 

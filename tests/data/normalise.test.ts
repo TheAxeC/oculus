@@ -262,6 +262,46 @@ describe('normalise, the field mapping', () => {
     });
 });
 
+describe("normalise, a collection's schema", () => {
+    /** The events collection with one `schema:` value under its meta, as the file would carry it. */
+    function events(schema: unknown) {
+        const raw = portfolio();
+        raw.collections.events.meta.schema = schema;
+        return normalise(raw, []).entities.collections.events;
+    }
+
+    it('carries the file schema onto the wire, one map per field', () => {
+        const found = events([
+            { field: 'title', type: 'text', required: true },
+            { field: 'sub', type: 'text', label: 'Subtitle' },
+            { field: 'status', type: 'select', options: ['planned', 'completed'], help: 'pick one' }
+        ]);
+        expect(found.schema).toEqual([
+            { field: 'title', type: 'text', required: true },
+            { field: 'sub', type: 'text', label: 'Subtitle' },
+            { field: 'status', type: 'select', options: ['planned', 'completed'], help: 'pick one' }
+        ]);
+    });
+
+    it('carries no schema for a file that has none', () => {
+        expect('schema' in events(undefined)).toBe(false);
+    });
+
+    it('leaves off a schema that is not a list of maps naming a field and a type', () => {
+        expect(events('title, status').schema).toBe(undefined);
+        expect(events([{ field: 'title' }]).schema).toBe(undefined);
+        expect(events([{ type: 'text' }]).schema).toBe(undefined);
+        expect(events(['title']).schema).toBe(undefined);
+    });
+
+    it('survives the JSON round trip like the rest of the snapshot', () => {
+        const found = events([{ field: 'title', type: 'text' }]);
+        expect(JSON.parse(JSON.stringify(found)).schema).toEqual([
+            { field: 'title', type: 'text' }
+        ]);
+    });
+});
+
 describe('normalise, the relations', () => {
     it('writes one table per relation, sorted by the pair', () => {
         expect(snapshot.relations).toEqual({

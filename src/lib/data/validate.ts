@@ -8,6 +8,7 @@
 // this module never opens a file, so it cannot know those on its own.
 
 import type { Finding, RawManifest, RawPortfolio, ValidationRules, Vocabulary } from './model.ts';
+import { collectionSchema } from './normalise.ts';
 
 /** Keys the reader itself adds to every manifest record; no schema names them. */
 const PROVENANCE = ['file', 'folder', 'id', 'tier', 'category', 'type', 'manifestId'];
@@ -273,6 +274,25 @@ function checkEntryStatus(raw: RawPortfolio, statuses: string[], findings: Findi
 }
 
 /**
+ * A collection file's `schema:`, when it has one, is a list of maps each naming a `field` and a
+ * `type`. It is what a collection is drawn by, so one malformed entry costs the whole file its
+ * field order; normalise leaves such a schema off the wire and this is where that is said.
+ */
+function checkCollectionSchema(raw: RawPortfolio, findings: Finding[]): void {
+    for (const key of Object.keys(raw.collections).sort()) {
+        const collection = raw.collections[key];
+        const schema = collection.meta.schema;
+        if (schema === undefined) continue;
+        if (collectionSchema(schema) !== undefined) continue;
+        findings.push({
+            file: collection.file,
+            key: 'schema',
+            message: `schema ${shapeOf(schema)} is not a list of maps naming a field and a type`
+        });
+    }
+}
+
+/**
  * A funding entry is known by its `key` when it has one and by its `title` otherwise, so an entry
  * with neither has no identity and normalise cannot carry it. The other four registries require an
  * id and their reader has already reported a missing one, so only funding is checked here.
@@ -334,6 +354,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     }
     checkFundingIdentity(raw, findings);
     checkEntryStatus(raw, vocab.statuses, findings);
+    checkCollectionSchema(raw, findings);
 
     return sortFindings(findings);
 }

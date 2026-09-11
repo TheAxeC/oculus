@@ -8,6 +8,7 @@ import { dirname, isAbsolute, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 import type { Finding } from '../model.ts';
+import { REGISTRY_KEYS } from '../normalise.ts';
 
 export type LocalConfig = {
     /** Absolute path of the research hub whose YAML the portfolio is built from. */
@@ -105,6 +106,53 @@ export function loadLocal(engine: string): LocalConfig {
  * in name order wins. A file that does not parse or is not a map is a finding and contributes
  * nothing; a missing config directory is a finding and an empty map. Nothing here throws.
  */
+/**
+ * The one top-level key more than one file may carry. The catalog is a map of groups, and every
+ * source file under 1000 lines is the rule, so the groups are spread over `text.yml` and
+ * `text-oculus.yml`; a group defined in two of them is the finding, and the later file wins it.
+ */
+export const TEXT_KEY = 'text';
+
+/** Fold one file's `text:` groups into the groups already read, naming any group read twice. */
+function mergeText(
+    config: Record<string, unknown>,
+    value: unknown,
+    name: string,
+    file: string,
+    from: Record<string, string>,
+    findings: Finding[]
+): void {
+    const held = config[TEXT_KEY];
+    if (
+        typeof held !== 'object' ||
+        held === null ||
+        Array.isArray(held) ||
+        typeof value !== 'object' ||
+        value === null ||
+        Array.isArray(value)
+    ) {
+        findings.push({
+            file,
+            key: TEXT_KEY,
+            message: `key ${TEXT_KEY} is already defined in ${from[TEXT_KEY]}; ${name} wins`
+        });
+        config[TEXT_KEY] = value;
+        from[TEXT_KEY] = name;
+        return;
+    }
+    const groups = held as Record<string, unknown>;
+    for (const [group, entries] of Object.entries(value as Record<string, unknown>)) {
+        if (group in groups) {
+            findings.push({
+                file,
+                key: `${TEXT_KEY}.${group}`,
+                message: `group ${TEXT_KEY}.${group} is already defined in ${from[TEXT_KEY]}; ${name} wins`
+            });
+        }
+        groups[group] = entries;
+    }
+}
+
 export function loadConfig(engine: string): {
     config: Record<string, unknown>;
     findings: Finding[];
@@ -140,6 +188,10 @@ export function loadConfig(engine: string): {
             continue;
         }
         for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
+            if (key === TEXT_KEY && key in config) {
+                mergeText(config, value, name, file, from, findings);
+                continue;
+            }
             if (key in config) {
                 findings.push({
                     file,
@@ -208,6 +260,26 @@ export function vocabCatalog(config: Record<string, unknown>): Record<string, un
     const vocab: Record<string, unknown> = {};
     for (const key of VOCAB_KEYS) if (config[key] !== undefined) vocab[key] = config[key];
     return vocab;
+}
+
+/**
+ * The keys of the `collections:` list of config/sources.yml, in the file's order, minus the five
+ * that name a registry the snapshot already carries (normalise leaves those collections out, so a
+ * view over one would have nothing to read). They ship as the page's data and the page registers
+ * the collection view once per key, so a collection is added to the tool by adding a line to
+ * sources.yml, a label and a glyph to text.yml, and its key to a group of nav_groups.
+ */
+export function collectionKeys(config: Record<string, unknown>): string[] {
+    const raw = config.collections;
+    if (!Array.isArray(raw)) return [];
+    const keys: string[] = [];
+    for (const item of raw) {
+        if (typeof item !== 'object' || item === null || Array.isArray(item)) continue;
+        const key = (item as Record<string, unknown>).key;
+        if (typeof key !== 'string' || key === '' || REGISTRY_KEYS.includes(key)) continue;
+        if (!keys.includes(key)) keys.push(key);
+    }
+    return keys;
 }
 
 /**

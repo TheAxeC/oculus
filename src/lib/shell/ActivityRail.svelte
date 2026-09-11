@@ -1,8 +1,12 @@
 <script module lang="ts">
     import type { Registration } from '$lib/views/registry';
 
-    /** One group of the rail: a heading and the view ids it claims, as `nav_groups` in the config. */
-    export type NavGroup = { label: string; keys: string[] };
+    /**
+     * One group of the rail: a heading and the view ids it claims, as `nav_groups` in the config.
+     * `glyph` is a name in config/glyphs.yml and is drawn only where the group is one button with a
+     * list; a group that has none and is drawn that way carries its first view's glyph.
+     */
+    export type NavGroup = { label: string; keys: string[]; glyph?: string };
 
     /**
      * One entry of the rail's Docs section, as `bookmarks` in the config: a local file under one of
@@ -30,7 +34,15 @@
     }
 
     /** The rail as it is drawn: a group's registrations, or the ungrouped ones under no heading. */
-    type Section = { label: string | null; items: Registration[] };
+    type Section = { label: string | null; items: Registration[]; glyph?: string };
+
+    /**
+     * How many views a group may hold and still be drawn as a heading over one button per view. A
+     * larger group is drawn as one button with a list beside it, which is DESIGN.md's decision of
+     * 2026-09-10: the rail does not grow an icon per view. The ungrouped trailing section has no
+     * heading to name such a button and stays as buttons however many it holds.
+     */
+    export const GROUP_MAX = 4;
 
     /**
      * The registrations under the groups that name them, in the groups' order, and everything no
@@ -50,7 +62,10 @@
                 taken.add(found.id);
                 items.push(found);
             }
-            if (items.length > 0) sections.push({ label: group.label, items });
+            if (items.length === 0) continue;
+            const section: Section = { label: group.label, items };
+            if (group.glyph !== undefined) section.glyph = group.glyph;
+            sections.push(section);
         }
         const rest = registrations.filter((view) => !taken.has(view.id));
         if (rest.length > 0) sections.push({ label: null, items: rest });
@@ -65,7 +80,7 @@
     // then lands inside that tree is the store's.
 
     import Glyph from '$lib/ui/Glyph.svelte';
-    import Menu from '$lib/ui/Menu.svelte';
+    import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
     import Tooltip from '$lib/ui/Tooltip.svelte';
     import {
         applyArrangement,
@@ -153,6 +168,20 @@
         else applyArrangement(arrangement);
     }
 
+    /** The views of one group as the choices of its list, each with its own glyph and words. */
+    function groupItems(section: Section): MenuItem[] {
+        return section.items.map((view) => ({
+            id: view.id,
+            label: lookup(view.label),
+            glyph: lookup(view.glyph)
+        }));
+    }
+
+    /** The glyph a group's button carries: the group's own, or its first view's when it has none. */
+    function groupGlyph(section: Section): string {
+        return section.glyph ?? lookup(section.items[0].glyph);
+    }
+
     /** The wallpaper toggle is drawn only where there is one to switch: it is config and a theme. */
     const offersWallpaper = $derived(wallpaperOnTheme(theme()));
 </script>
@@ -162,22 +191,39 @@
         <!-- Keyed by position: two config groups may carry the same label, and a duplicate key
              would be an error rather than a repeated heading. -->
         {#each sections as section, index (index)}
-            {#if section.label !== null}
-                <p class="group">{section.label}</p>
+            {@const label = section.label}
+            <!-- A large group is one button with a list beside it, so the rail does not grow an
+                 icon per view; a small one stays a heading over its buttons. The list opens where
+                 the theme menu at the foot does, since `compact` is what fixes it beside the rail. -->
+            {#if label !== null && section.items.length > GROUP_MAX}
+                <div class="flyout" data-group={label}>
+                    <Menu
+                        {label}
+                        glyph={groupGlyph(section)}
+                        compact
+                        items={groupItems(section)}
+                        onpick={(id, event) => openView(id, event.shiftKey ? 'panel' : 'main')}
+                    />
+                </div>
+            {:else}
+                {#if label !== null}
+                    <p class="group">{label}</p>
+                {/if}
+                {#each section.items as view (view.id)}
+                    <Tooltip text={lookup(view.label)} placement="beside">
+                        <button
+                            type="button"
+                            class="view"
+                            data-view={view.id}
+                            aria-label={lookup(view.label)}
+                            onclick={(event) =>
+                                openView(view.id, event.shiftKey ? 'panel' : 'main')}
+                        >
+                            <Glyph name={lookup(view.glyph)} />
+                        </button>
+                    </Tooltip>
+                {/each}
             {/if}
-            {#each section.items as view (view.id)}
-                <Tooltip text={lookup(view.label)} placement="beside">
-                    <button
-                        type="button"
-                        class="view"
-                        data-view={view.id}
-                        aria-label={lookup(view.label)}
-                        onclick={(event) => openView(view.id, event.shiftKey ? 'panel' : 'main')}
-                    >
-                        <Glyph name={lookup(view.glyph)} />
-                    </button>
-                </Tooltip>
-            {/each}
         {/each}
 
         <!-- The documents of config/layout.yml. They are not registrations, so they sit under a
@@ -291,6 +337,12 @@
        which is how the theme menu and the arrangement control came to be unreachable. */
     .controls {
         flex-shrink: 0;
+    }
+
+    /* The group's button is a Menu, which is a flex row of its own; this gives it the top margin a
+       heading would have had, so a flyout sits where the heading it replaces sat. */
+    .flyout {
+        margin-top: 6px;
     }
 
     .group {
