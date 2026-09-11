@@ -210,11 +210,23 @@ const TASKS = [
     'schema:',
     '  - { field: title, type: text }',
     '  - { field: status, type: select }',
+    '  - { field: meta, type: metalist }',
     'entries:',
     '  - title: "Review the draft"',
     '    status: open',
     '    subtasks:',
     '      - { do: read it }',
+    ''
+].join('\n');
+
+const VENUES = [
+    'title: Venues',
+    'schema:',
+    '  - { field: name, type: text }',
+    '  - { field: id, type: text }',
+    'venues:',
+    '  - name: Existing Venue',
+    '    id: existing',
     ''
 ].join('\n');
 
@@ -230,6 +242,7 @@ function wider(): string {
     const root = hub();
     for (const [path, body] of [
         ['tasks/tasks.yml', TASKS],
+        ['registries/venues.yml', VENUES],
         ['CAREER.yml', CAREER]
     ]) {
         const file = join(root, path);
@@ -242,6 +255,10 @@ function wider(): string {
 
 function tasksOf(root: string): string {
     return readFileSync(join(root, 'tasks', 'tasks.yml'), 'utf8');
+}
+
+function venuesOf(root: string): string {
+    return readFileSync(join(root, 'registries', 'venues.yml'), 'utf8');
 }
 
 describe('writing one collection entry', () => {
@@ -266,6 +283,26 @@ describe('writing one collection entry', () => {
             changed: [],
             refused: []
         });
+        expect(tasksOf(root)).toBe(TASKS);
+    });
+
+    it('writes a metalist through to the collection file', () => {
+        const root = wider();
+        const out = writeEntry(root, configFor(), 'tasks', 'Review the draft', {
+            meta: [{ label: 'Owner', value: 'Axel' }]
+        });
+        expect(out).toEqual({ found: true, changed: ['meta'], refused: [] });
+        expect(tasksOf(root)).toContain('    meta:\n      - { label: Owner, value: "Axel" }');
+    });
+
+    it('clears a schema metalist whose current value is an empty list', () => {
+        const root = wider();
+        writeFileSync(
+            join(root, 'tasks', 'tasks.yml'),
+            TASKS.replace('    status: open\n', '    status: open\n    meta: []\n')
+        );
+        const out = writeEntry(root, configFor(), 'tasks', 'Review the draft', { meta: [] });
+        expect(out).toEqual({ found: true, changed: ['meta'], refused: [] });
         expect(tasksOf(root)).toBe(TASKS);
     });
 });
@@ -402,6 +439,74 @@ describe('adding an entry and an idea', () => {
         });
         expect(out).toEqual({ found: true, changed: ['entries'], refused: [] });
         expect(tasksOf(root)).toBe(`${TASKS}\n  - title: A new task\n    status: open\n`);
+    });
+
+    it('appends a new entry carrying a metalist', () => {
+        const root = wider();
+        const out = createEntry(root, configFor(), 'tasks', {
+            title: 'A metalist task',
+            meta: [{ label: 'Owner', value: 'Axel' }]
+        });
+        expect(out).toEqual({ found: true, changed: ['entries'], refused: [] });
+        expect(tasksOf(root)).toContain(
+            '  - title: A metalist task\n    meta:\n      - { label: Owner, value: "Axel" }'
+        );
+    });
+
+    it('refuses an edit that clears a venue id or moves it onto another venue', () => {
+        const root = wider();
+        const file = join(root, 'registries', 'venues.yml');
+        writeFileSync(file, `${VENUES}  - name: Second Venue\n    id: second\n`);
+        expect(writeEntry(root, configFor(), 'venues', 'second', { id: 'existing' })).toEqual({
+            found: true,
+            changed: [],
+            refused: [{ field: 'id', reason: 'an entry with that id is already in the file' }]
+        });
+        expect(writeEntry(root, configFor(), 'venues', 'second', { id: '' })).toEqual({
+            found: true,
+            changed: [],
+            refused: [{ field: 'id', reason: 'an entry needs a non-empty id' }]
+        });
+        expect(writeEntry(root, configFor(), 'venues', 'second', { id: 'second' })).toEqual({
+            found: true,
+            changed: [],
+            refused: []
+        });
+        const moved = writeEntry(root, configFor(), 'venues', 'second', { id: 'renamed' });
+        expect(moved.refused).toEqual([]);
+        expect(venuesOf(root)).toContain('  - name: Second Venue\n    id: renamed');
+    });
+
+    it('requires a fresh non-empty registry id for a new venue', () => {
+        const missingRoot = wider();
+        expect(createEntry(missingRoot, configFor(), 'venues', { name: 'Missing ID' })).toEqual({
+            found: true,
+            changed: [],
+            refused: [{ field: 'id', reason: 'a new entry needs a non-empty id' }]
+        });
+        expect(venuesOf(missingRoot)).toBe(VENUES);
+
+        const duplicateRoot = wider();
+        expect(
+            createEntry(duplicateRoot, configFor(), 'venues', {
+                name: 'Another Venue',
+                id: 'existing'
+            })
+        ).toEqual({
+            found: true,
+            changed: [],
+            refused: [{ field: 'id', reason: 'an entry with that id is already in the file' }]
+        });
+        expect(venuesOf(duplicateRoot)).toBe(VENUES);
+
+        const freshRoot = wider();
+        expect(
+            createEntry(freshRoot, configFor(), 'venues', {
+                name: 'Fresh Venue',
+                id: 'fresh'
+            })
+        ).toEqual({ found: true, changed: ['venues'], refused: [] });
+        expect(venuesOf(freshRoot)).toContain('  - name: Fresh Venue\n    id: fresh');
     });
 
     it('refuses an entry whose identity the file already holds, and an unknown collection', () => {

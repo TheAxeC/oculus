@@ -296,9 +296,8 @@ export function vocabCatalog(config: Record<string, unknown>): Record<string, un
 }
 
 /**
- * The keys of the `collections:` list of config/sources.yml, in the file's order, minus the five
- * that name a registry the snapshot already carries (normalise leaves those collections out, so a
- * view over one would have nothing to read). They ship as the page's data and the page registers
+ * The keys of the `collections:` list of config/sources.yml, in the file's order, minus the four
+ * that name a registry with a dedicated view. They ship as the page's data and the page registers
  * the collection view once per key, so a collection is added to the tool by adding a line to
  * sources.yml, a label and a glyph to text.yml, and its key to a group of nav_groups.
  */

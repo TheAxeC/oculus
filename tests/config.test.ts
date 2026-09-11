@@ -295,6 +295,7 @@ describe("oculus's own config directory", () => {
             'lifecycle',
             'arch_color',
             'data_access',
+            'venue_categories',
             'venue_tiers',
             'radar_buckets'
         ]
@@ -364,7 +365,6 @@ describe("oculus's own config directory", () => {
         'programs',
         'domains',
         'map',
-        'venues',
         'data',
         'approach',
         'agent-approach',

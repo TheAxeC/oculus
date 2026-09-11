@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, view partial of views/Collection.svelte. The add and edit form of one collection,
+    // Layer 3, shared view partial. The add and edit form of one collection,
     // drawn from that file's own `schema:` and from nothing this module knows: the controls are the
     // schema's fields in the schema's order, through formFields() of state/collection.ts.
     //
@@ -8,9 +8,8 @@
     // deleteEntry() behind the confirm. What the reader sees change is the watcher's next push of the
     // portfolio, so nothing here edits the entry it was handed.
     //
-    // A `metalist` field is drawn as no control: the write path takes a string, a number, a boolean,
-    // a list of strings or null (asFieldValue in server/yaml-edit.ts), and a list of label-value maps
-    // is none of them, so an editor over it would produce a refusal every time it saved.
+    // A `metalist` is kept as rows apart from the scalar controls because each row writes two
+    // values and is saved as one flat map.
 
     import Checkbox from '$lib/ui/Checkbox.svelte';
     import Confirm from '$lib/ui/Confirm.svelte';
@@ -21,8 +20,9 @@
     import TextInput from '$lib/ui/TextInput.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { formFields, identityField, type Entry, type SchemaField } from '$lib/state/collection';
+    import { configMap } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
-    import { deleteEntry, newEntry, writeEntry } from '$lib/state/writes.svelte';
+    import { deleteEntry, newEntry, writeEntry, type WriteAnswer } from '$lib/state/writes.svelte';
 
     type Props = {
         /** The collection key, which is what a write names its file by. */
@@ -37,12 +37,26 @@
 
     let { collection, schema, entry, onclose, onsaid }: Props = $props();
 
-    const fields = $derived(formFields(schema).filter((field) => field.kind !== 'metalist'));
+    type MetaRow = { label: string; value: string };
+    type Draft = string | boolean | MetaRow[];
+
+    const fields = $derived(formFields(schema, configMap()));
 
     /** One field of the entry as the control for it holds it: a list is a line of commas. */
-    function held(field: string, kind: string): string | boolean {
+    function held(field: string, kind: string): Draft {
         const value = entry === null ? undefined : entry.fields[field];
         if (kind === 'checkbox') return value === true;
+        if (kind === 'metalist' && Array.isArray(value)) {
+            return value
+                .filter(
+                    (one): one is Record<string, unknown> =>
+                        typeof one === 'object' && one !== null && !Array.isArray(one)
+                )
+                .map((one) => ({
+                    label: typeof one.label === 'string' ? one.label : '',
+                    value: typeof one.value === 'string' ? one.value : ''
+                }));
+        }
         if (Array.isArray(value)) return value.filter((one) => typeof one === 'string').join(', ');
         if (typeof value === 'string' || typeof value === 'number') return String(value);
         return '';
@@ -50,18 +64,18 @@
 
     /** What the entry itself holds, per field: what a control shows until the reader types in it. */
     const initial = $derived.by(() => {
-        const next: Record<string, string | boolean> = {};
+        const next: Record<string, Draft> = {};
         for (const field of fields) next[field.field] = held(field.field, field.kind);
         return next;
     });
 
     /** What the reader has typed, by field. A field nobody touched is not in here at all. */
-    let edits: Record<string, string | boolean> = $state({});
+    let edits: Record<string, Draft> = $state({});
     let asked = $state('');
     let sure = $state(false);
 
     /** One control's value: what was typed into it, and what the entry holds until something is. */
-    function valueOf(field: string): string | boolean {
+    function valueOf(field: string): Draft {
         return field in edits ? edits[field] : (initial[field] ?? '');
     }
 
@@ -70,10 +84,36 @@
         return typeof value === 'string' ? value : '';
     }
 
+    function metaRows(field: string): MetaRow[] {
+        const value = valueOf(field);
+        return Array.isArray(value) ? value : [];
+    }
+
+    function setMeta(field: string, at: number, key: keyof MetaRow, value: string): void {
+        edits[field] = metaRows(field).map((row, index) =>
+            index === at ? { ...row, [key]: value } : row
+        );
+    }
+
+    function addMeta(field: string): void {
+        edits[field] = [...metaRows(field), { label: '', value: '' }];
+    }
+
+    function removeMeta(field: string, at: number): void {
+        edits[field] = metaRows(field).filter((_, index) => index !== at);
+    }
+
     /** The value one control saves as: an empty control clears the field rather than writing ''. */
     function saveable(field: string, kind: string): unknown {
         const value = valueOf(field);
         if (kind === 'checkbox') return value === true ? true : null;
+        if (kind === 'metalist') {
+            const rows = Array.isArray(value) ? value : [];
+            const kept = rows
+                .map((row) => ({ label: row.label.trim(), value: row.value.trim() }))
+                .filter((row) => row.label !== '' || row.value !== '');
+            return kept.length === 0 ? null : kept;
+        }
         const text = typeof value === 'string' ? value.trim() : '';
         if (kind === 'tags') {
             const words = text
@@ -85,12 +125,20 @@
         return text === '' ? null : text;
     }
 
-    function said(answer: { ok: boolean; changed: string[]; error?: string }): void {
-        onsaid(
-            answer.ok
-                ? t('editor.saved', answer.changed.join(', '))
-                : t('editor.failed', answer.error ?? '')
-        );
+    function said(answer: WriteAnswer): void {
+        if (!answer.ok) {
+            onsaid(t('editor.failed', answer.error ?? ''));
+        } else if (answer.refused.length > 0) {
+            // A refused field answers ok with nothing changed; the reader is told why, not "saved".
+            onsaid(
+                t(
+                    'editor.failed',
+                    answer.refused.map((one) => `${one.field}: ${one.reason}`).join('; ')
+                )
+            );
+        } else {
+            onsaid(t('editor.saved', answer.changed.join(', ')));
+        }
     }
 
     /** Save the form: a new entry when the form has none, the entry's own fields when it has one. */
@@ -162,6 +210,34 @@
                     placeholder={t('collection.tags_hint')}
                     oninput={(next) => (edits[field.field] = next)}
                 />
+            {:else if field.kind === 'metalist'}
+                <div class="metalist" data-metalist={field.field}>
+                    {#each metaRows(field.field) as row, at (`${field.field}-${at}`)}
+                        <div class="metarow">
+                            <TextInput
+                                value={row.label}
+                                label={t('collection.meta_label')}
+                                placeholder={t('collection.meta_label')}
+                                oninput={(next) => setMeta(field.field, at, 'label', next)}
+                            />
+                            <TextInput
+                                value={row.value}
+                                label={t('collection.meta_value')}
+                                placeholder={t('collection.meta_value')}
+                                oninput={(next) => setMeta(field.field, at, 'value', next)}
+                            />
+                            <ToolButton
+                                label={t('collection.meta_remove')}
+                                compact
+                                onclick={() => removeMeta(field.field, at)}
+                            />
+                        </div>
+                    {/each}
+                    <ToolButton
+                        label={t('collection.meta_add')}
+                        onclick={() => addMeta(field.field)}
+                    />
+                </div>
             {:else}
                 <TextInput
                     value={line(field.field)}
@@ -235,5 +311,17 @@
     .said {
         font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
+    }
+
+    .metalist {
+        display: grid;
+        gap: 6px;
+    }
+
+    .metarow {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) auto;
+        gap: 6px;
+        align-items: center;
     }
 </style>

@@ -35,6 +35,9 @@ domains_file: registries/domains.yml
 # Collection tabs - a generic card list from one YAML (entries: title/sub/status/date/meta/tags/related/link/url/note).
 # Schema: README.md. Files are editable in served mode. `related:` ids cross-link to project cards.
 collections:
+  - { key: venues,         title: "Venues",             file: "registries/venues.yml" }
+  - { key: programs,       title: "Pillars",            file: "registries/programs.yml" }
+  - { key: domains,        title: "Domains",            file: "registries/domains.yml" }
   - { key: statements,     title: "Statements",         icon: "§", file: "registries/boilerplate.yml" }
   - { key: funding,        title: "Funding",            icon: "◈", file: "funding/funding.yml" }
   - { key: events,         title: "Talks & Events",     icon: "🗓", file: "network/events.yml" }

@@ -77,13 +77,9 @@ function derivedCounts(): Record<string, number> {
             listKey
         );
     }
-    // A collection whose key names a registry is that registry, with one exception: funding/funding.yml
-    // is read twice on purpose, as the eleven scheme entities and as the collection the Funding view
-    // draws, so it is counted here as well as in the registries above.
-    const registryOnly = Object.keys(REGISTRY_LISTS).filter((key) => key !== 'funding');
-    counts.collections = config.collections.filter(
-        (file) => !registryOnly.includes(file.key)
-    ).length;
+    // The three editable registry files are collections beside their entity maps; every configured
+    // collection therefore reaches the snapshot, including funding and those three registries.
+    counts.collections = config.collections.length;
     return counts;
 }
 

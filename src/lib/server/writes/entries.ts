@@ -27,6 +27,9 @@ import type { EditResult, FieldValue, Refusal } from '../yaml-edit.ts';
 import type { PortfolioConfig } from '../../data/model.ts';
 import type { WriteOutcome } from '../writes.ts';
 
+/** Registries whose entry key is not the first field of their collection schema. */
+const REGISTRY_IDENTITY_FIELDS: Record<string, string> = { venues: 'id' };
+
 /** One edit put on disk the way writeManifest does it: only when the edit changed something. */
 export function saved(file: string, source: string, edit: EditResult): WriteOutcome {
     if (edit.changed.length > 0 && edit.text !== source) writeFileSync(file, edit.text, 'utf8');
@@ -47,8 +50,35 @@ export function identityField(schema: unknown): string {
     return names.length > 0 ? names[0] : 'title';
 }
 
+/** The fields the collection schema declares as metalists. */
+function metalistFields(schema: unknown): Set<string> {
+    const fields = new Set<string>();
+    if (!Array.isArray(schema)) return fields;
+    for (const item of schema) {
+        if (!isMap(item) || item.type !== 'metalist' || typeof item.field !== 'string') continue;
+        fields.add(item.field);
+    }
+    return fields;
+}
+
+/** Empty metalists mean removal, including when the current YAML value is already `[]`. */
+function normaliseMetalists(
+    schema: unknown,
+    fields: Record<string, unknown>
+): Record<string, unknown> {
+    const metalists = metalistFields(schema);
+    return Object.fromEntries(
+        Object.entries(fields).map(([field, value]) => [
+            field,
+            metalists.has(field) && Array.isArray(value) && value.length === 0 ? null : value
+        ])
+    );
+}
+
 /** The id the reader gives an entry, normalise.ts line 323: its `key`, or its `title` without one. */
 function entryId(entry: Record<string, unknown>): string {
+    const id = entry.id;
+    if (typeof id === 'string' && id !== '') return id;
     const key = entry.key;
     if (typeof key === 'string' && key !== '') return key;
     return typeof entry.title === 'string' ? entry.title : '';
@@ -133,7 +163,44 @@ export function writeEntry(
     if (held === null) return { found: false, changed: [], refused: [] };
     const value = identityOf(held, id);
     if (value === null) return { found: false, changed: [], refused: [] };
-    return saved(held.file, held.source, setEntryFields(held.source, held.ident, value, fields));
+    const registryField = REGISTRY_IDENTITY_FIELDS[collection];
+    if (registryField !== undefined && registryField in fields) {
+        // The registry keys its entities by this field, so an edit may neither clear it nor move
+        // the entry onto another entry's value: normalise would then keep one of the two.
+        const own = held.items.find((one) => String(one[held.ident] ?? '') === value);
+        const raw = fields[registryField];
+        const next = typeof raw === 'string' ? raw.trim() : '';
+        const current = String(own?.[registryField] ?? '').trim();
+        if (next === '') {
+            return {
+                found: true,
+                changed: [],
+                refused: [
+                    { field: registryField, reason: `an entry needs a non-empty ${registryField}` }
+                ]
+            };
+        }
+        if (
+            next !== current &&
+            held.items.some((one) => String(one[registryField] ?? '').trim() === next)
+        ) {
+            return {
+                found: true,
+                changed: [],
+                refused: [
+                    {
+                        field: registryField,
+                        reason: `an entry with that ${registryField} is already in the file`
+                    }
+                ]
+            };
+        }
+    }
+    return saved(
+        held.file,
+        held.source,
+        setEntryFields(held.source, held.ident, value, normaliseMetalists(held.schema, fields))
+    );
 }
 
 /**
@@ -174,6 +241,36 @@ export function createEntry(
 ): WriteOutcome {
     const held = readCollection(hub, config, collection);
     if (held === null) return { found: false, changed: [], refused: [] };
+    const registryField = REGISTRY_IDENTITY_FIELDS[collection];
+    const registryRaw = registryField === undefined ? undefined : fields[registryField];
+    const registryValue = typeof registryRaw === 'string' ? registryRaw.trim() : '';
+    if (registryField !== undefined && registryValue === '') {
+        return {
+            found: true,
+            changed: [],
+            refused: [
+                {
+                    field: registryField,
+                    reason: `a new entry needs a non-empty ${registryField}`
+                }
+            ]
+        };
+    }
+    if (
+        registryField !== undefined &&
+        held.items.some((one) => String(one[registryField] ?? '').trim() === registryValue)
+    ) {
+        return {
+            found: true,
+            changed: [],
+            refused: [
+                {
+                    field: registryField,
+                    reason: `an entry with that ${registryField} is already in the file`
+                }
+            ]
+        };
+    }
     const ident = held.ident;
     const raw = fields[ident];
     const value = typeof raw === 'string' ? raw.trim() : '';
@@ -196,18 +293,19 @@ export function createEntry(
 
     const values: Record<string, FieldValue> = {};
     const refused: Refusal[] = [];
-    for (const [field, given] of Object.entries(fields)) {
+    for (const [field, given] of Object.entries(normaliseMetalists(held.schema, fields))) {
         const one = asFieldValue(given);
         if (one === undefined) {
             refused.push({
                 field,
-                reason: 'not a string, number, boolean, list of strings or null'
+                reason: 'not a string, number, boolean, list of strings, metalist or null'
             });
             continue;
         }
         values[field] = one;
     }
     values[ident] = value;
+    if (registryField !== undefined) values[registryField] = registryValue;
 
     const block = renderEntry(fieldNames(held.schema), ident, values);
     if (block === '') {

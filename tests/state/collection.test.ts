@@ -412,6 +412,33 @@ describe('formFields', () => {
             { field: 'weight', label: 'weight', kind: 'text', options: [], required: false }
         ]);
     });
+
+    it('resolves optionsFrom over a list of strings when inline options are absent', () => {
+        const schema: SchemaField[] = [
+            { field: 'category', type: 'select', optionsFrom: 'venue_categories' }
+        ];
+        expect(
+            formFields(schema, { venue_categories: ['journal', 'conference'] })[0].options
+        ).toEqual(['journal', 'conference']);
+    });
+
+    it('resolves optionsFrom over keyed maps and leaves out unassignable rows', () => {
+        const schema: SchemaField[] = [
+            { field: 'tier', type: 'select', optionsFrom: 'venue_tiers' },
+            { field: 'fixed', type: 'select', options: ['own'], optionsFrom: 'venue_tiers' }
+        ];
+        const config = {
+            venue_tiers: [
+                { key: 'flagship', label: 'flagship' },
+                { key: 'unrated', assignable: false },
+                { label: 'missing key' }
+            ]
+        };
+        expect(formFields(schema, config).map((field) => field.options)).toEqual([
+            ['flagship'],
+            ['own']
+        ]);
+    });
 });
 
 describe('noFunding and coverage', () => {

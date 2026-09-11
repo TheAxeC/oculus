@@ -265,6 +265,7 @@ data_access: { open: "#16a34a", registration: "#b45309", credentialed: "#dc2626"
 # isn't flattened into one label). Order = ranking (best first). The venues edit form's tier dropdown pulls
 # its options from the ASSIGNABLE keys here; the Pillars tab colours its tier spread from these. `unrated`
 # is the computed fallback (no venue / no tier), `assignable: false` so it's not offered as a choice.
+venue_categories: [journal, conference]
 venue_tiers:
   - { key: flagship,   color: "#7c3aed", label: "flagship" }
   - { key: strong,     color: "#0d9488", label: "strong" }

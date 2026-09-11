@@ -142,7 +142,11 @@ function portfolio(): RawPortfolio {
                     free: 'APC',
                     themes: ['signal'],
                     deadline: '2026-09-01',
-                    deadline_month: 'Sep'
+                    deadline_month: 'Sep',
+                    held_month: 'Jan',
+                    timing: 'deadline Sep, held Jan',
+                    call: 'https://example.invalid/call',
+                    email: 'chair@example.invalid'
                 }
             ]),
             datasets: entries('datasets', [
@@ -164,7 +168,25 @@ function portfolio(): RawPortfolio {
         },
         collections: {
             funding: collection('funding', [{ title: 'Flanders AI' }]),
-            events: collection('events', [{ title: 'A talk', status: 'planned' }])
+            events: collection('events', [{ title: 'A talk', status: 'planned' }]),
+            venues: {
+                ...collection('venues', [{ name: 'BSPC', id: 'bspc' }]),
+                meta: {
+                    title: 'VENUES',
+                    schema: [
+                        { field: 'name', type: 'text' },
+                        { field: 'category', type: 'select', options_from: 'venue_categories' }
+                    ]
+                }
+            },
+            programs: {
+                ...collection('programs', [{ key: 'federated', title: 'Federated learning' }]),
+                meta: { title: 'PROGRAMS', schema: [{ field: 'key', type: 'text' }] }
+            },
+            domains: {
+                ...collection('domains', [{ key: 'heart', title: 'Cardiology' }]),
+                meta: { title: 'DOMAINS', schema: [{ field: 'key', type: 'text' }] }
+            }
         },
         feeds: NO_FEEDS,
         career: null,
@@ -299,6 +321,10 @@ describe('normalise, the field mapping', () => {
     it('carries a conference call off the venue registry, by its date and by its month', () => {
         expect(snapshot.entities.venues.bspc.deadline).toBe('2026-09-01');
         expect(snapshot.entities.venues.bspc.deadlineMonth).toBe('Sep');
+        expect(snapshot.entities.venues.bspc.heldMonth).toBe('Jan');
+        expect(snapshot.entities.venues.bspc.timing).toBe('deadline Sep, held Jan');
+        expect(snapshot.entities.venues.bspc.call).toBe('https://example.invalid/call');
+        expect(snapshot.entities.venues.bspc.email).toBe('chair@example.invalid');
     });
 
     it('fills the registry entities, hpc_path and retrieval included', () => {
@@ -309,6 +335,10 @@ describe('normalise, the field mapping', () => {
             free: 'APC',
             deadline: '2026-09-01',
             deadlineMonth: 'Sep',
+            heldMonth: 'Jan',
+            timing: 'deadline Sep, held Jan',
+            call: 'https://example.invalid/call',
+            email: 'chair@example.invalid',
             themes: ['signal']
         });
         expect(snapshot.entities.datasets.mimic).toEqual({
@@ -327,7 +357,13 @@ describe('normalise, the field mapping', () => {
     });
 
     it('carries the funding file as a collection as well as a registry', () => {
-        expect(Object.keys(snapshot.entities.collections)).toEqual(['events', 'funding']);
+        expect(Object.keys(snapshot.entities.collections)).toEqual([
+            'domains',
+            'events',
+            'funding',
+            'programs',
+            'venues'
+        ]);
         expect(Object.keys(snapshot.entities.funding)).toEqual(['A scheme with no key', 'FAIR']);
         expect(snapshot.entities.collections.events).toEqual({
             id: 'events',
@@ -344,6 +380,13 @@ describe('normalise, the field mapping', () => {
                 }
             ]
         });
+        expect(snapshot.entities.collections.venues.entries[0]).toMatchObject({
+            id: 'bspc',
+            title: 'BSPC',
+            fields: { name: 'BSPC', id: 'bspc' }
+        });
+        expect(snapshot.entities.collections.programs.entries[0].id).toBe('federated');
+        expect(snapshot.entities.collections.domains.entries[0].id).toBe('heart');
     });
 });
 
@@ -365,6 +408,13 @@ describe("normalise, a collection's schema", () => {
             { field: 'title', type: 'text', required: true },
             { field: 'sub', type: 'text', label: 'Subtitle' },
             { field: 'status', type: 'select', options: ['planned', 'completed'], help: 'pick one' }
+        ]);
+    });
+
+    it('carries a select options_from key onto the wire', () => {
+        const found = events([{ field: 'status', type: 'select', options_from: 'statuses' }]);
+        expect(found.schema).toEqual([
+            { field: 'status', type: 'select', optionsFrom: 'statuses' }
         ]);
     });
 

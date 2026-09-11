@@ -16,8 +16,11 @@
 import { isMap, isScalar, isSeq, parseDocument, stringify } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
 
-/** What a field may be set to. A list is a list of strings; null clears the field. */
-export type FieldValue = string | number | boolean | string[] | null;
+/** One row of a metalist: a flat map whose keys and values are strings. */
+export type FlatStringMap = Record<string, string>;
+
+/** What a field may be set to. A list is strings or flat string maps; null clears the field. */
+export type FieldValue = string | number | boolean | string[] | FlatStringMap[] | null;
 
 /** One field that was not written, and why. */
 export type Refusal = { field: string; reason: string };
@@ -121,7 +124,21 @@ export function asFieldValue(raw: unknown): FieldValue | undefined {
     if (typeof raw === 'string' || typeof raw === 'boolean') return raw;
     if (typeof raw === 'number') return Number.isFinite(raw) ? raw : undefined;
     if (Array.isArray(raw) && raw.every((item) => typeof item === 'string')) return raw as string[];
+    if (
+        Array.isArray(raw) &&
+        raw.every(
+            (item) =>
+                isRecord(item) && Object.values(item).every((value) => typeof value === 'string')
+        )
+    ) {
+        return raw as FlatStringMap[];
+    }
     return undefined;
+}
+
+/** Whether a non-empty list is the metalist shape rather than a list of strings. */
+export function isMetalist(value: Exclude<FieldValue, null>): value is FlatStringMap[] {
+    return Array.isArray(value) && value.length > 0 && isRecord(value[0]);
 }
 
 /** One scalar in YAML, on one line. `style` keeps the quoting the file already had. */
@@ -160,6 +177,21 @@ function styleAt(styles: (string | undefined)[], at: number): string | undefined
 function renderFlow(values: string[], styles: (string | undefined)[] = []): string {
     const items = values.map((item, at) => renderScalar(item, styleAt(styles, at)));
     return `[${items.join(', ')}]`;
+}
+
+/** One metalist item as a flow map, with its reader-facing value always double-quoted. */
+function renderFlowMap(value: FlatStringMap): string {
+    const fields = Object.entries(value).map(
+        ([key, item]) =>
+            `${renderScalar(key)}: ${renderScalar(item, key === 'value' ? 'QUOTE_DOUBLE' : undefined)}`
+    );
+    return `{ ${fields.join(', ')} }`;
+}
+
+/** A metalist as block-list lines, with continuation lines at the list's indentation. */
+export function renderMetalist(values: FlatStringMap[], indent: number): string {
+    const pad = ' '.repeat(indent);
+    return values.map((value) => `- ${renderFlowMap(value)}`).join(`\n${pad}`);
 }
 
 /** A list in the block style `results` and `ideas` are written in, at one indentation. */
@@ -257,7 +289,9 @@ function replaceValue(text: string, node: Node, value: Exclude<FieldValue, null>
     const end = valueEnd(node);
     const block = Array.isArray(value) && isSeq(node) && node.flow !== true && value.length > 0;
     let rendered: string;
-    if (Array.isArray(value)) {
+    if (isMetalist(value)) {
+        rendered = renderMetalist(value, columnOf(text, start));
+    } else if (Array.isArray(value)) {
         const styles = itemStyles(node);
         rendered = block
             ? renderBlock(value, columnOf(text, start), styles)
@@ -336,6 +370,7 @@ function insertBlockChild(
 
 /** A value as it is written after `key:` on one line, or null when it cannot be. */
 function renderOneLine(value: Exclude<FieldValue, null>): string | null {
+    if (isMetalist(value)) return null;
     const rendered = Array.isArray(value) ? renderFlow(value) : renderScalar(value);
     return rendered.includes('\n') ? null : rendered;
 }
@@ -360,6 +395,10 @@ function appendTop(
     value: Exclude<FieldValue, null>
 ): Written {
     const indent = mapIndent(root, text);
+    if (isMetalist(value)) {
+        const pad = ' '.repeat(indent);
+        return appendLines(text, root, `${name}:\n${pad}${renderMetalist(value, indent)}`);
+    }
     if (Array.isArray(value) && value.length > 0 && BLOCK_LISTS.includes(name)) {
         // Every `results` and `ideas` item on the tree is a double-quoted string, so a list written
         // where there was none is written the way the ones beside it are.
@@ -504,15 +543,23 @@ export function setFields(source: string, fields: Record<string, unknown>): Edit
             refused.push({ field, reason: `${path[0]} is set by the folder, never by a write` });
             continue;
         }
-        const value = asFieldValue(raw);
-        if (value === undefined) {
+        const parsed = asFieldValue(raw);
+        if (parsed === undefined) {
             refused.push({
                 field,
-                reason: 'not a string, number, boolean, list of strings or null'
+                reason: 'not a string, number, boolean, list of strings, metalist or null'
             });
             continue;
         }
-        if (sameValue(value, currentValue(base, path))) continue;
+        const current = currentValue(base, path);
+        const value =
+            Array.isArray(parsed) &&
+            parsed.length === 0 &&
+            Array.isArray(current) &&
+            current.some(isRecord)
+                ? null
+                : parsed;
+        if (sameValue(value, current)) continue;
         const out = applyOne(text, path, value);
         if ('reason' in out) {
             refused.push({ field, reason: out.reason });

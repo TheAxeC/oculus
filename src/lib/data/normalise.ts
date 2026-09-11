@@ -41,13 +41,10 @@ import type {
 import { isMap, str, strings } from './guards.ts';
 
 /**
- * Collection keys that name a registry the snapshot already carries; reading both would double it.
- *
- * `funding` is deliberately not one of them. funding/funding.yml is the only file that is both: the
- * schemes are entities projects point at by their `funding:` tag, and the file is a collection with
- * an intro, a schema and entries the reader edits like any other. So it is carried twice, eleven
- * schemes as entities and the same eleven as one collection, and the funding view is registered
- * from the collection keys with the other seven.
+ * Registry-backed collection keys. Normalise carries these both as entities and collections so
+ * their dedicated views can display entities and edit the same records through collection schemas.
+ * Config registration uses this list to omit their duplicate generic collection views. `funding`
+ * remains a generic collection because its editable collection view is its only dedicated view.
  */
 export const REGISTRY_KEYS = ['venues', 'datasets', 'programs', 'domains'];
 
@@ -291,6 +288,10 @@ function venue(entry: RawRegistryEntry): Venue {
         link: str(entry.link),
         deadline: str(entry.deadline),
         deadlineMonth: str(entry.deadline_month),
+        heldMonth: str(entry.held_month),
+        timing: str(entry.timing),
+        call: str(entry.call),
+        email: str(entry.email),
         themes: strings(entry.themes)
     });
 }
@@ -357,15 +358,22 @@ function funding(entry: RawRegistryEntry): Funding {
 }
 
 /** One collection entry: its identity, and every field the YAML gave it apart from the provenance. */
-function entry(raw: RawEntry, index: number): Entry {
+function entry(raw: RawEntry, index: number, ident = 'title'): Entry {
     const fields: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(raw)) {
         if (key !== 'source') fields[key] = value;
     }
-    const title = str(raw.title) ?? '';
+    const title = str(raw.title) ?? str(raw.name) ?? str(raw[ident]) ?? '';
     const key = str(raw.key);
+    const id = str(raw.id);
+    const identity = str(raw[ident]);
     return {
-        id: key !== undefined && key.length > 0 ? key : title,
+        id:
+            id !== undefined && id.length > 0
+                ? id
+                : key !== undefined && key.length > 0
+                  ? key
+                  : (identity ?? title),
         title,
         fields,
         file: raw.source.file,
@@ -393,6 +401,7 @@ export function collectionSchema(value: unknown): SchemaField[] | undefined {
                 type,
                 label: str(item.label),
                 options: item.options === undefined ? undefined : strings(item.options),
+                optionsFrom: str(item.options_from),
                 required: typeof item.required === 'boolean' ? item.required : undefined,
                 help: str(item.help)
             })
@@ -402,13 +411,15 @@ export function collectionSchema(value: unknown): SchemaField[] | undefined {
 }
 
 function collection(raw: RawCollection): Collection {
+    const schema = collectionSchema(raw.meta.schema);
+    const ident = schema?.[0]?.field ?? 'title';
     return compact({
         id: raw.key,
         title: str(raw.meta.title) ?? raw.key,
         intro: str(raw.meta.intro),
         file: raw.file,
-        schema: collectionSchema(raw.meta.schema),
-        entries: raw.entries.map(entry)
+        schema,
+        entries: raw.entries.map((item, index) => entry(item, index, ident))
     });
 }
 
@@ -614,9 +625,7 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
     const schemes = raw.registries.funding.entries
         .map(funding)
         .filter((scheme) => scheme.id.length > 0);
-    const collections = Object.keys(raw.collections)
-        .filter((key) => !REGISTRY_KEYS.includes(key))
-        .map((key) => collection(raw.collections[key]));
+    const collections = Object.keys(raw.collections).map((key) => collection(raw.collections[key]));
 
     const known: Record<string, Set<Id>> = {
         projects: new Set(projects.map((item) => item.id)),

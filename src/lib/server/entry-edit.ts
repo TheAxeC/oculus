@@ -17,7 +17,14 @@
 
 import { isMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Document, Node, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
-import { asFieldValue, deepEqual, renderScalar, sameValue } from './yaml-edit.ts';
+import {
+    asFieldValue,
+    deepEqual,
+    isMetalist,
+    renderMetalist,
+    renderScalar,
+    sameValue
+} from './yaml-edit.ts';
 import type { EditResult, FieldValue, Refusal } from './yaml-edit.ts';
 
 /** The key a collection file holds its records under when it has one; collections.ts reads the same. */
@@ -195,6 +202,11 @@ export function renderEntry(
         const value = fields[name];
         if (value === undefined || value === null || value === '') continue;
         if (Array.isArray(value) && value.length === 0) continue;
+        if (isMetalist(value)) {
+            lines.push(`    ${name}:`);
+            lines.push(`      ${renderMetalist(value, 6)}`);
+            continue;
+        }
         const rendered = Array.isArray(value) ? renderFlowList(value, []) : renderScalar(value);
         if (rendered.includes('\n')) continue;
         lines.push(lines.length === 0 ? `  - ${name}: ${rendered}` : `    ${name}: ${rendered}`);
@@ -302,7 +314,9 @@ function replaceIn(text: string, node: Node, value: Exclude<FieldValue, null>): 
     const start = range[0];
     const end = endOffset(node);
     let rendered: string;
-    if (Array.isArray(value)) {
+    if (isMetalist(value)) {
+        rendered = renderMetalist(value, columnAt(text, start));
+    } else if (Array.isArray(value)) {
         if (isSeq(node) && node.flow !== true && node.items.length > 0) {
             return fail('the field is a block list; this writes one line');
         }
@@ -327,10 +341,19 @@ function appendField(
 ): Written {
     const own = rangeOf(found.node);
     if (own === null) return fail('the entry has no place in the file');
-    const rendered = Array.isArray(value) ? renderFlowList(value, []) : renderScalar(value);
-    if (rendered.includes('\n')) return fail('the value does not fit on one line');
     const pad = ' '.repeat(columnAt(text, own[0]));
     const lines = text.split('\n');
+    if (isMetalist(value)) {
+        lines.splice(
+            found.range.end,
+            0,
+            `${pad}${field}:`,
+            `${pad}  ${renderMetalist(value, pad.length + 2)}`
+        );
+        return { text: lines.join('\n') };
+    }
+    const rendered = Array.isArray(value) ? renderFlowList(value, []) : renderScalar(value);
+    if (rendered.includes('\n')) return fail('the value does not fit on one line');
     lines.splice(found.range.end, 0, `${pad}${field}: ${rendered}`);
     return { text: lines.join('\n') };
 }
@@ -393,14 +416,21 @@ export function setEntryFields(
     let ident_value = value;
 
     for (const [field, raw] of Object.entries(fields)) {
-        const wanted = asFieldValue(raw);
-        if (wanted === undefined) {
+        const parsed = asFieldValue(raw);
+        if (parsed === undefined) {
             refused.push({
                 field,
-                reason: 'not a string, number, boolean, list of strings or null'
+                reason: 'not a string, number, boolean, list of strings, metalist or null'
             });
             continue;
         }
+        const wanted =
+            Array.isArray(parsed) &&
+            parsed.length === 0 &&
+            Array.isArray(current[field]) &&
+            current[field].some(isRecord)
+                ? null
+                : parsed;
         if (field === ident && (wanted === null || Array.isArray(wanted))) {
             refused.push({ field, reason: 'the identity field is what the entry is found by' });
             continue;

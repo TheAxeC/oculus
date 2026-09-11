@@ -378,7 +378,7 @@ export function crossLinks(entry: Entry, collectionKey: string, projects: Projec
 }
 
 /** Projects by type, the types in the order they first occur and the members in the order given. */
-function groupProjects(projects: Project[]): CrossGroup[] {
+export function groupProjects(projects: Project[]): CrossGroup[] {
     const groups: CrossGroup[] = [];
     for (const project of projects) {
         const type = typeOf(project);
@@ -413,15 +413,34 @@ const KINDS: FormKind[] = ['text', 'textarea', 'select', 'tags', 'date', 'metali
  * word: the hub's schemas use text, tags, textarea, select, metalist and date, and a word none of
  * them uses is drawn as one line of text rather than left out, so a field is never uneditable.
  */
-export function formFields(schema: SchemaField[] | undefined): FormField[] {
+export function formFields(
+    schema: SchemaField[] | undefined,
+    config: Record<string, unknown> = {}
+): FormField[] {
     return (schema ?? []).map((field) => ({
         field: field.field,
         label: field.label ?? field.field,
         kind: KINDS.includes(field.type as FormKind) ? (field.type as FormKind) : 'text',
-        options: field.options ?? [],
+        options: field.options ?? optionsFrom(config[field.optionsFrom ?? '']),
         required: field.required === true,
         ...(field.help === undefined ? {} : { help: field.help })
     }));
+}
+
+/** Select choices read from one merged-config value: strings, or assignable keyed rows. */
+function optionsFrom(value: unknown): string[] {
+    if (!Array.isArray(value)) return [];
+    const options: string[] = [];
+    for (const item of value) {
+        if (typeof item === 'string') {
+            options.push(item);
+            continue;
+        }
+        if (typeof item !== 'object' || item === null || Array.isArray(item)) continue;
+        const row = item as { key?: unknown; assignable?: unknown };
+        if (typeof row.key === 'string' && row.assignable !== false) options.push(row.key);
+    }
+    return options;
 }
 
 /** The project types the Funding view's synthetic card counts: the work that is still running. */

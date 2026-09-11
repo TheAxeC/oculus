@@ -21,7 +21,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Coverage from './collection/Coverage.svelte';
     import EntryCard from './collection/EntryCard.svelte';
-    import EntryForm from './collection/EntryForm.svelte';
+    import EntryForm from './shared/EntryForm.svelte';
     import {
         FUNDING,
         NO_FUNDING,

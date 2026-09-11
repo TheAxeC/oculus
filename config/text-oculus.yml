@@ -210,6 +210,8 @@ text:
     project_glyph: "folder"
     editor: "Editor"
     editor_glyph: "edit"
+    venues: "Venues"
+    venues_glyph: "venue"
     # The deposit panel, opened for one project from the deposit control of a card.
     deposit: "Deposit"
     deposit_glyph: "published"
@@ -295,6 +297,10 @@ text:
     form_none: "none"
     form_needs: "{0} is what the entry is found by; it cannot be empty."
     tags_hint: "comma separated"
+    meta_label: "Label"
+    meta_value: "Value"
+    meta_add: "+ add row"
+    meta_remove: "Remove row"
     # Glyph names, not characters - each value is a name in the `glyphs:` map of glyphs.yml.
     grip_glyph: "grip"
     pin_glyph: "pin"

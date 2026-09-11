@@ -11,9 +11,6 @@
 # with the call args. A key referenced by a template but missing here FAILS `--selftest` (strict lookup).
 # Edit the words HERE, not in the .py / .js. (Populated incrementally; empty groups are harmless.)
 text:
-  presentation:
-    button: "Slides"
-    title: "Choose presentation slides"
   # strings read by the client JS via CK.t("group.key") - flattened into the #ckstrings blob (page.py).
   # Emoji / glyphs are fine here (cockpit surface); {0}/{1} are CK.t interpolation args. Preserve verbatim.
   js:
@@ -858,6 +855,8 @@ text:
     ven_journals: "Journals ({0})"
     ven_conferences: "Conferences ({0})"
     ven_empty: "No venues yet - add some to <code>registries/venues.yml</code>."
+    ven_months: "Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec"
+    ven_sep: " | "
 
   hpc:                         # Live HPC / SLURM tab (cockpit/hpc.py). `utwente` is remapped to hpc_host post-render.
     ssh_timeout: "ssh timed out (on UT network / EduVPN?)"

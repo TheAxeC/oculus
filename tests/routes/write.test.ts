@@ -20,7 +20,10 @@ const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line
 
 /** A collection file and a career file, at the hub paths config/sources.yml names. */
 const TASKS =
-    'title: Tasks\nschema:\n  - { field: title, type: text }\nentries:\n  - title: "Review the draft"\n    status: open\n    subtasks:\n      - { do: read it }\n\n  - title: "Another task"\n    status: open\n';
+    'title: Tasks\nschema:\n  - { field: title, type: text }\n  - { field: meta, type: metalist }\nentries:\n  - title: "Review the draft"\n    status: open\n    subtasks:\n      - { do: read it }\n\n  - title: "Another task"\n    status: open\n';
+
+const VENUES =
+    'title: Venues\nschema:\n  - { field: name, type: text }\n  - { field: id, type: text }\nvenues:\n  - name: Existing Venue\n    id: existing\n';
 
 const CAREER = 'title: Career\nhosts:\n  - { name: "Naesens", status: "warm" }\n';
 
@@ -37,6 +40,7 @@ function target(): WriteTarget {
     writeFileSync(join(folder, 'project.yml'), MANIFEST);
     for (const [path, body] of [
         ['tasks/tasks.yml', TASKS],
+        ['registries/venues.yml', VENUES],
         ['CAREER.yml', CAREER]
     ]) {
         const file = join(dir, path);
@@ -396,5 +400,82 @@ describe('the kinds the write endpoint learned in P1', () => {
             refused: [{ field: 'status', reason: 'promoted is not a career host status' }]
         });
         expect(readFileSync(join(into.hub, 'CAREER.yml'), 'utf8')).toBe(CAREER);
+    });
+
+    it('carries metalists through entry and new-entry writes', async () => {
+        const into = target();
+        const fields = { meta: [{ label: 'Owner', value: 'Axel' }] };
+        const edited = await handleWrite(
+            request({ kind: 'entry', collection: 'tasks', id: 'Review the draft', fields }),
+            TOKEN,
+            into
+        );
+        expect(await edited.json()).toEqual({ ok: true, changed: ['meta'], refused: [] });
+        expect(readFileSync(join(into.hub, 'tasks', 'tasks.yml'), 'utf8')).toContain(
+            '    meta:\n      - { label: Owner, value: "Axel" }'
+        );
+
+        const added = await handleWrite(
+            request({
+                kind: 'new-entry',
+                collection: 'tasks',
+                fields: { title: 'Metalist task', ...fields }
+            }),
+            TOKEN,
+            into
+        );
+        expect(await added.json()).toEqual({ ok: true, changed: ['entries'], refused: [] });
+        expect(readFileSync(join(into.hub, 'tasks', 'tasks.yml'), 'utf8')).toContain(
+            '  - title: Metalist task\n    meta:\n      - { label: Owner, value: "Axel" }'
+        );
+    });
+
+    it('requires a fresh non-empty id for new venues', async () => {
+        const missing = target();
+        const missingResponse = await handleWrite(
+            request({ kind: 'new-entry', collection: 'venues', fields: { name: 'Missing ID' } }),
+            TOKEN,
+            missing
+        );
+        expect(await missingResponse.json()).toEqual({
+            ok: true,
+            changed: [],
+            refused: [{ field: 'id', reason: 'a new entry needs a non-empty id' }]
+        });
+
+        const duplicate = target();
+        const duplicateResponse = await handleWrite(
+            request({
+                kind: 'new-entry',
+                collection: 'venues',
+                fields: { name: 'Another Venue', id: 'existing' }
+            }),
+            TOKEN,
+            duplicate
+        );
+        expect(await duplicateResponse.json()).toEqual({
+            ok: true,
+            changed: [],
+            refused: [{ field: 'id', reason: 'an entry with that id is already in the file' }]
+        });
+
+        const fresh = target();
+        const freshResponse = await handleWrite(
+            request({
+                kind: 'new-entry',
+                collection: 'venues',
+                fields: { name: 'Fresh Venue', id: 'fresh' }
+            }),
+            TOKEN,
+            fresh
+        );
+        expect(await freshResponse.json()).toEqual({
+            ok: true,
+            changed: ['venues'],
+            refused: []
+        });
+        expect(readFileSync(join(fresh.hub, 'registries', 'venues.yml'), 'utf8')).toContain(
+            '  - name: Fresh Venue\n    id: fresh'
+        );
     });
 });

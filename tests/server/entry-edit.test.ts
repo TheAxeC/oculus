@@ -54,6 +54,60 @@ const ENTRIES = [
     ''
 ].join('\n');
 
+describe('entry metalists', () => {
+    it('renders a new entry with a metalist as block flow maps', () => {
+        expect(
+            renderEntry(['title', 'meta'], 'title', {
+                title: 'A scheme',
+                meta: [{ label: 'Host', value: 'UT' }]
+            })
+        ).toBe('  - title: A scheme\n    meta:\n      - { label: Host, value: "UT" }');
+    });
+
+    it('replaces a metalist inside one entry and leaves the surrounding bytes alone', () => {
+        const source = [
+            'entries:',
+            '  - title: First',
+            '    meta:',
+            '      - { label: Host, value: Old }',
+            '    note: kept',
+            '',
+            'footer: after',
+            ''
+        ].join('\n');
+        const out = setEntryFields(source, 'title', 'First', {
+            meta: [{ label: 'Host', value: 'UT' }]
+        });
+        expect(out.refused).toEqual([]);
+        expect(out.text).toBe(
+            [
+                'entries:',
+                '  - title: First',
+                '    meta:',
+                '      - { label: Host, value: "UT" }',
+                '    note: kept',
+                '',
+                'footer: after',
+                ''
+            ].join('\n')
+        );
+    });
+
+    it('clears an existing metalist with an empty list', () => {
+        const source = [
+            'entries:',
+            '  - title: First',
+            '    meta:',
+            '      - { label: Host, value: Old }',
+            '    note: kept',
+            ''
+        ].join('\n');
+        const out = setEntryFields(source, 'title', 'First', { meta: [] });
+        expect(out.refused).toEqual([]);
+        expect(out.text).toBe('entries:\n  - title: First\n    note: kept\n');
+    });
+});
+
 const KEYED = [
     'schema:',
     '  - { field: key, type: text }',
@@ -578,20 +632,24 @@ describe.skipIf(!present)('every collection entry of the real hub, read only', (
         expect(wrong).toEqual([]);
     });
 
-    it('reads every id as the identity field, except where the entry carries its own key', () => {
+    it('reads every id as the identity field, except where the entry carries its own id or key', () => {
         const apart: string[] = [];
         for (const one of files) {
             for (const item of one.items) {
                 const held = item as Record<string, unknown>;
-                const id = typeof held.key === 'string' && held.key !== '' ? held.key : held.title;
+                const id =
+                    typeof held.id === 'string' && held.id !== ''
+                        ? held.id
+                        : typeof held.key === 'string' && held.key !== ''
+                          ? held.key
+                          : held.title;
                 if (id === held[one.ident]) continue;
                 apart.push(
                     `${one.file}: id ${String(id)} vs ${one.ident} ${String(held[one.ident])}`
                 );
-                // The id the reader makes is `key` when the entry has one (normalise.ts line 323),
-                // and the identity field is the schema's first; funding.yml puts `key` last, so the
-                // two differ there and every write resolves one to the other rather than assuming.
-                expect(typeof held.key).toBe('string');
+                // Registry collections keep an explicit `id` or `key`, while the identity field is
+                // the schema's first. Every write resolves the entity id to that field.
+                expect(typeof held.id === 'string' || typeof held.key === 'string').toBe(true);
             }
         }
         if (apart.length > 0)

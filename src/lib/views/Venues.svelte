@@ -1,0 +1,195 @@
+<script lang="ts">
+    // Layer 3, view. The venue catalogue: theme facets, journal cards and conference timing.
+    // Registry entities provide the display model while the matching collection provides editing.
+
+    import Pane from '$lib/ui/Pane.svelte';
+    import Search from '$lib/ui/Search.svelte';
+    import Toolbar from '$lib/ui/Toolbar.svelte';
+    import ToolButton from '$lib/ui/ToolButton.svelte';
+    import EntryForm from '$lib/views/shared/EntryForm.svelte';
+    import Facets from '$lib/views/venues/Facets.svelte';
+    import Ribbon from '$lib/views/venues/Ribbon.svelte';
+    import VenueCard from '$lib/views/venues/VenueCard.svelte';
+    import {
+        applyThemeFacets,
+        parseVenuesState,
+        realProjects,
+        themeFacets,
+        venueSearch,
+        venueUsers,
+        type VenuesState
+    } from '$lib/state/venues';
+    import { archiveDead, collectionOf, projects, venues } from '$lib/state/selectors.svelte';
+    import { t } from '$lib/state/text';
+    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
+    import type { ViewProps } from './registry';
+
+    let { instance }: ViewProps = $props();
+
+    const collection = $derived(collectionOf('venues'));
+    const allVenues = $derived(venues());
+    const allProjects = $derived(realProjects(projects(), archiveDead()));
+    const held = $derived(parseVenuesState(instanceState(instance.id)));
+    const facets = $derived(themeFacets(allVenues));
+    const shown = $derived(applyThemeFacets(venueSearch(allVenues, held.search), held.off));
+    const journals = $derived(shown.filter((venue) => venue.category === 'journal'));
+    const conferences = $derived(shown.filter((venue) => venue.category === 'conference'));
+    const todayMonth = new Date().getMonth() + 1;
+
+    let adding = $state(false);
+    let editing: string | null = $state(null);
+    let said = $state('');
+
+    function write(next: Partial<VenuesState>): void {
+        setInstanceState(instance.id, { ...held, ...next });
+    }
+
+    function toggleTheme(theme: string): void {
+        write({
+            off: held.off.includes(theme)
+                ? held.off.filter((item) => item !== theme)
+                : [...held.off, theme]
+        });
+    }
+
+    function entryFor(id: string) {
+        return collection?.entries.find((entry) => entry.id === id) ?? null;
+    }
+</script>
+
+{#snippet tools()}
+    <Toolbar label={t('collection.toolbar')}>
+        {#if collection?.schema !== undefined}
+            <ToolButton
+                label={t('col.add')}
+                title={t('col.add_tip')}
+                active={adding}
+                onclick={() => (adding = !adding)}
+            />
+        {/if}
+        <Search
+            value={held.search}
+            placeholder={t('col.search', t('views.venues'))}
+            oninput={(search) => write({ search })}
+        />
+    </Toolbar>
+{/snippet}
+
+<Pane title={t('views.venues')} toolbar={tools}>
+    <div class="venues" data-instance={instance.id}>
+        {#if adding && collection?.schema !== undefined}
+            <EntryForm
+                collection="venues"
+                schema={collection.schema}
+                entry={null}
+                onclose={() => (adding = false)}
+                onsaid={(words) => (said = words)}
+            />
+        {/if}
+
+        {#if said !== ''}
+            <p class="said">{said}</p>
+        {/if}
+
+        <Facets {facets} off={held.off} ontoggle={toggleTheme} />
+
+        {#if allVenues.length === 0}
+            <p class="empty">{@html t('col.ven_empty')}</p>
+        {:else}
+            {#if journals.length > 0}
+                <section>
+                    <ToolButton
+                        label={t('col.ven_journals', journals.length)}
+                        glyph="journals"
+                        active={held.journalsOpen}
+                        onclick={() => write({ journalsOpen: !held.journalsOpen })}
+                    />
+                    {#if held.journalsOpen}
+                        <div class="cards">
+                            {#each journals as venue (venue.id)}
+                                {@const use = venueUsers(venue, allProjects)}
+                                <VenueCard
+                                    {venue}
+                                    projects={use.projects}
+                                    concentrated={use.concentrated}
+                                    entry={entryFor(venue.id)}
+                                    schema={collection?.schema}
+                                    editing={editing === venue.id}
+                                    onedit={() =>
+                                        (editing = editing === venue.id ? null : venue.id)}
+                                    onsaid={(words) => (said = words)}
+                                />
+                            {/each}
+                        </div>
+                    {/if}
+                </section>
+            {/if}
+
+            {#if conferences.length > 0}
+                <section>
+                    <ToolButton
+                        label={t('col.ven_conferences', conferences.length)}
+                        glyph="conference"
+                        active={held.conferencesOpen}
+                        onclick={() => write({ conferencesOpen: !held.conferencesOpen })}
+                    />
+                    {#if held.conferencesOpen}
+                        <div class="timeline">
+                            <Ribbon venues={conferences} {todayMonth} />
+                        </div>
+                        <div class="cards">
+                            {#each conferences as venue (venue.id)}
+                                {@const use = venueUsers(venue, allProjects)}
+                                <VenueCard
+                                    {venue}
+                                    projects={use.projects}
+                                    concentrated={use.concentrated}
+                                    entry={entryFor(venue.id)}
+                                    schema={collection?.schema}
+                                    editing={editing === venue.id}
+                                    onedit={() =>
+                                        (editing = editing === venue.id ? null : venue.id)}
+                                    onsaid={(words) => (said = words)}
+                                />
+                            {/each}
+                        </div>
+                    {/if}
+                </section>
+            {/if}
+        {/if}
+    </div>
+</Pane>
+
+<style>
+    .venues {
+        min-width: 0;
+    }
+
+    .said {
+        margin: 8px 0;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
+    }
+
+    .empty {
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-md);
+    }
+
+    section {
+        margin-top: 12px;
+    }
+
+    .timeline {
+        margin-top: 8px;
+        overflow-x: auto;
+    }
+
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 10px;
+        align-items: start;
+        margin-top: 8px;
+    }
+</style>

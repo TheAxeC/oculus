@@ -13,7 +13,7 @@ import { describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Collection from '../../src/lib/views/Collection.svelte';
-import EntryForm from '../../src/lib/views/collection/EntryForm.svelte';
+import EntryForm from '../../src/lib/views/shared/EntryForm.svelte';
 import {
     engineDir,
     glyphCatalog,
@@ -235,6 +235,7 @@ function snapshot(): Snapshot {
 }
 
 receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
 
 /** The view as the instance of one collection's view id, with one saved state. */
 function html(view = 'events', state: Partial<CollectionState> = {}): string {
@@ -496,5 +497,23 @@ describe('the entry form', () => {
 
     it('offers no delete on the add form', () => {
         expect(form(null)).not.toContain(catalog['collection.form_delete']);
+    });
+
+    it('pre-fills metalist rows and offers the add-row control', () => {
+        const body = render(EntryForm, {
+            props: {
+                collection: 'events',
+                schema: SCHEMA,
+                entry: ENTRIES[0],
+                onclose: () => {},
+                onsaid: () => {}
+            }
+        }).body;
+        expect(body).toContain('data-metalist="meta"');
+        expect(body).toContain('value="When"');
+        expect(body).toContain('value="16 Feb 2027"');
+        expect(body).toContain('value="Where"');
+        expect(body).toContain(catalog['collection.meta_add']);
+        expect(body).toContain(catalog['collection.meta_remove']);
     });
 });

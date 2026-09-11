@@ -83,6 +83,7 @@ describe('the real registrations', () => {
             'status',
             'findings',
             'gallery',
+            'venues',
             'focus',
             'projects',
             'archive',
@@ -124,6 +125,15 @@ describe('the real registrations', () => {
         expect(collections.map((view) => view.id)).toEqual(COLLECTIONS);
         expect(new Set(collections.map((view) => view.component)).size).toBe(1);
         expect(collections.every((view) => view.listed !== false)).toBe(true);
+    });
+
+    it('registers Venues directly with its catalog label and venue glyph', () => {
+        expect(viewFor('venues')).toMatchObject({
+            id: 'venues',
+            label: 'views.venues',
+            glyph: 'views.venues_glyph'
+        });
+        expect(COLLECTIONS).not.toContain('venues');
     });
 
     it('keeps a collection in its first position when it is registered again', () => {

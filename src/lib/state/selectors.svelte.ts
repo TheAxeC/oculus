@@ -32,6 +32,7 @@ import type {
     GroupedSession,
     Id,
     Project,
+    Venue,
     Workspace
 } from '../data/model.ts';
 
@@ -174,6 +175,20 @@ export function projectOf(id: Id): Project | null {
 export function projects(): Project[] {
     const snapshot = portfolio();
     return snapshot === null ? [] : Object.values(snapshot.entities.projects);
+}
+
+/** Every venue in catalogue order, before the first snapshot an empty list. */
+export function venues(): Venue[] {
+    const snapshot = portfolio();
+    return snapshot === null ? [] : Object.values(snapshot.entities.venues);
+}
+
+/** Dead archive outcomes from the merged vocabulary. */
+export function archiveDead(): string[] {
+    const value = configMap().archive_dead;
+    return Array.isArray(value)
+        ? value.filter((item): item is string => typeof item === 'string')
+        : [];
 }
 
 /** The edit form as config/manifest-schema.yml describes it, in file order. */

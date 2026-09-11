@@ -4,7 +4,7 @@
 // hub's findings belong to the hub.
 //
 // The counts are pinned here, unlike the real hub's, because this folder does not grow: ten
-// manifests over the five tiers, the five registries, and the eight collection files. A count that
+// manifests over the five tiers, the five registries, and the eleven collection files. A count that
 // moves means the demo changed, which is the thing a test over a fixture is for.
 //
 // The browser layer serves a copy of this folder, so a finding it would raise is caught here, in
@@ -50,16 +50,19 @@ describe('the demo hub', () => {
         }).toEqual({ venues: 5, datasets: 3, programs: 3, domains: 3, funding: 2 });
     });
 
-    it('holds the eight collections', () => {
+    it('holds the eleven collections, including the three editable registries', () => {
         expect(Object.keys(snapshot.entities.collections).sort()).toEqual([
             'applications',
             'code',
             'collaborations',
+            'domains',
             'education',
             'events',
             'funding',
+            'programs',
             'statements',
-            'tasks'
+            'tasks',
+            'venues'
         ]);
     });
 

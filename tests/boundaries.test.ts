@@ -23,7 +23,8 @@ const LAYERS = ['data', 'server', 'state', 'ui', 'shell', 'views', 'themes'];
 //
 // `data/guards` joined `data/model` in the state row with Q1's one module for the four type guards
 // fifteen modules had each declared for themselves. It is the same kind of permission as the model:
-// pure, with no reader and no I/O in it.
+// pure, with no reader and no I/O in it. The model's own concern modules (`data/model-*`) are
+// reached through the facade only, which is why they are not listed here.
 //
 // The shell's row names the state modules the workbench is made of, one at a time: `state/drag`
 // joined `state/layout` and `state/ui` with the docking of O10b, since the one drag in progress is

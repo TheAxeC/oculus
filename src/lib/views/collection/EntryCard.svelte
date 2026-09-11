@@ -11,7 +11,7 @@
     import Chip from '$lib/ui/Chip.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import EntryForm from './EntryForm.svelte';
+    import EntryForm from '../shared/EntryForm.svelte';
     import Subtasks from '../shared/Subtasks.svelte';
     import {
         crossLinks,

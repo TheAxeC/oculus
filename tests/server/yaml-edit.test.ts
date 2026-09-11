@@ -82,6 +82,63 @@ describe('setting a scalar', () => {
     });
 });
 
+describe('setting a metalist', () => {
+    const source = [
+        'title: Things',
+        'meta:',
+        '  - { label: Scheme, value: Old }',
+        '  - { label: Host, value: UT }',
+        'after: kept',
+        ''
+    ].join('\n');
+
+    it('replaces the whole block and keeps the bytes around it', () => {
+        const out = setFields(source, {
+            meta: [
+                { label: 'Scheme', value: 'NWO Veni' },
+                { label: 'Stage', value: 'submitted' }
+            ]
+        });
+        expect(out.refused).toEqual([]);
+        expect(out.text).toBe(
+            [
+                'title: Things',
+                'meta:',
+                '  - { label: Scheme, value: "NWO Veni" }',
+                '  - { label: Stage, value: "submitted" }',
+                'after: kept',
+                ''
+            ].join('\n')
+        );
+    });
+
+    it('appends a metalist as block flow maps', () => {
+        const out = setFields('title: Things\nafter: kept\n', {
+            meta: [{ label: 'Scheme', value: 'NWO Veni' }]
+        });
+        expect(out.text).toBe(
+            'title: Things\nafter: kept\nmeta:\n  - { label: Scheme, value: "NWO Veni" }\n'
+        );
+    });
+
+    it('clears an existing metalist with an empty list', () => {
+        const out = setFields(source, { meta: [] });
+        expect(out.text).toBe('title: Things\nafter: kept\n');
+    });
+
+    it('refuses a list whose map contains a non-string value', () => {
+        const out = setFields(source, { meta: [{ label: 'Scheme', value: 3 }] });
+        expect(out.changed).toEqual([]);
+        expect(out.refused).toEqual([
+            {
+                field: 'meta',
+                reason: 'not a string, number, boolean, list of strings, metalist or null'
+            }
+        ]);
+        expect(out.text).toBe(source);
+    });
+});
+
 describe('setting a list', () => {
     it('keeps a flow list flow', () => {
         const out = setFields(DOC, { program: ['tensor', 'hcc'] });
