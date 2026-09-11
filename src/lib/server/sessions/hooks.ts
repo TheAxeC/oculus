@@ -99,7 +99,7 @@ export function patchPayload(payload: SessionsPayload, event: HookEvent): Sessio
             )
         }))
     }));
-    return { records, workspaces };
+    return { ...payload, records, workspaces };
 }
 
 /**

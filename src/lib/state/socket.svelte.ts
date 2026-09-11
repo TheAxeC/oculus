@@ -11,6 +11,7 @@ import { receive } from './entities.svelte.ts';
 import { setAscii, setCatalog, setGlyphs } from './text.ts';
 import { setAppearance } from './appearance.ts';
 import { setVocab } from './tones.ts';
+import { writeToken } from './writes.svelte.ts';
 import type { ConfigPayload, Message, Subscription } from '../data/model.ts';
 
 export type Status = 'connecting' | 'open' | 'closed';
@@ -61,8 +62,10 @@ export function disconnect(): void {
     if (current !== null) current.close();
 }
 
+// The token goes with the subscription rather than with each message: the server remembers which
+// socket carried it, and a socket without it reads every channel and writes to none (O17).
 function subscription(): Subscription {
-    return { type: 'subscribe', channels };
+    return { type: 'subscribe', channels, token: writeToken() };
 }
 
 function open(): void {

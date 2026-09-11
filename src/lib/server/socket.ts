@@ -3,6 +3,10 @@
 // one message from the page, the subscription. Nothing else a page sends is acted on; the write
 // side is O11's and goes over fetch, not over here.
 //
+// The one exception DESIGN.md's "The socket" names is terminal input: a page that carried the write
+// token in its subscribe message may also send `input` and `resize` on a `pty:` channel, which this
+// hands to server/pty/channel.ts. A socket without the token reads every channel and writes to none.
+//
 // The origin check is the read half of DESIGN.md's "Auth". The server binds 127.0.0.1, but any page
 // open in the browser can address 127.0.0.1, so a connection is refused unless its Origin names
 // this machine. A missing Origin is refused with the rest: a browser always sends one on a
@@ -15,10 +19,21 @@ import { WebSocketServer } from 'ws';
 import type { WebSocket } from 'ws';
 import { allowedOrigin } from './auth.ts';
 import type { Hub, Sink } from './channels.ts';
+import { CHANNEL_PREFIX } from './pty/channel.ts';
+import type { Subscription } from '../data/model.ts';
+
+/** What the socket needs of the terminals; server/pty/channel.ts's Terminals is the one there is. */
+export type TerminalSink = {
+    subscribed(sink: Sink, channels: string[], token: unknown): void;
+    inbound(sink: Sink, data: string): boolean;
+    remove(sink: Sink): void;
+};
 
 export type SocketOptions = {
     /** The path the upgrade must be on. An upgrade on any other path is left to its own handler. */
     path: string;
+    /** The terminals, when this process has any. Without it a `pty:` channel carries nothing. */
+    terminals?: TerminalSink;
 };
 
 export type Attached = {
@@ -26,8 +41,8 @@ export type Attached = {
     close(): void;
 };
 
-/** The channels of a subscribe message, or null when the message is not one. */
-export function subscriptionChannels(data: string): string[] | null {
+/** A subscribe message, with the write token when the page sent one, or null when it is not one. */
+export function parseSubscription(data: string): Subscription | null {
     let parsed: unknown;
     try {
         parsed = JSON.parse(data);
@@ -38,7 +53,16 @@ export function subscriptionChannels(data: string): string[] | null {
     const message = parsed as Record<string, unknown>;
     if (message.type !== 'subscribe' || !Array.isArray(message.channels)) return null;
     if (!message.channels.every((channel) => typeof channel === 'string')) return null;
-    return message.channels as string[];
+    return {
+        type: 'subscribe',
+        channels: message.channels as string[],
+        token: typeof message.token === 'string' ? message.token : undefined
+    };
+}
+
+/** The channels of a subscribe message, or null when the message is not one. */
+export function subscriptionChannels(data: string): string[] | null {
+    return parseSubscription(data)?.channels ?? null;
 }
 
 export function attachSocket(server: Server, hub: Hub, options: SocketOptions): Attached {
@@ -65,12 +89,27 @@ export function attachSocket(server: Server, hub: Hub, options: SocketOptions): 
                 }),
             close: () => ws.close()
         };
+        const drop = (): void => {
+            options.terminals?.remove(sink);
+            hub.remove(sink);
+        };
         ws.on('message', (data: unknown) => {
-            const channels = subscriptionChannels(String(data));
-            if (channels !== null) hub.subscribe(sink, channels);
+            const text = String(data);
+            const subscription = parseSubscription(text);
+            if (subscription !== null) {
+                // A terminal channel is subscribed by the terminals, which send the scrollback
+                // first; every other channel is the Hub's own and gets its latest message here.
+                const plain = subscription.channels.filter(
+                    (channel) => !channel.startsWith(CHANNEL_PREFIX)
+                );
+                if (plain.length > 0) hub.subscribe(sink, plain);
+                options.terminals?.subscribed(sink, subscription.channels, subscription.token);
+                return;
+            }
+            options.terminals?.inbound(sink, text);
         });
-        ws.on('close', () => hub.remove(sink));
-        ws.on('error', () => hub.remove(sink));
+        ws.on('close', drop);
+        ws.on('error', drop);
     });
 
     return {

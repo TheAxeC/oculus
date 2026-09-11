@@ -2,7 +2,7 @@
 // Composition only, so the order of the two steps is the whole content of this file.
 
 import { join } from 'node:path';
-import type { Project, SessionsPayload, Snapshot } from '../../data/model.ts';
+import type { Project, SessionsPayload, Snapshot, Terminal } from '../../data/model.ts';
 import { group, type ProjectFolder } from './group.ts';
 import { HookStore, mergeHooks, sharedHookStore } from './hooks.ts';
 import { defaultOverridesPath } from './overrides.ts';
@@ -20,6 +20,8 @@ export type SessionsOptions = ScanOptions & {
     attachedIds?: string[];
     /** hooks.ts's HookStore to merge each record's `hook` field from; O12's shared one when absent. */
     hooks?: HookStore;
+    /** The tmux terminals of O17, which the payload carries so the page sees one the moment it exists. */
+    terminals?: Terminal[];
 };
 
 // The payload's own shape lives in data/model.ts with the rest of the wire, since the `sessions`
@@ -51,5 +53,5 @@ export function sessions(options: SessionsOptions = {}): SessionsPayload {
         options.attachedIds ?? [],
         options.overridesPath ?? defaultOverridesPath()
     );
-    return { records, workspaces };
+    return { records, workspaces, terminals: options.terminals ?? [] };
 }

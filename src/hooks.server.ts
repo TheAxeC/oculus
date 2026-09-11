@@ -1,5 +1,5 @@
 import { engineDir, loadConfig, textCatalog } from '$lib/data/sources/config';
-import { mintToken } from '$lib/server/auth';
+import { mintToken, publishToken } from '$lib/server/auth';
 import type { Handle } from '@sveltejs/kit';
 
 // The write token of DESIGN.md's "Auth", minted once when this module loads and handed to every
@@ -8,6 +8,10 @@ import type { Handle } from '@sveltejs/kit';
 // a separate module graph and need no token of their own. A restarted dev server mints a new one,
 // which the page notices as a 403 and answers by reloading its data.
 const token = mintToken();
+// The socket is a separate module graph and cannot import this one, so the token is put on the
+// process-wide bridge server/auth.ts holds. It is what says a subscribe message came from this
+// page, and therefore what lets that socket send terminal input (O17).
+publishToken(token);
 
 // The route renders in the browser, so the served HTML is a shell. The document title is the one
 // string that has to be in it before the app starts, and it comes from the catalog like every other

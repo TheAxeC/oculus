@@ -448,10 +448,15 @@ export type Message = {
     payload: unknown;
 };
 
-/** The one message a client sends: the channels it wants. */
+/**
+ * The subscribe message a client sends: the channels it wants, and the write token when the page has
+ * one. A socket that carried the token may send terminal input on a `pty:` channel; a socket without
+ * it reads every channel and writes to none (DESIGN.md, "Auth").
+ */
 export type Subscription = {
     type: 'subscribe';
     channels: string[];
+    token?: string;
 };
 
 /** The payload of the `config` channel: the merged map, the flat catalog, and what was wrong. */
@@ -644,10 +649,59 @@ export type Workspace = {
     areas: Area[];
 };
 
-/** The payload of the `sessions` channel: every record and the tree they group into. */
+/** The payload of the `sessions` channel: every record, the tree they group into, the terminals. */
 export type SessionsPayload = {
     records: SessionRecord[];
     workspaces: Workspace[];
+    /** Every tmux session oculus started, so a terminal appears on the page as soon as it exists. */
+    terminals: Terminal[];
+};
+
+// ------------------------------------------------------------------ terminals
+// The tmux side of DESIGN.md's "PTY": one record per tmux session oculus started, and the three
+// messages the `pty:<id>` channel carries. JSON-safe like everything above, so the bytes of a pane
+// travel as base64 rather than as a string that a lone surrogate could break.
+
+/** What a terminal pane runs (DESIGN.md, decision of 2026-09-10 on the three things it runs). */
+export type TerminalKind = 'claude' | 'codex' | 'shell';
+
+/** One tmux session oculus started, as `tmux list-sessions` reports it. */
+export type Terminal = {
+    /** The session name without the `oculus-` prefix; the `pty:<id>` channel is named from it. */
+    id: string;
+    /** What to call it on the page. The id when the starter named nothing. */
+    name: string;
+    kind: TerminalKind;
+    /** The pane's current directory. */
+    cwd: string;
+    /** The pane's current command, which is what tmux reports is running right now. */
+    command: string;
+    /** The pane's process id, for a page that wants to show it. Zero when tmux reported none. */
+    pid: number;
+    /** When the session was created, as an ISO instant. */
+    created: string;
+    /** Whether any client (oculus or a terminal window) is attached to the tmux session. */
+    attached: boolean;
+};
+
+/** The payload of a `pty:<id>` message: a chunk of pane output, or the scrollback, as base64. */
+export type PtyPayload = {
+    bytes: string;
+};
+
+/** Keystrokes from the page, as base64 of the UTF-8 bytes xterm.js produced. */
+export type TerminalInput = {
+    type: 'input';
+    channel: string;
+    bytes: string;
+};
+
+/** The page's terminal was resized, so the tmux window follows it. */
+export type TerminalResize = {
+    type: 'resize';
+    channel: string;
+    cols: number;
+    rows: number;
 };
 
 // ------------------------------------------------------------------ git

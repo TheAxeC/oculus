@@ -8,8 +8,17 @@
 // queued; the message is held as that channel's pending message, overwriting whatever was pending
 // for the same channel, and goes out when the send completes. A slow page sees the newest state and
 // never a backlog.
+//
+// That rule is right for a state channel, where the newest payload is the whole truth, and wrong for
+// a byte stream, where an overwritten message is output the terminal never shows again. A channel
+// may therefore name how two of its messages combine, which is what the `pty:` channels of O17 do:
+// their held chunk and the next one are concatenated rather than replaced, so a page that falls
+// behind sees every byte, late, rather than a hole.
 
 import type { Message } from '../data/model.ts';
+
+/** How a channel's held message and its next one combine when a sink is behind. */
+export type Merge = (held: Message, next: Message) => Message;
 
 /** A client, as this module needs it: something a text can be sent to and that can be closed. */
 export type Sink = {
@@ -30,6 +39,7 @@ export class Hub {
     /** The current message of every channel that has one. */
     #latest = new Map<string, Message>();
     #subscribers = new Map<Sink, Subscriber>();
+    #merges = new Map<string, Merge>();
 
     /** The channel's version: 0 before anything is published on it. */
     version(channel: string): number {
@@ -57,18 +67,33 @@ export class Hub {
     /**
      * Add channels to a sink's subscription and send it the current message of each named channel
      * that has one. A sink that subscribes twice keeps the channels of both calls.
+     *
+     * `replay` is false for a terminal channel of O17: its current message is the previous chunk of
+     * pane output, which the scrollback that module sends already holds, so replaying it would print
+     * the same bytes twice. Every other caller wants the state channel's latest, which is the
+     * default.
      */
-    subscribe(sink: Sink, channels: string[]): void {
+    subscribe(sink: Sink, channels: string[], replay: boolean = true): void {
         let subscriber = this.#subscribers.get(sink);
         if (subscriber === undefined) {
             subscriber = { channels: new Set(), sending: false, pending: new Map() };
             this.#subscribers.set(sink, subscriber);
         }
         for (const channel of channels) subscriber.channels.add(channel);
+        if (!replay) return;
         for (const channel of channels) {
             const message = this.#latest.get(channel);
             if (message !== undefined) this.#deliver(sink, subscriber, message);
         }
+    }
+
+    /**
+     * Say how two messages of one channel combine for a sink that is behind. Null restores the
+     * default, which is that the newer message replaces the older one.
+     */
+    merge(channel: string, merge: Merge | null): void {
+        if (merge === null) this.#merges.delete(channel);
+        else this.#merges.set(channel, merge);
     }
 
     /** Store a payload as the channel's current message and send it to that channel's subscribers. */
@@ -88,7 +113,10 @@ export class Hub {
 
     #deliver(sink: Sink, subscriber: Subscriber, message: Message): void {
         if (subscriber.sending) {
-            subscriber.pending.set(message.channel, message);
+            const held = subscriber.pending.get(message.channel);
+            const merge = this.#merges.get(message.channel);
+            const next = held === undefined || merge === undefined ? message : merge(held, message);
+            subscriber.pending.set(message.channel, next);
             return;
         }
         subscriber.sending = true;

@@ -79,7 +79,7 @@ export function workspace(key: string, areas: Area[], over: Partial<Workspace> =
 /** The `sessions` payload: the tree, and the records flattened out of it in the tree's order. */
 export function payload(workspaces: Workspace[]): SessionsPayload {
     const records = workspaces.flatMap((one) => one.areas.flatMap((each) => each.sessions));
-    return { records, workspaces };
+    return { records, workspaces, terminals: [] };
 }
 
 /** One workspace's git state, clean unless the case says otherwise. */

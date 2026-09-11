@@ -158,6 +158,7 @@ function recording(): { sink: Sink; got: Message[] } {
 function announce(hub: Hub, roots: string[]): void {
     const payload: SessionsPayload = {
         records: [],
+        terminals: [],
         workspaces: roots.map((root) => ({
             key: root,
             name: root.split(sep).pop() ?? root,
@@ -198,7 +199,7 @@ describe('rootsOf', () => {
             workspaces: [workspace('/a'), workspace(''), workspace('/b'), workspace('/a')]
         } as unknown as SessionsPayload;
         expect(rootsOf(payload)).toEqual(['/a', '/b']);
-        expect(rootsOf({ records: [], workspaces: [] })).toEqual([]);
+        expect(rootsOf({ records: [], workspaces: [], terminals: [] })).toEqual([]);
     });
 });
 

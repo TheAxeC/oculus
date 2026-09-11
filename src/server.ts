@@ -10,6 +10,7 @@ import { Hub } from './lib/server/channels.ts';
 import { projectFolders } from './lib/server/sessions/index.ts';
 import type { ProjectFolder } from './lib/server/sessions/group.ts';
 import { bindHookHub } from './lib/server/sessions/hooks.ts';
+import { Terminals, bindTerminals } from './lib/server/pty/channel.ts';
 import { attachSocket } from './lib/server/socket.ts';
 import { watchGit } from './lib/server/watch/git.ts';
 import { watchPortfolio } from './lib/server/watch/portfolio.ts';
@@ -26,7 +27,13 @@ const { handler } = (await import(built)) as { handler: Handler };
 
 const server = createServer(handler);
 const hub = new Hub();
-attachSocket(server, hub, { path: '/ws' });
+// The terminals of O17. Nothing runs until a page attaches to one: the control client is opened at
+// the first attach, and until then the only tmux call is the list poll that feeds the sessions
+// payload. The bridge is what lets the terminal endpoint, which is in the built app's module graph,
+// nudge this list the moment it starts or stops one.
+const terminals = new Terminals(hub);
+bindTerminals(terminals);
+attachSocket(server, hub, { path: '/ws', terminals });
 // The built app's routes (routes/api/hook) are a separate module graph from this plain import, so
 // binding the real Hub onto the process-wide bridge is what lets a hook republish immediately
 // instead of waiting for the sessions watcher's next rescan; see sessions/hooks.ts's own comment.
@@ -44,7 +51,8 @@ function folders(): ProjectFolder[] {
 const sessions = watchSessions(hub, {
     cache: local.sessionsCache,
     overrides: local.sessionsOverrides,
-    projectFolders: folders
+    projectFolders: folders,
+    terminals
 });
 // Started after the sessions watcher, so its subscription is answered with the first scan at once.
 const git = watchGit(hub);
@@ -53,6 +61,8 @@ server.on('close', () => {
     git.close();
     sessions.close();
     portfolio.close();
+    bindTerminals(null);
+    terminals.close();
 });
 
 server.listen(local.port, '127.0.0.1', () => {

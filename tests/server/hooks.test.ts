@@ -145,7 +145,7 @@ describe('patchPayload', () => {
     it("replaces one record's hook and leaves every other record's object the same", () => {
         const a = record('a') as SessionRecord;
         const b = record('b') as SessionRecord;
-        const payload: SessionsPayload = { records: [a, b], workspaces: [] };
+        const payload: SessionsPayload = { records: [a, b], workspaces: [], terminals: [] };
         const event: HookEvent = { session: 'a', event: 'stop', at: new Date(NOW).toISOString() };
         const patched = patchPayload(payload, event);
         expect(patched.records.find((one) => one.id === 'a')?.hook).toEqual(event);
@@ -155,7 +155,7 @@ describe('patchPayload', () => {
     it('marks a live record idle on a Stop, and leaves an ended one as it was', () => {
         const live = { ...record('a'), live: true, state: 'working' } as SessionRecord;
         const ended = { ...record('b'), live: false, state: 'ended' } as SessionRecord;
-        const payload: SessionsPayload = { records: [live, ended], workspaces: [] };
+        const payload: SessionsPayload = { records: [live, ended], workspaces: [], terminals: [] };
         const at = new Date(NOW).toISOString();
         const onLive = patchPayload(payload, { session: 'a', event: 'stop', at });
         expect(onLive.records.find((one) => one.id === 'a')?.state).toBe('idle');
@@ -172,7 +172,7 @@ describe('patchPayload', () => {
 
     it("leaves the payload untouched when it holds no record for the event's session", () => {
         const a = record('a') as SessionRecord;
-        const payload: SessionsPayload = { records: [a], workspaces: [] };
+        const payload: SessionsPayload = { records: [a], workspaces: [], terminals: [] };
         const event: HookEvent = {
             session: 'gone',
             event: 'stop',

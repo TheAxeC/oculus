@@ -20,7 +20,7 @@
 import { watch } from 'node:fs';
 import { basename, dirname } from 'node:path';
 import type { FSWatcher } from 'node:fs';
-import type { SessionRecord, SessionsPayload } from '../../data/model.ts';
+import type { SessionRecord, SessionsPayload, Terminal } from '../../data/model.ts';
 import type { Hub } from '../channels.ts';
 import { sessions } from '../sessions/index.ts';
 import { defaultStore } from '../sessions/transcripts.ts';
@@ -36,6 +36,12 @@ export const DEBOUNCE = 500;
 export const LIVENESS = 15000;
 export const WINDOW_DAYS = 2;
 export const MAX_SESSIONS = 40;
+
+/** What the watcher needs of server/pty/channel.ts's Terminals: the list, and when it changed. */
+export type TerminalSource = {
+    list(): Terminal[];
+    onChange(listener: () => void): () => void;
+};
 
 export type SessionsWatchOptions = {
     /** The Claude Code transcript store; O12's default when absent. */
@@ -61,6 +67,12 @@ export type SessionsWatchOptions = {
     debounce?: number;
     /** Milliseconds between liveness re-checks; 0 turns the re-check off. */
     liveness?: number;
+    /**
+     * The tmux terminals of O17. The list is read here at every rescan and the watcher republishes
+     * whenever the source says it moved, so a terminal started anywhere appears on the page without
+     * the page asking. Absent in a process that has no terminals, where the payload carries none.
+     */
+    terminals?: TerminalSource;
     /** What the Claude liveness check asks of the system; stubbed by every test. */
     probe?: Probe;
     /** What the Codex liveness check asks of the system; stubbed by every test. */
@@ -107,7 +119,8 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Wat
             windowDays: options.windowDays ?? WINDOW_DAYS,
             maxSessions: options.maxSessions ?? MAX_SESSIONS,
             probe: options.probe,
-            codexProbe: options.codexProbe
+            codexProbe: options.codexProbe,
+            terminals: options.terminals?.list() ?? []
         });
 
     const publish = (payload: SessionsPayload): void => {
@@ -173,6 +186,9 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Wat
     };
 
     rescan();
+    // A terminal starting, stopping or being renamed is a change to the payload and nothing under
+    // the three stores moved, so this handle is what carries it to every open page.
+    const offTerminals = options.terminals?.onChange(() => queue()) ?? null;
     // The default paths are resolved here rather than held as constants because O12 resolves them
     // at the call, so a process whose home directory differs sees its own three directories.
     open(options.store ?? defaultStore());
@@ -190,6 +206,7 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Wat
     return {
         close(): void {
             closed = true;
+            if (offTerminals !== null) offTerminals();
             if (timer !== null) clearTimeout(timer);
             timer = null;
             if (ticker !== null) clearInterval(ticker);

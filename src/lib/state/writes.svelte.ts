@@ -25,6 +25,14 @@ export function setToken(next: string): void {
     token = typeof next === 'string' ? next : '';
 }
 
+/**
+ * The token, for the one reader that is not a fetch: the socket sends it with its subscription, so
+ * that a page which may write a manifest may also type into a terminal (O17).
+ */
+export function writeToken(): string {
+    return token;
+}
+
 /** Whether a write is in flight. */
 export function pending(): boolean {
     return state.pending > 0;
