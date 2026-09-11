@@ -20,7 +20,7 @@ const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line
 
 /** A collection file and a career file, at the hub paths config/sources.yml names. */
 const TASKS =
-    'title: Tasks\nschema:\n  - { field: title, type: text }\nentries:\n  - title: "Review the draft"\n    status: open\n    subtasks:\n      - { do: read it }\n';
+    'title: Tasks\nschema:\n  - { field: title, type: text }\nentries:\n  - title: "Review the draft"\n    status: open\n    subtasks:\n      - { do: read it }\n\n  - title: "Another task"\n    status: open\n';
 
 const CAREER = 'title: Career\nhosts:\n  - { name: "Naesens", status: "warm" }\n';
 
@@ -289,6 +289,12 @@ const KINDS: Record<string, unknown> = {
     'subtask-add': { kind: 'subtask-add', target: { id: 'alpha' }, fields: { do: 'write it' } },
     host: { kind: 'host', name: 'Naesens', status: 'candidate' },
     'new-entry': { kind: 'new-entry', collection: 'tasks', fields: { title: 'A new task' } },
+    reorder: {
+        kind: 'reorder',
+        collection: 'tasks',
+        order: ['Another task', 'Review the draft']
+    },
+    'delete-entry': { kind: 'delete-entry', collection: 'tasks', id: 'Review the draft' },
     'new-idea': { kind: 'new-idea', fields: { id: 'a-new-idea', title: 'A new idea' } }
 };
 
@@ -299,6 +305,8 @@ const MALFORMED: Record<string, unknown> = {
     'subtask-add': { kind: 'subtask-add', target: { id: 'alpha' }, fields: { do: '   ' } },
     host: { kind: 'host', name: 'Naesens', status: 42 },
     'new-entry': { kind: 'new-entry', collection: 42, fields: {} },
+    reorder: { kind: 'reorder', collection: 'tasks', order: [42] },
+    'delete-entry': { kind: 'delete-entry', collection: 'tasks', id: 42 },
     'new-idea': { kind: 'new-idea', fields: { title: 'no id' } }
 };
 
@@ -363,7 +371,12 @@ describe('the kinds the write endpoint learned in P1', () => {
                 { kind: 'new-entry', collection: 'nonesuch', fields: { title: 'x' } },
                 'no collection nonesuch'
             ],
-            [{ kind: 'host', name: 'Nobody', status: 'warm' }, 'no host named Nobody']
+            [{ kind: 'host', name: 'Nobody', status: 'warm' }, 'no host named Nobody'],
+            [{ kind: 'reorder', collection: 'nonesuch', order: ['x'] }, 'no collection nonesuch'],
+            [
+                { kind: 'delete-entry', collection: 'tasks', id: 'Nobody' },
+                'no entry Nobody in tasks'
+            ]
         ];
         for (const [body, error] of cases) {
             const response = await handleWrite(request(body), TOKEN, into);

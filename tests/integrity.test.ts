@@ -77,8 +77,13 @@ function derivedCounts(): Record<string, number> {
             listKey
         );
     }
-    // A collection whose key names a registry is that registry; the rest are the generic collections.
-    counts.collections = config.collections.filter((file) => !(file.key in REGISTRY_LISTS)).length;
+    // A collection whose key names a registry is that registry, with one exception: funding/funding.yml
+    // is read twice on purpose, as the eleven scheme entities and as the collection the Funding view
+    // draws, so it is counted here as well as in the registries above.
+    const registryOnly = Object.keys(REGISTRY_LISTS).filter((key) => key !== 'funding');
+    counts.collections = config.collections.filter(
+        (file) => !registryOnly.includes(file.key)
+    ).length;
     return counts;
 }
 

@@ -220,6 +220,8 @@ text:
     # needs its two keys added here and nowhere else.
     statements: "Statements"
     statements_glyph: "draft"
+    funding: "Funding"
+    funding_glyph: "funding"
     events: "Talks & Events"
     events_glyph: "events"
     education: "Education & Service"
@@ -271,6 +273,34 @@ text:
     search: "Filter the entries"
     status: "Filter by status"
     empty: "No entry matches the filter."
+    # The words the cockpit kept in its scripts rather than in its catalog: the entry form, the
+    # cross-links, the links, and the two cards that are joined from the projects rather than read
+    # from the file (funding's "no scheme" aggregate, code's coverage of the portfolio).
+    related: "Named by"
+    links: "Links"
+    no_funding: "No funding"
+    no_funding_sub: "Active and manuscript projects with no scheme attached."
+    coverage: "Code coverage"
+    coverage_deposited: "deposited"
+    coverage_anon: "review-anon"
+    coverage_none: "no deposit"
+    form_add_title: "New entry"
+    form_edit_title: "Edit entry"
+    form_save: "Save"
+    form_cancel: "Cancel"
+    form_delete: "Delete"
+    form_delete_confirm: "Delete this entry from the file?"
+    form_none: "none"
+    form_needs: "{0} is what the entry is found by; it cannot be empty."
+    tags_hint: "comma separated"
+    # Glyph names, not characters - each value is a name in the `glyphs:` map of glyphs.yml.
+    grip_glyph: "grip"
+    pin_glyph: "pin"
+    edit_glyph: "edit"
+    save_glyph: "check"
+    delete_glyph: "cross"
+    folder_glyph: "folder"
+    link_glyph: "link"
 
   project:                     # oculus: one project as its own tab - its card, its documents, its sessions.
     documents: "Documents"

@@ -15,6 +15,8 @@ import {
     createEntry,
     createIdea,
     insideHub,
+    removeEntry,
+    reorderCollection,
     writeEntry,
     writeHost,
     writeManifest,
@@ -216,6 +218,65 @@ describe('writing one collection entry', () => {
             refused: []
         });
         expect(writeEntry(root, configFor(), 'tasks', 'Nobody', { status: 'done' })).toEqual({
+            found: false,
+            changed: [],
+            refused: []
+        });
+        expect(tasksOf(root)).toBe(TASKS);
+    });
+});
+
+describe('reordering and deleting entries of a collection', () => {
+    const TWO = TASKS.replace(
+        'entries:\n',
+        'entries:\n  - title: "Another task"\n    status: open\n\n'
+    );
+
+    it('writes the entries in the order the identity values name', () => {
+        const root = wider();
+        writeFileSync(join(root, 'tasks', 'tasks.yml'), TWO);
+        const out = reorderCollection(root, configFor(), 'tasks', [
+            'Review the draft',
+            'Another task'
+        ]);
+        expect(out.changed).toEqual(['entries']);
+        const after = tasksOf(root);
+        expect(after.indexOf('Review the draft')).toBeLessThan(after.indexOf('Another task'));
+        expect(after).toContain('      - { do: read it }');
+    });
+
+    it('refuses an order that does not name every entry, and an unknown collection', () => {
+        const root = wider();
+        writeFileSync(join(root, 'tasks', 'tasks.yml'), TWO);
+        const out = reorderCollection(root, configFor(), 'tasks', ['Review the draft']);
+        expect(out.changed).toEqual([]);
+        expect(out.refused).toEqual([
+            { field: 'entries', reason: 'the order does not name every entry exactly once' }
+        ]);
+        expect(tasksOf(root)).toBe(TWO);
+        expect(reorderCollection(root, configFor(), 'nonesuch', ['x'])).toEqual({
+            found: false,
+            changed: [],
+            refused: []
+        });
+    });
+
+    it('takes one entry out of its file, by the id the reader gave it', () => {
+        const root = wider();
+        writeFileSync(join(root, 'tasks', 'tasks.yml'), TWO);
+        const out = removeEntry(root, configFor(), 'tasks', 'Another task');
+        expect(out.changed).toEqual(['entries']);
+        expect(tasksOf(root)).toBe(TASKS);
+    });
+
+    it('says not found for an entry and a collection the hub does not hold', () => {
+        const root = wider();
+        expect(removeEntry(root, configFor(), 'tasks', 'Nobody')).toEqual({
+            found: false,
+            changed: [],
+            refused: []
+        });
+        expect(removeEntry(root, configFor(), 'nonesuch', 'x')).toEqual({
             found: false,
             changed: [],
             refused: []

@@ -18,9 +18,11 @@ import { describe, expect, it } from 'vitest';
 import {
     addSubtask,
     appendEntry,
+    deleteEntry,
     deleteSubtask,
     entryRange,
     renderEntry,
+    reorderEntries,
     setEntryFields,
     setHostStatus,
     setSubtask,
@@ -241,6 +243,79 @@ describe('appending an entry', () => {
         const out = appendEntry(ENTRIES, 'records', '  - title: x');
         expect(out.text).toBe(ENTRIES);
         expect(out.refused).toEqual([{ field: 'records', reason: 'the file has no records key' }]);
+    });
+});
+
+describe('putting the entries in another order', () => {
+    it('moves whole blocks, keeping every byte inside them', () => {
+        const out = reorderEntries(ENTRIES, 'title', ['Second', 'First thing']);
+        expect(out.changed).toEqual(['entries']);
+        expect(out.refused).toEqual([]);
+        expect(out.text).toContain('  - title: Second\n    status: planned\n');
+        expect(out.text).toContain('    note: plain      # a trailing comment');
+        expect(out.text).toContain('      - { do: write it, deadline: 2026-09-20 }');
+        const before = parse(ENTRIES) as { entries: unknown[] };
+        const after = parse(out.text) as { entries: unknown[] };
+        expect(after.entries).toEqual([before.entries[1], before.entries[0]]);
+        expect(out.text.endsWith('footer: "after the list"\n')).toBe(true);
+    });
+
+    it('leaves the file alone when the order is the one it already has', () => {
+        const out = reorderEntries(ENTRIES, 'title', ['First thing', 'Second']);
+        expect(out).toEqual({ text: ENTRIES, changed: [], refused: [] });
+    });
+
+    it('refuses an order that does not name every entry exactly once', () => {
+        for (const order of [['Second'], ['Second', 'Second'], ['Second', 'Nobody']]) {
+            const out = reorderEntries(ENTRIES, 'title', order);
+            expect(out.text).toBe(ENTRIES);
+            expect(out.changed).toEqual([]);
+            expect(out.refused).toEqual([
+                { field: 'entries', reason: 'the order does not name every entry exactly once' }
+            ]);
+        }
+    });
+
+    it('reorders a file whose entries are addressed by a key', () => {
+        const two = KEYED.replace(
+            '  - key: amir\n',
+            '  - key: vens\n    title: "Celine Vens"\n  - key: amir\n'
+        );
+        const out = reorderEntries(two, 'key', ['amir', 'vens']);
+        expect(out.changed).toEqual(['entries']);
+        expect(
+            (parse(out.text) as { entries: { key: string }[] }).entries.map((e) => e.key)
+        ).toEqual(['amir', 'vens']);
+    });
+});
+
+describe('deleting an entry', () => {
+    it("takes the entry's own lines out and leaves the rest of the file", () => {
+        const out = deleteEntry(ENTRIES, 'title', 'First thing');
+        expect(out.changed).toEqual(['entries']);
+        expect(out.text).not.toContain('First thing');
+        expect(out.text).not.toContain('do: write it');
+        expect(parse(out.text)).toEqual(
+            applied(ENTRIES, (data) => {
+                (data.entries as unknown[]).splice(0, 1);
+            })
+        );
+        expect(out.text.endsWith('footer: "after the list"\n')).toBe(true);
+    });
+
+    it('takes the last entry out as well, and refuses an entry the file does not hold', () => {
+        const out = deleteEntry(ENTRIES, 'title', 'Second');
+        expect(out.changed).toEqual(['entries']);
+        expect(parse(out.text)).toEqual(
+            applied(ENTRIES, (data) => {
+                (data.entries as unknown[]).splice(1, 1);
+            })
+        );
+        const gone = deleteEntry(ENTRIES, 'title', 'Nobody');
+        expect(gone.text).toBe(ENTRIES);
+        expect(gone.refused).toEqual([
+            { field: 'entries', reason: 'the entry is not in the file' }
+        ]);
     });
 });
 

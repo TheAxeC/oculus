@@ -98,6 +98,7 @@ describe('the real registrations', () => {
             'changes',
             'agents',
             'statements',
+            'funding',
             'events',
             'education',
             'applications',
@@ -110,6 +111,7 @@ describe('the real registrations', () => {
     it('registers the one collection component under every collection key of sources.yml', () => {
         expect(COLLECTIONS).toEqual([
             'statements',
+            'funding',
             'events',
             'education',
             'applications',

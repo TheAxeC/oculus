@@ -13,6 +13,7 @@ import { describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Collection from '../../src/lib/views/Collection.svelte';
+import EntryForm from '../../src/lib/views/collection/EntryForm.svelte';
 import {
     engineDir,
     glyphCatalog,
@@ -25,7 +26,7 @@ import { setVocab, statusTone } from '../../src/lib/state/tones.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { CollectionState } from '../../src/lib/state/collection.ts';
-import type { Entry, Relations, SchemaField, Snapshot } from '../../src/lib/data/model.ts';
+import type { Entry, Project, Relations, SchemaField, Snapshot } from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout.ts';
 
 const { config } = loadConfig(engineDir());
@@ -82,13 +83,116 @@ const ENTRIES: Entry[] = [
     entry(2, 'A pitch', { status: 'upcoming', deadline: '2030-01-01' })
 ];
 
+/** A project as the snapshot holds it, with the fields the joins on a card read. */
+function project(id: string, over: Partial<Project> = {}): Project {
+    return {
+        id,
+        tier: 'active',
+        title: id,
+        chips: [],
+        results: [],
+        ideas: [],
+        waitingOn: [],
+        followups: [],
+        subtasks: [],
+        relatedIds: [],
+        fundingIds: [],
+        datasetIds: [],
+        programIds: [],
+        domainIds: [],
+        collaborators: [],
+        docs: [],
+        folder: `projects/active/${id}`,
+        file: `/hub/projects/active/${id}/project.yml`,
+        ...over
+    };
+}
+
+const PROJECTS: Record<string, Project> = {
+    alpha: project('alpha', {
+        type: 'active',
+        short: 'Alpha',
+        fundingIds: ['FAIR'],
+        codeAvailability: { status: 'deposited' }
+    }),
+    beta: project('beta', { type: 'manuscript' })
+};
+
+/** The funding file: a schema, one scheme with a key and a statement, and a pinned entry. */
+const FUNDING_SCHEMA: SchemaField[] = [
+    { field: 'title', type: 'text', required: true },
+    { field: 'status', type: 'select', options: ['awarded', 'submitted'] },
+    { field: 'note', type: 'textarea' },
+    { field: 'statement', type: 'textarea' },
+    { field: 'url', type: 'text' },
+    { field: 'key', type: 'text' }
+];
+
+const FUNDING_ENTRIES: Entry[] = [
+    {
+        id: 'later',
+        title: 'A later scheme',
+        fields: {
+            title: 'A later scheme',
+            status: 'submitted',
+            url: 'https://example.org/call'
+        },
+        file: '/hub/funding/funding.yml',
+        index: 0
+    },
+    {
+        id: 'FAIR',
+        title: 'A funded program',
+        fields: {
+            title: 'A funded program',
+            status: 'awarded',
+            pin: true,
+            note: 'what it **is**',
+            statement: 'This work was funded by FAIR.',
+            key: 'FAIR',
+            subtasks: [{ do: 'paste the statement' }]
+        },
+        file: '/hub/funding/funding.yml',
+        index: 1
+    }
+];
+
+/** A file with no schema: its cards carry the status buttons instead of the edit form. */
+const PLAIN_ENTRIES: Entry[] = [
+    {
+        id: 'One task',
+        title: 'One task',
+        fields: { title: 'One task', status: 'todo' },
+        file: '/hub/tasks/tasks.yml',
+        index: 0
+    },
+    {
+        id: 'Another task',
+        title: 'Another task',
+        fields: { title: 'Another task', status: 'doing' },
+        file: '/hub/tasks/tasks.yml',
+        index: 1
+    }
+];
+
+/** The code file, whose view adds what the portfolio says about its own code above the cards. */
+const CODE_ENTRIES: Entry[] = [
+    {
+        id: 'a repo',
+        title: 'a repo',
+        fields: { title: 'a repo', status: 'active', related: ['alpha'] },
+        file: '/hub/registries/repos.yml',
+        index: 0
+    }
+];
+
 function snapshot(): Snapshot {
     return {
         version: 1,
         entities: {
             feeds: NO_FEEDS,
             career: null,
-            projects: {},
+            projects: PROJECTS,
             venues: {},
             datasets: {},
             programs: {},
@@ -98,10 +202,30 @@ function snapshot(): Snapshot {
                 events: {
                     id: 'events',
                     title: 'Talks and Events',
-                    intro: 'one calendar of appearances',
+                    intro: 'one **calendar** of appearances',
                     file: FILE,
                     schema: SCHEMA,
                     entries: ENTRIES
+                },
+                funding: {
+                    id: 'funding',
+                    title: 'Funding',
+                    file: '/hub/funding/funding.yml',
+                    schema: FUNDING_SCHEMA,
+                    entries: FUNDING_ENTRIES
+                },
+                tasks: {
+                    id: 'tasks',
+                    title: 'Tasks',
+                    file: '/hub/tasks/tasks.yml',
+                    entries: PLAIN_ENTRIES
+                },
+                code: {
+                    id: 'code',
+                    title: 'Code',
+                    file: '/hub/registries/repos.yml',
+                    schema: SCHEMA,
+                    entries: CODE_ENTRIES
                 }
             }
         },
@@ -114,7 +238,7 @@ receive({ channel: 'portfolio', version: 1, payload: snapshot() });
 
 /** The view as the instance of one collection's view id, with one saved state. */
 function html(view = 'events', state: Partial<CollectionState> = {}): string {
-    setInstanceState(INSTANCE, { search: '', statuses: [], ...state });
+    setInstanceState(INSTANCE, { search: '', statuses: [], hidden: [], ...state });
     const instance: Instance = { id: INSTANCE, view, state: {} };
     return render(Collection, { props: { instance } }).body;
 }
@@ -127,9 +251,9 @@ function cards(body: string): string[] {
 describe('a collection as its own tab', () => {
     const body = html();
 
-    it("draws the pane with the file's own title and intro", () => {
+    it("draws the pane with the file's own title and its intro as rendered Markdown", () => {
         expect(body).toContain('Talks and Events');
-        expect(body).toContain('one calendar of appearances');
+        expect(body).toContain('one <strong>calendar</strong> of appearances');
     });
 
     it('draws one card per entry, in file order', () => {
@@ -140,8 +264,9 @@ describe('a collection as its own tab', () => {
         expect(found[2]).toContain('A pitch');
     });
 
-    it('offers the search box the catalog names', () => {
-        expect(body).toContain(catalog['collection.search']);
+    it('offers the search box and the add control the catalog names', () => {
+        expect(body).toContain('Search Talks and Events ...');
+        expect(body).toContain(catalog['col.add']);
     });
 
     it('says which collection it is drawing', () => {
@@ -157,7 +282,7 @@ describe('a card', () => {
         expect(card).toContain('>upcoming</span>');
     });
 
-    it('draws a metalist as one chip per label-value pair', () => {
+    it('draws a metalist as one wrapping line per label-value pair', () => {
         expect(card).toContain('>When: 16 Feb 2027</span>');
         expect(card).toContain('>Where: Enschede</span>');
     });
@@ -167,13 +292,21 @@ describe('a card', () => {
         expect(card).toContain('>conference</span>');
     });
 
-    it("draws a link as an anchor into the hub that opens a tab of the browser's own", () => {
-        expect(card).toContain('href="/api/file/hub/network/a-talk/slides.html"');
-        expect(card).toContain('target="_blank"');
+    it('draws a local HTML link as a control that opens it as a document tab', () => {
+        expect(card).toContain('network/a-talk/slides.html');
+        expect(card).not.toContain('href="/api/file/hub/network/a-talk/slides.html"');
+    });
+
+    it("draws every other link as an anchor into the hub, in a tab of the browser's own", () => {
+        const body = html('funding');
+        expect(body).toContain('href="https://example.org/call"');
+        expect(body).toContain('target="_blank"');
     });
 
     it("draws the fields in the order the file's schema lists them", () => {
-        const order = ['the subtitle', 'upcoming', '2027-02-16', 'When: 16 Feb 2027', 'core-ml'];
+        // The status is drawn once, as the chip in the meta row over the fields, so it is not in
+        // this list: what it checks is the order of the fields the card's body draws.
+        const order = ['the subtitle', '2027-02-16', 'When: 16 Feb 2027', 'core-ml'];
         const places = order.map((words) => card.indexOf(words));
         expect(places.filter((at) => at < 0)).toEqual([]);
         expect([...places].sort((a, b) => a - b)).toEqual(places);
@@ -195,8 +328,19 @@ describe('a field the schema does not name', () => {
 });
 
 describe('the status facet', () => {
-    it('is offered, since the schema names a status and two values occur', () => {
-        expect(html()).toContain(catalog['collection.status']);
+    it('draws one toggle per status, with its count, all of them on', () => {
+        const body = html();
+        expect(body).toContain(catalog['col.status_facet']);
+        expect(body).toContain('upcoming 2');
+        expect(body).toContain('completed 1');
+        expect(body).toContain(`--accent: var(--c-${statusTone('upcoming')})`);
+        expect(body).toContain(`--accent: var(--c-${statusTone('completed')})`);
+    });
+
+    it("hides a status's cards when its toggle is switched off", () => {
+        const found = cards(html('events', { hidden: ['upcoming'] }));
+        expect(found.length).toBe(1);
+        expect(found[0]).toContain('A visit');
     });
 
     it('shows only the entries whose status is selected', () => {
@@ -226,5 +370,131 @@ describe('a collection the snapshot does not carry', () => {
 
     it('falls back to the name the view is registered under', () => {
         expect(body).toContain(catalog['views.statements']);
+    });
+});
+
+describe('the controls a card carries', () => {
+    const card = cards(html())[0];
+
+    it('carries the grip, the pin and the edit control the catalog names', () => {
+        expect(card).toContain(catalog['col.reorder_hint']);
+        expect(card).toContain(catalog['col.pin_to_top']);
+        expect(card).toContain(catalog['col.edit_delete']);
+    });
+
+    it('carries the subtasks block, over the entry rather than over a project', () => {
+        expect(card).toContain(catalog['actions.subtasks']);
+        expect(card).toContain(catalog['actions.add_subtask']);
+    });
+});
+
+describe('a collection whose file has no schema', () => {
+    const body = html('tasks');
+
+    it('offers no add control, since there is no schema to draw a form from', () => {
+        expect(body).not.toContain(catalog['col.add']);
+    });
+
+    it("draws the file's other statuses as buttons, the current one left out", () => {
+        const card = cards(body)[0];
+        expect(card).toContain('>doing</span>');
+        expect(card).not.toContain(catalog['col.edit_delete']);
+        expect(cards(body)[1]).toContain('>todo</span>');
+    });
+});
+
+describe('the funding view', () => {
+    const body = html('funding');
+
+    it('is drawn from the funding collection the snapshot now carries', () => {
+        expect(body).toContain('data-collection="funding"');
+        expect(cards(body).length).toBeGreaterThan(1);
+    });
+
+    it('draws the pinned scheme first, marked as pinned', () => {
+        const found = cards(body);
+        expect(found[0]).toContain('A funded program');
+        expect(found[0]).toContain('pinned');
+        expect(found[1]).toContain('A later scheme');
+    });
+
+    it('draws the statement as a blockquote with the tooltip the catalog names', () => {
+        expect(body).toContain('<blockquote');
+        expect(body).toContain(catalog['col.fundstmt_tip']);
+        expect(body).toContain('This work was funded by FAIR.');
+    });
+
+    it('draws the note as rendered Markdown', () => {
+        expect(body).toContain('what it <strong>is</strong>');
+    });
+
+    it("groups the projects whose manifest names the scheme's key", () => {
+        expect(body).toContain(catalog['collection.related']);
+        expect(body).toContain('>1 active</span>');
+        expect(body).toContain('Alpha');
+    });
+
+    it('draws the card of the projects no scheme covers, and its facet toggle', () => {
+        expect(body).toContain(catalog['collection.no_funding']);
+        expect(body).toContain(catalog['collection.no_funding_sub']);
+        expect(body).toContain('>beta</span>');
+    });
+
+    it('drops that card when its toggle is switched off', () => {
+        const off = html('funding', { hidden: ['no-funding'] });
+        expect(off).not.toContain(catalog['collection.no_funding_sub']);
+    });
+});
+
+describe('the code view', () => {
+    const body = html('code');
+
+    it('draws the coverage groups over the projects, with a count each', () => {
+        expect(body).toContain(catalog['collection.coverage']);
+        expect(body).toContain(catalog['collection.coverage_deposited']);
+        expect(body).toContain(catalog['collection.coverage_anon']);
+        expect(body).toContain(catalog['collection.coverage_none']);
+        expect(body).toContain('data-group="deposited"');
+    });
+
+    it("draws the repo cards under it, with the projects the entry's related list names", () => {
+        const card = cards(body)[0];
+        expect(card).toContain('a repo');
+        expect(card).toContain('Alpha');
+    });
+});
+
+describe('the entry form', () => {
+    /** The form as the card opens it: over one entry to edit, and over none to add. */
+    function form(entry: Entry | null): string {
+        return render(EntryForm, {
+            props: {
+                collection: 'funding',
+                schema: FUNDING_SCHEMA,
+                entry,
+                onclose: () => {},
+                onsaid: () => {}
+            }
+        }).body;
+    }
+
+    it("draws one control per schema field, in the file's order", () => {
+        const body = form(null);
+        expect(body).toContain(catalog['collection.form_add_title']);
+        expect(body).toContain('<select');
+        expect(body).toContain('<textarea');
+        expect(body.indexOf('status')).toBeLessThan(body.indexOf('statement'));
+    });
+
+    it('fills the controls with what the entry holds, and offers the delete', () => {
+        const body = form(FUNDING_ENTRIES[1]);
+        expect(body).toContain(catalog['collection.form_edit_title']);
+        expect(body).toContain('A funded program');
+        expect(body).toContain(catalog['collection.form_delete']);
+        expect(body).toContain(catalog['collection.form_save']);
+    });
+
+    it('offers no delete on the add form', () => {
+        expect(form(null)).not.toContain(catalog['collection.form_delete']);
     });
 });

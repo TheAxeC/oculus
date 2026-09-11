@@ -23,9 +23,11 @@ import { setHidden, setOverride } from './sessions/overrides.ts';
 import {
     addSubtask,
     appendEntry,
+    deleteEntry,
     deleteSubtask,
     entryRange,
     renderEntry,
+    reorderEntries,
     setEntryFields,
     setHostStatus,
     setSubtask
@@ -300,6 +302,35 @@ export function writeEntry(
     const value = identityOf(held, id);
     if (value === null) return { found: false, changed: [], refused: [] };
     return saved(held.file, held.source, setEntryFields(held.source, held.ident, value, fields));
+}
+
+/**
+ * Put one collection's entries in the order the reader dragged them into. The order is the identity
+ * values, not the ids: it is what addresses an entry in the file, and it is what the card carries.
+ */
+export function reorderCollection(
+    hub: string,
+    config: PortfolioConfig,
+    collection: string,
+    order: string[]
+): WriteOutcome {
+    const held = readCollection(hub, config, collection);
+    if (held === null) return { found: false, changed: [], refused: [] };
+    return saved(held.file, held.source, reorderEntries(held.source, held.ident, order));
+}
+
+/** Take one entry out of its collection file, found by the id the reader gave it. */
+export function removeEntry(
+    hub: string,
+    config: PortfolioConfig,
+    collection: string,
+    id: string
+): WriteOutcome {
+    const held = readCollection(hub, config, collection);
+    if (held === null) return { found: false, changed: [], refused: [] };
+    const value = identityOf(held, id);
+    if (value === null) return { found: false, changed: [], refused: [] };
+    return saved(held.file, held.source, deleteEntry(held.source, held.ident, value));
 }
 
 /** What a subtask write hangs under: one manifest, or one entry of one collection. */
@@ -636,6 +667,12 @@ type HostWrite = { kind: 'host'; name: string; status: string };
 type NewEntryWrite = { kind: 'new-entry'; collection: string; fields: Record<string, unknown> };
 type NewIdeaWrite = { kind: 'new-idea'; fields: Record<string, unknown> };
 
+/** One collection's entries in the order a drag left them: the identity values, all of them. */
+type ReorderWrite = { kind: 'reorder'; collection: string; order: string[] };
+
+/** One entry of one collection taken out of its file, by the id the reader gave it. */
+type DeleteEntryWrite = { kind: 'delete-entry'; collection: string; id: string };
+
 const ACTIONS: SubtaskAction[] = ['done', 'reopen', 'snooze', 'delete'];
 
 /** The `target` of a subtask body: `{ id }` for a manifest, `{ collection, id }` for an entry. */
@@ -700,6 +737,27 @@ export function newEntry(body: unknown): NewEntryWrite | null {
     if (typeof body.collection !== 'string' || body.collection === '') return null;
     if (!isRecord(body.fields)) return null;
     return { kind: 'new-entry', collection: body.collection, fields: body.fields };
+}
+
+/**
+ * The body as a reorder, or null when it is not one. An order of no values is a reorder of a file
+ * with no entries in it and is answered by the writer, not refused here: what is refused here is a
+ * body that is not the shape, an order that is not a list of words above all.
+ */
+export function reorderWrite(body: unknown): ReorderWrite | null {
+    if (!isRecord(body) || body.kind !== 'reorder') return null;
+    if (typeof body.collection !== 'string' || body.collection === '') return null;
+    if (!Array.isArray(body.order)) return null;
+    if (!body.order.every((one) => typeof one === 'string' && one !== '')) return null;
+    return { kind: 'reorder', collection: body.collection, order: body.order as string[] };
+}
+
+/** The body as an entry deletion, or null when it is not one. */
+export function deleteEntryWrite(body: unknown): DeleteEntryWrite | null {
+    if (!isRecord(body) || body.kind !== 'delete-entry') return null;
+    if (typeof body.collection !== 'string' || body.collection === '') return null;
+    if (typeof body.id !== 'string' || body.id === '') return null;
+    return { kind: 'delete-entry', collection: body.collection, id: body.id };
 }
 
 /** The body as a new idea, or null when it is not one. */
@@ -822,6 +880,22 @@ export async function handleWrite(
     if (fresh !== null) {
         const outcome = createEntry(into.hub, into.config, fresh.collection, fresh.fields);
         if (!outcome.found) return json(404, { error: `no collection ${fresh.collection}` });
+        return answer(outcome);
+    }
+
+    const order = reorderWrite(body);
+    if (order !== null) {
+        const outcome = reorderCollection(into.hub, into.config, order.collection, order.order);
+        if (!outcome.found) return json(404, { error: `no collection ${order.collection}` });
+        return answer(outcome);
+    }
+
+    const removal = deleteEntryWrite(body);
+    if (removal !== null) {
+        const outcome = removeEntry(into.hub, into.config, removal.collection, removal.id);
+        if (!outcome.found) {
+            return json(404, { error: `no entry ${removal.id} in ${removal.collection}` });
+        }
         return answer(outcome);
     }
 

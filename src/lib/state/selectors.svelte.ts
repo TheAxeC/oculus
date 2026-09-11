@@ -166,6 +166,16 @@ export function projectOf(id: Id): Project | null {
     return portfolio()?.entities.projects[id] ?? null;
 }
 
+/**
+ * Every project of the snapshot, in the order the scan found them. The collection view joins the
+ * entries of a file to them: which projects name a funding scheme, a collaborator or an entry's
+ * `related:` id, which of them no scheme covers, and what each of them says about its own code.
+ */
+export function projects(): Project[] {
+    const snapshot = portfolio();
+    return snapshot === null ? [] : Object.values(snapshot.entities.projects);
+}
+
 /** The edit form as config/manifest-schema.yml describes it, in file order. */
 export function manifestFields(): FormField[] {
     return formFields(configMap());

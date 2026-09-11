@@ -39,8 +39,16 @@ import type {
     Venue
 } from './model.ts';
 
-/** Collection keys that name a registry the snapshot already carries; reading both would double it. */
-export const REGISTRY_KEYS = ['venues', 'datasets', 'programs', 'domains', 'funding'];
+/**
+ * Collection keys that name a registry the snapshot already carries; reading both would double it.
+ *
+ * `funding` is deliberately not one of them. funding/funding.yml is the only file that is both: the
+ * schemes are entities projects point at by their `funding:` tag, and the file is a collection with
+ * an intro, a schema and entries the reader edits like any other. So it is carried twice, eleven
+ * schemes as entities and the same eleven as one collection, and the funding view is registered
+ * from the collection keys with the other seven.
+ */
+export const REGISTRY_KEYS = ['venues', 'datasets', 'programs', 'domains'];
 
 /**
  * The entity kinds the snapshot keys by id. `entities.feeds` and `entities.career` are summaries of

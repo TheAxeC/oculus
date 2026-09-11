@@ -8,11 +8,12 @@
 // is how it is drawn, and that is decided by the field's name first and its type second, since the
 // seven hub files agree on the names (`status`, `tags`, `meta`, `note`) and use only six types.
 
-import type { Entry, SchemaField } from '../data/model.ts';
+import { marked } from 'marked';
+import type { Entry, Project, SchemaField, Subtask } from '../data/model.ts';
 
-// The boundary table lets `views/` import `state/` and nothing of `data/`, so the three types the
-// view names reach it from here, beside the functions that return them.
-export type { Collection, Entry, SchemaField } from '../data/model.ts';
+// The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
+// names reach it from here, beside the functions that return them.
+export type { Collection, Entry, Project, SchemaField, Subtask } from '../data/model.ts';
 
 /** The field that is the card's own heading; the Card draws it and no drawn field repeats it. */
 export const TITLE_FIELD = 'title';
@@ -36,27 +37,42 @@ export type Drawn = {
     values: string[];
 };
 
-/** What the view holds per instance: the search box and the status values in force. */
+/**
+ * What the view holds per instance: the search box, the status values in force, and the statuses
+ * the reader has switched off in the facet bar.
+ *
+ * The two status fields are not one field. `statuses` is a selection: empty means every status, and
+ * a value in it means that value alone, which is what the menu of O14d writes. `hidden` is the facet
+ * bar of the acceptance list, where every toggle is on until it is clicked and a click hides that
+ * status's cards. A card is drawn when the selection admits it and the facet bar has not hidden it.
+ */
 export type CollectionState = {
     search: string;
     statuses: string[];
+    hidden: string[];
 };
 
 /** The state of an instance nobody has typed in yet. */
 export function emptyCollectionState(): CollectionState {
-    return { search: '', statuses: [] };
+    return { search: '', statuses: [], hidden: [] };
+}
+
+/** The strings of a saved list, and nothing when what was saved is not a list. */
+function savedList(value: unknown): string[] {
+    return Array.isArray(value)
+        ? value.filter((item): item is string => typeof item === 'string')
+        : [];
 }
 
 /** The saved state of one instance, with anything that is not the shape above replaced by it. */
 export function parseCollectionState(raw: unknown): CollectionState {
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw))
         return emptyCollectionState();
-    const held = raw as { search?: unknown; statuses?: unknown };
+    const held = raw as { search?: unknown; statuses?: unknown; hidden?: unknown };
     return {
         search: typeof held.search === 'string' ? held.search : '',
-        statuses: Array.isArray(held.statuses)
-            ? held.statuses.filter((value): value is string => typeof value === 'string')
-            : []
+        statuses: savedList(held.statuses),
+        hidden: savedList(held.hidden)
     };
 }
 
@@ -225,11 +241,229 @@ function haystack(value: unknown): string {
 export function applyCollectionFilters(entries: Entry[], state: CollectionState): Entry[] {
     const needle = state.search.trim().toLowerCase();
     return entries.filter((entry) => {
+        const status = entryStatus(entry);
         if (state.statuses.length > 0) {
-            const status = entryStatus(entry);
             if (status === undefined || !state.statuses.includes(status)) return false;
         }
+        if (status !== undefined && state.hidden.includes(status)) return false;
         if (needle === '') return true;
         return haystack(entry.fields).toLowerCase().includes(needle);
     });
+}
+
+/**
+ * One field of Markdown as the HTML a card draws it with. The intro, the note and the funding
+ * statement are Markdown in the hub's files, written by the owner of the hub and read by nobody
+ * else, which is why the view draws this with {@html} unsanitised, exactly as views/Project.svelte
+ * draws a README. It is the inline renderer: these fields are one paragraph and a link or two, so a
+ * block renderer would only wrap each of them in a `<p>` the card's own markup already gives them.
+ */
+export function inlineMarkdown(text: string): string {
+    return marked.parseInline(text, { async: false });
+}
+
+/** The facet value of the synthetic card the Funding view draws for the projects with no scheme. */
+export const NO_FUNDING = 'no-funding';
+
+/** The collection key whose entries the manifests' `funding:` tags name. */
+export const FUNDING = 'funding';
+
+/** The collection key whose entries the manifests' `collaborators:` tags name. */
+export const COLLABORATIONS = 'collaborations';
+
+/** The field an entry is addressed by: the file's own schema's first field, `title` without one. */
+export function identityField(schema: SchemaField[] | undefined): string {
+    const first = (schema ?? [])[0];
+    return first === undefined ? TITLE_FIELD : first.field;
+}
+
+/**
+ * The value a write addresses one entry by. It is not the id: funding.yml's schema opens with
+ * `title` while three of its entries carry a `key`, and the id the reader made is that key, so a
+ * write names the identity field's own value and the server finds the entry by it.
+ */
+export function identityValue(entry: Entry, schema: SchemaField[] | undefined): string {
+    const held = entry.fields[identityField(schema)];
+    if (typeof held === 'string' || typeof held === 'number') return String(held);
+    return entry.title === '' ? entry.id : entry.title;
+}
+
+/** Whether the file floats this entry to the top of its list: `pin: true` and nothing else. */
+export function isPinned(entry: Entry): boolean {
+    return entry.fields.pin === true;
+}
+
+/** The entries a card list draws: the pinned ones first, everything in file order inside that. */
+export function pinnedFirst(entries: Entry[]): Entry[] {
+    return [...entries.filter(isPinned), ...entries.filter((entry) => !isPinned(entry))];
+}
+
+/** One toggle of the facet bar: the status, how many entries carry it. */
+export type StatusFacet = { value: string; count: number };
+
+/**
+ * Every status the entries carry, in the order they first occur, with a count each. Unlike
+ * statusValues, which offers a menu and so needs two values to be worth offering, one value is a
+ * facet bar of one toggle and is drawn: it is the file saying what its one lifecycle value is.
+ */
+export function statusFacets(entries: Entry[]): StatusFacet[] {
+    const counts = new Map<string, number>();
+    for (const entry of entries) {
+        const status = entryStatus(entry);
+        if (status === undefined) continue;
+        counts.set(status, (counts.get(status) ?? 0) + 1);
+    }
+    return [...counts].map(([value, count]) => ({ value, count }));
+}
+
+/**
+ * The `subtasks:` of one entry as the block draws them. A list is keyed by position and a map by
+ * its own keys, which is what the write path addresses a line by; a line with no `do` is no line.
+ */
+export function entrySubtasks(entry: Entry): Subtask[] {
+    const held = entry.fields.subtasks;
+    const rows: [string, unknown][] = Array.isArray(held)
+        ? held.map((item, at) => [String(at), item])
+        : typeof held === 'object' && held !== null
+          ? Object.entries(held as Record<string, unknown>)
+          : [];
+    const lines: Subtask[] = [];
+    for (const [key, item] of rows) {
+        const map = typeof item === 'object' && item !== null && !Array.isArray(item);
+        const record = map ? (item as Record<string, unknown>) : {};
+        const text = typeof item === 'string' ? item : textOf(record.do);
+        if (text === undefined || text.trim() === '') continue;
+        const line: Subtask = { key, do: text, done: record.done === true };
+        const deadline = textOf(record.deadline);
+        const snooze = textOf(record.snooze);
+        if (deadline !== undefined) line.deadline = deadline;
+        if (snooze !== undefined) line.snooze = snooze;
+        lines.push(line);
+    }
+    return lines;
+}
+
+/** One group of the cross-links: the projects of one type, with the words each of them opens as. */
+export type CrossGroup = { type: string; count: number; members: { id: string; label: string }[] };
+
+/** The type a cross-link group is keyed by: the project's own `type:`, or its tier without one. */
+function typeOf(project: Project): string {
+    return project.type ?? project.tier;
+}
+
+/**
+ * The projects that name one entry, grouped by type with a count each.
+ *
+ * Which projects those are is the collection's own question and has three answers: funding is the
+ * manifests' `funding:` tags, collaborations is their `collaborators:` tags, and every other
+ * collection has no project-side inverse, so it is the entry's own `related:` list of project ids.
+ * A related id no project of the snapshot holds is left out rather than drawn as a dead link.
+ */
+export function crossLinks(entry: Entry, collectionKey: string, projects: Project[]): CrossGroup[] {
+    let named: Project[];
+    if (collectionKey === FUNDING) {
+        named = projects.filter((project) => project.fundingIds.includes(entry.id));
+    } else if (collectionKey === COLLABORATIONS) {
+        named = projects.filter((project) => project.collaborators.includes(entry.id));
+    } else {
+        const ids = wordsOf(entry.fields.related);
+        named = ids
+            .map((id) => projects.find((project) => project.id === id))
+            .filter((project): project is Project => project !== undefined);
+    }
+    return groupProjects(named);
+}
+
+/** Projects by type, the types in the order they first occur and the members in the order given. */
+function groupProjects(projects: Project[]): CrossGroup[] {
+    const groups: CrossGroup[] = [];
+    for (const project of projects) {
+        const type = typeOf(project);
+        const held = groups.find((group) => group.type === type);
+        const member = { id: project.id, label: project.short ?? project.title };
+        if (held === undefined) groups.push({ type, count: 1, members: [member] });
+        else {
+            held.count += 1;
+            held.members.push(member);
+        }
+    }
+    return groups;
+}
+
+/** What the entry form draws for one field. A type no control is written for is drawn as text. */
+export type FormKind = 'text' | 'textarea' | 'select' | 'tags' | 'date' | 'metalist' | 'checkbox';
+
+/** One control of the entry form, over one field of the file's own schema. */
+export type FormField = {
+    field: string;
+    label: string;
+    kind: FormKind;
+    options: string[];
+    required: boolean;
+    help?: string;
+};
+
+const KINDS: FormKind[] = ['text', 'textarea', 'select', 'tags', 'date', 'metalist', 'checkbox'];
+
+/**
+ * The controls the add and edit form draws, in the file's own field order. The type is the file's
+ * word: the hub's schemas use text, tags, textarea, select, metalist and date, and a word none of
+ * them uses is drawn as one line of text rather than left out, so a field is never uneditable.
+ */
+export function formFields(schema: SchemaField[] | undefined): FormField[] {
+    return (schema ?? []).map((field) => ({
+        field: field.field,
+        label: field.label ?? field.field,
+        kind: KINDS.includes(field.type as FormKind) ? (field.type as FormKind) : 'text',
+        options: field.options ?? [],
+        required: field.required === true,
+        ...(field.help === undefined ? {} : { help: field.help })
+    }));
+}
+
+/** The project types the Funding view's synthetic card counts: the work that is still running. */
+const LIVE_TYPES = ['active', 'manuscript'];
+
+/**
+ * The active and manuscript projects no funding scheme of the file covers, which is the Funding
+ * tab's one synthetic card. A project naming a scheme the file does not hold is not covered by it,
+ * so the schemes are the file's own keys rather than whatever a manifest happens to name.
+ */
+export function noFunding(projects: Project[], schemes: string[]): Project[] {
+    return projects.filter(
+        (project) =>
+            LIVE_TYPES.includes(project.type ?? '') &&
+            !project.fundingIds.some((id) => schemes.includes(id))
+    );
+}
+
+/** The three code-availability groups of the Code view, in the order the sections are drawn. */
+export const COVERAGE_GROUPS = ['deposited', 'review-anon', 'none'];
+
+/** One coverage section: which group, and the projects in it. */
+export type CoverageGroup = {
+    group: string;
+    count: number;
+    members: { id: string; label: string }[];
+};
+
+/**
+ * The projects grouped by what their manifest says about their code: `deposited`, `review-anon`,
+ * and `none` for both the ones that say so and the ones that say nothing, which is the gap the
+ * section is drawn to show. An idea has no code to deposit and is not counted.
+ */
+export function coverage(projects: Project[]): CoverageGroup[] {
+    const groups: CoverageGroup[] = COVERAGE_GROUPS.map((group) => ({
+        group,
+        count: 0,
+        members: []
+    }));
+    for (const project of projects) {
+        if (project.type === 'idea') continue;
+        const status = project.codeAvailability?.status ?? '';
+        const held = groups.find((group) => group.group === status) ?? groups[2];
+        held.count += 1;
+        held.members.push({ id: project.id, label: project.short ?? project.title });
+    }
+    return groups;
 }

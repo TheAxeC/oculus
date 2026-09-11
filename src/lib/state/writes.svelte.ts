@@ -136,6 +136,20 @@ export async function writeHost(name: string, status: string): Promise<WriteAnsw
     return send({ kind: 'host', name, status });
 }
 
+/**
+ * Put one collection's entries in the order a drag left them. `order` is every entry's identity
+ * value, the file's own schema's first field, in the new order; an order that does not name every
+ * entry exactly once is refused by the server and the file is left alone.
+ */
+export async function reorderEntries(collection: string, order: string[]): Promise<WriteAnswer> {
+    return send({ kind: 'reorder', collection, order });
+}
+
+/** Take one entry out of its collection file, by the id the reader gave it. */
+export async function deleteEntry(collection: string, id: string): Promise<WriteAnswer> {
+    return send({ kind: 'delete-entry', collection, id });
+}
+
 /** Add one entry to a collection, rendered from that file's own schema. */
 export async function newEntry(
     collection: string,

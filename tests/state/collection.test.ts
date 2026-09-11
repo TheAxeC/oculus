@@ -5,15 +5,27 @@
 import { describe, expect, it } from 'vitest';
 import {
     applyCollectionFilters,
+    coverage,
+    crossLinks,
     drawnFields,
     emptyCollectionState,
     entryStatus,
+    entrySubtasks,
+    formFields,
     hasStatusField,
     hrefOf,
+    identityField,
+    identityValue,
+    inlineMarkdown,
+    isPinned,
     kindOf,
+    noFunding,
     parseCollectionState,
+    pinnedFirst,
+    statusFacets,
     statusValues,
     type Entry,
+    type Project,
     type SchemaField
 } from '../../src/lib/state/collection.ts';
 
@@ -162,17 +174,21 @@ describe('applyCollectionFilters', () => {
     });
 
     it('keeps the entries of every selected status and no other', () => {
-        const found = applyCollectionFilters(entries, { search: '', statuses: ['completed'] });
+        const found = applyCollectionFilters(entries, {
+            search: '',
+            statuses: ['completed'],
+            hidden: []
+        });
         expect(found.map((held) => held.title)).toEqual(['A visit']);
     });
 
     it('searches inside a list and inside a map, not only the top-level words', () => {
-        const state = { search: 'enschede', statuses: [] };
+        const state = { search: 'enschede', statuses: [], hidden: [] };
         expect(applyCollectionFilters(entries, state).map((held) => held.title)).toEqual([
             'A talk'
         ]);
         expect(
-            applyCollectionFilters(entries, { search: 'travel', statuses: [] }).map(
+            applyCollectionFilters(entries, { search: 'travel', statuses: [], hidden: [] }).map(
                 (held) => held.title
             )
         ).toEqual(['A visit']);
@@ -181,10 +197,13 @@ describe('applyCollectionFilters', () => {
 
 describe('parseCollectionState', () => {
     it('keeps what it is given and replaces what it is not', () => {
-        expect(parseCollectionState({ search: 'talk', statuses: ['upcoming', 7] })).toEqual({
-            search: 'talk',
-            statuses: ['upcoming']
-        });
+        expect(
+            parseCollectionState({
+                search: 'talk',
+                statuses: ['upcoming', 7],
+                hidden: ['completed']
+            })
+        ).toEqual({ search: 'talk', statuses: ['upcoming'], hidden: ['completed'] });
     });
 
     it('falls back to the empty state for anything that is not a map', () => {
@@ -210,5 +229,224 @@ describe('hrefOf', () => {
         expect(hrefOf('education/a course/notes.pdf')).toBe(
             '/api/file/hub/education/a%20course/notes.pdf'
         );
+    });
+});
+
+describe('identityValue', () => {
+    it("reads the schema's first field, which is what a write addresses the entry by", () => {
+        const scheme = entry(0, { title: 'A scheme', key: 'FAIR' });
+        expect(identityValue(scheme, SCHEMA)).toBe('A scheme');
+        expect(identityValue(scheme, [{ field: 'key', type: 'text' }])).toBe('FAIR');
+        expect(identityField(undefined)).toBe('title');
+    });
+
+    it('falls back to the title when the entry does not carry the identity field', () => {
+        expect(identityValue(entry(0, { title: 'A talk' }), [{ field: 'key', type: 'text' }])).toBe(
+            'A talk'
+        );
+    });
+});
+
+describe('pinnedFirst', () => {
+    const entries = [
+        entry(0, { title: 'One' }),
+        entry(1, { title: 'Two', pin: true }),
+        entry(2, { title: 'Three' }),
+        entry(3, { title: 'Four', pin: true })
+    ];
+
+    it('floats every pinned entry, keeping file order inside both halves', () => {
+        expect(pinnedFirst(entries).map((held) => held.title)).toEqual([
+            'Two',
+            'Four',
+            'One',
+            'Three'
+        ]);
+        expect(isPinned(entries[1])).toBe(true);
+        expect(isPinned(entries[0])).toBe(false);
+    });
+});
+
+describe('statusFacets', () => {
+    it('counts every status in the order it first occurs, one value included', () => {
+        const entries = [
+            entry(0, { title: 'One', status: 'todo' }),
+            entry(1, { title: 'Two', status: 'done' }),
+            entry(2, { title: 'Three', status: 'todo' })
+        ];
+        expect(statusFacets(entries)).toEqual([
+            { value: 'todo', count: 2 },
+            { value: 'done', count: 1 }
+        ]);
+        expect(statusFacets([entry(0, { title: 'One', status: 'todo' })])).toEqual([
+            { value: 'todo', count: 1 }
+        ]);
+    });
+
+    it('hides the entries of a status the facet bar has switched off', () => {
+        const entries = [
+            entry(0, { title: 'One', status: 'todo' }),
+            entry(1, { title: 'Two', status: 'done' })
+        ];
+        const state = { search: '', statuses: [], hidden: ['done'] };
+        expect(applyCollectionFilters(entries, state).map((held) => held.title)).toEqual(['One']);
+    });
+});
+
+describe('entrySubtasks', () => {
+    it('reads a list of flow maps, keyed by position, and drops a line with no do', () => {
+        const held = entry(0, {
+            title: 'A task',
+            subtasks: [
+                { do: 'read it', deadline: '2026-10-01' },
+                { do: 'write it', done: true, snooze: '2026-11-01' },
+                { note: 'no do line' },
+                'a bare line'
+            ]
+        });
+        expect(entrySubtasks(held)).toEqual([
+            { key: '0', do: 'read it', done: false, deadline: '2026-10-01' },
+            { key: '1', do: 'write it', done: true, snooze: '2026-11-01' },
+            { key: '3', do: 'a bare line', done: false }
+        ]);
+    });
+
+    it('reads a map of keys by its own keys, and an entry with no block as nothing', () => {
+        const held = entry(0, { title: 'A task', subtasks: { one: { do: 'read it' } } });
+        expect(entrySubtasks(held)).toEqual([{ key: 'one', do: 'read it', done: false }]);
+        expect(entrySubtasks(entry(1, { title: 'Another' }))).toEqual([]);
+    });
+});
+
+/** Projects as the snapshot holds them, with only the fields the joins below read. */
+function project(id: string, over: Partial<Project> = {}): Project {
+    return {
+        id,
+        tier: 'active',
+        title: id,
+        chips: [],
+        results: [],
+        ideas: [],
+        waitingOn: [],
+        followups: [],
+        subtasks: [],
+        relatedIds: [],
+        fundingIds: [],
+        datasetIds: [],
+        programIds: [],
+        domainIds: [],
+        collaborators: [],
+        docs: [],
+        folder: `projects/active/${id}`,
+        file: `/hub/projects/active/${id}/project.yml`,
+        ...over
+    };
+}
+
+describe('crossLinks', () => {
+    const projects = [
+        project('alpha', { type: 'active', short: 'Alpha', fundingIds: ['FAIR'] }),
+        project('beta', { type: 'manuscript', fundingIds: ['FAIR'] }),
+        project('gamma', { type: 'active', collaborators: ['naesens'] })
+    ];
+
+    it("groups the projects a funding scheme's key names, by type with a count", () => {
+        const scheme = entry(0, { title: 'FAIR' });
+        expect(crossLinks({ ...scheme, id: 'FAIR' }, 'funding', projects)).toEqual([
+            { type: 'active', count: 1, members: [{ id: 'alpha', label: 'Alpha' }] },
+            { type: 'manuscript', count: 1, members: [{ id: 'beta', label: 'beta' }] }
+        ]);
+    });
+
+    it("groups the projects a collaborator's key names", () => {
+        const who = entry(0, { title: 'Naesens' });
+        expect(crossLinks({ ...who, id: 'naesens' }, 'collaborations', projects)).toEqual([
+            { type: 'active', count: 1, members: [{ id: 'gamma', label: 'gamma' }] }
+        ]);
+    });
+
+    it("reads the entry's own related list for every other collection, and skips a dead id", () => {
+        const talk = entry(0, { title: 'A talk', related: ['alpha', 'nobody'] });
+        expect(crossLinks(talk, 'events', projects)).toEqual([
+            { type: 'active', count: 1, members: [{ id: 'alpha', label: 'Alpha' }] }
+        ]);
+    });
+});
+
+describe('formFields', () => {
+    it("draws one control per schema field, in the file's order, by the file's own type", () => {
+        expect(formFields(SCHEMA).map((field) => [field.field, field.kind])).toEqual([
+            ['title', 'text'],
+            ['sub', 'text'],
+            ['status', 'select'],
+            ['date', 'text'],
+            ['meta', 'metalist'],
+            ['tags', 'tags'],
+            ['note', 'textarea'],
+            ['url', 'text']
+        ]);
+        expect(formFields(undefined)).toEqual([]);
+    });
+
+    it('carries the label, the options, the help and required, and draws a type it knows not as text', () => {
+        const schema: SchemaField[] = [
+            {
+                field: 'status',
+                type: 'select',
+                label: 'State',
+                options: ['todo', 'done'],
+                required: true,
+                help: 'what it is now'
+            },
+            { field: 'weight', type: 'slider' }
+        ];
+        expect(formFields(schema)).toEqual([
+            {
+                field: 'status',
+                label: 'State',
+                kind: 'select',
+                options: ['todo', 'done'],
+                required: true,
+                help: 'what it is now'
+            },
+            { field: 'weight', label: 'weight', kind: 'text', options: [], required: false }
+        ]);
+    });
+});
+
+describe('noFunding and coverage', () => {
+    const projects = [
+        project('alpha', { type: 'active', fundingIds: ['FAIR'] }),
+        project('beta', { type: 'manuscript' }),
+        project('gamma', { type: 'active', fundingIds: ['gone'] }),
+        project('delta', { type: 'idea' }),
+        project('epsilon', { type: 'archive' })
+    ];
+
+    it('counts the live projects no scheme of the file covers', () => {
+        expect(noFunding(projects, ['FAIR']).map((held) => held.id)).toEqual(['beta', 'gamma']);
+    });
+
+    it('groups the projects by what their manifest says about their code', () => {
+        const held = [
+            project('one', { type: 'active', codeAvailability: { status: 'deposited' } }),
+            project('two', { type: 'manuscript', codeAvailability: { status: 'review-anon' } }),
+            project('three', { type: 'active', codeAvailability: { status: 'none' } }),
+            project('four', { type: 'active' }),
+            project('five', { type: 'idea' })
+        ];
+        expect(coverage(held).map((group) => [group.group, group.count])).toEqual([
+            ['deposited', 1],
+            ['review-anon', 1],
+            ['none', 2]
+        ]);
+        expect(coverage(held)[0].members).toEqual([{ id: 'one', label: 'one' }]);
+    });
+});
+
+describe('inlineMarkdown', () => {
+    it('renders one line of Markdown, leaving plain words alone', () => {
+        expect(inlineMarkdown('what it **is**')).toBe('what it <strong>is</strong>');
+        expect(inlineMarkdown('plain words')).toBe('plain words');
     });
 });

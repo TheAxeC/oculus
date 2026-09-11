@@ -137,9 +137,10 @@ describe('the groups of the real config', () => {
         return sections.find((found) => found.label === label)?.items ?? [];
     }
 
-    it('registers the seven collections of sources.yml', () => {
+    it('registers the eight collections of sources.yml', () => {
         expect(COLLECTIONS).toEqual([
             'statements',
+            'funding',
             'events',
             'education',
             'applications',
@@ -149,8 +150,9 @@ describe('the groups of the real config', () => {
         ]);
     });
 
-    it('puts five of them under Academic life, which is therefore a flyout', () => {
+    it('puts six of them under Academic life, which is therefore a flyout', () => {
         expect(section('Academic life').map((view) => view.id)).toEqual([
+            'funding',
             'events',
             'education',
             'applications',

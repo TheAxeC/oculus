@@ -326,8 +326,9 @@ describe('normalise, the field mapping', () => {
         expect(Object.keys(snapshot.entities.funding)).toEqual(['A scheme with no key', 'FAIR']);
     });
 
-    it('leaves the funding collection out, since the registry already carries it', () => {
-        expect(Object.keys(snapshot.entities.collections)).toEqual(['events']);
+    it('carries the funding file as a collection as well as a registry', () => {
+        expect(Object.keys(snapshot.entities.collections)).toEqual(['events', 'funding']);
+        expect(Object.keys(snapshot.entities.funding)).toEqual(['A scheme with no key', 'FAIR']);
         expect(snapshot.entities.collections.events).toEqual({
             id: 'events',
             title: 'EVENTS',
