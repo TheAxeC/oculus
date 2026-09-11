@@ -516,4 +516,20 @@ describe('the entry form', () => {
         expect(body).toContain(catalog['collection.meta_add']);
         expect(body).toContain(catalog['collection.meta_remove']);
     });
+
+    it("pre-fills a raw textarea with the entry map's JSON", () => {
+        const body = render(EntryForm, {
+            props: {
+                collection: 'data',
+                schema: [{ field: 'retrieval', type: 'raw' }],
+                entry: entry(0, 'A dataset', {
+                    retrieval: { method: 'wget', verified: true }
+                }),
+                onclose: () => {},
+                onsaid: () => {}
+            }
+        }).body;
+        expect(body).toContain('<textarea');
+        expect(body).toContain('{"method":"wget","verified":true}');
+    });
 });

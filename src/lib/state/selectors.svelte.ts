@@ -28,6 +28,7 @@ import type { Choice, FormField } from './schema.ts';
 import type {
     Area,
     Collection,
+    Dataset,
     GitState,
     GroupedSession,
     Id,
@@ -181,6 +182,12 @@ export function projects(): Project[] {
 export function venues(): Venue[] {
     const snapshot = portfolio();
     return snapshot === null ? [] : Object.values(snapshot.entities.venues);
+}
+
+/** Every dataset in registry order, before the first snapshot an empty list. */
+export function datasets(): Dataset[] {
+    const snapshot = portfolio();
+    return snapshot === null ? [] : Object.values(snapshot.entities.datasets);
 }
 
 /** Dead archive outcomes from the merged vocabulary. */

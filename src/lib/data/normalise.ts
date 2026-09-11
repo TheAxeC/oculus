@@ -46,7 +46,7 @@ import { isMap, str, strings } from './guards.ts';
  * Config registration uses this list to omit their duplicate generic collection views. `funding`
  * remains a generic collection because its editable collection view is its only dedicated view.
  */
-export const REGISTRY_KEYS = ['venues', 'datasets', 'programs', 'domains'];
+export const REGISTRY_KEYS = ['venues', 'datasets', 'programs', 'domains', 'data'];
 
 /**
  * The entity kinds the snapshot keys by id. `entities.feeds` and `entities.career` are summaries of
@@ -361,7 +361,7 @@ function funding(entry: RawRegistryEntry): Funding {
 function entry(raw: RawEntry, index: number, ident = 'title'): Entry {
     const fields: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(raw)) {
-        if (key !== 'source') fields[key] = value;
+        if (key !== 'provenance') fields[key] = value;
     }
     const title = str(raw.title) ?? str(raw.name) ?? str(raw[ident]) ?? '';
     const key = str(raw.key);
@@ -376,7 +376,7 @@ function entry(raw: RawEntry, index: number, ident = 'title'): Entry {
                   : (identity ?? title),
         title,
         fields,
-        file: raw.source.file,
+        file: raw.provenance.file,
         index
     };
 }
@@ -413,10 +413,18 @@ export function collectionSchema(value: unknown): SchemaField[] | undefined {
 function collection(raw: RawCollection): Collection {
     const schema = collectionSchema(raw.meta.schema);
     const ident = schema?.[0]?.field ?? 'title';
+    const labels = isMap(raw.meta.theme_labels)
+        ? Object.fromEntries(
+              Object.entries(raw.meta.theme_labels).filter(
+                  (item): item is [string, string] => typeof item[1] === 'string'
+              )
+          )
+        : undefined;
     return compact({
         id: raw.key,
         title: str(raw.meta.title) ?? raw.key,
         intro: str(raw.meta.intro),
+        themeLabels: labels,
         file: raw.file,
         schema,
         entries: raw.entries.map((item, index) => entry(item, index, ident))

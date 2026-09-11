@@ -19,8 +19,14 @@ import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
 /** One row of a metalist: a flat map whose keys and values are strings. */
 export type FlatStringMap = Record<string, string>;
 
-/** What a field may be set to. A list is strings or flat string maps; null clears the field. */
-export type FieldValue = string | number | boolean | string[] | FlatStringMap[] | null;
+/** A scalar accepted inside a raw field's flat map. */
+export type ScalarFieldValue = string | number | boolean | null;
+
+/** The parsed shape of a raw field: one map with scalar values and no nested structures. */
+export type FlatScalarMap = Record<string, ScalarFieldValue>;
+
+/** What a field may be set to. Raw maps are flat scalar maps; null clears the field. */
+export type FieldValue = ScalarFieldValue | string[] | FlatStringMap[] | FlatScalarMap;
 
 /** One field that was not written, and why. */
 export type Refusal = { field: string; reason: string };
@@ -133,7 +139,22 @@ export function asFieldValue(raw: unknown): FieldValue | undefined {
     ) {
         return raw as FlatStringMap[];
     }
+    if (isFlatScalarMap(raw)) return raw;
     return undefined;
+}
+
+/** Whether a value is a map whose values are finite scalars, the raw field's write vocabulary. */
+export function isFlatScalarMap(value: unknown): value is FlatScalarMap {
+    return (
+        isRecord(value) &&
+        Object.values(value).every(
+            (item) =>
+                item === null ||
+                typeof item === 'string' ||
+                typeof item === 'boolean' ||
+                (typeof item === 'number' && Number.isFinite(item))
+        )
+    );
 }
 
 /** Whether a non-empty list is the metalist shape rather than a list of strings. */
@@ -142,7 +163,7 @@ export function isMetalist(value: Exclude<FieldValue, null>): value is FlatStrin
 }
 
 /** One scalar in YAML, on one line. `style` keeps the quoting the file already had. */
-export function renderScalar(value: string | number | boolean, style?: string): string {
+export function renderScalar(value: ScalarFieldValue, style?: string): string {
     if (typeof value !== 'string') return String(value);
     // A single-quoted scalar carries no escape, so a value with a newline in it is written double
     // quoted whatever the old style was: that is the one quoting that stays on one line.
@@ -156,6 +177,14 @@ export function renderScalar(value: string | number | boolean, style?: string): 
             ? stringify(value, { lineWidth: 0 })
             : stringify(value, { lineWidth: 0, defaultStringType: wanted });
     return text.replace(/\n+$/, '');
+}
+
+/** A flat scalar map as block lines at the indentation of its own keys. */
+export function renderFlatMap(values: FlatScalarMap, indent: number): string {
+    const pad = ' '.repeat(indent);
+    return Object.entries(values)
+        .map(([key, value]) => `${renderScalar(key)}: ${renderScalar(value)}`)
+        .join(`\n${pad}`);
 }
 
 /**
@@ -289,7 +318,15 @@ function replaceValue(text: string, node: Node, value: Exclude<FieldValue, null>
     const end = valueEnd(node);
     const block = Array.isArray(value) && isSeq(node) && node.flow !== true && value.length > 0;
     let rendered: string;
-    if (isMetalist(value)) {
+    if (isFlatScalarMap(value)) {
+        const block = isMap(node) && node.flow !== true;
+        const indent = block
+            ? columnOf(text, start)
+            : text.slice(lineStart(text, start), start).length -
+              text.slice(lineStart(text, start), start).trimStart().length +
+              DEFAULT_INDENT;
+        rendered = `${block ? '' : `\n${' '.repeat(indent)}`}${renderFlatMap(value, indent)}`;
+    } else if (isMetalist(value)) {
         rendered = renderMetalist(value, columnOf(text, start));
     } else if (Array.isArray(value)) {
         const styles = itemStyles(node);
@@ -370,7 +407,7 @@ function insertBlockChild(
 
 /** A value as it is written after `key:` on one line, or null when it cannot be. */
 function renderOneLine(value: Exclude<FieldValue, null>): string | null {
-    if (isMetalist(value)) return null;
+    if (isMetalist(value) || isFlatScalarMap(value)) return null;
     const rendered = Array.isArray(value) ? renderFlow(value) : renderScalar(value);
     return rendered.includes('\n') ? null : rendered;
 }
@@ -395,6 +432,10 @@ function appendTop(
     value: Exclude<FieldValue, null>
 ): Written {
     const indent = mapIndent(root, text);
+    if (isFlatScalarMap(value)) {
+        const pad = ' '.repeat(indent);
+        return appendLines(text, root, `${name}:\n${pad}${renderFlatMap(value, indent)}`);
+    }
     if (isMetalist(value)) {
         const pad = ' '.repeat(indent);
         return appendLines(text, root, `${name}:\n${pad}${renderMetalist(value, indent)}`);
@@ -547,7 +588,7 @@ export function setFields(source: string, fields: Record<string, unknown>): Edit
         if (parsed === undefined) {
             refused.push({
                 field,
-                reason: 'not a string, number, boolean, list of strings, metalist or null'
+                reason: 'not a string, number, boolean, list of strings, metalist, flat scalar map or null'
             });
             continue;
         }
@@ -558,7 +599,9 @@ export function setFields(source: string, fields: Record<string, unknown>): Edit
             Array.isArray(current) &&
             current.some(isRecord)
                 ? null
-                : parsed;
+                : isFlatScalarMap(parsed) && Object.keys(parsed).length === 0
+                  ? null
+                  : parsed;
         if (sameValue(value, current)) continue;
         const out = applyOne(text, path, value);
         if ('reason' in out) {

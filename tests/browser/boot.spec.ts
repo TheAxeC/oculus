@@ -10,6 +10,6 @@ test('the page boots, the socket opens and the snapshot holds the demo hub', asy
     const status = page.locator('.view', { hasText: t('app.socket', t('app.socket_open')) });
     await expect(status).toContainText(t('app.socket', t('app.socket_open')));
     await expect(status).toContainText(t('app.projects', 10));
-    await expect(status).toContainText(t('app.collections', 11));
+    await expect(status).toContainText(t('app.collections', 12));
     await expect(status).toContainText(t('app.venues', 5));
 });

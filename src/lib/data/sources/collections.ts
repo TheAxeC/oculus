@@ -3,10 +3,10 @@
 // It validates nothing and resolves nothing. Every failure is a Finding; nothing here throws, so a
 // missing or broken collection costs its own entries and no more.
 //
-// A collection is a hub file of like records that are not entities: statements, funding schemes,
-// talks, teaching, applications, collaborations, tasks, repositories. The same file may also be a
-// registry (funding/funding.yml is both); this source reads the files it is given and knows
-// nothing about registries.
+// A collection is a hub file of like records: datasets, statements, funding schemes, talks,
+// teaching, applications, collaborations, tasks or repositories. Five are also registries and are
+// carried as entities; this reader knows that the data registry lists records under `datasets:` and
+// every other collection lists them under `entries:`.
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
@@ -16,8 +16,10 @@ import type { CollectionFile, Finding, RawCollection, RawEntry } from '../model.
 /** A key and a hub-relative path from the `collections:` list; declared with the other types. */
 export type { CollectionFile } from '../model.ts';
 
-/** The key every collection file holds its records under. */
-const LIST = 'entries';
+/** The record-list key, including the dataset registry's established exception. */
+function listKey(key: string): string {
+    return key === 'data' ? 'datasets' : 'entries';
+}
 
 function empty(key: string, file: string): RawCollection {
     return { key, file, meta: {}, entries: [] };
@@ -52,16 +54,17 @@ function readCollection(hub: string, asked: CollectionFile, findings: Finding[])
     const file = join(hub, asked.file);
     const data = readFile(file, findings);
     if (data === null) return empty(asked.key, file);
+    const listName = listKey(asked.key);
 
     const meta: Record<string, unknown> = {};
     for (const [key, value] of Object.entries(data)) {
-        if (key !== LIST) meta[key] = value;
+        if (key !== listName) meta[key] = value;
     }
 
-    const list = data[LIST];
+    const list = data[listName];
     if (!Array.isArray(list)) {
-        const had = LIST in data ? 'is not a list' : 'is missing';
-        findings.push({ file, key: LIST, message: `entry list ${LIST} ${had}` });
+        const had = listName in data ? 'is not a list' : 'is missing';
+        findings.push({ file, key: listName, message: `entry list ${listName} ${had}` });
         return { key: asked.key, file, meta, entries: [] };
     }
 
@@ -70,12 +73,12 @@ function readCollection(hub: string, asked: CollectionFile, findings: Finding[])
         if (typeof item !== 'object' || item === null || Array.isArray(item)) {
             findings.push({
                 file,
-                key: `${LIST}[${index}]`,
+                key: `${listName}[${index}]`,
                 message: 'entry is not a map of keys'
             });
             return;
         }
-        entries.push({ ...(item as Record<string, unknown>), source: { file, index } });
+        entries.push({ ...(item as Record<string, unknown>), provenance: { file, index } });
     });
 
     return { key: asked.key, file, meta, entries };
@@ -83,7 +86,7 @@ function readCollection(hub: string, asked: CollectionFile, findings: Finding[])
 
 /**
  * Read the collection files named, keyed by the key each was named under. An entry keeps every
- * field the YAML gave it plus `source`, and its identity is left as read: nothing here decides
+ * field the YAML gave it plus `provenance`, and its identity is left as read: nothing here decides
  * whether a record is known by its `key` or its `title`. A file that is missing, does not parse,
  * is not a map, or has no entry list gives an empty collection and one finding; an entry that is
  * not a map is one finding and no record. Two callers' entries for the same key is a finding and

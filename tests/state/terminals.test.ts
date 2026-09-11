@@ -1,4 +1,4 @@
-// The page's end of a terminal: the three posts to /api/terminal, the two messages it writes on the
+// The page's end of a terminal: the four posts to /api/terminal, the two messages it writes on the
 // socket, and what a `pty:` channel does that no other channel does.
 //
 // Nothing here opens a socket or a connection: `WebSocket` is a stub that records what was written
@@ -17,6 +17,7 @@ import {
     encodeBytes,
     isTerminalId,
     ptyChannel,
+    recoverDataset,
     resizeTerminal,
     sendInput,
     sendResize,
@@ -179,7 +180,7 @@ describe('base64 on the wire', () => {
     });
 });
 
-describe('the three actions of /api/terminal', () => {
+describe('the four actions of /api/terminal', () => {
     it('starts one with its kind, its directory and a geometry', async () => {
         serving(200, { ok: true, terminal: terminal({ id: 'ffee00-claude' }) });
         setToken('the-token');
@@ -217,6 +218,18 @@ describe('the three actions of /api/terminal', () => {
         expect(lastBody()).toEqual({ action: 'stop', id: ID });
         await resizeTerminal(ID, 100, 30);
         expect(lastBody()).toEqual({ action: 'resize', id: ID, cols: 100, rows: 30 });
+    });
+
+    it('starts a dataset recovery with its key and geometry', async () => {
+        serving(200, { ok: true, terminal: terminal({ id: 'ffee00-shell' }) });
+        const answer = await recoverDataset('mimic-iv', 96, 28);
+        expect(answer).toEqual({ ok: true, id: 'ffee00-shell', error: '' });
+        expect(lastBody()).toEqual({
+            action: 'recover',
+            key: 'mimic-iv',
+            cols: 96,
+            rows: 28
+        });
     });
 
     it('reports what the server refused it with, in the server words', async () => {

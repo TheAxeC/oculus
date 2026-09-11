@@ -298,7 +298,7 @@ export function createEntry(
         if (one === undefined) {
             refused.push({
                 field,
-                reason: 'not a string, number, boolean, list of strings, metalist or null'
+                reason: 'not a string, number, boolean, list of strings, metalist, flat scalar map or null'
             });
             continue;
         }

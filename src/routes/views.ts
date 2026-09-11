@@ -8,6 +8,7 @@
 // is the only module in the application that names a view.
 
 import Collection from '$lib/views/Collection.svelte';
+import Data from '$lib/views/Data.svelte';
 import Deposit from '$lib/views/Deposit.svelte';
 import Document from '$lib/views/Document.svelte';
 import Editor from '$lib/views/Editor.svelte';
@@ -66,6 +67,13 @@ registerView({
     label: 'views.venues',
     glyph: 'views.venues_glyph',
     component: Venues
+});
+
+registerView({
+    id: 'data',
+    label: 'views.data',
+    glyph: 'views.data_glyph',
+    component: Data
 });
 
 registerView({

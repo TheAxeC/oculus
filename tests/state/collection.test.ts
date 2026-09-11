@@ -23,6 +23,8 @@ import {
     noFunding,
     parseCollectionState,
     pinnedFirst,
+    parseRawField,
+    rawFieldText,
     statusFacets,
     statusValues,
     type Entry,
@@ -62,6 +64,30 @@ describe('kindOf', () => {
         expect(kindOf('rows', 'metalist')).toBe('meta');
         expect(kindOf('kind', 'text')).toBe('text');
         expect(kindOf('weight', 'slider')).toBe('text');
+    });
+});
+
+describe('raw form fields', () => {
+    it('keeps raw in the schema and renders a map as one line of JSON', () => {
+        expect(formFields([{ field: 'retrieval', type: 'raw' }])[0].kind).toBe('raw');
+        expect(rawFieldText({ method: 'wget', throttle: true })).toBe(
+            '{"method":"wget","throttle":true}'
+        );
+    });
+
+    it('accepts an empty value or a JSON map of scalars', () => {
+        expect(parseRawField('')).toEqual({ ok: true, value: null });
+        expect(parseRawField('{"method":"wget","tries":2,"ready":true,"token":null}')).toEqual({
+            ok: true,
+            value: { method: 'wget', tries: 2, ready: true, token: null }
+        });
+    });
+
+    it('refuses malformed JSON, lists, and maps with nested values', () => {
+        expect(parseRawField('{method}')).toEqual({ ok: false });
+        expect(parseRawField('["wget"]')).toEqual({ ok: false });
+        expect(parseRawField('{"files":["one"]}')).toEqual({ ok: false });
+        expect(parseRawField('{"nested":{"one":1}}')).toEqual({ ok: false });
     });
 });
 

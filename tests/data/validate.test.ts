@@ -68,7 +68,7 @@ function collection(key: string, entries: Record<string, unknown>[]): RawCollect
         key,
         file,
         meta: {},
-        entries: entries.map((fields, index) => ({ ...fields, source: { file, index } }))
+        entries: entries.map((fields, index) => ({ ...fields, provenance: { file, index } }))
     };
 }
 

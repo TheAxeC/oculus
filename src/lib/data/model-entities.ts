@@ -114,19 +114,20 @@ export type RawRegistry = {
 
 /**
  * One entry of one collection as it was read. Every key the YAML map held is present untouched;
- * the reader adds only `source`. The entry's identity, its `key` when it has one and its `title`
+ * the reader adds only `provenance`. The entry's identity, its `key` when it has one and its `title`
  * otherwise, is left where it was read and is derived by O4, not here.
  */
 export type RawEntry = {
     [key: string]: unknown;
     /** Absolute path of the collection file, and the entry's position in the file's entry list. */
-    source: { file: string; index: number };
+    provenance: { file: string; index: number };
 };
 
 /**
  * One collection as read: the file it came from, its entries in file order, and every top-level
- * key other than `entries` untouched as `meta` (`title`, `intro` and `schema` are the ones the
- * hub's collection files carry).
+ * key other than its record list untouched as `meta` (`title`, `intro` and `schema` are the ones
+ * the hub's collection files carry). Of the five files carried as both entities and collections,
+ * data uses the `datasets:` record list and the other four use `entries:`.
  */
 export type RawCollection = {
     /** The key the caller asked for the file under, from the `collections:` list. */

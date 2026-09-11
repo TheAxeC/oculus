@@ -9,6 +9,7 @@ import type { CollectionFile } from '../../src/lib/data/sources/collections.ts';
 import { readCollections } from '../../src/lib/data/sources/collections.ts';
 
 const FILES: CollectionFile[] = [
+    { key: 'data', file: 'registries/data.yml' },
     { key: 'events', file: 'network/events.yml' },
     { key: 'collaborations', file: 'network/collaborations.yml' },
     { key: 'tasks', file: 'tasks/tasks.yml' },
@@ -36,6 +37,19 @@ function write(hub: string, rel: string, body: string): void {
  */
 function buildHub(): string {
     const hub = scratch();
+    write(
+        hub,
+        'registries/data.yml',
+        [
+            'intro: dataset registry',
+            'theme_labels: { ecg: ECG }',
+            'schema:',
+            '  - { field: key, type: text }',
+            'datasets:',
+            '  - { key: mimic, name: MIMIC-IV, themes: [ecg], source: https://example.invalid/mimic }',
+            ''
+        ].join('\n')
+    );
     write(
         hub,
         'network/events.yml',
@@ -88,6 +102,22 @@ function buildHub(): string {
 }
 
 describe('readCollections', () => {
+    it('reads the data registry from its datasets list and keeps its metadata', () => {
+        const hub = buildHub();
+        const { collections, findings } = readCollections(hub, FILES);
+
+        expect(collections.data.entries.map((entry) => entry.key)).toEqual(['mimic']);
+        expect(collections.data.entries[0].source).toBe('https://example.invalid/mimic');
+        expect(collections.data.meta).toEqual({
+            intro: 'dataset registry',
+            theme_labels: { ecg: 'ECG' },
+            schema: [{ field: 'key', type: 'text' }]
+        });
+        expect(findings.filter((finding) => finding.file.endsWith('registries/data.yml'))).toEqual(
+            []
+        );
+    });
+
     it('reads a title-keyed collection with its entries in file order', () => {
         const hub = buildHub();
         const { collections } = readCollections(hub, FILES);
@@ -117,8 +147,8 @@ describe('readCollections', () => {
         const { collections } = readCollections(hub, FILES);
         const file = join(hub, 'network/collaborations.yml');
 
-        expect(collections.collaborations.entries[0].source).toEqual({ file, index: 0 });
-        expect(collections.collaborations.entries[1].source).toEqual({ file, index: 1 });
+        expect(collections.collaborations.entries[0].provenance).toEqual({ file, index: 0 });
+        expect(collections.collaborations.entries[1].provenance).toEqual({ file, index: 1 });
         // Keyed by `key` here and by `title` in events; both come back exactly as read.
         expect(collections.collaborations.entries[0].key).toBe('linkoping');
         expect(collections.collaborations.entries[0].title).toBe('Linkoping');
@@ -156,7 +186,7 @@ describe('readCollections', () => {
         const { collections, findings } = readCollections(hub, FILES);
 
         expect(collections.code.entries.map((e) => e.title)).toEqual(['bttrlib', 'oculus']);
-        expect(collections.code.entries[1].source).toEqual({
+        expect(collections.code.entries[1].provenance).toEqual({
             file: join(hub, 'registries/repos.yml'),
             index: 2
         });

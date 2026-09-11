@@ -50,11 +50,12 @@ describe('the demo hub', () => {
         }).toEqual({ venues: 5, datasets: 3, programs: 3, domains: 3, funding: 2 });
     });
 
-    it('holds the eleven collections, including the three editable registries', () => {
+    it('holds the twelve collections, including the four editable registries', () => {
         expect(Object.keys(snapshot.entities.collections).sort()).toEqual([
             'applications',
             'code',
             'collaborations',
+            'data',
             'domains',
             'education',
             'events',

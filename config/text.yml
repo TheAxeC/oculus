@@ -2,8 +2,6 @@
 # text.yml
 # Part of the split cockpit config - merged by cockpit.config.load_config() (cockpit.yml + config/*.yml).
 # ===========================================================================
-
-
 # === UI-string catalog ======================================================
 # Every human-readable string the engine renders lives here (mirrors `glyphs:`). The Python side reads it
 # as `T("group.key")` (see cockpit/config.py `_Text`); the `text.js.*` subtree is serialized into the
@@ -808,6 +806,8 @@ text:
     ds_empty: "No datasets yet - add some to registries/data.yml."
     ds_search: "Search datasets | name | modality | project ..."
     ds_modality_facet: "Modality"
+    ds_recover: "Recover"
+    ds_recover_tip: "Open a terminal and recover this dataset"
     idx_intro: "{0} files - search by name or folder, click to open."
     idx_empty: "No files found."
     in_flight: "in flight"
@@ -993,6 +993,5 @@ text:
     demo_open: "Open the fake-data example cockpit (dummy)"
     demo_note: "- a complete cockpit built from made-up data; copy <code>dummy/</code> as a starting point."
     demo_hint: "Fake-data example: build it with <code>python3 build.py --dummy</code>, then open <code>dummy/cockpit.html</code>."
-
 # oculus's own groups (app, ui, views, gallery, collection, project, document, editor) are in
 # text-oculus.yml; loadConfig() folds both files' `text:` into one catalog.

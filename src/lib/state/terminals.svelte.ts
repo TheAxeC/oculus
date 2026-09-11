@@ -141,6 +141,15 @@ export async function startTerminal(
     return post({ action: 'start', kind, cwd, cols, rows });
 }
 
+/** Recover one dataset in a shell terminal; the server supplies both the command and the hub cwd. */
+export async function recoverDataset(
+    key: string,
+    cols: number = COLS,
+    rows: number = ROWS
+): Promise<TerminalAnswer> {
+    return post({ action: 'recover', key, cols, rows });
+}
+
 /**
  * Continue an observed session in a terminal: DESIGN.md's one explicit migration, which runs
  * `claude --resume <id>` or `codex resume <id>` in the session's own directory. The server reads

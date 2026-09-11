@@ -56,7 +56,7 @@ function collection(key: string, items: Record<string, unknown>[]): RawCollectio
         key,
         file,
         meta: { title: key.toUpperCase(), intro: 'about it' },
-        entries: items.map((fields, index) => ({ ...fields, source: { file, index } }))
+        entries: items.map((fields, index) => ({ ...fields, provenance: { file, index } }))
     };
 }
 
@@ -186,6 +186,25 @@ function portfolio(): RawPortfolio {
             domains: {
                 ...collection('domains', [{ key: 'heart', title: 'Cardiology' }]),
                 meta: { title: 'DOMAINS', schema: [{ field: 'key', type: 'text' }] }
+            },
+            data: {
+                ...collection('data', [
+                    {
+                        key: 'mimic',
+                        name: 'MIMIC-IV',
+                        source: 'https://example.invalid/mimic',
+                        retrieval: { method: 'wget' },
+                        themes: ['ecg']
+                    }
+                ]),
+                meta: {
+                    intro: 'dataset registry',
+                    theme_labels: { ecg: 'ECG' },
+                    schema: [
+                        { field: 'key', type: 'text' },
+                        { field: 'retrieval', type: 'raw' }
+                    ]
+                }
             }
         },
         feeds: NO_FEEDS,
@@ -358,6 +377,7 @@ describe('normalise, the field mapping', () => {
 
     it('carries the funding file as a collection as well as a registry', () => {
         expect(Object.keys(snapshot.entities.collections)).toEqual([
+            'data',
             'domains',
             'events',
             'funding',
@@ -387,6 +407,25 @@ describe('normalise, the field mapping', () => {
         });
         expect(snapshot.entities.collections.programs.entries[0].id).toBe('federated');
         expect(snapshot.entities.collections.domains.entries[0].id).toBe('heart');
+        expect(snapshot.entities.collections.data).toMatchObject({
+            id: 'data',
+            intro: 'dataset registry',
+            themeLabels: { ecg: 'ECG' },
+            schema: [
+                { field: 'key', type: 'text' },
+                { field: 'retrieval', type: 'raw' }
+            ]
+        });
+        expect(snapshot.entities.collections.data.entries[0]).toMatchObject({
+            id: 'mimic',
+            fields: {
+                key: 'mimic',
+                name: 'MIMIC-IV',
+                source: 'https://example.invalid/mimic',
+                retrieval: { method: 'wget' },
+                themes: ['ecg']
+            }
+        });
     });
 });
 

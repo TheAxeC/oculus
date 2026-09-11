@@ -84,6 +84,7 @@ describe('the real registrations', () => {
             'findings',
             'gallery',
             'venues',
+            'data',
             'programs',
             'domains',
             'map',
@@ -111,6 +112,15 @@ describe('the real registrations', () => {
             'tasks',
             'code'
         ]);
+    });
+
+    it('registers Data directly and excludes it from generic collections', () => {
+        expect(viewFor('data')).toMatchObject({
+            id: 'data',
+            label: 'views.data',
+            glyph: 'views.data_glyph'
+        });
+        expect(COLLECTIONS).not.toContain('data');
     });
 
     it('registers the one collection component under every collection key of sources.yml', () => {

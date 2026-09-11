@@ -25,6 +25,7 @@ let typeColor: Record<string, string> = {};
 let legend: Record<string, Legend> = {};
 let domainColor: Record<string, string> = {};
 let domainText: Record<string, string> = {};
+let dataAccess: Record<string, string> = {};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -65,6 +66,7 @@ export function setVocab(config: Record<string, unknown>): void {
     typeColor = stringMap(config.type_color, null);
     domainColor = stringMap(config.domains, 'color');
     domainText = stringMap(config.domains, 'label');
+    dataAccess = stringMap(config.data_access, null);
 
     legend = {};
     const rows = config.status_legend;
@@ -91,6 +93,12 @@ export function toneOf(hex: string): string {
     if (token === undefined || !token.startsWith('c-')) return UNKNOWN_TONE;
     const tone = token.slice('c-'.length);
     return TONE.test(tone) ? tone : UNKNOWN_TONE;
+}
+
+/** The dataset access colour from `data_access`, with an unknown value kept neutral. */
+export function dataAccessTone(access: string): string {
+    const hex = dataAccess[String(access).toLowerCase()];
+    return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
 /** The tone of a collection entry's status, through `status_palette`. */

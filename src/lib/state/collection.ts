@@ -396,7 +396,8 @@ export function groupProjects(projects: Project[]): CrossGroup[] {
 }
 
 /** What the entry form draws for one field. A type no control is written for is drawn as text. */
-export type FormKind = 'text' | 'textarea' | 'select' | 'tags' | 'date' | 'metalist' | 'checkbox';
+export type FormKind =
+    'text' | 'textarea' | 'select' | 'tags' | 'date' | 'metalist' | 'checkbox' | 'raw';
 
 /** One control of the entry form, over one field of the file's own schema. */
 export type FormField = {
@@ -408,7 +409,16 @@ export type FormField = {
     help?: string;
 };
 
-const KINDS: FormKind[] = ['text', 'textarea', 'select', 'tags', 'date', 'metalist', 'checkbox'];
+const KINDS: FormKind[] = [
+    'text',
+    'textarea',
+    'select',
+    'tags',
+    'date',
+    'metalist',
+    'checkbox',
+    'raw'
+];
 
 /**
  * The controls the add and edit form draws, in the file's own field order. The type is the file's
@@ -427,6 +437,44 @@ export function formFields(
         required: field.required === true,
         ...(field.help === undefined ? {} : { help: field.help })
     }));
+}
+
+export type RawFieldAnswer =
+    { ok: true; value: Record<string, string | number | boolean | null> | null } | { ok: false };
+
+/** A raw map as the one-line JSON text the textarea edits. */
+export function rawFieldText(value: unknown): string {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) return '';
+    return JSON.stringify(value);
+}
+
+/** Parse raw JSON only when it is a map whose values YAML can write as scalar values. */
+export function parseRawField(text: string): RawFieldAnswer {
+    if (text.trim() === '') return { ok: true, value: null };
+    let parsed: unknown;
+    try {
+        parsed = JSON.parse(text);
+    } catch {
+        return { ok: false };
+    }
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
+        return { ok: false };
+    const values = Object.values(parsed as Record<string, unknown>);
+    if (
+        values.some(
+            (value) =>
+                value !== null &&
+                typeof value !== 'string' &&
+                typeof value !== 'number' &&
+                typeof value !== 'boolean'
+        )
+    ) {
+        return { ok: false };
+    }
+    return {
+        ok: true,
+        value: parsed as Record<string, string | number | boolean | null>
+    };
 }
 
 /** Select choices read from one merged-config value: strings, or assignable keyed rows. */

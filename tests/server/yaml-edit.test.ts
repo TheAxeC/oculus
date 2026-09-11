@@ -132,9 +132,59 @@ describe('setting a metalist', () => {
         expect(out.refused).toEqual([
             {
                 field: 'meta',
-                reason: 'not a string, number, boolean, list of strings, metalist or null'
+                reason: 'not a string, number, boolean, list of strings, metalist, flat scalar map or null'
             }
         ]);
+        expect(out.text).toBe(source);
+    });
+});
+
+describe('setting a flat scalar map', () => {
+    const source = [
+        'title: Dataset',
+        'retrieval:',
+        '  method: curl',
+        '  retries: 2',
+        'after: kept',
+        ''
+    ].join('\n');
+
+    it('replaces the whole block and leaves the bytes around it untouched', () => {
+        const out = setFields(source, {
+            retrieval: { method: 'wget', verified: true, token: null }
+        });
+        expect(out.refused).toEqual([]);
+        expect(out.text).toBe(
+            [
+                'title: Dataset',
+                'retrieval:',
+                '  method: wget',
+                '  verified: true',
+                '  token: null',
+                'after: kept',
+                ''
+            ].join('\n')
+        );
+    });
+
+    it('appends the map as a block at the key indentation', () => {
+        const out = setFields('title: Dataset\nafter: kept\n', {
+            retrieval: { method: 'wget' }
+        });
+        expect(out.text).toBe('title: Dataset\nafter: kept\nretrieval:\n  method: wget\n');
+    });
+
+    it('clears the whole key when given an empty map', () => {
+        const out = setFields(source, { retrieval: {} });
+        expect(out.refused).toEqual([]);
+        expect(out.text).toBe('title: Dataset\nafter: kept\n');
+    });
+
+    it('refuses a nested map', () => {
+        const out = setFields(source, { retrieval: { method: { command: 'wget' } } });
+        expect(out.changed).toEqual([]);
+        expect(out.refused).toHaveLength(1);
+        expect(out.refused[0].field).toBe('retrieval');
         expect(out.text).toBe(source);
     });
 });
@@ -280,8 +330,8 @@ describe('what is not written', () => {
         ]);
     });
 
-    it('refuses a value that is not a scalar, a list of strings or null', () => {
-        const out = setFields(DOC, { title: { a: 1 }, program: [1, 2] });
+    it('refuses a nested map and a list that is not strings', () => {
+        const out = setFields(DOC, { title: { a: { b: 1 } }, program: [1, 2] });
         expect(out.text).toBe(DOC);
         expect(out.refused.map((one) => one.field)).toEqual(['title', 'program']);
     });

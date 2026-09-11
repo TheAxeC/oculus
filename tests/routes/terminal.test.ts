@@ -200,3 +200,64 @@ describe('POST /api/terminal, the resume action', () => {
         expect(driver.calls).toEqual([]);
     });
 });
+
+describe('POST /api/terminal, the recover action', () => {
+    it('starts a named shell in the hub with the server-built recovery command', async () => {
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({ action: 'recover', key: 'mimic-iv', cols: 96, rows: 28 }),
+            TOKEN,
+            {
+                run: driver.run,
+                datasetIdsFor: () => ['mimic-iv'],
+                hubFor: () => HERE
+            }
+        );
+        expect(response.status).toBe(200);
+        const body = await answer(response);
+        const terminal = body.terminal as { id: string; name: string };
+        expect(terminal.name).toBe('recover mimic-iv');
+        const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
+        expect(started[started.indexOf('-c') + 1]).toBe(HERE);
+        expect(started[started.indexOf('-x') + 1]).toBe('96');
+        expect(started[started.indexOf('-y') + 1]).toBe('28');
+        expect(started[started.length - 1]).toBe("python3 tools/data/redownload.py 'mimic-iv'");
+    });
+
+    it('refuses an unknown dataset without starting a terminal', async () => {
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({ action: 'recover', key: 'unknown', cols: 80, rows: 24 }),
+            TOKEN,
+            { run: driver.run, datasetIdsFor: () => ['mimic-iv'], hubFor: () => HERE }
+        );
+        expect(response.status).toBe(400);
+        expect((await answer(response)).error).toBe(
+            'key is not a dataset in the current portfolio'
+        );
+        expect(driver.calls).toEqual([]);
+    });
+
+    it('refuses a shell-bearing key absent from the snapshot', async () => {
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({ action: 'recover', key: 'mimic; touch nope', cols: 80, rows: 24 }),
+            TOKEN,
+            { run: driver.run, datasetIdsFor: () => ['mimic-iv'], hubFor: () => HERE }
+        );
+        expect(response.status).toBe(400);
+        expect(driver.calls).toEqual([]);
+    });
+
+    it('refuses a dash-prefixed key even when the snapshot holds it', async () => {
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({ action: 'recover', key: '--all', cols: 80, rows: 24 }),
+            TOKEN,
+            { run: driver.run, datasetIdsFor: () => ['--all'], hubFor: () => HERE }
+        );
+        expect(response.status).toBe(400);
+        expect((await answer(response)).error).toBe('key is not a valid dataset key');
+        expect(driver.calls).toEqual([]);
+    });
+});

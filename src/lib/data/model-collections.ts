@@ -35,14 +35,17 @@ export type SchemaField = {
 /**
  * One collection: a hub file of like records the reader edits through the file's own schema. Its
  * entries are held inline rather than by id, since an entry belongs to exactly one collection and
- * no relation runs the other way, so no cycle can form. Four files are carried as entities too
- * (venues, programs, domains, funding), the collection being what their entries are edited as.
+ * no relation runs the other way, so no cycle can form. Five files are carried as entities too
+ * (venues, programs, domains, funding and data), the collection being what their entries are
+ * edited as. The data file lists its records under `datasets:`; the others use `entries:`.
  */
 export type Collection = {
     /** The key from the `collections:` list, `funding` or `events`. */
     id: Id;
     title: string;
     intro?: string;
+    /** Optional display words keyed by a collection-specific facet token. */
+    themeLabels?: Record<string, string>;
     /** Absolute path of the collection file. */
     file: string;
     /**

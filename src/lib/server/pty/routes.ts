@@ -3,8 +3,8 @@
 // join them, the pattern lib/server/docs.ts and lib/server/writes.ts already hold.
 //
 // A GET lists the terminals and is same-origin only, like every read. A POST starts, stops, resizes
-// or resumes one and additionally carries the write token, since it is a write in DESIGN.md's "Auth"
-// sense: it runs a process on the machine.
+// or resumes a terminal, or starts dataset recovery, and additionally carries the write token,
+// since it is a write in DESIGN.md's "Auth" sense: it runs a process on the machine.
 //
 // The resume action is DESIGN.md's one explicit migration: an observed session becomes a terminal
 // oculus holds by running `claude --resume <id>` or `codex resume <id>` in its own cwd. Nothing is
@@ -15,7 +15,8 @@
 // no English the page would have to show raw. The page maps the two keys back through t().
 
 import { hasToken, sameOrigin } from '../auth.ts';
-import { bridgedRecord } from '../sessions/hooks.ts';
+import { engineDir, loadLocal } from '../../data/sources/config.ts';
+import { bridgedDatasetIds, bridgedRecord } from '../sessions/hooks.ts';
 import { refreshTerminals } from './channel.ts';
 import {
     KINDS,
@@ -43,6 +44,10 @@ export type TerminalOptions = StartOptions & {
      * to bridgedRecord; tests/routes/terminal.test.ts passes a source the test owns.
      */
     recordFor?: (id: string) => SessionRecord | null;
+    /** Dataset keys in the server's latest portfolio payload. */
+    datasetIdsFor?: () => string[];
+    /** The hub root in which a recovery shell starts. */
+    hubFor?: () => string;
 };
 
 function json(status: number, body: unknown): Response {
@@ -98,7 +103,43 @@ async function resumeSession(
     return json(200, { ok: true, terminal });
 }
 
-/** POST /api/terminal: start, stop, resize or resume one terminal. */
+/** Quote one word for the shell command tmux starts. */
+function shellWord(value: string): string {
+    return `'${value.replaceAll("'", `'"'"'`)}'`;
+}
+
+/** Start the registry's recovery script for one dataset the current snapshot holds. */
+async function recoverDataset(
+    key: unknown,
+    cols: unknown,
+    rows: unknown,
+    options: TerminalOptions
+): Promise<Response> {
+    // A key that starts with a dash would read as a flag of the recovery script (its --all fetches
+    // every dataset), so it is refused before the snapshot is consulted; the snapshot decides the rest.
+    if (typeof key !== 'string' || key === '' || key.startsWith('-')) {
+        return json(400, { error: 'key is not a valid dataset key' });
+    }
+    const known = options.datasetIdsFor?.() ?? bridgedDatasetIds();
+    if (!known.includes(key)) {
+        return json(400, { error: 'key is not a dataset in the current portfolio' });
+    }
+    const cwd = options.hubFor?.() ?? loadLocal(engineDir()).hub;
+    const terminal = await startTerminal(
+        {
+            kind: 'shell',
+            cwd,
+            cols: cols as number,
+            rows: rows as number,
+            name: `recover ${key}`
+        },
+        { ...options, command: `python3 tools/data/redownload.py ${shellWord(key)}` }
+    );
+    refreshTerminals();
+    return json(200, { ok: true, terminal });
+}
+
+/** POST /api/terminal: start, stop, resize, resume or recover one terminal. */
 export async function handleTerminal(
     request: Request,
     token: string,
@@ -140,6 +181,9 @@ export async function handleTerminal(
             refreshTerminals();
             return json(200, { ok: true, terminal });
         }
+        if (message.action === 'recover') {
+            return await recoverDataset(message.key, message.cols, message.rows, options);
+        }
         if (message.action === 'stop') {
             if (!isTerminalId(message.id)) return json(400, { error: 'id is not a terminal id' });
             await stopTerminal(message.id, options);
@@ -172,5 +216,5 @@ export async function handleTerminal(
     } catch (error) {
         return json(400, { error: reason(error) });
     }
-    return json(400, { error: 'action must be start, stop, resize or resume' });
+    return json(400, { error: 'action must be start, stop, resize, resume or recover' });
 }

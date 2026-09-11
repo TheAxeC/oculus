@@ -20,7 +20,9 @@ import type { Document, Node, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
 import {
     asFieldValue,
     deepEqual,
+    isFlatScalarMap,
     isMetalist,
+    renderFlatMap,
     renderMetalist,
     renderScalar,
     sameValue
@@ -202,6 +204,12 @@ export function renderEntry(
         const value = fields[name];
         if (value === undefined || value === null || value === '') continue;
         if (Array.isArray(value) && value.length === 0) continue;
+        if (isFlatScalarMap(value)) {
+            if (Object.keys(value).length === 0) continue;
+            lines.push(`    ${name}:`);
+            lines.push(`      ${renderFlatMap(value, 6)}`);
+            continue;
+        }
         if (isMetalist(value)) {
             lines.push(`    ${name}:`);
             lines.push(`      ${renderMetalist(value, 6)}`);
@@ -314,7 +322,13 @@ function replaceIn(text: string, node: Node, value: Exclude<FieldValue, null>): 
     const start = range[0];
     const end = endOffset(node);
     let rendered: string;
-    if (isMetalist(value)) {
+    if (isFlatScalarMap(value)) {
+        const block = isMap(node) && node.flow !== true;
+        const indent = block
+            ? columnAt(text, start)
+            : indentOf(text.split('\n')[lineAt(text, start)]) + 2;
+        rendered = `${block ? '' : `\n${' '.repeat(indent)}`}${renderFlatMap(value, indent)}`;
+    } else if (isMetalist(value)) {
         rendered = renderMetalist(value, columnAt(text, start));
     } else if (Array.isArray(value)) {
         if (isSeq(node) && node.flow !== true && node.items.length > 0) {
@@ -343,6 +357,15 @@ function appendField(
     if (own === null) return fail('the entry has no place in the file');
     const pad = ' '.repeat(columnAt(text, own[0]));
     const lines = text.split('\n');
+    if (isFlatScalarMap(value)) {
+        lines.splice(
+            found.range.end,
+            0,
+            `${pad}${field}:`,
+            `${pad}  ${renderFlatMap(value, pad.length + 2)}`
+        );
+        return { text: lines.join('\n') };
+    }
     if (isMetalist(value)) {
         lines.splice(
             found.range.end,
@@ -420,7 +443,7 @@ export function setEntryFields(
         if (parsed === undefined) {
             refused.push({
                 field,
-                reason: 'not a string, number, boolean, list of strings, metalist or null'
+                reason: 'not a string, number, boolean, list of strings, metalist, flat scalar map or null'
             });
             continue;
         }
@@ -430,7 +453,9 @@ export function setEntryFields(
             Array.isArray(current[field]) &&
             current[field].some(isRecord)
                 ? null
-                : parsed;
+                : isFlatScalarMap(parsed) && Object.keys(parsed).length === 0
+                  ? null
+                  : parsed;
         if (field === ident && (wanted === null || Array.isArray(wanted))) {
             refused.push({ field, reason: 'the identity field is what the entry is found by' });
             continue;

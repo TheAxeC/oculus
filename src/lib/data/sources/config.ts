@@ -277,6 +277,7 @@ export const VOCAB_KEYS = [
     'status_palette',
     'type_color',
     'status_legend',
+    'data_access',
     'domains',
     'themes',
     'wallpaper',

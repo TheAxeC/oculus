@@ -19,7 +19,14 @@
     import TextArea from '$lib/ui/TextArea.svelte';
     import TextInput from '$lib/ui/TextInput.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { formFields, identityField, type Entry, type SchemaField } from '$lib/state/collection';
+    import {
+        formFields,
+        identityField,
+        parseRawField,
+        rawFieldText,
+        type Entry,
+        type SchemaField
+    } from '$lib/state/collection';
     import { configMap } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
     import { deleteEntry, newEntry, writeEntry, type WriteAnswer } from '$lib/state/writes.svelte';
@@ -57,6 +64,7 @@
                     value: typeof one.value === 'string' ? one.value : ''
                 }));
         }
+        if (kind === 'raw') return rawFieldText(value);
         if (Array.isArray(value)) return value.filter((one) => typeof one === 'string').join(', ');
         if (typeof value === 'string' || typeof value === 'number') return String(value);
         return '';
@@ -145,7 +153,19 @@
     async function save(): Promise<void> {
         const ident = identityField(schema);
         const wanted: Record<string, unknown> = {};
-        for (const field of fields) wanted[field.field] = saveable(field.field, field.kind);
+        for (const field of fields) {
+            if (field.kind !== 'raw') {
+                wanted[field.field] = saveable(field.field, field.kind);
+                continue;
+            }
+            if (entry !== null && !(field.field in edits)) continue;
+            const parsed = parseRawField(line(field.field));
+            if (!parsed.ok) {
+                asked = t('collection.form_raw_invalid');
+                return;
+            }
+            wanted[field.field] = parsed.value;
+        }
         if (wanted[ident] === null || wanted[ident] === undefined) {
             asked = t('collection.form_needs', ident);
             return;
@@ -177,7 +197,7 @@
 
     {#each fields as field (field.field)}
         <Field label={field.label} help={field.help}>
-            {#if field.kind === 'textarea'}
+            {#if field.kind === 'textarea' || field.kind === 'raw'}
                 <TextArea
                     value={line(field.field)}
                     label={field.label}

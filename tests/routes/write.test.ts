@@ -25,6 +25,9 @@ const TASKS =
 const VENUES =
     'title: Venues\nschema:\n  - { field: name, type: text }\n  - { field: id, type: text }\nvenues:\n  - name: Existing Venue\n    id: existing\n';
 
+const DATA =
+    'title: Data\nschema:\n  - { field: key, type: text }\n  - { field: retrieval, type: raw }\ndatasets:\n  - key: mimic-iv\n    retrieval:\n      method: curl\n';
+
 const CAREER = 'title: Career\nhosts:\n  - { name: "Naesens", status: "warm" }\n';
 
 const TOKEN = mintToken();
@@ -41,6 +44,7 @@ function target(): WriteTarget {
     for (const [path, body] of [
         ['tasks/tasks.yml', TASKS],
         ['registries/venues.yml', VENUES],
+        ['registries/data.yml', DATA],
         ['CAREER.yml', CAREER]
     ]) {
         const file = join(dir, path);
@@ -427,6 +431,34 @@ describe('the kinds the write endpoint learned in P1', () => {
         expect(await added.json()).toEqual({ ok: true, changed: ['entries'], refused: [] });
         expect(readFileSync(join(into.hub, 'tasks', 'tasks.yml'), 'utf8')).toContain(
             '  - title: Metalist task\n    meta:\n      - { label: Owner, value: "Axel" }'
+        );
+    });
+
+    it('carries flat raw maps through entry and new-entry writes', async () => {
+        const into = target();
+        const fields = { retrieval: { method: 'wget' } };
+        const edited = await handleWrite(
+            request({ kind: 'entry', collection: 'data', id: 'mimic-iv', fields }),
+            TOKEN,
+            into
+        );
+        expect(await edited.json()).toEqual({ ok: true, changed: ['retrieval'], refused: [] });
+        expect(readFileSync(join(into.hub, 'registries', 'data.yml'), 'utf8')).toContain(
+            '    retrieval:\n      method: wget'
+        );
+
+        const added = await handleWrite(
+            request({
+                kind: 'new-entry',
+                collection: 'data',
+                fields: { key: 'ptb-xl', ...fields }
+            }),
+            TOKEN,
+            into
+        );
+        expect(await added.json()).toEqual({ ok: true, changed: ['datasets'], refused: [] });
+        expect(readFileSync(join(into.hub, 'registries', 'data.yml'), 'utf8')).toContain(
+            '  - key: ptb-xl\n    retrieval:\n      method: wget'
         );
     });
 

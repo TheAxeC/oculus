@@ -212,6 +212,8 @@ text:
     editor_glyph: "edit"
     venues: "Venues"
     venues_glyph: "venue"
+    data: "Data"
+    data_glyph: "data"
     programs: "Pillars"
     programs_glyph: "program"
     domains: "Domains"
@@ -333,6 +335,10 @@ text:
     delete_glyph: "cross"
     folder_glyph: "folder"
     link_glyph: "link"
+    form_raw_invalid: "Raw fields must be valid JSON maps whose values are strings, numbers, booleans or null."
+
+  data:                        # The Data view's action outcome; the card supplies the server's reason.
+    recover_failed: "Recovery did not start: {0}"
 
   project:                     # oculus: one project as its own tab - its card, its documents, its sessions.
     documents: "Documents"

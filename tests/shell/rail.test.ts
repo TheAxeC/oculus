@@ -173,8 +173,13 @@ describe('the groups of the real config', () => {
         expect(section('Academic life').length).toBeGreaterThan(GROUP_MAX);
     });
 
-    it('puts the other two collections and Venues under Sources, which is therefore a heading', () => {
-        expect(section('Sources').map((view) => view.id)).toEqual(['venues', 'code', 'statements']);
+    it('puts the other two collections, Venues and Data under Sources', () => {
+        expect(section('Sources').map((view) => view.id)).toEqual([
+            'venues',
+            'data',
+            'code',
+            'statements'
+        ]);
         expect(section('Sources').length).toBeLessThanOrEqual(GROUP_MAX);
     });
 

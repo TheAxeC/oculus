@@ -108,6 +108,50 @@ describe('entry metalists', () => {
     });
 });
 
+describe('entry raw maps', () => {
+    it('renders a new entry with a flat scalar map as a block map', () => {
+        expect(
+            renderEntry(['key', 'retrieval'], 'key', {
+                key: 'mimic-iv',
+                retrieval: { method: 'wget', verified: true, token: null }
+            })
+        ).toBe(
+            '  - key: mimic-iv\n    retrieval:\n      method: wget\n      verified: true\n      token: null'
+        );
+    });
+
+    it('replaces one entry field with the complete flat scalar map', () => {
+        const source = [
+            'datasets:',
+            '  - key: mimic-iv',
+            '    retrieval:',
+            '      method: curl',
+            '      notes: old',
+            '    access: credentialed',
+            '',
+            'footer: kept',
+            ''
+        ].join('\n');
+        const out = setEntryFields(source, 'key', 'mimic-iv', {
+            retrieval: { method: 'wget', verified: false }
+        });
+        expect(out.refused).toEqual([]);
+        expect(out.text).toBe(
+            [
+                'datasets:',
+                '  - key: mimic-iv',
+                '    retrieval:',
+                '      method: wget',
+                '      verified: false',
+                '    access: credentialed',
+                '',
+                'footer: kept',
+                ''
+            ].join('\n')
+        );
+    });
+});
+
 const KEYED = [
     'schema:',
     '  - { field: key, type: text }',

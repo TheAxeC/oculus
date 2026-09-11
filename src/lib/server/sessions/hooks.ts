@@ -161,6 +161,19 @@ export function bridgedProjectIds(): string[] {
     return Object.keys(entities.projects ?? {});
 }
 
+/** Dataset keys in the last portfolio payload, for recovery requests to address by snapshot only. */
+export function bridgedDatasetIds(): string[] {
+    const { hub } = bridge();
+    if (hub === null) return [];
+    const message = hub.latest('portfolio');
+    if (message === undefined) return [];
+    const payload = message.payload;
+    if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return [];
+    const entities = (payload as Snapshot).entities;
+    if (typeof entities !== 'object' || entities === null) return [];
+    return Object.keys(entities.datasets ?? {});
+}
+
 /** What routes/api/hook/+server.ts needs of the real Hub, without importing its class identity. */
 export type HubLike = {
     latest(channel: string): { payload: unknown } | undefined;
