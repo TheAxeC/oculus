@@ -21,7 +21,20 @@ reviewer: codex:gpt-5.6-sol  # the reviewer stage, tried from O24a on (Axel, 202
 ```
 
 ```yaml
-dispatch: none               # nothing in flight; O25a is next.
+dispatch:
+  package: O25a
+  worker: codex:gpt-5.6-sol
+  worktree: .agents/worktrees/o25a
+  base: 82a03526bbbb0f0c9790f068e2de2d9a26371c71
+  launched: 2026-09-11T22:17:36+02:00
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O25a/prompt.md
+  events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O25a/events.jsonl
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O25a/report.md
+  exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O25a/exit.txt
+  pid: none
+  session_id: none
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
