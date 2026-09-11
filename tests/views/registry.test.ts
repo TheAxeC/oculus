@@ -91,6 +91,7 @@ describe('the real registrations', () => {
             'session-list',
             'session-detail',
             'terminal',
+            'transcript',
             'timeline',
             'changes',
             'agents',

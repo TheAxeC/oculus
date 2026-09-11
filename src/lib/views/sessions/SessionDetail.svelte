@@ -143,6 +143,16 @@
         await write({ title: text });
     }
 
+    /**
+     * Show the turns of this session. A transcript view already up in the panel is the one that is
+     * focused; otherwise openView activates the one in the main tree or opens it there, since the
+     * conversation is read beside the terminal rather than in the narrow panel.
+     */
+    function openTranscript(): void {
+        const where = findView(workbench().panel, 'transcript') !== null ? 'panel' : 'main';
+        openView('transcript', where);
+    }
+
     /** Whether a terminal view is already up, so a resume does not rearrange a workbench. */
     function terminalOpen(): boolean {
         const trees = [workbench().main, workbench().panel];
@@ -272,6 +282,12 @@
                             onclick={() => void resume()}
                         />
                     {/if}
+                    <ToolButton
+                        label={t('sessions.transcript_open')}
+                        glyph={t('sessions.transcript_glyph')}
+                        title={t('sessions.transcript_open_tip')}
+                        onclick={() => openTranscript()}
+                    />
                 </div>
                 {#if outcome !== ''}
                     <span class="outcome">{outcome}</span>

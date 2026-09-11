@@ -505,6 +505,32 @@ export type SessionEvent = {
     text: string;
 };
 
+/**
+ * The call one `tool` turn is about. `id` is the transcript's own `tool_use_id`, which is what pairs
+ * the call with its result; the result may be read in a later tail read, so the id travels with the
+ * turn rather than being resolved away on the server. `ok` is null while the call is still out.
+ */
+export type TurnTool = {
+    id: string;
+    name: string;
+    summary: string;
+    ok: boolean | null;
+};
+
+/**
+ * One turn of a session's conversation, as the transcript view draws it. `html` is the rendered
+ * Markdown of an assistant turn and the empty string on every other role; `text` is capped and `cut`
+ * says the cap applied. A `tool` turn carries `tool` and nothing in `text`.
+ */
+export type Turn = {
+    at: string | null;
+    role: 'user' | 'assistant' | 'tool';
+    text: string;
+    html: string;
+    cut: boolean;
+    tool: TurnTool | null;
+};
+
 /** Lifetime token sums over the whole transcript. Never the context occupancy. */
 export type SessionTokens = {
     input: number;

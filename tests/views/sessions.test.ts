@@ -17,6 +17,7 @@ import SessionDetail from '../../src/lib/views/sessions/SessionDetail.svelte';
 import SessionList from '../../src/lib/views/sessions/SessionList.svelte';
 import Terminal from '../../src/lib/views/sessions/Terminal.svelte';
 import Timeline from '../../src/lib/views/sessions/Timeline.svelte';
+import Transcript from '../../src/lib/views/sessions/Transcript.svelte';
 import {
     engineDir,
     glyphCatalog,
@@ -29,6 +30,7 @@ import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { select } from '../../src/lib/state/selection.svelte.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
+import { forget, hold, type Turn } from '../../src/lib/state/transcript.svelte.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import { area, git, payload, record, terminal, workspace } from '../sessions-fixture.ts';
 import type { Component } from 'svelte';
@@ -370,6 +372,67 @@ describe('the timeline', () => {
         expect(html(Timeline)).toContain(catalog['js.sessions.tl_empty']);
         select(null);
         expect(html(Timeline)).toContain(catalog['sessions.detail_empty']);
+    });
+});
+
+// The transcript view, which draws what state/transcript.svelte.ts holds for the selected session.
+// The turns are put in through hold(), the module's test-only door: this suite renders on the server,
+// where the module fetches nothing, so there is no request to stub.
+describe('the transcript view', () => {
+    const turn = (over: Partial<Turn> = {}): Turn => ({
+        at: '2026-09-10T08:00:00.000Z',
+        role: 'user',
+        text: '',
+        html: '',
+        cut: false,
+        tool: null,
+        ...over
+    });
+
+    it('draws the three roles of the turns it holds', () => {
+        hold('live-one', [
+            turn({ role: 'user', text: 'do the thing' }),
+            turn({ role: 'assistant', html: '<p>Doing it.</p>' }),
+            turn({
+                role: 'tool',
+                tool: { id: 't1', name: 'Edit', summary: 'main.tex', ok: true }
+            })
+        ]);
+        select('live-one');
+        const body = html(Transcript);
+        expect(body).toContain(catalog['sessions.turn_user']);
+        expect(body).toContain('do the thing');
+        expect(body).toContain(catalog['sessions.turn_assistant']);
+        expect(body).toContain('<p>Doing it.</p>');
+        expect(body).toContain(catalog['sessions.turn_tool']);
+        expect(body).toContain('main.tex');
+        expect(body).toContain(catalog['sessions.turn_ok']);
+        forget('live-one');
+    });
+
+    it('says a cut turn was cut', () => {
+        hold('live-one', [turn({ role: 'user', text: 'x'.repeat(40), cut: true })]);
+        select('live-one');
+        expect(html(Transcript)).toContain(catalog['sessions.turn_cut']);
+        forget('live-one');
+    });
+
+    it('says when a session has no turns, and when none is selected', () => {
+        hold('ended-one', []);
+        select('ended-one');
+        expect(html(Transcript)).toContain(catalog['sessions.turns_empty']);
+        forget('ended-one');
+        select(null);
+        expect(html(Transcript)).toContain(catalog['sessions.detail_empty']);
+    });
+
+    // The row menu's own entry is not covered here: a Menu renders its opener on the server and its
+    // items only once it is opened, which needs a DOM this suite does not have.
+    it('offers the open control in the detail pane', () => {
+        select('live-one');
+        const body = html(SessionDetail);
+        expect(body).toContain(catalog['sessions.transcript_open']);
+        expect(body).toContain(catalog['sessions.transcript_open_tip']);
     });
 });
 

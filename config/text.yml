@@ -828,6 +828,22 @@ text:
     resume_confirm: "Press again to run the agent again in {0}"
     resume_live: "This session is still running. It can be resumed once it has ended."
     resume_unknown: "The snapshot no longer holds this session."
+    # oculus, O19b: the transcript view - the turns of one session, read from its file on demand.
+    view_transcript: "Transcript"
+    transcript_glyph: "chat"
+    transcript_open: "Open the transcript"
+    transcript_open_tip: "read the turns of this session in the transcript view"
+    turns_empty: "This session has no turns yet."
+    turn_cut: "(cut at 20000 characters)"
+    turn_user: "You"
+    turn_assistant: "Agent"
+    turn_tool: "Tool"
+    turn_toolbar: "Transcript controls"
+    turn_end: "Jump to the last turn"
+    turn_end_glyph: "disclosure"
+    turn_ok: "ok"
+    turn_error: "error"
+    turn_running: "running"
 
   config:                      # Config tab (render/surfaces.py config_tab_html) - the split config, raw-YAML editable.
     intro: "The cockpit config, split across these files and merged by <code>load_config()</code>. Edit any file as raw YAML (served mode) - the build and <code>--selftest</code> validate it on save. The <b>+ status</b> button (top bar) is the one-click shortcut for adding a status colour."

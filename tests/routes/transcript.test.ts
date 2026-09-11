@@ -1,0 +1,89 @@
+// What GET /api/transcript answers. The route itself is one line handing the request to
+// handleTranscript, which is what this calls with an options bag holding a `recordFor` the test
+// owns instead of the bridge to the last published payload: no session store, no registry and no hub
+// is read, and the only file any case opens is the one written under mkdtemp.
+
+import { mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve, sep } from 'node:path';
+import { describe, expect, it } from 'vitest';
+import { handleTranscript } from '../../src/lib/server/transcript-routes.ts';
+import { record } from '../sessions-fixture.ts';
+import type { SessionRecord } from '../../src/lib/data/model.ts';
+
+const HOST = '127.0.0.1:8791';
+const SESSION = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
+
+/** One synthetic transcript: a prompt and an answer, under the system temporary root. */
+function transcript(): string {
+    const root = mkdtempSync(join(tmpdir(), 'oculus-transcript-route-'));
+    expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+    const path = join(root, `${SESSION}.jsonl`);
+    const lines = [
+        {
+            type: 'user',
+            timestamp: '2026-09-11T08:00:00.000Z',
+            origin: { kind: 'human' },
+            message: { role: 'user', content: 'do the thing' }
+        },
+        {
+            type: 'assistant',
+            timestamp: '2026-09-11T08:00:05.000Z',
+            message: { role: 'assistant', content: [{ type: 'text', text: 'Doing it.' }] }
+        }
+    ];
+    writeFileSync(path, lines.map((one) => JSON.stringify(one) + '\n').join(''));
+    return path;
+}
+
+/** The payload's records, as the endpoint reads them: one session and nothing else. */
+function recordFor(path: string): (id: string) => SessionRecord | null {
+    const held = record(SESSION, { path, tool: 'claude' });
+    return (id) => (id === SESSION ? held : null);
+}
+
+function request(query: string): Request {
+    return new Request(`http://${HOST}/api/transcript?${query}`, {
+        headers: { 'sec-fetch-site': 'same-origin' }
+    });
+}
+
+describe('GET /api/transcript', () => {
+    it('answers 404 for an id the last payload does not hold', async () => {
+        const response = handleTranscript(request('id=not-there'), {
+            recordFor: recordFor(transcript())
+        });
+        expect(response.status).toBe(404);
+        expect(((await response.json()) as { error: string }).error).toContain('not-there');
+    });
+
+    it('answers 400 for a from that is not a whole number', async () => {
+        const response = handleTranscript(request(`id=${SESSION}&from=abc`), {
+            recordFor: recordFor(transcript())
+        });
+        expect(response.status).toBe(400);
+        expect(((await response.json()) as { error: string }).error).toContain('abc');
+    });
+
+    it('answers the turns of the session the payload holds', async () => {
+        const response = handleTranscript(request(`id=${SESSION}`), {
+            recordFor: recordFor(transcript())
+        });
+        expect(response.status).toBe(200);
+        const body = (await response.json()) as {
+            turns: { role: string; text: string }[];
+            offset: number;
+        };
+        expect(body.turns.map((turn) => turn.role)).toEqual(['user', 'assistant']);
+        expect(body.turns[0].text).toBe('do the thing');
+        expect(body.offset).toBeGreaterThan(0);
+    });
+
+    it('refuses a request from another origin', async () => {
+        const other = new Request(`http://${HOST}/api/transcript?id=${SESSION}`, {
+            headers: { origin: 'http://elsewhere.example', 'sec-fetch-site': 'cross-site' }
+        });
+        const response = handleTranscript(other, { recordFor: recordFor(transcript()) });
+        expect(response.status).toBe(403);
+    });
+});

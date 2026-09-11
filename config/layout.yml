@@ -18,7 +18,7 @@ nav_groups:
   boards:
     - { label: "Boards",        keys: [projects, coauthor, archive, programs, domains, map] }
   sessions:
-    - { label: "Sessions",      glyph: chat,  keys: [session-list, session-detail, terminal, timeline, changes, agents] }
+    - { label: "Sessions",      glyph: chat,  keys: [session-list, session-detail, terminal, transcript, timeline, changes, agents] }
   collections:
     - { label: "Academic life", glyph: scout, keys: [funding, events, education, applications, collaborations, tasks] }
     - { label: "Sources",       keys: [venues, data, code, statements] }
@@ -46,7 +46,7 @@ arrangements:
           sizes: [0.6, 0.4]
           children:
             - { kind: pane, view: terminal }
-            - { kind: pane, view: timeline }
+            - { kind: pane, view: [transcript, timeline] }
     panel:
       kind: pane
       view: [session-detail, changes, agents]

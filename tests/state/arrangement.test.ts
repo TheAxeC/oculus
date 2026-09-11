@@ -42,7 +42,12 @@ describe('parseArrangement', () => {
         expect(made).not.toBe(null);
         expect(checkWorkbench(made as Workbench)).toEqual([]);
         expect(made?.dock).toBe('right');
-        expect(viewsOf((made as Workbench).main)).toEqual(['session-list', 'terminal', 'timeline']);
+        expect(viewsOf((made as Workbench).main)).toEqual([
+            'session-list',
+            'terminal',
+            'transcript',
+            'timeline'
+        ]);
         expect(viewsOf((made as Workbench).panel)).toEqual(['session-detail', 'changes', 'agents']);
     });
 
@@ -53,7 +58,7 @@ describe('parseArrangement', () => {
             [...panes(made.main), ...panes(made.panel)].flatMap(({ pane: node }) =>
                 node.tabs.map((tab) => tab.id)
             );
-        expect(new Set(ids(first)).size).toBe(6);
+        expect(new Set(ids(first)).size).toBe(7);
         expect(ids(first).some((id) => ids(second).includes(id))).toBe(false);
     });
 

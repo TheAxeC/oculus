@@ -175,16 +175,31 @@
         if (!answer.ok) failure = answer.error;
     }
 
-    /** What a row's menu offers: the resume, reading as the confirm once it has been armed. */
+    /** What a row's menu offers: the transcript, and the resume, reading as the confirm once armed. */
     function rowItems(row: GroupedSession): MenuItem[] {
         const confirm = t('sessions.resume_confirm', row.cwd ?? '');
         return [
+            {
+                id: 'transcript',
+                label: t('sessions.transcript_open'),
+                glyph: t('sessions.transcript_glyph')
+            },
             {
                 id: 'resume',
                 label: armedResume === row.id ? confirm : t('sessions.resume'),
                 glyph: t('sessions.resume_glyph')
             }
         ];
+    }
+
+    /**
+     * Show one row's turns. The row becomes the selection first, since the transcript view draws the
+     * selected session; a transcript view already up is activated rather than a second one opened.
+     */
+    function openTranscript(row: GroupedSession): void {
+        select(row.id);
+        const where = findView(workbench().panel, 'transcript') !== null ? 'panel' : 'main';
+        openView('transcript', where);
     }
 
     /** Whether a terminal view is already up, so a resume does not rearrange a workbench. */
@@ -283,6 +298,7 @@
                     align="right"
                     onpick={(id) => {
                         if (id === 'resume') void resume(entry);
+                        if (id === 'transcript') openTranscript(entry);
                     }}
                 />
             </div>

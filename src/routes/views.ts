@@ -21,6 +21,7 @@ import SessionDetail from '$lib/views/sessions/SessionDetail.svelte';
 import SessionList from '$lib/views/sessions/SessionList.svelte';
 import Terminal from '$lib/views/sessions/Terminal.svelte';
 import Timeline from '$lib/views/sessions/Timeline.svelte';
+import Transcript from '$lib/views/sessions/Transcript.svelte';
 import { registerView } from '$lib/views/registry';
 
 registerView({
@@ -121,6 +122,13 @@ registerView({
     label: 'sessions.view_terminal',
     glyph: 'sessions.terminal_glyph',
     component: Terminal
+});
+
+registerView({
+    id: 'transcript',
+    label: 'sessions.view_transcript',
+    glyph: 'sessions.transcript_glyph',
+    component: Transcript
 });
 
 registerView({
