@@ -34,7 +34,12 @@ dispatch:
   pid: 9264
   session_id: 01a091e2-e5fa-7630-b244-f874e745685d
   landing: not-started
-  round: 0
+  round: 1                   # repair round in flight, resumed on the same thread
+  repair_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24b/repair-prompt.md
+  repair_events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24b/repair-events.jsonl
+  repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24b/repair-report.md
+  repair_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24b/repair-exit.txt
+  repair_pid: none
   reviewer_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24b/review-prompt.md
   reviewer_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24b/review-report.md
   reviewer_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24b/review-exit.txt
