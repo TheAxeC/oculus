@@ -43,4 +43,4 @@ Read from the cockpit's built page on 127.0.0.1:8787 and the oculus page on 8790
 
 ## Not yet ported at all (planned)
 
-Inbox, Lit Watch, Position Leads, LinkedIn (O25); Live HPC (O26); Map, Programs, Domains, Venues, Data (O24); Memories, Help, Audit, Config, Approach, Agent approach (O28; the two approach documents are bookmarks today).
+Inbox, Lit Watch, Position Leads, LinkedIn, Data, the Update action and the Cmd-K search (O25); Live HPC (O26); Map, Programs, Domains, Venues (O24; Funding is P4); Memories, Help, Audit, Config, and the three document tabs of the cockpit's More group, Research approach, Agent approach and the HPC how-to (O28; `config/layout.yml`'s bookmarks hold only the cathedra and game-engine manuals today, so none of the three is reachable from the rail). The list is the cockpit's own: `PRIMARY_TABS` at `page.py` line 631, the `more` group at `data/config/layout.yml` line 22, the document tabs at lines 122 to 124.
