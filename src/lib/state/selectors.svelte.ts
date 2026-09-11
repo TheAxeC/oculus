@@ -13,14 +13,17 @@ import {
     SESSIONS_LIVE,
     SESSIONS_NONE,
     SESSIONS_RECENT,
+    STALE_LAG,
     boardItems,
-    presetFor
+    disseminated,
+    presetFor,
+    stats
 } from './board.ts';
 import { config, git, portfolio, sessions } from './entities.svelte.ts';
 import { choicesFor, formFields, formSections } from './schema.ts';
 import { pinnedSession, selected } from './selection.svelte.ts';
 import { instanceState } from './ui.svelte.ts';
-import type { BoardItem, BoardPreset } from './board.ts';
+import type { BoardItem, BoardPreset, BoardStats, Dissemination } from './board.ts';
 import type { Choice, FormField } from './schema.ts';
 import type {
     Area,
@@ -42,6 +45,7 @@ export type {
     SessionAgent,
     SessionEvent,
     SessionFile,
+    Subtask,
     Workspace
 } from '../data/model.ts';
 
@@ -62,6 +66,32 @@ export function boardPreset(view: string): BoardPreset {
 export function board(preset: BoardPreset): BoardItem[] {
     const snapshot = portfolio();
     return snapshot === null ? [] : boardItems(snapshot, preset, sessionsOf);
+}
+
+/**
+ * The strip above one board, over the board's own projects and the venue registry they aim at.
+ * Before the first snapshot the venues are empty, which is a strip of zeroes and no venue chips.
+ */
+export function boardStats(items: BoardItem[]): BoardStats {
+    return stats(items, portfolio()?.entities.venues ?? {}, configMap());
+}
+
+/** `stale_lag_days` of config/behavior.yml: how far behind its documents a manifest may be. */
+export function staleLag(): number {
+    const value = configMap().stale_lag_days;
+    return typeof value === 'number' && Number.isFinite(value) ? value : STALE_LAG;
+}
+
+/** The events and education entries that name one project. Empty before the first snapshot. */
+export function disseminatedFor(id: Id): Dissemination[] {
+    const snapshot = portfolio();
+    return snapshot === null ? [] : disseminated(snapshot, id);
+}
+
+/** The domains registry as a form's choices, for the one field of the new-idea form that has any. */
+export function domainChoices(): Choice[] {
+    const domains = portfolio()?.entities.domains ?? {};
+    return Object.values(domains).map((one) => ({ id: one.id, label: one.title }));
 }
 
 /**

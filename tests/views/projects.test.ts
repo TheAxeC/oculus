@@ -9,7 +9,7 @@
 // menu opens, no card is clicked and no $effect runs; the state a click would write is written
 // here through setInstanceState instead, and the interactions are checked in a browser.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Projects from '../../src/lib/views/Projects.svelte';
@@ -223,6 +223,30 @@ function cards(body: string): number {
     return body.split('<article class="card').length - 1;
 }
 
+/** The words of one catalog key with its argument filled in, which is what the markup carries. */
+function words(key: string, ...args: string[]): string {
+    return args.reduce((held, arg, at) => held.replace(`{${at}}`, arg), catalog[key]);
+}
+
+/**
+ * The board over the fixture with some projects overwritten, and the fixture put back afterwards,
+ * so a case that needs a stale project or a pinned one does not change what every other case sees.
+ */
+function withProjects(
+    fields: Record<Id, Partial<Project>>,
+    view = 'projects',
+    state: Partial<BoardState> = {}
+): string {
+    const snap = snapshot();
+    for (const [id, held] of Object.entries(fields)) {
+        snap.entities.projects[id] = { ...snap.entities.projects[id], ...held };
+    }
+    receive({ channel: 'portfolio', version: 1, payload: snap });
+    const body = html(view, state);
+    receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+    return body;
+}
+
 describe('the board', () => {
     it('draws one card per project of its own tiers', () => {
         expect(cards(html('projects'))).toBe(2);
@@ -418,5 +442,174 @@ describe('the facets', () => {
         expect(
             cards(html('projects', { filters: { compute: ['hpc'], status: ['submitted'] } }))
         ).toBe(0);
+    });
+});
+
+describe('the stats strip', () => {
+    it('counts the board, the submit-ready chip, the blocked lane and the dated projects', () => {
+        const body = withProjects({
+            alpha: { chips: ['submit-ready'] },
+            bravo: { focus: 'blocked' }
+        });
+
+        expect(body).toContain(words('board.stat_active', '2'));
+        expect(body).toContain(words('board.stat_submit_ready', '1'));
+        expect(body).toContain(words('board.stat_blocked', '1'));
+        expect(body).toContain(words('board.stat_dated', '2'));
+    });
+
+    it('shows the venue the board aims at, by its catalogued short name', () => {
+        const body = html('projects');
+        expect(body).toContain(catalog['board.stat_venues_tip']);
+        expect(body).toContain('>BSPC</span>');
+    });
+
+    it('is not drawn on the archive board or the coauthor board', () => {
+        expect(html('archive')).not.toContain(catalog['board.stat_venues_tip']);
+        expect(html('coauthor')).not.toContain(catalog['board.stat_venues_tip']);
+    });
+});
+
+describe('the controls beside the search', () => {
+    it('offers the new idea control on every board', () => {
+        for (const view of ['projects', 'archive', 'coauthor']) {
+            expect(html(view)).toContain(catalog['board.new_idea']);
+        }
+        // The form itself opens on a click, which needs a DOM; it is a browser check.
+    });
+
+    it('offers the two quick filters on the projects board and on no other', () => {
+        expect(html('projects')).toContain(catalog['board.quick_stale']);
+        expect(html('projects')).toContain(catalog['board.quick_deadline']);
+        expect(html('archive')).not.toContain(catalog['board.quick_stale']);
+    });
+
+    it('leaves only what is behind its documents when the stale filter is on', () => {
+        expect(cards(withProjects({ alpha: { staleDays: 3 } }, 'projects', { stale: true }))).toBe(
+            1
+        );
+        expect(cards(html('projects', { stale: true }))).toBe(0);
+    });
+
+    it('leaves only what carries a deadline when the deadline filter is on', () => {
+        const body = withProjects({ bravo: { deadline: undefined } }, 'projects', { dated: true });
+        expect(cards(body)).toBe(1);
+        expect(cards(html('projects', { dated: true }))).toBe(2);
+    });
+
+    it('draws one toggle per type with its count, and hides the types switched off', () => {
+        const body = html('projects');
+        expect(body).toContain('active 1');
+        expect(body).toContain('manuscript 1');
+        expect(cards(html('projects', { hiddenTypes: ['manuscript'] }))).toBe(1);
+        expect(cards(html('projects', { hiddenTypes: ['manuscript', 'active'] }))).toBe(0);
+    });
+
+    it('offers the two bulk controls', () => {
+        expect(html('projects')).toContain(catalog['board.expand_all']);
+        expect(html('projects')).toContain(catalog['board.collapse']);
+    });
+});
+
+describe('the card controls', () => {
+    it('offers the pin control, and marks a card that is pinned', () => {
+        expect(html('projects')).toContain(catalog['cards.pin_to_top']);
+        const pinned = withProjects({ alpha: { pin: true } });
+        expect(pinned).toContain(catalog['cards.unpin']);
+        expect(pinned).toMatch(/class="card[^"]*pinned"/);
+    });
+
+    it('draws the stale badge with the days the manifest is behind', () => {
+        const body = withProjects({
+            alpha: { staleDays: 3, docs: [{ name: 'README.md', present: true, mtime: 1 }] }
+        });
+        expect(body).toContain(words('cards.stale_behind', '3'));
+        expect(html('projects')).not.toContain(words('cards.stale_behind', '3'));
+    });
+});
+
+describe('the subtasks block', () => {
+    const body = withProjects(
+        {
+            alpha: {
+                subtasks: [
+                    { key: '0', do: 'redraw figure 2', deadline: '2026-10-01', done: false },
+                    { key: '1', do: 'add the funding line', done: true }
+                ]
+            }
+        },
+        'projects',
+        { expanded: ['alpha'] }
+    );
+
+    it('draws the lines with the open count', () => {
+        expect(body).toContain(catalog['actions.subtasks']);
+        expect(body).toContain(words('actions.n_open', '1'));
+        expect(body).toContain('redraw figure 2');
+        expect(body).toContain('2026-10-01');
+    });
+
+    it('draws done, the snoozes and del on an open line, and reopen on a done one', () => {
+        for (const key of [
+            'actions.done',
+            'actions.snooze_1w',
+            'actions.snooze_1mo',
+            'actions.snooze_hide',
+            'actions.del',
+            'actions.reopen',
+            'actions.add_subtask'
+        ]) {
+            expect(body).toContain(catalog[key]);
+        }
+    });
+});
+
+describe('the file finder', () => {
+    /** What the endpoint answers, with a row in megabytes, one in kilobytes, and a cap. */
+    const answer = {
+        rows: [
+            { path: 'code/run.py', size: 38400, mtime: 2 },
+            { path: 'manuscript/main.pdf', size: 2097152, mtime: 1 }
+        ],
+        truncated: true,
+        folder: 'projects/active/alpha'
+    };
+
+    it('draws the heading, the filter box, the rows and the cap once they are held', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(
+                async () =>
+                    new Response(JSON.stringify(answer), {
+                        status: 200,
+                        headers: { 'content-type': 'application/json' }
+                    })
+            )
+        );
+        // A new portfolio version is what makes the store ask again: an earlier case in this file
+        // opened the same card with no stub in place, and what is held is held per version.
+        receive({ channel: 'portfolio', version: 2, payload: snapshot() });
+        // The first rendering asks for the listing, the second draws what the answer left held.
+        html('projects', { expanded: ['alpha'] });
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        const body = html('projects', { expanded: ['alpha'] });
+        vi.unstubAllGlobals();
+
+        expect(body).toContain(words('cards.files_hdr', '2'));
+        expect(body).toContain(catalog['cards.files_ph']);
+        expect(body).toContain('run.py');
+        expect(body).toContain('37 KB');
+        expect(body).toContain('2.0 MB');
+        expect(body).toContain(words('cards.files_capped', '2'));
+    });
+
+    it('asks for nothing on a card that is not open', () => {
+        const asked = vi.fn();
+        vi.stubGlobal('fetch', asked);
+        receive({ channel: 'portfolio', version: 3, payload: snapshot() });
+        html('projects');
+        vi.unstubAllGlobals();
+
+        expect(asked).not.toHaveBeenCalled();
     });
 });

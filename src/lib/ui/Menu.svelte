@@ -4,7 +4,14 @@
      * `glyph` is a name in `glyphs:` drawn before the words, for a list whose choices are things
      * that have an icon of their own (the views of a rail group).
      */
-    export type MenuItem = { id: string; label: string; active?: boolean; glyph?: string };
+    export type MenuItem = {
+        id: string;
+        label: string;
+        active?: boolean;
+        glyph?: string;
+        /** A hue name from state/tones.ts, drawn as a dot before the label. */
+        tone?: string;
+    };
 </script>
 
 <script lang="ts">
@@ -106,6 +113,11 @@
         return `${left} bottom: ${Math.round(bottom)}px; max-height: ${Math.round(room)}px;`;
     }
 
+    /** The hue of one item's dot, as the one inline style this primitive writes. */
+    function dotStyle(tone: string): string {
+        return `--tone: var(--c-${tone})`;
+    }
+
     function toggle(): void {
         open = !open;
         if (open) {
@@ -184,6 +196,9 @@
                     onclick={(event) => pick(item.id, event)}
                     onkeydown={(event) => keys(event, index)}
                 >
+                    {#if item.tone !== undefined}
+                        <span class="dot" style={dotStyle(item.tone)}></span>
+                    {/if}
                     {#if item.glyph !== undefined}
                         <Glyph name={item.glyph} />
                     {/if}
@@ -278,6 +293,14 @@
         overflow-y: auto;
         box-sizing: border-box;
         margin: 0;
+    }
+
+    .item .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+        background: var(--tone);
+        flex: none;
     }
 
     .item {

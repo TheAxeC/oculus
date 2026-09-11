@@ -370,6 +370,35 @@ text:
     collapse: "collapse"
     empty: "No entries match."
     empty_glyph: "circle_empty"
+    # oculus: the stats strip above the Projects board, and the controls beside the search.
+    stat_active: "{0} active"
+    stat_submit_ready: "{0} submit-ready"
+    stat_blocked: "{0} blocked"
+    stat_dated: "{0} dated"
+    stat_venues_tip: "where the board's projects are aimed"
+    # oculus: glyph names, not characters - a name in the `glyphs:` map of glyphs.yml.
+    venue_dist_glyph: "venue_dist"
+    warn_glyph: "warn"
+    stale_glyph: "stale"
+    folder_glyph: "folder"
+    stat_venue_tip: "{0}: {1}"
+    stat_venue_count: "x{0}"
+    stats: "Board totals"
+    quick_stale: "stale"
+    quick_stale_tip: "only the projects whose manifest is behind their documents"
+    quick_deadline: "deadline"
+    quick_deadline_tip: "only the projects that carry a deadline"
+    types: "Types"
+    type_toggle_tip: "show or hide the {0} projects"
+    new_idea: "+ new idea"
+    new_idea_tip: "scaffold a new idea manifest"
+    new_idea_id: "folder name"
+    new_idea_title: "title"
+    new_idea_short: "short handle"
+    new_idea_domain: "domain"
+    new_idea_eli5: "in one line"
+    new_idea_save: "save"
+    new_idea_cancel: "cancel"
 
   memories:                    # Memories photo-wall tab (render/memories.py). {0} = interpolated arg.
     add_photo_title: "add a photo to the wall"
@@ -395,6 +424,10 @@ text:
     deposit: "deposit"          # oculus: opens the deposit panel for this project.
     deposit_glyph: "published"
     files_hdr: "Files ({0})"
+    collaborations: "Collaborations"            # oculus: where a collaborator tag opens.
+    files_none: "No files in this project."     # oculus: the finder on a folder the index lists nothing of.
+    files_error: "files: {0}"                   # oculus: what the listing request failed with.
+    files_loading: "reading the folder ..."     # oculus: before the first answer for a card arrives.
     files_badge_tip: "files in this project - expand the card to search them"
     files_ph: "filter files in this project ..."
     files_capped: "showing the {0} most recent"
@@ -462,6 +495,14 @@ text:
     snooze_1w: "1w"
     snooze_1mo: "1mo"
     snooze_hide: "hide"
+    # oculus: glyph names, not characters - each value is a name in the `glyphs:` map of glyphs.yml.
+    box_on_glyph: "checkbox_on"
+    box_off_glyph: "checkbox_off"
+    # oculus: the one-line form the "+ subtask" control opens on a card.
+    subtask_do: "what to do"
+    subtask_deadline: "deadline"
+    subtask_save: "save"
+    subtask_cancel: "cancel"
 
   helpers:                     # shared doc-link / code-coverage / xlink helpers (render/helpers.py).
     doc_human_tip: "human-only - no agent edits this"

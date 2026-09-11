@@ -73,6 +73,12 @@ export interface RawManifest {
     [key: string]: unknown;
     /** Absolute path of the project.yml. */
     file: string;
+    /**
+     * Last write of the project.yml in milliseconds, and absent when it could not be stat'ed. It
+     * is `fileMtime` rather than `mtime` because the record spreads the manifest's own keys and a
+     * key called `mtime` in a project.yml would then be read as provenance.
+     */
+    fileMtime?: number;
     /** Folder of the project relative to the hub, `projects/coauthor/active/clinical-hccnet`. */
     folder: string;
     /** The folder's basename, which is the project's id. */
@@ -142,6 +148,8 @@ export type DocPresence = {
     /** Absolute path the document would sit at, whether or not it is there. */
     path: string;
     present: boolean;
+    /** Last write of the file in milliseconds, and 0 for a document that is not there. */
+    mtime: number;
 };
 
 /** A status chip: a word from the vocabulary, resolved to colour and glyph by the view. */
@@ -174,6 +182,8 @@ export type Reproduced = {
 export type DocFlag = {
     name: string;
     present: boolean;
+    /** Last write of the file in milliseconds, absent for a document that is not there. */
+    mtime?: number;
 };
 
 /**
@@ -216,6 +226,13 @@ export type Project = {
     year?: number;
     /** `pin: true` floats the card to the top of its board. False and absent are both no pin. */
     pin?: boolean;
+    /**
+     * Whole days the newest of the project's documents is ahead of its own project.yml, so the
+     * manifest is behind what the folder says. Absent when the manifest is the newer of the two,
+     * which is a project with nothing to report. The threshold a badge is drawn at is
+     * `stale_lag_days` of config/behavior.yml and is applied by the board, not here.
+     */
+    staleDays?: number;
     chips: Chip[];
     statusLine?: string;
     focus?: string;

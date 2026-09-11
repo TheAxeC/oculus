@@ -50,11 +50,15 @@ export const PROJECT_DOCS = [
  */
 const FRONTMATTER = /^---[ \t]*\r?\n((?:[\s\S]*?\r?\n)?)(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/;
 
-function isFile(path: string): boolean {
+/** Whether the path is a file, and when it was last written; 0 for anything that is not one. */
+function fileStat(path: string): { present: boolean; mtime: number } {
     try {
-        return statSync(path).isFile();
+        const stat = statSync(path);
+        return stat.isFile()
+            ? { present: true, mtime: stat.mtimeMs }
+            : { present: false, mtime: 0 };
     } catch {
-        return false;
+        return { present: false, mtime: 0 };
     }
 }
 
@@ -93,13 +97,16 @@ export function readDoc(path: string): DocRead {
 }
 
 /**
- * Which of PROJECT_DOCS the folder has, one record per name in that order, whether present or not.
- * Existence only: no file is opened and no size is taken, so this stays cheap enough to run over
- * every project on a rebuild. A directory named like a document counts as absent.
+ * Which of PROJECT_DOCS the folder has, one record per name in that order, whether present or not,
+ * and when each was last written. No file is opened: it is the one stat per name the presence check
+ * already made, so this stays cheap enough to run over every project on a rebuild. A directory
+ * named like a document counts as absent. The mtime is what normalise reads a project's staleness
+ * from: a document written after the project.yml is a manifest that is behind its own folder.
  */
 export function projectDocs(folder: string): DocPresence[] {
     return PROJECT_DOCS.map((name) => {
         const path = join(folder, name);
-        return { name, path, present: isFile(path) };
+        const stat = fileStat(path);
+        return { name, path, present: stat.present, mtime: stat.mtime };
     });
 }

@@ -16,13 +16,18 @@ import {
     boardItems,
     bucketOf,
     daysUntil,
+    disseminated,
     emptyBoardState,
     facetValues,
     facets,
     firstSentence,
+    humanSize,
+    isStale,
     parseBoardState,
     presetFor,
     slug,
+    stats,
+    typeCounts,
     venueText,
     type BoardItem,
     type BoardPreset
@@ -60,7 +65,7 @@ const CONFIG: Record<string, unknown> = {
     },
     tab_rollup: {
         projects: [
-            { label: 'in progress', keys: ['active', 'manuscript'] },
+            { label: 'in progress', keys: ['active', 'manuscript'], color: '#0d9488' },
             { label: 'idea', keys: ['idea'] }
         ],
         archive: [
@@ -280,8 +285,13 @@ describe('presetFor', () => {
 
     it('reads the rollup buckets of its own board, by the slug of their words', () => {
         expect(PROJECTS.rollup).toEqual([
-            { id: 'in-progress', label: 'in progress', keys: ['active', 'manuscript'] },
-            { id: 'idea', label: 'idea', keys: ['idea'] }
+            {
+                id: 'in-progress',
+                label: 'in progress',
+                keys: ['active', 'manuscript'],
+                color: '#0d9488'
+            },
+            { id: 'idea', label: 'idea', keys: ['idea'], color: '' }
         ]);
     });
 
@@ -519,8 +529,8 @@ describe('bucketOf', () => {
 
     it('stops at the first bucket, in the config order', () => {
         const rollup = [
-            { id: 'first', label: 'first', keys: ['idea'] },
-            { id: 'second', label: 'second', keys: ['lead'] }
+            { id: 'first', label: 'first', keys: ['idea'], color: '' },
+            { id: 'second', label: 'second', keys: ['lead'], color: '' }
         ];
         expect(bucketOf(project('x', 'ideas', { type: 'idea', chips: ['lead'] }), rollup)).toBe(
             'first'
@@ -606,9 +616,23 @@ describe('parseBoardState', () => {
             search: 'ecg',
             filters: { status: ['lead'] },
             expanded: ['alpha'],
-            labels: 'full' as const
+            labels: 'full' as const,
+            stale: true,
+            dated: true,
+            hiddenTypes: ['idea']
         };
         expect(parseBoardState(state)).toEqual(state);
+    });
+
+    it('reads the quick filters as off and the type toggles as empty when they are not there', () => {
+        const state = parseBoardState({ mode: 'list' });
+        expect(state.stale).toBe(false);
+        expect(state.dated).toBe(false);
+        expect(state.hiddenTypes).toEqual([]);
+    });
+
+    it('drops a hidden type that is not a string', () => {
+        expect(parseBoardState({ hiddenTypes: ['idea', 7] }).hiddenTypes).toEqual(['idea']);
     });
 
     it('drops a mode, a label mode and a search that are not what they should be', () => {
@@ -626,5 +650,194 @@ describe('parseBoardState', () => {
     it('drops an expanded list that is not a list of ids', () => {
         expect(parseBoardState({ expanded: 'alpha' }).expanded).toEqual([]);
         expect(parseBoardState({ expanded: ['alpha', 7] }).expanded).toEqual(['alpha']);
+    });
+});
+
+/** The board's items with some projects overwritten, for the counting cases. */
+function over(fields: Record<Id, Partial<Project>>): {
+    items: BoardItem[];
+    snapshot: Snapshot;
+} {
+    const snap = snapshot();
+    for (const [id, held] of Object.entries(fields)) {
+        snap.entities.projects[id] = { ...snap.entities.projects[id], ...held };
+    }
+    return { items: boardItems(snap, PROJECTS), snapshot: snap };
+}
+
+describe('stats', () => {
+    it('counts the board, the submit-ready chip, the blocked lane and the dated projects', () => {
+        const { items, snapshot: snap } = over({
+            alpha: { chips: ['submit-ready'] },
+            bravo: { focus: 'blocked' },
+            charlie: { deadline: '2030-01-01' }
+        });
+        const found = stats(items, snap.entities.venues, CONFIG);
+
+        expect(found.active).toBe(6);
+        expect(found.submitReady).toBe(1);
+        expect(found.blocked).toBe(1);
+        expect(found.dated).toBe(2);
+    });
+
+    it('counts the venues the board aims at, most aimed at first', () => {
+        const { items, snapshot: snap } = over({
+            bravo: { venueId: 'bspc' },
+            charlie: { venueId: 'bspc' },
+            delta: { venueId: 'other' }
+        });
+        snap.entities.venues.other = venue('other', { name: 'Other', short: 'OTH' });
+        const found = stats(boardItems(snap, PROJECTS), snap.entities.venues, CONFIG);
+
+        expect(found.venues.map((one) => `${one.short}:${one.count}`)).toEqual(['BSPC:3', 'OTH:1']);
+        expect(items.length).toBe(6);
+    });
+
+    it('marks a venue at the config threshold and leaves one under it unmarked', () => {
+        const { snapshot: snap } = over({ bravo: { venueId: 'bspc' } });
+        const items = boardItems(snap, PROJECTS);
+
+        const at = stats(items, snap.entities.venues, { ...CONFIG, venue_conc_warn: 2 });
+        expect(at.venues[0]).toMatchObject({ count: 2, warn: true });
+        const under = stats(items, snap.entities.venues, { ...CONFIG, venue_conc_warn: 3 });
+        expect(under.venues[0].warn).toBe(false);
+    });
+
+    it('shows at most eight venues', () => {
+        const snap = snapshot();
+        for (let at = 0; at < 10; at += 1) {
+            const id = `v${at}`;
+            snap.entities.venues[id] = venue(id, { name: `Venue ${at}` });
+            snap.entities.projects[`p${at}`] = project(`p${at}`, 'ideas', {
+                type: 'idea',
+                venueId: id
+            });
+        }
+
+        expect(stats(boardItems(snap, PROJECTS), snap.entities.venues, CONFIG).venues).toHaveLength(
+            8
+        );
+    });
+});
+
+describe('typeCounts', () => {
+    it("counts each type in the config's type order, and an unnamed type after them", () => {
+        expect(typeCounts(ITEMS, PROJECTS.typeOrder)).toEqual([
+            { type: 'active', count: 1 },
+            { type: 'manuscript', count: 1 },
+            { type: 'idea', count: 3 },
+            { type: 'exploring', count: 1 }
+        ]);
+    });
+
+    it('counts no type for a project that has none', () => {
+        const { items } = over({ charlie: { type: undefined } });
+        const counts = typeCounts(items, PROJECTS.typeOrder);
+        expect(counts.find((one) => one.type === 'idea')?.count).toBe(2);
+        expect(counts.some((one) => one.type === '')).toBe(false);
+    });
+});
+
+describe('isStale', () => {
+    it('is the lag against the threshold it is given', () => {
+        const { items } = over({ alpha: { staleDays: 2 } });
+        const one = items.find((held) => held.id === 'alpha') as BoardItem;
+
+        expect(isStale(one, 1)).toBe(true);
+        expect(isStale(one, 2)).toBe(true);
+        expect(isStale(one, 3)).toBe(false);
+    });
+
+    it('is false for a project normalise left without a lag', () => {
+        expect(isStale(item('bravo'), 1)).toBe(false);
+    });
+});
+
+describe('applyFilters, the quick filters and the type toggles', () => {
+    const { items } = over({ alpha: { staleDays: 3 }, charlie: { staleDays: 1 } });
+
+    it('leaves only what is behind by at least the lag it is given', () => {
+        expect(ids(applyFilters(items, {}, '', { stale: true, staleLag: 1 })).sort()).toEqual([
+            'alpha',
+            'charlie'
+        ]);
+        expect(ids(applyFilters(items, {}, '', { stale: true, staleLag: 3 }))).toEqual(['alpha']);
+    });
+
+    it('leaves only what carries a deadline', () => {
+        expect(ids(applyFilters(items, {}, '', { dated: true }))).toEqual(['alpha']);
+    });
+
+    it('drops the types that are switched off and keeps every other', () => {
+        expect(ids(applyFilters(items, {}, '', { hiddenTypes: ['idea', 'exploring'] }))).toEqual([
+            'alpha',
+            'bravo'
+        ]);
+    });
+
+    it('changes nothing when it is given no quick filter at all', () => {
+        expect(ids(applyFilters(items, {}, ''))).toEqual(ids(items));
+    });
+});
+
+describe('humanSize', () => {
+    it('writes a megabyte and over to one decimal', () => {
+        expect(humanSize(1048576)).toBe('1.0 MB');
+        expect(humanSize(1258291)).toBe('1.2 MB');
+    });
+
+    it('writes anything under a megabyte as whole kilobytes, and never as nothing', () => {
+        expect(humanSize(38400)).toBe('37 KB');
+        expect(humanSize(12)).toBe('1 KB');
+        expect(humanSize(0)).toBe('1 KB');
+    });
+});
+
+describe('disseminated', () => {
+    /** A hub whose events and education files each name one project. */
+    function activity(): Snapshot {
+        const snap = snapshot();
+        const entry = (id: Id, title: string, fields: Record<string, unknown>, file: string) => ({
+            id,
+            title,
+            fields,
+            file,
+            index: 0
+        });
+        snap.entities.collections.events = {
+            id: 'events',
+            title: 'Talks and events',
+            file: '/hub/network/events.yml',
+            entries: [
+                entry('esann', 'ESANN 2026', { related: ['alpha'], role: 'present' }, '/hub/e.yml'),
+                entry(
+                    'other',
+                    'A conference',
+                    { related: ['alpha'], role: 'attend' },
+                    '/hub/e.yml'
+                ),
+                entry('none', 'Nothing to do with it', { related: ['zulu'] }, '/hub/e.yml')
+            ]
+        };
+        snap.entities.collections.education = {
+            id: 'education',
+            title: 'Education',
+            file: '/hub/network/education.yml',
+            entries: [entry('course', 'A course', { related: ['alpha'] }, '/hub/ed.yml')]
+        };
+        return snap;
+    }
+
+    it('finds the events and education entries that name the project', () => {
+        expect(disseminated(activity(), 'alpha').map((one) => one.id)).toEqual(['esann', 'course']);
+    });
+
+    it('leaves out an events entry the reader only attended', () => {
+        expect(disseminated(activity(), 'alpha').some((one) => one.id === 'other')).toBe(false);
+    });
+
+    it('finds nothing for a project nothing names, and none at all without the files', () => {
+        expect(disseminated(activity(), 'bravo')).toEqual([]);
+        expect(disseminated(SNAPSHOT, 'alpha')).toEqual([]);
     });
 });

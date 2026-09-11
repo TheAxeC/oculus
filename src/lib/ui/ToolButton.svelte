@@ -26,6 +26,12 @@
          * belongs in `title`: a button that cannot be pressed and does not say why is a dead end.
          */
         disabled?: boolean;
+        /**
+         * The glyph alone, with the words as the tooltip and the accessible name: for a control
+         * that sits on every card of a board, where the words on each would cost a line. A button
+         * with no glyph ignores this, since a button with nothing on it is not a control.
+         */
+        compact?: boolean;
     };
 
     let {
@@ -35,26 +41,34 @@
         onclick,
         title,
         checked,
-        disabled = false
+        disabled = false,
+        compact = false
     }: Props = $props();
+
+    const iconOnly = $derived(compact && glyph !== undefined);
+    const tip = $derived(title ?? (iconOnly ? label : ''));
 </script>
 
 <!-- A button of an exclusive group is a radio its group owns, and a radiogroup owns radios: a
      wrapper with semantics of its own between them would leave the group with no radios in it. -->
-<Tooltip text={title ?? ''} presentational={checked !== undefined}>
+<Tooltip text={tip} presentational={checked !== undefined}>
     <button
         type="button"
         class="tool"
         class:active
+        class:compact={iconOnly}
         role={checked === undefined ? undefined : 'radio'}
         aria-checked={checked}
+        aria-label={iconOnly ? label : undefined}
         {disabled}
         {onclick}
     >
         {#if glyph !== undefined}
             <Glyph name={glyph} />
         {/if}
-        <span class="label">{label}</span>
+        {#if !iconOnly}
+            <span class="label">{label}</span>
+        {/if}
     </button>
 </Tooltip>
 
@@ -72,6 +86,10 @@
         padding: 3px 8px;
         cursor: pointer;
         white-space: nowrap;
+    }
+
+    .tool.compact {
+        padding: 3px 5px;
     }
 
     .tool:hover:not(:disabled) {

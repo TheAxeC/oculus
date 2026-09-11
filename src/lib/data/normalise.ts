@@ -143,7 +143,39 @@ function reproduced(value: unknown): Reproduced | undefined {
 
 /** The documents of one folder, without the absolute path the presence check carries. */
 function docs(found: DocPresence[] | undefined): DocFlag[] {
-    return (found ?? []).map((doc) => ({ name: doc.name, present: doc.present }));
+    return (found ?? []).map((doc) =>
+        compact({
+            name: doc.name,
+            present: doc.present,
+            mtime: doc.present && doc.mtime > 0 ? doc.mtime : undefined
+        })
+    );
+}
+
+/** The calendar day a moment falls on, as the midnight that day is measured from. */
+function dayOf(ms: number): number {
+    const at = new Date(ms);
+    return Date.UTC(at.getFullYear(), at.getMonth(), at.getDate());
+}
+
+/** One day, in milliseconds. */
+const DAY = 24 * 60 * 60 * 1000;
+
+/**
+ * Whole days the newest document of a folder is ahead of the folder's own project.yml. Nothing
+ * when the manifest is the newer of the two, when no document is there, and when either mtime is
+ * missing: a project with nothing to report carries no field at all. Both ends are taken at
+ * midnight of their own day, so a manifest touched an hour before a README is not a day behind.
+ */
+function staleDays(found: DocPresence[] | undefined, manifest: number | undefined): number {
+    if (manifest === undefined) return 0;
+    const newest = (found ?? []).reduce(
+        (held, doc) => (doc.present && doc.mtime > held ? doc.mtime : held),
+        0
+    );
+    if (newest === 0) return 0;
+    const lag = Math.round((dayOf(newest) - dayOf(manifest)) / DAY);
+    return lag > 0 ? lag : 0;
 }
 
 /**
@@ -197,6 +229,7 @@ function project(manifest: RawManifest, found: DocPresence[] | undefined): Proje
     const status = isMap(manifest.status) ? manifest.status : {};
     const authors = manifest.authors;
     const domain = str(manifest.domain);
+    const lag = staleDays(found, manifest.fileMtime);
     return compact({
         id: manifest.id,
         tier: manifest.tier as Tier,
@@ -240,6 +273,7 @@ function project(manifest: RawManifest, found: DocPresence[] | undefined): Proje
         domainIds: domain === undefined ? [] : [domain],
         collaborators: strings(manifest.collaborators),
         venue: str(manifest.venue),
+        staleDays: lag > 0 ? lag : undefined,
         docs: docs(found),
         folder: manifest.folder,
         file: manifest.file

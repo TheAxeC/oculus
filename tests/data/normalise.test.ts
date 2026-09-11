@@ -15,12 +15,18 @@ import type {
 } from '../../src/lib/data/model.ts';
 
 /** What sources/docs.ts hands the build for one folder: the fixed names, with a path and a flag. */
-function documents(id: string, present: string[]): DocPresence[] {
+function documents(id: string, present: string[], mtime = 0): DocPresence[] {
     return ['README.md', 'code/README.md'].map((name) => ({
         name,
         path: `/hub/projects/active/${id}/${name}`,
-        present: present.includes(name)
+        present: present.includes(name),
+        mtime: present.includes(name) ? mtime : 0
     }));
+}
+
+/** The moment a day's midnight falls at, for the staleness cases. */
+function day(iso: string): number {
+    return new Date(`${iso}T12:00:00Z`).getTime();
 }
 
 function manifest(data: Record<string, unknown>, id: string): RawManifest {
@@ -404,6 +410,43 @@ describe('normalise, the relations', () => {
     it('leaves an id that names nothing out of the table and out of the entity', () => {
         expect(snapshot.entities.projects.beta.relatedIds).toEqual([]);
         expect('venueId' in snapshot.entities.projects.beta).toBe(false);
+    });
+});
+
+describe('normalise, staleness', () => {
+    /** One project whose documents and whose manifest were written on the days named. */
+    function stale(docDay: string, manifestDay: string | undefined) {
+        const raw = portfolio();
+        raw.manifests = [
+            {
+                ...raw.manifests[0],
+                ...(manifestDay === undefined ? {} : { fileMtime: day(manifestDay) })
+            }
+        ];
+        raw.docs = { alpha: documents('alpha', ['README.md'], day(docDay)) };
+        return normalise(raw, []).entities.projects.alpha;
+    }
+
+    it('carries each present document mtime and leaves an absent one without', () => {
+        const docs = stale('2026-09-10', '2026-09-01').docs;
+        expect(docs.find((doc) => doc.name === 'README.md')?.mtime).toBe(day('2026-09-10'));
+        expect('mtime' in (docs.find((doc) => doc.name === 'code/README.md') ?? {})).toBe(false);
+    });
+
+    it('counts the whole days a document is ahead of the manifest', () => {
+        expect(stale('2026-09-10', '2026-09-01').staleDays).toBe(9);
+    });
+
+    it('leaves the field out when the manifest is the newer of the two', () => {
+        expect('staleDays' in stale('2026-09-01', '2026-09-10')).toBe(false);
+    });
+
+    it('leaves the field out when both were written on the same day', () => {
+        expect('staleDays' in stale('2026-09-10', '2026-09-10')).toBe(false);
+    });
+
+    it('leaves the field out when the manifest has no mtime at all', () => {
+        expect('staleDays' in stale('2026-09-10', undefined)).toBe(false);
     });
 });
 

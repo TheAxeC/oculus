@@ -1,17 +1,17 @@
 <script lang="ts">
-    // Layer 3, view. The project board: cards or a table, a search, a facet menu per way the board
-    // can be split, and a short or full title. It is registered three times, as `projects`,
-    // `archive` and `coauthor`, and reads which board it is from the instance it was mounted as, so
-    // the three cockpit tabs that were one board over three tier sets are one component here.
+    // Layer 3, view. The project board: cards or a table, a search, quick filters, type toggles, a
+    // facet menu per way the board can be split, and a short or full title. It is registered three
+    // times, as `projects`, `archive` and `coauthor`, and reads which board it is from the instance
+    // it was mounted as, so the three cockpit tabs that were one board over three tier sets are one
+    // component here.
     //
     // It joins nothing and counts nothing itself: the projects come from the board selector already
-    // joined, and the facets, the filters and the sentence cut are the pure functions of
-    // state/board.ts. What is left in this file is the markup and the words, and the words are keys.
+    // joined, and the facets, the filters, the counts and the sentence cut are the pure functions of
+    // state/board.ts. The card is views/projects/Card.svelte, the strip views/projects/Stats.svelte
+    // and the new-idea form views/projects/NewIdea.svelte, which is the partials rule of DESIGN.md's
+    // boundary table: a view too large for one file is split into its own folder.
 
-    import Card from '$lib/ui/Card.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
     import Empty from '$lib/ui/Empty.svelte';
-    import Glyph from '$lib/ui/Glyph.svelte';
     import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Search from '$lib/ui/Search.svelte';
@@ -19,47 +19,58 @@
     import Table from '$lib/ui/Table.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import Card from './projects/Card.svelte';
+    import NewIdea from './projects/NewIdea.svelte';
+    import Stats from './projects/Stats.svelte';
     import {
-        DEADLINE_SOON,
         NONE,
         SESSIONS_LIVE,
         SESSIONS_RECENT,
         applyFilters,
-        daysUntil,
         facets,
         firstSentence,
         parseBoardState,
+        typeCounts,
         type BoardItem,
         type BoardState,
         type FacetValue
     } from '$lib/state/board';
-    import {
-        board,
-        boardPreset,
-        folderOf,
-        sessionsForProject,
-        type GroupedSession
-    } from '$lib/state/selectors.svelte';
-    import { openView, workbench } from '$lib/state/layout.svelte';
-    import { findView } from '$lib/state/layout';
-    import { select } from '$lib/state/selection.svelte';
+    import { board, boardPreset, boardStats, staleLag } from '$lib/state/selectors.svelte';
     import { lookup, t } from '$lib/state/text';
-    import { chipGlyph, chipLabel, statusTone } from '$lib/state/tones';
+    import { chipGlyph, toneOf } from '$lib/state/tones';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
 
     let { instance }: ViewProps = $props();
 
-    /** How much of `next` a card shows, and how much a list row does. */
-    const CARD_NEXT = 130;
+    /** How much of `next` a list row shows. */
     const ROW_NEXT = 110;
 
+    /** The board the stats strip and the two quick filters belong to. */
+    const STATS_BOARD = 'projects';
+
     const preset = $derived(boardPreset(instance.view));
-    const state = $derived(parseBoardState(instanceState(instance.id), preset.labels));
+    const held = $derived(parseBoardState(instanceState(instance.id), preset.labels));
     const items = $derived(board(preset));
     const groups = $derived(facets(items, preset));
-    const shown = $derived(applyFilters(items, state.filters, state.search));
+    const types = $derived(typeCounts(items, preset.typeOrder));
+    const lag = $derived(staleLag());
+    const shown = $derived(
+        applyFilters(items, held.filters, held.search, {
+            stale: held.stale,
+            dated: held.dated,
+            hiddenTypes: held.hiddenTypes,
+            staleLag: lag
+        })
+    );
     const rows = $derived(shown.map(row));
+    const strip = $derived(boardStats(items));
+
+    /** What the last write on this board answered, shown under the toolbar until the next one. */
+    let said = $state('');
+
+    /** True while the new-idea form is open under the toolbar. */
+    let adding = $state(false);
 
     /**
      * Today, for the deadline badge. It is read when the board is opened and not again, so a page
@@ -78,71 +89,46 @@
     ];
 
     function write(next: Partial<BoardState>): void {
-        setInstanceState(instance.id, { ...state, ...next });
+        setInstanceState(instance.id, { ...held, ...next });
     }
 
     /** Add or remove one value of one facet, which is what a click in a facet menu means. */
     function toggleFilter(facet: string, value: string): void {
-        const selected = state.filters[facet] ?? [];
+        const selected = held.filters[facet] ?? [];
         const next = selected.includes(value)
-            ? selected.filter((held) => held !== value)
+            ? selected.filter((one) => one !== value)
             : [...selected, value];
-        const filters = { ...state.filters };
+        const filters = { ...held.filters };
         if (next.length === 0) delete filters[facet];
         else filters[facet] = next;
         write({ filters });
     }
 
     function toggleCard(id: string): void {
-        const open = state.expanded.includes(id);
+        const open = held.expanded.includes(id);
         write({
-            expanded: open ? state.expanded.filter((held) => held !== id) : [...state.expanded, id]
+            expanded: open ? held.expanded.filter((one) => one !== id) : [...held.expanded, id]
         });
+    }
+
+    /** Every type is on until it is clicked off, so the state holds the ones that are off. */
+    function toggleType(type: string): void {
+        const off = held.hiddenTypes.includes(type);
+        write({
+            hiddenTypes: off
+                ? held.hiddenTypes.filter((one) => one !== type)
+                : [...held.hiddenTypes, type]
+        });
+    }
+
+    /** Open or close every card of the board at once, which is what the two bulk controls do. */
+    function bulk(expand: boolean): void {
+        write({ expanded: expand ? shown.map((item) => item.id) : [] });
     }
 
     /** The board's own name, the key the registry names it by. */
     function title(): string {
         return lookup(`views.${preset.id}`);
-    }
-
-    /**
-     * The six session views. A click on a card's session chip opens the panel's detail only when
-     * none of them is already showing, so a workbench arranged for sessions is not rearranged by a
-     * click on the board.
-     */
-    const SESSION_VIEWS = [
-        'session-list',
-        'session-detail',
-        'terminal',
-        'timeline',
-        'changes',
-        'agents'
-    ] as const;
-
-    /** The sessions working in one project's folder, whether filed there or only sitting in it. */
-    function sessionsOf(item: BoardItem): GroupedSession[] {
-        const folder = folderOf(item.project);
-        return folder === '' ? [] : sessionsForProject(folder);
-    }
-
-    /** The hue of a session's state dot, the same reading the session list gives it. */
-    function dotStyle(entry: GroupedSession): string {
-        if (entry.state === 'working') return '--tone: var(--c-green)';
-        if (entry.state === 'idle') return '--tone: var(--c-amber)';
-        if (entry.state === 'ended') return '--tone: var(--c-grey)';
-        return '--tone: var(--c-slate)';
-    }
-
-    /** Whether any of the six session views is open in either tree. */
-    function sessionViewOpen(): boolean {
-        const trees = [workbench().main, workbench().panel];
-        return SESSION_VIEWS.some((view) => trees.some((tree) => findView(tree, view) !== null));
-    }
-
-    /** Pick a session from a card: every session view follows, and the panel opens when none is up. */
-    function pick(entry: GroupedSession): void {
-        select(entry.id);
-        if (!sessionViewOpen()) openView('session-detail', 'panel', { session: entry.id });
     }
 
     /** A facet's heading. The keys are literal so tests/keys.test.ts can see every one of them. */
@@ -192,20 +178,31 @@
         return t('board.code_none');
     }
 
-    /** One facet's menu: every value with its count, and a mark on the ones in force. */
+    /**
+     * One facet's menu: every value with its count, and a mark on the ones in force. The category
+     * facet carries its bucket's own hue as a dot, which is the one facet whose values the config
+     * gives a colour to (`tab_rollup`), and no other facet is given one.
+     */
     function menuItems(facet: string, values: FacetValue[]): MenuItem[] {
-        const selected = state.filters[facet] ?? [];
+        const selected = held.filters[facet] ?? [];
         return values.map((value) => ({
             id: value.value,
             label: `${valueLabel(facet, value)} ${value.count}`,
-            active: selected.includes(value.value)
+            active: selected.includes(value.value),
+            tone: facet === 'category' ? bucketTone(value.value) : undefined
         }));
+    }
+
+    /** The hue of one lifecycle bucket, through the palette, and nothing when it has none. */
+    function bucketTone(id: string): string | undefined {
+        const colour = preset.rollup.find((bucket) => bucket.id === id)?.color ?? '';
+        return colour === '' ? undefined : toneOf(colour);
     }
 
     /** The label a card and a row carry: the short handle in short mode, else the full title. */
     function label(item: BoardItem): string {
         const short = item.project.short;
-        if (state.labels === 'full' || short === undefined || short === '') {
+        if (held.labels === 'full' || short === undefined || short === '') {
             return item.project.title;
         }
         return short;
@@ -215,28 +212,6 @@
     function tabLabel(item: BoardItem): string {
         const short = item.project.short;
         return short === undefined || short === '' ? item.project.title : short;
-    }
-
-    /** The deadline badge: the date once submitted, how overdue it is, or how long is left. */
-    function deadline(item: BoardItem): { label: string; tone?: string } | null {
-        const date = item.project.deadline;
-        if (date === undefined || date === '') return null;
-        const days = daysUntil(date, now);
-        if (days === null || item.chips.includes('submitted')) return { label: date };
-        if (days < 0) return { label: t('cards.overdue', -days), tone: 'red' };
-        if (days <= DEADLINE_SOON) return { label: t('cards.due_days', days), tone: 'amber' };
-        return { label: date };
-    }
-
-    /** Whether a card has a tag row at all: four lists, and a card with none skips the row. */
-    function tagged(item: BoardItem): boolean {
-        return (
-            item.funding.length +
-                item.programs.length +
-                item.datasets.length +
-                item.collaborators.length >
-            0
-        );
     }
 
     /** One row of the list mode. Every column key of both presets is filled here. */
@@ -257,237 +232,108 @@
     }
 </script>
 
-{#snippet tags(item: BoardItem)}
-    <div class="tags">
-        {#each item.funding as tag (tag.id)}
-            <Chip label={tag.label} glyph={t('cards.funding_glyph')} />
-        {/each}
-        {#each item.programs as tag (tag.id)}
-            <Chip label={tag.label} glyph={t('cards.program_glyph')} />
-        {/each}
-        {#each item.datasets as tag (tag.id)}
-            <Chip label={tag.label} glyph={t('cards.dataset_glyph')} />
-        {/each}
-        {#each item.collaborators as tag (tag.id)}
-            <Chip label={tag.label} glyph={t('cards.collaborator_glyph')} />
-        {/each}
-    </div>
-{/snippet}
-
-{#snippet sessions(rows: GroupedSession[])}
-    {@const live = rows.filter((entry) => entry.live).length}
-    <div class="sessions">
-        <Chip
-            label={rows.length === 1
-                ? t('js.sessions.card_one')
-                : t('js.sessions.card_n', rows.length)}
-        />
-        {#if live > 0}
-            <Chip label={t('js.sessions.card_live', live)} tone="green" />
-        {/if}
-        {#each rows as entry (entry.id)}
-            <button
-                type="button"
-                class="session"
-                title={t('sessions.select_tip')}
-                onclick={() => pick(entry)}
-            >
-                <span class="dot" style={dotStyle(entry)}></span>
-                <Chip label={entry.tool} />
-                <span class="nm">{entry.title}</span>
-            </button>
-        {/each}
-    </div>
-{/snippet}
-
-{#snippet field(name: string, value: string)}
-    <div class="field">
-        <span class="label">{name}</span>
-        <p class="value">{value}</p>
-    </div>
-{/snippet}
-
-{#snippet listField(name: string, values: string[])}
-    <div class="field">
-        <span class="label">{name}</span>
-        <ul class="value">
-            {#each values as value, at (`${at}:${value}`)}
-                <li>{value}</li>
-            {/each}
-        </ul>
-    </div>
-{/snippet}
-
-{#snippet more(item: BoardItem)}
-    <div class="more">
-        {#if item.project.statusLine}
-            <p class="statusline">{item.project.statusLine}</p>
-        {/if}
-        {#if item.project.latest}
-            {@render field(t('cards.latest'), item.project.latest)}
-        {/if}
-        {#if item.project.results.length > 0}
-            {@render listField(t('cards.results'), item.project.results)}
-        {/if}
-        {#if item.project.outcome}
-            {@render field(t('cards.outcome'), item.project.outcome)}
-        {/if}
-        {#if item.project.next}
-            {@render field(t('cards.next'), item.project.next)}
-        {/if}
-        {#if item.project.ideas.length > 0}
-            {@render listField(t('cards.ideas'), item.project.ideas)}
-        {/if}
-        {#if item.project.reproduced}
-            {@render field(
-                t('cards.reproduced'),
-                [item.project.reproduced.date, item.project.reproduced.note]
-                    .filter((part) => part !== undefined && part !== '')
-                    .join(' | ')
-            )}
-        {/if}
-        {#if item.project.docs.length > 0}
-            <div class="field">
-                <span class="label">{t('cards.documents')}</span>
-                <div class="docs">
-                    {#each item.project.docs as doc (doc.name)}
-                        <Chip label={doc.name} tone={doc.present ? 'green' : undefined} />
-                    {/each}
-                </div>
-            </div>
-        {/if}
-    </div>
-{/snippet}
-
-{#snippet cardFor(item: BoardItem)}
-    {@const working = sessionsOf(item)}
-    {@const open = state.expanded.includes(item.id)}
-    {@const due = deadline(item)}
-    {@const short = label(item) !== item.project.title}
-    <div class="slot" title={short ? item.project.title : undefined}>
-        <Card
-            title={label(item)}
-            tone={item.tone}
-            pinned={item.project.pin === true}
-            ontitle={() => openView('project', 'main', { id: item.id, label: tabLabel(item) })}
-        >
-            {#snippet meta()}
-                {#if item.project.type}
-                    <Chip label={item.project.type} tone={item.tone} filled />
-                {/if}
-                {#if item.domain}
-                    <Chip label={item.domain.label} tone={item.domain.tone} />
-                {/if}
-                {#if due}
-                    <Chip label={due.label} tone={due.tone} glyph={t('cards.deadline_glyph')} />
-                {/if}
-                {#if item.project.pin === true}
-                    <Chip label={t('cards.pinned')} glyph={t('cards.pin_glyph')} />
-                {/if}
-                <ToolButton
-                    label={t('cards.toggle_tip')}
-                    glyph={open ? t('cards.collapse_glyph') : t('cards.expand_glyph')}
-                    active={open}
-                    onclick={() => toggleCard(item.id)}
-                />
-                <ToolButton
-                    label={t('cards.edit_manifest')}
-                    glyph={t('cards.edit_glyph')}
-                    onclick={() => openView('editor', 'panel', { id: item.id })}
-                />
-            {/snippet}
-
-            <div class="folder">{item.project.folder}</div>
-            <div class="row">
-                {#if item.project.focus}
-                    <Chip label={item.project.focus} />
-                {/if}
-                {#each item.chips as chip (chip)}
-                    <Chip label={chipLabel(chip)} icon={chipGlyph(chip)} tone={statusTone(chip)} />
-                {/each}
-                {#if item.code !== ''}
-                    <Chip label={codeLabel(item.code)} glyph={t('cards.code_glyph')} />
-                {/if}
-                {#if item.reproduced}
-                    <Chip label={t('board.repro_yes')} glyph={t('cards.repro_glyph')} />
-                {/if}
-                {#if item.compute === 'hpc'}
-                    <Chip label={t('cards.hpc_label')} glyph={t('cards.hpc_glyph')} />
-                {:else if item.compute === 'local'}
-                    <Chip label={t('cards.local_label')} />
-                {/if}
-                {#if item.venue}
-                    <span class="venue">{item.venue.text}</span>
-                {/if}
-                {#if item.authors !== ''}
-                    <span class="authors">
-                        <Glyph name={t('cards.author_glyph')} />
-                        {item.authors}
-                    </span>
-                {/if}
-            </div>
-            {#if tagged(item)}
-                {@render tags(item)}
-            {/if}
-            {#if working.length > 0}
-                {@render sessions(working)}
-            {/if}
-            {#if item.project.eli5}
-                <div class="eli5">
-                    <span class="label">{t('cards.eli5')}</span>
-                    <p>{item.project.eli5}</p>
-                </div>
-            {/if}
-            {#if item.project.next}
-                <p class="next">{firstSentence(item.project.next, CARD_NEXT)}</p>
-            {/if}
-            {#if open}
-                {@render more(item)}
-            {/if}
-        </Card>
-    </div>
-{/snippet}
-
 {#snippet tools()}
     <Toolbar label={t('board.toolbar')}>
         <Search
-            value={state.search}
+            value={held.search}
             placeholder={preset.search === '' ? t('board.search_default') : preset.search}
             oninput={(value) => write({ search: value })}
         />
+        <ToolButton
+            label={t('board.new_idea')}
+            title={t('board.new_idea_tip')}
+            active={adding}
+            onclick={() => (adding = !adding)}
+        />
+        {#if preset.id === STATS_BOARD}
+            <ToolButton
+                label={t('board.quick_stale')}
+                title={t('board.quick_stale_tip')}
+                glyph={t('board.stale_glyph')}
+                active={held.stale}
+                onclick={() => write({ stale: !held.stale })}
+            />
+            <ToolButton
+                label={t('board.quick_deadline')}
+                title={t('board.quick_deadline_tip')}
+                glyph={t('cards.deadline_glyph')}
+                active={held.dated}
+                onclick={() => write({ dated: !held.dated })}
+            />
+        {/if}
+        {#each types as one (one.type)}
+            <ToolButton
+                label={`${one.type} ${one.count}`}
+                title={t('board.type_toggle_tip', one.type)}
+                active={!held.hiddenTypes.includes(one.type)}
+                onclick={() => toggleType(one.type)}
+            />
+        {/each}
         <Segment
             label={t('board.view')}
             items={modes}
-            value={state.mode}
+            value={held.mode}
             onchange={(id) => write({ mode: id === 'list' ? 'list' : 'cards' })}
         />
         <Segment
             label={t('board.labels')}
             items={labelModes}
-            value={state.labels}
+            value={held.labels}
             onchange={(id) => write({ labels: id === 'full' ? 'full' : 'short' })}
         />
-        {#each groups as group (group.key)}
-            <Menu
-                label={t('board.filter_by', heading(group.key))}
-                items={menuItems(group.key, group.values)}
-                onpick={(value) => toggleFilter(group.key, value)}
-                placement="down"
-            />
-        {/each}
+        <ToolButton
+            label={t('board.expand_all')}
+            glyph={t('cards.expand_glyph')}
+            onclick={() => bulk(true)}
+        />
+        <ToolButton
+            label={t('board.collapse')}
+            glyph={t('cards.collapse_glyph')}
+            onclick={() => bulk(false)}
+        />
     </Toolbar>
 {/snippet}
 
 <Pane title={title()} toolbar={tools}>
     <div class="board" data-instance={instance.id} data-board={preset.id}>
+        <!-- The facets are a row of their own under the header, so the header keeps to one line
+             and the title stays readable whatever the board's width. -->
+        <div class="filters">
+            {#each groups as group (group.key)}
+                <Menu
+                    label={t('board.filter_by', heading(group.key))}
+                    items={menuItems(group.key, group.values)}
+                    onpick={(value) => toggleFilter(group.key, value)}
+                    placement="down"
+                />
+            {/each}
+        </div>
+        {#if adding}
+            <NewIdea onclose={() => (adding = false)} onsaid={(answer) => (said = answer)} />
+        {/if}
+        {#if preset.id === STATS_BOARD}
+            <Stats stats={strip} />
+        {/if}
+        {#if said !== ''}
+            <p class="said">{said}</p>
+        {/if}
         {#if shown.length === 0}
             <Empty message={t('board.empty')} glyph={t('board.empty_glyph')} />
-        {:else if state.mode === 'list'}
+        {:else if held.mode === 'list'}
             <Table columns={preset.columns} {rows} rowKey="id" sortable />
         {:else}
             <div class="cards">
                 {#each shown as item (item.id)}
-                    {@render cardFor(item)}
+                    <Card
+                        {item}
+                        {now}
+                        open={held.expanded.includes(item.id)}
+                        label={label(item)}
+                        tab={tabLabel(item)}
+                        staleLag={lag}
+                        ontoggle={() => toggleCard(item.id)}
+                        onsaid={(answer) => (said = answer)}
+                    />
                 {/each}
             </div>
         {/if}
@@ -502,119 +348,18 @@
         align-items: start;
     }
 
-    .folder {
-        font-family: var(--font-mono);
-        font-size: var(--fs-xs);
-        color: var(--muted-txt, var(--muted));
-        word-break: break-all;
-    }
-
-    .row,
-    .tags,
-    .docs {
+    .filters {
         display: flex;
         flex-wrap: wrap;
         align-items: center;
         gap: 6px;
-        margin-top: 6px;
+        margin-bottom: 8px;
     }
 
-    .sessions {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
-        margin-top: 6px;
-    }
-
-    .session {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        min-width: 0;
-        max-width: 100%;
-        border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
-        background: none;
-        color: inherit;
-        font: inherit;
-        font-size: var(--fs-xs);
-        padding: 1px 6px;
-        cursor: pointer;
-        text-align: left;
-    }
-
-    .session:hover {
-        background: var(--chip);
-    }
-
-    .session .dot {
-        width: 7px;
-        height: 7px;
-        border-radius: 50%;
-        background: var(--tone);
-        flex: none;
-    }
-
-    .session .nm {
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-
-    .venue,
-    .authors {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
+    .said {
+        margin: 0 0 8px;
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
-    }
-
-    .eli5 {
-        margin-top: 8px;
-    }
-
-    .eli5 p,
-    .next {
-        margin: 2px 0 0;
-        font-size: var(--fs-sm);
-    }
-
-    .next {
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .label {
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--accent-txt, var(--accent));
-    }
-
-    .more {
-        margin-top: 10px;
-        padding-top: 8px;
-        border-top: 1px solid var(--line);
-    }
-
-    .statusline {
-        margin: 0 0 6px;
-        font-size: var(--fs-sm);
-    }
-
-    .field {
-        margin-top: 6px;
-    }
-
-    .field .value {
-        margin: 2px 0 0;
-        font-size: var(--fs-sm);
-    }
-
-    ul.value {
-        padding-left: 18px;
     }
 
     /* The terminal shape: the folder is the only monospace line in a card by default, so under the

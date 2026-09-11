@@ -25,8 +25,11 @@ export type LabelMode = 'short' | 'full';
 /** One column of the list mode: the key its cell is read from a row by, and its heading. */
 export type BoardColumn = { key: string; label: string };
 
-/** One lifecycle bucket of `tab_rollup`: its id, its words, and the types and chips it catches. */
-export type RollupBucket = { id: string; label: string; keys: string[] };
+/**
+ * One lifecycle bucket of `tab_rollup`: its id, its words, the types and chips it catches, and the
+ * hue the config gives it, which the category facet draws its dot in.
+ */
+export type RollupBucket = { id: string; label: string; keys: string[]; color: string };
 
 /** What one board is, as the config describes it. */
 export type BoardPreset = {
@@ -103,6 +106,52 @@ export type BoardState = {
     /** The ids of the cards that are open. */
     expanded: Id[];
     labels: LabelMode;
+    /** The quick filter: only the projects whose manifest is behind their documents. */
+    stale: boolean;
+    /** The quick filter: only the projects that carry a deadline. */
+    dated: boolean;
+    /**
+     * The types switched OFF, which is what the type toggles hold. Every type is on until one is
+     * clicked, so a type the hub grows later is on the day it appears rather than hidden by a state
+     * saved before it existed.
+     */
+    hiddenTypes: string[];
+};
+
+/** The counts of the strip above the board, and the venues the board's projects aim at. */
+export type BoardStats = {
+    /** How many projects the board holds, before any filter. */
+    active: number;
+    submitReady: number;
+    /** The `focus: blocked` lane, which is a lane and not a status chip. */
+    blocked: number;
+    /** How many carry a deadline. */
+    dated: number;
+    venues: VenueCount[];
+};
+
+/** One venue of the stats strip: how many of the board's projects aim at it, and whether that warns. */
+export type VenueCount = {
+    id: Id;
+    /** The registry's short name, which is what the chip carries. */
+    short: string;
+    /** The registry's full name, which is what the chip's tooltip carries. */
+    name: string;
+    count: number;
+    /** True from `venue_conc_warn` of config/behavior.yml up: too much of the board on one venue. */
+    warn: boolean;
+};
+
+/** One type of the board with how many carry it, in the order the board's own sort put them in. */
+export type TypeCount = { type: string; count: number };
+
+/** The quick filters and type toggles applyFilters is given beside the facets. */
+export type QuickFilters = {
+    stale?: boolean;
+    dated?: boolean;
+    hiddenTypes?: string[];
+    /** `stale_lag_days` of config/behavior.yml: how far behind counts as behind. */
+    staleLag?: number;
 };
 
 /** The three boards and the tiers each one shows. A view id outside this map is the first board. */
@@ -236,7 +285,7 @@ function rollupOf(config: Record<string, unknown>, id: string): RollupBucket[] {
         if (!isMap(row)) continue;
         const label = str(row.label);
         if (label === '') continue;
-        buckets.push({ id: slug(label), label, keys: strings(row.keys) });
+        buckets.push({ id: slug(label), label, keys: strings(row.keys), color: str(row.color) });
     }
     return buckets;
 }
@@ -523,18 +572,155 @@ export function facets(items: BoardItem[], preset: BoardPreset): Facet[] {
     return found;
 }
 
+/** The status chip the stats strip counts as ready to go out. */
+const SUBMIT_READY = 'submit-ready';
+
+/** The focus lane the stats strip counts as waiting on somebody else. */
+const BLOCKED = 'blocked';
+
+/** How many venues the strip's distribution shows, most aimed at first. */
+const STATS_VENUES = 8;
+
+/** The `venue_conc_warn` the config names when it names none. */
+const VENUE_WARN = 4;
+
+/** The `stale_lag_days` the config names when it names none. */
+export const STALE_LAG = 1;
+
+/** A number out of the merged config, and the fallback behavior.yml's own comment names. */
+function setting(config: Record<string, unknown>, key: string, fallback: number): number {
+    const value = config[key];
+    return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
+}
+
+/**
+ * The strip above the board: how many projects it holds, how many are ready to go out, how many
+ * are waiting on somebody, how many are dated, and where they are aimed. The counts are over the
+ * board's own projects, before any filter, so the strip says what the board is rather than what is
+ * on screen. The venues come from the registry rather than from the manifests, so a chip carries
+ * the catalogued short name and the full one it stands for.
+ */
+export function stats(
+    items: BoardItem[],
+    venues: Record<Id, Venue>,
+    config: Record<string, unknown> = {}
+): BoardStats {
+    const warnAt = setting(config, 'venue_conc_warn', VENUE_WARN);
+    const counts = new Map<Id, number>();
+    let submitReady = 0;
+    let blocked = 0;
+    let dated = 0;
+    for (const item of items) {
+        if (item.chips.includes(SUBMIT_READY)) submitReady += 1;
+        if (item.project.focus === BLOCKED) blocked += 1;
+        if (item.project.deadline !== undefined && item.project.deadline !== '') dated += 1;
+        const id = item.venue?.id;
+        if (id !== undefined) counts.set(id, (counts.get(id) ?? 0) + 1);
+    }
+    const rows: VenueCount[] = [...counts.entries()].map(([id, count]) => {
+        const venue = venues[id];
+        const name = venue?.name ?? id;
+        return {
+            id,
+            short: venue?.short !== undefined && venue.short !== '' ? venue.short : name,
+            name,
+            count,
+            warn: count >= warnAt
+        };
+    });
+    rows.sort((left, right) => right.count - left.count || left.name.localeCompare(right.name));
+    return {
+        active: items.length,
+        submitReady,
+        blocked,
+        dated,
+        venues: rows.slice(0, STATS_VENUES)
+    };
+}
+
+/**
+ * How many projects carry each type, in the `type_order` of the config, with a type that list does
+ * not name after the ones it does and in its own order. A project with no type is not counted:
+ * there is no toggle to draw for a type that has no name.
+ */
+export function typeCounts(items: BoardItem[], order: string[] = []): TypeCount[] {
+    const counts = new Map<string, number>();
+    for (const item of items) {
+        const type = item.project.type;
+        if (type === undefined || type === '') continue;
+        counts.set(type, (counts.get(type) ?? 0) + 1);
+    }
+    const rank = (type: string): number => {
+        const at = order.indexOf(type);
+        return at < 0 ? order.length : at;
+    };
+    return [...counts.entries()]
+        .map(([type, count]) => ({ type, count }))
+        .sort((left, right) => rank(left.type) - rank(right.type));
+}
+
+/**
+ * Whether a project's manifest is behind its own documents by at least `lag` days. `staleDays` is
+ * the raw lag normalise measured, and the threshold is applied here, so raising the config key
+ * changes the badge and the quick filter together.
+ */
+export function isStale(item: BoardItem, lag: number = STALE_LAG): boolean {
+    const days = item.project.staleDays;
+    return days !== undefined && days >= lag;
+}
+
+/** A size as the file finder writes it: megabytes to one decimal, else whole kilobytes. */
+export function humanSize(bytes: number): string {
+    if (!Number.isFinite(bytes) || bytes < 0) return '0 KB';
+    if (bytes >= 1048576) return `${(bytes / 1048576).toFixed(1)} MB`;
+    return `${Math.max(1, Math.floor(bytes / 1024))} KB`;
+}
+
+/** One entry of a collection that names a project: which collection it is in, and its words. */
+export type Dissemination = { collection: string; id: Id; title: string };
+
+/** The collections whose entries say a project was presented or taught. */
+const ACTIVITY = ['events', 'education'];
+
+/**
+ * The events and education entries whose `related:` names one project, which is where the work was
+ * disseminated. An events entry the reader only attended is not one: its `role` says `attend`, and
+ * attending somebody else's conference is not this project appearing anywhere.
+ */
+export function disseminated(snapshot: Snapshot, id: Id): Dissemination[] {
+    const found: Dissemination[] = [];
+    for (const collection of ACTIVITY) {
+        const entries = snapshot.entities.collections[collection]?.entries ?? [];
+        for (const entry of entries) {
+            const role = str(entry.fields.role);
+            if (collection === 'events' && role === 'attend') continue;
+            if (!strings(entry.fields.related).includes(id)) continue;
+            found.push({ collection, id: entry.id, title: entry.title });
+        }
+    }
+    return found;
+}
+
 /**
  * The items a board shows: every selected value of a facet is an alternative within that facet, and
  * every facet with a selection must match. The search is a substring of everything haystack holds,
- * case insensitive, and an empty search matches everything.
+ * case insensitive, and an empty search matches everything. The quick filters and the type toggles
+ * are the same gate: a type switched off is gone, and a quick filter keeps only what carries it.
  */
 export function applyFilters(
     items: BoardItem[],
     filters: Record<string, string[]>,
-    search: string
+    search: string,
+    quick: QuickFilters = {}
 ): BoardItem[] {
     const needle = search.trim().toLowerCase();
+    const hidden = quick.hiddenTypes ?? [];
+    const lag = quick.staleLag ?? STALE_LAG;
     return items.filter((item) => {
+        const type = item.project.type;
+        if (type !== undefined && hidden.includes(type)) return false;
+        if (quick.stale === true && !isStale(item, lag)) return false;
+        if (quick.dated === true && (item.project.deadline ?? '') === '') return false;
         for (const facet of FACETS) {
             const selected = filters[facet];
             if (selected === undefined || selected.length === 0) continue;
@@ -547,7 +733,16 @@ export function applyFilters(
 
 /** The state a board starts in, before it has remembered anything. */
 export function emptyBoardState(labels: LabelMode = 'short'): BoardState {
-    return { mode: 'cards', search: '', filters: {}, expanded: [], labels };
+    return {
+        mode: 'cards',
+        search: '',
+        filters: {},
+        expanded: [],
+        labels,
+        stale: false,
+        dated: false,
+        hiddenTypes: []
+    };
 }
 
 /**
@@ -561,6 +756,9 @@ export function parseBoardState(value: unknown, labels: LabelMode = 'short'): Bo
     if (value.mode === 'list' || value.mode === 'cards') state.mode = value.mode;
     if (value.labels === 'full' || value.labels === 'short') state.labels = value.labels;
     if (typeof value.search === 'string') state.search = value.search;
+    state.stale = value.stale === true;
+    state.dated = value.dated === true;
+    state.hiddenTypes = strings(value.hiddenTypes);
     state.expanded = strings(value.expanded);
     if (isMap(value.filters)) {
         for (const [facet, selected] of Object.entries(value.filters)) {

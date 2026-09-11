@@ -1,7 +1,7 @@
 // readDoc and projectDocs against synthetic files in a temporary directory. Nothing outside it is
 // read or written, and every write asserts its path is inside the temporary directory first.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -133,7 +133,7 @@ describe('projectDocs', () => {
 
         const docs = projectDocs(root);
         expect(docs.map((d) => d.name)).toEqual(PROJECT_DOCS);
-        expect(docs[0]).toEqual({
+        expect(docs[0]).toMatchObject({
             name: 'README.md',
             path: join(root, 'README.md'),
             present: true
@@ -178,5 +178,24 @@ describe('projectDocs', () => {
 
         expect(docs.map((d) => d.name)).toEqual(PROJECT_DOCS);
         expect(present(docs)).toEqual([]);
+    });
+
+    it('carries the mtime of a document that is there and zero for one that is not', () => {
+        const root = scratch();
+        const file = write(root, 'README.md', 'readme\n');
+        const written = statSync(file).mtimeMs;
+        const docs = projectDocs(root);
+
+        expect(docs.find((d) => d.name === 'README.md')?.mtime).toBe(written);
+        expect(docs.find((d) => d.name === 'PRESENT.md')?.mtime).toBe(0);
+    });
+
+    it('reports the mtime a later write gave a document', () => {
+        const root = scratch();
+        const file = write(root, 'README.md', 'readme\n');
+        const later = new Date('2030-01-02T03:04:05Z');
+        utimesSync(file, later, later);
+
+        expect(projectDocs(root).find((d) => d.name === 'README.md')?.mtime).toBe(later.getTime());
     });
 });

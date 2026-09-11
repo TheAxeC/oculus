@@ -26,6 +26,15 @@ function isDir(path: string): boolean {
     }
 }
 
+/** When the manifest was last written, in milliseconds, or nothing when it cannot be stat'ed. */
+function mtimeOf(file: string): number | undefined {
+    try {
+        return statSync(file).mtimeMs;
+    } catch {
+        return undefined;
+    }
+}
+
 function hasManifest(dir: string): boolean {
     try {
         return statSync(join(dir, MANIFEST)).isFile();
@@ -123,6 +132,8 @@ function record(
     }
 
     const built: RawManifest = { ...data, file, folder, id, tier };
+    const written = mtimeOf(file);
+    if (written !== undefined) built.fileMtime = written;
     if (category !== undefined) built.category = category;
     if (type !== undefined) built.type = type;
     if (data.id !== undefined) built.manifestId = data.id;
