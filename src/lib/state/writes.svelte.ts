@@ -16,6 +16,8 @@ export type WriteAnswer = {
     error?: string;
     /** What the endpoint had to say: git's own output, or the suggested commit message. */
     output?: string;
+    /** The branch rows of a deposit `branches` action. Absent on every other write. */
+    branches?: { name: string; upstream: string; current: boolean }[];
 };
 
 const state: { pending: number; error: string | null } = $state({ pending: 0, error: null });
@@ -101,6 +103,23 @@ export async function writeGit(
     return send({ action, root, ...fields }, GIT_PATH);
 }
 
+/** The endpoint of the deposit panel: one action on one project, behind the same token. */
+export const DEPOSIT_PATH = '/api/deposit';
+
+/**
+ * One deposit action on one project: adopt, plan, commit, push, snapshot, or a branch. The endpoint
+ * is /api/deposit, and what the action did to the mirror is read back by state/deposit.svelte.ts's
+ * own GET rather than carried here. An action that can lose work carries `confirm: true`, which the
+ * panel sets only from its dialog.
+ */
+export async function writeDeposit(
+    action: string,
+    id: string,
+    fields: Record<string, unknown> = {}
+): Promise<WriteAnswer> {
+    return send({ action, id, ...fields }, DEPOSIT_PATH);
+}
+
 /** One write, with the one retry a stale token gets. */
 async function send(request: unknown, path = '/api/write'): Promise<WriteAnswer> {
     state.pending += 1;
@@ -124,7 +143,8 @@ async function send(request: unknown, path = '/api/write'): Promise<WriteAnswer>
             ok: true,
             changed: Array.isArray(body.changed) ? body.changed : [],
             refused: Array.isArray(body.refused) ? body.refused : [],
-            output: typeof body.output === 'string' ? body.output : undefined
+            output: typeof body.output === 'string' ? body.output : undefined,
+            branches: Array.isArray(body.branches) ? body.branches : undefined
         };
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

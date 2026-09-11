@@ -8,6 +8,7 @@
 // is the only module in the application that names a view.
 
 import Collection from '$lib/views/Collection.svelte';
+import Deposit from '$lib/views/Deposit.svelte';
 import Document from '$lib/views/Document.svelte';
 import Editor from '$lib/views/Editor.svelte';
 import Findings from '$lib/views/Findings.svelte';
@@ -86,6 +87,16 @@ registerView({
     label: 'views.editor',
     glyph: 'views.editor_glyph',
     component: Editor,
+    listed: false
+});
+
+// The deposit panel. It is opened for one project, by the deposit control of a card, which is what
+// its instance state holds; opened from the rail it has none and says so.
+registerView({
+    id: 'deposit',
+    label: 'views.deposit',
+    glyph: 'views.deposit_glyph',
+    component: Deposit,
     listed: false
 });
 

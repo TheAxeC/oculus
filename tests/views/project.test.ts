@@ -124,6 +124,11 @@ describe('a project as its own tab', () => {
         expect(body).toContain('the first result');
     });
 
+    it('offers the manifest editor and the deposit on the card', () => {
+        expect(body).toContain(catalog['cards.edit_manifest']);
+        expect(body).toContain(catalog['cards.deposit']);
+    });
+
     it('offers the Markdown documents the project has, and no others', () => {
         const group = segment(body);
         expect(body).toContain(catalog['project.documents']);

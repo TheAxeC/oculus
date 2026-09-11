@@ -87,6 +87,7 @@ describe('the real registrations', () => {
             'coauthor',
             'project',
             'editor',
+            'deposit',
             'document',
             'session-list',
             'session-detail',

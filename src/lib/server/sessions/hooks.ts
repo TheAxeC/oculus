@@ -16,6 +16,7 @@ import type {
     HookEvent,
     SessionRecord,
     SessionsPayload,
+    Snapshot,
     Workspace
 } from '../../data/model.ts';
 
@@ -141,6 +142,23 @@ export function bridgedGitRoots(): string[] {
     const payload = message.payload;
     if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return [];
     return Object.keys(payload as GitPayload);
+}
+
+/**
+ * The project ids the last published `portfolio` payload names. POST /api/deposit takes them as one
+ * half of what a deposit may address, the hub's own manifests being the other; a process that has
+ * published nothing yet names none, and the manifests answer alone.
+ */
+export function bridgedProjectIds(): string[] {
+    const { hub } = bridge();
+    if (hub === null) return [];
+    const message = hub.latest('portfolio');
+    if (message === undefined) return [];
+    const payload = message.payload;
+    if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return [];
+    const entities = (payload as Snapshot).entities;
+    if (typeof entities !== 'object' || entities === null) return [];
+    return Object.keys(entities.projects ?? {});
 }
 
 /** What routes/api/hook/+server.ts needs of the real Hub, without importing its class identity. */

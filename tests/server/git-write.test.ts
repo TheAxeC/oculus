@@ -15,7 +15,9 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { defaultMirrorsDir } from '../../src/lib/server/deposit-git.ts';
 import {
+    allowedRoots,
     branches,
     commit,
     createBranch,
@@ -120,6 +122,14 @@ describe('the roots a write may name', () => {
         expect(permitted(outside)).toBe(false);
         expect(permitted('')).toBe(false);
         expect(permitted('relative/path')).toBe(false);
+    });
+
+    it('takes the deposit mirrors folder, for the suggested message of the deposit panel', () => {
+        // O21's mirrors live under ~/.oculus/deposits and are not a published workspace, so
+        // allowedRoots names that folder as a third source; nothing else here reaches it.
+        const mirrors = defaultMirrorsDir();
+        expect(allowedRoots()).toContain(mirrors);
+        expect(permitted(join(mirrors, 'a-repo'))).toBe(true);
     });
 
     it('refuses an operation on a root outside the set before running anything', async () => {

@@ -392,6 +392,8 @@ text:
     unpin: "unpin"
     pin_to_top: "pin to top"
     edit_manifest: "edit manifest"
+    deposit: "deposit"          # oculus: opens the deposit panel for this project.
+    deposit_glyph: "published"
     files_hdr: "Files ({0})"
     files_badge_tip: "files in this project - expand the card to search them"
     files_ph: "filter files in this project ..."

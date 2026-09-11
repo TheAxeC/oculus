@@ -33,6 +33,7 @@ import { execFile } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, resolve, sep } from 'node:path';
+import { defaultMirrorsDir } from './deposit-git.ts';
 import { GIT } from './git.ts';
 import { bridgedGitRoots } from './sessions/hooks.ts';
 import { target } from './writes.ts';
@@ -96,7 +97,12 @@ function run(root: string, args: string[], timeout: number): Promise<Outcome> {
 
 // ---------------------------------------------------------------- what may be written where
 
-/** The roots a write may name: the workspaces on the `git` channel, and the hub itself. */
+/**
+ * The roots a write may name: the workspaces on the `git` channel, the hub itself, and the deposit
+ * mirrors folder. The third is there for the suggested commit message of the deposit panel, which
+ * asks this module for a message over the mirror's staged diff; every other write on a mirror goes
+ * through server/deposit.ts, whose own gate is the enumerated subcommands of deposit-git.ts.
+ */
 export function allowedRoots(): string[] {
     const roots = new Set(bridgedGitRoots());
     try {
@@ -104,6 +110,7 @@ export function allowedRoots(): string[] {
     } catch {
         // A machine whose local.yml cannot be read still writes to the workspaces it published.
     }
+    roots.add(defaultMirrorsDir());
     return [...roots].filter((root) => root !== '');
 }
 

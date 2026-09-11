@@ -236,6 +236,11 @@
                     glyph={t('cards.edit_glyph')}
                     onclick={() => openView('editor', 'panel', { id: one.id })}
                 />
+                <ToolButton
+                    label={t('cards.deposit')}
+                    glyph={t('cards.deposit_glyph')}
+                    onclick={() => openView('deposit', 'panel', { id: one.id })}
+                />
             {/snippet}
 
             <div class="folder">{one.project.folder}</div>
