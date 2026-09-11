@@ -552,6 +552,12 @@ export type SessionRecord = {
     tokens: SessionTokens;
     /** What the model carried on the last turn, which is what a context meter measures. */
     contextTokens: number;
+    /**
+     * The cache read of that same last turn. The share of the window that came out of the cache is
+     * this over contextTokens; the lifetime sum in `tokens.cacheRead` is a different measurement
+     * and divides into a percentage in the tens of thousands.
+     */
+    lastCacheRead: number;
     /** The model's context window when the transcript states it; Codex does, Claude does not. */
     contextWindow: number | null;
     cache: SessionCache;

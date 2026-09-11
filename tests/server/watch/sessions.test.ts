@@ -365,6 +365,29 @@ describe('watchSessions', () => {
         expect(ids).toContain(SID);
     });
 
+    it('rescans when the overrides file changes, and not when the cache beside it does', async () => {
+        const fixture = new Fixture();
+        // The cache goes in the same directory as the overrides file, which is where ~/.oculus keeps
+        // both: the watch is on that directory, so only the filename keeps a scan's own cache write
+        // from causing the next scan.
+        fixture.cache = join(fixture.root, 'transcript-cache.json');
+        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+        const started = start(fixture);
+        await until(() => started.got.length >= 1, WAIT);
+        expect(latest(started.got).records[0].hidden).toBe(false);
+        await armed(fixture.root, 'sessions.json', started.got);
+
+        // A dismissal, as api/write would have written it.
+        writeFileSync(fixture.overrides, JSON.stringify({ sessions: { [SID]: { hidden: true } } }));
+        await until(() => latest(started.got).records[0].hidden === true, WAIT);
+        expect(latest(started.got).records[0].hidden).toBe(true);
+
+        const before = await quiet(started.got);
+        writeFileSync(fixture.cache, JSON.stringify({ version: 99, entries: {} }));
+        await sleep(600);
+        expect(started.got.length).toBe(before);
+    });
+
     it('closes every handle it opened', async () => {
         const fixture = new Fixture();
         fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);

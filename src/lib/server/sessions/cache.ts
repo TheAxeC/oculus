@@ -19,8 +19,11 @@ export type Found = {
     ino: number;
 };
 
-/** Bumped by any change to the accumulator's shape. oculus starts its own count at 1. */
-export const CACHE_VERSION = 1;
+/**
+ * Bumped by any change to the accumulator's shape, or to what a record reads out of it. Version 2
+ * is the record's lastCacheRead; a store cached at version 1 is folded again once, whole.
+ */
+export const CACHE_VERSION = 2;
 export const MAX_CACHE_ENTRIES = 200;
 /** A first read of a file above this is not folded; the record says so and nothing is cached. */
 export const MAX_FIRST_READ_BYTES = 256 * 1024 * 1024;

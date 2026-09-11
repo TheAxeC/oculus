@@ -130,7 +130,7 @@
         const next = !hidden(row);
         flipped = { ...flipped, [row.id]: next };
         failure = '';
-        const answer = await writeSession(row.id, next);
+        const answer = await writeSession(row.id, { hidden: next });
         if (answer.ok) return;
         flipped = { ...flipped, [row.id]: !next };
         failure = t('js.sessions.dismiss_failed');
@@ -151,6 +151,11 @@
                 ></span>
                 <Chip label={entry.tool} />
                 <span class="nm">{entry.title}</span>
+                {#if entry.pinned}
+                    <span class="pin" title={t('sessions.pin_mark')}>
+                        <Glyph name={t('cards.pin_glyph')} />
+                    </span>
+                {/if}
             </span>
             <span class="meta">
                 {#if entry.live}
@@ -364,6 +369,11 @@
 
     /* The row's title at the list's own size: the page's base size is the largest step, and a
        session's title is one line among many rather than a heading. */
+    .top .pin {
+        flex: none;
+        font-size: var(--fs-xs);
+    }
+
     .top .nm {
         overflow: hidden;
         text-overflow: ellipsis;

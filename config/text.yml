@@ -338,6 +338,10 @@ text:
     facet_compute: "Compute"
     facet_reproduced: "Reproduced"
     facet_code: "Code"
+    facet_sessions: "Sessions"   # oculus: which projects are being worked on right now.
+    sessions_live: "working now"
+    sessions_recent: "worked on recently"
+    sessions_none: "no session"
     filter_by: "Filter by {0}"
     search_default: "Search"    # oculus: the search box's words when `board.search` names none for this board.
     toolbar: "Board controls"   # oculus: the accessible name of the strip the search, the modes and the facets sit in.
@@ -785,6 +789,19 @@ text:
     ended_glyph: "disclosure"
     empty_glyph: "circle_empty"
     select_tip: "show this session in the other session views"
+    # oculus: the pin row of the session panel, which writes the per-session overrides file.
+    pin_label: "Pin"
+    pin_tip: "file this session under a project folder instead of the one its files scored"
+    pin_scored: "(scored)"
+    pin_mark: "pinned to this area by hand"
+    rename_label: "Title"
+    rename_tip: "show this session under a name of your own"
+    rename_placeholder: "the session's own title"
+    clear_title: "clear the title"
+    clear_glyph: "clear"
+    rename_glyph: "check"
+    write_saved: "saved"
+    write_failed: "not saved"
 
   config:                      # Config tab (render/surfaces.py config_tab_html) - the split config, raw-YAML editable.
     intro: "The cockpit config, split across these files and merged by <code>load_config()</code>. Edit any file as raw YAML (served mode) - the build and <code>--selftest</code> validate it on save. The <b>+ status</b> button (top bar) is the one-click shortcut for adding a status colour."

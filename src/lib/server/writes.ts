@@ -18,7 +18,7 @@ import { engineDir, loadConfig, loadLocal } from '../data/sources/config.ts';
 import { readManifests } from '../data/sources/manifests.ts';
 import { fieldNames } from '../data/validate.ts';
 import { hasToken, sameOrigin } from './auth.ts';
-import { setHidden } from './sessions/overrides.ts';
+import { setHidden, setOverride } from './sessions/overrides.ts';
 import { setFields } from './yaml-edit.ts';
 import type { FieldValue, Refusal } from './yaml-edit.ts';
 import type { PortfolioConfig } from '../data/model.ts';
@@ -184,8 +184,20 @@ export function writeManifest(
 /** The body a write carries. `kind` is the discriminator later writes are added on. */
 type ManifestWrite = { kind: 'manifest'; id: string; fields: Record<string, unknown> };
 
-/** The other body: one session dismissed from the rail, or brought back to it. */
-type SessionWrite = { kind: 'session'; id: string; hidden: boolean };
+/**
+ * The other body: one session dismissed from the rail or brought back to it, pinned to an area or
+ * unpinned, renamed or given its own title back. A field the body does not name is not touched, and
+ * a body naming none of the three is not a write.
+ */
+type SessionWrite = {
+    kind: 'session';
+    id: string;
+    hidden?: boolean;
+    /** An absolute directory to pin the session to, or the empty string to unpin it. */
+    area?: string;
+    /** The title to show instead of the transcript's own, or the empty string to clear it. */
+    title?: string;
+};
 
 /** The body as a manifest write, or null when it is not one. */
 export function manifestWrite(body: unknown): ManifestWrite | null {
@@ -197,13 +209,30 @@ export function manifestWrite(body: unknown): ManifestWrite | null {
     return { kind: 'manifest', id: held.id, fields: fields as Record<string, unknown> };
 }
 
-/** The body as a session write, or null when it is not one. */
+/**
+ * The body as a session write, or null when it is not one. A field of the wrong type makes the whole
+ * body unknown rather than being dropped quietly, and a body carrying none of the three fields is
+ * not a write either: there would be nothing to do and nothing to answer with.
+ */
 export function sessionWrite(body: unknown): SessionWrite | null {
     if (typeof body !== 'object' || body === null || Array.isArray(body)) return null;
     const held = body as Record<string, unknown>;
     if (held.kind !== 'session' || typeof held.id !== 'string' || held.id === '') return null;
-    if (typeof held.hidden !== 'boolean') return null;
-    return { kind: 'session', id: held.id, hidden: held.hidden };
+    const write: SessionWrite = { kind: 'session', id: held.id };
+    if (held.hidden !== undefined) {
+        if (typeof held.hidden !== 'boolean') return null;
+        write.hidden = held.hidden;
+    }
+    for (const key of ['area', 'title'] as const) {
+        const value = held[key];
+        if (value === undefined) continue;
+        if (typeof value !== 'string') return null;
+        write[key] = value;
+    }
+    if (write.hidden === undefined && write.area === undefined && write.title === undefined) {
+        return null;
+    }
+    return write;
 }
 
 function json(status: number, body: unknown): Response {
@@ -247,13 +276,27 @@ export async function handleWrite(
     }
     const session = sessionWrite(body);
     if (session !== null) {
+        const changed: string[] = [];
+        const refused: Refusal[] = [];
         try {
-            setHidden(session.id, session.hidden, into.overrides);
+            if (session.hidden !== undefined) {
+                setHidden(session.id, session.hidden, into.overrides);
+                changed.push('hidden');
+            }
+            if (session.area !== undefined || session.title !== undefined) {
+                const outcome = setOverride(
+                    session.id,
+                    { area: session.area, title: session.title },
+                    into.overrides
+                );
+                changed.push(...outcome.changed);
+                refused.push(...outcome.refused);
+            }
         } catch (error) {
             const reason = error instanceof Error ? error.message : String(error);
-            return json(500, { error: `the dismissal could not be saved: ${reason}` });
+            return json(500, { error: `the session write could not be saved: ${reason}` });
         }
-        return json(200, { ok: true, changed: ['hidden'], refused: [] });
+        return json(200, { ok: true, changed, refused });
     }
 
     const write = manifestWrite(body);

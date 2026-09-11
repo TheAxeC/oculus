@@ -46,6 +46,13 @@ export type BoardPreset = {
     search: string;
 };
 
+/**
+ * What the sessions facet reads: one project to one of the three values. The sessions payload is
+ * live data and this module is pure over the snapshot, so the reading is handed in by
+ * state/selectors.svelte.ts rather than done here.
+ */
+export type SessionsOf = (project: Project) => string;
+
 /** A tag on a card: the id a filter names it by, and the words the chip carries. */
 export type BoardTag = { id: Id; label: string };
 
@@ -74,6 +81,8 @@ export type BoardItem = {
     reproduced: boolean;
     /** The year as text, or the empty string when the manifest has none. */
     year: string;
+    /** `live`, `recent` or `none`: what the sessions payload says about the project's folder. */
+    sessions: string;
     chips: string[];
     /** Everything the search reads, lower case, one string. */
     haystack: string;
@@ -140,8 +149,20 @@ export const FACETS = [
     'status',
     'compute',
     'reproduced',
-    'code'
+    'code',
+    'sessions'
 ];
+
+/**
+ * The values of the sessions facet: a session running in the project's folder now, one in the
+ * payload's own two-day window with none running, or none at all. It is the one facet whose value
+ * is not in the snapshot, so boardItems is handed a function that reads it from the sessions
+ * payload; a board built without one has `none` everywhere, which is one value and is not offered.
+ */
+export const SESSIONS_LIVE = 'live';
+export const SESSIONS_RECENT = 'recent';
+export const SESSIONS_NONE = 'none';
+const SESSIONS_VALUES = [SESSIONS_LIVE, SESSIONS_RECENT, SESSIONS_NONE];
 
 /** The fixed values of the facets that have them, in the order their menu lists them. */
 const COMPUTE_VALUES = ['hpc', 'local', NONE];
@@ -338,7 +359,8 @@ function itemOf(
     project: Project,
     snapshot: Snapshot,
     preset: BoardPreset,
-    names: Record<Id, string>
+    names: Record<Id, string>,
+    sessionsOf: SessionsOf
 ): BoardItem {
     const entities = snapshot.entities;
     const domainId = project.domainIds[0];
@@ -372,6 +394,7 @@ function itemOf(
         compute: project.compute ?? '',
         reproduced: project.reproduced !== undefined,
         year: project.year === undefined ? '' : String(project.year),
+        sessions: sessionsOf(project),
         chips: project.chips
     };
     return { ...item, haystack: haystack(project, item) };
@@ -394,11 +417,15 @@ function compare(left: BoardItem, right: BoardItem, order: string[]): number {
  * The projects of a board, joined and sorted. A project of another tier is not here, and nothing
  * is filtered: a facet counts what this returns, and a filter is applied to it afterwards.
  */
-export function boardItems(snapshot: Snapshot, preset: BoardPreset): BoardItem[] {
+export function boardItems(
+    snapshot: Snapshot,
+    preset: BoardPreset,
+    sessionsOf: SessionsOf = () => SESSIONS_NONE
+): BoardItem[] {
     const names = collaboratorNames(snapshot);
     const items = Object.values(snapshot.entities.projects)
         .filter((project) => preset.tiers.includes(project.tier))
-        .map((project) => itemOf(project, snapshot, preset, names));
+        .map((project) => itemOf(project, snapshot, preset, names, sessionsOf));
     return items.sort((left, right) => compare(left, right, preset.typeOrder));
 }
 
@@ -428,6 +455,8 @@ export function facetValues(item: BoardItem, facet: string): string[] {
             return [item.reproduced ? '1' : '0'];
         case 'code':
             return [item.code === '' ? NONE : item.code];
+        case 'sessions':
+            return [item.sessions];
         default:
             return [];
     }
@@ -463,6 +492,7 @@ function orderValues(facet: string, counts: Map<string, number>, preset: BoardPr
     if (facet === 'compute') return COMPUTE_VALUES.filter(has);
     if (facet === 'code') return CODE_VALUES.filter(has);
     if (facet === 'reproduced') return REPRODUCED_VALUES.filter(has);
+    if (facet === 'sessions') return SESSIONS_VALUES.filter(has);
     const values = [...counts.keys()].filter(has);
     // A year axis reads newest first; every other free facet reads by weight, and by its own value
     // where two weigh the same, so the order does not depend on the order the projects were read in.

@@ -511,6 +511,11 @@ describe('the fold', () => {
         const record = readSession(f.path);
         expect(record.contextTokens).toBe(2120);
         expect(record.tokens.cacheRead).toBe(3000);
+        // The share the panel draws is the last turn's read over the last turn's occupancy. The
+        // lifetime sum over the same occupancy would be 142% cached, which is not a share of
+        // anything.
+        expect(record.lastCacheRead).toBe(2000);
+        expect(Math.round((100 * record.lastCacheRead) / record.contextTokens)).toBe(94);
     });
 });
 

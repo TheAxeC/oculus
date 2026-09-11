@@ -66,6 +66,9 @@ function request(body: unknown, headers: Record<string, string> = {}): Request {
 
 const GOOD = { kind: 'manifest', id: 'alpha', fields: { 'status.line': 'a new line' } };
 
+/** An absolute area to pin a session to. It is never opened: the overrides file only names it. */
+const AREA = '/hub/projects/manuscripts/alpha';
+
 function manifestOf(into: WriteTarget): string {
     return readFileSync(join(into.hub, 'projects', 'manuscripts', 'alpha', 'project.yml'), 'utf8');
 }
@@ -155,7 +158,7 @@ describe('the write endpoint', () => {
         expect(overridesOf(into)).toBe(null);
     });
 
-    it('refuses a session write that names no id or no flag', async () => {
+    it('refuses a session write that names no id or no field', async () => {
         const into = target();
         expect((await handleWrite(request({ kind: 'session', id: '' }), TOKEN, into)).status).toBe(
             400
@@ -167,6 +170,73 @@ describe('the write endpoint', () => {
             (await handleWrite(request({ kind: 'session', id: 'a', hidden: 'yes' }), TOKEN, into))
                 .status
         ).toBe(400);
+        expect(
+            (await handleWrite(request({ kind: 'session', id: 'a', area: 7 }), TOKEN, into)).status
+        ).toBe(400);
+        expect(
+            (await handleWrite(request({ kind: 'session', id: 'a', title: null }), TOKEN, into))
+                .status
+        ).toBe(400);
+        expect(overridesOf(into)).toBe(null);
+    });
+
+    it('pins a session to an area through the route, and unpins it', async () => {
+        const into = target();
+        const pin = { kind: 'session', id: 'sess-1', area: AREA };
+        const response = await handleWrite(request(pin), TOKEN, into);
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ ok: true, changed: ['area'], refused: [] });
+        expect(overridesOf(into)).toEqual({ sessions: { 'sess-1': { area: AREA } } });
+
+        const unpin = { kind: 'session', id: 'sess-1', area: '' };
+        expect((await handleWrite(request(unpin), TOKEN, into)).status).toBe(200);
+        expect(overridesOf(into)).toEqual({ sessions: {} });
+    });
+
+    it('renames a session through the route, and clears the name', async () => {
+        const into = target();
+        const rename = { kind: 'session', id: 'sess-1', title: 'my name' };
+        const response = await handleWrite(request(rename), TOKEN, into);
+        expect(await response.json()).toEqual({ ok: true, changed: ['title'], refused: [] });
+        expect(overridesOf(into)).toEqual({ sessions: { 'sess-1': { title: 'my name' } } });
+
+        const clear = { kind: 'session', id: 'sess-1', title: '' };
+        expect((await handleWrite(request(clear), TOKEN, into)).status).toBe(200);
+        expect(overridesOf(into)).toEqual({ sessions: {} });
+    });
+
+    it('carries a dismissal, a pin and a title in one body', async () => {
+        const into = target();
+        const body = { kind: 'session', id: 'sess-1', hidden: true, area: AREA, title: 'my name' };
+        const response = await handleWrite(request(body), TOKEN, into);
+        expect(await response.json()).toEqual({
+            ok: true,
+            changed: ['hidden', 'area', 'title'],
+            refused: []
+        });
+        expect(overridesOf(into)).toEqual({
+            sessions: { 'sess-1': { hidden: true, area: AREA, title: 'my name' } }
+        });
+    });
+
+    it('refuses an area that is not absolute as a refusal, not an error', async () => {
+        const into = target();
+        const body = { kind: 'session', id: 'sess-1', area: 'projects/alpha' };
+        const response = await handleWrite(request(body), TOKEN, into);
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            ok: true,
+            changed: [],
+            refused: [{ field: 'area', reason: 'the area must be an absolute path' }]
+        });
+        expect(overridesOf(into)).toBe(null);
+    });
+
+    it('refuses a pin with no token, and writes nothing', async () => {
+        const into = target();
+        const body = { kind: 'session', id: 'sess-1', area: AREA };
+        const response = await handleWrite(request(body, { 'x-oculus-token': '' }), TOKEN, into);
+        expect(response.status).toBe(403);
         expect(overridesOf(into)).toBe(null);
     });
 

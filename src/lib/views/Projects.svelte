@@ -22,6 +22,8 @@
     import {
         DEADLINE_SOON,
         NONE,
+        SESSIONS_LIVE,
+        SESSIONS_RECENT,
         applyFilters,
         daysUntil,
         facets,
@@ -31,8 +33,16 @@
         type BoardState,
         type FacetValue
     } from '$lib/state/board';
-    import { board, boardPreset } from '$lib/state/selectors.svelte';
-    import { openView } from '$lib/state/layout.svelte';
+    import {
+        board,
+        boardPreset,
+        folderOf,
+        sessionsForProject,
+        type GroupedSession
+    } from '$lib/state/selectors.svelte';
+    import { openView, workbench } from '$lib/state/layout.svelte';
+    import { findView } from '$lib/state/layout';
+    import { select } from '$lib/state/selection.svelte';
     import { lookup, t } from '$lib/state/text';
     import { chipGlyph, chipLabel, statusTone } from '$lib/state/tones';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
@@ -95,6 +105,46 @@
         return lookup(`views.${preset.id}`);
     }
 
+    /**
+     * The six session views. A click on a card's session chip opens the panel's detail only when
+     * none of them is already showing, so a workbench arranged for sessions is not rearranged by a
+     * click on the board.
+     */
+    const SESSION_VIEWS = [
+        'session-list',
+        'session-detail',
+        'terminal',
+        'timeline',
+        'changes',
+        'agents'
+    ] as const;
+
+    /** The sessions working in one project's folder, whether filed there or only sitting in it. */
+    function sessionsOf(item: BoardItem): GroupedSession[] {
+        const folder = folderOf(item.project);
+        return folder === '' ? [] : sessionsForProject(folder);
+    }
+
+    /** The hue of a session's state dot, the same reading the session list gives it. */
+    function dotStyle(entry: GroupedSession): string {
+        if (entry.state === 'working') return '--tone: var(--c-green)';
+        if (entry.state === 'idle') return '--tone: var(--c-amber)';
+        if (entry.state === 'ended') return '--tone: var(--c-grey)';
+        return '--tone: var(--c-slate)';
+    }
+
+    /** Whether any of the six session views is open in either tree. */
+    function sessionViewOpen(): boolean {
+        const trees = [workbench().main, workbench().panel];
+        return SESSION_VIEWS.some((view) => trees.some((tree) => findView(tree, view) !== null));
+    }
+
+    /** Pick a session from a card: every session view follows, and the panel opens when none is up. */
+    function pick(entry: GroupedSession): void {
+        select(entry.id);
+        if (!sessionViewOpen()) openView('session-detail', 'panel', { session: entry.id });
+    }
+
     /** A facet's heading. The keys are literal so tests/keys.test.ts can see every one of them. */
     function heading(facet: string): string {
         if (facet === 'category') return t('board.facet_category');
@@ -106,6 +156,7 @@
         if (facet === 'status') return t('board.facet_status');
         if (facet === 'compute') return t('board.facet_compute');
         if (facet === 'reproduced') return t('board.facet_reproduced');
+        if (facet === 'sessions') return t('board.facet_sessions');
         return t('board.facet_code');
     }
 
@@ -118,7 +169,14 @@
         if (facet === 'reproduced') {
             return value.value === '1' ? t('board.repro_yes') : t('board.repro_no');
         }
+        if (facet === 'sessions') return sessionsLabel(value.value);
         return value.label;
+    }
+
+    function sessionsLabel(value: string): string {
+        if (value === SESSIONS_LIVE) return t('board.sessions_live');
+        if (value === SESSIONS_RECENT) return t('board.sessions_recent');
+        return t('board.sessions_none');
     }
 
     function computeLabel(value: string): string {
@@ -216,6 +274,32 @@
     </div>
 {/snippet}
 
+{#snippet sessions(rows: GroupedSession[])}
+    {@const live = rows.filter((entry) => entry.live).length}
+    <div class="sessions">
+        <Chip
+            label={rows.length === 1
+                ? t('js.sessions.card_one')
+                : t('js.sessions.card_n', rows.length)}
+        />
+        {#if live > 0}
+            <Chip label={t('js.sessions.card_live', live)} tone="green" />
+        {/if}
+        {#each rows as entry (entry.id)}
+            <button
+                type="button"
+                class="session"
+                title={t('sessions.select_tip')}
+                onclick={() => pick(entry)}
+            >
+                <span class="dot" style={dotStyle(entry)}></span>
+                <Chip label={entry.tool} />
+                <span class="nm">{entry.title}</span>
+            </button>
+        {/each}
+    </div>
+{/snippet}
+
 {#snippet field(name: string, value: string)}
     <div class="field">
         <span class="label">{name}</span>
@@ -276,6 +360,7 @@
 {/snippet}
 
 {#snippet cardFor(item: BoardItem)}
+    {@const working = sessionsOf(item)}
     {@const open = state.expanded.includes(item.id)}
     {@const due = deadline(item)}
     {@const short = label(item) !== item.project.title}
@@ -343,6 +428,9 @@
             </div>
             {#if tagged(item)}
                 {@render tags(item)}
+            {/if}
+            {#if working.length > 0}
+                {@render sessions(working)}
             {/if}
             {#if item.project.eli5}
                 <div class="eli5">
@@ -429,6 +517,49 @@
         align-items: center;
         gap: 6px;
         margin-top: 6px;
+    }
+
+    .sessions {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        margin-top: 6px;
+    }
+
+    .session {
+        display: inline-flex;
+        align-items: center;
+        gap: 4px;
+        min-width: 0;
+        max-width: 100%;
+        border: 1px solid var(--line);
+        border-radius: var(--radius-sm);
+        background: none;
+        color: inherit;
+        font: inherit;
+        font-size: var(--fs-xs);
+        padding: 1px 6px;
+        cursor: pointer;
+        text-align: left;
+    }
+
+    .session:hover {
+        background: var(--chip);
+    }
+
+    .session .dot {
+        width: 7px;
+        height: 7px;
+        border-radius: 50%;
+        background: var(--tone);
+        flex: none;
+    }
+
+    .session .nm {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .venue,

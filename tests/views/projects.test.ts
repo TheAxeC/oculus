@@ -24,7 +24,15 @@ import { setVocab } from '../../src/lib/state/tones.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import { emptyBoardState, type BoardState } from '../../src/lib/state/board.ts';
-import type { Id, Project, Relations, Snapshot, Tier } from '../../src/lib/data/model.ts';
+import { area, payload, record, workspace } from '../sessions-fixture.ts';
+import type {
+    Id,
+    Project,
+    Relations,
+    SessionsPayload,
+    Snapshot,
+    Tier
+} from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout.ts';
 
 const { config } = loadConfig(engineDir());
@@ -167,7 +175,34 @@ function snapshot(): Snapshot {
     };
 }
 
+/** Alpha's absolute folder, which is what the session join matches: the manifest's own directory. */
+const ALPHA = '/hub/projects/active/alpha';
+
+/** Two sessions in alpha's folder, one of them running, and none anywhere else. */
+function sessions(): SessionsPayload {
+    const rows = [
+        record('live-one', {
+            title: 'The live one',
+            live: true,
+            liveStatus: 'busy',
+            state: 'working',
+            workspace: '/hub',
+            area: ALPHA,
+            cwd: ALPHA
+        }),
+        record('ended-one', {
+            title: 'The ended one',
+            tool: 'codex',
+            workspace: '/hub',
+            area: ALPHA,
+            cwd: ALPHA
+        })
+    ];
+    return payload([workspace('/hub', [area(ALPHA, rows)])]);
+}
+
 receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+receive({ channel: 'sessions', version: 1, payload: sessions() });
 receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
 
 /** The board rendered with one state, as the instance of one view id. */
@@ -229,6 +264,18 @@ describe('a card', () => {
         expect(body).toContain('Faes, Someone');
         expect(body).toContain('>run</span>');
         expect(body).toContain('first author');
+    });
+
+    it('draws the sessions working in the project folder, and the live count', () => {
+        expect(body).toContain(catalog['js.sessions.card_n'].replace('{0}', '2'));
+        expect(body).toContain(catalog['js.sessions.card_live'].replace('{0}', '1'));
+        expect(body).toContain('The live one');
+        expect(body).toContain('The ended one');
+        // The tool mark of each row, and the state dot in the hue the session list gives it.
+        expect(body).toContain('>codex</span>');
+        expect(body).toContain('--tone: var(--c-green)');
+        // Bravo's folder holds no session, so its card draws no sessions row at all.
+        expect(body.split('class="sessions').length - 1).toBe(1);
     });
 
     it('draws the code, reproduced and compute badges', () => {
@@ -347,6 +394,16 @@ describe('the facets', () => {
 
     it('offers no menu for a facet with fewer than two values', () => {
         expect(body).not.toContain(`Filter by ${catalog['board.facet_dataset']}`);
+    });
+
+    it('offers the sessions facet, and narrows the board to the project being worked on', () => {
+        // A menu's values are drawn when it opens, which needs a DOM; what is checked here is that
+        // the facet is offered at all, and that filtering on each of its values leaves the right
+        // cards. Alpha has a live session, bravo has none, and no project is `recent`.
+        expect(body).toContain(`Filter by ${catalog['board.facet_sessions']}`);
+        expect(cards(html('projects', { filters: { sessions: ['live'] } }))).toBe(1);
+        expect(cards(html('projects', { filters: { sessions: ['none'] } }))).toBe(1);
+        expect(cards(html('projects', { filters: { sessions: ['recent'] } }))).toBe(0);
     });
 
     it('shows only what a filter leaves', () => {

@@ -54,12 +54,24 @@ export async function writeManifest(
     return send({ kind: 'manifest', id, fields });
 }
 
+/** What one session write may set. A field left out is left as the overrides file has it. */
+export type SessionFields = {
+    /** True dismisses the session from the rail, false brings it back. */
+    hidden?: boolean;
+    /** An absolute directory to pin the session to, or the empty string to unpin it. */
+    area?: string;
+    /** A title to show instead of the transcript's own, or the empty string to clear it. */
+    title?: string;
+};
+
 /**
- * Dismiss one session, or bring it back. It is the same endpoint and the same token as a manifest
- * write; what it writes is the per-session overrides file rather than a project.yml.
+ * Dismiss one session or bring it back, pin it to an area or unpin it, rename it or clear the name.
+ * It is the same endpoint and the same token as a manifest write; what it writes is the per-session
+ * overrides file rather than a project.yml, and the answer's `refused` names a field the server
+ * would not write, an area that is not an absolute path above all.
  */
-export async function writeSession(id: string, hidden: boolean): Promise<WriteAnswer> {
-    return send({ kind: 'session', id, hidden });
+export async function writeSession(id: string, fields: SessionFields): Promise<WriteAnswer> {
+    return send({ kind: 'session', id, ...fields });
 }
 
 /** One write, with the one retry a stale token gets. */

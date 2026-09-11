@@ -8,7 +8,14 @@
 // component. A $derived created inside a function would be a second derived per call and would say
 // nothing more.
 
-import { BOARDS, boardItems, presetFor } from './board.ts';
+import {
+    BOARDS,
+    SESSIONS_LIVE,
+    SESSIONS_NONE,
+    SESSIONS_RECENT,
+    boardItems,
+    presetFor
+} from './board.ts';
 import { config, git, portfolio, sessions } from './entities.svelte.ts';
 import { choicesFor, formFields, formSections } from './schema.ts';
 import { pinnedSession, selected } from './selection.svelte.ts';
@@ -54,7 +61,28 @@ export function boardPreset(view: string): BoardPreset {
  */
 export function board(preset: BoardPreset): BoardItem[] {
     const snapshot = portfolio();
-    return snapshot === null ? [] : boardItems(snapshot, preset);
+    return snapshot === null ? [] : boardItems(snapshot, preset, sessionsOf);
+}
+
+/**
+ * The absolute folder of one project: the manifest's own path, less the file name. The snapshot
+ * carries the folder relative to the hub and the manifest's absolute path, and the manifest sits in
+ * the folder, so this is the hub's own root without the page ever being told what it is.
+ */
+export function folderOf(project: Project): string {
+    const cut = project.file.lastIndexOf('/');
+    return cut < 0 ? '' : project.file.slice(0, cut);
+}
+
+/**
+ * What the sessions facet says about one project: a session running in its folder now, a session in
+ * the payload's two-day window with none running, or none at all. Every session the payload holds is
+ * inside that window, which is why there is nothing to compare a date against here.
+ */
+function sessionsOf(project: Project): string {
+    const rows = sessionsForProject(folderOf(project));
+    if (rows.some((row) => row.live)) return SESSIONS_LIVE;
+    return rows.length > 0 ? SESSIONS_RECENT : SESSIONS_NONE;
 }
 
 /**
@@ -83,7 +111,7 @@ export function boardItemOf(id: Id): BoardItem | null {
     const merged = configMap();
     const view = BOARDS.find((name) => presetFor(name, merged).tiers.includes(project.tier));
     const preset = presetFor(view ?? BOARDS[0], merged);
-    return boardItems(snapshot, preset).find((item) => item.id === id) ?? null;
+    return boardItems(snapshot, preset, sessionsOf).find((item) => item.id === id) ?? null;
 }
 
 /** One project of the snapshot, or null before the first one arrives and for an id it does not hold. */
@@ -161,6 +189,18 @@ export function sessionsByWorkspace(includeDismissed = false): Workspace[] {
         if (areas.length > 0) kept.push({ ...workspace, areas });
     }
     return kept;
+}
+
+/**
+ * The known project folders of one workspace: the areas the grouping filed under a folder the
+ * portfolio holds, which are the areas a session may be pinned to by hand. An area the score
+ * invented out of the touched files is not offered, since pinning to one would say nothing the
+ * score does not already say.
+ */
+export function knownAreas(workspace: string): Area[] {
+    if (workspace === '') return [];
+    const found = (sessions()?.workspaces ?? []).find((one) => one.key === workspace);
+    return (found?.areas ?? []).filter((area) => area.known);
 }
 
 /** The git state of one workspace root, or null when the payload carries none for it. */

@@ -231,6 +231,9 @@ export function finish(acc: Acc, state: string): SessionRecord {
         messages: acc.messages,
         tokens: { ...acc.tokens },
         contextTokens: acc.context,
+        // The accumulator's prevCacheRead is the read of the turn it last folded, which is the last
+        // turn of the whole transcript once the fold has finished.
+        lastCacheRead: acc.prevCacheRead,
         contextWindow: acc.contextWindow,
         cache: { ...acc.cache },
         tools: { ...acc.tools },

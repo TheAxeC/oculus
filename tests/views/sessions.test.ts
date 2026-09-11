@@ -58,7 +58,10 @@ const live = record('live-one', {
     branch: 'main',
     prompts: 4,
     contextTokens: 800000,
-    tokens: { input: 1200, output: 340, cacheRead: 400000, cacheCreation: 0, thinking: 90 },
+    // The last turn read 400k of its 800k; the lifetime sum is larger than any window, which is the
+    // whole reason the share is not taken from it.
+    lastCacheRead: 400000,
+    tokens: { input: 1200, output: 340, cacheRead: 9000000, cacheCreation: 0, thinking: 90 },
     cache: { ttl: '1h', lastCreation: null, lastRead: null, busts: 2 },
     workspace: HUB,
     area: ALPHA,
@@ -134,9 +137,23 @@ const bare = record('bare-one', {
     cwd: '/other'
 });
 
+/** A session an override pinned to its area rather than the score choosing it. */
+const held = record('pinned-one', {
+    title: 'The pinned one',
+    // Live, so the counts the rail draws for the ended and the dismissed rows are the same five
+    // rows those cases were written against.
+    live: true,
+    liveStatus: 'idle',
+    state: 'idle',
+    workspace: HUB,
+    area: ALPHA,
+    cwd: UNKNOWN,
+    pinned: true
+});
+
 const tree = [
     workspace(HUB, [
-        area(ALPHA, [live, sharer]),
+        area(ALPHA, [live, sharer, held]),
         area(UNKNOWN, [gone, away], { known: false, short: 'scratch', full: UNKNOWN })
     ]),
     workspace('/other', [area('/other', [bare])])
@@ -178,6 +195,14 @@ describe('the session list', () => {
         expect(body).toContain('codex');
         // The short area label, and the whole of it as the tooltip.
         expect(body).toContain(`title="${ALPHA}"`);
+    });
+
+    it('marks a session an override pinned to its area', () => {
+        const body = html(SessionList);
+        expect(body).toContain(catalog['sessions.pin_mark']);
+        // The mark is on the pinned row and on no other: four of the five rows it draws scored
+        // their own area.
+        expect(body.split(catalog['sessions.pin_mark']).length - 1).toBe(1);
     });
 
     it('marks an area that is not a known project folder', () => {
@@ -252,6 +277,9 @@ describe('the session detail', () => {
         select('live-one');
         const body = html(SessionDetail);
         expect(body).toContain(catalog['js.sessions.tok_in'].replace('{0}', '1k'));
+        // The share is the last turn's read over the last turn's occupancy. Taken from the lifetime
+        // sum beside it, 9M over 800k, it would read 1125% cached.
+        expect(body).not.toContain(catalog['js.sessions.cache_share'].replace('{0}', '1125'));
         expect(body).toContain(catalog['js.sessions.cache_ttl'].replace('{0}', '1h'));
         expect(body).toContain(catalog['js.sessions.cache_share'].replace('{0}', '50'));
         expect(body).toContain(catalog['js.sessions.cache_busts'].replace('{0}', '2'));
@@ -262,6 +290,33 @@ describe('the session detail', () => {
         const body = html(SessionDetail);
         expect(body).toContain(catalog['js.sessions.state_ended']);
         expect(body).toContain(catalog['js.sessions.kind_observed'].replace('{0}', 'observed'));
+    });
+
+    it('draws the pin row with the known areas of the session own workspace', () => {
+        select('live-one');
+        const body = html(SessionDetail);
+        expect(body).toContain(catalog['sessions.pin_label']);
+        expect(body).toContain(catalog['sessions.pin_scored']);
+        // ALPHA is a known project folder of the hub workspace; the scratch area is not one, and
+        // the other workspace's area belongs to another workspace.
+        expect(body).toContain(`<option value="${ALPHA}"`);
+        expect(body).not.toContain(`<option value="${UNKNOWN}"`);
+        expect(body).not.toContain('<option value="/other"');
+    });
+
+    it('shows the title override box and the control that clears it', () => {
+        select('live-one');
+        const body = html(SessionDetail);
+        expect(body).toContain(catalog['sessions.rename_label']);
+        expect(body).toContain(catalog['sessions.rename_placeholder']);
+        expect(body).toContain(catalog['sessions.clear_title']);
+        expect(body).toContain('value="The live one"');
+    });
+
+    it('shows the pinned area as the pin control value', () => {
+        select('pinned-one');
+        const body = html(SessionDetail);
+        expect(body).toContain(`<option value="${ALPHA}" selected`);
     });
 
     it('shows its empty state with nothing selected', () => {

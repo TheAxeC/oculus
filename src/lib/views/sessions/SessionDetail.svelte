@@ -10,12 +10,34 @@
     import Empty from '$lib/ui/Empty.svelte';
     import Meter from '$lib/ui/Meter.svelte';
     import Pane from '$lib/ui/Pane.svelte';
+    import Select from '$lib/ui/Select.svelte';
+    import TextInput from '$lib/ui/TextInput.svelte';
+    import ToolButton from '$lib/ui/ToolButton.svelte';
     import { compactCount, modelShort, stamp } from '$lib/state/format';
-    import { contextWindow, sessionFor, type GroupedSession } from '$lib/state/selectors.svelte';
+    import {
+        contextWindow,
+        knownAreas,
+        sessionFor,
+        type GroupedSession
+    } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
+    import { writeSession } from '$lib/state/writes.svelte';
     import type { ViewProps } from '$lib/views/registry';
 
     let { instance }: ViewProps = $props();
+
+    /** A title typed but not yet written, and the session it was typed for. */
+    type Draft = { id: string; text: string };
+
+    /**
+     * The title box's draft, and which session it was typed for. A rename is written when the set
+     * control is used rather than on each keystroke: every write of the overrides file makes the
+     * server rescan the session stores, so a write per character would be a rescan per character.
+     */
+    let draft = $state<Draft | null>(null);
+
+    /** What the last pin or rename answered, in words, or the empty string before either. */
+    let outcome = $state('');
 
     /** Where the meter changes hue: a window under half full, then three quarters, then above it. */
     const MID = 0.5;
@@ -49,10 +71,47 @@
         return session.liveStatus ?? '';
     }
 
-    /** The share of the last turn that came out of the prompt cache rather than being sent again. */
+    /**
+     * The share of the last turn that came out of the prompt cache rather than being sent again.
+     * Both numbers are that one turn's: the lifetime sum beside it is larger than any window and
+     * divided by an occupancy it gave a share in the tens of thousands of percent.
+     */
     function cacheShare(session: GroupedSession): number {
         if (session.contextTokens <= 0) return 0;
-        return Math.round((100 * session.tokens.cacheRead) / session.contextTokens);
+        return Math.round((100 * session.lastCacheRead) / session.contextTokens);
+    }
+
+    /** The areas this session may be pinned to: the known project folders of its own workspace. */
+    const areas = $derived(record === null ? [] : knownAreas(record.workspace));
+
+    const choices = $derived(
+        areas.map((area) => ({ id: area.key, label: area.short === '' ? area.key : area.full }))
+    );
+
+    /** What the pin control shows: the area a pin chose, and nothing when the score chose it. */
+    const pinned = $derived(record !== null && record.pinned ? record.area : '');
+
+    /** What the title box shows: the draft typed for this session, else the title it has now. */
+    const typed = $derived(
+        record === null ? '' : draft !== null && draft.id === record.id ? draft.text : record.title
+    );
+
+    function type(text: string): void {
+        if (record !== null) draft = { id: record.id, text };
+    }
+
+    /** One write of the overrides file, with the answer put where the row shows it. */
+    async function write(fields: { area?: string; title?: string }): Promise<void> {
+        if (record === null) return;
+        outcome = '';
+        const answer = await writeSession(record.id, fields);
+        const refused = answer.refused.length > 0;
+        outcome = answer.ok && !refused ? t('sessions.write_saved') : t('sessions.write_failed');
+    }
+
+    async function rename(text: string): Promise<void> {
+        draft = null;
+        await write({ title: text });
     }
 </script>
 
@@ -98,6 +157,43 @@
                 {@render field(t('js.sessions.f_version'), record.version ?? '', '')}
                 {@render field(t('js.sessions.f_started'), stamp(record.started, now), '')}
             </dl>
+
+            <div class="pin">
+                <div class="ctl">
+                    <span class="lb">{t('sessions.pin_label')}</span>
+                    <Select
+                        value={pinned}
+                        label={t('sessions.pin_tip')}
+                        empty={t('sessions.pin_scored')}
+                        {choices}
+                        onchange={(area) => write({ area })}
+                    />
+                </div>
+                <div class="ctl">
+                    <span class="lb">{t('sessions.rename_label')}</span>
+                    <TextInput
+                        value={typed}
+                        label={t('sessions.rename_tip')}
+                        placeholder={t('sessions.rename_placeholder')}
+                        oninput={type}
+                    />
+                    <ToolButton
+                        label={t('sessions.rename_label')}
+                        glyph={t('sessions.rename_glyph')}
+                        title={t('sessions.rename_tip')}
+                        onclick={() => rename(typed)}
+                    />
+                    <ToolButton
+                        label={t('sessions.clear_title')}
+                        glyph={t('sessions.clear_glyph')}
+                        title={t('sessions.clear_title')}
+                        onclick={() => rename('')}
+                    />
+                </div>
+                {#if outcome !== ''}
+                    <span class="outcome">{outcome}</span>
+                {/if}
+            </div>
 
             <div class="gauge">
                 {@render line(
@@ -159,6 +255,34 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .pin {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        margin-top: 6px;
+        padding-top: 6px;
+        border-top: 1px solid var(--line);
+    }
+
+    .pin .ctl {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .pin .lb {
+        color: var(--muted-txt, var(--muted));
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        font-size: var(--fs-xs);
+    }
+
+    .pin .outcome {
+        font-size: var(--fs-xs);
+        color: var(--muted-txt, var(--muted));
     }
 
     .gauge {

@@ -2,10 +2,12 @@
 // publish whenever either store changes. DESIGN.md, "Watchers": sessions watches ~/.claude/projects
 // (transcripts), ~/.claude/sessions (the registry) and ~/.codex/sessions (the rollouts).
 //
-// Three handles, one debounce. A transcript is appended to as a session works, so a change there is
+// Four handles, one debounce. A transcript is appended to as a session works, so a change there is
 // an ordinary .jsonl write; a registry file appears when a session starts, changes when it goes from
 // busy to idle, and vanishes when it ends; a rollout appends under YYYY/MM/DD, and a new day makes a
-// new folder, which the recursive watch on the store's root sees. The byte-offset cache in
+// new folder, which the recursive watch on the store's root sees. The fourth is the overrides file,
+// which no session writes: it is api/write's, and without it a dismissal or a pin made on one page
+// would not reach another until a transcript happened to change. The byte-offset cache in
 // sessions/cache.ts is what makes the rescan cost the appended bytes rather than the whole store.
 //
 // The 15 s liveness re-check is the fourth thing that can change the payload and the only one no
@@ -16,6 +18,7 @@
 // machine sees no traffic on the channel.
 
 import { watch } from 'node:fs';
+import { basename, dirname } from 'node:path';
 import type { FSWatcher } from 'node:fs';
 import type { SessionRecord, SessionsPayload } from '../../data/model.ts';
 import type { Hub } from '../channels.ts';
@@ -23,6 +26,7 @@ import { sessions } from '../sessions/index.ts';
 import { defaultStore } from '../sessions/transcripts.ts';
 import { defaultCodexStore, type CodexProbe } from '../sessions/codex.ts';
 import { defaultRegistry, type Probe } from '../sessions/registry.ts';
+import { defaultOverridesPath } from '../sessions/overrides.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
 import type { Watcher } from './portfolio.ts';
 
@@ -148,12 +152,35 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Wat
         }
     };
 
+    /**
+     * The overrides file, watched through its own directory: fs.watch on a file that is replaced by
+     * a rename, which is how server/sessions/json.ts writes it, stops seeing the new inode. The
+     * watch is not recursive and fires only for that one name, because the transcript cache sits
+     * beside it in ~/.oculus and every scan rewrites it, so watching the directory as a whole would
+     * make each scan cause the next one.
+     */
+    const openOverrides = (file: string): void => {
+        const name = basename(file);
+        try {
+            handles.push(
+                watch(dirname(file), { recursive: false }, (_event, changed) => {
+                    if (changed !== null && String(changed) === name) queue();
+                })
+            );
+        } catch (error) {
+            console.error(`sessions watch: cannot watch ${file}: ${reason(error)}`);
+        }
+    };
+
     rescan();
     // The default paths are resolved here rather than held as constants because O12 resolves them
     // at the call, so a process whose home directory differs sees its own three directories.
     open(options.store ?? defaultStore());
     open(options.registry ?? defaultRegistry());
     open(options.codexStore ?? defaultCodexStore());
+    // A dismissal or a pin is written by api/write, not by a session, so nothing under the three
+    // stores changes and only this handle carries the write to every open page.
+    openOverrides(options.overrides ?? defaultOverridesPath());
     if (liveness > 0) {
         ticker = setInterval(recheck, liveness);
         // The re-check must not be the reason a process stays up.

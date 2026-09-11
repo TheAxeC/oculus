@@ -40,6 +40,7 @@ export function record(id: string, over: Partial<GroupedSession> = {}): GroupedS
         messages: 0,
         tokens: { input: 0, output: 0, cacheRead: 0, cacheCreation: 0, thinking: 0 },
         contextTokens: 0,
+        lastCacheRead: 0,
         contextWindow: null,
         cache: { ttl: null, lastCreation: null, lastRead: null, busts: 0 },
         tools: {},

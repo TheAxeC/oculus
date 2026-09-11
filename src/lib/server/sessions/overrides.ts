@@ -9,7 +9,7 @@
 // goes through one atomic replace, because the file holds work the user did by hand.
 
 import { homedir } from 'node:os';
-import { join } from 'node:path';
+import { isAbsolute, join } from 'node:path';
 import { isMap, readJson, writeJsonAtomic } from './json.ts';
 
 /** What one session's entry may hold. Any other key the file carries is kept but not read. */
@@ -68,4 +68,65 @@ export function setHidden(sessionId: unknown, hidden: boolean, path?: string): b
     data.sessions = sessions;
     writeJsonAtomic(file, data);
     return hidden;
+}
+
+/** What one refusal says: the field that was not written, and why it was not. */
+export type OverrideRefusal = { field: string; reason: string };
+
+/** The two fields a pin write carries. An absent field is left exactly as the file has it. */
+export type OverrideFields = { area?: string; title?: string };
+
+/** What a pin write did: the keys whose value changed, and the ones that were refused. */
+export type OverrideResult = { changed: string[]; refused: OverrideRefusal[] };
+
+/**
+ * Pin one session to an area, rename it, or clear either. Only the fields named are touched: every
+ * other key of the file, and every other key of this session's own entry, is kept, and an entry left
+ * with nothing in it is removed rather than left as a shell. An area that is not an absolute path is
+ * refused rather than written, because group.ts matches a pin against absolute workspace paths and a
+ * relative one would silently never match. Nothing is written when nothing changed.
+ */
+export function setOverride(
+    sessionId: unknown,
+    fields: OverrideFields,
+    path?: string
+): OverrideResult {
+    if (typeof sessionId !== 'string' || sessionId.trim() === '') {
+        throw new Error('a session id is required');
+    }
+    const ident = sessionId.trim();
+    const file = path ?? defaultOverridesPath();
+    const read = readJson(file);
+    const data: Record<string, unknown> = isMap(read) ? { ...read } : {};
+    const sessions: Record<string, unknown> = isMap(data.sessions) ? { ...data.sessions } : {};
+    const existing = sessions[ident];
+    const entry: Record<string, unknown> = isMap(existing) ? { ...existing } : {};
+    const changed: string[] = [];
+    const refused: OverrideRefusal[] = [];
+
+    for (const key of ['area', 'title'] as const) {
+        const value = fields[key];
+        if (value === undefined) continue;
+        const wanted = value.trim();
+        if (key === 'area' && wanted !== '' && !isAbsolute(wanted)) {
+            refused.push({ field: key, reason: 'the area must be an absolute path' });
+            continue;
+        }
+        const before = entry[key];
+        if (wanted === '') {
+            if (before === undefined) continue;
+            delete entry[key];
+        } else {
+            if (before === wanted) continue;
+            entry[key] = wanted;
+        }
+        changed.push(key);
+    }
+
+    if (changed.length === 0) return { changed, refused };
+    if (Object.keys(entry).length > 0) sessions[ident] = entry;
+    else delete sessions[ident];
+    data.sessions = sessions;
+    writeJsonAtomic(file, data);
+    return { changed, refused };
 }
