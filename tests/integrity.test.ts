@@ -99,6 +99,21 @@ describe.skipIf(!present)('the real hub', () => {
         expect(loadConfig(engine).findings).toEqual([]);
     });
 
+    it('names the nine lanes and the holding backlog as what a focus may be', () => {
+        expect(config.vocab.lanes).toEqual([
+            'run',
+            'push',
+            'revise',
+            'review',
+            'blocked',
+            'backburner',
+            'scope',
+            'derisk',
+            'build',
+            'holding'
+        ]);
+    });
+
     it('holds exactly what a second count of the tree finds', () => {
         const held: Record<string, number> = {};
         for (const [kind, entities] of Object.entries(snapshot?.entities ?? {})) {

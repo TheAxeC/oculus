@@ -151,6 +151,24 @@ function checkType(manifest: RawManifest, types: string[], findings: Finding[]):
     }
 }
 
+/**
+ * The manifest's `focus:` names a lane of `focus_lanes` or `holding`, the ideas backlog. A value
+ * outside them is not drawn anywhere: the board puts a non-idea on no lane at all and an idea in the
+ * backlog, and until this check that was silent. No lanes in the vocabulary means the check is off,
+ * the way `chips` behaves.
+ */
+function checkFocus(manifest: RawManifest, lanes: string[] | undefined, findings: Finding[]): void {
+    const focus = manifest.focus;
+    if (lanes === undefined || focus === undefined) return;
+    if (typeof focus !== 'string' || !lanes.includes(focus)) {
+        findings.push({
+            file: manifest.file,
+            key: 'focus',
+            message: `focus ${JSON.stringify(focus)} is not a lane of focus_lanes`
+        });
+    }
+}
+
 /** The relation fields have the shapes the tree has them in; an absent field has no shape. */
 function checkShapes(manifest: RawManifest, findings: Finding[]): void {
     for (const shape of SHAPES) {
@@ -367,6 +385,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     for (const manifest of raw.manifests) {
         checkKeys(manifest, schema, findings);
         checkType(manifest, vocab.types, findings);
+        checkFocus(manifest, vocab.lanes, findings);
         checkShapes(manifest, findings);
         checkReferences(manifest, ids, findings);
         checkCollaborators(manifest, collaborators, findings);

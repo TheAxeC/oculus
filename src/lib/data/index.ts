@@ -58,6 +58,12 @@ function collectionFiles(value: unknown): CollectionFile[] {
 }
 
 /** The feed paths on the hub today, for a config that names none of them. */
+/**
+ * The ideas backlog's `focus:` value. It is not a key of `focus_lanes` (vocab.yml says why beside
+ * `holding_color`), and it is the one value beside the lanes a manifest's `focus:` may hold.
+ */
+const BACKLOG = 'holding';
+
 const FEED_FILES: FeedFiles = {
     inbox: 'feeds/inbox.yml',
     leads: 'feeds/position-leads.yml',
@@ -116,6 +122,13 @@ export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioC
     if (chips.length > 0) vocab.chips = chips;
     if (isMap(merged.career_host_status))
         vocab.hostStatuses = Object.keys(merged.career_host_status);
+    // The lanes a `focus:` may name, plus the ideas backlog: vocab.yml keeps `holding` out of
+    // `focus_lanes` on purpose (it is not a lane) and names it through `holding_color`, so it is
+    // added here when that colour is configured, which is the same file saying the backlog exists.
+    const lanes = vocabKeys(merged.focus_lanes);
+    if (lanes.length > 0) {
+        vocab.lanes = merged.holding_color === undefined ? lanes : [...lanes, BACKLOG];
+    }
 
     const feeds: FeedFiles = {
         inbox: docPath(merged.docs, 'inbox') ?? FEED_FILES.inbox,

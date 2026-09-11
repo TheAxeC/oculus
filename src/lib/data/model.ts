@@ -521,6 +521,13 @@ export type Vocabulary = {
      * status is then a free string and is not checked, which is how `chips` above behaves.
      */
     hostStatuses?: string[];
+    /**
+     * The keys of `focus_lanes` plus `holding`, the ideas backlog, which is what a manifest's `focus:`
+     * may name. Absent when the config holds no lanes, and `focus:` is then not checked. A value
+     * outside it is a card the board draws on no lane, which is why it is a finding and not a
+     * silence.
+     */
+    lanes?: string[];
 };
 
 /**

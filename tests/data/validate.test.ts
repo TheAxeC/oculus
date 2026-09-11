@@ -31,12 +31,14 @@ const RULES: ValidationRules = {
         'funding',
         'followup.do',
         'followup.after',
+        'focus',
         'paths'
     ],
     vocab: {
         types: ['active', 'idea'],
         statuses: ['planned', 'done'],
-        chips: ['lead', 'submitted']
+        chips: ['lead', 'submitted'],
+        lanes: ['run', 'push', 'holding']
     }
 };
 
@@ -155,6 +157,25 @@ describe('validate', () => {
         expect(lines({ type: 'monograph' })).toEqual([
             'type: type "monograph" is not one of the type vocabulary'
         ]);
+    });
+
+    it('reports a focus that names no lane, and accepts a lane and the holding backlog', () => {
+        expect(lines({ focus: 'submit' })).toEqual([
+            'focus: focus "submit" is not a lane of focus_lanes'
+        ]);
+        expect(lines({ focus: 7 })).toEqual(['focus: focus 7 is not a lane of focus_lanes']);
+        expect(lines({ focus: 'run' })).toEqual([]);
+        expect(lines({ focus: 'holding' })).toEqual([]);
+    });
+
+    it('leaves focus unchecked when the vocabulary names no lanes', () => {
+        const rules: ValidationRules = {
+            schema: RULES.schema,
+            vocab: { types: RULES.vocab.types, statuses: RULES.vocab.statuses }
+        };
+        expect(validate(portfolio({ manifests: [manifest({ focus: 'submit' })] }), rules)).toEqual(
+            []
+        );
     });
 
     it('reports a dangling id in every relation field', () => {
