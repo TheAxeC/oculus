@@ -27,7 +27,7 @@ Read from the cockpit's built page on 127.0.0.1:8787 and the oculus page on 8790
 ## Collections: funding, events, education, applications, collaborations, tasks, statements, code (O14d landed a generic read-only view)
 
 - No Funding view at all: the schemes are a registry entity and `registerCollections` registers the snapshot's collections only. The cockpit's Funding tab is the collection view over `funding/funding.yml` with the statement field.
-- No "+ add" control (a new entry from the file's own schema), no "✎ edit" per entry (the entry editor form over the schema), no pin, no "+ subtask" and subtasks block, no status action buttons (the entry's lifecycle statuses from `status_palette`), no drag grip for reordering.
+- No "+ add" control (a new entry from the file's own schema), no edit control per entry (the entry editor form over the schema), no pin, no "+ subtask" and subtasks block, no status action buttons (the entry's lifecycle statuses from `status_palette`), no drag grip for reordering.
 - No cross-links from an entry to the projects that name it (the cockpit's `xlg` groups: "5 active | 1 active | 4 manuscript" with goto links), no folder links, no rendered note (Markdown).
 - No intro text per collection (the file's `intro:`).
 - Venues and Data views absent (O24; the cockpit's Venues tab groups journals and conferences with a theme facet and the timeline; the Data tab has the modality facet, the per-dataset recovery command and "+ add").
@@ -38,7 +38,7 @@ Read from the cockpit's built page on 127.0.0.1:8787 and the oculus page on 8790
 
 ## Header bar and tabs
 
-- The cockpit's top bar: ⌘K search over everything, Chat, Update (the tasks: scout, litwatch, linkedin, inbox), Slides, Present, "+ status", the built date, the theme toggle. oculus has the theme toggle in the rail and nothing else of these; ⌘K and Update belong with the feeds (O25), Chat and Present are not planned.
+- The cockpit's top bar: Cmd-K search over everything, Chat, Update (the tasks: scout, litwatch, linkedin, inbox), Slides, Present, "+ status", the built date, the theme toggle. oculus has the theme toggle in the rail and nothing else of these; Cmd-K and Update belong with the feeds (O25), Chat and Present are not planned.
 - Tab badges (counts on Projects, Archive, Coauthor, Inbox, Position Leads, Live HPC): oculus's rail carries no counts.
 
 ## Not yet ported at all (planned)
