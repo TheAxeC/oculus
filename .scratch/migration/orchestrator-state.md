@@ -17,11 +17,24 @@ standards: [tools/oculus/.scratch/migration/agents/spec.md]
 executor: agent
 worker: codex:gpt-5.6-sol    # Axel's default from O24 on (Rulings, 2026-09-11); claude:opus for a package whose brief says so.
 worker_effort: high          # the Codex reasoning effort passed as -c model_reasoning_effort; a recommendation until a row measures it.
-reviewer: none               # a codex:gpt-5.6-sol reviewer stage is to be tried on the first package after the pause (Axel, 2026-09-11).
+reviewer: codex:gpt-5.6-sol  # the reviewer stage, tried from O24a on (Axel, 2026-09-11); its usage goes into the table under its own row.
 ```
 
 ```yaml
-dispatch: none               # nothing in flight; the plan is paused before O24 (Axel, 2026-09-11).
+dispatch:
+  package: O24a
+  worker: codex:gpt-5.6-sol
+  worktree: .agents/worktrees/o24a
+  base: 9d47ff5799fd797a64a575af3dd8ff6aee74a578
+  launched: 2026-09-11T20:00:09+02:00
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24a/prompt.md
+  events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24a/events.jsonl
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24a/report.md
+  exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24a/exit.txt
+  pid: none
+  session_id: none
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
