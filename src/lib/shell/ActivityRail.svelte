@@ -82,14 +82,7 @@
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
     import Tooltip from '$lib/ui/Tooltip.svelte';
-    import {
-        applyArrangement,
-        arranged,
-        dock,
-        dockedAt,
-        openView,
-        restoreArrangement
-    } from '$lib/state/layout.svelte';
+    import { dock, dockedAt, openView } from '$lib/state/layout.svelte';
     import {
         crt,
         setCrt,
@@ -110,17 +103,9 @@
         groups?: NavGroup[];
         /** The `bookmarks` list of the merged config; the page reads it and passes it on. */
         bookmarks?: Bookmark[];
-        /**
-         * The `arrangements.sessions` node of the merged config, unread: state/layout.ts is what
-         * turns it into a workbench, and the shell may not read the config itself.
-         */
-        arrangement?: unknown;
     };
 
-    let { groups = [], bookmarks = [], arrangement = null }: Props = $props();
-
-    /** The id of the control that swaps the workbench for the saved arrangement, and back. */
-    const ARRANGE = 'arrange';
+    let { groups = [], bookmarks = [] }: Props = $props();
 
     /* A view registered as not listed (the editor, a project, a document) is opened from a card or a
        bookmark and has nothing to show when opened bare, so the rail draws no button for it. */
@@ -142,30 +127,14 @@
     const docks = $derived([
         { id: 'right', label: t('ui.dock_right'), active: dockedAt() === 'right' },
         { id: 'bottom', label: t('ui.dock_bottom'), active: dockedAt() === 'bottom' },
-        { id: 'hidden', label: t('ui.dock_hidden'), active: dockedAt() === 'hidden' },
-        {
-            id: ARRANGE,
-            label: arranged() ? t('ui.arrange_restore') : t('ui.arrange_sessions'),
-            active: arranged()
-        }
+        { id: 'hidden', label: t('ui.dock_hidden'), active: dockedAt() === 'hidden' }
     ]);
 
-    const dockLabel = $derived(
-        docks.find((item) => item.id !== ARRANGE && item.active)?.label ?? t('ui.dock_right')
-    );
+    const dockLabel = $derived(docks.find((item) => item.active)?.label ?? t('ui.dock_right'));
 
-    /**
-     * The one control that is not a dock: it puts the sessions arrangement on screen, keeping the
-     * workbench that was there, and puts that workbench back the next time it is picked. A saved
-     * arrangement of the viewer's own is therefore never lost by opening this one.
-     */
+    /** Where the panel goes. The menu holds the three docks and nothing else. */
     function pick(id: string): void {
-        if (id !== ARRANGE) {
-            dock(id as Dock);
-            return;
-        }
-        if (arranged()) restoreArrangement();
-        else applyArrangement(arrangement);
+        dock(id as Dock);
     }
 
     /** The views of one group as the choices of its list, each with its own glyph and words. */
@@ -334,7 +303,7 @@
 
     /* On a short window the view list is what gives way, and it scrolls. Without this the foot
        shrinks with it, its buttons pile over each other and the last ones fall below the window,
-       which is how the theme menu and the arrangement control came to be unreachable. */
+       which is how the theme menu and the panel's dock came to be unreachable. */
     .controls {
         flex-shrink: 0;
     }

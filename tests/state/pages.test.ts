@@ -1,0 +1,282 @@
+// Pages: the level above the layout tree that DESIGN.md's decision of 2026-09-11 adds. The pure
+// half is newPage, defaultPages, checkPages and the version 3 envelope; the store half is which
+// page is on screen, what the page operations do to the list, and that every one of them writes the
+// whole list down. tests/state/layout.test.ts covers the trees themselves and is not extended here.
+//
+// Nothing here touches localStorage or the DOM: the store takes the storage it is given. The
+// catalog is installed because the store names the page loadLayout and closePage make.
+
+import { describe, expect, it } from 'vitest';
+import {
+    LAYOUT_VERSION,
+    checkPages,
+    defaultPages,
+    newPage,
+    parseLayout,
+    serialiseLayout,
+    type Pages,
+    type Workbench
+} from '../../src/lib/state/layout.ts';
+import {
+    LAYOUT_KEY,
+    PREVIOUS_KEY,
+    closePage,
+    currentPage,
+    dock,
+    dockedAt,
+    layout,
+    loadLayout,
+    openPage,
+    pageShortcut,
+    pages,
+    renamePage,
+    switchPage,
+    workbench
+} from '../../src/lib/state/layout.svelte.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../src/lib/state/text.ts';
+import { bench, fakeStorage, pane, saveBench, three, viewsOf } from './layout-fixture.ts';
+
+setCatalog(textCatalog(loadConfig(engineDir()).config));
+
+/** A workbench of the viewer's own, told apart from the default by the views on it. */
+function own(): Workbench {
+    return bench(three(), pane(['p']), 'bottom', 0.4);
+}
+
+/** The pages a storage holds, read back out of the one key everything is saved under. */
+function saved(storage: { held: Record<string, string> }): Pages | null {
+    return parseLayout(storage.held[LAYOUT_KEY] ?? '', '');
+}
+
+describe('newPage and defaultPages', () => {
+    it('mints an id per page and takes the workbench it is given', () => {
+        const first = newPage('One', own());
+        const second = newPage('One', own());
+        expect(first.id).not.toBe(second.id);
+        expect(first.workbench).toEqual(own());
+        expect(first.label).toBe('One');
+    });
+
+    it('starts from one page on the default workbench, which is the current one', () => {
+        const made = defaultPages('Page 1');
+        expect(made.pages).toHaveLength(1);
+        expect(made.current).toBe(made.pages[0].id);
+        expect(viewsOf(made.pages[0].workbench.main)).toEqual(['status']);
+        expect(checkPages(made)).toEqual([]);
+    });
+});
+
+describe('checkPages', () => {
+    it('refuses no page at all', () => {
+        expect(checkPages({ pages: [], current: 'x' })).toContain('no page');
+    });
+
+    it('refuses a page id used twice', () => {
+        const page = newPage('One');
+        const problems = checkPages({ pages: [page, { ...page }], current: page.id });
+        expect(problems.some((problem) => problem.includes('used twice'))).toBe(true);
+    });
+
+    it('refuses a current that names no page', () => {
+        const page = newPage('One');
+        expect(checkPages({ pages: [page], current: 'gone' })).toEqual([
+            'current is "gone", which is not a page'
+        ]);
+    });
+
+    it('carries every problem of every page workbench, named by the page', () => {
+        const broken = newPage('Bad', { ...own(), dock: 'left' as Workbench['dock'] });
+        expect(checkPages({ pages: [broken], current: broken.id })).toEqual([
+            'page "Bad" dock is "left", not right, bottom or hidden'
+        ]);
+    });
+
+    it('refuses an instance id repeated across two pages, since a view is found by that id', () => {
+        const first = newPage('One', bench(pane(['a']), pane(['b'])));
+        const second = newPage('Two', bench(pane(['a']), pane(['c'])));
+        expect(checkPages({ pages: [first, second], current: first.id })).toEqual([
+            'instance "a" is on two pages'
+        ]);
+    });
+});
+
+describe('the version 3 envelope', () => {
+    it('reads back every page and which one is current', () => {
+        const made: Pages = { pages: [newPage('One', own()), newPage('Two')], current: '' };
+        const held: Pages = { ...made, current: made.pages[1].id };
+        expect(parseLayout(serialiseLayout(held), '')).toEqual(held);
+        expect(JSON.parse(serialiseLayout(held)).version).toBe(LAYOUT_VERSION);
+    });
+
+    it('reads a version 2 envelope of one workbench as one page, carrying the label', () => {
+        const read = parseLayout(saveBench(own()), 'Page 1');
+        expect(read?.pages).toHaveLength(1);
+        expect(read?.pages[0].label).toBe('Page 1');
+        expect(read?.pages[0].workbench).toEqual(own());
+        expect(read?.current).toBe(read?.pages[0].id);
+    });
+
+    it('refuses an envelope whose pages or current are not what they must be', () => {
+        const page = newPage('One');
+        expect(parseLayout({ version: LAYOUT_VERSION, pages: page, current: page.id }, '')).toBe(
+            null
+        );
+        expect(parseLayout({ version: LAYOUT_VERSION, pages: [page] }, '')).toBe(null);
+        expect(parseLayout({ version: LAYOUT_VERSION, pages: [page], current: 'gone' }, '')).toBe(
+            null
+        );
+        expect(parseLayout({ version: 1, pages: [page], current: page.id }, '')).toBe(null);
+        expect(
+            parseLayout({ version: LAYOUT_VERSION, pages: [{ id: 'a' }], current: 'a' }, '')
+        ).toBe(null);
+    });
+});
+
+describe('the store: loading', () => {
+    it('starts from one default page when storage holds nothing', () => {
+        const storage = fakeStorage();
+        expect(loadLayout(storage)).toBe(false);
+        expect(pages().map((page) => page.label)).toEqual(['Page 1']);
+        expect(viewsOf(layout('main'))).toEqual(['status']);
+    });
+
+    it('reads a version 2 envelope as page 1, so a browser holding one loses nothing', () => {
+        const storage = fakeStorage(saveBench(own()));
+        expect(loadLayout(storage)).toBe(true);
+        expect(pages().map((page) => page.label)).toEqual(['Page 1']);
+        expect(workbench()).toEqual(own());
+    });
+
+    it('reads every page of a version 3 envelope back', () => {
+        const held: Pages = { pages: [newPage('One', own()), newPage('Two')], current: '' };
+        const storage = fakeStorage(serialiseLayout({ ...held, current: held.pages[1].id }));
+        expect(loadLayout(storage)).toBe(true);
+        expect(pages().map((page) => page.label)).toEqual(['One', 'Two']);
+        expect(currentPage().label).toBe('Two');
+    });
+
+    it('makes the workbench the retired control held page 1, and the one on screen page 2', () => {
+        const storage = fakeStorage(saveBench(bench(pane(['s']), pane(['d']))));
+        storage.held[PREVIOUS_KEY] = saveBench(own());
+        expect(loadLayout(storage)).toBe(true);
+        expect(pages().map((page) => page.label)).toEqual(['Page 1', 'Sessions']);
+        expect(pages()[0].workbench).toEqual(own());
+        expect(currentPage().label).toBe('Sessions');
+        expect(viewsOf(layout('main'))).toEqual(['projects']);
+        expect(storage.held[PREVIOUS_KEY]).toBe('');
+        // Written at once, or a reload before the next change would lose the page just made.
+        expect(saved(storage)?.pages.map((page) => page.label)).toEqual(['Page 1', 'Sessions']);
+    });
+});
+
+describe('the store: the page operations', () => {
+    /** A store loaded with one page carrying the viewer's own workbench. */
+    function loaded() {
+        const storage = fakeStorage(saveBench(own()));
+        loadLayout(storage);
+        return storage;
+    }
+
+    it('opens a page on the default workbench and makes it current', () => {
+        const storage = loaded();
+        openPage('Page 2');
+        expect(pages().map((page) => page.label)).toEqual(['Page 1', 'Page 2']);
+        expect(currentPage().label).toBe('Page 2');
+        expect(viewsOf(layout('main'))).toEqual(['status']);
+        expect(saved(storage)?.pages).toHaveLength(2);
+    });
+
+    it('acts on the page on screen and leaves the other one as it was', () => {
+        const storage = loaded();
+        const first = currentPage().id;
+        openPage('Page 2');
+        dock('hidden');
+        expect(dockedAt()).toBe('hidden');
+        expect(pages()[0].workbench).toEqual(own());
+        expect(saved(storage)?.pages[0].workbench).toEqual(own());
+        switchPage(first);
+        expect(dockedAt()).toBe('bottom');
+        expect(workbench()).toEqual(own());
+    });
+
+    it('changes nothing on a switch to a page that is not there', () => {
+        loaded();
+        const before = currentPage().id;
+        switchPage('gone');
+        expect(currentPage().id).toBe(before);
+    });
+
+    it('renames a page and writes the name down', () => {
+        const storage = loaded();
+        renamePage(currentPage().id, 'Reading');
+        expect(currentPage().label).toBe('Reading');
+        expect(saved(storage)?.pages[0].label).toBe('Reading');
+    });
+
+    it('closes a page and shows the one after it', () => {
+        loaded();
+        openPage('Page 2');
+        openPage('Page 3');
+        switchPage(pages()[1].id);
+        closePage(currentPage().id);
+        expect(pages().map((page) => page.label)).toEqual(['Page 1', 'Page 3']);
+        expect(currentPage().label).toBe('Page 3');
+    });
+
+    it('shows the page before the one it closed when that was the last in the strip', () => {
+        loaded();
+        openPage('Page 2');
+        closePage(currentPage().id);
+        expect(pages().map((page) => page.label)).toEqual(['Page 1']);
+        expect(currentPage().label).toBe('Page 1');
+    });
+
+    it('leaves the page on screen where it is when another page is closed', () => {
+        loaded();
+        const first = currentPage().id;
+        openPage('Page 2');
+        switchPage(first);
+        closePage(pages()[1].id);
+        expect(currentPage().id).toBe(first);
+    });
+
+    it('leaves one fresh default page when the only page is closed', () => {
+        const storage = loaded();
+        closePage(currentPage().id);
+        expect(pages()).toHaveLength(1);
+        expect(currentPage().label).toBe('Page 1');
+        expect(viewsOf(layout('main'))).toEqual(['status']);
+        expect(saved(storage)?.pages).toHaveLength(1);
+    });
+
+    it('shows the page a shortcut names, and answers whether there was one', () => {
+        loaded();
+        openPage('Page 2');
+        expect(pageShortcut(1)).toBe(true);
+        expect(currentPage().label).toBe('Page 1');
+        expect(pageShortcut(2)).toBe(true);
+        expect(currentPage().label).toBe('Page 2');
+    });
+
+    it('answers no for a shortcut out of range, and changes nothing', () => {
+        loaded();
+        expect(pageShortcut(2)).toBe(false);
+        expect(pageShortcut(0)).toBe(false);
+        expect(pageShortcut(9)).toBe(false);
+        expect(pages()).toHaveLength(1);
+        expect(currentPage().label).toBe('Page 1');
+    });
+
+    it('saves every page under the one key on every change', () => {
+        const storage = loaded();
+        openPage('Page 2');
+        renamePage(currentPage().id, 'Runs');
+        dock('hidden');
+        expect(Object.keys(storage.held)).toEqual([LAYOUT_KEY]);
+        const held = saved(storage);
+        expect(held?.pages.map((page) => page.label)).toEqual(['Page 1', 'Runs']);
+        expect(held?.current).toBe(currentPage().id);
+        expect(held?.pages[1].workbench.dock).toBe('hidden');
+    });
+});

@@ -13,15 +13,18 @@
 
     import ActivityRail, { type Bookmark, type NavGroup } from './ActivityRail.svelte';
     import DropLayer from './DropLayer.svelte';
+    import PageStrip, { type Arrangement } from './PageStrip.svelte';
     import PaneView from './PaneView.svelte';
     import SplitView from './SplitView.svelte';
     import Sash, { SASH_PX } from '$lib/ui/Sash.svelte';
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
     import {
         change,
+        currentPage,
         dockedAt,
         focused,
         layout,
+        pageShortcut,
         panelSize,
         resizePanel,
         restorePanes
@@ -42,8 +45,8 @@
         groups?: NavGroup[];
         /** The `bookmarks` list of the merged config, for the rail's Docs section. */
         bookmarks?: Bookmark[];
-        /** The `arrangements.sessions` node of the merged config, unread, for the rail's control. */
-        arrangement?: unknown;
+        /** The `arrangements:` of the merged config, for the page strip's menu. */
+        arrangements?: Arrangement[];
         /**
          * How many sessions wait on a permission, for the document title. The page reads it from
          * the sessions channel and hands it on, since the shell may not read entities itself.
@@ -51,7 +54,7 @@
         waiting?: number;
     };
 
-    let { groups = [], bookmarks = [], arrangement = null, waiting = 0 }: Props = $props();
+    let { groups = [], bookmarks = [], arrangements = [], waiting = 0 }: Props = $props();
 
     let area: HTMLDivElement | undefined = $state(undefined);
 
@@ -64,11 +67,20 @@
     const focus = $derived(focused());
     const zoomed = $derived(focus === null ? null : paneAt(layout(focus.target), focus.path));
 
+    /** The page on screen: its trees are the ones drawn, and its id is what remounts them. */
+    const page = $derived(currentPage());
+
     /**
-     * Escape restores the arrangement. A drag in progress consumes its own Escape on the document,
-     * where the drag store's listener calls preventDefault, so the two never both act on one press.
+     * Escape restores the arrangement, and Ctrl+1 to Ctrl+9 show a page. A drag in progress consumes
+     * its own Escape on the document, where the drag store's listener calls preventDefault, so the
+     * two never both act on one press. Cmd+digit is the browser's own tab switch and is left alone,
+     * which is why the shortcut is Ctrl and a held Cmd is refused.
      */
     function keys(event: KeyboardEvent): void {
+        if (event.ctrlKey && !event.metaKey && /^[1-9]$/.test(event.key)) {
+            if (pageShortcut(Number(event.key))) event.preventDefault();
+            return;
+        }
         if (event.key !== 'Escape' || event.defaultPrevented) return;
         if (dragging() !== null || focus === null) return;
         event.preventDefault();
@@ -133,37 +145,49 @@
              negative depth paints over the page's own background and under every panel. -->
         <div class="wallpaper" style={image}></div>
     {/if}
-    <ActivityRail {groups} {bookmarks} {arrangement} />
-    <div class="area {direction}" bind:this={area}>
-        {#if zoomed !== null && focus !== null}
-            <div class="tree" style="flex: 1 1 0">
-                <PaneView node={zoomed} target={focus.target} path={focus.path} />
-            </div>
-        {:else}
-            <div class="tree" style="flex: {dock === 'hidden' ? 1 : 1 - share} 1 0">
-                <SplitView
-                    layout={layout('main')}
-                    pane={mainPane}
-                    onresize={(path, sizes) => change('main', (tree) => resize(tree, path, sizes))}
-                />
-            </div>
-            {#if dock !== 'hidden'}
-                <Sash
-                    dir={direction}
-                    share={1 - share}
-                    onresize={panelMoved}
-                    onreset={() => resizePanel(PANEL_DEFAULT)}
-                />
-                <section class="tree panel" style="flex: {share} 1 0" aria-label={t('ui.panel')}>
-                    <SplitView
-                        layout={layout('panel')}
-                        pane={panelPane}
-                        onresize={(path, sizes) =>
-                            change('panel', (tree) => resize(tree, path, sizes))}
-                    />
-                </section>
-            {/if}
-        {/if}
+    <ActivityRail {groups} {bookmarks} />
+    <div class="column">
+        <PageStrip {arrangements} />
+        <div class="area {direction}" bind:this={area}>
+            <!-- Keyed by the page, so a switch unmounts the hidden page's views and mounts the
+                 shown page's: nothing is drawn twice, and every view rebuilds from the stores. -->
+            {#key page.id}
+                {#if zoomed !== null && focus !== null}
+                    <div class="tree" style="flex: 1 1 0">
+                        <PaneView node={zoomed} target={focus.target} path={focus.path} />
+                    </div>
+                {:else}
+                    <div class="tree" style="flex: {dock === 'hidden' ? 1 : 1 - share} 1 0">
+                        <SplitView
+                            layout={layout('main')}
+                            pane={mainPane}
+                            onresize={(path, sizes) =>
+                                change('main', (tree) => resize(tree, path, sizes))}
+                        />
+                    </div>
+                    {#if dock !== 'hidden'}
+                        <Sash
+                            dir={direction}
+                            share={1 - share}
+                            onresize={panelMoved}
+                            onreset={() => resizePanel(PANEL_DEFAULT)}
+                        />
+                        <section
+                            class="tree panel"
+                            style="flex: {share} 1 0"
+                            aria-label={t('ui.panel')}
+                        >
+                            <SplitView
+                                layout={layout('panel')}
+                                pane={panelPane}
+                                onresize={(path, sizes) =>
+                                    change('panel', (tree) => resize(tree, path, sizes))}
+                            />
+                        </section>
+                    {/if}
+                {/if}
+            {/key}
+        </div>
     </div>
 </div>
 <DropLayer />
@@ -187,6 +211,15 @@
         background-repeat: no-repeat;
         filter: brightness(var(--wall-dim, 1)) blur(var(--wall-image-blur, 0px));
         pointer-events: none;
+    }
+
+    /* The column right of the rail: the page strip over the area the two trees share. */
+    .column {
+        display: flex;
+        flex-direction: column;
+        flex: 1 1 auto;
+        min-width: 0;
+        min-height: 0;
     }
 
     .area {

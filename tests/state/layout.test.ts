@@ -11,6 +11,7 @@ import {
     PANEL_DEFAULT,
     PANEL_MAX,
     PANEL_MIN,
+    WORKBENCH_VERSION,
     activate,
     checkLayout,
     checkWorkbench,
@@ -26,11 +27,9 @@ import {
     openInstance,
     paneAt,
     panes,
-    parseArrangement,
-    parseLayout,
+    parseWorkbench,
     resize,
     restore,
-    serialiseLayout,
     splitPane,
     splitWith,
     transfer,
@@ -60,19 +59,26 @@ import {
     transferInstance,
     workbench
 } from '../../src/lib/state/layout.svelte.ts';
+import { parseArrangement } from '../../src/lib/state/arrangement.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../src/lib/state/text.ts';
 import {
     bench,
     envelope,
     fakeStorage,
     instance,
     pane,
+    saveBench,
+    savedBench,
     split,
     three,
     viewsOf
 } from './layout-fixture.ts';
 
 // The trees, the workbenches and the fake Storage are tests/state/layout-fixture.ts, shared with
-// the arrangement suite beside this one.
+// the pages suite beside this one. The catalog is installed because loadLayout names the page it
+// makes, and a page is named from config/text.yml like everything else on screen.
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 describe('reading the tree', () => {
     it('finds the pane a path names and nothing else', () => {
@@ -568,8 +574,8 @@ describe('checkLayout', () => {
 describe('serialiseLayout and parseLayout', () => {
     it('reads back the whole workbench', () => {
         const saved = bench(three(), pane(['p']), 'bottom', 0.42);
-        expect(parseLayout(serialiseLayout(saved))).toEqual(saved);
-        expect(parseLayout(JSON.parse(serialiseLayout(saved)))).toEqual(saved);
+        expect(parseWorkbench(saveBench(saved))).toEqual(saved);
+        expect(parseWorkbench(JSON.parse(saveBench(saved)))).toEqual(saved);
     });
 
     it('keeps a view the registry may not know and the instance state', () => {
@@ -577,79 +583,83 @@ describe('serialiseLayout and parseLayout', () => {
             { kind: 'pane', tabs: [{ id: 'a', view: 'from-2027', state: { at: 3 } }], active: 'a' },
             pane(['p'])
         );
-        expect(parseLayout(serialiseLayout(saved))).toEqual(saved);
+        expect(parseWorkbench(saveBench(saved))).toEqual(saved);
     });
 
     it('refuses version 1, which held one tree and no panel, and an envelope with no version', () => {
         const saved = bench(three(), pane(['p']));
-        expect(parseLayout({ version: 1, layout: three() })).toBe(null);
-        expect(parseLayout({ version: 1, workbench: saved })).toBe(null);
-        expect(parseLayout({ workbench: saved })).toBe(null);
-        expect(parseLayout({ version: LAYOUT_VERSION, layout: three() })).toBe(null);
+        expect(parseWorkbench({ version: 1, layout: three() })).toBe(null);
+        expect(parseWorkbench({ version: 1, workbench: saved })).toBe(null);
+        expect(parseWorkbench({ workbench: saved })).toBe(null);
+        expect(parseWorkbench({ version: WORKBENCH_VERSION, layout: three() })).toBe(null);
     });
 
     it('refuses a wrong kind, a split with one child, and sizes that do not sum to 1', () => {
-        expect(parseLayout(envelope({ main: { kind: 'box' } }))).toBe(null);
+        expect(parseWorkbench(envelope({ main: { kind: 'box' } }))).toBe(null);
         expect(
-            parseLayout(
+            parseWorkbench(
                 envelope({
                     main: { kind: 'split', dir: 'row', sizes: [1], children: [pane(['a'])] }
                 })
             )
         ).toBe(null);
         expect(
-            parseLayout(envelope({ panel: split('row', [0.5, 0.4], [pane(['x']), pane(['y'])]) }))
+            parseWorkbench(
+                envelope({ panel: split('row', [0.5, 0.4], [pane(['x']), pane(['y'])]) })
+            )
         ).toBe(null);
     });
 
     it('refuses an instance id repeated across the two trees, and a size under the minimum', () => {
-        expect(parseLayout(envelope({ main: pane(['a']), panel: pane(['a']) }))).toBe(null);
+        expect(parseWorkbench(envelope({ main: pane(['a']), panel: pane(['a']) }))).toBe(null);
         expect(
-            parseLayout(envelope({ main: split('row', [0.95, 0.05], [pane(['a']), pane(['b'])]) }))
+            parseWorkbench(
+                envelope({ main: split('row', [0.95, 0.05], [pane(['a']), pane(['b'])]) })
+            )
         ).toBe(null);
     });
 
     it('refuses a dock and a panel share it does not know', () => {
-        expect(parseLayout(envelope({ dock: 'left' }))).toBe(null);
-        expect(parseLayout(envelope({ dock: 1 }))).toBe(null);
-        expect(parseLayout(envelope({ panelSize: PANEL_MAX + 0.1 }))).toBe(null);
-        expect(parseLayout(envelope({ panelSize: PANEL_MIN - 0.01 }))).toBe(null);
-        expect(parseLayout(envelope({ panelSize: 'wide' }))).toBe(null);
+        expect(parseWorkbench(envelope({ dock: 'left' }))).toBe(null);
+        expect(parseWorkbench(envelope({ dock: 1 }))).toBe(null);
+        expect(parseWorkbench(envelope({ panelSize: PANEL_MAX + 0.1 }))).toBe(null);
+        expect(parseWorkbench(envelope({ panelSize: PANEL_MIN - 0.01 }))).toBe(null);
+        expect(parseWorkbench(envelope({ panelSize: 'wide' }))).toBe(null);
     });
 
     it('reads back the maximised pane, and a workbench with none', () => {
         const zoomed = maximise(bench(three(), pane(['p'])), 'main', [1, 1]);
-        expect(parseLayout(serialiseLayout(zoomed))).toEqual(zoomed);
+        expect(parseWorkbench(saveBench(zoomed))).toEqual(zoomed);
         const plain = bench(three(), pane(['p']));
-        const read = parseLayout(serialiseLayout(plain));
+        const read = parseWorkbench(saveBench(plain));
         expect(read).toEqual(plain);
         expect(read !== null && 'focus' in read).toBe(false);
     });
 
     it('drops a focus that names no pane rather than refusing the arrangement', () => {
         const zoomed = maximise(bench(three(), pane(['p'])), 'main', [1, 1]);
-        const saved = JSON.parse(serialiseLayout(zoomed));
+        const saved = JSON.parse(saveBench(zoomed));
         // The pane it named is closed by a later release, or by a hand edit of the saved value.
         saved.workbench.main = closePane(zoomed.main, [1, 1]);
-        const read = parseLayout(saved);
+        const read = parseWorkbench(saved);
         expect(read?.focus).toBe(undefined);
         expect(read?.main).toEqual(closePane(zoomed.main, [1, 1]));
     });
 
     it('drops a focus that is not a target and a path', () => {
         for (const focus of ['main', { target: 'left', path: [] }, { target: 'main' }, null]) {
-            expect(parseLayout(envelope({ focus }))?.focus).toBe(undefined);
+            expect(parseWorkbench(envelope({ focus }))?.focus).toBe(undefined);
         }
-        expect(parseLayout(envelope({ focus: { target: 'main', path: ['x'] } }))?.focus).toBe(
+        expect(parseWorkbench(envelope({ focus: { target: 'main', path: ['x'] } }))?.focus).toBe(
             undefined
         );
     });
 
     it('refuses what is not an envelope at all', () => {
-        expect(parseLayout('not json')).toBe(null);
-        expect(parseLayout(null)).toBe(null);
-        expect(parseLayout([1, 2])).toBe(null);
-        expect(parseLayout(`{"version":${LAYOUT_VERSION}}`)).toBe(null);
+        expect(parseWorkbench('not json')).toBe(null);
+        expect(parseWorkbench(null)).toBe(null);
+        expect(parseWorkbench([1, 2])).toBe(null);
+        expect(parseWorkbench(`{"version":${WORKBENCH_VERSION}}`)).toBe(null);
     });
 });
 
@@ -685,7 +695,7 @@ describe('the store', () => {
 
     it('restores a saved arrangement', () => {
         const saved = bench(three(), pane(['p']), 'bottom', 0.4);
-        const storage = fakeStorage(serialiseLayout(saved));
+        const storage = fakeStorage(saveBench(saved));
         expect(loadLayout(storage)).toBe(true);
         expect(workbench()).toEqual(saved);
     });
@@ -698,18 +708,18 @@ describe('the store', () => {
         const saved = bench(three(), pane(['p']));
         apply(saved);
         expect(workbench()).toEqual(saved);
-        expect(storage.held[LAYOUT_KEY]).toBe(serialiseLayout(saved));
-        expect(parseLayout(storage.held[LAYOUT_KEY])).toEqual(saved);
+        expect(JSON.parse(storage.held[LAYOUT_KEY]).version).toBe(LAYOUT_VERSION);
+        expect(savedBench(storage)).toEqual(saved);
     });
 
     it('applies an operation to the tree it is told and saves the whole workbench under the one key', () => {
-        const storage = fakeStorage(serialiseLayout(bench(pane(['a']), pane(['p']))));
+        const storage = fakeStorage(saveBench(bench(pane(['a']), pane(['p']))));
         loadLayout(storage);
         change('panel', (tree) => openInstance(tree, [], instance('q')));
         expect(Object.keys(storage.held)).toEqual([LAYOUT_KEY]);
         expect(layout('main')).toEqual(pane(['a']));
         expect(layout('panel')).toEqual(pane(['p', 'q'], 'q'));
-        expect(parseLayout(storage.held[LAYOUT_KEY])).toEqual(workbench());
+        expect(savedBench(storage)).toEqual(workbench());
     });
 
     it('docks the panel and saves where it went', () => {
@@ -717,7 +727,7 @@ describe('the store', () => {
         loadLayout(storage);
         dock('bottom');
         expect(dockedAt()).toBe('bottom');
-        expect(parseLayout(storage.held[LAYOUT_KEY])?.dock).toBe('bottom');
+        expect(savedBench(storage)?.dock).toBe('bottom');
         dock('hidden');
         expect(dockedAt()).toBe('hidden');
     });
@@ -779,7 +789,7 @@ describe('the store', () => {
 
     it('opens a view the tree does not hold in the pane last activated', () => {
         const two = split('row', [0.5, 0.5], [pane(['a']), pane(['b'])]);
-        loadLayout(fakeStorage(serialiseLayout(bench(two, pane(['p'])))));
+        loadLayout(fakeStorage(saveBench(bench(two, pane(['p'])))));
         activateInstance('main', 'b');
         openView('venues', 'main');
         expect(paneAt(layout('main'), [0])?.tabs.map((tab) => tab.view)).toEqual(['projects']);
@@ -791,7 +801,7 @@ describe('the store', () => {
 
     it('opens into the first pane when nothing has been activated since the load', () => {
         const two = split('row', [0.5, 0.5], [pane(['a']), pane(['b'])]);
-        loadLayout(fakeStorage(serialiseLayout(bench(two, pane(['p'])))));
+        loadLayout(fakeStorage(saveBench(bench(two, pane(['p'])))));
         openView('venues', 'main');
         expect(paneAt(layout('main'), [0])?.tabs.map((tab) => tab.view)).toEqual([
             'projects',
@@ -809,7 +819,7 @@ describe('the store', () => {
     });
 
     it('closes an instance in the tree it names', () => {
-        loadLayout(fakeStorage(serialiseLayout(bench(pane(['a', 'b']), pane(['p'])))));
+        loadLayout(fakeStorage(saveBench(bench(pane(['a', 'b']), pane(['p'])))));
         closeInstanceIn('main', 'a');
         expect(layout('main')).toEqual(pane(['b'], 'b'));
         expect(layout('panel')).toEqual(pane(['p']));
@@ -819,7 +829,7 @@ describe('the store', () => {
 describe('the store: docking', () => {
     /** A two-pane main area and a one-pane panel, loaded and saved through a fake storage. */
     function load(main: Layout = split('row', [0.5, 0.5], [pane(['a']), pane(['b', 'c'])])) {
-        const storage = fakeStorage(serialiseLayout(bench(main, pane(['p']))));
+        const storage = fakeStorage(saveBench(bench(main, pane(['p']))));
         loadLayout(storage);
         return storage;
     }
@@ -828,7 +838,7 @@ describe('the store: docking', () => {
         const storage = load();
         closePaneIn('main', [1]);
         expect(layout('main')).toEqual(pane(['a']));
-        expect(parseLayout(storage.held[LAYOUT_KEY])).toEqual(workbench());
+        expect(savedBench(storage)).toEqual(workbench());
     });
 
     it('moves a tab to the panel and saves it there', () => {
@@ -840,7 +850,7 @@ describe('the store: docking', () => {
             active: 'c'
         });
         expect(layout('main')).toEqual(split('row', [0.5, 0.5], [pane(['a']), pane(['b'], 'b')]));
-        expect(parseLayout(storage.held[LAYOUT_KEY])).toEqual(workbench());
+        expect(savedBench(storage)).toEqual(workbench());
     });
 
     it('splits a pane with a tab and saves the new arrangement', () => {
@@ -853,7 +863,7 @@ describe('the store: docking', () => {
                 [split('col', [0.5, 0.5], [pane(['a']), pane(['c'])]), pane(['b'], 'b')]
             )
         );
-        expect(parseLayout(storage.held[LAYOUT_KEY])).toEqual(workbench());
+        expect(savedBench(storage)).toEqual(workbench());
     });
 
     it('shows a hidden panel when a tab is moved into it', () => {
@@ -874,13 +884,13 @@ describe('the store: docking', () => {
         const storage = load();
         maximisePane('main', [1]);
         expect(focused()).toEqual({ target: 'main', path: [1] });
-        expect(parseLayout(storage.held[LAYOUT_KEY])?.focus).toEqual({
+        expect(savedBench(storage)?.focus).toEqual({
             target: 'main',
             path: [1]
         });
         restorePanes();
         expect(focused()).toBe(null);
-        expect(parseLayout(storage.held[LAYOUT_KEY])?.focus).toBe(undefined);
+        expect(savedBench(storage)?.focus).toBe(undefined);
     });
 
     it('drops the focus when the maximised pane is closed', () => {

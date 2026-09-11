@@ -5,6 +5,8 @@
         label: string;
         /** A glyph name, or nothing for a tab that is drawn with its label alone. */
         glyph?: string;
+        /** What the tooltip says, when it is not the label: a page tab names its shortcut. */
+        hint?: string;
     };
 
     /**
@@ -106,7 +108,7 @@
                 role="presentation"
                 bind:this={faces[index]}
             >
-                <Tooltip text={tab.label} presentational>
+                <Tooltip text={tab.hint ?? tab.label} presentational>
                     <button
                         type="button"
                         class="face"

@@ -1,9 +1,9 @@
 // Named arrangements: a whole workbench written by hand in config/layout.yml, read into the shape
-// state/layout.ts holds, and the control that swaps the viewer's own workbench for it and back.
+// state/layout.ts holds, and the control that opens one as a page of its own.
 //
 // The tool's own `arrangements.sessions` is read from the config here rather than repeated, so an
 // edit of that file that stops it parsing fails in this suite instead of silently doing nothing in
-// the rail. Nothing here touches localStorage or the DOM: the store takes the storage it is given.
+// the strip. Nothing here touches localStorage or the DOM: the store takes the storage it is given.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -11,32 +11,35 @@ import {
     PANEL_MAX,
     checkWorkbench,
     panes,
-    parseArrangement,
     parseLayout,
     serialiseLayout,
     type Workbench
 } from '../../src/lib/state/layout.ts';
 import {
     LAYOUT_KEY,
-    PREVIOUS_KEY,
-    applyArrangement,
-    arranged,
-    dock,
+    currentPage,
     layout,
     loadLayout,
-    restoreArrangement,
+    openArrangement,
+    pages,
     workbench
 } from '../../src/lib/state/layout.svelte.ts';
-import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
-import { bench, fakeStorage, pane, three, viewsOf } from './layout-fixture.ts';
+import { parseArrangement } from '../../src/lib/state/arrangement.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../src/lib/state/text.ts';
+import { bench, fakeStorage, pane, saveBench, three, viewsOf } from './layout-fixture.ts';
+
+// loadLayout names the page it makes, and a page is named from config/text.yml like everything
+// else on screen.
+setCatalog(textCatalog(loadConfig(engineDir()).config));
+
+/** The `arrangements.sessions` node of the tool's own config/layout.yml. */
+function real(): unknown {
+    const held = loadConfig(engineDir()).config.arrangements;
+    return (held as Record<string, unknown>).sessions;
+}
 
 describe('parseArrangement', () => {
-    /** The `arrangements.sessions` node of the tool's own config/layout.yml. */
-    function real(): unknown {
-        const held = loadConfig(engineDir()).config.arrangements;
-        return (held as Record<string, unknown>).sessions;
-    }
-
     it('turns the shipped sessions arrangement into a workbench that checks out', () => {
         const made = parseArrangement(real());
         expect(made).not.toBe(null);
@@ -137,8 +140,8 @@ describe('parseArrangement', () => {
     });
 });
 
-describe('the store: a named arrangement', () => {
-    /** A workbench of the viewer's own, to be replaced and then put back. */
+describe('the store: a named arrangement as a page', () => {
+    /** A workbench of the viewer's own, which opening an arrangement must leave where it is. */
     function own(): Workbench {
         return bench(three(), pane(['p']), 'bottom', 0.4);
     }
@@ -148,66 +151,61 @@ describe('the store: a named arrangement', () => {
         panel: { kind: 'pane', view: ['session-detail', 'changes'] }
     };
 
-    it('is not in force before one is applied', () => {
-        loadLayout(fakeStorage());
-        expect(arranged()).toBe(false);
-    });
+    const SESSIONS = 'Sessions';
 
-    it('shows the arrangement and keeps the workbench it replaced', () => {
-        const storage = fakeStorage(serialiseLayout(own()));
+    it('opens the arrangement as a page of its own, made current', () => {
+        const storage = fakeStorage(saveBench(own()));
         loadLayout(storage);
-        expect(applyArrangement(ARRANGEMENT)).toBe(true);
-        expect(arranged()).toBe(true);
+        expect(openArrangement(ARRANGEMENT, SESSIONS)).toBe(true);
+        expect(pages().map((page) => page.label)).toEqual(['Page 1', SESSIONS]);
+        expect(currentPage().label).toBe(SESSIONS);
         expect(viewsOf(layout('main'))).toEqual(['session-list']);
-        expect(parseLayout(storage.held[PREVIOUS_KEY])).toEqual(own());
-        expect(parseLayout(storage.held[LAYOUT_KEY])).toEqual(workbench());
+        expect(viewsOf(layout('panel'))).toEqual(['session-detail', 'changes']);
     });
 
-    it('puts the viewer own workbench back, and is not in force after', () => {
-        const storage = fakeStorage(serialiseLayout(own()));
+    it('leaves the workbench that was on screen on the page it was on', () => {
+        const storage = fakeStorage(saveBench(own()));
         loadLayout(storage);
-        applyArrangement(ARRANGEMENT);
-        expect(restoreArrangement()).toBe(true);
-        expect(workbench()).toEqual(own());
-        expect(arranged()).toBe(false);
-        expect(storage.held[PREVIOUS_KEY]).toBe('');
+        openArrangement(ARRANGEMENT, SESSIONS);
+        expect(pages()[0].workbench).toEqual(own());
     });
 
-    it('keeps the viewer own workbench when the arrangement is applied twice', () => {
-        const storage = fakeStorage(serialiseLayout(own()));
+    it('switches to the page it already made rather than opening a second one', () => {
+        const storage = fakeStorage(saveBench(own()));
         loadLayout(storage);
-        applyArrangement(ARRANGEMENT);
-        dock('right');
-        applyArrangement(ARRANGEMENT);
-        expect(parseLayout(storage.held[PREVIOUS_KEY])).toEqual(own());
+        openArrangement(ARRANGEMENT, SESSIONS);
+        const made = currentPage().id;
+        openArrangement(ARRANGEMENT, SESSIONS);
+        expect(pages()).toHaveLength(2);
+        expect(currentPage().id).toBe(made);
+    });
+
+    it('saves every page under the one key', () => {
+        const storage = fakeStorage(saveBench(own()));
+        loadLayout(storage);
+        openArrangement(ARRANGEMENT, SESSIONS);
+        expect(Object.keys(storage.held)).toEqual([LAYOUT_KEY]);
+        const saved = parseLayout(storage.held[LAYOUT_KEY], '');
+        expect(saved?.pages.map((page) => page.label)).toEqual(['Page 1', SESSIONS]);
+        expect(saved?.current).toBe(currentPage().id);
     });
 
     it('changes nothing on an arrangement that does not parse', () => {
-        const storage = fakeStorage(serialiseLayout(own()));
+        const storage = fakeStorage(saveBench(own()));
         loadLayout(storage);
-        expect(applyArrangement({ main: { kind: 'box' } })).toBe(false);
-        expect(workbench()).toEqual(own());
-        expect(arranged()).toBe(false);
-    });
-
-    it('reads a kept workbench back at the next load, so the control still offers the restore', () => {
-        const storage = fakeStorage(serialiseLayout(own()));
-        loadLayout(storage);
-        applyArrangement(ARRANGEMENT);
-        loadLayout(storage);
-        expect(arranged()).toBe(true);
-        expect(restoreArrangement()).toBe(true);
+        expect(openArrangement({ main: { kind: 'box' } }, 'Broken')).toBe(false);
+        expect(pages()).toHaveLength(1);
         expect(workbench()).toEqual(own());
     });
 
-    it('lets a kept workbench go when it can no longer be read', () => {
-        const storage = fakeStorage(serialiseLayout(own()));
-        loadLayout(storage);
-        applyArrangement(ARRANGEMENT);
-        storage.held[PREVIOUS_KEY] = 'not an envelope';
-        loadLayout(storage);
-        expect(arranged()).toBe(true);
-        expect(restoreArrangement()).toBe(false);
-        expect(arranged()).toBe(false);
+    it('opens the shipped sessions arrangement as a page', () => {
+        loadLayout(fakeStorage());
+        expect(openArrangement(real(), SESSIONS)).toBe(true);
+        expect(viewsOf(layout('main'))).toEqual([
+            'session-list',
+            'terminal',
+            'transcript',
+            'timeline'
+        ]);
     });
 });

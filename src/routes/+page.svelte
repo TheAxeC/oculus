@@ -7,7 +7,9 @@
     import { onMount, untrack } from 'svelte';
     import Workbench from '$lib/shell/Workbench.svelte';
     import type { Bookmark, NavGroup } from '$lib/shell/ActivityRail.svelte';
+    import type { Arrangement } from '$lib/shell/PageStrip.svelte';
     import { config } from '$lib/state/entities.svelte';
+    import { t } from '$lib/state/text';
     import { waitingCount } from '$lib/state/selectors.svelte';
     import { loadLayout } from '$lib/state/layout.svelte';
     import { loadUi } from '$lib/state/ui.svelte';
@@ -53,14 +55,22 @@
     }
 
     /**
-     * The `arrangements.sessions` node of config/layout.yml, handed on untouched. state/layout.ts
-     * reads its shape and refuses one that does not add up, so nothing here knows what is in it.
+     * The `arrangements:` of config/layout.yml, each with the words a page opened from it carries.
+     * The node itself is handed on untouched: state/layout.ts reads its shape and refuses one that
+     * does not add up, so nothing here knows what is in it.
      */
-    const arrangement = $derived(readArrangement(config()?.config.arrangements));
+    const arrangements = $derived(readArrangements(config()?.config.arrangements));
 
-    function readArrangement(raw: unknown): unknown {
-        if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
-        return (raw as Record<string, unknown>).sessions ?? null;
+    /** The one arrangement the tool ships, which is the one the catalog has words for. */
+    const SESSIONS = 'sessions';
+
+    function readArrangements(raw: unknown): Arrangement[] {
+        if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return [];
+        return Object.entries(raw as Record<string, unknown>).map(([name, node]) => ({
+            name,
+            label: name === SESSIONS ? t('ui.page_sessions') : name,
+            node
+        }));
     }
 
     function readGroups(raw: unknown): NavGroup[] {
@@ -93,4 +103,4 @@
     });
 </script>
 
-<Workbench {groups} {bookmarks} {arrangement} waiting={waitingCount()} />
+<Workbench {groups} {bookmarks} {arrangements} waiting={waitingCount()} />

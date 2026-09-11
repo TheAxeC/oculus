@@ -1,12 +1,13 @@
-// Layer 2, client state. The store half of the layout: the arrangement the shell is rendering now,
-// and its persistence. The trees themselves, their types and every operation on them are
+// Layer 2, client state. The store half of the layout: the pages the shell is rendering now, and
+// their persistence. The trees themselves, their types and every operation on them are
 // state/layout.ts, which has no runes in it; this module is the one place an arrangement is reactive
 // and the one place it is saved.
 //
-// The saved unit is the whole workbench: two trees, the dock and the panel's share. An operation
-// names the tree it applies to, so change() takes a target and rebuilds the workbench around the
-// tree the operation returned. Every change reaches the store through apply(), which is also what
-// saves, so an arrangement is never changed without being written down.
+// The saved unit is every page: each one a whole workbench (two trees, the dock and the panel's
+// share) with a name, and which page is on screen. Every operation below the page operations acts on
+// the current page, so an operation names the tree it applies to and nothing else knows about pages.
+// Every change reaches the store through apply() or savePages(), which are also what save, so
+// neither an arrangement nor a page is changed without being written down.
 
 import {
     activePath,
@@ -14,16 +15,17 @@ import {
     clampPanel,
     closeInstance,
     closePane,
-    defaultWorkbench,
+    defaultPages,
     findView,
     focusedPane,
     isInstanceOf,
     maximise,
     newInstance,
+    newPage,
     openInstance,
     paneAt,
-    parseArrangement,
     parseLayout,
+    parseWorkbench,
     restate,
     restore,
     serialiseLayout,
@@ -36,58 +38,87 @@ import {
     type Focus,
     type Instance,
     type Layout,
+    type Page,
+    type Pages,
     type Pane,
     type Target,
     type ViewId,
     type Workbench
 } from './layout.ts';
+import { parseArrangement } from './arrangement.ts';
+import { t } from './text.ts';
 
 /** The key the arrangement is saved under. The envelope inside it carries the version. */
 export const LAYOUT_KEY = 'oculus.layout.v1';
 
 /**
- * The key the workbench a named arrangement replaced is kept under, so the control that applied the
- * arrangement puts the user's own back. It holds a whole serialised workbench, or the empty string
- * for none: the store never removes a key, so a Storage it is handed needs only get and set.
+ * The key the workbench a named arrangement replaced was kept under, by the rail control pages
+ * retired. Nothing writes it any more: loadLayout reads it once, so the arrangement that control
+ * replaced becomes a page of its own, and then writes it empty. It holds a whole serialised
+ * workbench, or the empty string: the store never removes a key, so a Storage it is handed needs
+ * only get and set.
  */
 export const PREVIOUS_KEY = 'oculus.layout.previous';
 
 /** What the store needs of a Storage, so a test can hand it a plain object. */
 type Storable = Pick<Storage, 'getItem' | 'setItem'>;
 
-const store: { current: Workbench } = $state({ current: defaultWorkbench() });
-
-/** The workbench a named arrangement replaced, serialised, or the empty string when none did. */
-const kept: { previous: string } = $state({ previous: '' });
+/**
+ * The pages, and which of them is on screen. The label of the page this starts on is empty because
+ * the catalog is not installed when this module is evaluated; loadLayout names it, and the strip
+ * draws a page carrying no name by its position, which is the one moment such a page is on screen.
+ */
+const store: { current: Pages } = $state({ current: defaultPages('') });
 
 /** Where apply() saves, once loadLayout has named it. Nothing is saved before that. */
 let backing: Storable | null = null;
 
 /**
- * The instance activated last in each tree, which is what makes one of its panes the active one. It
- * is not saved: a reload opens a view in the first pane, which is where an arrangement with one pane
- * puts it anyway, and nothing about the arrangement itself is lost.
+ * The instance activated last in each tree of each page, which is what makes one of its panes the
+ * active one, keyed by page id so returning to a page finds the pane it was left on. It is not
+ * saved: a reload opens a view in the first pane, which is where an arrangement with one pane puts
+ * it anyway, and nothing about the arrangement itself is lost.
  */
-const lastActive: Record<Target, string | null> = { main: null, panel: null };
+const lastActive: Record<string, Record<Target, string | null>> = {};
 
-/** The whole arrangement. */
+/** The page on screen, or the first one when the current id names none. */
+export function currentPage(): Page {
+    const held = store.current;
+    return held.pages.find((page) => page.id === held.current) ?? held.pages[0];
+}
+
+/** Every page, in the order the strip draws them. */
+export function pages(): Page[] {
+    return store.current.pages;
+}
+
+/** The instance activated last in each tree of the page on screen. */
+function active(): Record<Target, string | null> {
+    const id = currentPage().id;
+    const held = lastActive[id] ?? { main: null, panel: null };
+    lastActive[id] = held;
+    return held;
+}
+
+/** The whole arrangement of the page on screen. */
 export function workbench(): Workbench {
-    return store.current;
+    return currentPage().workbench;
 }
 
 /** One of the two trees. */
 export function layout(target: Target = 'main'): Layout {
-    return target === 'main' ? store.current.main : store.current.panel;
+    const current = workbench();
+    return target === 'main' ? current.main : current.panel;
 }
 
 /** Where the panel sits. */
 export function dockedAt(): Dock {
-    return store.current.dock;
+    return workbench().dock;
 }
 
 /** The panel's share of the window. */
 export function panelSize(): number {
-    return store.current.panelSize;
+    return workbench().panelSize;
 }
 
 /**
@@ -98,25 +129,35 @@ export function panelSize(): number {
  */
 export function loadLayout(storage: Storable = localStorage): boolean {
     backing = storage;
-    let raw: string | null = null;
+    const first = t('ui.page_default', 1);
+    const raw = read(storage, LAYOUT_KEY);
+    const parsed = raw === null ? null : parseLayout(raw, first);
+    const held = parseWorkbench(read(storage, PREVIOUS_KEY));
+    for (const id of Object.keys(lastActive)) delete lastActive[id];
+    // A browser that ran before pages holds one workbench, and holds the user's own arrangement
+    // beside it when the rail control pages retired had put the sessions arrangement on screen.
+    // Both are kept: the user's own becomes page 1 and what was on screen becomes page 2, so the
+    // control's restore is not needed to reach either of them.
+    if (parsed !== null && held !== null && parseWorkbench(raw) !== null) {
+        const shown = newPage(t('ui.page_sessions'), parsed.pages[0].workbench);
+        // Written at once: the version 2 envelope under LAYOUT_KEY still holds only what was on
+        // screen, so a reload before the next change would lose the page the held one became.
+        savePages({ pages: [newPage(first, held), shown], current: shown.id });
+    } else {
+        store.current = parsed ?? defaultPages(first);
+    }
+    if (held !== null) remember(PREVIOUS_KEY, '');
+    return parsed !== null;
+}
+
+/** One key of a storage, or null when there is none or the browser refused to be read. */
+function read(storage: Storable, key: string): string | null {
     try {
-        raw = storage.getItem(LAYOUT_KEY);
+        return storage.getItem(key);
     } catch {
         // A browser with storage refused still runs; it just forgets the arrangement.
-        raw = null;
+        return null;
     }
-    const parsed = raw === null ? null : parseLayout(raw);
-    store.current = parsed ?? defaultWorkbench();
-    let previous: string | null = null;
-    try {
-        previous = storage.getItem(PREVIOUS_KEY);
-    } catch {
-        previous = null;
-    }
-    kept.previous = previous ?? '';
-    lastActive.main = null;
-    lastActive.panel = null;
-    return parsed !== null;
 }
 
 /** Write one string under a key, or do nothing when there is nowhere to write yet. */
@@ -129,47 +170,94 @@ function remember(key: string, value: string): void {
     }
 }
 
-/** Whether a named arrangement is in force, which is to say a workbench is held to go back to. */
-export function arranged(): boolean {
-    return kept.previous !== '';
-}
-
 /**
- * Show a named arrangement, keeping the workbench that was on screen so the same control puts it
- * back. An arrangement that does not parse changes nothing and says so, and applying one while
- * another is already in force keeps the workbench held first: what is remembered is the user's own
- * arrangement, never a generated one.
+ * A named arrangement of config/layout.yml as a page of its own, made current. A page already
+ * carrying that name is switched to instead, so the control that opens one is idempotent and a
+ * second press does not fill the strip with copies. An arrangement that does not parse changes
+ * nothing and says so.
  */
-export function applyArrangement(raw: unknown): boolean {
+export function openArrangement(raw: unknown, label: string): boolean {
+    const found = store.current.pages.find((page) => page.label === label);
+    if (found !== undefined) {
+        switchPage(found.id);
+        return true;
+    }
     const next = parseArrangement(raw);
     if (next === null) return false;
-    if (kept.previous === '') {
-        const previous = serialiseLayout(store.current);
-        kept.previous = previous;
-        remember(PREVIOUS_KEY, previous);
-    }
-    apply(next);
+    addPage(newPage(label, next));
     return true;
+}
+
+/** A new page, on the default workbench, made current. */
+export function openPage(label: string): void {
+    addPage(newPage(label));
+}
+
+/** Put a page at the end of the strip and show it. */
+function addPage(page: Page): void {
+    savePages({ pages: [...store.current.pages, page], current: page.id });
+}
+
+/** Show a page. A page id naming none changes nothing. */
+export function switchPage(id: string): void {
+    if (!store.current.pages.some((page) => page.id === id)) return;
+    savePages({ ...store.current, current: id });
+}
+
+/** Give a page another name. */
+export function renamePage(id: string, label: string): void {
+    savePages({
+        ...store.current,
+        pages: store.current.pages.map((page) => (page.id === id ? { ...page, label } : page))
+    });
 }
 
 /**
- * Put the workbench a named arrangement replaced back. The held workbench is let go either way, so a
- * saved value that no longer parses leaves the control saying what it now does rather than offering
- * a restore that cannot happen.
+ * Close a page, with every tab on it. The page after it becomes current, or the one before it when
+ * it was the last in the strip; closing the only page leaves one fresh default page, since a
+ * workbench with no page to render is nothing at all.
  */
-export function restoreArrangement(): boolean {
-    const previous = kept.previous;
-    kept.previous = '';
-    remember(PREVIOUS_KEY, '');
-    if (previous === '') return false;
-    const back = parseLayout(previous);
-    if (back === null) return false;
-    apply(back);
+export function closePage(id: string): void {
+    const held = store.current.pages;
+    const at = held.findIndex((page) => page.id === id);
+    if (at < 0) return;
+    delete lastActive[id];
+    const left = held.filter((page) => page.id !== id);
+    if (left.length === 0) {
+        savePages(defaultPages(t('ui.page_default', 1)));
+        return;
+    }
+    const next =
+        store.current.current === id
+            ? left[Math.min(at, left.length - 1)].id
+            : store.current.current;
+    savePages({ pages: left, current: next });
+}
+
+/**
+ * Show the page at `index`, counting from 1, which is what Ctrl+1 to Ctrl+9 do. It answers whether
+ * there was one, so the handler swallows the key only when the shortcut did something.
+ */
+export function pageShortcut(index: number): boolean {
+    const page = store.current.pages[index - 1];
+    if (index < 1 || page === undefined) return false;
+    switchPage(page.id);
     return true;
 }
 
-/** Make an arrangement current and save it. */
+/** Make an arrangement the current page's and save every page. */
 export function apply(next: Workbench): void {
+    const held = store.current;
+    savePages({
+        ...held,
+        pages: held.pages.map((page) =>
+            page.id === currentPage().id ? { ...page, workbench: next } : page
+        )
+    });
+}
+
+/** Make a set of pages current and save it. */
+function savePages(next: Pages): void {
     store.current = next;
     if (backing === null) return;
     try {
@@ -182,36 +270,37 @@ export function apply(next: Workbench): void {
 
 /** Apply an operation to one of the two trees. This is how every O7 operation reaches the store. */
 export function change(target: Target, edit: (tree: Layout) => Layout): void {
-    const current = store.current;
+    const current = workbench();
     const next = edit(target === 'main' ? current.main : current.panel);
     apply(target === 'main' ? { ...current, main: next } : { ...current, panel: next });
 }
 
 /** Where the panel sits, or that it is not shown. */
 export function dock(where: Dock): void {
-    apply({ ...store.current, dock: where });
+    apply({ ...workbench(), dock: where });
 }
 
 /** How much of the window the panel takes, held inside the allowed range. */
 export function resizePanel(fraction: number): void {
-    apply({ ...store.current, panelSize: clampPanel(fraction) });
+    apply({ ...workbench(), panelSize: clampPanel(fraction) });
 }
 
 /** Make an instance the active tab of its pane, and its pane the tree's active one. */
 export function activateInstance(target: Target, id: string): void {
-    lastActive[target] = id;
+    active()[target] = id;
     change(target, (tree) => activate(tree, id));
 }
 
 /** Close an instance, and forget it if it was the tree's active one. */
 export function closeInstanceIn(target: Target, id: string): void {
-    if (lastActive[target] === id) lastActive[target] = null;
+    const held = active();
+    if (held[target] === id) held[target] = null;
     apply(settleFocus(withTree(target, closeInstance(layout(target), id))));
 }
 
 /** The arrangement with one of its trees replaced, which is what an operation on a tree returns. */
 function withTree(target: Target, tree: Layout): Workbench {
-    const current = store.current;
+    const current = workbench();
     return target === 'main' ? { ...current, main: tree } : { ...current, panel: tree };
 }
 
@@ -219,8 +308,9 @@ function withTree(target: Target, tree: Layout): Workbench {
 export function closePaneIn(target: Target, path: number[]): void {
     const pane = paneAt(layout(target), path);
     if (pane === null) return;
-    const held = lastActive[target];
-    if (held !== null && pane.tabs.some((tab) => tab.id === held)) lastActive[target] = null;
+    const seen = active();
+    const held = seen[target];
+    if (held !== null && pane.tabs.some((tab) => tab.id === held)) seen[target] = null;
     apply(settleFocus(withTree(target, closePane(layout(target), path))));
 }
 
@@ -230,7 +320,7 @@ export function closePaneIn(target: Target, path: number[]): void {
  * would be moved out of sight, which is the one thing a move must not look like.
  */
 function reveal(target: Target): Workbench {
-    const current = store.current;
+    const current = workbench();
     const focus = focusedPane(current);
     const shown = focus !== null && focus.target !== target ? restore(current) : current;
     return target === 'panel' && shown.dock === 'hidden' ? { ...shown, dock: 'right' } : shown;
@@ -241,7 +331,7 @@ export function transferInstance(id: string, target: Target, path: number[], ind
     const from = reveal(target);
     const next = transfer(from, id, target, path, index);
     if (next === from) return;
-    lastActive[target] = id;
+    active()[target] = id;
     apply(next);
 }
 
@@ -250,23 +340,23 @@ export function splitInstance(id: string, target: Target, path: number[], edge: 
     const from = reveal(target);
     const next = splitWith(from, id, target, path, edge);
     if (next === from) return;
-    lastActive[target] = id;
+    active()[target] = id;
     apply(next);
 }
 
 /** Show one pane alone, with the rest of the workbench put away. */
 export function maximisePane(target: Target, path: number[]): void {
-    apply(maximise(store.current, target, path));
+    apply(maximise(workbench(), target, path));
 }
 
 /** Show every pane again. */
 export function restorePanes(): void {
-    apply(restore(store.current));
+    apply(restore(workbench()));
 }
 
 /** The maximised pane, or null when every pane is shown. */
 export function focused(): Focus | null {
-    return focusedPane(store.current);
+    return focusedPane(workbench());
 }
 
 /**
@@ -283,7 +373,7 @@ export function focused(): Focus | null {
 export function openView(view: ViewId, where: Target, state?: unknown): void {
     // A maximised pane hides everything else, so a view opened into the other tree would land out
     // of sight; opening it is what the rail was clicked for, so the arrangement comes back instead.
-    const focus = focusedPane(store.current);
+    const focus = focusedPane(workbench());
     if (focus !== null && focus.target !== where) restorePanes();
 
     const tree = layout(where);
@@ -294,14 +384,14 @@ export function openView(view: ViewId, where: Target, state?: unknown): void {
     if (existing !== null) {
         if (state !== undefined) change(where, (current) => restate(current, existing.id, state));
         activateInstance(where, existing.id);
-        if (where === 'panel' && store.current.dock === 'hidden') dock('right');
+        if (where === 'panel' && dockedAt() === 'hidden') dock('right');
         return;
     }
     const instance = newInstance(view, state ?? {});
-    const path = into !== null && inside !== null ? into : activePath(tree, lastActive[where]);
-    lastActive[where] = instance.id;
+    const path = into !== null && inside !== null ? into : activePath(tree, active()[where]);
+    active()[where] = instance.id;
     change(where, (current) => openInstance(current, path, instance));
-    if (where === 'panel' && store.current.dock === 'hidden') dock('right');
+    if (where === 'panel' && dockedAt() === 'hidden') dock('right');
 }
 
 /**

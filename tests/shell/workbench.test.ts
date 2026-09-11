@@ -31,7 +31,14 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { registerView } from '../../src/lib/views/registry.ts';
-import { apply } from '../../src/lib/state/layout.svelte.ts';
+import {
+    apply,
+    closePage,
+    currentPage,
+    openPage,
+    pages,
+    switchPage
+} from '../../src/lib/state/layout.svelte.ts';
 import type { Dock, Layout, Workbench as Bench } from '../../src/lib/state/layout.ts';
 
 const { config } = loadConfig(engineDir());
@@ -78,9 +85,26 @@ describe('the workbench', () => {
         expect(rail).toEqual(['alpha', 'beta']);
     });
 
+    // Four strips, not three: the page strip over the whole area is drawn with the same primitive,
+    // and the one page it draws is one more tab.
     it('draws a tab strip over every pane of both trees', () => {
-        expect([...docked.matchAll(/role="tablist"/g)]).toHaveLength(3);
-        expect([...docked.matchAll(/role="tab"/g)]).toHaveLength(3);
+        expect([...docked.matchAll(/role="tablist"/g)]).toHaveLength(4);
+        expect([...docked.matchAll(/role="tab"/g)]).toHaveLength(4);
+    });
+
+    it('draws the page strip above the area, and the current page in it', () => {
+        expect(docked.indexOf('aria-label="Pages"')).toBeLessThan(docked.indexOf('class="area'));
+        expect(docked).toContain('Page 1');
+    });
+
+    it('draws the trees of the page on screen and nothing of the page beside it', () => {
+        const first = currentPage().id;
+        apply(bench('right'));
+        openPage('Page 2');
+        expect(render(Workbench, { props: { groups: [] } }).body).not.toContain('data-alpha="one"');
+        switchPage(first);
+        expect(render(Workbench, { props: { groups: [] } }).body).toContain('data-alpha="one"');
+        closePage(pages()[1].id);
     });
 
     it('labels each tab from the registry', () => {
@@ -112,7 +136,7 @@ describe('the workbench', () => {
         const hidden = html('hidden');
         expect(hidden).not.toContain('data-beta="three"');
         expect([...hidden.matchAll(/role="separator"/g)]).toHaveLength(1);
-        expect([...hidden.matchAll(/role="tablist"/g)]).toHaveLength(2);
+        expect([...hidden.matchAll(/role="tablist"/g)]).toHaveLength(3);
     });
 
     it('groups a rail button under a group that names it, and leaves the rest ungrouped', () => {
@@ -134,7 +158,7 @@ describe('the workbench', () => {
     // browser, where the menu can be opened.
     it('puts a pane menu at the right of every tab strip', () => {
         expect([...docked.matchAll(/aria-label="Pane"/g)]).toHaveLength(3);
-        expect([...docked.matchAll(/aria-haspopup="menu"/g)]).toHaveLength(5);
+        expect([...docked.matchAll(/aria-haspopup="menu"/g)]).toHaveLength(6);
     });
 });
 
@@ -151,7 +175,7 @@ describe('a maximised pane', () => {
         expect(one).toContain('data-beta="two"');
         expect(one).not.toContain('data-alpha="one"');
         expect(one).not.toContain('data-beta="three"');
-        expect([...one.matchAll(/role="tablist"/g)]).toHaveLength(1);
+        expect([...one.matchAll(/role="tablist"/g)]).toHaveLength(2);
     });
 
     it('draws neither sash: no split is shown and the panel is not beside it', () => {
@@ -171,7 +195,7 @@ describe('a maximised pane', () => {
     it('draws the whole workbench again when the focus names no pane', () => {
         // [0, 0] is inside a pane, which is no node at all, and the arrangement is drawn whole.
         const stale = zoomed([0, 0], 'main');
-        expect([...stale.matchAll(/role="tablist"/g)]).toHaveLength(3);
+        expect([...stale.matchAll(/role="tablist"/g)]).toHaveLength(4);
     });
 });
 

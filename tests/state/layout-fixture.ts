@@ -2,7 +2,12 @@
 // operations and the saved form in layout.test.ts, and the named arrangements in arrangement.test.ts.
 // Nothing here touches localStorage or the DOM.
 
-import { LAYOUT_VERSION, PANEL_DEFAULT, panes } from '../../src/lib/state/layout.ts';
+import {
+    PANEL_DEFAULT,
+    WORKBENCH_VERSION,
+    panes,
+    parseLayout
+} from '../../src/lib/state/layout.ts';
 import { LAYOUT_KEY } from '../../src/lib/state/layout.svelte.ts';
 import type { Dock, Instance, Layout, Workbench } from '../../src/lib/state/layout.ts';
 
@@ -38,12 +43,24 @@ export function bench(
     return { main, panel, dock: dockedAt, panelSize: share };
 }
 
-/** A current envelope over a workbench that is valid except for the fields handed in. */
+/** A version 2 envelope over a workbench that is valid except for the fields handed in. */
 export function envelope(over: Record<string, unknown>): unknown {
     return {
-        version: LAYOUT_VERSION,
+        version: WORKBENCH_VERSION,
         workbench: { ...bench(pane(['a']), pane(['b'])), ...over }
     };
+}
+
+/** One workbench in the envelope a browser held before pages, which is what the store migrates. */
+export function saveBench(workbench: Workbench): string {
+    return JSON.stringify({ version: WORKBENCH_VERSION, workbench });
+}
+
+/** The workbench of the page a storage holds as its current one, or null when it holds none. */
+export function savedBench(storage: { held: Record<string, string> }): Workbench | null {
+    const read = parseLayout(storage.held[LAYOUT_KEY] ?? '', '');
+    if (read === null) return null;
+    return (read.pages.find((page) => page.id === read.current) ?? read.pages[0]).workbench;
 }
 
 /** The view of every tab in a tree, depth first, which is what a store test is about. */

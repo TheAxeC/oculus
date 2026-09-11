@@ -56,8 +56,20 @@ text:
     accent_title: "Accent colour - used for state (active tab, selection, focus). Same as :accent"
     accent_reset: "back to the theme's own accent"
     panel: "Panel"
-    arrange_sessions: "Arrange for sessions"
-    arrange_restore: "Back to my own arrangement"
+    # shell/PageStrip.svelte, the strip of pages over the main area and the panel: a page is a whole
+    # workbench of its own, so the strip names them and its menu makes, renames and opens them.
+    pages: "Pages"
+    page_default: "Page {0}"
+    page_sessions: "Sessions"
+    page_new: "New page"
+    page_rename: "Rename this page"
+    page_rename_label: "Page name"
+    page_close: "Close page"
+    page_close_confirm: "Close the page {0} and the {1} tabs on it?"
+    page_menu: "Page"
+    page_menu_glyph: "expand"  # a name in `glyphs:`: the opener at the right of the page strip.
+    page_from: "Open {0} as a page"
+    page_shortcut: "{0} - Ctrl+{1}"
     dock_right: "Panel on the right"
     dock_bottom: "Panel along the bottom"
     dock_hidden: "Panel hidden"

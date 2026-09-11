@@ -52,6 +52,16 @@ export type Workbench = {
     focus?: Focus;
 };
 
+/**
+ * One page: a whole workbench with a name of its own. DESIGN.md's decision of 2026-09-11 puts a
+ * level above the layout tree rather than inside it, so every operation below still works on one
+ * tree and one workbench and knows nothing about pages.
+ */
+export type Page = { id: string; label: string; workbench: Workbench };
+
+/** Every page, and which of them is on screen. This is the unit that is saved. */
+export type Pages = { pages: Page[]; current: string };
+
 /** The side of a pane a dropped tab takes, which is what says where the new pane goes. */
 export type Edge = 'left' | 'right' | 'top' | 'bottom';
 
@@ -70,8 +80,14 @@ export const PANEL_DEFAULT = 0.3;
 export const MAIN_VIEW = 'status';
 export const PANEL_VIEW = 'findings';
 
-/** The envelope version serialiseLayout writes and parseLayout demands. */
-export const LAYOUT_VERSION = 2;
+/** The envelope version serialiseLayout writes and parseLayout demands: the list of pages. */
+export const LAYOUT_VERSION = 3;
+
+/**
+ * The envelope version that held one workbench, before a page was a thing. It is still read, so a
+ * browser that holds one opens it as a page instead of falling back to the default.
+ */
+export const WORKBENCH_VERSION = 2;
 
 /** Sizes must sum to 1 within this; a float sum of ten tenths is not exactly 1. */
 const SUM_EPS = 1e-6;
@@ -79,7 +95,8 @@ const SUM_EPS = 1e-6;
 /** The slack a size is allowed below MIN_SIZE, for the same reason. */
 const EPS = 1e-9;
 
-function isRecord(value: unknown): value is Record<string, unknown> {
+/** Whether a value is an object with keys, which every saved shape is read through. */
+export function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
@@ -127,6 +144,20 @@ export function defaultWorkbench(): Workbench {
         dock: 'right',
         panelSize: PANEL_DEFAULT
     };
+}
+
+/**
+ * A fresh page around a workbench, with the id every page operation addresses it by. The words are
+ * the caller's: they come from the catalog, which state/layout.ts does not read.
+ */
+export function newPage(label: string, workbench: Workbench = defaultWorkbench()): Page {
+    return { id: crypto.randomUUID(), label, workbench };
+}
+
+/** The pages a browser that has never held any starts from: one, on the default workbench. */
+export function defaultPages(label: string): Pages {
+    const page = newPage(label);
+    return { pages: [page], current: page.id };
 }
 
 /** The panel's share, held between PANEL_MIN and PANEL_MAX; anything that is not a number is the default. */
@@ -738,7 +769,8 @@ function readPane(
     return { kind: 'pane', tabs, active };
 }
 
-const DOCKS: Dock[] = ['right', 'bottom', 'hidden'];
+/** Where the panel may sit, which is what a saved value and an arrangement are read against. */
+export const DOCKS: Dock[] = ['right', 'bottom', 'hidden'];
 
 /**
  * Everything that must hold of a whole arrangement: both trees, the dock, and the panel's share.
@@ -763,20 +795,81 @@ export function checkWorkbench(workbench: Workbench): string[] {
     return problems;
 }
 
+/**
+ * Everything that must hold of the whole set of pages: at least one page, a page id used once, a
+ * current that names one of them, a workbench that checks out on every page, and an instance id
+ * used once across every page, since openView finds an open view by instance id alone.
+ */
+export function checkPages(pages: Pages): string[] {
+    const problems: string[] = [];
+    if (pages.pages.length === 0) problems.push('no page');
+    const ids = new Set<string>();
+    const instances = new Set<string>();
+    for (const page of pages.pages) {
+        if (ids.has(page.id)) problems.push(`page id ${JSON.stringify(page.id)} is used twice`);
+        ids.add(page.id);
+        for (const problem of checkWorkbench(page.workbench)) {
+            problems.push(`page ${JSON.stringify(page.label)} ${problem}`);
+        }
+        for (const { pane } of [...panes(page.workbench.main), ...panes(page.workbench.panel)]) {
+            for (const tab of pane.tabs) {
+                if (instances.has(tab.id)) {
+                    problems.push(`instance ${JSON.stringify(tab.id)} is on two pages`);
+                }
+                instances.add(tab.id);
+            }
+        }
+    }
+    if (!ids.has(pages.current)) {
+        problems.push(`current is ${JSON.stringify(pages.current)}, which is not a page`);
+    }
+    return problems;
+}
+
 /** The saved form: the envelope, so a later version can be told apart from this one. */
-export function serialiseLayout(workbench: Workbench): string {
-    return JSON.stringify({ version: LAYOUT_VERSION, workbench });
+export function serialiseLayout(pages: Pages): string {
+    return JSON.stringify({ version: LAYOUT_VERSION, pages: pages.pages, current: pages.current });
 }
 
 /**
- * The arrangement in a saved envelope, or null when anything about it is wrong: another version, a
- * broken shape, or an invariant a hand edit or an older release left violated. A version 1 envelope
- * held one tree and no panel, so it is another version and the browser falls back to the default.
- * An arrangement that fails here never reaches the shell, which is why the shell never checks the
- * shape of what it renders. A string is read as JSON first, so the caller can hand over what storage
- * returned.
+ * The pages in a saved envelope, or null when anything about them is wrong: another version, a
+ * broken shape, or an invariant a hand edit or an older release left violated. A version 2 envelope
+ * held one workbench and is read as one page, carrying `label`, so nothing a browser holds today is
+ * lost; a version 1 envelope held one tree and no panel, so it is another version and the browser
+ * falls back to the default. Anything that fails here never reaches the shell, which is why the
+ * shell never checks the shape of what it renders. A string is read as JSON first, so the caller can
+ * hand over what storage returned.
  */
-export function parseLayout(value: unknown): Workbench | null {
+export function parseLayout(value: unknown, label: string): Pages | null {
+    const envelope = asEnvelope(value);
+    if (envelope === null) return null;
+    if (envelope.version === WORKBENCH_VERSION) {
+        const only = readWorkbench(envelope.workbench);
+        return only === null ? null : defaultPagesOf(newPage(label, only));
+    }
+    if (envelope.version !== LAYOUT_VERSION) return null;
+    const saved = envelope.pages;
+    const current = envelope.current;
+    if (!Array.isArray(saved) || typeof current !== 'string') return null;
+    const pages: Page[] = [];
+    for (const entry of saved) {
+        if (!isRecord(entry)) return null;
+        if (typeof entry.id !== 'string' || typeof entry.label !== 'string') return null;
+        const workbench = readWorkbench(entry.workbench);
+        if (workbench === null) return null;
+        pages.push({ id: entry.id, label: entry.label, workbench });
+    }
+    const read: Pages = { pages, current };
+    return checkPages(read).length === 0 ? read : null;
+}
+
+/** The one set of pages a single page makes, which is what a version 2 envelope reads as. */
+function defaultPagesOf(page: Page): Pages {
+    return { pages: [page], current: page.id };
+}
+
+/** A saved envelope as an object, reading a string as JSON first, or null when it is neither. */
+function asEnvelope(value: unknown): Record<string, unknown> | null {
     let envelope: unknown = value;
     if (typeof envelope === 'string') {
         try {
@@ -785,8 +878,23 @@ export function parseLayout(value: unknown): Workbench | null {
             return null;
         }
     }
-    if (!isRecord(envelope) || envelope.version !== LAYOUT_VERSION) return null;
-    const saved = envelope.workbench;
+    return isRecord(envelope) ? envelope : null;
+}
+
+/**
+ * The one workbench of a version 2 envelope, or null when it is another version or does not check
+ * out. It is what a browser that last ran before pages holds, and the migration in the store reads
+ * the workbench a named arrangement replaced with it.
+ */
+export function parseWorkbench(value: unknown): Workbench | null {
+    const envelope = asEnvelope(value);
+    if (envelope === null || envelope.version !== WORKBENCH_VERSION) return null;
+    return readWorkbench(envelope.workbench);
+}
+
+/** One saved workbench, the envelope around it already taken off. */
+function readWorkbench(value: unknown): Workbench | null {
+    const saved = value;
     if (!isRecord(saved)) return null;
 
     const problems: string[] = [];
@@ -833,66 +941,4 @@ function readTree(
     const tree = readNode(value, [], found, ids);
     for (const problem of found) problems.push(`${which} ${problem}`);
     return tree;
-}
-
-// ---------------------------------------------------------------------------------------------
-// An arrangement, which is a saved layout written by hand
-
-/**
- * One arrangement of `arrangements:` in config/layout.yml as a workbench, with a fresh instance id
- * for every tab. It is the same tree as a saved envelope with the instances left out: a node is
- * `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view id or
- * a list of them, and the arrangement itself carries `main`, `panel` and optionally `dock` and
- * `panel_size`. Anything the shape or checkWorkbench refuses is null, so a hand edit that does not
- * add up leaves the workbench the user had rather than replacing it with a broken one.
- */
-export function parseArrangement(value: unknown): Workbench | null {
-    if (!isRecord(value)) return null;
-    const main = readArrangement(value.main);
-    const panel = readArrangement(value.panel);
-    if (main === null || panel === null) return null;
-    const where = value.dock;
-    const dock: Dock =
-        typeof where === 'string' && DOCKS.includes(where as Dock) ? (where as Dock) : 'right';
-    const share = value.panel_size;
-    const panelSize =
-        typeof share === 'number' && Number.isFinite(share) ? clampPanel(share) : PANEL_DEFAULT;
-    const workbench: Workbench = { main, panel, dock, panelSize };
-    return checkWorkbench(workbench).length === 0 ? workbench : null;
-}
-
-/** One node of an arrangement: a split with its children, or a pane with the views it holds. */
-function readArrangement(value: unknown): Layout | null {
-    if (!isRecord(value)) return null;
-    if (value.kind === 'pane') return readArrangementPane(value.view);
-    if (value.kind !== 'split') return null;
-    const dir = value.dir;
-    if (dir !== 'row' && dir !== 'col') return null;
-    const rawChildren = value.children;
-    const rawSizes = value.sizes;
-    if (!Array.isArray(rawChildren) || !Array.isArray(rawSizes)) return null;
-    const children: Layout[] = [];
-    for (const raw of rawChildren) {
-        const child = readArrangement(raw);
-        if (child === null) return null;
-        children.push(child);
-    }
-    const sizes: number[] = [];
-    for (const raw of rawSizes) {
-        if (typeof raw !== 'number' || !Number.isFinite(raw)) return null;
-        sizes.push(raw);
-    }
-    return { kind: 'split', dir, sizes, children };
-}
-
-/** A pane's tabs from its `view`, which is one view id or a list of them. */
-function readArrangementPane(view: unknown): Layout | null {
-    const names = typeof view === 'string' ? [view] : Array.isArray(view) ? view : null;
-    if (names === null || names.length === 0) return null;
-    const tabs: Instance[] = [];
-    for (const name of names) {
-        if (typeof name !== 'string' || name === '') return null;
-        tabs.push(newInstance(name));
-    }
-    return { kind: 'pane', tabs, active: tabs[0].id };
 }
