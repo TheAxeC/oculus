@@ -45,7 +45,10 @@ function json(status: number, body: unknown): Response {
     });
 }
 
-/** A non-empty string field of the body, or undefined for anything else (absent, empty, wrong type). */
+/**
+ * A non-empty string field of the body, or undefined for anything else (absent, empty, wrong type).
+ * Not data/guards' `str`: it takes the body and a key, and an empty string is not a value here.
+ */
 function str(body: Record<string, unknown>, key: string): string | undefined {
     const value = body[key];
     return typeof value === 'string' && value !== '' ? value : undefined;

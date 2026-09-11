@@ -14,8 +14,6 @@ import type {
     ValidationRules
 } from '../../src/lib/data/model.ts';
 
-const MANIFEST = '/hub/projects/active/alpha/project.yml';
-
 const RULES: ValidationRules = {
     schema: [
         'id',

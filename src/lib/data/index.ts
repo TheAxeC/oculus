@@ -6,6 +6,7 @@
 // what the socket carries; the caller owns the version number and increments it on every rebuild.
 
 import { join } from 'node:path';
+import { isMap } from './guards.ts';
 import { readManifests } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
 import { readCollections } from './sources/collections.ts';
@@ -27,10 +28,6 @@ import type {
     Snapshot,
     Vocabulary
 } from './model.ts';
-
-function isMap(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 function list(value: unknown): unknown[] {
     return Array.isArray(value) ? value : [];

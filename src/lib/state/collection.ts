@@ -101,7 +101,10 @@ export function kindOf(field: string, type: string): FieldKind {
     return 'text';
 }
 
-/** A value as one line of words, or undefined when it is a map and has no line to give. */
+/**
+ * A value as one line of words, or undefined when it is a map and has no line to give. Not
+ * data/guards' `text`: a number, a boolean and a list all have a line here, and only a map has none.
+ */
 function textOf(value: unknown): string | undefined {
     if (typeof value === 'string') return value;
     if (typeof value === 'number' || typeof value === 'boolean') return String(value);

@@ -36,7 +36,7 @@ async function start(): Promise<Running> {
 }
 
 /** Wait for one event of a WebSocket, whichever comes first of the two names. */
-function once(ws: WebSocket, name: 'open' | 'error'): Promise<Error | null> {
+function once(ws: WebSocket, _name: 'open' | 'error'): Promise<Error | null> {
     return new Promise((resolve) => {
         ws.once('open', () => resolve(null));
         ws.once('error', (error: Error) => resolve(error));

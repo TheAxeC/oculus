@@ -12,7 +12,6 @@ import {
     checkWorkbench,
     panes,
     parseLayout,
-    serialiseLayout,
     type Workbench
 } from '../../src/lib/state/layout.ts';
 import {

@@ -12,6 +12,8 @@
 
 import { chipKeys, chipLabel, domainLabel, domainTone, typeTone } from './tones.ts';
 import type { Id, Project, Snapshot, Tier, Venue } from '../data/model.ts';
+// `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
+import { isMap, strings, text as str } from '../data/guards.ts';
 
 /** The value a facet gives what has none: no year, no funding, no compute, no code deposit. */
 export const NONE = '__none__';
@@ -251,19 +253,6 @@ export function daysUntil(date: string, now: number): number | null {
     const at = midnight(date);
     if (Number.isNaN(at)) return null;
     return Math.round((at - today(now)) / DAY);
-}
-
-function isMap(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function str(value: unknown): string {
-    return typeof value === 'string' ? value : '';
-}
-
-function strings(value: unknown): string[] {
-    if (!Array.isArray(value)) return [];
-    return value.filter((item): item is string => typeof item === 'string');
 }
 
 /** A config label turned into an id: lower case, and every other run of characters a hyphen. */

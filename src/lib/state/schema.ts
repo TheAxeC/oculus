@@ -12,6 +12,7 @@
 // empty; the write itself handles them like any other, since it reads the manifest from disk.
 
 import type { Id, Project, Snapshot } from '../data/model.ts';
+import { isMap } from '../data/guards.ts';
 
 /** One field of the form, in the order config/manifest-schema.yml lists it. */
 export type FormField = {
@@ -53,10 +54,7 @@ export const NOT_IN_MODEL = [
     'paths'
 ];
 
-function isMap(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
+/** Not data/guards' `text`: an empty string is no label here, so it reads as undefined. */
 function text(value: unknown): string | undefined {
     return typeof value === 'string' && value !== '' ? value : undefined;
 }

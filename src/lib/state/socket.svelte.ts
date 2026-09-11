@@ -149,7 +149,10 @@ function open(): void {
     });
 }
 
-/** A map of strings out of a config key, or null when the key holds no map. */
+/**
+ * A map of strings out of a config key, or null when the key holds no map. Not data/guards'
+ * `strings`: it reads the string values of a map, not the string items of a list.
+ */
 function strings(raw: unknown): Record<string, string> | null {
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
     const map: Record<string, string> = {};

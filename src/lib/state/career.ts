@@ -6,6 +6,8 @@
 // label out of config/vocab.yml, and everything else the panel says is a key of config/text.yml.
 
 import type { Career, Host } from '../data/model.ts';
+// `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
+import { isMap, text as str } from '../data/guards.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the two model types
 // the career panel names reach it from here.
@@ -28,14 +30,6 @@ export type ScoreDim = {
     badge: string;
     label: string;
 };
-
-function isMap(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function str(value: unknown): string {
-    return typeof value === 'string' ? value : '';
-}
 
 /**
  * The host statuses of `career_host_status`, in the config's order, each hue already a tone. The

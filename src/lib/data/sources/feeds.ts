@@ -13,6 +13,9 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import type { Feeds, FeedFiles, Finding, Lead, RawFeeds } from '../model.ts';
+// `str` here is the shared `text`: this file's reading of a missing or mistyped value has always
+// been the empty string rather than undefined, and the alias keeps that reading at every call.
+import { isMap, text as str } from '../guards.ts';
 
 /** A lead is closed, and off the radar, once it has been applied to, declined or withdrawn. */
 const CLOSED = ['applied', 'declined', 'closed'];
@@ -25,14 +28,6 @@ const SCOUT_RUN = /^\s*(\d{4}-\d{2}-\d{2})\b.*?scout/i;
 
 /** A `date:` line of a LinkedIn post's front matter. */
 const FRONT_DATE = /^date:\s*["']?(\d{4}-\d{2}-\d{2})/m;
-
-function isMap(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function str(value: unknown): string {
-    return typeof value === 'string' ? value : '';
-}
 
 /** The `meta:` map of a feed file, and an empty map for a file that has none. */
 function metaOf(data: Record<string, unknown>): Record<string, unknown> {

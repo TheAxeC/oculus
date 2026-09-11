@@ -7,9 +7,10 @@
     //
     // It joins nothing and counts nothing itself: the projects come from the board selector already
     // joined, and the facets, the filters, the counts and the sentence cut are the pure functions of
-    // state/board.ts. The card is views/projects/Card.svelte, the strip views/projects/Stats.svelte
-    // and the new-idea form views/projects/NewIdea.svelte, which is the partials rule of DESIGN.md's
-    // boundary table: a view too large for one file is split into its own folder.
+    // state/board.ts. The strip is views/projects/Stats.svelte and the new-idea form
+    // views/projects/NewIdea.svelte, which is the partials rule of DESIGN.md's boundary table: a
+    // view too large for one file is split into its own folder. The card is
+    // views/shared/ProjectCard.svelte, since views/Project.svelte draws the same one.
 
     import Empty from '$lib/ui/Empty.svelte';
     import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
@@ -19,7 +20,7 @@
     import Table from '$lib/ui/Table.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import Card from './projects/Card.svelte';
+    import Card from './shared/ProjectCard.svelte';
     import NewIdea from './projects/NewIdea.svelte';
     import Stats from './projects/Stats.svelte';
     import {

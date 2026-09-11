@@ -9,6 +9,7 @@
 // through config/text.yml.
 
 import type { Snapshot } from '../data/model.ts';
+import { isMap } from '../data/guards.ts';
 import { daysUntil } from './board.ts';
 import { venueLoad } from './focus.ts';
 
@@ -35,10 +36,6 @@ export type RefreshItem = {
     feed: string;
     days: number | null;
 };
-
-function isMap(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /** A number out of the merged config, and the fallback when it holds none. */
 function setting(config: Record<string, unknown>, key: string, fallback: number): number {

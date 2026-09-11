@@ -12,7 +12,7 @@
 // So the tree is counted a second way, without the code under test: a plain recursive walk for the
 // manifests, yaml.parse for each registry's entry list, and the collections config for the rest.
 
-import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';

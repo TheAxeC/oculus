@@ -74,7 +74,10 @@ function project(): Record_ {
             { name: 'manuscript/main.pdf', present: true }
         ],
         folder: 'projects/manuscripts/alpha',
-        file: `${FOLDER}/project.yml`
+        file: `${FOLDER}/project.yml`,
+        // Nine days behind its documents, against the `stale_lag_days: 1` of config/behavior.yml,
+        // so the card the tab draws carries the stale badge.
+        staleDays: 9
     };
 }
 
@@ -133,6 +136,21 @@ describe('a project as its own tab', () => {
     it('offers the manifest editor and the deposit on the card', () => {
         expect(body).toContain(catalog['cards.edit_manifest']);
         expect(body).toContain(catalog['cards.deposit']);
+    });
+
+    // The three the tab lacked while its card was a copy of the board's: Q1 made the two one file,
+    // so the pin, the stale badge and the subtasks block reach the tab with it.
+    it('offers the pin control on the card', () => {
+        expect(body).toContain(catalog['cards.pin_to_top']);
+    });
+
+    it('marks the manifest as behind its documents', () => {
+        expect(body).toContain(catalog['cards.stale_behind'].replace('{0}', '9'));
+    });
+
+    it('draws the subtasks block', () => {
+        expect(body).toContain(catalog['actions.subtasks']);
+        expect(body).toContain(catalog['actions.add_subtask']);
     });
 
     it('offers the Markdown documents the project has, and no others', () => {

@@ -12,7 +12,7 @@
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import EntryForm from './EntryForm.svelte';
-    import Subtasks from './Subtasks.svelte';
+    import Subtasks from '../shared/Subtasks.svelte';
     import {
         crossLinks,
         drawnFields,
@@ -259,7 +259,7 @@
             {/if}
 
             {#if addressable}
-                <Subtasks {collection} id={entry.id} subtasks={lines} {onsaid} />
+                <Subtasks target={{ id: entry.id, collection }} subtasks={lines} {onsaid} />
             {/if}
 
             {#if editing}

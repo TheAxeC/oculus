@@ -38,6 +38,7 @@ import type {
     Tier,
     Venue
 } from './model.ts';
+import { isMap, str, strings } from './guards.ts';
 
 /**
  * Collection keys that name a registry the snapshot already carries; reading both would double it.
@@ -64,24 +65,9 @@ export const ENTITY_KINDS = [
     'collections'
 ];
 
-function isMap(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-/** A string value, or undefined when the key held anything else. */
-function str(value: unknown): string | undefined {
-    return typeof value === 'string' ? value : undefined;
-}
-
 /** A number value, or undefined. NaN and Infinity are not JSON-safe and are dropped with them. */
 function num(value: unknown): number | undefined {
     return typeof value === 'number' && Number.isFinite(value) ? value : undefined;
-}
-
-/** The strings of a list; a value that is not a list, and any element that is not a string, is not one. */
-function strings(value: unknown): string[] {
-    if (!Array.isArray(value)) return [];
-    return value.filter((item): item is string => typeof item === 'string');
 }
 
 /** Drop the keys whose value is undefined, so the object survives JSON round-tripping unchanged. */

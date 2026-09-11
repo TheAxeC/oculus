@@ -1,7 +1,12 @@
 <script lang="ts">
-    // Layer 3, view partial of views/Projects.svelte. The subtasks block of one card: the open
-    // count, one row per line with what it says and when it is due, the buttons that move it, and
-    // the one-line form that adds another.
+    // Layer 3, view partial under views/shared/. The subtasks block of one card: the open count, one
+    // row per line with what it says and when it is due, the buttons that move it, and the one-line
+    // form that adds another.
+    //
+    // Two views draw it: views/shared/ProjectCard.svelte, which hands it the `{ id }` of one
+    // manifest, and views/collection/EntryCard.svelte, which hands it the `{ id, collection }` of one
+    // entry of one collection. The host is the only difference between the two, so it is the prop,
+    // and `SubtaskTarget` is the write path's own type for it.
     //
     // Every button is one call of the write path (state/writes.svelte.ts) and nothing else: the
     // line the reader sees change is the watcher's next push of the portfolio, about a fifth of a
@@ -13,18 +18,23 @@
     import TextInput from '$lib/ui/TextInput.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { t } from '$lib/state/text';
-    import { addSubtask, writeSubtask, type SubtaskAction } from '$lib/state/writes.svelte';
-    import type { Subtask } from '$lib/state/selectors.svelte';
+    import {
+        addSubtask,
+        writeSubtask,
+        type SubtaskAction,
+        type SubtaskTarget
+    } from '$lib/state/writes.svelte';
+    import type { Subtask } from '$lib/state/collection';
 
     type Props = {
-        /** The project the lines hang under, by the id its manifest is found by. */
-        id: string;
+        /** What the lines hang under: one project by its id, or one entry of one collection. */
+        target: SubtaskTarget;
         subtasks: Subtask[];
         /** What a write answered, for the one outcome line the card holds. */
         onsaid: (said: string) => void;
     };
 
-    let { id, subtasks, onsaid }: Props = $props();
+    let { target, subtasks, onsaid }: Props = $props();
 
     /** True while the add form is open. */
     let adding = $state(false);
@@ -51,14 +61,14 @@
 
     /** One button: the action it names, on the line it sits in. */
     async function act(key: string, action: SubtaskAction, value?: string): Promise<void> {
-        said(await writeSubtask({ id }, key, action, value));
+        said(await writeSubtask(target, key, action, value));
     }
 
     /** The add form's save: one line, with the deadline when the form was given one. */
     async function add(): Promise<void> {
         if (text.trim() === '') return;
         const fields = due === '' ? { do: text.trim() } : { do: text.trim(), deadline: due };
-        const answer = await addSubtask({ id }, fields);
+        const answer = await addSubtask(target, fields);
         said(answer);
         if (answer.ok) {
             adding = false;

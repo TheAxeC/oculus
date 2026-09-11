@@ -4,35 +4,32 @@
     // its folder. One instance per project, and the project it is for is the `id` in its instance
     // state, exactly as the editor reads its own.
     //
-    // The card's snippets are copied from Projects.svelte rather than shared. The boundary table
-    // forbids a view importing another view, `ui/` is domain-blind and `state/` holds no markup, so
-    // there is nowhere the two could share them without widening a rule; the duplicated range is
-    // Projects.svelte lines 196 to 355 and this file's lines 141 to 282.
+    // The card is views/shared/ProjectCard.svelte, the one the board draws, with `deposit` on and no
+    // `ontoggle`: this tab's card is always open, so it carries the deposit control and no expand
+    // control. Everything else the card shows, the pin, the stale badge, the file finder and the
+    // subtasks among it, is the board's card unchanged.
     //
     // A document is fetched, not selected: the wire model keeps documents out of the snapshot, so
     // state/docs.svelte.ts asks api/docs for the chosen one and this renders what comes back. It is
     // rendered with {@html} unsanitised, because it is the owner's own Markdown from the owner's own
     // disk; api/docs says the same at greater length.
 
-    import Card from '$lib/ui/Card.svelte';
     import Chip from '$lib/ui/Chip.svelte';
     import Empty from '$lib/ui/Empty.svelte';
-    import Glyph from '$lib/ui/Glyph.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Segment, { type SegmentItem } from '$lib/ui/Segment.svelte';
-    import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { DEADLINE_SOON, daysUntil, type BoardItem } from '$lib/state/board';
+    import ProjectCard from './shared/ProjectCard.svelte';
+    import type { BoardItem } from '$lib/state/board';
     import { document as docFor } from '$lib/state/docs.svelte';
     import { modelShort, stamp } from '$lib/state/format';
-    import { openView } from '$lib/state/layout.svelte';
     import { select, selected } from '$lib/state/selection.svelte';
     import {
         boardItemOf,
         sessionsForProject,
+        staleLag,
         type GroupedSession
     } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
-    import { chipGlyph, chipLabel, statusTone } from '$lib/state/tones';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
 
@@ -46,6 +43,10 @@
     const names = $derived(item === null ? [] : item.project.docs.filter(markdown).map(nameOf));
     const chosen = $derived(pick(names, readDoc(instanceState(instance.id))));
     const shown = $derived(chosen === '' ? null : docFor(id, chosen));
+    const lag = $derived(staleLag());
+
+    /** What the card's last write answered, which is the one outcome line this tab holds. */
+    let said = $state('');
 
     /** Read once, so the stamps of one rendering all agree on what day it is. */
     const now = Date.now();
@@ -97,35 +98,6 @@
 
     const documents: SegmentItem[] = $derived(names.map((name) => ({ id: name, label: name })));
 
-    /** The deadline badge: the date once submitted, how overdue it is, or how long is left. */
-    function deadline(one: BoardItem): { label: string; tone?: string } | null {
-        const date = one.project.deadline;
-        if (date === undefined || date === '') return null;
-        const days = daysUntil(date, now);
-        if (days === null || one.chips.includes('submitted')) return { label: date };
-        if (days < 0) return { label: t('cards.overdue', -days), tone: 'red' };
-        if (days <= DEADLINE_SOON) return { label: t('cards.due_days', days), tone: 'amber' };
-        return { label: date };
-    }
-
-    /** Whether a card has a tag row at all: four lists, and a card with none skips the row. */
-    function tagged(one: BoardItem): boolean {
-        return (
-            one.funding.length +
-                one.programs.length +
-                one.datasets.length +
-                one.collaborators.length >
-            0
-        );
-    }
-
-    function codeLabel(value: string): string {
-        if (value === 'deposited') return t('board.code_deposited');
-        if (value === 'review-anon') return t('board.code_anon');
-        if (value === 'none') return t('board.code_pending');
-        return t('board.code_none');
-    }
-
     function title(): string {
         return item === null ? t('views.project') : item.project.title;
     }
@@ -137,154 +109,6 @@
         return entry.liveStatus ?? '';
     }
 </script>
-
-{#snippet tags(one: BoardItem)}
-    <div class="tags">
-        {#each one.funding as tag (tag.id)}
-            <Chip label={tag.label} glyph={t('cards.funding_glyph')} />
-        {/each}
-        {#each one.programs as tag (tag.id)}
-            <Chip label={tag.label} glyph={t('cards.program_glyph')} />
-        {/each}
-        {#each one.datasets as tag (tag.id)}
-            <Chip label={tag.label} glyph={t('cards.dataset_glyph')} />
-        {/each}
-        {#each one.collaborators as tag (tag.id)}
-            <Chip label={tag.label} glyph={t('cards.collaborator_glyph')} />
-        {/each}
-    </div>
-{/snippet}
-
-{#snippet field(name: string, value: string)}
-    <div class="field">
-        <span class="label">{name}</span>
-        <p class="value">{value}</p>
-    </div>
-{/snippet}
-
-{#snippet listField(name: string, values: string[])}
-    <div class="field">
-        <span class="label">{name}</span>
-        <ul class="value">
-            {#each values as value, at (`${at}:${value}`)}
-                <li>{value}</li>
-            {/each}
-        </ul>
-    </div>
-{/snippet}
-
-{#snippet more(one: BoardItem)}
-    <div class="more">
-        {#if one.project.statusLine}
-            <p class="statusline">{one.project.statusLine}</p>
-        {/if}
-        {#if one.project.latest}
-            {@render field(t('cards.latest'), one.project.latest)}
-        {/if}
-        {#if one.project.results.length > 0}
-            {@render listField(t('cards.results'), one.project.results)}
-        {/if}
-        {#if one.project.outcome}
-            {@render field(t('cards.outcome'), one.project.outcome)}
-        {/if}
-        {#if one.project.next}
-            {@render field(t('cards.next'), one.project.next)}
-        {/if}
-        {#if one.project.ideas.length > 0}
-            {@render listField(t('cards.ideas'), one.project.ideas)}
-        {/if}
-        {#if one.project.reproduced}
-            {@render field(
-                t('cards.reproduced'),
-                [one.project.reproduced.date, one.project.reproduced.note]
-                    .filter((part) => part !== undefined && part !== '')
-                    .join(' | ')
-            )}
-        {/if}
-        {#if one.project.docs.length > 0}
-            <div class="field">
-                <span class="label">{t('cards.documents')}</span>
-                <div class="docs">
-                    {#each one.project.docs as doc (doc.name)}
-                        <Chip label={doc.name} tone={doc.present ? 'green' : undefined} />
-                    {/each}
-                </div>
-            </div>
-        {/if}
-    </div>
-{/snippet}
-
-{#snippet cardFor(one: BoardItem)}
-    {@const due = deadline(one)}
-    <div class="slot">
-        <Card title={one.project.title} tone={one.tone} pinned={one.project.pin === true}>
-            {#snippet meta()}
-                {#if one.project.type}
-                    <Chip label={one.project.type} tone={one.tone} filled />
-                {/if}
-                {#if one.domain}
-                    <Chip label={one.domain.label} tone={one.domain.tone} />
-                {/if}
-                {#if due}
-                    <Chip label={due.label} tone={due.tone} glyph={t('cards.deadline_glyph')} />
-                {/if}
-                {#if one.project.pin === true}
-                    <Chip label={t('cards.pinned')} glyph={t('cards.pin_glyph')} />
-                {/if}
-                <ToolButton
-                    label={t('cards.edit_manifest')}
-                    glyph={t('cards.edit_glyph')}
-                    onclick={() => openView('editor', 'panel', { id: one.id })}
-                />
-                <ToolButton
-                    label={t('cards.deposit')}
-                    glyph={t('cards.deposit_glyph')}
-                    onclick={() => openView('deposit', 'panel', { id: one.id })}
-                />
-            {/snippet}
-
-            <div class="folder">{one.project.folder}</div>
-            <div class="row">
-                {#if one.project.focus}
-                    <Chip label={one.project.focus} />
-                {/if}
-                {#each one.chips as chip (chip)}
-                    <Chip label={chipLabel(chip)} icon={chipGlyph(chip)} tone={statusTone(chip)} />
-                {/each}
-                {#if one.code !== ''}
-                    <Chip label={codeLabel(one.code)} glyph={t('cards.code_glyph')} />
-                {/if}
-                {#if one.reproduced}
-                    <Chip label={t('board.repro_yes')} glyph={t('cards.repro_glyph')} />
-                {/if}
-                {#if one.compute === 'hpc'}
-                    <Chip label={t('cards.hpc_label')} glyph={t('cards.hpc_glyph')} />
-                {:else if one.compute === 'local'}
-                    <Chip label={t('cards.local_label')} />
-                {/if}
-                {#if one.venue}
-                    <span class="venue">{one.venue.text}</span>
-                {/if}
-                {#if one.authors !== ''}
-                    <span class="authors">
-                        <Glyph name={t('cards.author_glyph')} />
-                        {one.authors}
-                    </span>
-                {/if}
-            </div>
-            {#if tagged(one)}
-                {@render tags(one)}
-            {/if}
-            {#if one.project.eli5}
-                <div class="eli5">
-                    <span class="label">{t('cards.eli5')}</span>
-                    <p>{one.project.eli5}</p>
-                </div>
-            {/if}
-            {@render more(one)}
-        </Card>
-    </div>
-{/snippet}
 
 {#snippet sessionRow(entry: GroupedSession)}
     <div class="session" class:on={entry.id === selected()}>
@@ -318,7 +142,19 @@
         {:else if item === null}
             <Empty message={t('project.unknown', id)} glyph={t('project.none_glyph')} />
         {:else}
-            {@render cardFor(item)}
+            {#if said !== ''}
+                <p class="said">{said}</p>
+            {/if}
+            <ProjectCard
+                {item}
+                {now}
+                open
+                deposit
+                label={item.project.title}
+                tab={item.project.title}
+                staleLag={lag}
+                onsaid={(answer) => (said = answer)}
+            />
 
             <section class="block">
                 <h3 class="heading">{t('project.documents')}</h3>
@@ -375,78 +211,11 @@
         color: var(--accent-txt, var(--accent));
     }
 
+    .said,
     .failed {
         margin: 0;
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
-    }
-
-    /* The card, copied from the board so the tab opens with what the card said. */
-    .folder {
-        font-family: var(--font-mono);
-        font-size: var(--fs-xs);
-        color: var(--muted-txt, var(--muted));
-        word-break: break-all;
-    }
-
-    .row,
-    .tags,
-    .docs {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
-        margin-top: 6px;
-    }
-
-    .venue,
-    .authors {
-        display: inline-flex;
-        align-items: center;
-        gap: 4px;
-        font-size: var(--fs-sm);
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .eli5 {
-        margin-top: 8px;
-    }
-
-    .eli5 p {
-        margin: 2px 0 0;
-        font-size: var(--fs-sm);
-    }
-
-    .label {
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-        color: var(--accent-txt, var(--accent));
-    }
-
-    .more {
-        margin-top: 10px;
-        padding-top: 8px;
-        border-top: 1px solid var(--line);
-    }
-
-    .statusline {
-        margin: 0 0 6px;
-        font-size: var(--fs-sm);
-    }
-
-    .field {
-        margin-top: 6px;
-    }
-
-    .field .value {
-        margin: 2px 0 0;
-        font-size: var(--fs-sm);
-    }
-
-    ul.value {
-        padding-left: 18px;
     }
 
     /* The document. The Markdown reaches the DOM as HTML, so every rule below is :global. */

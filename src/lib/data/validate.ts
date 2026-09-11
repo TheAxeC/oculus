@@ -8,6 +8,7 @@
 // this module never opens a file, so it cannot know those on its own.
 
 import type { Finding, RawManifest, RawPortfolio, ValidationRules, Vocabulary } from './model.ts';
+import { isMap } from './guards.ts';
 import { collectionSchema } from './normalise.ts';
 
 /** Keys the reader itself adds to every manifest record; no schema names them. */
@@ -58,10 +59,6 @@ const SHAPES: { field: string; kind: 'string' | 'list'; nullable: boolean }[] = 
     { field: 'collaborators', kind: 'list', nullable: false },
     { field: 'funding', kind: 'list', nullable: true }
 ];
-
-function isMap(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 /** What a value is, in the words the shape messages use. */
 function shapeOf(value: unknown): string {

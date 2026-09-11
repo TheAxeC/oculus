@@ -14,6 +14,7 @@
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
 import { engineDir, loadConfig } from '../data/sources/config.ts';
+import { isMap } from '../data/guards.ts';
 import { readManifests } from '../data/sources/manifests.ts';
 import { sameOrigin } from './auth.ts';
 import { target } from './writes.ts';
@@ -83,10 +84,6 @@ const DEFAULT_CAP = 400;
 
 /** A listing is walked again whenever a card is opened, so nothing here is ever cached. */
 const CACHE = 'no-store';
-
-function isMap(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
 
 function json(status: number, body: unknown): Response {
     return new Response(JSON.stringify(body), {

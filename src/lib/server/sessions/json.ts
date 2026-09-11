@@ -50,9 +50,9 @@ export function writeJsonAtomic(path: string, payload: unknown): void {
     }
 }
 
-export function isMap(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
+// The one map guard, from data/guards.ts. It is re-exported under the name it has always had here,
+// so the seven session modules that read a transcript line through it are unchanged.
+export { isMap } from '../../data/guards.ts';
 
 /** A string value, or the empty string for anything else. */
 export function text(value: unknown): string {

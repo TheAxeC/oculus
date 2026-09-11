@@ -33,8 +33,7 @@
         sessionFor,
         touchers,
         type GitEntry,
-        type GitState,
-        type SessionFile
+        type GitState
     } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
     import { writeGit } from '$lib/state/writes.svelte';

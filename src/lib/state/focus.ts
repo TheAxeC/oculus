@@ -9,6 +9,9 @@
 // free of both.
 
 import type { Collection, Entry, Followup, Id, Project, Snapshot, Venue } from '../data/model.ts';
+// `str` here is the shared `text`: a config or entry value of the wrong type reads as the empty
+// string. The alias also keeps the name off the several `const text` locals in this file.
+import { isMap, text as str } from '../data/guards.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the three model types
 // the Focus view names reach it from here, beside the functions that take and return them.
@@ -185,14 +188,6 @@ export type Band = {
     applications: BandItem[];
     education: BandItem[];
 };
-
-function isMap(value: unknown): value is Record<string, unknown> {
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function str(value: unknown): string {
-    return typeof value === 'string' ? value : '';
-}
 
 function num(value: unknown): number {
     return typeof value === 'number' && Number.isFinite(value) ? value : 0;

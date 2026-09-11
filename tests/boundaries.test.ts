@@ -5,7 +5,7 @@
 
 import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, normalize, relative, resolve, sep } from 'node:path';
+import { dirname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
@@ -16,6 +16,14 @@ const LAYERS = ['data', 'server', 'state', 'ui', 'shell', 'views', 'themes'];
 // One entry per row of the table. A pattern ending in /** matches the folder and everything
 // under it; any other pattern matches exactly. The view registry is the one module the shell
 // and the views share, so a view can register itself without importing another view.
+//
+// `views/shared/**` is the row's other addition, of Q1: a block two views draw the same way lives
+// there once instead of twice, and only a view may import it. A file under `views/shared/` is in the
+// views layer itself, so the row binds it too and it may reach no other view's partials.
+//
+// `data/guards` joined `data/model` in the state row with Q1's one module for the four type guards
+// fifteen modules had each declared for themselves. It is the same kind of permission as the model:
+// pure, with no reader and no I/O in it.
 //
 // The shell's row names the state modules the workbench is made of, one at a time: `state/drag`
 // joined `state/layout` and `state/ui` with the docking of O10b, since the one drag in progress is
@@ -34,8 +42,8 @@ const ALLOWED: Record<string, string[]> = {
         'state/appearance',
         'views/registry'
     ],
-    views: ['ui/**', 'state/**', 'views/registry'],
-    state: ['state/**', 'data/model'],
+    views: ['ui/**', 'state/**', 'views/registry', 'views/shared/**'],
+    state: ['state/**', 'data/model', 'data/guards'],
     data: ['data/**'],
     server: ['server/**', 'data/**'],
     themes: ['themes/**']
@@ -134,13 +142,24 @@ describe('layer boundaries', () => {
         );
         write('ui/Card.svelte', '<span></span>');
         write('ui/Bad.svelte', "<script>\nimport Focus from '../views/Focus.svelte';\n</script>");
+        write(
+            'ui/Shared.svelte',
+            "<script>\nimport Sub from '../views/shared/Subtasks.svelte';\n</script>"
+        );
         write('shell/Bad.ts', "import { branch } from '$lib/server/git';");
+        write('shell/Shared.ts', "import Sub from '$lib/views/shared/Subtasks.svelte';");
         write('shell/Runes.ts', "import { portfolio } from '$lib/state/entities.svelte';");
         write('shell/Store.ts', "import { apply } from '$lib/state/layout.svelte';");
         write(
             'views/Focus.svelte',
-            "<script>\nimport Other from './Other.svelte';\nimport Cc from './focus/CommandCenter.svelte';\n</script>"
+            "<script>\nimport Other from './Other.svelte';\nimport Cc from './focus/CommandCenter.svelte';\nimport Sub from './shared/Subtasks.svelte';\n</script>"
         );
+        write('views/shared/Subtasks.svelte', '<span></span>');
+        write(
+            'views/shared/Card.svelte',
+            "<script>\nimport Bad from '../projects/Card.svelte';\n</script>"
+        );
+        write('views/projects/Card.svelte', '<span></span>');
         write(
             'views/Other.svelte',
             "<script>\nimport Cc from './focus/CommandCenter.svelte';\n</script>"
@@ -152,16 +171,20 @@ describe('layer boundaries', () => {
         write('views/focus/Row.svelte', '<span></span>');
         write('views/Projects.svelte', '<span></span>');
         write('state/bad.svelte.ts', "import { read } from '$lib/data/sources/config';");
+        write('state/good.ts', "import { isMap } from '$lib/data/guards';");
         write('server/git.ts', "import type { Project } from '../data/model.ts';");
 
         expect(findViolations(dir)).toEqual([
             'shell/Bad.ts imports server/git',
             'shell/Runes.ts imports state/entities.svelte',
+            'shell/Shared.ts imports views/shared/Subtasks.svelte',
             'state/bad.svelte.ts imports data/sources/config',
             'ui/Bad.svelte imports views/Focus.svelte',
+            'ui/Shared.svelte imports views/shared/Subtasks.svelte',
             'views/Focus.svelte imports views/Other.svelte',
             'views/Other.svelte imports views/focus/CommandCenter.svelte',
-            'views/focus/CommandCenter.svelte imports views/Projects.svelte'
+            'views/focus/CommandCenter.svelte imports views/Projects.svelte',
+            'views/shared/Card.svelte imports views/projects/Card.svelte'
         ]);
     });
 });

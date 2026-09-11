@@ -7,7 +7,7 @@
 // reaches the DOM through ui/Glyph.svelte and a legend icon through ui/Chip.svelte's `icon`, so
 // those two calls are the whole of it.
 
-import { glyphMode, setGlyphMode } from './glyphmode.svelte.ts';
+import { glyphMode } from './glyphmode.svelte.ts';
 
 export { setGlyphMode, type GlyphMode } from './glyphmode.svelte.ts';
 

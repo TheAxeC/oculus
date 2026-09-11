@@ -33,6 +33,8 @@ import {
 import { tmpdir } from 'node:os';
 import { basename, dirname, join } from 'node:path';
 import { readManifests } from '../data/sources/manifests.ts';
+// `textOf` here is the shared `text`: a value that is not a string reads as the empty string.
+import { text as textOf } from '../data/guards.ts';
 import {
     NETWORK_TIMEOUT_MS,
     addAll,
@@ -165,10 +167,6 @@ function settings(options: DepositOptions): { mirrors: string; into: WriteTarget
 function mapOf(value: unknown): Record<string, unknown> {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) return {};
     return value as Record<string, unknown>;
-}
-
-function textOf(value: unknown): string {
-    return typeof value === 'string' ? value : '';
 }
 
 /** The deposit of one project, or null when the hub holds no project with that id. */

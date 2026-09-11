@@ -15,6 +15,7 @@
 // endpoint without running git at all.
 
 import { engineDir, loadConfig, textCatalog } from '../data/sources/config.ts';
+import { strings } from '../data/guards.ts';
 import { hasToken, sameOrigin } from './auth.ts';
 import {
     allowedRoots,
@@ -72,12 +73,6 @@ function json(status: number, body: unknown): Response {
         status,
         headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }
     });
-}
-
-function strings(value: unknown): string[] {
-    return Array.isArray(value)
-        ? value.filter((one): one is string => typeof one === 'string')
-        : [];
 }
 
 function text(value: unknown): string {

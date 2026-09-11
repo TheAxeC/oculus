@@ -179,11 +179,13 @@ Svelte 5 state modules (`.svelte.ts`). `entities` holds the latest payload per c
 |---|---|---|
 | `ui/` | `ui/`, `themes/`, `state/text` | `state/*` otherwise, `views/`, `shell/`, `server/` |
 | `shell/` | `ui/`, `state/layout`, `state/drag`, `state/ui`, `state/text`, `state/appearance`, the view registry | any view by name, `server/` |
-| `views/` | `ui/`, `state/`, its own partials under `views/<name>/` | `shell/`, `server/`, other views and their partials |
-| `state/` | `data/model` | `server/`, anything in layer 3 |
+| `views/` | `ui/`, `state/`, `views/shared/`, its own partials under `views/<name>/` | `shell/`, `server/`, other views and their partials |
+| `state/` | `data/model`, `data/guards` | `server/`, anything in layer 3 |
 | `data/`, `server/` | `data/` | anything client-side |
 
 SvelteKit enforces the last row's server half by refusing client imports of `$lib/server`.
+
+A partial under `views/shared/` may import `ui/`, `state/` and `views/shared/`, and nothing under any other `views/<name>/`; nothing outside `views/` imports it. It is where a block two views draw the same way lives, the project card and the subtasks block being the two, so the alternative to a view importing another view's partial is one shared partial rather than a copy that falls behind.
 
 ## Layout as data
 

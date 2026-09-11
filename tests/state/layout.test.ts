@@ -34,7 +34,6 @@ import {
     splitWith,
     transfer,
     type Dock,
-    type Instance,
     type Layout,
     type Workbench
 } from '../../src/lib/state/layout.ts';
@@ -59,7 +58,6 @@ import {
     transferInstance,
     workbench
 } from '../../src/lib/state/layout.svelte.ts';
-import { parseArrangement } from '../../src/lib/state/arrangement.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
 import {

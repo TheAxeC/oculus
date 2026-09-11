@@ -1,8 +1,12 @@
 <script lang="ts">
-    // Layer 3, view partial of views/Projects.svelte. One project as the board draws it: the head
-    // with its badges and controls, the meta line, the tags, the eli5 and the first sentence of
-    // `next`, and, when it is open, the rest of the manifest, the documents, the file finder and
-    // the subtasks.
+    // Layer 3, view partial under views/shared/. One project as a card: the head with its badges and
+    // controls, the meta line, the tags, the eli5 and the first sentence of `next`, and, when it is
+    // open, the rest of the manifest, the documents, the file finder and the subtasks.
+    //
+    // Two views draw it: views/Projects.svelte, which draws one per project of the board and holds
+    // the expanded set for the whole board, and views/Project.svelte, whose tab is one project and
+    // draws it open, with no expand control and with the deposit control the board's card has no
+    // room for. Those two differences are the `ontoggle` and `deposit` props and nothing else.
     //
     // It joins nothing and counts nothing: the item arrives joined from state/board.ts, the file
     // rows come from state/files.svelte.ts when the card is opened, and every control is one call
@@ -50,12 +54,28 @@
         now: number;
         /** `stale_lag_days`: how far behind its documents a manifest may be before it is marked. */
         staleLag: number;
-        ontoggle: () => void;
+        /**
+         * What the expand control does. Absent on a card that is always open, which is the project
+         * tab's; the control is then not drawn at all rather than drawn doing nothing.
+         */
+        ontoggle?: () => void;
+        /** Whether the head carries the deposit control. The project tab's card does; the board's does not. */
+        deposit?: boolean;
         /** What a write answered, for the one outcome line the board holds. */
         onsaid: (said: string) => void;
     };
 
-    let { item, open, label, tab, now, staleLag, ontoggle, onsaid }: Props = $props();
+    let {
+        item,
+        open,
+        label,
+        tab,
+        now,
+        staleLag,
+        ontoggle,
+        deposit = false,
+        onsaid
+    }: Props = $props();
 
     /** The root api/file serves the hub under, which is where every file of a project sits. */
     const HUB = 'hub';
@@ -325,7 +345,7 @@
             </div>
         {/if}
         {@render finder()}
-        <Subtasks id={item.id} subtasks={item.project.subtasks} {onsaid} />
+        <Subtasks target={{ id: item.id }} subtasks={item.project.subtasks} {onsaid} />
     </div>
 {/snippet}
 
@@ -362,19 +382,29 @@
                 compact
                 onclick={pin}
             />
-            <ToolButton
-                label={t('cards.toggle_tip')}
-                glyph={open ? t('cards.collapse_glyph') : t('cards.expand_glyph')}
-                active={open}
-                compact
-                onclick={ontoggle}
-            />
+            {#if ontoggle}
+                <ToolButton
+                    label={t('cards.toggle_tip')}
+                    glyph={open ? t('cards.collapse_glyph') : t('cards.expand_glyph')}
+                    active={open}
+                    compact
+                    onclick={ontoggle}
+                />
+            {/if}
             <ToolButton
                 label={t('cards.edit_manifest')}
                 glyph={t('cards.edit_glyph')}
                 compact
                 onclick={() => openView('editor', 'panel', { id: item.id })}
             />
+            {#if deposit}
+                <ToolButton
+                    label={t('cards.deposit')}
+                    glyph={t('cards.deposit_glyph')}
+                    compact
+                    onclick={() => openView('deposit', 'panel', { id: item.id })}
+                />
+            {/if}
         {/snippet}
 
         <div class="folder">{item.project.folder}</div>

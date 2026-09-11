@@ -32,7 +32,7 @@
     import { configMap } from '$lib/state/selectors.svelte';
     import { portfolio } from '$lib/state/entities.svelte';
     import { t } from '$lib/state/text';
-    import { chipGlyph, chipLabel, statusTone } from '$lib/state/tones';
+    import { chipGlyph, chipLabel } from '$lib/state/tones';
     import { writeManifest } from '$lib/state/writes.svelte';
 
     type Props = {
