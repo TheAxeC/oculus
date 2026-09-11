@@ -316,6 +316,27 @@ describe('watchGit', () => {
         expect(state.branch).toBe('');
     });
 
+    it('watches nothing and logs nothing for a root that no longer exists', async () => {
+        // A session's workspace that was deleted after the session ran: the payload still names
+        // it, and the watcher used to log two ENOENT errors for it on every rescan.
+        const gone = join(dir, 'gone');
+        const quiet = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        try {
+            const hub = new Hub();
+            const client = recording();
+            hub.subscribe(client.sink, ['git']);
+            announce(hub, [gone]);
+            watchers.push(watchGit(hub));
+
+            await until(() => client.got.length >= 1, WAIT);
+            const state = latest(client.got)[gone];
+            expect(state.error).toBeTruthy();
+            expect(quiet).not.toHaveBeenCalled();
+        } finally {
+            quiet.mockRestore();
+        }
+    });
+
     it('reads nothing more once it is closed', async () => {
         const first = repository('one');
         const hub = new Hub();

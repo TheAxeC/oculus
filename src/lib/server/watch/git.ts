@@ -15,7 +15,7 @@
 // one of the ignored folders, and .git/objects is dropped with them: a pack being written is a
 // second event for the index change that is already coming.
 
-import { watch } from 'node:fs';
+import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { join } from 'node:path';
 import type { GitPayload, Message, SessionsPayload } from '../../data/model.ts';
@@ -132,6 +132,13 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
 
     const open = (root: string): void => {
         const opened: FSWatcher[] = [];
+        // A session's workspace that has since been deleted is still a root the payload names. There
+        // is nothing to watch and nothing to say about it: its state is the empty shape statusFor
+        // gives a directory that is not a repository, read once below, and no error is logged.
+        if (!existsSync(root)) {
+            handles.set(root, opened);
+            return;
+        }
         // The .git of a git worktree is a file, not a directory; fs.watch takes either. Its events
         // name a path inside .git, so the prefix is added back before the filter reads it, and the
         // one filter then covers both handles.
