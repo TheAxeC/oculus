@@ -9,6 +9,7 @@
 
     import Card from '$lib/ui/Card.svelte';
     import Chip from '$lib/ui/Chip.svelte';
+    import Confirm from '$lib/ui/Confirm.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Meter from '$lib/ui/Meter.svelte';
     import Pane from '$lib/ui/Pane.svelte';
@@ -81,6 +82,7 @@
 
     let form = $state('both');
     let query = $state('');
+    let asking = $state(false);
 
     const shown = $derived(
         rows.filter((row) => {
@@ -183,6 +185,21 @@
         <section>
             <h3>{t('gallery.table')}</h3>
             <Table {columns} rows={shown} rowKey="tone" {cell} sortable />
+        </section>
+
+        <section>
+            <h3>{t('gallery.confirm')}</h3>
+            <ToolButton label={t('gallery.confirm_open')} onclick={() => (asking = true)} />
+            {#if asking}
+                <Confirm
+                    message={t('gallery.confirm_message')}
+                    detail={t('gallery.confirm_detail')}
+                    confirm={t('ui.confirm_ok')}
+                    cancel={t('ui.confirm_cancel')}
+                    onconfirm={() => (asking = false)}
+                    oncancel={() => (asking = false)}
+                />
+            {/if}
         </section>
 
         <section>

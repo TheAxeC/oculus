@@ -11,7 +11,13 @@
 // event, it answers a payload with only the matching record changed, so the caller can push it
 // without waiting for the next debounced rescan. Nothing here runs a rescan or touches a file.
 
-import type { HookEvent, SessionRecord, SessionsPayload, Workspace } from '../../data/model.ts';
+import type {
+    GitPayload,
+    HookEvent,
+    SessionRecord,
+    SessionsPayload,
+    Workspace
+} from '../../data/model.ts';
 
 /** How long a hook keeps showing on its session before it is treated as if it never arrived. */
 export const HOOK_EXPIRY_MS = 24 * 60 * 60 * 1000;
@@ -120,6 +126,21 @@ export function bridgedRecord(session: string): SessionRecord | null {
     if (message === undefined) return null;
     const payload = message.payload as SessionsPayload;
     return payload.records.find((record) => record.id === session) ?? null;
+}
+
+/**
+ * The workspace roots the last published `git` payload names. They are what a git write may address:
+ * server/git-write.ts refuses any other root, so the panel can only ever act on a checkout the
+ * sessions views are already showing. An empty list is a process that has published nothing yet.
+ */
+export function bridgedGitRoots(): string[] {
+    const { hub } = bridge();
+    if (hub === null) return [];
+    const message = hub.latest('git');
+    if (message === undefined) return [];
+    const payload = message.payload;
+    if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return [];
+    return Object.keys(payload as GitPayload);
 }
 
 /** What routes/api/hook/+server.ts needs of the real Hub, without importing its class identity. */

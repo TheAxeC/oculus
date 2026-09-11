@@ -11,7 +11,7 @@ import type { ProjectFolder } from './src/lib/server/sessions/group.ts';
 import { bindHookHub } from './src/lib/server/sessions/hooks.ts';
 import { Terminals, bindTerminals } from './src/lib/server/pty/channel.ts';
 import { attachSocket } from './src/lib/server/socket.ts';
-import { watchGit } from './src/lib/server/watch/git.ts';
+import { bindGitWatcher, watchGit } from './src/lib/server/watch/git.ts';
 import { watchPortfolio } from './src/lib/server/watch/portfolio.ts';
 import { watchSessions } from './src/lib/server/watch/sessions.ts';
 
@@ -53,7 +53,9 @@ function oculusSocket(): Plugin {
             });
             // After the sessions watcher, so its subscription is answered with the first scan.
             const git = watchGit(hub);
+            bindGitWatcher(git);
             http.on('close', () => {
+                bindGitWatcher(null);
                 git.close();
                 sessions.close();
                 watcher.close();

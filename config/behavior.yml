@@ -91,3 +91,12 @@ notify:
   enabled: true
   events: [permission_prompt, idle_prompt, stop]
   quiet_seconds: 3
+
+
+# === The git panel ==========================================================
+# The suggested commit message of the Changes view: `claude -p` reads the staged diff and writes a
+# message in the hub's shape, which is the `git.message_prompt` of the text catalog. `message_model`
+# names the model to ask; empty means the CLI's own default. Nothing here commits anything: the
+# message lands in the box for Axel to edit, and the commit is a separate click behind a confirm.
+git:
+  message_model: ""

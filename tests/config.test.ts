@@ -205,7 +205,8 @@ describe("oculus's own config directory", () => {
             'file_index',
             'slurm',
             'chat',
-            'notify'
+            'notify',
+            'git'
         ],
         'glyphs.yml': ['glyphs', 'ascii'],
         'layout.yml': [

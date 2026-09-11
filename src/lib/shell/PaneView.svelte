@@ -14,6 +14,7 @@
     // makes the menu the keyboard path: the opener takes focus and Menu already handles arrows and
     // Escape.
 
+    import Confirm from '$lib/ui/Confirm.svelte';
     import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
     import Tabs, { type Tab } from '$lib/ui/Tabs.svelte';
     import {
@@ -101,6 +102,9 @@
             : null
     );
 
+    /** Whether the pane menu's close is waiting on the dialog. */
+    let closing = $state(false);
+
     const items = $derived<MenuItem[]>([
         { id: 'close', label: t('ui.pane_close') },
         maximised
@@ -157,7 +161,11 @@
 
     function pick(id: string): void {
         if (id === 'close') {
-            closePaneIn(target, path);
+            // Closing a pane closes every tab in it at once, and a tab holds a view's own state. One
+            // tab is the tab's own close control by another name, so it goes; more than one is asked
+            // about first.
+            if (tabs.length > 1) closing = true;
+            else closePaneIn(target, path);
             return;
         }
         if (id === 'maximise') {
@@ -198,6 +206,19 @@
         {/if}
     </div>
 </div>
+
+{#if closing}
+    <Confirm
+        message={t('ui.pane_close_confirm', tabs.length)}
+        confirm={t('ui.confirm_ok')}
+        cancel={t('ui.confirm_cancel')}
+        onconfirm={() => {
+            closing = false;
+            closePaneIn(target, path);
+        }}
+        oncancel={() => (closing = false)}
+    />
+{/if}
 
 {#snippet paneMenu()}
     <Menu

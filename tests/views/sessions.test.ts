@@ -169,7 +169,17 @@ receive({
             branch: 'main',
             ahead: 1,
             staged: [{ path: 'a/one.ts', status: 'M', added: 4, deleted: 2 }],
-            unstaged: [{ path: 'a/two.png', status: 'M', added: null, deleted: null }],
+            unstaged: [
+                { path: 'a/two.png', status: 'M', added: null, deleted: null },
+                // The same file the other live session is holding open, as git sees it: relative to
+                // the workspace root, which is what the "also open" mark has to match across.
+                {
+                    path: 'projects/manuscripts/alpha/manuscript/main.tex',
+                    status: 'M',
+                    added: 1,
+                    deleted: 0
+                }
+            ],
             untracked: [{ path: 'a/three.ts', status: '?', added: 0, deleted: 0 }]
         }),
         '/other': git({ error: 'not a git repository' })
@@ -363,6 +373,11 @@ describe('the timeline', () => {
     });
 });
 
+/** How many controls carry exactly these words, which is how many rows drew that control. */
+function count(body: string, label: string): number {
+    return [...body.matchAll(new RegExp(`>${label}<`, 'g'))].length;
+}
+
 describe('the changes view', () => {
     it('lists the files the session touched, relative to its workspace', () => {
         select('live-one');
@@ -398,6 +413,46 @@ describe('the changes view', () => {
         const body = html(Changes);
         expect(body).toContain(catalog['js.sessions.ch_norepo']);
         expect(body).toContain('title="not a git repository"');
+    });
+
+    it('draws a control on every row: unstage on a staged one, stage and discard on a changed one', () => {
+        select('live-one');
+        const body = html(Changes);
+        expect(body).toContain(catalog['git.unstage']);
+        expect(body).toContain(catalog['git.stage']);
+        expect(body).toContain(catalog['git.discard']);
+        // The reason a control gives is drawn as a Tooltip bubble rather than a title attribute.
+        expect(body).toContain(catalog['git.discard_title']);
+        // Three rows carry a stage (two changed, one untracked) and one carries the unstage.
+        expect(count(body, catalog['git.stage'])).toBe(3);
+        expect(count(body, catalog['git.unstage'])).toBe(1);
+        // An untracked row offers no discard, so only the two changed rows carry one.
+        expect(count(body, catalog['git.discard'])).toBe(2);
+    });
+
+    it('marks a git row another live session is holding open', () => {
+        select('live-one');
+        const body = html(Changes);
+        expect(body).toContain('projects/manuscripts/alpha/manuscript/main.tex');
+        const marks = [...body.matchAll(new RegExp(catalog['js.sessions.ch_shared'], 'g'))];
+        expect(marks.length).toBeGreaterThan(1);
+    });
+
+    it('disables the push button with its reason while the branch has no upstream', () => {
+        select('live-one');
+        const body = html(Changes);
+        expect(body).toContain(catalog['git.push']);
+        expect(body).toContain(catalog['git.push_none']);
+        expect(body).toContain('disabled');
+    });
+
+    it('draws the commit box with its suggest and commit controls', () => {
+        select('live-one');
+        const body = html(Changes);
+        expect(body).toContain(`aria-label="${catalog['git.commit_label']}"`);
+        expect(body).toContain(catalog['git.suggest']);
+        expect(body).toContain(catalog['git.commit']);
+        expect(body).toContain(catalog['git.branch_new']);
     });
 
     it('shows its empty state with nothing selected', () => {

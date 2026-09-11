@@ -21,9 +21,22 @@
         title?: string;
         /** One of an exclusive group: the button becomes a radio and reports this as its state. */
         checked?: boolean;
+        /**
+         * Shown and not pressable, for a control whose action is unavailable right now. The reason
+         * belongs in `title`: a button that cannot be pressed and does not say why is a dead end.
+         */
+        disabled?: boolean;
     };
 
-    let { label, glyph, active = false, onclick, title, checked }: Props = $props();
+    let {
+        label,
+        glyph,
+        active = false,
+        onclick,
+        title,
+        checked,
+        disabled = false
+    }: Props = $props();
 </script>
 
 <!-- A button of an exclusive group is a radio its group owns, and a radiogroup owns radios: a
@@ -35,6 +48,7 @@
         class:active
         role={checked === undefined ? undefined : 'radio'}
         aria-checked={checked}
+        {disabled}
         {onclick}
     >
         {#if glyph !== undefined}
@@ -60,8 +74,13 @@
         white-space: nowrap;
     }
 
-    .tool:hover {
+    .tool:hover:not(:disabled) {
         border-color: var(--accent);
+    }
+
+    .tool:disabled {
+        opacity: 0.5;
+        cursor: default;
     }
 
     .tool.active {

@@ -12,7 +12,7 @@ import type { ProjectFolder } from './lib/server/sessions/group.ts';
 import { bindHookHub } from './lib/server/sessions/hooks.ts';
 import { Terminals, bindTerminals } from './lib/server/pty/channel.ts';
 import { attachSocket } from './lib/server/socket.ts';
-import { watchGit } from './lib/server/watch/git.ts';
+import { bindGitWatcher, watchGit } from './lib/server/watch/git.ts';
 import { watchPortfolio } from './lib/server/watch/portfolio.ts';
 import { watchSessions } from './lib/server/watch/sessions.ts';
 
@@ -56,8 +56,12 @@ const sessions = watchSessions(hub, {
 });
 // Started after the sessions watcher, so its subscription is answered with the first scan at once.
 const git = watchGit(hub);
+// The git endpoint is in the built app's module graph, so the bridge is what lets a write re-read
+// its own root at once instead of waiting for the watcher's next event.
+bindGitWatcher(git);
 
 server.on('close', () => {
+    bindGitWatcher(null);
     git.close();
     sessions.close();
     portfolio.close();

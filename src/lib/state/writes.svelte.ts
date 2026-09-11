@@ -14,6 +14,8 @@ export type WriteAnswer = {
     refused: { field: string; reason: string }[];
     /** Set when the request itself was refused, rather than a field of it. */
     error?: string;
+    /** What the endpoint had to say: git's own output, or the suggested commit message. */
+    output?: string;
 };
 
 const state: { pending: number; error: string | null } = $state({ pending: 0, error: null });
@@ -43,8 +45,8 @@ export function lastError(): string | null {
     return state.error;
 }
 
-async function post(body: unknown): Promise<Response> {
-    return fetch('/api/write', {
+async function post(body: unknown, path = '/api/write'): Promise<Response> {
+    return fetch(path, {
         method: 'POST',
         headers: { 'content-type': 'application/json', 'x-oculus-token': token },
         body: JSON.stringify(body)
@@ -82,18 +84,35 @@ export async function writeSession(id: string, fields: SessionFields): Promise<W
     return send({ kind: 'session', id, ...fields });
 }
 
+/** The endpoint of the git panel: one action on one workspace, behind the same token. */
+export const GIT_PATH = '/api/git';
+
+/**
+ * One git action on one workspace: staging, a commit, a push, a branch, or the suggested message.
+ * The endpoint is /api/git rather than /api/write, and the answer's `output` is what git said or the
+ * message that was suggested; everything else, the token and the one retry above all, is the same.
+ * An action that can lose work carries `confirm: true`, which the panel sets only from its dialog.
+ */
+export async function writeGit(
+    action: string,
+    root: string,
+    fields: Record<string, unknown> = {}
+): Promise<WriteAnswer> {
+    return send({ action, root, ...fields }, GIT_PATH);
+}
+
 /** One write, with the one retry a stale token gets. */
-async function send(request: unknown): Promise<WriteAnswer> {
+async function send(request: unknown, path = '/api/write'): Promise<WriteAnswer> {
     state.pending += 1;
     state.error = null;
     try {
-        let response = await post(request);
+        let response = await post(request, path);
         if (response.status === 403) {
             // The import is here rather than at the top so nothing but a stale token pulls Kit's
             // navigation module in, and a server-rendered page never touches it.
             const { invalidateAll } = await import('$app/navigation');
             await invalidateAll();
-            response = await post(request);
+            response = await post(request, path);
         }
         const body = (await response.json()) as Partial<WriteAnswer>;
         if (!response.ok) {
@@ -104,7 +123,8 @@ async function send(request: unknown): Promise<WriteAnswer> {
         return {
             ok: true,
             changed: Array.isArray(body.changed) ? body.changed : [],
-            refused: Array.isArray(body.refused) ? body.refused : []
+            refused: Array.isArray(body.refused) ? body.refused : [],
+            output: typeof body.output === 'string' ? body.output : undefined
         };
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);

@@ -14,6 +14,7 @@ import type { Component } from 'svelte';
 import Card from '../../src/lib/ui/Card.svelte';
 import Composer from '../../src/lib/ui/Composer.svelte';
 import Chip from '../../src/lib/ui/Chip.svelte';
+import Confirm from '../../src/lib/ui/Confirm.svelte';
 import Empty from '../../src/lib/ui/Empty.svelte';
 import Meter from '../../src/lib/ui/Meter.svelte';
 import Pane from '../../src/lib/ui/Pane.svelte';
@@ -336,6 +337,38 @@ describe('the gallery', () => {
     it('fills its table from the chip vocabulary', () => {
         expect([...body.matchAll(/<tbody/g)]).toHaveLength(1);
         expect([...body.matchAll(/<tr/g)].length).toBeGreaterThan(4);
+    });
+});
+
+describe('Confirm', () => {
+    const props = {
+        message: 'Throw the change away?',
+        detail: 'There is no undo.',
+        confirm: 'Confirm',
+        cancel: 'Cancel',
+        onconfirm: () => undefined,
+        oncancel: () => undefined
+    };
+
+    it('draws its message, its detail and both controls', () => {
+        const body = html(Confirm, props);
+        expect(body).toContain('Throw the change away?');
+        expect(body).toContain('There is no undo.');
+        expect(body).toContain('>Confirm<');
+        expect(body).toContain('>Cancel<');
+    });
+
+    it('reports itself as a modal dialog named by its message', () => {
+        const body = html(Confirm, props);
+        expect(body).toContain('role="alertdialog"');
+        expect(body).toContain('aria-modal="true"');
+        expect(body).toContain('aria-label="Throw the change away?"');
+    });
+
+    it('leaves the detail line out when there is none', () => {
+        const body = html(Confirm, { ...props, detail: '' });
+        expect(body).not.toContain('There is no undo.');
+        expect(body).toContain('Throw the change away?');
     });
 });
 
