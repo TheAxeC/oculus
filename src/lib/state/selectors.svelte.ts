@@ -75,6 +75,23 @@ export function folderOf(project: Project): string {
 }
 
 /**
+ * The hub's own absolute path, or the empty string before the first snapshot. A project carries its
+ * manifest's absolute path and its folder relative to the hub, so the root is the one less the
+ * other and no channel has to carry it. O18 offers it as a place to start a terminal in.
+ */
+export function hubRoot(): string {
+    const snapshot = portfolio();
+    if (snapshot === null) return '';
+    for (const project of Object.values(snapshot.entities.projects)) {
+        if (project.folder === '') continue;
+        const folder = folderOf(project);
+        const suffix = `/${project.folder}`;
+        if (folder.endsWith(suffix)) return folder.slice(0, -suffix.length);
+    }
+    return '';
+}
+
+/**
  * What the sessions facet says about one project: a session running in its folder now, a session in
  * the payload's two-day window with none running, or none at all. Every session the payload holds is
  * inside that window, which is why there is nothing to compare a date against here.

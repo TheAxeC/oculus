@@ -73,6 +73,7 @@ text:
     split_right: "Split tab to the right"
     split_down: "Split tab downwards"
     drag_hint: "Moving {0}"
+    confirm_stop: "Confirm"    # the second press of a two-press control: the one that actually acts.
 
   views:                       # oculus's views: one label per registered view, and the glyph name it is drawn with.
     status: "Status"

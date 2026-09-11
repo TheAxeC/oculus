@@ -103,6 +103,10 @@ glyphs:
   sent: "📨"
   writing: "✍"
   x_mark: "✗"
+  # the three things a terminal pane runs (oculus O18); each character is already in `ascii:` above.
+  terminal_claude: "✦"
+  terminal_codex: "◇"
+  terminal_shell: "▶"
   # circled section numbers (inbox)
 
 

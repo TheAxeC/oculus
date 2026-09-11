@@ -9,6 +9,12 @@
 // whose own instance state pins a session (`{ session: <id> }`) reads that instead and stops
 // following, which is how two detail views show two sessions side by side.
 
+// A terminal selects the same way (O18). O17 puts a record per terminal in the `sessions` payload,
+// and a terminal's id cannot collide with a session's, so one store holds both and the two readers
+// below are the whole of the difference.
+
+import { isTerminalId } from './terminals.svelte.ts';
+
 const store: { id: string | null } = $state({ id: null });
 
 /** Make one session the current one. An empty id and null both mean none. */
@@ -30,4 +36,15 @@ export function pinnedSession(state: unknown): string | null {
     if (typeof state !== 'object' || state === null || Array.isArray(state)) return null;
     const held = (state as Record<string, unknown>).session;
     return typeof held === 'string' && held !== '' ? held : null;
+}
+
+/** The current selection when it names a terminal, and null when it names a session or nothing. */
+export function selectedTerminal(): string | null {
+    return isTerminalId(store.id) ? store.id : null;
+}
+
+/** The terminal a view instance pinned, out of the same `session` field pinnedSession reads. */
+export function pinnedTerminal(state: unknown): string | null {
+    const held = pinnedSession(state);
+    return isTerminalId(held) ? held : null;
 }

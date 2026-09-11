@@ -261,6 +261,7 @@ Each step names what "done" means. Nothing visual before step 3.
 - 2026-09-10, sessions are six views, not one.
 - 2026-09-10, the cockpit is frozen; B ports rather than being rebuilt.
 - 2026-09-09, tmux is the session backend (installed, 3.7c); migration of a running session is explicit and per session.
+- 2026-09-11, the pty bridge is tmux control mode and no native pty module: a terminal is a tmux session `oculus-<id>`, and the server holds one `tmux -C attach-session` client per attached terminal, since tmux streams `%output` only for the panes of the session a control client is attached to (measured on 2026-09-11; a single client per server, the earlier assumption, left a second terminal silent). Terminal input and resizes are accepted only on a socket whose subscription carried the write token.
 - 2026-09-10, O1: `local.yml` carries `hub` (the research hub's absolute path, default two directories above `tools/oculus`) and `port` (default 8790; 8787 is the cockpit and is never used). The verification commands are `npm test`, `npm run check`, `npm run build`. The text catalog reaches the browser as the page's data at first load and afterwards by push over the socket like every other YAML (O6's watcher covers `config/` as well as the hub); the browser never fetches the YAML as a file. Until O6 exists, the server reads the catalog per request, so a browser reload shows an edit.
 
 ## Still undecided, and not needed yet

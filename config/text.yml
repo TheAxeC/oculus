@@ -804,6 +804,23 @@ text:
     rename_glyph: "check"
     write_saved: "saved"
     write_failed: "not saved"
+    # oculus, O18: the terminal view over xterm.js, the composer under it, and the terminals in the rail.
+    terminals: "Terminals"
+    no_terminal: "No terminal is selected. Start one, or pick one in the rail."
+    start_terminal: "Start a terminal"
+    kind_claude: "Claude"
+    kind_codex: "Codex"
+    kind_shell: "Shell"
+    kind_claude_glyph: "terminal_claude"
+    kind_codex_glyph: "terminal_codex"
+    kind_shell_glyph: "terminal_shell"
+    cwd: "Directory to start in"
+    cwd_empty: "The research hub"
+    compose: "Write to this terminal"
+    send: "Send"
+    route_to: "Send to another terminal instead"
+    stop_terminal: "Stop this terminal"
+    confirm_stop: "Stopping ends the tmux session and everything running in it"
 
   config:                      # Config tab (render/surfaces.py config_tab_html) - the split config, raw-YAML editable.
     intro: "The cockpit config, split across these files and merged by <code>load_config()</code>. Edit any file as raw YAML (served mode) - the build and <code>--selftest</code> validate it on save. The <b>+ status</b> button (top bar) is the one-click shortcut for adding a status colour."

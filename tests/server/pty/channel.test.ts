@@ -135,7 +135,9 @@ describe('a page attached to a terminal', () => {
         await settle();
         expect(page.messages).toHaveLength(1);
         expect(page.messages[0].channel).toBe(CHANNEL);
-        expect(decode(page.messages[0])).toBe(SCREEN);
+        // capture-pane separates rows with a bare newline; the scrollback goes out with CR LF so
+        // the rows do not step across the grid.
+        expect(decode(page.messages[0])).toBe(SCREEN.replace('\n', '\r\n'));
         expect(record.calls[record.calls.length - 1]).toEqual([
             'capture-pane',
             '-p',

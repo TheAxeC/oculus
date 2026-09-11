@@ -9,9 +9,15 @@
         oninput: (value: string) => void;
         /** How tall it opens. It grows no further on its own; the box scrolls. */
         rows?: number;
+        /**
+         * A key pressed in the box, for a caller where a key means something other than a character:
+         * the composer sends on Enter and recalls what it sent on the up arrow. The caller decides
+         * whether the key still types, since only it knows.
+         */
+        onkeydown?: (event: KeyboardEvent) => void;
     };
 
-    let { value, label, oninput, rows = 3 }: Props = $props();
+    let { value, label, oninput, rows = 3, onkeydown }: Props = $props();
 
     function typed(event: Event): void {
         const field = event.currentTarget;
@@ -19,7 +25,7 @@
     }
 </script>
 
-<textarea class="area" {rows} aria-label={label} oninput={typed}>{value}</textarea>
+<textarea class="area" {rows} aria-label={label} oninput={typed} {onkeydown}>{value}</textarea>
 
 <style>
     .area {

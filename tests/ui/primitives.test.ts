@@ -12,6 +12,7 @@ import { render } from 'svelte/server';
 import { createRawSnippet } from 'svelte';
 import type { Component } from 'svelte';
 import Card from '../../src/lib/ui/Card.svelte';
+import Composer from '../../src/lib/ui/Composer.svelte';
 import Chip from '../../src/lib/ui/Chip.svelte';
 import Empty from '../../src/lib/ui/Empty.svelte';
 import Meter from '../../src/lib/ui/Meter.svelte';
@@ -335,5 +336,32 @@ describe('the gallery', () => {
     it('fills its table from the chip vocabulary', () => {
         expect([...body.matchAll(/<tbody/g)]).toHaveLength(1);
         expect([...body.matchAll(/<tr/g)].length).toBeGreaterThan(4);
+    });
+});
+
+describe('Composer', () => {
+    it('draws the box and the send control with the words it was given', () => {
+        const body = html(Composer, {
+            label: 'Write to this terminal',
+            send: 'Send',
+            onsend: () => undefined
+        });
+        expect(body).toContain('aria-label="Write to this terminal"');
+        expect(body).toContain('Send');
+    });
+
+    it('offers the routes it was given and none when there are none', () => {
+        const routed = html(Composer, {
+            label: 'Write',
+            send: 'Send',
+            onsend: () => undefined,
+            routes: [{ id: 'a1b2c3-shell', label: 'a shell' }],
+            routeLabel: 'Send to another terminal instead',
+            onroute: () => undefined
+        });
+        expect(routed).toContain('Send to another terminal instead');
+
+        const alone = html(Composer, { label: 'Write', send: 'Send', onsend: () => undefined });
+        expect(alone).not.toContain('Send to another terminal instead');
     });
 });

@@ -7,10 +7,10 @@
 // the token reads every channel and writes to none. That is DESIGN.md's "The socket accepts nothing
 // from the page except subscriptions and, later, terminal input", made concrete.
 //
-// The control client is opened when the first terminal is attached and closed when nothing has been
-// attached for a minute, so a machine with no terminal open runs no tmux child. While it is open,
-// tmux's own `%session-changed` and its relatives say when the terminal list moved; while it is
-// closed, a `list-sessions` every five seconds does.
+// A control client is opened per attached terminal and closed a minute after nothing is attached
+// to that terminal, so a machine with no terminal open runs no tmux child. While one is open,
+// tmux's own `%session-changed` and its relatives say when the terminal list moved; while none is,
+// a `list-sessions` every five seconds does.
 
 import type {
     Message,
@@ -29,8 +29,7 @@ import {
     resizeArgs,
     sendKeysArgs,
     sessionName,
-    SCROLLBACK_LINES,
-    terminalId
+    SCROLLBACK_LINES
 } from './sessions.ts';
 import {
     control,
@@ -49,9 +48,6 @@ export const IDLE_MS = 60000;
 
 /** Milliseconds between two `list-sessions` calls while no control client is open. */
 export const POLL_MS = 5000;
-
-/** How many unrouted output chunks are held while the pane map is re-read. */
-const PENDING_LIMIT = 64;
 
 /** The tmux notifications that mean the terminal list or the pane map moved. */
 const CHANGE_EVENTS = new Set([
@@ -143,16 +139,20 @@ export type TerminalDriver = {
     close(): void;
 };
 
-/** The control client, its pane map, and the restart of both. */
+/**
+ * One control client per attached terminal, each restarted on its own when it exits and closed a
+ * minute after its terminal has no page on it. tmux sends `%output` for the panes of the session a
+ * control client is attached to and for no other (measured 2026-09-11 with two sessions on a
+ * private server: a client attached to one saw nothing typed into the other), so one client for
+ * every attached terminal is what makes every attached terminal stream. A client's output belongs
+ * to its own terminal, so nothing here maps pane ids to sessions.
+ */
 export function tmuxDriver(options: TmuxOptions = {}): TerminalDriver {
-    let client: ControlClient | null = null;
-    let ids: string[] = [];
+    const clients = new Map<string, ControlClient>();
+    const restarts = new Map<string, ReturnType<typeof setTimeout>>();
+    const idles = new Map<string, ReturnType<typeof setTimeout>>();
+    let ids = new Set<string>();
     let closed = false;
-    let panes = new Map<string, string>();
-    let pending: Array<[string, Buffer]> = [];
-    let restart: ReturnType<typeof setTimeout> | null = null;
-    let idle: ReturnType<typeof setTimeout> | null = null;
-    let reading = false;
     let outputs: (id: string, bytes: Buffer) => void = () => {};
     let changed: () => void = () => {};
 
@@ -160,68 +160,44 @@ export function tmuxDriver(options: TmuxOptions = {}): TerminalDriver {
         if (typeof timer === 'object' && typeof timer.unref === 'function') timer.unref();
     };
 
-    const deliver = (pane: string, bytes: Buffer): boolean => {
-        const session = panes.get(pane);
-        if (session === undefined) return false;
-        const id = terminalId(session);
-        if (id === null) return true;
-        outputs(id, bytes);
-        return true;
+    const forget = (timers: Map<string, ReturnType<typeof setTimeout>>, id: string): void => {
+        const timer = timers.get(id);
+        if (timer === undefined) return;
+        clearTimeout(timer);
+        timers.delete(id);
     };
 
-    const readPanes = (): void => {
-        if (reading || closed) return;
-        reading = true;
-        void run(['list-panes', '-a', '-F', '#{pane_id}\t#{session_name}'], options)
-            .then((text) => {
-                const found = new Map<string, string>();
-                for (const line of text.split('\n')) {
-                    if (line === '') continue;
-                    const [pane, session] = line.split('\t');
-                    if (pane !== undefined && session !== undefined) found.set(pane, session);
-                }
-                panes = found;
-                const held = pending;
-                pending = [];
-                for (const [pane, bytes] of held) deliver(pane, bytes);
-            })
-            .catch(() => {
-                pending = [];
-            })
-            .finally(() => {
-                reading = false;
-            });
-    };
-
-    const open = (): void => {
-        if (closed || client !== null || ids.length === 0) return;
-        client = control(
-            sessionName(ids[0]),
+    const open = (id: string): void => {
+        if (closed || clients.has(id) || !ids.has(id)) return;
+        const client = control(
+            sessionName(id),
             {
-                output: (pane, bytes) => {
-                    if (deliver(pane, bytes)) return;
-                    if (pending.length < PENDING_LIMIT) pending.push([pane, bytes]);
-                    readPanes();
-                },
+                output: (_pane, bytes) => outputs(id, bytes),
                 event: (event) => {
-                    if (!CHANGE_EVENTS.has(event.name)) return;
-                    readPanes();
-                    changed();
+                    if (CHANGE_EVENTS.has(event.name)) changed();
                 },
                 exit: () => {
-                    client = null;
-                    if (closed || ids.length === 0) return;
-                    if (restart !== null) clearTimeout(restart);
-                    restart = setTimeout(() => {
-                        restart = null;
-                        open();
+                    if (clients.get(id) === client) clients.delete(id);
+                    if (closed || !ids.has(id)) return;
+                    forget(restarts, id);
+                    const timer = setTimeout(() => {
+                        restarts.delete(id);
+                        open(id);
                     }, RESTART_MS);
-                    unref(restart);
+                    unref(timer);
+                    restarts.set(id, timer);
                 }
             },
             options
         );
-        readPanes();
+        clients.set(id, client);
+    };
+
+    const drop = (id: string): void => {
+        forget(restarts, id);
+        forget(idles, id);
+        clients.get(id)?.close();
+        clients.delete(id);
     };
 
     return {
@@ -233,36 +209,30 @@ export function tmuxDriver(options: TmuxOptions = {}): TerminalDriver {
             changed = listener;
         },
         attached(next: string[]): void {
-            ids = [...next];
-            if (idle !== null) {
-                clearTimeout(idle);
-                idle = null;
+            ids = new Set(next);
+            for (const id of ids) {
+                forget(idles, id);
+                if (!clients.has(id)) open(id);
             }
-            if (ids.length > 0) {
-                if (client === null) open();
-                else readPanes();
-                return;
+            for (const id of clients.keys()) {
+                if (ids.has(id) || idles.has(id)) continue;
+                const timer = setTimeout(() => {
+                    idles.delete(id);
+                    if (!ids.has(id)) drop(id);
+                }, IDLE_MS);
+                unref(timer);
+                idles.set(id, timer);
             }
-            idle = setTimeout(() => {
-                idle = null;
-                if (ids.length > 0) return;
-                client?.close();
-                client = null;
-            }, IDLE_MS);
-            unref(idle);
         },
         live(): boolean {
-            return client !== null && client.live();
+            for (const client of clients.values()) if (client.live()) return true;
+            return false;
         },
         close(): void {
             closed = true;
-            if (restart !== null) clearTimeout(restart);
-            restart = null;
-            if (idle !== null) clearTimeout(idle);
-            idle = null;
-            client?.close();
-            client = null;
-            pending = [];
+            for (const id of [...clients.keys()]) drop(id);
+            for (const id of [...restarts.keys()]) forget(restarts, id);
+            for (const id of [...idles.keys()]) forget(idles, id);
         }
     };
 }
@@ -289,6 +259,8 @@ export class Terminals {
     #attached = new Map<string, Set<Sink>>();
     #held = new Map<Sink, Set<string>>();
     #writable = new WeakSet<Sink>();
+    /** The tail of each terminal's command chain, so its keystrokes reach tmux in order. */
+    #queue = new Map<string, Promise<void>>();
     #terminals: Terminal[] = [];
     #signature = '';
     #listeners = new Set<() => void>();
@@ -360,8 +332,15 @@ export class Terminals {
             return true;
         }
         if (this.#attached.get(id)?.has(sink) !== true) return true;
-        if (message.type === 'input') void this.#input(id, message.bytes);
-        else void this.#resize(id, message.cols, message.rows);
+        // One terminal's commands run one after another: each keystroke is its own message and its
+        // own tmux process, and two started at once can finish in either order, which typed "ceho"
+        // for "echo" in the first Chrome check.
+        const work =
+            message.type === 'input'
+                ? () => this.#input(id, message.bytes)
+                : () => this.#resize(id, message.cols, message.rows);
+        const after = (this.#queue.get(id) ?? Promise.resolve()).then(work, work);
+        this.#queue.set(id, after);
         return true;
     }
 
@@ -376,6 +355,7 @@ export class Terminals {
             sinks.delete(sink);
             if (sinks.size === 0) {
                 this.#attached.delete(id);
+                this.#queue.delete(id);
                 this.#hub.merge(ptyChannel(id), null);
             }
         }
@@ -424,11 +404,15 @@ export class Terminals {
             console.error(`pty: no scrollback for ${id}: ${reason(error)}`);
         }
         if (!this.#attached.get(id)?.has(sink)) return;
+        // capture-pane writes one line per row with a bare newline between them; a terminal moves
+        // down without returning to the left on a bare newline, so the rows would step across the
+        // grid (seen in Chrome as a staircase). Every line break goes out as CR LF.
+        const screen = text.replace(/\r?\n/g, '\r\n');
         const message = {
             channel: ptyChannel(id),
             // The scrollback is not a chunk, so it carries no chunk number; the chunks count from 1.
             version: 0,
-            payload: { bytes: Buffer.from(text, 'utf8').toString('base64') }
+            payload: { bytes: Buffer.from(screen, 'utf8').toString('base64') }
         };
         try {
             await sink.send(JSON.stringify(message));

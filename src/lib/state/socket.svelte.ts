@@ -24,6 +24,12 @@ const socket: { status: Status } = $state({ status: 'closed' });
 
 let live: WebSocket | null = null;
 let channels: string[] = [];
+/**
+ * The listeners of a channel, by channel name. A channel that has one is handed every message and
+ * nothing of it is stored: entities.receive keeps one message per channel, the latest, and on a
+ * `pty:` channel that rule would drop the chunk before the one that arrived (O18).
+ */
+const listeners = new Map<string, Set<(message: Message) => void>>();
 /** Whether connect() is in force; a close reconnects only while it is. */
 let wanted = false;
 let backoff = FIRST;
@@ -66,6 +72,50 @@ export function disconnect(): void {
 // socket carried it, and a socket without it reads every channel and writes to none (O17).
 function subscription(): Subscription {
     return { type: 'subscribe', channels, token: writeToken() };
+}
+
+/**
+ * Write one message on the open socket: the terminal input and resize of O17, and nothing else the
+ * server accepts from a page. False when there is no open socket, which a caller shows rather than
+ * queueing: keystrokes held through a reconnect would be typed into whatever the pane shows by then.
+ */
+export function send(message: unknown): boolean {
+    if (live === null || live.readyState !== WebSocket.OPEN) return false;
+    live.send(JSON.stringify(message));
+    return true;
+}
+
+/**
+ * Add channels to the subscription. The server takes a second subscribe message as more channels on
+ * the same sink, and the list is remembered so a reconnect asks for them again.
+ */
+export function subscribe(names: string[]): void {
+    const added = names.filter((name) => !channels.includes(name));
+    if (added.length === 0) return;
+    channels = [...channels, ...added];
+    send(subscription());
+}
+
+/**
+ * Take channels out of the subscription. There is no unsubscribe message on the wire, so the server
+ * keeps sending on an open socket until it closes; what this stops is the next reconnect asking for
+ * them, and with the listener gone the messages that still arrive are dropped.
+ */
+export function unsubscribe(names: string[]): void {
+    channels = channels.filter((name) => !names.includes(name));
+}
+
+/** Hand every message on a channel to a listener. The call it returns takes the listener off. */
+export function listen(channel: string, fn: (message: Message) => void): () => void {
+    const held = listeners.get(channel) ?? new Set<(message: Message) => void>();
+    held.add(fn);
+    listeners.set(channel, held);
+    return () => {
+        const set = listeners.get(channel);
+        if (set === undefined) return;
+        set.delete(fn);
+        if (set.size === 0) listeners.delete(channel);
+    };
 }
 
 function open(): void {
@@ -119,6 +169,11 @@ function handle(data: string): void {
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return;
     const message = parsed as Message;
     if (typeof message.channel !== 'string' || typeof message.version !== 'number') return;
+    const heard = listeners.get(message.channel);
+    if (heard !== undefined && heard.size > 0) {
+        for (const fn of [...heard]) fn(message);
+        return;
+    }
     receive(message);
     if (message.channel === 'config') {
         const payload = message.payload as ConfigPayload | null;

@@ -26,6 +26,12 @@
     } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
+    import {
+        stopTerminal,
+        terminals,
+        type Terminal,
+        type TerminalKind
+    } from '$lib/state/terminals.svelte';
     import { writeSession } from '$lib/state/writes.svelte';
     import type { ViewProps } from '$lib/views/registry';
 
@@ -41,8 +47,14 @@
      */
     let flipped: Record<string, boolean> = $state({});
 
-    /** What the last dismissal failed with, or the empty string when none did. */
+    /** What the last dismissal or stop failed with, or the empty string when none did. */
     let failure = $state('');
+
+    /**
+     * The terminal whose stop control is armed, or the empty string when none is. Stopping ends the
+     * tmux session and everything in it, so the control asks once before it acts.
+     */
+    let arming = $state('');
 
     /** Read once, so the stamps of one rendering all agree on what day it is. */
     const now = Date.now();
@@ -53,6 +65,7 @@
     const dismissed = $derived(rows.filter((row) => hidden(row)).length);
     const endedCount = $derived(rows.filter((row) => !row.live && !hidden(row)).length);
     const live = $derived(prune(tree, (row) => row.live));
+    const panes = $derived(terminals());
     const ended = $derived(prune(tree, (row) => !row.live && (opened.dismissed || !hidden(row))));
 
     function readState(saved: unknown): ListState {
@@ -123,6 +136,31 @@
         const text = String(event.text ?? '');
         const at = text.lastIndexOf('/');
         return at < 0 ? text : text.slice(at + 1);
+    }
+
+    /** The glyph a terminal's kind is drawn with. One call per kind, so every key is a literal. */
+    function kindGlyph(kind: TerminalKind): string {
+        if (kind === 'claude') return t('sessions.kind_claude_glyph');
+        if (kind === 'codex') return t('sessions.kind_codex_glyph');
+        return t('sessions.kind_shell_glyph');
+    }
+
+    /** The last segment of a path, which is what a terminal's row has room for. */
+    function basename(path: string): string {
+        const at = path.lastIndexOf('/');
+        return at < 0 ? path : path.slice(at + 1);
+    }
+
+    /** Stop one terminal, once the control has been armed. */
+    async function stop(entry: Terminal): Promise<void> {
+        if (arming !== entry.id) {
+            arming = entry.id;
+            return;
+        }
+        arming = '';
+        failure = '';
+        const answer = await stopTerminal(entry.id);
+        if (!answer.ok) failure = answer.error;
     }
 
     /** Dismiss a row, or bring it back. The rail moves on the click; the write follows it. */
@@ -215,6 +253,41 @@
     </div>
 {/snippet}
 
+{#snippet terminalRow(entry: Terminal)}
+    <div class="row" class:on={entry.id === selected()}>
+        <button
+            type="button"
+            class="pick"
+            title={t('sessions.select_tip')}
+            onclick={() => select(entry.id)}
+        >
+            <span class="top">
+                <Glyph name={kindGlyph(entry.kind)} />
+                <Chip label={entry.kind} />
+                <span class="nm">{entry.name}</span>
+            </span>
+            <span class="meta">
+                <span class="act">{basename(entry.cwd)}</span>
+                <span class="sep">{t('js.sessions.meta_sep')}</span>
+                <span class="ts">{stamp(entry.created, now)}</span>
+            </span>
+        </button>
+        <button
+            type="button"
+            class="hide"
+            title={arming === entry.id ? t('sessions.confirm_stop') : t('sessions.stop_terminal')}
+            aria-label={arming === entry.id ? t('ui.confirm_stop') : t('sessions.stop_terminal')}
+            onclick={() => void stop(entry)}
+        >
+            {#if arming === entry.id}
+                <span class="confirm">{t('ui.confirm_stop')}</span>
+            {:else}
+                <Glyph name={t('sessions.dismiss_glyph')} />
+            {/if}
+        </button>
+    </div>
+{/snippet}
+
 {#snippet workspaceOf(workspace: Workspace)}
     <div class="ws">
         <div class="ws-h">
@@ -225,6 +298,22 @@
             {@render areaOf(area)}
         {/each}
     </div>
+{/snippet}
+
+{#snippet terminalSection()}
+    {#if panes.length > 0}
+        <div class="ws">
+            <div class="ws-h">
+                <span class="nm">{t('sessions.terminals')}</span>
+                <span class="n">{panes.length}</span>
+            </div>
+            <div class="area">
+                {#each panes as pane (pane.id)}
+                    {@render terminalRow(pane)}
+                {/each}
+            </div>
+        </div>
+    {/if}
 {/snippet}
 
 {#snippet tools()}
@@ -246,12 +335,13 @@
         {#if failure !== ''}
             <p class="failure">{failure}</p>
         {/if}
-        {#if rows.length === 0}
+        {#if rows.length === 0 && panes.length === 0}
             <Empty message={t('js.sessions.state_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}
             {#each live as workspace (workspace.key)}
                 {@render workspaceOf(workspace)}
             {/each}
+            {@render terminalSection()}
             {#if ended.length > 0}
                 <div class="ended" class:open={opened.ended}>
                     <button
@@ -319,6 +409,12 @@
     .area {
         margin-top: 6px;
         padding-left: 6px;
+    }
+
+    .hide .confirm {
+        font-size: var(--fs-xxs);
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
     }
 
     .area-h .unknown {

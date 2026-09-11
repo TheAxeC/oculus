@@ -432,10 +432,17 @@ describe('the agents view', () => {
     });
 });
 
-describe('the terminal placeholder', () => {
-    it('says the terminal arrives with a later step', () => {
+describe('the terminal view with nothing selected', () => {
+    it('offers the three kinds, a directory and the control that starts one', () => {
+        select(null);
         const body = html(Terminal);
-        expect(body).toContain(catalog['sessions.centre_pending']);
+        expect(body).toContain(catalog['sessions.no_terminal']);
+        expect(body).toContain(catalog['sessions.start_terminal']);
+        expect(body).toContain(catalog['sessions.kind_claude']);
+        expect(body).toContain(catalog['sessions.kind_codex']);
+        expect(body).toContain(catalog['sessions.kind_shell']);
+        expect(body).toContain(catalog['sessions.cwd']);
+        expect(body).toContain(catalog['sessions.cwd_empty']);
     });
 });
 
@@ -504,5 +511,51 @@ describe('a hook event on a session', () => {
         expect(body).toContain(
             catalog['js.sessions.stopped_at'].replace('{0}', clock(stopped.hook?.at))
         );
+    });
+});
+
+// O18's terminals, which reach the page in the same payload the sessions do. What this does NOT
+// cover: xterm.js itself, which needs a DOM that `svelte/server` does not give it, so the grid here
+// is the mount point the browser fills and the assertions stop at it.
+describe('a terminal in the payload', () => {
+    const pane = {
+        id: 'a1b2c3-shell',
+        name: 'a1b2c3-shell',
+        kind: 'shell' as const,
+        cwd: `${ALPHA}/code`,
+        command: 'zsh',
+        pid: 991,
+        created: '2026-09-11T08:00:00.000Z',
+        attached: true
+    };
+
+    /** A fresh version each call, and the tree put back after, as the hook cases do above. */
+    let version = 200;
+
+    function withTerminals<T>(run: () => T): T {
+        const whole = { ...payload(tree), terminals: [pane] };
+        receive({ channel: 'sessions', version: (version += 1), payload: whole });
+        const result = run();
+        receive({ channel: 'sessions', version: (version += 1), payload: payload(tree) });
+        return result;
+    }
+
+    it('draws the mount point and the composer when it is the selection', () => {
+        const body = withTerminals(() => {
+            select(pane.id);
+            return html(Terminal);
+        });
+        expect(body).toContain(`data-terminal="${pane.id}"`);
+        expect(body).toContain(catalog['sessions.send']);
+        expect(body).toContain(catalog['sessions.compose']);
+        select(null);
+    });
+
+    it('lists it under the terminals heading, with its directory and a stop control', () => {
+        const body = withTerminals(() => html(SessionList));
+        expect(body).toContain(catalog['sessions.terminals']);
+        expect(body).toContain(pane.name);
+        expect(body).toContain('code');
+        expect(body).toContain(catalog['sessions.stop_terminal']);
     });
 });
