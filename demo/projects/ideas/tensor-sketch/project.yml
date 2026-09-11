@@ -1,0 +1,18 @@
+id: tensor-sketch
+type: idea
+short: Tensor-Sketch
+title: Sketched tensor decompositions for streaming data
+lead: A. Example
+authors: [A. Example]
+focus: holding
+status:
+  chips: [exploring]
+  line: New idea - scope + novelty check open.
+domain: method
+program: [tensors]
+related: [streaming-anomaly]
+eli5: Can we recover a big tensor's decomposition from a small random sketch, updated online as data streams in?
+next: Scope the idea; run a novelty check against streaming-PARAFAC work.
+ideas:
+  - A count-sketch per mode, decomposed in sketch space.
+  - Error bounds as a function of sketch size vs rank.

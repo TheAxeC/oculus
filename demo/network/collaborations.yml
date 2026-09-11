@@ -1,0 +1,34 @@
+# Collaborations - people/groups you work with (FAKE example data). A project's `collaborators:` / `waiting-on:`
+# keys aggregate onto these cards. Edit in served mode on the Collaborations tab.
+title: Collaborations
+intro: "Active and exploratory collaborations. A project lists a `collaborators:` key and it aggregates here; `waiting-on:` marks who a project is blocked on."
+schema:
+  - { field: key,    type: text,     help: "short slug referenced by a project's collaborators: / waiting-on:" }
+  - { field: title,  type: text,     required: true }
+  - { field: sub,    type: text,     label: "Subtitle" }
+  - { field: status, type: select,   options: [exploring, active, completed], required: true }
+  - { field: meta,   type: metalist }
+  - { field: tags,   type: tags }
+  - { field: note,   type: textarea }
+  - { field: deadline, type: date }
+  - { field: followup, type: text, help: "a standing reminder -> the Follow-ups group" }
+
+entries:
+  - key: rivera-lab
+    title: "Rivera Lab (Northwood University)"
+    sub: "Streaming systems group - the anomaly-detection benchmark"
+    status: active
+    meta:
+      - { label: PI, value: "Dr. A. Rivera" }
+      - { label: Since, value: "2025" }
+    tags: [streaming, systems]
+    note: "Co-supervises the streaming-anomaly project; shared benchmark harness."
+
+  - key: chen-graph
+    title: "Chen (Meridian Institute)"
+    sub: "Graph learning - transfer + bandits line"
+    status: exploring
+    meta:
+      - { label: Topic, value: "graph transfer" }
+    tags: [graphs, exploratory]
+    note: "Early conversations about a joint workshop paper."

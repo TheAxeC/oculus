@@ -355,11 +355,12 @@
         if (target === undefined) return;
         const answer = await run(target, action);
         if (answer === null) return;
-        onsaid(
-            answer.ok
-                ? t('editor.saved', answer.changed.join(', '))
-                : t('editor.failed', answer.error ?? '')
-        );
+        // A write refused whole answers ok with nothing changed and the refusals filled, which the
+        // line reports as not saved rather than as saved over an untouched file.
+        const refused = answer.refused.map((one) => one.reason).join(', ');
+        if (!answer.ok) onsaid(t('editor.failed', answer.error ?? ''));
+        else if (answer.changed.length === 0 && refused !== '') onsaid(t('editor.failed', refused));
+        else onsaid(t('editor.saved', answer.changed.join(', ')));
     }
 </script>
 

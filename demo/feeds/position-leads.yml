@@ -1,0 +1,37 @@
+# Position Leads (FAKE example data) - academic openings, auto-scouted, rendered as cards on the Position Leads
+# tab. fit = strong | moderate | reach. applied/declined/past-deadline leads tuck into the Expired disclosure.
+meta:
+  log:
+    - "2026-06-20 scout: 3 new openings (2 tenure-track, 1 postdoc)"
+    - "2026-06-13 scout: 1 new opening"
+
+entries:
+  - title: "Assistant Professor, Machine Learning"
+    inst: "Northwood University"
+    country: "US"
+    typ: "tenure-track"
+    focus: "ML systems / streaming"
+    fit: strong
+    status: open
+    deadline: "2026-09-15"
+    url: "https://example.org/jobs/northwood-ml"
+
+  - title: "Lecturer in Data Science"
+    inst: "Coastal University"
+    country: "UK"
+    typ: "permanent"
+    focus: "graph learning, representation learning"
+    fit: moderate
+    status: open
+    deadline: "2026-08-30"
+    url: "https://example.org/jobs/coastal-ds"
+
+  - title: "Postdoc, Robust ML"
+    inst: "Meridian Institute"
+    country: "NL"
+    typ: "postdoc"
+    focus: "robustness, distribution shift"
+    fit: reach
+    status: applied
+    deadline: "2026-05-01"
+    url: "https://example.org/jobs/meridian-postdoc"

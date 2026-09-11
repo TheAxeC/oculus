@@ -27,7 +27,13 @@ export default ts.config(
             'build/**',
             'node_modules/**',
             'eslint.config.js',
-            'vite.config.ts'
+            'vite.config.ts',
+            // Beside vite.config.ts for the same two reasons: it is build configuration rather than
+            // application code, and the generated .svelte-kit/tsconfig.json includes src/ and
+            // tests/ and the root vite config and nothing else, so a type-aware rule over a root
+            // file the project service does not hold is a parse error rather than a lint result.
+            // The specs under tests/browser/ are linted by the tests/**/*.ts glob below.
+            'playwright.config.ts'
         ]
     },
     {

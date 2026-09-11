@@ -1,0 +1,16 @@
+# Teaching & service -> the Education tab.
+title: Education & Service
+schema:
+  - { field: title,  type: text,   required: true }
+  - { field: sub,    type: text }
+  - { field: status, type: select, options: [ongoing, done] }
+  - { field: date,   type: text }
+entries:
+  - title: Machine Learning (MSc)
+    sub: Lecturer | 2x
+    status: ongoing
+    date: 2025-
+  - title: 'Supervised: MSc thesis on graph transfer'
+    sub: Daily supervisor
+    status: done
+    date: '2025'

@@ -1,0 +1,38 @@
+# Lit Watch radar (FAKE example data) - new-paper radar per active/manuscript project, classified into buckets
+# (pre-emption / cite-baseline / adjacent) plus cross-pollination idea sparks. Populated by /research-cockpit litwatch.
+meta:
+  last_run: 2026-06-27
+  note: "Example sweep - a couple of fake radar hits so the Lit Watch tab renders."
+
+entries:
+  - title: "Fast streaming anomaly detection with adaptive thresholds"
+    authors: "L. Park et al."
+    venue: "KDD"
+    year: 2026
+    url: "https://example.org/streaming-ad"
+    bucket: cite_baseline
+    project: streaming-anomaly
+    relevance: high
+    why: "A strong recent baseline to cite and compare against - similar setting, different thresholding."
+
+  - title: "Certified robustness for sentence embeddings under covariate shift"
+    authors: "M. Osei et al."
+    venue: "ICLR"
+    year: 2026
+    url: "https://example.org/robust-embed"
+    bucket: preemption
+    project: robust-embeddings
+    relevance: high
+    threatens: "the robustness guarantee angle - check the overlap before submitting"
+
+  - title: "Optimal transport for graph domain adaptation"
+    authors: "R. Silva et al."
+    venue: "NeurIPS"
+    year: 2025
+    url: "https://example.org/ot-graph"
+    bucket: idea
+    project: graph-transfer
+    relevance: med
+    idea_spark: "OT alignment could transfer to the streaming setting - a possible cross-domain spark."
+    maps_to: new-idea-candidate
+    motif: "OT alignment"

@@ -1,0 +1,26 @@
+id: graph-transfer
+type: active
+short: Graph-Transfer
+title: Transfer learning across graph domains
+lead: A. Example
+authors: [A. Example, B. Coauthor]
+focus: push
+status:
+  chips: [submit-ready]
+  line: Draft complete, internal review done; ready to submit.
+domain: graphs
+program: [graphs]
+funding: [ecf]
+datasets: [synthgraph]
+related: [graph-bandits, robust-embeddings]
+venue_id: kdd
+deadline: "2026-09-10"
+eli5: Reuse what a model learned on one graph to warm-start it on a different, related graph.
+results:
+  - +6.3 F1 over training-from-scratch on the small target graph (synthgraph transfer split).
+next: Fill the author block and submit to KDD.
+code_availability:
+  status: review-anon
+  repo: graph-transfer
+  description: "Cross-domain graph transfer learning: an anonymized code drop for double-blind review; the public deposit goes up on acceptance."
+  topics: [graph-neural-networks, transfer-learning, domain-adaptation]

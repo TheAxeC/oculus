@@ -1,0 +1,15 @@
+# Research programs (lines of work) -> the Programs tab. Membership is computed from each manifest's `program:`.
+schema:
+  - { field: key,   type: text, required: true }
+  - { field: title, type: text, required: true }
+  - { field: goal,  type: text }
+entries:
+  - key: tensors
+    title: Structured tensor methods
+    goal: Compact, interpretable models from tensor structure.
+  - key: graphs
+    title: Graph learning
+    goal: Learning and decision-making on evolving graphs.
+  - key: repr
+    title: Representation learning
+    goal: Representations that survive distribution shift.

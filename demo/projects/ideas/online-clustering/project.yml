@@ -1,0 +1,15 @@
+id: online-clustering
+type: idea
+short: Online-Cluster
+title: Drift-aware clustering for non-stationary streams
+lead: A. Example
+authors: [A. Example]
+focus: scope
+status:
+  chips: [exploring]
+  line: Early exploration - a promising angle, no experiments yet.
+domain: method
+program: [graphs]
+related: [streaming-anomaly]
+eli5: Keep cluster assignments sensible when the data distribution keeps moving under you.
+next: Prototype on a synthetic drifting-Gaussian stream.

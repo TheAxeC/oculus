@@ -50,18 +50,22 @@
     }
 
     /**
-     * A follow-up is written as the manifest's `followup:`, a deadline as its `deadline:`. Both are
-     * one field of one manifest, so both are one writeManifest call.
+     * A follow-up is written as the manifest's `followup.do`, the field config/manifest-schema.yml
+     * names (a bare `followup:` note in the file is expanded to the map by the editor), a deadline
+     * as its `deadline:`. Both are one field of one manifest, so both are one writeManifest call.
+     *
+     * A write the server refused whole answers ok with nothing changed and the refusals filled, so
+     * the outcome line reads the refusals rather than saying "saved" over an untouched file.
      */
     async function save(): Promise<void> {
         if (field === null || project === '' || value.trim() === '') return;
-        const answer = await writeManifest(project, { [field]: value.trim() });
-        onsaid(
-            answer.ok
-                ? t('editor.saved', answer.changed.join(', '))
-                : t('editor.failed', answer.error ?? '')
-        );
-        if (answer.ok) close();
+        const key = field === 'followup' ? 'followup.do' : field;
+        const answer = await writeManifest(project, { [key]: value.trim() });
+        const refused = answer.refused.map((one) => one.reason).join(', ');
+        if (!answer.ok) onsaid(t('editor.failed', answer.error ?? ''));
+        else if (answer.changed.length === 0 && refused !== '') onsaid(t('editor.failed', refused));
+        else onsaid(t('editor.saved', answer.changed.join(', ')));
+        if (answer.ok && answer.changed.length > 0) close();
     }
 </script>
 

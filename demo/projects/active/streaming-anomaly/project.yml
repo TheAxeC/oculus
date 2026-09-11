@@ -1,0 +1,19 @@
+id: streaming-anomaly
+type: active
+short: Stream-Anomaly
+title: Low-rank streaming anomaly detection
+lead: A. Example
+authors: [A. Example]
+focus: revise
+status:
+  chips: [numbers-pending]
+  line: Reviewer comments in hand; revising the experiments.
+domain: method
+program: [tensors]
+datasets: [stream-bench]
+related: [tensor-sketch, online-clustering]
+deadline: "2026-08-15"
+eli5: Flag anomalies in a fast data stream by tracking a low-rank model of "normal" and watching the residual.
+results:
+  - Detection AUROC 0.88 at a fixed 1% false-positive rate (stream-bench).
+next: Add the drift-robustness experiment the reviewers asked for; re-run timing.

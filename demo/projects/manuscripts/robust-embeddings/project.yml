@@ -1,0 +1,27 @@
+id: robust-embeddings
+type: manuscript
+short: Robust-Emb
+title: Robust representation learning under distribution shift
+lead: A. Example
+authors: [A. Example]
+focus: review
+status:
+  chips: [submitted]
+  line: 8 pp, submitted to JMLR; awaiting decision.
+venue_id: jmlr
+year: 2026
+domain: nlp
+program: [repr]
+funding: [ecf]
+datasets: [toy-embed]
+related: [graph-transfer, sparse-attention]
+eli5: Embeddings that stay useful when the test data drifts away from training.
+results:
+  - AUROC 0.91 held under a 20% covariate shift (0.74 for the ERM baseline).
+code_availability:
+  status: deposited
+  date: "2026-05-20"
+  repo: robust-embeddings
+  url: https://example.org/robust-embeddings
+  description: "Robust sentence embeddings under distribution shift: a contrastive objective with a spectral regularizer, plus an evaluation suite across six shift types. Reproducible from raw inputs with one command."
+  topics: [embeddings, robustness, distribution-shift, contrastive-learning, representation-learning, reproducible]

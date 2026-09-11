@@ -1,0 +1,17 @@
+# Job applications -> the Applications tab.
+title: Applications
+schema:
+  - { field: title,  type: text,   required: true }
+  - { field: sub,    type: text }
+  - { field: status, type: select, options: [in-prep, applied, rejected, declined, withdrawn] }
+  - { field: date,   type: text }
+  - { field: url,    type: text }
+entries:
+  - title: Assistant Professor, ML
+    sub: Example University
+    status: applied
+    date: 2026-02
+  - title: Postdoc, graph learning
+    sub: Research Institute
+    status: declined
+    date: 2025-11

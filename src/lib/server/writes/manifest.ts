@@ -130,12 +130,29 @@ export function writeManifest(
     }
 
     const named = new Set(fieldNames(config.schema));
+    // The parents of the dotted names, `followup` for `followup.do` and `followup.after`: a group
+    // the schema names by its children may be cleared whole by its parent name, since the file may
+    // hold it as a bare note, a map or a list and clearing one child of a note is not a write the
+    // editor can make. A value for the parent is still refused: only its children take one.
+    const groups = new Set(
+        [...named].filter((one) => one.includes('.')).map((one) => one.slice(0, one.indexOf('.')))
+    );
     const types = fieldTypes(config.schema);
     const refused: Refusal[] = [];
     const wanted: Record<string, unknown> = {};
     for (const [field, raw] of Object.entries(fields)) {
         if (!named.has(field)) {
-            refused.push({ field, reason: 'the manifest schema does not name the field' });
+            const clearing = raw === null || raw === undefined || raw === '';
+            if (groups.has(field) && clearing) {
+                wanted[field] = null;
+                continue;
+            }
+            refused.push({
+                field,
+                reason: groups.has(field)
+                    ? 'the field is a group; set its children, or clear it whole'
+                    : 'the manifest schema does not name the field'
+            });
             continue;
         }
         const out = coerce(types[field] ?? 'text', raw, currentOf(manifest, field));

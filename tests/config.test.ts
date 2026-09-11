@@ -104,6 +104,39 @@ describe('loadLocal', () => {
         writeLocal(dir, 'sessions_cache: 17\n');
         expect(() => loadLocal(dir)).toThrow(/sessions_cache must be a path/);
     });
+
+    describe('OCULUS_LOCAL', () => {
+        afterEach(() => {
+            delete process.env.OCULUS_LOCAL;
+        });
+
+        it('is read instead of the engine local.yml', () => {
+            const dir = scratch();
+            writeLocal(dir, 'hub: /srv/from-the-engine\nport: 8791\n');
+            const elsewhere = scratch();
+            const named = join(elsewhere, 'named.yml');
+            expect(resolve(named).startsWith(resolve(elsewhere) + sep)).toBe(true);
+            writeFileSync(named, 'hub: /srv/from-the-override\nport: 8792\n');
+            process.env.OCULUS_LOCAL = named;
+            expect(loadLocal(dir)).toEqual({ hub: '/srv/from-the-override', port: 8792 });
+        });
+
+        it('resolves a relative hub against the named file own folder', () => {
+            const dir = scratch();
+            const elsewhere = scratch();
+            const named = join(elsewhere, 'named.yml');
+            expect(resolve(named).startsWith(resolve(elsewhere) + sep)).toBe(true);
+            writeFileSync(named, 'hub: demo\n');
+            process.env.OCULUS_LOCAL = named;
+            expect(loadLocal(dir).hub).toBe(join(elsewhere, 'demo'));
+        });
+
+        it('throws when the named file is not there', () => {
+            const dir = scratch();
+            process.env.OCULUS_LOCAL = join(dir, 'absent.yml');
+            expect(() => loadLocal(dir)).toThrow(/does not exist/);
+        });
+    });
 });
 
 describe('loadConfig', () => {

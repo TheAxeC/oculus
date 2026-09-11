@@ -1,0 +1,27 @@
+# Dataset registry -> the Data tab. Projects point at these by `datasets:`; `used_by` cross-links back.
+schema:
+  - { field: key,    type: text, required: true }
+  - { field: name,   type: text, required: true }
+  - { field: access, type: select, options: [open, registration, credentialed, private] }
+datasets:
+  - key: synthgraph
+    name: Synthetic evolving-graph benchmark
+    modality: graphs
+    access: open
+    used_by:
+    - graph-bandits
+    - graph-transfer
+  - key: stream-bench
+    name: Streaming anomaly benchmark
+    modality: timeseries
+    access: registration
+    used_by:
+    - graph-bandits
+    - streaming-anomaly
+  - key: toy-embed
+    name: Toy embedding corpus
+    modality: text
+    access: open
+    used_by:
+    - robust-embeddings
+    - sparse-attention

@@ -11,6 +11,11 @@ package-lock.json
 # columns of all eight. meta.yml is not listed: it is oculus's own from the start and is formatted.
 # manifest-schema.yml carries the form's structure as well as its words since O11 (`type`, `section`,
 # `from`, `options` per field), so it is no longer the cockpit's file with different words in it.
+# The demo hub is data, not source: it is the cockpit's dummy/ ported across, and a formatter pass
+# would rewrite the indentation and the quoting of every manifest and every collection file, which is
+# what tests/data/demo-hub.test.ts and the browser specs read.
+demo/
+
 config/appearance.yml
 config/behavior.yml
 config/glyphs.yml

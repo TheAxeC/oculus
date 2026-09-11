@@ -78,6 +78,50 @@ describe('what a write refuses', () => {
         ]);
     });
 
+    // `followup` is named by the schema through its children, `followup.do` and `followup.after`,
+    // and the file may hold it as a bare note, a map or a list. Clearing it whole by the parent name
+    // is the one write on the parent the editor takes; a value for the parent is refused.
+    it('clears a grouped field whole by its parent name, whatever shape the file holds it in', () => {
+        const noted = hub(
+            MANIFEST.replace('title: "A title"', 'title: "A title"\nfollowup: "ask"')
+        );
+        const out = writeManifest(noted, configFor(), 'alpha', { followup: '' });
+        expect(out.changed).toEqual(['followup']);
+        expect(manifestOf(noted)).not.toContain('followup');
+
+        const mapped = hub(
+            MANIFEST.replace(
+                'title: "A title"',
+                'title: "A title"\nfollowup: { do: "ask", after: "2030-01-01" }'
+            )
+        );
+        const gone = writeManifest(mapped, configFor(), 'alpha', { followup: null });
+        expect(gone.changed).toEqual(['followup']);
+        expect(manifestOf(mapped)).not.toContain('followup');
+    });
+
+    it('refuses a value for a grouped field by its parent name', () => {
+        const root = hub();
+        const out = writeManifest(root, configFor(), 'alpha', { followup: 'ask' });
+        expect(out.changed).toEqual([]);
+        expect(out.refused).toEqual([
+            {
+                field: 'followup',
+                reason: 'the field is a group; set its children, or clear it whole'
+            }
+        ]);
+    });
+
+    it('writes a follow-up note through followup.do, expanding a bare note into the map', () => {
+        const noted = hub(
+            MANIFEST.replace('title: "A title"', 'title: "A title"\nfollowup: "old"')
+        );
+        const out = writeManifest(noted, configFor(), 'alpha', { 'followup.do': 'new' });
+        expect(out.changed).toEqual(['followup.do']);
+        expect(manifestOf(noted)).toContain('do: new');
+        expect(manifestOf(noted)).not.toContain('old');
+    });
+
     it('refuses the read-only fields and the map field', () => {
         const root = hub();
         const out = writeManifest(root, configFor(), 'alpha', {

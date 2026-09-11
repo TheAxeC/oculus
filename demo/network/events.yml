@@ -1,0 +1,40 @@
+# Talks & Events - talks you give (present) + events you attend (FAKE example data). `present` entries with a
+# `related:` id feed each project's "Disseminated in". Edit in served mode on the Talks & Events tab.
+title: Talks & Events
+intro: "Talks given and events attended. A `present` talk with a `related:` project id shows on that project's card as 'Disseminated in'."
+schema:
+  - { field: title,    type: text,     required: true }
+  - { field: sub,      type: text,     label: "Subtitle" }
+  - { field: role,     type: select,   options: [present, attend], required: true, help: "present = a talk/poster I give; attend = attending only" }
+  - { field: status,   type: select,   options: [upcoming, planned, completed, cancelled, not-attending], required: true }
+  - { field: date,     type: text }
+  - { field: deadline, type: date,     help: "ISO date; shows on the Focus radar while live" }
+  - { field: meta,     type: metalist }
+  - { field: tags,     type: tags }
+  - { field: note,     type: textarea }
+  - { field: link,     type: text }
+  - { field: related,  type: tags,     help: "Project ids" }
+
+entries:
+  - title: "Streaming anomaly detection at scale"
+    sub: "Invited talk, Northwood Systems Seminar"
+    role: present
+    status: completed
+    date: "2026-03-12"
+    tags: [talk, streaming]
+    related: [streaming-anomaly]
+
+  - title: "Poster: robust embeddings under shift"
+    sub: "MLShift Workshop"
+    role: present
+    status: upcoming
+    date: "2026-09-01"
+    deadline: "2026-07-25"
+    tags: [poster]
+    related: [robust-embeddings]
+
+  - title: "NeurIPS (attending)"
+    role: attend
+    status: planned
+    date: "2026-12"
+    tags: [conference]

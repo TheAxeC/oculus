@@ -1,0 +1,47 @@
+# Code / GitHub repositories - the curated catalogue for the Code tab (FAKE example data).
+# Personal projects + research tools + finished repos in ONE place, alongside the auto "code coverage"
+# of the portfolio (which projects have code deposited vs not - derived from each project.yml `code_availability:`).
+# Schema: tools/cockpit/README.md. status = active | finished | archived. Put the GitHub URL in `url:`.
+# `related:` ids cross-link to the project cards a repo backs. Edit in served mode on the Code tab.
+title: Code
+intro: "Personal projects, research tools, and finished repos, plus the portfolio's code-availability coverage (which projects have a code deposit, which don't). A curated list; add your GitHub URLs (edit in the cockpit). Paper deposits also surface from each project's `code_availability`."
+schema:
+  - { field: title,   type: text,     required: true }
+  - { field: sub,     type: text,     label: "Subtitle" }
+  - { field: status,  type: select,   options: [active, finished, archived], required: true }
+  - { field: meta,    type: metalist }
+  - { field: tags,    type: tags }
+  - { field: url,     type: text,     help: "Repo URL (http)" }
+  - { field: note,    type: textarea }
+  - { field: related, type: tags,     help: "Project ids" }
+
+entries:
+  # -- Active ---------------------------------------------------------------
+  - title: "tensorkit - tensor decomposition toolkit"
+    sub: "A small library of tensor decompositions (CP, Tucker, block-term) with a scikit-learn-style API"
+    status: active
+    meta:
+      - { label: Kind, value: "research tool / library" }
+      - { label: Language, value: "Python" }
+    tags: [tensor, decomposition, library]
+    url: "https://example.org/tensorkit"
+    note: "Backs several of the example projects (streaming-anomaly, robust-embeddings)."
+    related: [robust-embeddings]
+
+  - title: "example-hub"
+    sub: "This fake research monorepo - projects, registries, and the cockpit demo"
+    status: active
+    meta:
+      - { label: Kind, value: "research infrastructure" }
+      - { label: Visibility, value: "private" }
+    tags: [demo, research-hub, infrastructure]
+
+  # -- Finished -------------------------------------------------------------
+  - title: "bench-suite"
+    sub: "Reproducible benchmark harness (finished, archived after the paper shipped)"
+    status: finished
+    meta:
+      - { label: Language, value: "Python" }
+    tags: [benchmark, reproducibility]
+    url: "https://example.org/bench-suite"
+    related: [early-benchmark]

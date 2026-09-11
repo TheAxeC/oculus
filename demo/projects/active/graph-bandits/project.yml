@@ -1,0 +1,20 @@
+id: graph-bandits
+type: active
+short: Graph-Bandits
+title: Bandit algorithms over evolving graphs
+lead: A. Example
+authors: [A. Example, B. Coauthor]
+focus: push
+status:
+  chips: [results-positive]
+  line: Method drafted, ablations running.
+domain: graphs
+program: [graphs]
+datasets: [synthgraph, stream-bench]
+related: [tensor-sketch, graph-transfer]
+eli5: Pick the most informative node to probe next when the graph keeps changing under you.
+results:
+  - Cumulative regret 0.42 vs 0.61 for the static-graph baseline (synthgraph, 20 seeds).
+next: Finish the ablations, then add one real dataset.
+ideas:
+  - A change-point detector that resets the exploration budget.

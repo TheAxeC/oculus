@@ -1,0 +1,32 @@
+# Funding pipeline -> the Funding tab. One entry per application or funded programme.
+title: Funding
+intro: "Grant applications and the programmes this work sits inside. (Example data.)"
+schema:
+  - { field: title,     type: text,   required: true }
+  - { field: sub,       type: text,   help: "Scheme | role | period" }
+  - { field: status,    type: select, options: [in-prep, planned, submitted, awarded, rejected], required: true }
+  - { field: date,      type: text,   help: "Year or range" }
+  - { field: deadline,  type: date }
+  - { field: meta,      type: metalist }
+  - { field: tags,      type: tags }
+  - { field: note,      type: textarea }
+  - { field: key,       type: text,   help: "funding: tag the projects use" }
+entries:
+  - title: Early-Career Fellowship
+    sub: "National science fund | personal grant | 3 years"
+    status: in-prep
+    date: "2026"
+    deadline: "2026-10-01"
+    meta:
+      - { label: Scheme, value: "ECF - personal" }
+      - { label: Host, value: "Example University" }
+    tags: [fellowship, graphs]
+    key: ecf
+    note: "Interpretable transfer learning across graph domains. Two case studies."
+  - title: Open-Data Infrastructure Grant
+    sub: "Consortium | co-applicant | 2 years"
+    status: rejected
+    date: "2025"
+    meta:
+      - { label: Outcome, value: "not funded (resubmit 2026)" }
+    tags: [infrastructure]

@@ -1,7 +1,9 @@
 // Layer 1, data. Resolves the machine-local values and the text catalog from files on disk.
 // Server side only: it reads the filesystem and no client module may import it.
-// No environment variable is consulted anywhere; a caller passes the engine directory, and
-// engineDir() derives it from this module's own location so dev and the built server agree.
+// A caller passes the engine directory, and engineDir() derives it from this module's own location
+// so dev and the built server agree. One environment variable is read, OCULUS_LOCAL, and only by
+// loadLocal(): it names the machine-local file instead of <engine>/local.yml, which is how a test
+// server is pointed at a hub in a temporary directory without writing into the checkout.
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
@@ -53,13 +55,36 @@ export function localDefaults(engine: string): LocalConfig {
 }
 
 /**
- * Read <engine>/local.yml. A missing file means the defaults. An unknown key is reported
- * once on stderr and ignored. A key of the wrong type is an error naming the file and the key.
+ * Which file loadLocal reads, and the directory a relative path in it resolves against.
+ *
+ * Without OCULUS_LOCAL that is <engine>/local.yml and the engine, which is the whole of what the
+ * machine's own configuration is. With it, the named file and its own folder: the browser specs
+ * stand a server up over a hub in a temporary directory, and writing local.yml into the checkout to
+ * do that would make a tracked file a test fixture. A relative OCULUS_LOCAL resolves against the
+ * engine, so a path typed on the command line means what it looks like from tools/oculus.
+ */
+function localFile(engine: string): { file: string; base: string; required: boolean } {
+    const named = process.env.OCULUS_LOCAL;
+    if (named === undefined || named === '') {
+        return { file: join(engine, 'local.yml'), base: engine, required: false };
+    }
+    const file = isAbsolute(named) ? named : resolve(engine, named);
+    return { file, base: dirname(file), required: true };
+}
+
+/**
+ * Read <engine>/local.yml, or the file OCULUS_LOCAL names. A missing file means the defaults,
+ * except when OCULUS_LOCAL named it: a run told to read a file that is not there is an error rather
+ * than a silent fall back to the machine's own hub. An unknown key is reported once on stderr and
+ * ignored. A key of the wrong type is an error naming the file and the key.
  */
 export function loadLocal(engine: string): LocalConfig {
-    const file = join(engine, 'local.yml');
+    const { file, base, required } = localFile(engine);
     const config = localDefaults(engine);
-    if (!existsSync(file)) return config;
+    if (!existsSync(file)) {
+        if (required) throw new Error(`${file}: OCULUS_LOCAL names a file that does not exist`);
+        return config;
+    }
 
     const raw: unknown = parse(readFileSync(file, 'utf8')) ?? {};
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
@@ -76,7 +101,7 @@ export function loadLocal(engine: string): LocalConfig {
         if (typeof record.hub !== 'string' || record.hub.length === 0) {
             throw new Error(`${file}: hub must be a path`);
         }
-        config.hub = isAbsolute(record.hub) ? record.hub : resolve(engine, record.hub);
+        config.hub = isAbsolute(record.hub) ? record.hub : resolve(base, record.hub);
     }
     if (record.port !== undefined) {
         if (!Number.isInteger(record.port)) throw new Error(`${file}: port must be an integer`);
@@ -93,7 +118,7 @@ export function loadLocal(engine: string): LocalConfig {
             throw new Error(`${file}: ${key} must be a path`);
         }
         const value = record[key] as string;
-        config[field] = isAbsolute(value) ? value : resolve(engine, value);
+        config[field] = isAbsolute(value) ? value : resolve(base, value);
     }
     return config;
 }
