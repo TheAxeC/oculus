@@ -18,6 +18,12 @@ import type { WriteTarget } from '../../src/lib/server/writes.ts';
 
 const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
+/** A collection file and a career file, at the hub paths config/sources.yml names. */
+const TASKS =
+    'title: Tasks\nschema:\n  - { field: title, type: text }\nentries:\n  - title: "Review the draft"\n    status: open\n    subtasks:\n      - { do: read it }\n';
+
+const CAREER = 'title: Career\nhosts:\n  - { name: "Naesens", status: "warm" }\n';
+
 const TOKEN = mintToken();
 const HOST = '127.0.0.1:8791';
 const URL_ = `http://${HOST}/api/write`;
@@ -29,6 +35,15 @@ function target(): WriteTarget {
     expect(resolve(folder).startsWith(resolve(dir) + sep)).toBe(true);
     mkdirSync(folder, { recursive: true });
     writeFileSync(join(folder, 'project.yml'), MANIFEST);
+    for (const [path, body] of [
+        ['tasks/tasks.yml', TASKS],
+        ['CAREER.yml', CAREER]
+    ]) {
+        const file = join(dir, path);
+        expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
+        mkdirSync(join(file, '..'), { recursive: true });
+        writeFileSync(file, body);
+    }
     const real = portfolioConfigFrom(loadConfig(engineDir()).config);
     // The overrides file is inside the same temporary directory, so a session write in this suite
     // can never reach ~/.oculus/sessions.json.
@@ -254,5 +269,119 @@ describe('the write endpoint', () => {
             changed: ['title'],
             refused: [{ field: 'id', reason: 'the field is read-only' }]
         });
+    });
+});
+
+/** One good body of every kind this route learned in P1, and what it should answer. */
+const KINDS: Record<string, unknown> = {
+    entry: {
+        kind: 'entry',
+        collection: 'tasks',
+        id: 'Review the draft',
+        fields: { status: 'done' }
+    },
+    subtask: {
+        kind: 'subtask',
+        target: { id: 'Review the draft', collection: 'tasks' },
+        key: '0',
+        action: 'done'
+    },
+    'subtask-add': { kind: 'subtask-add', target: { id: 'alpha' }, fields: { do: 'write it' } },
+    host: { kind: 'host', name: 'Naesens', status: 'candidate' },
+    'new-entry': { kind: 'new-entry', collection: 'tasks', fields: { title: 'A new task' } },
+    'new-idea': { kind: 'new-idea', fields: { id: 'a-new-idea', title: 'A new idea' } }
+};
+
+/** One malformed body of every kind: the right `kind`, a field of the wrong shape. */
+const MALFORMED: Record<string, unknown> = {
+    entry: { kind: 'entry', collection: 'tasks', id: 'Review the draft', fields: 'not a map' },
+    subtask: { kind: 'subtask', target: { id: 'alpha' }, key: '0', action: 'archive' },
+    'subtask-add': { kind: 'subtask-add', target: { id: 'alpha' }, fields: { do: '   ' } },
+    host: { kind: 'host', name: 'Naesens', status: 42 },
+    'new-entry': { kind: 'new-entry', collection: 42, fields: {} },
+    'new-idea': { kind: 'new-idea', fields: { title: 'no id' } }
+};
+
+describe('the kinds the write endpoint learned in P1', () => {
+    for (const [kind, body] of Object.entries(KINDS)) {
+        it(`answers 200 for a good ${kind} body`, async () => {
+            const into = target();
+            const response = await handleWrite(request(body), TOKEN, into);
+            expect(response.status).toBe(200);
+            const answer = (await response.json()) as { ok: boolean; changed: string[] };
+            expect(answer.ok).toBe(true);
+            expect(answer.changed.length).toBeGreaterThan(0);
+        });
+
+        it(`refuses a ${kind} body with no token, and writes nothing`, async () => {
+            const into = target();
+            const before = readFileSync(join(into.hub, 'tasks', 'tasks.yml'), 'utf8');
+            const response = await handleWrite(
+                request(body, { 'x-oculus-token': '' }),
+                TOKEN,
+                into
+            );
+            expect(response.status).toBe(403);
+            expect(readFileSync(join(into.hub, 'tasks', 'tasks.yml'), 'utf8')).toBe(before);
+            expect(manifestOf(into)).toBe(MANIFEST);
+            expect(existsSync(join(into.hub, 'projects', 'ideas'))).toBe(false);
+        });
+    }
+
+    for (const [kind, body] of Object.entries(MALFORMED)) {
+        it(`answers 400 for a malformed ${kind} body`, async () => {
+            const into = target();
+            const response = await handleWrite(request(body), TOKEN, into);
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({
+                error: 'the body is not a write this route knows'
+            });
+        });
+    }
+
+    it('answers 404 for a subtask on a project the hub does not hold', async () => {
+        const into = target();
+        const body = {
+            kind: 'subtask',
+            target: { id: 'no-such-project' },
+            key: '0',
+            action: 'done'
+        };
+        const response = await handleWrite(request(body), TOKEN, into);
+        expect(response.status).toBe(404);
+        expect(await response.json()).toEqual({ error: 'no project with the id no-such-project' });
+    });
+
+    it('answers 404 for an entry, a collection and a host the hub does not hold', async () => {
+        const into = target();
+        const cases: [unknown, string][] = [
+            [
+                { kind: 'entry', collection: 'tasks', id: 'Nobody', fields: { status: 'done' } },
+                'no entry Nobody in tasks'
+            ],
+            [
+                { kind: 'new-entry', collection: 'nonesuch', fields: { title: 'x' } },
+                'no collection nonesuch'
+            ],
+            [{ kind: 'host', name: 'Nobody', status: 'warm' }, 'no host named Nobody']
+        ];
+        for (const [body, error] of cases) {
+            const response = await handleWrite(request(body), TOKEN, into);
+            expect(response.status).toBe(404);
+            expect(await response.json()).toEqual({ error });
+        }
+    });
+
+    it('carries a refusal back for a status outside the career vocabulary', async () => {
+        const into = target();
+        const body = { kind: 'host', name: 'Naesens', status: 'promoted' };
+        const response = await handleWrite(request(body), TOKEN, into);
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            ok: true,
+            changed: [],
+            refused: [{ field: 'status', reason: 'promoted is not a career host status' }]
+        });
+        expect(readFileSync(join(into.hub, 'CAREER.yml'), 'utf8')).toBe(CAREER);
     });
 });

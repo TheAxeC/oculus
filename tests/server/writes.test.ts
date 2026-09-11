@@ -6,11 +6,21 @@
 // for writing, and the schema it checks against is the real config/manifest-schema.yml, so what the
 // form offers and what the write accepts are the same list.
 
-import { mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { coerce, insideHub, writeManifest } from '../../src/lib/server/writes.ts';
+import {
+    coerce,
+    createEntry,
+    createIdea,
+    insideHub,
+    writeEntry,
+    writeHost,
+    writeManifest,
+    writeSubtask,
+    writeSubtaskAdd
+} from '../../src/lib/server/writes.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { PortfolioConfig } from '../../src/lib/data/model.ts';
@@ -145,5 +155,204 @@ describe('the file itself', () => {
         const after = statSync(join(root, 'projects', 'manuscripts', 'alpha', 'project.yml'));
         expect(out).toEqual({ found: true, changed: [], refused: [] });
         expect(after.mtimeMs).toBe(before.mtimeMs);
+    });
+});
+
+/** A collection file at the hub path config/sources.yml gives the `tasks` key. */
+const TASKS = [
+    'title: Tasks',
+    'schema:',
+    '  - { field: title, type: text }',
+    '  - { field: status, type: select }',
+    'entries:',
+    '  - title: "Review the draft"',
+    '    status: open',
+    '    subtasks:',
+    '      - { do: read it }',
+    ''
+].join('\n');
+
+const CAREER = [
+    'title: Career',
+    'hosts:',
+    '  - { name: "Naesens", inst: "KU Leuven", status: "warm" }',
+    ''
+].join('\n');
+
+/** The same hub with a collection file and a career file beside the one manifest. */
+function wider(): string {
+    const root = hub();
+    for (const [path, body] of [
+        ['tasks/tasks.yml', TASKS],
+        ['CAREER.yml', CAREER]
+    ]) {
+        const file = join(root, path);
+        expect(resolve(file).startsWith(resolve(root) + sep)).toBe(true);
+        mkdirSync(join(file, '..'), { recursive: true });
+        writeFileSync(file, body);
+    }
+    return root;
+}
+
+function tasksOf(root: string): string {
+    return readFileSync(join(root, 'tasks', 'tasks.yml'), 'utf8');
+}
+
+describe('writing one collection entry', () => {
+    it('sets a field of the entry the id names', () => {
+        const root = wider();
+        const out = writeEntry(root, configFor(), 'tasks', 'Review the draft', {
+            status: 'done'
+        });
+        expect(out).toEqual({ found: true, changed: ['status'], refused: [] });
+        expect(tasksOf(root)).toBe(TASKS.replace('status: open', 'status: done'));
+    });
+
+    it('says not found for a collection and for an entry the hub does not hold', () => {
+        const root = wider();
+        expect(writeEntry(root, configFor(), 'nonesuch', 'x', { status: 'done' })).toEqual({
+            found: false,
+            changed: [],
+            refused: []
+        });
+        expect(writeEntry(root, configFor(), 'tasks', 'Nobody', { status: 'done' })).toEqual({
+            found: false,
+            changed: [],
+            refused: []
+        });
+        expect(tasksOf(root)).toBe(TASKS);
+    });
+});
+
+describe('writing one subtask line', () => {
+    it('ticks and reopens a line of a manifest', () => {
+        const root = wider();
+        writeManifest(root, configFor(), 'alpha', {});
+        const added = writeSubtaskAdd(root, configFor(), { id: 'alpha' }, { do: 'write it' });
+        expect(added.changed).toEqual(['subtasks']);
+        expect(manifestOf(root)).toBe(`${MANIFEST}subtasks:\n  - { do: write it }\n`);
+        const done = writeSubtask(root, configFor(), { id: 'alpha' }, '0', 'done');
+        expect(done.changed).toEqual(['done']);
+        expect(manifestOf(root)).toContain('- { do: write it, done: true }');
+        const open = writeSubtask(root, configFor(), { id: 'alpha' }, '0', 'reopen');
+        expect(open.changed).toEqual(['done']);
+        expect(manifestOf(root)).toContain('- { do: write it }');
+    });
+
+    it('snoozes and deletes a line of a collection entry', () => {
+        const root = wider();
+        const target = { id: 'Review the draft', collection: 'tasks' };
+        const snoozed = writeSubtask(root, configFor(), target, '0', 'snooze', '2026-10-01');
+        expect(snoozed.changed).toEqual(['snooze']);
+        expect(tasksOf(root)).toContain('- { do: read it, snooze: 2026-10-01 }');
+        const gone = writeSubtask(root, configFor(), target, '0', 'delete');
+        expect(gone.changed).toEqual(['subtasks']);
+        expect(tasksOf(root)).toBe(TASKS.replace('    subtasks:\n      - { do: read it }\n', ''));
+    });
+
+    it('says not found for a host that is not in the hub', () => {
+        const root = wider();
+        expect(writeSubtask(root, configFor(), { id: 'nobody' }, '0', 'done')).toEqual({
+            found: false,
+            changed: [],
+            refused: []
+        });
+        expect(
+            writeSubtaskAdd(root, configFor(), { id: 'x', collection: 'tasks' }, { do: 'a' })
+        ).toEqual({ found: false, changed: [], refused: [] });
+    });
+});
+
+describe('writing one career host', () => {
+    it('sets a status of the vocabulary and refuses one outside it', () => {
+        const root = wider();
+        const out = writeHost(root, 'Naesens', 'candidate');
+        expect(out).toEqual({ found: true, changed: ['status'], refused: [] });
+        expect(readFileSync(join(root, 'CAREER.yml'), 'utf8')).toBe(
+            CAREER.replace('status: "warm"', 'status: "candidate"')
+        );
+        const bad = writeHost(root, 'Naesens', 'promoted');
+        expect(bad.changed).toEqual([]);
+        expect(bad.refused).toEqual([
+            { field: 'status', reason: 'promoted is not a career host status' }
+        ]);
+    });
+
+    it('says not found for a host the file does not hold', () => {
+        const root = wider();
+        expect(writeHost(root, 'Nobody', 'warm')).toEqual({
+            found: false,
+            changed: [],
+            refused: []
+        });
+    });
+});
+
+describe('adding an entry and an idea', () => {
+    it('appends a new entry rendered from the file schema', () => {
+        const root = wider();
+        const out = createEntry(root, configFor(), 'tasks', {
+            title: 'A new task',
+            status: 'open'
+        });
+        expect(out).toEqual({ found: true, changed: ['entries'], refused: [] });
+        expect(tasksOf(root)).toBe(`${TASKS}\n  - title: A new task\n    status: open\n`);
+    });
+
+    it('refuses an entry whose identity the file already holds, and an unknown collection', () => {
+        const root = wider();
+        const twice = createEntry(root, configFor(), 'tasks', { title: 'Review the draft' });
+        expect(twice.changed).toEqual([]);
+        expect(twice.refused).toEqual([
+            { field: 'title', reason: 'an entry with that title is already in the file' }
+        ]);
+        expect(createEntry(root, configFor(), 'nonesuch', { title: 'x' })).toEqual({
+            found: false,
+            changed: [],
+            refused: []
+        });
+        expect(tasksOf(root)).toBe(TASKS);
+    });
+
+    it('scaffolds an idea folder with a manifest and a README', () => {
+        const root = wider();
+        const out = createIdea(root, { id: 'new-idea', title: 'A new idea', eli5: 'what it is' });
+        expect(out.changed).toEqual([
+            'projects/ideas/new-idea/project.yml',
+            'projects/ideas/new-idea/README.md'
+        ]);
+        const folder = join(root, 'projects', 'ideas', 'new-idea');
+        expect(readFileSync(join(folder, 'project.yml'), 'utf8')).toBe(
+            [
+                'id: new-idea',
+                'type: idea',
+                'title: A new idea',
+                'focus: holding',
+                'status:',
+                '  chips: [exploring]',
+                '  line: New idea - scope + novelty check open.',
+                'eli5: what it is',
+                'next: Scope the idea; cited-novelty lit check; decide go/no-go.',
+                ''
+            ].join('\n')
+        );
+        expect(readFileSync(join(folder, 'README.md'), 'utf8')).toBe(
+            '# A new idea\n\nwhat it is\n\n## Next\n\nScope the idea; cited-novelty lit check; decide go/no-go.\n'
+        );
+    });
+
+    it('refuses a bad id and a folder that is already there', () => {
+        const root = wider();
+        expect(createIdea(root, { id: 'Not An Id' }).refused).toEqual([
+            { field: 'id', reason: 'an id is lower case letters, digits and hyphens' }
+        ]);
+        expect(createIdea(root, { id: '../escape' }).refused).toEqual([
+            { field: 'id', reason: 'an id is lower case letters, digits and hyphens' }
+        ]);
+        createIdea(root, { id: 'twice' });
+        expect(createIdea(root, { id: 'twice' }).refused).toEqual([
+            { field: 'id', reason: 'projects/ideas/twice is already there' }
+        ]);
+        expect(existsSync(join(root, 'projects', 'ideas', 'not-an-id'))).toBe(false);
     });
 });

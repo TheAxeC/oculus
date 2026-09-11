@@ -86,6 +86,75 @@ export async function writeSession(id: string, fields: SessionFields): Promise<W
     return send({ kind: 'session', id, ...fields });
 }
 
+/** What a subtask write hangs under: one project by its id, or one entry of one collection. */
+export type SubtaskTarget = { id: string; collection?: string };
+
+/** What one subtask button does to its line. */
+export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete';
+
+/**
+ * Set fields of one collection entry, found by the id the reader gave it. The same endpoint and the
+ * same token as a manifest write; what it writes is one entry's lines inside its collection file.
+ */
+export async function writeEntry(
+    collection: string,
+    id: string,
+    fields: Record<string, unknown>
+): Promise<WriteAnswer> {
+    return send({ kind: 'entry', collection, id, fields });
+}
+
+/**
+ * Tick one subtask line, reopen it, snooze it until a date, or delete it. `key` is what the reader
+ * addressed the line by: the key of the map the file writes, or the position in the list.
+ */
+export async function writeSubtask(
+    target: SubtaskTarget,
+    key: string,
+    action: SubtaskAction,
+    value?: string
+): Promise<WriteAnswer> {
+    return send({
+        kind: 'subtask',
+        target,
+        key,
+        action,
+        ...(value === undefined ? {} : { value })
+    });
+}
+
+/** Add one subtask line to a project or to a collection entry, making the block when it has none. */
+export async function addSubtask(
+    target: SubtaskTarget,
+    fields: { do: string; deadline?: string }
+): Promise<WriteAnswer> {
+    return send({ kind: 'subtask-add', target, fields });
+}
+
+/** Move one host of CAREER.yml along the pipeline. A status outside the vocabulary is refused. */
+export async function writeHost(name: string, status: string): Promise<WriteAnswer> {
+    return send({ kind: 'host', name, status });
+}
+
+/** Add one entry to a collection, rendered from that file's own schema. */
+export async function newEntry(
+    collection: string,
+    fields: Record<string, unknown>
+): Promise<WriteAnswer> {
+    return send({ kind: 'new-entry', collection, fields });
+}
+
+/** Scaffold one idea project: a manifest and a README under projects/ideas/<id>. */
+export async function newIdea(fields: {
+    id: string;
+    title?: string;
+    short?: string;
+    domain?: string;
+    eli5?: string;
+}): Promise<WriteAnswer> {
+    return send({ kind: 'new-idea', fields });
+}
+
 /** The endpoint of the git panel: one action on one workspace, behind the same token. */
 export const GIT_PATH = '/api/git';
 
