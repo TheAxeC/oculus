@@ -35,6 +35,10 @@ dispatch:
   session_id: 01a091e2-e5fa-7630-b244-f874e745685d
   landing: not-started
   round: 0
+  reviewer_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24b/review-prompt.md
+  reviewer_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24b/review-report.md
+  reviewer_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24b/review-exit.txt
+  reviewer_pid: 66942
 ```
 
 ## The standing demands (from Axel, in force)
