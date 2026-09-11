@@ -22,6 +22,8 @@ import type {
 } from './model-entities.ts';
 import type { Career, Collection, Feeds, RawFeeds } from './model-collections.ts';
 
+export type { FeedData, FeedEntry, FeedKind } from './model-collections.ts';
+
 export type RawPortfolio = {
     manifests: RawManifest[];
     registries: Record<RegistryName, RawRegistry>;

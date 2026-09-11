@@ -14,6 +14,8 @@ import {
     coerce,
     createEntry,
     createIdea,
+    feedDeleteWrite,
+    feedFieldWrite,
     insideHub,
     removeEntry,
     reorderCollection,
@@ -62,6 +64,37 @@ function manifestOf(root: string): string {
 }
 
 describe('what a write refuses', () => {
+    it('parses the two feed write bodies whole', () => {
+        expect(
+            feedFieldWrite({
+                kind: 'feed-field',
+                feed: 'radar',
+                id: 'Paper',
+                field: 'dismissed',
+                value: true
+            })
+        ).toEqual({
+            kind: 'feed-field',
+            feed: 'radar',
+            id: 'Paper',
+            field: 'dismissed',
+            value: true
+        });
+        expect(
+            feedFieldWrite({
+                kind: 'feed-field',
+                feed: 'radar',
+                id: 'Paper',
+                field: 'dismissed',
+                value: {}
+            })
+        ).toBe(null);
+        expect(feedDeleteWrite({ kind: 'feed-delete', feed: 'leads', id: 'Lead' })).toEqual({
+            kind: 'feed-delete',
+            feed: 'leads',
+            id: 'Lead'
+        });
+    });
     it('says an id the hub does not hold was not found, and writes nothing', () => {
         const root = hub();
         const out = writeManifest(root, configFor(), 'nobody', { title: 'x' });

@@ -20,6 +20,7 @@ import Map from '$lib/views/Map.svelte';
 import Project from '$lib/views/Project.svelte';
 import Projects from '$lib/views/Projects.svelte';
 import Programs from '$lib/views/Programs.svelte';
+import Radar from '$lib/views/Radar.svelte';
 import Status from '$lib/views/Status.svelte';
 import Venues from '$lib/views/Venues.svelte';
 import Domains from '$lib/views/Domains.svelte';
@@ -32,6 +33,13 @@ import Timeline from '$lib/views/sessions/Timeline.svelte';
 import Transcript from '$lib/views/sessions/Transcript.svelte';
 import { registerView } from '$lib/views/registry';
 import { badgeText } from '$lib/state/hpc.svelte';
+
+registerView({
+    id: 'radar',
+    label: 'views.radar',
+    glyph: 'views.radar_glyph',
+    component: Radar
+});
 
 registerView({
     id: 'hpc',

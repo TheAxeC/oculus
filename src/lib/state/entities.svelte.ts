@@ -16,12 +16,22 @@ import type {
 } from '../data/model.ts';
 
 const messages: Record<string, Message> = $state({});
+const portfolioListeners = new Set<(version: number) => void>();
 
 /** Store a message unless the channel already holds a newer one. */
 export function receive(message: Message): void {
     const held = messages[message.channel];
     if (held !== undefined && message.version < held.version) return;
     messages[message.channel] = message;
+    if (message.channel === 'portfolio') {
+        for (const listener of portfolioListeners) listener(message.version);
+    }
+}
+
+/** Run a listener after every accepted portfolio snapshot. */
+export function subscribePortfolio(listener: (version: number) => void): () => void {
+    portfolioListeners.add(listener);
+    return () => portfolioListeners.delete(listener);
 }
 
 /** The current message of a channel, or null when none has arrived. */

@@ -150,6 +150,21 @@ export async function deleteEntry(collection: string, id: string): Promise<Write
     return send({ kind: 'delete-entry', collection, id });
 }
 
+/** Set or clear one field allowed by a generated feed. */
+export async function writeFeedField(
+    feed: string,
+    id: string,
+    field: string,
+    value: string | number | boolean | null
+): Promise<WriteAnswer> {
+    return send({ kind: 'feed-field', feed, id, field, value });
+}
+
+/** Delete one entry from a generated feed that permits deletion. */
+export async function deleteFeedEntry(feed: string, id: string): Promise<WriteAnswer> {
+    return send({ kind: 'feed-delete', feed, id });
+}
+
 /** Add one entry to a collection, rendered from that file's own schema. */
 export async function newEntry(
     collection: string,

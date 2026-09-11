@@ -763,6 +763,8 @@ text:
     radar_intro_head: "{G.litwatch} <b>New-paper radar</b> across active &amp; manuscript projects - {G.red} pre-emption | {G.green} cite/baseline | {G.white} adjacent - plus cross-pollination {G.purple} <b>idea sparks</b> tied to the ideas folder."
     radar_intro_tail: "{0} tracked | last sweep <b>{1}</b>  | refresh with <code>/research-cockpit litwatch</code>."
     radar_search: "Search radar | title | venue | project | why ..."
+    radar_no_date: " - "
+    radar_count: "{0} ({1})"
     linkedin_no_folder: "No _linkedin folder."
     linkedin_no_dates: "no dated posts"
     linkedin_overdue: "{0} days since last post (target: every {1}d)"

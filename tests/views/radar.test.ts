@@ -1,0 +1,187 @@
+// The Lit Watch view rendered over a fetched fixture with every section and card marker.
+
+import { render } from 'svelte/server';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import Radar from '../../src/lib/views/Radar.svelte';
+import {
+    engineDir,
+    glyphCatalog,
+    loadConfig,
+    textCatalog,
+    vocabCatalog
+} from '../../src/lib/data/sources/config.ts';
+import { receive } from '../../src/lib/state/entities.svelte.ts';
+import { refetch } from '../../src/lib/state/feeds.svelte.ts';
+import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
+import { setVocab } from '../../src/lib/state/tones.ts';
+import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
+import type { Snapshot } from '../../src/lib/data/model.ts';
+import type { Instance } from '../../src/lib/state/layout.ts';
+
+const { config } = loadConfig(engineDir());
+const catalog = textCatalog(config);
+setCatalog(catalog);
+setGlyphs(glyphCatalog(config));
+setVocab(vocabCatalog(config));
+
+const entries = [
+    {
+        title: '**Risk** paper',
+        authors: 'Ada',
+        venue: 'Nature',
+        year: 2026,
+        url: 'https://example.org/risk',
+        bucket: 'preemption',
+        project: 'alpha',
+        relevance: 'high',
+        why: 'Direct **overlap**',
+        threatens: 'main claim',
+        found: '2026-09-11'
+    },
+    {
+        title: 'Idea paper',
+        bucket: 'idea',
+        motif: 'Useful Motif',
+        maps_to: 'new-idea-candidate',
+        relevance: 'med',
+        idea_spark: 'A clear seed',
+        found: '2026-09-10'
+    },
+    { title: 'Baseline paper', bucket: 'cite_baseline', relevance: 'low', found: '2026-09-09' },
+    { title: 'Adjacent paper', bucket: 'adjacent', found: '2026-09-08' },
+    { title: 'Dismissed paper', bucket: 'adjacent', dismissed: true, found: '2026-09-07' }
+];
+
+function instance(id: string, dismissedOpen = false): Instance {
+    const value: Instance = { id, view: 'radar', state: {} };
+    setInstanceState(id, { search: '', dismissedOpen });
+    return value;
+}
+
+function serve(body: Record<string, unknown>, status = 200): void {
+    vi.stubGlobal('fetch', () =>
+        Promise.resolve(
+            new Response(JSON.stringify(body), {
+                status,
+                headers: { 'content-type': 'application/json' }
+            })
+        )
+    );
+}
+
+afterEach(() => vi.unstubAllGlobals());
+
+describe('the Lit Watch view', () => {
+    it('draws its intro, search, ordered sections, card details, actions, and collapsed dismissed section', async () => {
+        const snapshot = {
+            version: 301,
+            entities: { projects: { alpha: { id: 'alpha', title: 'Alpha project' } } }
+        } as unknown as Snapshot;
+        receive({
+            channel: 'config',
+            version: 301,
+            payload: { config, text: catalog, findings: [] }
+        });
+        receive({ channel: 'portfolio', version: 301, payload: snapshot });
+        serve({
+            ok: true,
+            kind: 'radar',
+            file: 'feeds/literature-radar.yml',
+            meta: { last_run: '2026-09-11' },
+            entries
+        });
+        await refetch('radar');
+        const body = render(Radar, { props: { instance: instance('radar-one') } }).body;
+        expect(body).toContain('New-paper radar');
+        expect(body).toContain('4 tracked');
+        expect(body).not.toContain('{G.');
+        expect(body).toContain(catalog['sf.radar_search']);
+        for (const label of ['Pre-emption risk', 'Idea sparks', 'Cite / baseline', 'Adjacent'])
+            expect(body).toContain(label);
+        expect(body).toContain('<strong>Risk</strong> paper');
+        expect(body).toContain('Ada | Nature | 2026');
+        expect(body).toContain(catalog['sf.radar_new']);
+        expect(body).toContain('main claim');
+        expect(body).toContain('Alpha project');
+        expect(body).toContain(catalog['sf.radar_new_idea_candidate']);
+        expect(body).toContain(catalog['sf.radar_paper']);
+        expect(body).toContain(catalog['sf.radar_dismiss']);
+        expect(body).toContain(catalog['sf.radar_idea']);
+        expect(body).toContain(`${catalog['sf.radar_dismissed_sec']} (1)`);
+        expect(body).not.toContain('Dismissed paper');
+    });
+
+    it('draws the empty and missing-file states', async () => {
+        serve({
+            ok: true,
+            kind: 'radar',
+            file: 'feeds/literature-radar.yml',
+            meta: {},
+            entries: []
+        });
+        await refetch('radar');
+        expect(render(Radar, { props: { instance: instance('radar-empty') } }).body).toContain(
+            catalog['sf.radar_empty']
+        );
+
+        serve({
+            ok: true,
+            kind: 'radar',
+            file: 'feeds/literature-radar.yml',
+            missing: true
+        });
+        await refetch('radar');
+        const missing = render(Radar, { props: { instance: instance('radar-missing') } }).body;
+        expect(missing).toContain('No radar file yet');
+        expect(missing).toContain('feeds/literature-radar.yml');
+    });
+
+    it('draws dismissed string and boolean values open, newest first, with restore actions', async () => {
+        serve({
+            ok: true,
+            kind: 'radar',
+            file: 'feeds/literature-radar.yml',
+            meta: {},
+            entries: [
+                { title: 'Older dismissed', dismissed: true, found: '2026-09-01' },
+                { title: 'Newer dismissed', dismissed: 'true', found: '2026-09-02' }
+            ]
+        });
+        await refetch('radar');
+        const body = render(Radar, {
+            props: { instance: instance('radar-dismissed', true) }
+        }).body;
+        expect(body).toContain(catalog['sf.radar_restore']);
+        expect(body.indexOf('Newer dismissed')).toBeLessThan(body.indexOf('Older dismissed'));
+    });
+
+    it('draws no write action for an untitled entry', async () => {
+        serve({
+            ok: true,
+            kind: 'radar',
+            file: 'feeds/literature-radar.yml',
+            meta: {},
+            entries: [{ bucket: 'idea', maps_to: 'new-idea-candidate' }]
+        });
+        await refetch('radar');
+        const body = render(Radar, { props: { instance: instance('radar-untitled') } }).body;
+        expect(body).toContain(catalog['sf.radar_untitled']);
+        expect(body).not.toContain(catalog['sf.radar_dismiss_tip']);
+        expect(body).not.toContain(catalog['sf.radar_idea_tip']);
+    });
+
+    it('draws a parse error with its configured path and reason', async () => {
+        serve(
+            {
+                error: 'bad YAML',
+                kind: 'radar',
+                file: 'feeds/literature-radar.yml'
+            },
+            500
+        );
+        await refetch('radar');
+        const body = render(Radar, { props: { instance: instance('radar-error') } }).body;
+        expect(body).toContain('Could not read feeds/literature-radar.yml: bad YAML');
+        expect(body).not.toContain('No radar file yet');
+    });
+});

@@ -187,4 +187,12 @@ describe('the groups of the real config', () => {
         const rest = sections.find((found) => found.label === null)?.items ?? [];
         expect(rest.map((view) => view.id).filter((id) => COLLECTIONS.includes(id))).toEqual([]);
     });
+
+    it('draws the Feeds heading and its registered Lit Watch button only', () => {
+        expect(section('Feeds').map((view) => view.id)).toEqual(['radar']);
+        expect(section('Feeds').length).toBeLessThanOrEqual(GROUP_MAX);
+        expect(render(ActivityRail, { props: { groups: realGroups() } }).body).toContain(
+            '>Feeds</p>'
+        );
+    });
 });

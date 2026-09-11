@@ -29,6 +29,9 @@ const DATA =
     'title: Data\nschema:\n  - { field: key, type: text }\n  - { field: retrieval, type: raw }\ndatasets:\n  - key: mimic-iv\n    retrieval:\n      method: curl\n';
 
 const CAREER = 'title: Career\nhosts:\n  - { name: "Naesens", status: "warm" }\n';
+const RADAR = 'meta: {}\nentries:\n  - title: "Paper"\n';
+const LEADS = 'meta: {}\nentries:\n  - title: "Lead"\n';
+const INBOX = 'meta: {}\nentries:\n  - id: "mail-1"\n';
 
 const TOKEN = mintToken();
 const HOST = '127.0.0.1:8791';
@@ -45,7 +48,10 @@ function target(): WriteTarget {
         ['tasks/tasks.yml', TASKS],
         ['registries/venues.yml', VENUES],
         ['registries/data.yml', DATA],
-        ['CAREER.yml', CAREER]
+        ['CAREER.yml', CAREER],
+        ['feeds/literature-radar.yml', RADAR],
+        ['feeds/position-leads.yml', LEADS],
+        ['feeds/inbox.yml', INBOX]
     ]) {
         const file = join(dir, path);
         expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
@@ -97,6 +103,27 @@ function manifestOf(into: WriteTarget): string {
 }
 
 describe('the write endpoint', () => {
+    it('writes a feed field and deletes an allowed feed entry', async () => {
+        const into = target();
+        const field = await handleWrite(
+            request({
+                kind: 'feed-field',
+                feed: 'radar',
+                id: 'Paper',
+                field: 'dismissed',
+                value: true
+            }),
+            TOKEN,
+            into
+        );
+        expect(await field.json()).toEqual({ ok: true, changed: ['dismissed'], refused: [] });
+        const removal = await handleWrite(
+            request({ kind: 'feed-delete', feed: 'leads', id: 'Lead' }),
+            TOKEN,
+            into
+        );
+        expect(await removal.json()).toEqual({ ok: true, changed: ['entries'], refused: [] });
+    });
     it('refuses a request with no token', async () => {
         const into = target();
         const response = await handleWrite(request(GOOD, { 'x-oculus-token': '' }), TOKEN, into);

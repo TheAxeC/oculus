@@ -20,9 +20,12 @@ import { setHidden, setOverride } from './sessions/overrides.ts';
 import { createIdea, writeManifest } from './writes/manifest.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 import { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
+import { deleteFeedEntry, isFeedKind, writeFeedField } from './feeds.ts';
 import {
     deleteEntryWrite,
     entryWrite,
+    feedDeleteWrite,
+    feedFieldWrite,
     hostWrite,
     manifestWrite,
     newEntry,
@@ -65,6 +68,8 @@ export type { SubtaskAction, SubtaskTarget } from './writes/subtasks.ts';
 export {
     deleteEntryWrite,
     entryWrite,
+    feedDeleteWrite,
+    feedFieldWrite,
     hostWrite,
     manifestWrite,
     newEntry,
@@ -202,6 +207,35 @@ export async function handleWrite(
         const outcome = removeEntry(into.hub, into.config, removal.collection, removal.id);
         if (!outcome.found) {
             return json(404, { error: `no entry ${removal.id} in ${removal.collection}` });
+        }
+        return answer(outcome);
+    }
+
+    const feedField = feedFieldWrite(body);
+    if (feedField !== null) {
+        if (!isFeedKind(feedField.feed))
+            return json(400, { error: `unknown feed ${feedField.feed}` });
+        const outcome = writeFeedField(
+            into.hub,
+            into.config,
+            feedField.feed,
+            feedField.id,
+            feedField.field,
+            feedField.value
+        );
+        if (!outcome.found) {
+            return json(404, { error: `no entry ${feedField.id} in ${feedField.feed}` });
+        }
+        return answer(outcome);
+    }
+
+    const feedDelete = feedDeleteWrite(body);
+    if (feedDelete !== null) {
+        if (!isFeedKind(feedDelete.feed))
+            return json(400, { error: `unknown feed ${feedDelete.feed}` });
+        const outcome = deleteFeedEntry(into.hub, into.config, feedDelete.feed, feedDelete.id);
+        if (!outcome.found) {
+            return json(404, { error: `no entry ${feedDelete.id} in ${feedDelete.feed}` });
         }
         return answer(outcome);
     }

@@ -14,6 +14,7 @@ import {
 import {
     asciiOf,
     glyph,
+    lookup,
     setAscii,
     setCatalog,
     setGlyphMode,
@@ -55,6 +56,16 @@ describe('t', () => {
     it('throws on a key that is not in the catalog', () => {
         setCatalog({});
         expect(() => t('app.missing')).toThrow(/app\.missing/);
+    });
+
+    it('resolves known glyph placeholders in lookup and t and preserves unknown names', () => {
+        setCatalog({
+            'radar.head': '{G.litwatch} watch {G.red}',
+            'radar.tail': '{0} {G.nonesuch}'
+        });
+        setGlyphs(GLYPHS);
+        expect(lookup('radar.head')).toBe(`${GLYPHS.litwatch} watch ${GLYPHS.red}`);
+        expect(t('radar.tail', 4)).toBe('4 {G.nonesuch}');
     });
 });
 

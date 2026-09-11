@@ -1,0 +1,105 @@
+<script lang="ts">
+    // Layer 3, shared view partial. The new-idea form used by the Projects board and Lit Watch.
+    // Optional seed values let a radar spark pre-fill the same form without duplicating its write.
+
+    import Select from '$lib/ui/Select.svelte';
+    import TextInput from '$lib/ui/TextInput.svelte';
+    import ToolButton from '$lib/ui/ToolButton.svelte';
+    import { domainChoices } from '$lib/state/selectors.svelte';
+    import { t } from '$lib/state/text';
+    import { newIdea } from '$lib/state/writes.svelte';
+    import { untrack } from 'svelte';
+
+    type Props = {
+        onclose: () => void;
+        onsaid: (said: string) => void;
+        seed?: { id: string; eli5: string; title?: string };
+        oncreated?: () => void | Promise<void>;
+    };
+
+    let { onclose, onsaid, seed, oncreated }: Props = $props();
+    let id = $state(untrack(() => seed?.id ?? ''));
+    let title = $state(untrack(() => seed?.title ?? ''));
+    let short = $state('');
+    let domain = $state('');
+    let eli5 = $state(untrack(() => seed?.eli5 ?? ''));
+    const choices = $derived(domainChoices());
+
+    function keyed(event: KeyboardEvent): void {
+        if (event.key === 'Escape') onclose();
+    }
+
+    async function save(): Promise<void> {
+        if (id.trim() === '') return;
+        const answer = await newIdea({
+            id: id.trim(),
+            ...(title.trim() === '' ? {} : { title: title.trim() }),
+            ...(short.trim() === '' ? {} : { short: short.trim() }),
+            ...(domain === '' ? {} : { domain }),
+            ...(eli5.trim() === '' ? {} : { eli5: eli5.trim() })
+        });
+        onsaid(
+            answer.ok
+                ? t('editor.saved', answer.changed.join(', '))
+                : t('editor.failed', answer.error ?? '')
+        );
+        if (answer.ok) {
+            await oncreated?.();
+            onclose();
+        }
+    }
+</script>
+
+<svelte:window onkeydown={keyed} />
+
+<div class="form">
+    <TextInput
+        value={id}
+        label={t('board.new_idea_id')}
+        placeholder={t('board.new_idea_id')}
+        oninput={(next) => (id = next)}
+    />
+    <TextInput
+        value={title}
+        label={t('board.new_idea_title')}
+        placeholder={t('board.new_idea_title')}
+        oninput={(next) => (title = next)}
+    />
+    <TextInput
+        value={short}
+        label={t('board.new_idea_short')}
+        placeholder={t('board.new_idea_short')}
+        oninput={(next) => (short = next)}
+    />
+    <Select
+        value={domain}
+        label={t('board.new_idea_domain')}
+        empty={t('board.new_idea_domain')}
+        {choices}
+        onchange={(next) => (domain = next)}
+    />
+    <TextInput
+        value={eli5}
+        label={t('board.new_idea_eli5')}
+        placeholder={t('board.new_idea_eli5')}
+        oninput={(next) => (eli5 = next)}
+    />
+    <ToolButton label={t('board.new_idea_save')} onclick={save} />
+    <ToolButton label={t('board.new_idea_cancel')} onclick={onclose} />
+</div>
+
+<style>
+    .form {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 6px;
+        min-width: 0;
+        margin-bottom: 8px;
+    }
+
+    .form > :global(.text) {
+        flex: 1 1 160px;
+        width: auto;
+    }
+</style>

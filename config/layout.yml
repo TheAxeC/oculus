@@ -22,6 +22,8 @@ nav_groups:
   collections:
     - { label: "Academic life", glyph: scout, keys: [funding, events, education, applications, collaborations, tasks] }
     - { label: "Sources",       keys: [venues, data, code, statements] }
+  feeds:
+    - { label: "Feeds",         glyph: scout, keys: [radar, leads, inbox, linkedin] }
   more:
     - { label: "Personal",      keys: [approach, agent-approach, memories] }
     - { label: "System",        keys: [status, findings, gallery, hpc, help, audit, config] }

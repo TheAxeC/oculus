@@ -1,0 +1,52 @@
+<script lang="ts">
+    // Layer 3, view partial of views/Radar.svelte. One ordered radar bucket and its cards.
+    // The heading is a ToolButton and the section begins open, without owning feed rules.
+
+    import ToolButton from '$lib/ui/ToolButton.svelte';
+    import RadarCard from './RadarCard.svelte';
+    import { sortBucket, type Project, type RadarBucket, type RadarEntry } from '$lib/state/radar';
+    import { t } from '$lib/state/text';
+    import { toneOf } from '$lib/state/tones';
+
+    type Props = {
+        bucket: RadarBucket;
+        entries: RadarEntry[];
+        lastRun: unknown;
+        projects: Record<string, Project>;
+        onsaid: (words: string) => void;
+    };
+
+    let { bucket, entries, lastRun, projects, onsaid }: Props = $props();
+    let open = $state(true);
+    const ordered = $derived(sortBucket(entries));
+</script>
+
+<section style={`--bucket-tone: var(--c-${toneOf(bucket.color)})`}>
+    <ToolButton
+        label={t('sf.radar_count', bucket.label, entries.length)}
+        glyph={bucket.glyph}
+        active={open}
+        onclick={() => (open = !open)}
+    />
+    {#if open}
+        <div class="cards">
+            {#each ordered as entry, at (`${String(entry.title ?? '')}:${at}`)}
+                <RadarCard {entry} {lastRun} {projects} {onsaid} />
+            {/each}
+        </div>
+    {/if}
+</section>
+
+<style>
+    section {
+        padding-left: 8px;
+        border-left: 3px solid var(--bucket-tone);
+    }
+
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+        gap: 8px;
+        margin-top: 8px;
+    }
+</style>

@@ -87,6 +87,11 @@ export type Feeds = {
     linkedin: { lastPost: string | null } | null;
 };
 
+/** The generated YAML feeds served on request to their dedicated views. */
+export type FeedKind = 'radar' | 'leads' | 'inbox';
+export type FeedEntry = Record<string, unknown>;
+export type FeedData = { meta: Record<string, unknown>; entries: FeedEntry[] };
+
 /** What sources/feeds.ts returns. It is already JSON-safe, so the snapshot carries it unchanged. */
 export type RawFeeds = Feeds;
 

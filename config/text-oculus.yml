@@ -184,6 +184,8 @@ text:
     why_busy: "A request is in flight."
 
   views:                     # oculus's views: one label per registered view, and the glyph name it is drawn with.
+    radar: "Lit Watch"
+    radar_glyph: "litwatch"
     hpc: "Live HPC"
     hpc_glyph: "hpc"
     status: "Status"
@@ -246,6 +248,9 @@ text:
     tasks_glyph: "tasks"
     code: "Code"
     code_glyph: "code"
+
+  radar:                       # Lit Watch fetch failures; the sf group is capped in text.yml.
+    feed_error: "Could not read {0}: {1}"
 
   map:                         # the relationship graph: its explanation, legend, controls and empty state.
     head: "Research lines and projects, linked by line membership and directed related edges: a one-way edge has one arrow from the manifest that lists the other, while a mutual edge has two arrowheads and its own colour when each manifest lists the other. The layout is a self-tuning spring layout. Drag a node; click a project to open it."

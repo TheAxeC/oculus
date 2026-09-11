@@ -43,7 +43,9 @@ export function setAscii(next: Record<string, string>): void {
 export function lookup(key: string): string {
     const value = catalog[key];
     if (value === undefined) throw new Error(`text key not in config/text.yml: ${key}`);
-    return value;
+    return value.replace(/\{G\.([a-zA-Z0-9_-]+)\}/g, (placeholder, name: string) => {
+        return glyphs[name] ?? placeholder;
+    });
 }
 
 /**

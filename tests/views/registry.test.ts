@@ -79,6 +79,7 @@ describe('the real registrations', () => {
 
     it('registers every view the application has, in registration order', () => {
         expect(real().map((view) => view.id)).toEqual([
+            'radar',
             'hpc',
             'status',
             'findings',
@@ -121,6 +122,14 @@ describe('the real registrations', () => {
             glyph: 'views.data_glyph'
         });
         expect(COLLECTIONS).not.toContain('data');
+    });
+
+    it('registers Lit Watch directly with its catalog label and glyph', () => {
+        expect(viewFor('radar')).toMatchObject({
+            id: 'radar',
+            label: 'views.radar',
+            glyph: 'views.radar_glyph'
+        });
     });
 
     it('registers the one collection component under every collection key of sources.yml', () => {

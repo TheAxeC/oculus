@@ -69,6 +69,18 @@ export type ReorderWrite = { kind: 'reorder'; collection: string; order: string[
 /** One entry of one collection taken out of its file, by the id the reader gave it. */
 export type DeleteEntryWrite = { kind: 'delete-entry'; collection: string; id: string };
 
+/** One allowed scalar field of one generated feed entry. */
+export type FeedFieldWrite = {
+    kind: 'feed-field';
+    feed: string;
+    id: string;
+    field: string;
+    value: string | number | boolean | null;
+};
+
+/** One generated feed entry removed by its feed-specific identity. */
+export type FeedDeleteWrite = { kind: 'feed-delete'; feed: string; id: string };
+
 const ACTIONS: SubtaskAction[] = ['done', 'reopen', 'snooze', 'delete'];
 
 /** The `target` of a subtask body: `{ id }` for a manifest, `{ collection, id }` for an entry. */
@@ -188,6 +200,37 @@ export function deleteEntryWrite(body: unknown): DeleteEntryWrite | null {
     if (typeof body.collection !== 'string' || body.collection === '') return null;
     if (typeof body.id !== 'string' || body.id === '') return null;
     return { kind: 'delete-entry', collection: body.collection, id: body.id };
+}
+
+/** The body as one feed field write, including null to clear the field. */
+export function feedFieldWrite(body: unknown): FeedFieldWrite | null {
+    if (!isMap(body) || body.kind !== 'feed-field') return null;
+    if (typeof body.feed !== 'string' || body.feed === '') return null;
+    if (typeof body.id !== 'string' || body.id === '') return null;
+    if (typeof body.field !== 'string' || body.field === '') return null;
+    if (
+        body.value !== null &&
+        typeof body.value !== 'string' &&
+        typeof body.value !== 'number' &&
+        typeof body.value !== 'boolean'
+    ) {
+        return null;
+    }
+    return {
+        kind: 'feed-field',
+        feed: body.feed,
+        id: body.id,
+        field: body.field,
+        value: body.value
+    };
+}
+
+/** The body as one feed deletion. */
+export function feedDeleteWrite(body: unknown): FeedDeleteWrite | null {
+    if (!isMap(body) || body.kind !== 'feed-delete') return null;
+    if (typeof body.feed !== 'string' || body.feed === '') return null;
+    if (typeof body.id !== 'string' || body.id === '') return null;
+    return { kind: 'feed-delete', feed: body.feed, id: body.id };
 }
 
 /** The body as a new idea, or null when it is not one. */
