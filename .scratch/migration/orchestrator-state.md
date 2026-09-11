@@ -2,10 +2,27 @@
 
 The orchestrator's own catch-up note for the cockpit-to-oculus migration. Rewritten at every package. Everything here is also derivable from `plan.md`, `tools/oculus/DESIGN.md`, the hub `CLAUDE.md` and `git log`, but slower. Read this, then `plan.md`, then the tail of the transcript.
 
+```yaml
+verify:                      # from tools/oculus in the worktree and again on main, in order; all must pass.
+- npm test
+- npm run check
+- npm run build
+- npm run format:check
+- npm run lint
+- LC_ALL=C grep -rna '[^ -~]' src tests
+- npm run test:browser        # orchestrator only, on main, after the build; needs the installed Chrome.
+worktree_root: .agents/worktrees
+worktree_paths: [tools/oculus, tools/cockpit, feeds, registries, projects, funding, network, education, applications, tasks]
+standards: [tools/oculus/.scratch/migration/agents/spec.md]
+executor: agent
+worker: claude:opus          # codex:gpt-5.6-sol for the O26 trial and, if it holds, for the alternating rows after it (Rulings, 2026-09-11).
+reviewer: none               # a codex:gpt-5.6-sol reviewer stage is to be tried after the O26 trial (Axel, 2026-09-11).
+```
+
 ## The standing demands (from Axel, in force)
 
 - The hub `CLAUDE.md` "Working rules" section, in full. The ones that bite here: reports open with what is NOT done and carry a DONE / NOT DONE ledger naming the proving command; every measurement names its command or says not verified; a risk named is a task owned; no question boxes; surface rule clashes and stop; show code, not prose about code; references are not justifications (the cockpit never justifies an oculus choice); every change rewinds.
-- Agents: Opus 5 or lower, never Fable, general-purpose, one at a time. An agent works in a git worktree the orchestrator creates at main's head (`git worktree add -b <package> .claude/worktrees/<package> HEAD`, then `git -C <worktree> sparse-checkout set tools/oculus feeds registries projects` when the package needs no more than that); the agent never runs git and never edits any file under `.scratch/`. The orchestrator reads the whole diff, runs the verification commands on the worktree, lands by `git cherry-pick -n` onto main, runs them again on main, books the package in `plan.md`, commits by explicit path. Ruled by Axel 2026-09-10 as the substitute for `/rewind` over agent work.
+- Agents: the worker the block above names, on the working tier (Claude Opus 5 or GPT 5.6 Sol), general-purpose, one at a time; the orchestrator on the top tier (Claude Fable 5.1 or GPT 6 Astra); any combination, as Axel ruled on 2026-09-11. An agent works in a git worktree the orchestrator creates at main's head (`git worktree add -b <package> .agents/worktrees/<package> HEAD`; the folder moved from `.claude/worktrees` on 2026-09-11 so nothing in the process carries a vendor's name, then `git -C <worktree> sparse-checkout set tools/oculus feeds registries projects` when the package needs no more than that); the agent never runs git and never edits any file under `.scratch/`. The orchestrator reads the whole diff, runs the verification commands on the worktree, lands by `git cherry-pick -n` onto main, runs them again on main, books the package in `plan.md`, commits by explicit path. Ruled by Axel 2026-09-10 as the substitute for `/rewind` over agent work.
 - Commits: capitalised imperative subject (with a `refactor:` prefix where it fits), blank line, `- Verb ...` bullets, the last bullet the plan booking. No attribution of any kind. Never push. `merge`, `rebase`, `restore`, `push` and `reset --hard` are on the ask list.
 - Design: `tools/oculus/DESIGN.md` is the artefact every package is measured against. A disagreement between it and the code is a finding, never papered over. User-visible shapes (a config key, a wire format, the layout tree, a folder convention) are surfaced before they are baked in.
 - Conventions on every authored file: ASCII, one line per paragraph or bullet in Markdown and YAML, every source file under 1000 lines, strings in `config/text.yml`, colours as tokens, glyphs from `glyphs.yml`.
