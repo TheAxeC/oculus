@@ -44,6 +44,9 @@ dispatch:
   reviewer_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24a/review-report.md
   reviewer_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24a/review-exit.txt
   reviewer_pid: 34010
+  reviewer_report_2: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24a/review-report-2.md   # the reviewer again after the repair round
+  reviewer_exit_2: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O24a/review-exit-2.txt
+  reviewer_pid_2: 78804
 ```
 
 ## The standing demands (from Axel, in force)
