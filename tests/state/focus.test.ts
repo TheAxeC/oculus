@@ -9,6 +9,8 @@
 // reason the board's counting lives there; the view over it is tests/views/focus.test.ts.
 
 import { describe, expect, it } from 'vitest';
+import { NO_FEEDS } from '../entities-fixture.ts';
+import { attention, refresh, staleAfter } from '../../src/lib/state/feeds.ts';
 import { engineDir, loadConfig, vocabCatalog } from '../../src/lib/data/sources/config.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import {
@@ -92,7 +94,11 @@ function scheme(id: Id, over: Partial<Funding> = {}): Funding {
     };
 }
 
-function collection(id: string, rows: Record<string, unknown>[]): Collection {
+function collection(
+    id: string,
+    rows: Record<string, unknown>[],
+    statuses: string[] = []
+): Collection {
     const file = `/hub/${id}.yml`;
     const entries: Entry[] = rows.map((fields, index) => ({
         id: String(fields.key ?? fields.title ?? index),
@@ -101,7 +107,14 @@ function collection(id: string, rows: Record<string, unknown>[]): Collection {
         file,
         index
     }));
-    return { id, title: id, file, entries };
+    const held: Collection = { id, title: id, file, entries };
+    if (statuses.length > 0) {
+        held.schema = [
+            { field: 'title', type: 'text' },
+            { field: 'status', type: 'select', options: statuses }
+        ];
+    }
+    return held;
 }
 
 /**
@@ -160,6 +173,30 @@ function snapshot(): Snapshot {
     return {
         version: 1,
         entities: {
+            feeds: {
+                inbox: { run: '2026-09-09', actionable: 2 },
+                leads: [
+                    { title: 'A lead', deadline: '2026-09-20', status: 'open', fit: 'strong' },
+                    { title: 'A far lead', deadline: '2026-12-01', status: 'open', fit: null }
+                ],
+                radar: { lastRun: '2026-08-20' },
+                scout: { lastRun: '2026-09-09' },
+                linkedin: { lastPost: '2026-06-01' }
+            },
+            career: {
+                title: 'Career strategy',
+                milestone: 'FWO Senior (Nov 2026)',
+                situation: [],
+                order: [],
+                hosts: [
+                    { name: 'Naesens', status: 'awaiting', scores: {} },
+                    { name: 'Vermeesch', status: 'candidate', scores: {} }
+                ],
+                hostCriteria: [],
+                notHosts: [],
+                eligibility: null,
+                dropped: []
+            },
             projects: Object.fromEntries(projects.map((one) => [one.id, one])),
             venues: {
                 confx: venue('confx', {
@@ -186,15 +223,20 @@ function snapshot(): Snapshot {
                 sent: scheme('sent', { title: 'A grant sent', status: 'submitted' })
             },
             collections: {
-                events: collection('events', [
-                    { title: 'An old talk', status: 'past', date: '2026-09-01' },
-                    { title: 'A coming talk', status: 'upcoming', date: '2026-09-18' }
-                ]),
+                events: collection(
+                    'events',
+                    [
+                        { title: 'An old talk', status: 'past', date: '2026-09-01' },
+                        { title: 'A coming talk', status: 'upcoming', date: '2026-09-18' }
+                    ],
+                    ['upcoming', 'planned', 'not-attending', 'past']
+                ),
                 education: collection('education', [
                     { title: 'A course', status: 'ongoing', kind: 'teaching' }
                 ]),
                 applications: collection('applications', [
-                    { title: 'A position', status: 'active', deadline: '2026-09-14' }
+                    { title: 'A position', status: 'active', deadline: '2026-09-14' },
+                    { title: 'One out for an answer', status: 'applied' }
                 ]),
                 collaborations: collection('collaborations', [
                     { key: 'someone', title: 'Some One', status: 'active' }
@@ -285,11 +327,18 @@ describe('backlog and unplaced', () => {
 });
 
 describe('waiting', () => {
+    const strip = waiting(snap, config, { someone: 'Some One' });
+
     it('resolves a person, counts a paper by its venue and counts the rest as blocked', () => {
-        const strip = waiting(all, snap.entities.venues, { someone: 'Some One' });
         expect(strip.people).toEqual([{ label: 'Some One', count: 1 }]);
         expect(strip.venues).toEqual([{ label: 'JBI', count: 1 }]);
         expect(strip.blocked).toBe(1);
+    });
+
+    it('names the grants whose date is met, the applications out, and the hosts emailed', () => {
+        expect(strip.grants).toEqual(['A grant sent']);
+        expect(strip.applications).toEqual(['One out for an answer']);
+        expect(strip.hosts).toEqual(['Naesens']);
     });
 });
 
@@ -307,8 +356,15 @@ describe('ticker, deadlines', () => {
             ['paper', 'Dated', 10],
             ['funding', 'A grant in prep', 9],
             ['event', 'A coming talk', 7],
+            ['position', 'A position', 3],
+            ['position', 'A lead', 9],
             ['conference', 'ConfY', null]
         ]);
+    });
+
+    it('takes a live lead inside the leads window and leaves one beyond it', () => {
+        const leads = week.deadlines.filter((one) => one.target?.kind === 'lead');
+        expect(leads.map((one) => one.label)).toEqual(['A lead']);
     });
 
     it('folds a conference into the paper aimed at it and drops that call of its own', () => {
@@ -384,5 +440,105 @@ describe('band', () => {
         const cards = band(snap, config, NOW);
         expect(cards.applications.map((one) => one.title)).toEqual(['A position']);
         expect(cards.education.map((one) => one.title)).toEqual(['A course']);
+    });
+});
+
+describe('what a line can be written to', () => {
+    /** The first line of the ticker whose label is the one given, wherever it sits. */
+    function lineOf(label: string) {
+        const every = [
+            ...week.overdue,
+            ...week.deadlines,
+            ...week.followups,
+            ...week.subtasks,
+            ...week.snoozed
+        ];
+        return every.find((one) => one.label === label);
+    }
+
+    it('points a project deadline at its manifest', () => {
+        expect(lineOf('Dated')?.target).toEqual({ kind: 'manifest', id: 'run-dated' });
+        expect(lineOf('Late')?.target).toEqual({ kind: 'manifest', id: 'push-late' });
+    });
+
+    it('points a funding deadline at its scheme', () => {
+        expect(lineOf('A grant in prep')?.target).toEqual({ kind: 'funding', id: 'prep' });
+    });
+
+    it('points an entry at its collection, with that file own lifecycle statuses', () => {
+        const line = lineOf('A coming talk');
+        expect(line?.target?.kind).toBe('entry');
+        expect(line?.target?.collection).toBe('events');
+        expect(line?.target?.statuses).toEqual(['upcoming', 'planned', 'not-attending', 'past']);
+        expect(line?.status).toBe('upcoming');
+    });
+
+    it('points a subtask at its host and at the key of its own line', () => {
+        expect(lineOf('backburner-list: redraw figure 2')?.target).toEqual({
+            kind: 'manifest',
+            id: 'backburner-list',
+            subtask: 'a'
+        });
+        expect(lineOf('A review to write: read the paper')?.target).toEqual({
+            kind: 'entry',
+            id: 'A review to write',
+            collection: 'tasks',
+            subtask: '0'
+        });
+    });
+
+    it('points a follow-up at what holds the note, and a lead at the lead', () => {
+        expect(lineOf('build-notes - chase the coauthor')?.target).toEqual({
+            kind: 'followup',
+            id: 'build-notes'
+        });
+        expect(lineOf('A lead')?.target).toEqual({ kind: 'lead', id: 'A lead' });
+    });
+
+    it('gives a conference call no target, since the venue registry has no status field', () => {
+        expect(lineOf('ConfY')?.target).toBeUndefined();
+    });
+
+    it('keeps the target on a line that was snoozed rather than shown', () => {
+        expect(week.snoozed[0].target).toEqual({ kind: 'manifest', id: 'derisk-snoozed' });
+    });
+});
+
+describe('attention and refresh', () => {
+    it('counts the inbox and the days since the last post, and warns on venue load', () => {
+        expect(attention(snap, config, NOW)).toEqual([
+            { kind: 'inbox', count: 2 },
+            { kind: 'linkedin', count: 102 }
+        ]);
+    });
+
+    it('says nothing about a feed the hub does not have', () => {
+        const bare = { ...snap, entities: { ...snap.entities, feeds: NO_FEEDS } };
+        expect(attention(bare, config, NOW)).toEqual([]);
+        expect(refresh(bare, config, NOW)).toEqual([]);
+    });
+
+    it('nudges the feeds that are past their threshold and not the ones that are not', () => {
+        expect(refresh(snap, config, NOW)).toEqual([
+            { feed: 'litwatch', days: 22 },
+            { feed: 'inbox', days: 2 }
+        ]);
+    });
+
+    it('nudges a radar that is there and has never run', () => {
+        const never = {
+            ...snap,
+            entities: {
+                ...snap.entities,
+                feeds: { ...snap.entities.feeds, radar: { lastRun: null } }
+            }
+        };
+        expect(refresh(never, config, NOW)[0]).toEqual({ feed: 'litwatch', days: null });
+    });
+
+    it('reads the threshold of each feed out of refresh_stale_days over stale_days', () => {
+        expect(staleAfter(config, 'litwatch')).toBe(14);
+        expect(staleAfter(config, 'inbox')).toBe(2);
+        expect(staleAfter(config, 'scout')).toBe(7);
     });
 });

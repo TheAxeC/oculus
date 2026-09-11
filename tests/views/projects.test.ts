@@ -10,6 +10,7 @@
 // here through setInstanceState instead, and the interactions are checked in a browser.
 
 import { describe, expect, it } from 'vitest';
+import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Projects from '../../src/lib/views/Projects.svelte';
 import {
@@ -133,6 +134,8 @@ function snapshot(): Snapshot {
     return {
         version: 1,
         entities: {
+            feeds: NO_FEEDS,
+            career: null,
             projects: byId,
             venues: {
                 bspc: {

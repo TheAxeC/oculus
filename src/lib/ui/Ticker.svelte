@@ -10,6 +10,24 @@
         label: string;
         tail?: string;
         tone?: string;
+        /**
+         * Small buttons after the tail. Each is an id the caller knows and words it translated;
+         * what pressing one does is the caller's and nothing here knows what an action is.
+         */
+        actions?: TickerAction[];
+        /**
+         * Draw the name as text even in a list that can be picked. A row needs an id to be told
+         * apart when one of its buttons is pressed, and not every such row names something the
+         * caller can open; this says so, rather than leaving a button that does nothing.
+         */
+        plain?: boolean;
+    };
+
+    /** One button on a row: what it is called back with, its words, and its hover title. */
+    export type TickerAction = {
+        id: string;
+        label: string;
+        title?: string;
     };
 </script>
 
@@ -28,9 +46,11 @@
         rows: TickerRow[];
         /** What picking a row means. Rows are plain text when the caller wants none. */
         onpick?: (id: string) => void;
+        /** What pressing one of a row's buttons means, by the row's id and the button's. */
+        onaction?: (row: string, action: string) => void;
     };
 
-    let { rows, onpick }: Props = $props();
+    let { rows, onpick, onaction }: Props = $props();
 
     function toneStyle(tone: string | undefined): string | undefined {
         return tone === undefined ? undefined : `--tone-txt: var(--c-${tone}-txt)`;
@@ -41,7 +61,7 @@
     {#each rows as row, at (`${at}:${row.id}`)}
         <li>
             <Glyph name={row.glyph} />
-            {#if onpick !== undefined && row.id !== ''}
+            {#if onpick !== undefined && row.id !== '' && row.plain !== true}
                 <button type="button" class="name" onclick={() => onpick(row.id)}>
                     {row.label}
                 </button>
@@ -52,6 +72,18 @@
                 <span class="tail" class:toned={row.tone !== undefined} style={toneStyle(row.tone)}>
                     {row.tail}
                 </span>
+            {/if}
+            {#if onaction !== undefined && row.actions !== undefined}
+                {#each row.actions as action (action.id)}
+                    <button
+                        type="button"
+                        class="act"
+                        title={action.title}
+                        onclick={() => onaction(row.id, action.id)}
+                    >
+                        {action.label}
+                    </button>
+                {/each}
             {/if}
         </li>
     {/each}
@@ -111,5 +143,26 @@
     .tail.toned {
         color: var(--tone-txt);
         font-weight: 600;
+    }
+
+    .act {
+        flex: 0 0 auto;
+        padding: 0 5px;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        background: var(--chip);
+        font: inherit;
+        font-size: var(--fs-3xs);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted-txt, var(--muted));
+        cursor: pointer;
+    }
+
+    .act:hover,
+    .act:focus-visible {
+        color: var(--accent-txt, var(--accent));
+        border-color: var(--accent-txt, var(--accent));
     }
 </style>

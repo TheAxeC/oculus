@@ -17,6 +17,7 @@ import { join } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
 import { buildPortfolio, portfolioConfigFrom } from '../src/lib/data/index.ts';
+import { ENTITY_KINDS } from '../src/lib/data/normalise.ts';
 import { engineDir, loadConfig, loadLocal } from '../src/lib/data/sources/config.ts';
 
 const engine = engineDir();
@@ -96,7 +97,8 @@ describe.skipIf(!present)('the real hub', () => {
     it('holds exactly what a second count of the tree finds', () => {
         const held: Record<string, number> = {};
         for (const [kind, entities] of Object.entries(snapshot?.entities ?? {})) {
-            held[kind] = Object.keys(entities).length;
+            if (!ENTITY_KINDS.includes(kind)) continue;
+            held[kind] = Object.keys(entities as object).length;
         }
         console.log(`integrity: derived counts ${JSON.stringify(counts)}`);
         expect(held).toEqual(counts);

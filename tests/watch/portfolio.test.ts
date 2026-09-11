@@ -169,9 +169,16 @@ describe('relevant', () => {
 });
 
 describe('watchedDirectories', () => {
-    it('names every scan tier and the folder of every registry and collection file', () => {
+    it('names every scan tier and the folder of every registry, collection and feed file', () => {
         const dirs = watchedDirectories('/hub', {
             scan: [{ dir: 'projects/active' }],
+            feeds: {
+                inbox: 'feeds/inbox.yml',
+                leads: 'feeds/position-leads.yml',
+                radar: 'feeds/literature-radar.yml',
+                linkedin: 'theaxec.github.io/_linkedin'
+            },
+            career: 'CAREER.yml',
             registries: {
                 venues: 'registries/venues.yml',
                 datasets: 'registries/data.yml',
@@ -184,6 +191,7 @@ describe('watchedDirectories', () => {
             vocab: { types: [], statuses: [] }
         });
         expect(dirs.sort()).toEqual([
+            join('/hub', 'feeds'),
             join('/hub', 'funding'),
             join('/hub', 'network'),
             join('/hub', 'projects/active'),
@@ -231,6 +239,28 @@ describe('watchPortfolio', () => {
         expect(snapshot.entities.projects.loewner.title).toBe('Loewner neural layers');
         // A hub change is the portfolio channel alone; the vocabulary did not move.
         expect(on(started.got, 'config').length).toBe(configBefore);
+    });
+
+    it('republishes the portfolio when the career file changes', async () => {
+        const started = start();
+        await quiet(started.got);
+        // The file is watched on its own from the rebuild after it appears: a manifest change here
+        // is what makes that rebuild, and the edit after it is what the watch has to see.
+        write(started.hub, 'CAREER.yml', 'title: Career strategy\nhosts: []\n');
+        const seen = started.got.length;
+        write(
+            started.hub,
+            'projects/active/loewner/project.yml',
+            MANIFEST.replace('Loewner layers', 'Loewner layers again')
+        );
+        await until(() => started.got.length > seen, 2000);
+        const settled = await quiet(started.got);
+
+        write(started.hub, 'CAREER.yml', 'title: Career plan\nhosts: []\n');
+        await until(() => started.got.length > settled, 2000);
+        const portfolio = on(started.got, 'portfolio');
+        const snapshot = portfolio[portfolio.length - 1].payload as Snapshot;
+        expect(snapshot.entities.career?.title).toBe('Career plan');
     });
 
     it('ignores a file written under a project code folder', async () => {

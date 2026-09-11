@@ -10,6 +10,7 @@
 // and tests/routes/write.test.ts.
 
 import { describe, expect, it } from 'vitest';
+import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Editor from '../../src/lib/views/Editor.svelte';
 import {
@@ -79,6 +80,8 @@ function snapshot(): Snapshot {
     return {
         version: 1,
         entities: {
+            feeds: NO_FEEDS,
+            career: null,
             projects,
             venues: { bspc: { id: 'bspc', name: 'BSPC', short: 'BSPC', themes: [] } },
             datasets: {},

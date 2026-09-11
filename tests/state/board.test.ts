@@ -7,6 +7,7 @@
 // tests/state/tones.test.ts's half of the gate, and it would fail there rather than here.
 
 import { describe, expect, it } from 'vitest';
+import { NO_FEEDS } from '../entities-fixture.ts';
 import {
     DEADLINE_SOON,
     NONE,
@@ -189,6 +190,8 @@ function snapshot(): Snapshot {
     return {
         version: 1,
         entities: {
+            feeds: NO_FEEDS,
+            career: null,
             projects: byId,
             venues: {
                 bspc: venue('bspc', {

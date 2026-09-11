@@ -2,6 +2,7 @@
 // and the JSON round trip. Nothing here reads or writes a file; normalise is pure.
 
 import { describe, expect, it } from 'vitest';
+import { NO_FEEDS } from '../entities-fixture.ts';
 import { normalise } from '../../src/lib/data/normalise.ts';
 import type {
     DocPresence,
@@ -159,6 +160,8 @@ function portfolio(): RawPortfolio {
             funding: collection('funding', [{ title: 'Flanders AI' }]),
             events: collection('events', [{ title: 'A talk', status: 'planned' }])
         },
+        feeds: NO_FEEDS,
+        career: null,
         docs: { alpha: documents('alpha', ['README.md']) },
         findings: []
     };
@@ -274,6 +277,8 @@ describe('normalise, the field mapping', () => {
                     funding: entries('funding', [])
                 },
                 collections: {},
+                feeds: NO_FEEDS,
+                career: null,
                 docs: {},
                 findings: []
             },

@@ -24,7 +24,14 @@
         return t('app.socket_closed');
     }
 
-    function count(kind: keyof NonNullable<typeof snapshot>['entities']): number {
+    /**
+     * The entity kinds the snapshot keys by id. `feeds` and `career` are summaries of one file
+     * each rather than maps of entities, so they are not counted.
+     */
+    type Counted =
+        'projects' | 'venues' | 'datasets' | 'programs' | 'domains' | 'funding' | 'collections';
+
+    function count(kind: Counted): number {
         return snapshot === null ? 0 : Object.keys(snapshot.entities[kind]).length;
     }
 </script>

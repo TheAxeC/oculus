@@ -179,7 +179,7 @@ Svelte 5 state modules (`.svelte.ts`). `entities` holds the latest payload per c
 |---|---|---|
 | `ui/` | `ui/`, `themes/`, `state/text` | `state/*` otherwise, `views/`, `shell/`, `server/` |
 | `shell/` | `ui/`, `state/layout`, `state/drag`, `state/ui`, `state/text`, `state/appearance`, the view registry | any view by name, `server/` |
-| `views/` | `ui/`, `state/` | `shell/`, `server/`, other views |
+| `views/` | `ui/`, `state/`, its own partials under `views/<name>/` | `shell/`, `server/`, other views and their partials |
 | `state/` | `data/model` | `server/`, anything in layer 3 |
 | `data/`, `server/` | `data/` | anything client-side |
 

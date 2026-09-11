@@ -6,6 +6,7 @@
 // The snapshot is synthetic, since what is checked is the resolution and not the hub.
 
 import { describe, expect, it } from 'vitest';
+import { NO_FEEDS } from '../entities-fixture.ts';
 import {
     NOT_IN_MODEL,
     asList,
@@ -81,6 +82,8 @@ function snapshot(): Snapshot {
     return {
         version: 1,
         entities: {
+            feeds: NO_FEEDS,
+            career: null,
             projects,
             venues: {
                 bspc: {

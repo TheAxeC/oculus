@@ -47,6 +47,17 @@ function layerOf(id: string): string {
     return id.split('/')[0];
 }
 
+// A view may import partials from its own folder `views/<name>/`, and nothing else may import
+// them. It is the one way a view too large for one file is split without widening the row that
+// forbids a view importing another view: `views/Focus.svelte` and everything under `views/focus/`
+// may import `views/focus/**`, and `views/Projects.svelte` may not.
+function ownPartials(fileRel: string): string[] {
+    const parts = fileRel.split('/');
+    if (parts[0] !== 'views' || parts.length < 2) return [];
+    if (parts.length > 2) return [`views/${parts[1]}/**`];
+    return [`views/${parts[1].replace(/\.(ts|svelte)$/, '').toLowerCase()}/**`];
+}
+
 // An exact pattern also covers the runes module of the same name: `state/layout` is one module in
 // two files, the pure half in state/layout.ts and the store in state/layout.svelte.ts, and the row
 // names the module. It covers that one name and no other, so `state/entities.svelte` is still
@@ -88,7 +99,7 @@ export function findViolations(libRoot: string): string[] {
     for (const fileRel of sourceFiles(libRoot)) {
         const layer = layerOf(fileRel);
         if (!LAYERS.includes(layer)) continue;
-        const allowed = ALLOWED[layer];
+        const allowed = [...ALLOWED[layer], ...ownPartials(fileRel)];
         const text = readFileSync(join(libRoot, fileRel), 'utf8');
         for (const match of text.matchAll(IMPORT)) {
             const id = target(fileRel, match[1]);
@@ -126,8 +137,20 @@ describe('layer boundaries', () => {
         write('shell/Bad.ts', "import { branch } from '$lib/server/git';");
         write('shell/Runes.ts', "import { portfolio } from '$lib/state/entities.svelte';");
         write('shell/Store.ts', "import { apply } from '$lib/state/layout.svelte';");
-        write('views/Focus.svelte', "<script>\nimport Other from './Other.svelte';\n</script>");
-        write('views/Other.svelte', '<span></span>');
+        write(
+            'views/Focus.svelte',
+            "<script>\nimport Other from './Other.svelte';\nimport Cc from './focus/CommandCenter.svelte';\n</script>"
+        );
+        write(
+            'views/Other.svelte',
+            "<script>\nimport Cc from './focus/CommandCenter.svelte';\n</script>"
+        );
+        write(
+            'views/focus/CommandCenter.svelte',
+            "<script>\nimport Row from './Row.svelte';\nimport Bad from '../Projects.svelte';\n</script>"
+        );
+        write('views/focus/Row.svelte', '<span></span>');
+        write('views/Projects.svelte', '<span></span>');
         write('state/bad.svelte.ts', "import { read } from '$lib/data/sources/config';");
         write('server/git.ts', "import type { Project } from '../data/model.ts';");
 
@@ -136,7 +159,9 @@ describe('layer boundaries', () => {
             'shell/Runes.ts imports state/entities.svelte',
             'state/bad.svelte.ts imports data/sources/config',
             'ui/Bad.svelte imports views/Focus.svelte',
-            'views/Focus.svelte imports views/Other.svelte'
+            'views/Focus.svelte imports views/Other.svelte',
+            'views/Other.svelte imports views/focus/CommandCenter.svelte',
+            'views/focus/CommandCenter.svelte imports views/Projects.svelte'
         ]);
     });
 });

@@ -21,6 +21,7 @@ import Pane from '../../src/lib/ui/Pane.svelte';
 import Search from '../../src/lib/ui/Search.svelte';
 import Segment from '../../src/lib/ui/Segment.svelte';
 import Table, { order, type Column } from '../../src/lib/ui/Table.svelte';
+import Ticker from '../../src/lib/ui/Ticker.svelte';
 import Toolbar from '../../src/lib/ui/Toolbar.svelte';
 import ToolButton from '../../src/lib/ui/ToolButton.svelte';
 import Tooltip from '../../src/lib/ui/Tooltip.svelte';
@@ -269,6 +270,44 @@ describe('Pane, Empty, Toolbar, ToolButton, Segment and Search', () => {
         expect(body).toContain('type="search"');
         expect(body).toContain('aria-label="Filter"');
         expect(body).toContain('value="bt"');
+    });
+});
+
+describe('Ticker', () => {
+    const rows = [
+        {
+            id: 'one',
+            glyph: 'paper',
+            label: 'A paper',
+            tail: 'in 3d',
+            tone: 'amber',
+            actions: [
+                { id: 'snooze:7', label: '1w', title: 'snooze 1w' },
+                { id: 'hide', label: 'hide' }
+            ]
+        },
+        { id: 'two', glyph: 'coin', label: 'A grant', plain: true }
+    ];
+
+    it('draws a row with its glyph, its name and its dated tail', () => {
+        const body = html(Ticker, { rows });
+        expect(body).toContain('A paper');
+        expect(body).toContain('in 3d');
+    });
+
+    it('draws a row action as a button only when the caller says what one means', () => {
+        expect(html(Ticker, { rows })).not.toContain('1w');
+        const body = html(Ticker, { rows, onaction: () => {} });
+        expect(body).toContain('>1w<');
+        expect(body).toContain('title="snooze 1w"');
+        expect(body).toContain('>hide<');
+    });
+
+    it('leaves a plain row as text in a list that can otherwise be picked', () => {
+        const body = html(Ticker, { rows, onpick: () => {} });
+        expect(body).toContain('<button type="button" class="name');
+        const grant = body.slice(body.indexOf('A grant') - 200, body.indexOf('A grant'));
+        expect(grant).toContain('class="name plain');
     });
 });
 

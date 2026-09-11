@@ -337,6 +337,29 @@ function sortFindings(findings: Finding[]): Finding[] {
  * key. Nothing is thrown and nothing is repaired: a caller decides what a finding means, and the
  * snapshot carries the list so the app can show it.
  */
+/**
+ * A host of the career file whose `status:` is not one of `career_host_status`. The buttons on a
+ * host row are that vocabulary, so a status outside it is a row the board cannot move on.
+ */
+function checkHostStatus(raw: RawPortfolio, rules: ValidationRules, findings: Finding[]): void {
+    const allowed = rules.vocab.hostStatuses;
+    if (allowed === undefined || allowed.length === 0 || raw.career === null) return;
+    const hosts = raw.career.hosts;
+    if (!Array.isArray(hosts)) return;
+    const file = rules.careerFile ?? '';
+    hosts.forEach((held: unknown, index: number) => {
+        if (typeof held !== 'object' || held === null || Array.isArray(held)) return;
+        const row = held as Record<string, unknown>;
+        const status = typeof row.status === 'string' ? row.status : '';
+        if (status === '' || allowed.includes(status)) return;
+        findings.push({
+            file,
+            key: `hosts[${index}]`,
+            message: `host status "${status}" is not one of the host status vocabulary`
+        });
+    });
+}
+
 export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     const findings: Finding[] = [...raw.findings];
     const schema = schemaKeys(rules.schema);
@@ -355,6 +378,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     checkFundingIdentity(raw, findings);
     checkEntryStatus(raw, vocab.statuses, findings);
     checkCollectionSchema(raw, findings);
+    checkHostStatus(raw, rules, findings);
 
     return sortFindings(findings);
 }

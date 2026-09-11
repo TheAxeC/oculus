@@ -9,6 +9,7 @@
 // it in a finding, so a view never joins against something that is not there.
 
 import type {
+    Career,
     CodeAvailability,
     Collection,
     Dataset,
@@ -16,9 +17,11 @@ import type {
     DocPresence,
     Domain,
     Entry,
+    Feeds,
     Finding,
     Followup,
     Funding,
+    Host,
     Id,
     Program,
     Project,
@@ -38,6 +41,20 @@ import type {
 
 /** Collection keys that name a registry the snapshot already carries; reading both would double it. */
 export const REGISTRY_KEYS = ['venues', 'datasets', 'programs', 'domains', 'funding'];
+
+/**
+ * The entity kinds the snapshot keys by id. `entities.feeds` and `entities.career` are summaries of
+ * one file each rather than maps of entities, so anything counting entities skips them.
+ */
+export const ENTITY_KINDS = [
+    'projects',
+    'venues',
+    'datasets',
+    'programs',
+    'domains',
+    'funding',
+    'collections'
+];
 
 function isMap(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -375,6 +392,137 @@ function collection(raw: RawCollection): Collection {
  * its `funding:` is prose, so a scheme and a research line are related here when at least one
  * project names them both.
  */
+/** The keys of a host row that are the host itself; every other string key is one of its scores. */
+const HOST_KEYS = ['name', 'inst', 'tag', 'status', 'note'];
+
+/** The status a host row carries no `status:` of its own for. */
+const HOST_DEFAULT = 'candidate';
+
+/**
+ * The prose of a host row, with the `[proposal: Strong | ...]` prefix removed. The prefix repeats
+ * what the score chips already show, so leaving it in would print every score twice.
+ */
+function hostNote(value: unknown): string | undefined {
+    const text = str(value);
+    if (text === undefined) return undefined;
+    const trimmed =
+        text.startsWith('[') && text.includes(']')
+            ? text.slice(text.indexOf(']') + 1).trimStart()
+            : text;
+    return trimmed.trim() === '' ? undefined : trimmed;
+}
+
+function host(value: unknown): Host | null {
+    if (!isMap(value)) return null;
+    const name = str(value.name);
+    if (name === undefined || name.trim() === '') return null;
+    const scores: Record<string, string> = {};
+    for (const [key, held] of Object.entries(value)) {
+        if (HOST_KEYS.includes(key)) continue;
+        const text = str(held);
+        if (text !== undefined && text.trim() !== '') scores[key] = text;
+    }
+    return compact({
+        name,
+        inst: str(value.inst),
+        tag: str(value.tag),
+        status: str(value.status) ?? HOST_DEFAULT,
+        scores,
+        note: hostNote(value.note)
+    });
+}
+
+/** One numbered row of the order of work, tolerating the plain-string form the file may write. */
+function orderRow(value: unknown): { task: string; when?: string; note?: string } | null {
+    if (typeof value === 'string') return value.trim() === '' ? null : { task: value };
+    if (!isMap(value)) return null;
+    const task = str(value.task);
+    if (task === undefined || task.trim() === '') return null;
+    return compact({ task, when: str(value.when), note: str(value.note) });
+}
+
+/** A `what`/`why` or `who`/`why` chip row, tolerating the plain-string form. */
+function reasoned<K extends string>(value: unknown, key: K): Record<K | 'why', string> | null {
+    if (typeof value === 'string') {
+        return value.trim() === '' ? null : ({ [key]: value } as Record<K | 'why', string>);
+    }
+    if (!isMap(value)) return null;
+    const what = str(value[key]);
+    if (what === undefined || what.trim() === '') return null;
+    return compact({ [key]: what, why: str(value.why) }) as Record<K | 'why', string>;
+}
+
+/** The eligibility section, whose `rule` the file may write as one string or as a list of them. */
+function eligibility(value: unknown): Career['eligibility'] {
+    if (!isMap(value)) return null;
+    const rule = typeof value.rule === 'string' ? [value.rule] : strings(value.rule);
+    const shots = strings(value.shots);
+    if (rule.length === 0 && shots.length === 0 && str(value.caveat) === undefined) return null;
+    return compact({ rule, shots, caveat: str(value.caveat) });
+}
+
+/**
+ * The career strategy as the panel reads it. Every section is optional and every list tolerates the
+ * plain-string form the file is allowed to write, so a half-filled career file draws the half it
+ * has rather than nothing.
+ */
+export function career(raw: Record<string, unknown> | null): Career | null {
+    if (raw === null) return null;
+    const situation: { label: string; value: string }[] = [];
+    if (isMap(raw.situation)) {
+        for (const [label, held] of Object.entries(raw.situation)) {
+            const text = str(held);
+            if (text !== undefined) situation.push({ label, value: text });
+        }
+    }
+    const hosts: Host[] = [];
+    for (const row of Array.isArray(raw.hosts) ? raw.hosts : []) {
+        const one = host(row);
+        if (one !== null) hosts.push(one);
+    }
+    const order: { task: string; when?: string; note?: string }[] = [];
+    for (const row of Array.isArray(raw.order) ? raw.order : []) {
+        const one = orderRow(row);
+        if (one !== null) order.push(one);
+    }
+    const notHosts: { who: string; why?: string }[] = [];
+    for (const row of Array.isArray(raw.not_hosts) ? raw.not_hosts : []) {
+        const one = reasoned(row, 'who');
+        if (one !== null) notHosts.push(one);
+    }
+    const dropped: { what: string; why?: string }[] = [];
+    for (const row of Array.isArray(raw.dropped) ? raw.dropped : []) {
+        const one = reasoned(row, 'what');
+        if (one !== null) dropped.push(one);
+    }
+    return compact({
+        title: str(raw.title) ?? '',
+        milestone: str(raw.milestone),
+        situation,
+        order,
+        orderNote: str(raw.order_note),
+        hosts,
+        hostCriteria: strings(raw.host_criteria),
+        notHosts,
+        eligibility: eligibility(raw.eligibility),
+        dropped
+    });
+}
+
+/**
+ * The feeds, already the summary sources/feeds.ts made of them. They are copied rather than passed
+ * through so that the snapshot owns its own objects, which is what every other entity here does.
+ */
+function feeds(raw: Feeds): Feeds {
+    return {
+        inbox: raw.inbox === null ? null : { ...raw.inbox },
+        leads: raw.leads === null ? null : raw.leads.map((one) => ({ ...one })),
+        radar: raw.radar === null ? null : { ...raw.radar },
+        scout: raw.scout === null ? null : { ...raw.scout },
+        linkedin: raw.linkedin === null ? null : { ...raw.linkedin }
+    };
+}
+
 function relations(projects: Project[], entities: Record<string, Set<Id>>): Relations {
     const venueTable: [Id, Id][] = [];
     const fundingTable: [Id, Id][] = [];
@@ -481,7 +629,9 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
             programs: byId(programs),
             domains: byId(domains),
             funding: byId(schemes),
-            collections: byId(collections)
+            collections: byId(collections),
+            feeds: feeds(raw.feeds),
+            career: career(raw.career)
         },
         relations: tables,
         findings

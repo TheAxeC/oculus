@@ -12,6 +12,7 @@
 // which side of today they fall on is not in question.
 
 import { describe, expect, it } from 'vitest';
+import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Focus from '../../src/lib/views/Focus.svelte';
 import {
@@ -25,6 +26,7 @@ import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { chipLabel, setVocab } from '../../src/lib/state/tones.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
 import type {
+    Career,
     Collection,
     Funding,
     Id,
@@ -91,9 +93,13 @@ function scheme(id: Id, over: Partial<Funding> = {}): Funding {
     };
 }
 
-function collection(id: string, rows: Record<string, unknown>[]): Collection {
+function collection(
+    id: string,
+    rows: Record<string, unknown>[],
+    statuses: string[] = []
+): Collection {
     const file = `/hub/${id}.yml`;
-    return {
+    const held: Collection = {
         id,
         title: id,
         file,
@@ -105,6 +111,13 @@ function collection(id: string, rows: Record<string, unknown>[]): Collection {
             index
         }))
     };
+    if (statuses.length > 0) {
+        held.schema = [
+            { field: 'title', type: 'text' },
+            { field: 'status', type: 'select', options: statuses }
+        ];
+    }
+    return held;
 }
 
 function venue(id: Id, over: Partial<Venue> = {}): Venue {
@@ -122,7 +135,16 @@ function snapshot(): Snapshot {
             priority: 'high',
             chips: ['lead'],
             next: 'Run the sweep. Then write it up.',
-            waitingOn: ['someone']
+            waitingOn: ['someone'],
+            followups: [{ do: 'chase the coauthor' }],
+            subtasks: [{ key: 'fig', do: 'redraw figure 2', deadline: daysOff(6), done: false }]
+        }),
+        project('foxtrot', 'active', {
+            type: 'active',
+            title: 'Foxtrot',
+            focus: 'run',
+            deadline: daysOff(4),
+            snooze: daysOff(40)
         }),
         project('bravo', 'manuscripts', {
             type: 'manuscript',
@@ -145,6 +167,14 @@ function snapshot(): Snapshot {
     return {
         version: 1,
         entities: {
+            feeds: {
+                inbox: { run: '2020-01-01', actionable: 3 },
+                leads: [{ title: 'A lead', deadline: daysOff(8), status: 'open', fit: 'strong' }],
+                radar: { lastRun: '2020-01-01' },
+                scout: { lastRun: '2020-01-01' },
+                linkedin: { lastPost: '2020-01-01' }
+            },
+            career: CAREER,
             projects: byId,
             venues: {
                 jbi: venue('jbi', { name: 'Journal of Biomedical Informatics', short: 'JBI' })
@@ -156,13 +186,19 @@ function snapshot(): Snapshot {
                 prep: scheme('prep', {
                     title: 'A grant in prep',
                     status: 'in-prep',
-                    deadline: daysOff(10)
+                    deadline: daysOff(10),
+                    note: 'The concept is written. The budget is not.'
                 })
             },
             collections: {
                 collaborations: collection('collaborations', [
                     { key: 'someone', title: 'Some One', status: 'active' }
                 ]),
+                events: collection(
+                    'events',
+                    [{ title: 'A coming talk', status: 'upcoming', date: daysOff(9) }],
+                    ['upcoming', 'planned', 'not-attending', 'past']
+                ),
                 education: collection('education', [{ title: 'A course', status: 'ongoing' }])
             }
         },
@@ -170,6 +206,28 @@ function snapshot(): Snapshot {
         findings: []
     };
 }
+
+/** One host in flight, one dropped candidate, and a milestone whose brackets the summary drops. */
+const CAREER: Career = {
+    title: 'Career strategy',
+    milestone: 'FWO Senior - 2 shots left (Nov 2026 and Nov 2027).',
+    situation: [{ label: 'PhD', value: 'May 2023, KU Leuven' }],
+    order: [{ task: 'Veni pre-proposal', when: '1 Sep' }],
+    hosts: [
+        {
+            name: 'Naesens',
+            inst: 'KU Leuven',
+            tag: 'transplant',
+            status: 'awaiting',
+            scores: { proposal: 'Strong', backing: 'High' },
+            note: 'Federated outcome prediction across consortia.'
+        }
+    ],
+    hostCriteria: ['Clinic-embedded'],
+    notHosts: [{ who: 'Peeters', why: 'former advisor' }],
+    eligibility: { rule: ['PhD 3-6 yr before the start'], shots: ['Nov 2026'], caveat: 'a caveat' },
+    dropped: [{ what: 'MSCA-PF 2026' }]
+};
 
 /**
  * A date the given number of days from the run date. The deadline window is counted from the real
@@ -184,6 +242,8 @@ function bare(): Snapshot {
     return {
         version: 2,
         entities: {
+            feeds: NO_FEEDS,
+            career: null,
             projects: {},
             venues: {},
             datasets: {},
@@ -214,7 +274,7 @@ const body = html();
 
 describe('the board', () => {
     it('carries its own words and the three cluster headers', () => {
-        expect(body).toContain(catalog['focus.working_now']);
+        expect(body).toContain(catalog['views.focus']);
         expect(body).toContain(catalog['focus.cluster_now']);
         expect(body).toContain(catalog['focus.cluster_parked']);
         expect(body).toContain(catalog['focus.cluster_incubate']);
@@ -230,7 +290,7 @@ describe('the board', () => {
 
     it('counts what sits on a lane', () => {
         const run = body.slice(body.indexOf('>Run<'));
-        expect(run.slice(0, 200)).toContain('>2<');
+        expect(run.slice(0, 200)).toContain('>3<');
     });
 
     it('names the manuscript that belongs on a lane and has none', () => {
@@ -263,16 +323,75 @@ describe('a card', () => {
     it('says what a card is waiting on', () => {
         expect(body).toContain('Some One');
     });
+
+    // The flame is always drawn, faint, so a card with no priority can be clicked to set one; the
+    // cycle itself needs a DOM and is checked in a browser.
+    it('draws the flame badge on a card with no priority at all', () => {
+        expect(/class="[^"]*\bflames\b[^"]*\bunset\b/.test(body)).toBe(true);
+        expect(body).toContain(catalog['focus.set_priority']);
+    });
 });
 
-describe('the ticker', () => {
+describe('the command center', () => {
+    it('carries its heading', () => {
+        expect(body).toContain(catalog['cc.command_center']);
+    });
+
     it('draws the overdue group for a deadline that has gone by', () => {
         expect(body).toContain(catalog['cc.grp_overdue_label']);
         expect(body).toContain('Bravo');
     });
 
-    it('draws the deadlines group with its category sub-header', () => {
-        expect(body).toContain(escaped('cc.grp_deadlines_label'));
+    it('draws every group that has a line', () => {
+        for (const key of [
+            'cc.grp_overdue_label',
+            'cc.grp_attention_label',
+            'cc.grp_deadlines_label',
+            'cc.grp_subtask_dl_label',
+            'cc.grp_followups_label',
+            'cc.grp_refresh_label'
+        ]) {
+            expect(body).toContain(escaped(key));
+        }
+        expect(body).toContain(catalog['cc.emails'].replace(/&/g, '&amp;'));
+        expect(body).toContain('/research-cockpit litwatch');
+    });
+
+    it('draws the snooze buttons on a project deadline line', () => {
+        for (const key of ['actions.snooze_1w', 'actions.snooze_1mo', 'actions.snooze_hide']) {
+            expect(body).toContain(catalog[key]);
+        }
+    });
+
+    it('draws the lifecycle statuses of the events file on an events line', () => {
+        expect(body).toContain('A coming talk');
+        expect(body).toContain('>not-attending<');
+        expect(body).toContain('>planned<');
+    });
+
+    it('draws done and del on a subtask line, and done on a follow-up', () => {
+        expect(body).toContain('redraw figure 2');
+        expect(body).toContain(catalog['actions.done']);
+        expect(body).toContain(catalog['actions.del']);
+        expect(body).toContain('chase the coauthor');
+    });
+
+    it('draws un-snooze on a snoozed line and nothing else', () => {
+        expect(body).toContain(catalog['cc.snoozed'].replace('{0}', '1'));
+        expect(body).toContain(catalog['actions.unsnooze']);
+    });
+
+    it('draws a position lead with its own countdown', () => {
+        expect(body).toContain(escaped('cc.dlcat_position'));
+        expect(body).toContain('A lead');
+    });
+});
+
+describe('quick add', () => {
+    it('draws its label and the two controls that open the form', () => {
+        expect(body).toContain(catalog['focus.quick_add']);
+        expect(body).toContain(catalog['focus.add_followup']);
+        expect(body).toContain(catalog['focus.add_deadline']);
     });
 });
 
@@ -283,11 +402,47 @@ describe('the strip and the band', () => {
         expect(body).toContain('JBI');
     });
 
+    it('names the host emailed and still waiting', () => {
+        expect(body).toContain(catalog['focus.wait_hosts']);
+    });
+
     it('stacks the grants by stage and names the teaching column', () => {
         expect(body).toContain(catalog['focus.cards_group']);
         expect(body).toContain('A grant in prep');
         expect(body).toContain(escaped('focus.teaching_label'));
         expect(body).toContain('A course');
+    });
+
+    it('draws the first sentence of a band card note and not the rest of it', () => {
+        expect(body).toContain('The concept is written.');
+        expect(body).not.toContain('The budget is not.');
+    });
+});
+
+describe('the career panel', () => {
+    it('summarises itself with the milestone up to its first parenthesis', () => {
+        expect(body).toContain('FWO Senior - 2 shots left');
+        expect(body).toContain(catalog['focus.in_flight'].replace('{0}', '1'));
+    });
+
+    it('draws a host row with its score chips and the statuses it can be moved to', () => {
+        expect(body).toContain('Naesens');
+        expect(body).toContain('P Strong');
+        expect(body).toContain('B High');
+        expect(body).toContain(
+            (config.career_host_status as Record<string, { label: string }>).awaiting.label
+        );
+        expect(body).toContain('>warm<');
+        expect(body).toContain('>candidate<');
+        expect(body).not.toContain('>awaiting<');
+    });
+
+    it('draws the situation strip, the criteria, the shots and the dropped chips', () => {
+        expect(body).toContain(catalog['focus.career_situation']);
+        expect(body).toContain('Clinic-embedded');
+        expect(body).toContain('Nov 2026');
+        expect(body).toContain(catalog['focus.dropped']);
+        expect(body).toContain('MSCA-PF 2026');
     });
 });
 
@@ -298,5 +453,12 @@ describe('an empty portfolio', () => {
         expect(empty).toContain(catalog['focus.none']);
         expect(empty).not.toContain('Alpha');
         expect(empty).not.toContain(catalog['focus.awaiting_response']);
+    });
+
+    it('draws no command center and says the hub keeps no career file', () => {
+        receive({ channel: 'portfolio', version: 3, payload: bare() });
+        const empty = html();
+        expect(empty).not.toContain(catalog['cc.command_center']);
+        expect(empty).toContain(catalog['focus.career_empty']);
     });
 });

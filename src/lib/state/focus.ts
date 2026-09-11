@@ -23,7 +23,16 @@ export const CLUSTERS = ['now', 'parked', 'incubate'];
  * The deadline categories, in the order the ticker groups them. They are different jobs: your own
  * paper's submission date is not a conference's open call, and neither is a grant deadline.
  */
-export const CATEGORIES = ['paper', 'funding', 'event', 'teaching', 'collab', 'task', 'conference'];
+export const CATEGORIES = [
+    'paper',
+    'funding',
+    'event',
+    'teaching',
+    'position',
+    'collab',
+    'task',
+    'conference'
+];
 
 /** The glyph each category is drawn with, by the names of config/glyphs.yml. */
 const GLYPHS: Record<string, string> = {
@@ -75,6 +84,27 @@ export type Priority = {
  * of `id` (a project) and `entry` (the collection key of an entry) is set, and a line with neither
  * is not something the board can open.
  */
+/**
+ * What a ticker line's buttons act on, and nothing about what they say. A view derives the buttons
+ * from the shape: a `manifest` or an `entry` is snoozed, an `entry` carrying `statuses` also gets
+ * its lifecycle buttons, a line carrying a `subtask` key is ticked, reopened, snoozed or deleted, a
+ * `followup` is cleared, a snoozed line is woken, and a `lead` carries none until the Leads view.
+ *
+ * Keeping the words out is what lets one view draw every group: the buttons are the write path's
+ * vocabulary and the sentences are config/text.yml's, and neither of them is here.
+ */
+export type TickerTarget = {
+    kind: 'manifest' | 'entry' | 'funding' | 'venue' | 'lead' | 'followup';
+    /** The project id, the entry id, the scheme id, the venue id, or the lead's own title. */
+    id: string;
+    /** The collection an `entry` target sits in. */
+    collection?: string;
+    /** The key of the subtask line, for a line that is one. */
+    subtask?: string;
+    /** The lifecycle values of the entry's own collection, minus none; the view drops the current. */
+    statuses?: string[];
+};
+
 export type TickerItem = {
     kind: string;
     glyph: string;
@@ -82,6 +112,10 @@ export type TickerItem = {
     days: number | null;
     id?: Id;
     entry?: string;
+    /** What this line's buttons write, and nothing when the line carries none. */
+    target?: TickerTarget;
+    /** The status the entry of an `entry` target carries now, so the view can drop that button. */
+    status?: string;
     /**
      * The conference a paper's deadline is aimed at, folded into the paper's own line so the call
      * is not listed twice. It is a name, and the view joins it to the label with the arrow glyph;
@@ -114,6 +148,12 @@ export type Waiting = {
     people: Tally[];
     venues: Tally[];
     blocked: number;
+    /** Grants whose status says the application is in and the answer is not. */
+    grants: string[];
+    /** Job applications out for a decision. */
+    applications: string[];
+    /** Career hosts emailed and not yet answered. */
+    hosts: string[];
 };
 
 /** One card of the band under the lanes. */
@@ -125,6 +165,11 @@ export type BandItem = {
      */
     entry?: string;
     days: number | null;
+    /**
+     * The card's one line of prose: the entry's own `note:`, and its `sub:` descriptor when it has
+     * none, which is what the education file writes instead. The view shortens it to a sentence.
+     */
+    note?: string;
 };
 
 /** One stage stacked inside the funding column of the band. */
@@ -327,14 +372,15 @@ function venueLabel(venue: Venue | undefined): string {
  * A person is a collaborations key resolved to that entry's name, or a free name as written.
  */
 export function waiting(
-    projects: Project[],
-    venues: Record<Id, Venue>,
+    snapshot: Snapshot,
+    config: Record<string, unknown>,
     collaborators: Record<Id, string>
 ): Waiting {
+    const venues = snapshot.entities.venues;
     const people: Record<string, number> = {};
     const held: Record<string, number> = {};
     let blocked = 0;
-    for (const project of projects) {
+    for (const project of Object.values(snapshot.entities.projects)) {
         if (!live(project)) continue;
         if (project.waitingOn.length > 0) {
             for (const key of project.waitingOn) {
@@ -351,7 +397,18 @@ export function waiting(
         }
         if (project.chips.includes('blocked')) blocked += 1;
     }
-    return { people: tallies(people), venues: tallies(held), blocked };
+    const grants = Object.values(snapshot.entities.funding)
+        .filter((scheme) => deadlineMet(config, scheme.status ?? ''))
+        .map((scheme) => scheme.title)
+        .sort();
+    const applications = entriesOf(snapshot.entities.collections, 'applications')
+        .filter((entry) => str(entry.fields.status).trim().toLowerCase() === 'applied')
+        .map((entry) => entry.title)
+        .sort();
+    const hosts = (snapshot.entities.career?.hosts ?? [])
+        .filter((host) => host.status.trim().toLowerCase() === 'awaiting')
+        .map((host) => host.name);
+    return { people: tallies(people), venues: tallies(held), blocked, grants, applications, hosts };
 }
 
 /** An ISO date a `YYYY-MM-DD` string holds, and the empty string for anything else. */
@@ -372,6 +429,15 @@ function entryDate(entry: Entry): string {
 /** The entries of one collection of the snapshot, and none when it holds no such file. */
 function entriesOf(collections: Record<Id, Collection>, key: string): Entry[] {
     return collections[key]?.entries ?? [];
+}
+
+/**
+ * The lifecycle values of a collection's own `status` field, out of the file's own `schema:`. It is
+ * the file that says what an entry's statuses are, so a collection with no such field offers none
+ * and its lines carry no status buttons.
+ */
+export function collectionStatuses(collection: Collection | undefined): string[] {
+    return collection?.schema?.find((field) => field.field === 'status')?.options ?? [];
 }
 
 /** One ticker line. */
@@ -430,7 +496,10 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         const days = daysUntil(project.deadline ?? '', now);
         if (days === null || settled(project, config)) continue;
         if (days > horizon) continue;
-        const line = item('paper', GLYPHS.paper, labelOf(project), days, { id: project.id });
+        const line = item('paper', GLYPHS.paper, labelOf(project), days, {
+            id: project.id,
+            target: { kind: 'manifest', id: project.id }
+        });
         if (snoozed(project.snooze, now)) {
             asleep.push({ ...line, snoozed: true });
             continue;
@@ -463,7 +532,9 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         if (terminal(config, status) || deadlineMet(config, status)) continue;
         const days = daysUntil(isoOf(scheme.deadline), now);
         if (days === null || days > horizon) continue;
-        const line = item('funding', GLYPHS.funding, scheme.title, days);
+        const line = item('funding', GLYPHS.funding, scheme.title, days, {
+            target: { kind: 'funding', id: scheme.id }
+        });
         if (snoozed(scheme.snooze, now)) {
             asleep.push({ ...line, snoozed: true });
             continue;
@@ -475,12 +546,17 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     /** Talks, teaching, tasks, positions and collaborations: one rule over five files. */
     for (const category of ENTRY_CATEGORIES) {
         const key = COLLECTIONS[category];
+        const statuses = collectionStatuses(collections[key]);
         for (const entry of entriesOf(collections, key)) {
             const status = str(entry.fields.status);
             if (terminal(config, status) || deadlineMet(config, status)) continue;
             const days = daysUntil(entryDate(entry), now);
             if (days === null || days > horizon) continue;
-            const line = item(category, GLYPHS[category], entry.title, days, { entry: key });
+            const line = item(category, GLYPHS[category], entry.title, days, {
+                entry: key,
+                status,
+                target: { kind: 'entry', id: entry.id, collection: key, statuses }
+            });
             if (snoozed(entry.fields.snooze, now)) {
                 asleep.push({ ...line, snoozed: true });
                 continue;
@@ -488,6 +564,23 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             if (days < 0) overdue.push({ ...line, glyph: GLYPHS.overdue });
             else if (CATEGORIES.includes(category)) dated.push({ category, line });
         }
+    }
+
+    /**
+     * The position scout's live leads. They move fast, so they have a window of their own rather
+     * than the ninety-day planning horizon, and they sit in the same group as the applications the
+     * entry loop above found: both are positions.
+     */
+    const leadsWindow = setting(config, 'leads_horizon_days', 21);
+    for (const lead of snapshot.entities.feeds.leads ?? []) {
+        const days = daysUntil(lead.deadline ?? '', now);
+        if (days === null || days < 0 || days > leadsWindow) continue;
+        dated.push({
+            category: 'position',
+            line: item('position', GLYPHS.position, lead.title, days, {
+                target: { kind: 'lead', id: lead.title }
+            })
+        });
     }
 
     /** A conference's open call, by its exact date or, with none, by its usual month. */
@@ -517,7 +610,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             notes.push({
                 days,
                 line: item('followup', GLYPHS.followup, `${labelOf(project)} - ${note.do}`, days, {
-                    id: project.id
+                    id: project.id,
+                    target: { kind: 'followup', id: project.id }
                 })
             });
         }
@@ -539,7 +633,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
                 notes.push({
                     days,
                     line: item('followup', GLYPHS.followup, `${entry.title} - ${note.do}`, days, {
-                        entry: key
+                        entry: key,
+                        target: { kind: 'followup', id: entry.id, collection: key }
                     })
                 });
             }
@@ -553,9 +648,14 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
      * no `kind:`, so a project's lines group under the empty kind and an entry's under its own.
      */
     for (const project of Object.values(snapshot.entities.projects)) {
-        for (const line of subtaskLines(project.subtasks, labelOf(project), '', now, {
-            id: project.id
-        })) {
+        for (const line of subtaskLines(
+            project.subtasks,
+            labelOf(project),
+            '',
+            now,
+            { id: project.id },
+            { kind: 'manifest', id: project.id }
+        )) {
             if (line.snoozed) asleep.push(line);
             else subtasks.push(line);
         }
@@ -563,7 +663,17 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     for (const scheme of Object.values(snapshot.entities.funding)) {
         const status = scheme.status ?? '';
         if (terminal(config, status) && !statusFlag(config, status, 'live_subtasks')) continue;
-        for (const line of subtaskLines(scheme.subtasks, scheme.title, 'funding', now, {})) {
+        for (const line of subtaskLines(
+            scheme.subtasks,
+            scheme.title,
+            'funding',
+            now,
+            {},
+            {
+                kind: 'funding',
+                id: scheme.id
+            }
+        )) {
             if (line.snoozed) asleep.push(line);
             else subtasks.push(line);
         }
@@ -577,7 +687,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
                 entry.title,
                 str(entry.fields.kind),
                 now,
-                { entry: key }
+                { entry: key },
+                { kind: 'entry', id: entry.id, collection: key }
             )) {
                 if (line.snoozed) asleep.push(line);
                 else subtasks.push(line);
@@ -678,13 +789,17 @@ function subtaskLines(
     parent: string,
     kind: string,
     now: number,
-    over: Partial<TickerItem>
+    over: Partial<TickerItem>,
+    target: TickerTarget
 ): TickerItem[] {
     const out: TickerItem[] = [];
     for (const row of rows) {
         if (row.done) continue;
         const days = daysUntil(row.deadline ?? '', now);
-        const line = item(kind, GLYPHS.subtask, `${parent}: ${row.do}`, days, over);
+        const line = item(kind, GLYPHS.subtask, `${parent}: ${row.do}`, days, {
+            ...over,
+            target: { ...target, subtask: row.key }
+        });
         out.push(snoozed(row.snooze, now) ? { ...line, snoozed: true } : line);
     }
     return out;
@@ -732,7 +847,14 @@ function bandOrder(a: BandItem, b: BandItem): number {
 }
 
 function bandItem(entry: Entry, key: string, now: number): BandItem {
-    return { title: entry.title, entry: key, days: daysUntil(entryDate(entry), now) };
+    const note = str(entry.fields.note) === '' ? str(entry.fields.sub) : str(entry.fields.note);
+    const card: BandItem = {
+        title: entry.title,
+        entry: key,
+        days: daysUntil(entryDate(entry), now)
+    };
+    if (note !== '') card.note = note;
+    return card;
 }
 
 /**
@@ -747,10 +869,15 @@ export function band(snapshot: Snapshot, config: Record<string, unknown>, now: n
     for (const stage of fundStages(config)) {
         const items = grants
             .filter((scheme) => stage.statuses.includes((scheme.status ?? '').toLowerCase()))
-            .map((scheme) => ({
-                title: scheme.title,
-                days: daysUntil(isoOf(scheme.deadline), now)
-            }))
+            .map((scheme) => {
+                const card: BandItem = {
+                    title: scheme.title,
+                    days: daysUntil(isoOf(scheme.deadline), now)
+                };
+                const note = scheme.note ?? scheme.sub ?? '';
+                if (note !== '') card.note = note;
+                return card;
+            })
             .sort(bandOrder);
         if (items.length > 0) funding.push({ label: stage.label, tone: stage.tone, items });
     }

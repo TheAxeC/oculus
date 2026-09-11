@@ -2,6 +2,7 @@
 // Nothing here reads or writes a file; validate is pure and the fixtures are literals.
 
 import { describe, expect, it } from 'vitest';
+import { NO_FEEDS } from '../entities-fixture.ts';
 import { validate } from '../../src/lib/data/validate.ts';
 import type {
     Finding,
@@ -87,6 +88,8 @@ function portfolio(over: Partial<RawPortfolio> = {}): RawPortfolio {
                 { key: 'someone', title: 'Someone Else' }
             ])
         },
+        feeds: NO_FEEDS,
+        career: null,
         docs: {},
         findings: [],
         ...over

@@ -38,6 +38,18 @@ export type CollectionFile = {
 };
 
 /**
+ * The four generated feed files the command center reads a count and a run date out of. They are
+ * hub-relative like every other path in the config: the inbox entry of `docs:`, `leads_file`,
+ * `radar_file` and `linkedin_dir`.
+ */
+export type FeedFiles = {
+    inbox: string;
+    leads: string;
+    radar: string;
+    linkedin: string;
+};
+
+/**
  * One scan rule, the shape of an entry under `scan:` in the layout config.
  * A flat rule (no `nested`) reads `<hub>/<dir>/<name>/project.yml` and gives every manifest the
  * rule's `type`. A nested rule walks `<hub>/<dir>` to any depth and takes `type` from the manifest.
@@ -403,10 +415,72 @@ export type Collection = {
  * reads and what normalise turns into the snapshot; the findings are the ones the sources
  * themselves reported, carried so that validate can pass them through rather than re-derive them.
  */
+/** One live lead of the position scout's feed, as the command center counts it down. */
+export type Lead = {
+    title: string;
+    /** The ISO date inside the feed's own `deadline:` text, and null when it holds none. */
+    deadline: string | null;
+    status: string;
+    fit: string | null;
+};
+
+/**
+ * What the four feed files say and nothing more: a count, a run date, the live leads. A feed whose
+ * file or folder is not there is null rather than empty, because "nothing to report" and "no feed
+ * on this machine" are different answers and the board says so. The feeds are generated, so a
+ * missing one is not a finding; a broken one is.
+ *
+ * `scout` is the position scout's own run date, which lives in the leads file's `meta.log` rather
+ * than in a file of its own, so it is null exactly when `leads` is.
+ */
+export type Feeds = {
+    inbox: { run: string | null; actionable: number } | null;
+    leads: Lead[] | null;
+    radar: { lastRun: string | null } | null;
+    scout: { lastRun: string | null } | null;
+    linkedin: { lastPost: string | null } | null;
+};
+
+/** What sources/feeds.ts returns. It is already JSON-safe, so the snapshot carries it unchanged. */
+export type RawFeeds = Feeds;
+
+/**
+ * One host of the CAREER.yml pipeline. `scores` holds the file's own scoring keys, every key of
+ * the host that is not one of the five named above it, so that `career_score_dims` decides which
+ * of them a chip is drawn for and this model names none of them.
+ */
+export type Host = {
+    name: string;
+    inst?: string;
+    tag?: string;
+    status: string;
+    scores: Record<string, string>;
+    /** The prose under the row, with the `[proposal: ...]` prefix the chips already show removed. */
+    note?: string;
+};
+
+/** The career strategy of CAREER.yml, as the panel at the foot of the Focus board reads it. */
+export type Career = {
+    title: string;
+    milestone?: string;
+    situation: { label: string; value: string }[];
+    order: { task: string; when?: string; note?: string }[];
+    orderNote?: string;
+    hosts: Host[];
+    hostCriteria: string[];
+    notHosts: { who: string; why?: string }[];
+    eligibility: { rule: string[]; shots: string[]; caveat?: string } | null;
+    dropped: { what: string; why?: string }[];
+};
+
 export type RawPortfolio = {
     manifests: RawManifest[];
     registries: Record<RegistryName, RawRegistry>;
     collections: Record<string, RawCollection>;
+    /** What the four feed files hold, from sources/feeds.ts. */
+    feeds: RawFeeds;
+    /** CAREER.yml as it was parsed, and null when the hub holds no such file. */
+    career: Record<string, unknown> | null;
     /**
      * Which documents each project folder holds, by project id, from sources/docs.ts. It is here
      * rather than on the manifest record because no manifest key says it: it is read from the
@@ -425,6 +499,11 @@ export type Vocabulary = {
     types: string[];
     statuses: string[];
     chips?: string[];
+    /**
+     * The keys of `career_host_status`. Absent when the config holds no such vocabulary, and a host
+     * status is then a free string and is not checked, which is how `chips` above behaves.
+     */
+    hostStatuses?: string[];
 };
 
 /**
@@ -434,6 +513,11 @@ export type Vocabulary = {
 export type ValidationRules = {
     schema: unknown;
     vocab: Vocabulary;
+    /**
+     * Absolute path of the career file, so a finding about a host status can name the file it is
+     * in. The raw career record is the parsed map alone and carries no provenance of its own.
+     */
+    careerFile?: string;
 };
 
 /** Everything buildPortfolio needs: where to read, and what to check what it read against. */
@@ -441,6 +525,10 @@ export type PortfolioConfig = {
     scan: ScanRule[];
     registries: RegistryFiles;
     collections: CollectionFile[];
+    /** The four generated feed files, hub-relative. */
+    feeds: FeedFiles;
+    /** The career file, hub-relative. */
+    career: string;
     schema: unknown;
     vocab: Vocabulary;
 };
@@ -454,6 +542,10 @@ export type Entities = {
     domains: Record<Id, Domain>;
     funding: Record<Id, Funding>;
     collections: Record<Id, Collection>;
+    /** What the generated feeds say, which is a summary rather than a set of entities. */
+    feeds: Feeds;
+    /** The career strategy, and null when the hub holds no career file. */
+    career: Career | null;
 };
 
 /**

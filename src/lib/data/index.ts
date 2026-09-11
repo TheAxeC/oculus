@@ -9,12 +9,15 @@ import { join } from 'node:path';
 import { readManifests } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
 import { readCollections } from './sources/collections.ts';
+import { CAREER_FILE, readCareer } from './sources/career.ts';
+import { readFeeds } from './sources/feeds.ts';
 import { projectDocs } from './sources/docs.ts';
 import { normalise } from './normalise.ts';
 import { validate } from './validate.ts';
 import type {
     CollectionFile,
     DocPresence,
+    FeedFiles,
     Id,
     PortfolioConfig,
     RawManifest,
@@ -57,6 +60,27 @@ function collectionFiles(value: unknown): CollectionFile[] {
     return files;
 }
 
+/** The feed paths on the hub today, for a config that names none of them. */
+const FEED_FILES: FeedFiles = {
+    inbox: 'feeds/inbox.yml',
+    leads: 'feeds/position-leads.yml',
+    radar: 'feeds/literature-radar.yml',
+    linkedin: 'theaxec.github.io/_linkedin'
+};
+
+/**
+ * The first path of one `docs:` entry. The inbox feed is named there rather than in a key of its
+ * own, because the cockpit renders it as a markdown tab as well as counting it.
+ */
+function docPath(value: unknown, key: string): string | null {
+    for (const item of list(value)) {
+        if (!isMap(item) || item.key !== key) continue;
+        const paths = list(item.paths).filter((one): one is string => typeof one === 'string');
+        if (paths.length > 0) return paths[0];
+    }
+    return null;
+}
+
 /** The `key` of every entry of a keyed vocabulary list, `status_legend` being the one that matters. */
 function vocabKeys(value: unknown): string[] {
     const keys: string[] = [];
@@ -93,11 +117,22 @@ export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioC
     };
     const chips = vocabKeys(merged.status_legend);
     if (chips.length > 0) vocab.chips = chips;
+    if (isMap(merged.career_host_status))
+        vocab.hostStatuses = Object.keys(merged.career_host_status);
+
+    const feeds: FeedFiles = {
+        inbox: docPath(merged.docs, 'inbox') ?? FEED_FILES.inbox,
+        leads: path('leads_file', FEED_FILES.leads),
+        radar: path('radar_file', FEED_FILES.radar),
+        linkedin: path('linkedin_dir', FEED_FILES.linkedin)
+    };
 
     return {
         scan: scanRules(merged.scan),
         registries,
         collections,
+        feeds,
+        career: path('career_file', CAREER_FILE),
         schema: merged.manifest_schema,
         vocab
     };
@@ -122,15 +157,29 @@ export function buildPortfolio(hub: string, config: PortfolioConfig, version = 0
     const manifests = readManifests(hub, config.scan);
     const registries = readRegistries(hub, config.registries);
     const collections = readCollections(hub, config.collections);
+    const feeds = readFeeds(hub, config.feeds);
+    const career = readCareer(hub, config.career);
 
     const raw: RawPortfolio = {
         manifests: manifests.manifests,
         registries,
         collections: collections.collections,
+        feeds: feeds.feeds,
+        career: career.career,
         docs: documents(hub, manifests.manifests),
-        findings: [...manifests.findings, ...registries.findings, ...collections.findings]
+        findings: [
+            ...manifests.findings,
+            ...registries.findings,
+            ...collections.findings,
+            ...feeds.findings,
+            ...career.findings
+        ]
     };
 
-    const findings = validate(raw, { schema: config.schema, vocab: config.vocab });
+    const findings = validate(raw, {
+        schema: config.schema,
+        vocab: config.vocab,
+        careerFile: join(hub, config.career)
+    });
     return normalise(raw, findings, version);
 }

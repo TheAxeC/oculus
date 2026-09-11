@@ -563,6 +563,17 @@ text:
     empty_glyph: "circle_empty"
     working_now_plain: "- {0} projects, grouped into lanes by each manifest's manual focus: field"
     hint_plain: "not on the board (set their focus: field)"
+    # oculus: the quick-add form and the career panel, which the cockpit draws from JS and CSS.
+    qa_project: "Project"
+    qa_save: "Save"
+    qa_cancel: "Cancel"
+    hint_link: "open the first one"
+    career_empty: "No career file on this hub."
+    career_situation: "Situation"
+    career_shots: "Shots left"
+    career_rules: "Rules"
+    career_caveat: "Caveat"
+    career_score_tip: "{0}: {1}"
 
   cc:                        # "This week" command-center strip (render/command_center.py). {0}/{1}=args.
     never_run: "never run"
@@ -634,6 +645,19 @@ text:
     snoozed_glyph: "snooze"
     dlcat_event_label: "talks & events"
     venue_count: "{0} x{1}"
+    # oculus: the command-center heading and the refresh group, whose cockpit values carry a glyph
+    # token or an HTML <code> element; these are the clean twins and the glyph each is drawn with.
+    command_center_glyph: "live"
+    grp_refresh_label: "Refresh live data"
+    refresh_glyph: "refresh_live"
+    inbox_glyph: "inbox"
+    linkedin_glyph: "linkedin"
+    scout_glyph: "scout"
+    litwatch_glyph: "litwatch"
+    position_glyph: "scout"
+    refresh_litwatch_plain: "Lit Watch - {0} | run /research-cockpit litwatch"
+    refresh_inbox_plain: "Inbox - triaged {0}d ago | run /research-cockpit inbox"
+    refresh_scout_plain: "Position scout - ran {0}d ago | run /research-cockpit scout"
 
   sf:                          # scout/feed tabs: inbox, audit, leads, radar, linkedin (render/surfaces.py).
     no_file: "No file at <code>{0}</code>."

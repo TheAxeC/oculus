@@ -10,6 +10,7 @@
 // it are tests/state/collection.test.ts.
 
 import { describe, expect, it } from 'vitest';
+import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Collection from '../../src/lib/views/Collection.svelte';
 import {
@@ -85,6 +86,8 @@ function snapshot(): Snapshot {
     return {
         version: 1,
         entities: {
+            feeds: NO_FEEDS,
+            career: null,
             projects: {},
             venues: {},
             datasets: {},

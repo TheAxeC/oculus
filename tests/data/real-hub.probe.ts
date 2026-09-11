@@ -10,6 +10,7 @@ import { readRegistries } from '../../src/lib/data/sources/registries.ts';
 import { readCollections } from '../../src/lib/data/sources/collections.ts';
 import { PROJECT_DOCS, projectDocs } from '../../src/lib/data/sources/docs.ts';
 import { buildPortfolio, portfolioConfigFrom } from '../../src/lib/data/index.ts';
+import { ENTITY_KINDS } from '../../src/lib/data/normalise.ts';
 import { sessions } from '../../src/lib/server/sessions/index.ts';
 import { statusFor } from '../../src/lib/server/git.ts';
 import type { Finding, RegistryName } from '../../src/lib/data/model.ts';
@@ -79,8 +80,11 @@ const snapshot = buildPortfolio(hub, portfolio);
 console.log(`snapshot version: ${snapshot.version}`);
 console.log('entities:');
 for (const [kind, entities] of Object.entries(snapshot.entities)) {
-    console.log(`  ${kind}: ${Object.keys(entities).length}`);
+    if (!ENTITY_KINDS.includes(kind)) continue;
+    console.log(`  ${kind}: ${Object.keys(entities as object).length}`);
 }
+console.log(`feeds: ${JSON.stringify(snapshot.entities.feeds)}`);
+console.log(`career hosts: ${snapshot.entities.career?.hosts.length ?? 0}`);
 console.log('relations:');
 for (const [name, table] of Object.entries(snapshot.relations)) {
     console.log(`  ${name}: ${table.length}`);

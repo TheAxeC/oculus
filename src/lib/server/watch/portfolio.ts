@@ -17,7 +17,7 @@
 // follows a write to the hub can publish version 1 and then version 2 with the same content. The
 // rebuild is idempotent and the page takes the newer version, so nothing is done about it.
 
-import { watch } from 'node:fs';
+import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { buildPortfolio, portfolioConfigFrom } from '../../data/index.ts';
@@ -56,12 +56,23 @@ export function relevant(filename: string | null): boolean {
     return parts[parts.length - 1].endsWith('.yml');
 }
 
-/** The hub directories the build reads: every scan tier, and the folder of every registry file and collection file. */
+/**
+ * The hub directories the build reads: every scan tier, the folder of every registry file and
+ * collection file, and the folder of every generated feed the command center counts. The feeds
+ * joined with P2, since the Focus board reads them and a refreshed feed has to reach the page the
+ * way a changed manifest does.
+ *
+ * The career file is not here: it sits in the hub root, where a recursive watch of its folder
+ * would cover the whole hub a second time, so watchPortfolio watches that one file on its own.
+ */
 export function watchedDirectories(hub: string, config: PortfolioConfig): string[] {
     const dirs = new Set<string>();
     for (const rule of config.scan) dirs.add(join(hub, rule.dir));
     for (const file of Object.values(config.registries)) dirs.add(dirname(join(hub, file)));
     for (const file of config.collections) dirs.add(dirname(join(hub, file.file)));
+    for (const file of [config.feeds.inbox, config.feeds.leads, config.feeds.radar]) {
+        dirs.add(dirname(join(hub, file)));
+    }
     return [...dirs];
 }
 
@@ -101,6 +112,26 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     };
 
     /**
+     * One file watched on its own, for the career file, which sits in the hub root where a
+     * recursive watch would cover the whole hub a second time. A file that is not there is not
+     * watched and not refused, so a career file made later is picked up at the next rebuild.
+     */
+    const openFile = (file: string): void => {
+        if (handles.has(file) || refused.has(file) || !existsSync(file)) return;
+        try {
+            handles.set(
+                file,
+                watch(file, () => {
+                    queue(false);
+                })
+            );
+        } catch (error) {
+            refused.add(file);
+            console.error(`portfolio watch: cannot watch ${file}: ${reason(error)}`);
+        }
+    };
+
+    /**
      * One rebuild. `withConfig` also republishes the config channel. The directory set is derived
      * again from the config that was just read, so a scan path added to layout.yml is watched from
      * the next rebuild on; a path removed keeps its handle until the watcher is closed.
@@ -123,6 +154,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             const version = hub.nextVersion('portfolio');
             hub.publish('portfolio', buildPortfolio(paths.hub, portfolio, version));
             for (const dir of watchedDirectories(paths.hub, portfolio)) open(dir, false);
+            openFile(join(paths.hub, portfolio.career));
             open(configDir, true);
         } catch (error) {
             console.error(`portfolio watch: rebuild failed: ${reason(error)}`);
