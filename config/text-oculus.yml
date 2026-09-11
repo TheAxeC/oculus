@@ -212,6 +212,12 @@ text:
     editor_glyph: "edit"
     venues: "Venues"
     venues_glyph: "venue"
+    programs: "Pillars"
+    programs_glyph: "program"
+    domains: "Domains"
+    domains_glyph: "circle_filled"
+    map: "Map"
+    map_glyph: "link"
     # The deposit panel, opened for one project from the deposit control of a card.
     deposit: "Deposit"
     deposit_glyph: "published"
@@ -238,6 +244,24 @@ text:
     tasks_glyph: "tasks"
     code: "Code"
     code_glyph: "code"
+
+  map:                         # the relationship graph: its explanation, legend, controls and empty state.
+    head: "Research lines and projects, linked by line membership and directed related edges: a one-way edge has one arrow from the manifest that lists the other, while a mutual edge has two arrowheads and its own colour when each manifest lists the other. The layout is a self-tuning spring layout. Drag a node; click a project to open it."
+    line_glyph: "square_filled"
+    project_glyph: "circle_filled"
+    legend_active: "active"
+    legend_manuscript: "manuscript"
+    legend_idea: "idea"
+    legend_line: "research line"
+    link: "link"
+    link_glyph: "link"
+    link_tip: "Link mode: drag one project onto another to add or remove a related edge"
+    retune: "re-tune"
+    retune_glyph: "refresh"
+    retune_tip: "Re-optimise the layout for this graph"
+    collaborators: "+ collaborators"
+    archived: "+ archived:"
+    empty: "No relationships yet - add program or related to manifests."
 
   gallery:                     # the living style sheet: every primitive with sample data, in every theme.
     title: "Gallery"

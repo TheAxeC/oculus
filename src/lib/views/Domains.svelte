@@ -1,0 +1,114 @@
+<script lang="ts">
+    // Layer 3, view. The application-domain board over populated registry entries and real-project
+    // membership, with the shared schema-driven add and edit forms.
+
+    import Pane from '$lib/ui/Pane.svelte';
+    import ToolButton from '$lib/ui/ToolButton.svelte';
+    import DomainCard from '$lib/views/domains/DomainCard.svelte';
+    import EntryForm from '$lib/views/shared/EntryForm.svelte';
+    import { inlineMarkdown } from '$lib/state/collection';
+    import { portfolio } from '$lib/state/entities.svelte';
+    import { domainMembers } from '$lib/state/lines';
+    import { archiveDead, collectionOf, projects } from '$lib/state/selectors.svelte';
+    import { t } from '$lib/state/text';
+    import type { ViewProps } from './registry';
+
+    let { instance }: ViewProps = $props();
+    const collection = $derived(collectionOf('domains'));
+    const domains = $derived.by(() => {
+        const entities = Object.values(portfolio()?.entities.domains ?? {});
+        const byId = new Map(entities.map((domain) => [domain.id, domain]));
+        const ordered = (collection?.entries ?? [])
+            .map((entry) => byId.get(entry.id))
+            .filter((domain) => domain !== undefined);
+        const seen = new Set(ordered.map((domain) => domain.id));
+        return [...ordered, ...entities.filter((domain) => !seen.has(domain.id))];
+    });
+    const allProjects = $derived(projects());
+    const dead = $derived(archiveDead());
+    const shown = $derived(
+        domains
+            .map((domain) => ({ domain, projects: domainMembers(domain, allProjects, dead) }))
+            .filter((item) => item.projects.length > 0)
+    );
+    let adding = $state(false);
+    let editing = $state<string | null>(null);
+    let said = $state('');
+    function entryFor(id: string) {
+        return collection?.entries.find((entry) => entry.id === id) ?? null;
+    }
+</script>
+
+<Pane title={t('views.domains')}>
+    <div class="domains-view" data-instance={instance.id}>
+        <div class="intro">
+            <span>{@html inlineMarkdown(t('col.domains_intro'))}</span>
+            {#if collection?.schema !== undefined}
+                <ToolButton
+                    label={t('col.add')}
+                    title={t('col.add_tip')}
+                    active={adding}
+                    onclick={() => (adding = !adding)}
+                />
+            {/if}
+        </div>
+        {#if adding && collection?.schema !== undefined}
+            <EntryForm
+                collection="domains"
+                schema={collection.schema}
+                entry={null}
+                onclose={() => (adding = false)}
+                onsaid={(words) => (said = words)}
+            />
+        {/if}
+        {#if said !== ''}
+            <p class="said">{said}</p>
+        {/if}
+        {#if shown.length === 0}
+            <p class="empty">{t('col.domains_empty')}</p>
+        {:else}
+            <div class="cards">
+                {#each shown as item (item.domain.id)}
+                    <DomainCard
+                        domain={item.domain}
+                        projects={item.projects}
+                        entry={entryFor(item.domain.id)}
+                        schema={collection?.schema}
+                        editing={editing === item.domain.id}
+                        onedit={() =>
+                            (editing = editing === item.domain.id ? null : item.domain.id)}
+                        onsaid={(words) => (said = words)}
+                    />
+                {/each}
+            </div>
+        {/if}
+    </div>
+</Pane>
+
+<style>
+    .domains-view {
+        min-width: 0;
+    }
+
+    .intro {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 12px;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
+    }
+
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
+        gap: 10px;
+        margin-top: 10px;
+    }
+
+    .empty,
+    .said {
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
+    }
+</style>

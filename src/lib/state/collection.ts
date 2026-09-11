@@ -383,7 +383,9 @@ export function groupProjects(projects: Project[]): CrossGroup[] {
     for (const project of projects) {
         const type = typeOf(project);
         const held = groups.find((group) => group.type === type);
-        const member = { id: project.id, label: project.short ?? project.title };
+        // An empty short name is no name: the graph and the cards fall back to the title alike.
+        const short = project.short?.trim() ?? '';
+        const member = { id: project.id, label: short === '' ? project.title : short };
         if (held === undefined) groups.push({ type, count: 1, members: [member] });
         else {
             held.count += 1;

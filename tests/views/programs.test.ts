@@ -1,0 +1,101 @@
+// The Programs view rendered on the server over every line band and portfolio-fit state.
+
+import { render } from 'svelte/server';
+import { describe, expect, it } from 'vitest';
+import Programs from '../../src/lib/views/Programs.svelte';
+import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
+import type { Instance } from '../../src/lib/state/layout.ts';
+import type { Snapshot } from '../../src/lib/data/model.ts';
+import { catalog, fixture, install } from './lines-fixture.ts';
+
+const INSTANCE = 'programs-one';
+
+function html(snapshot = fixture()): string {
+    install(snapshot);
+    setInstanceState(INSTANCE, {});
+    const instance: Instance = { id: INSTANCE, view: 'programs', state: {} };
+    return render(Programs, { props: { instance } }).body;
+}
+
+function card(body: string, id: string): string {
+    const start = body.indexOf(`data-program="${id}"`);
+    const end = body.indexOf('</article>', start);
+    return body.slice(start, end);
+}
+
+describe('the Programs view', () => {
+    it('draws the intro, add control, line metrics, prose, edits and project groups', () => {
+        const body = html();
+        expect(body).toContain(catalog['col.programs_intro']);
+        expect(body).toContain(catalog['col.add']);
+        expect(body).toContain('Pillar <strong>One</strong>');
+        expect(body).toContain(`1 ${catalog['col.project']}`);
+        expect(body).toContain(catalog['col.in_flight']);
+        expect(body).toContain(catalog['col.total']);
+        expect(body).toContain('1 strong');
+        expect(body).toContain('A <strong>goal</strong>.');
+        expect(body).toContain('Funded by <strong>Tests</strong>.');
+        expect(body).toContain('ALPHA');
+        expect(body).toContain('data-program="dormant"');
+        expect(body).toMatch(/data-program="dormant"[^>]*class="[^"]*dormant/);
+    });
+
+    it('draws orphan, provisional, off-pillar and archival sections', () => {
+        const body = html();
+        expect(body).toContain(catalog['col.orphans']);
+        expect(body).toContain('1 untagged');
+        expect(body).toContain('ORPHAN');
+        expect(body).toContain(catalog['col.provisional_h']);
+        expect(body).toContain('Candidate line');
+        expect(body).toContain(catalog['col.offpillar_h']);
+        expect(body).toContain('Outside line');
+        expect(body).toContain(catalog['col.archival']);
+        expect(body).toContain('1 not active');
+        expect(body).toContain('dropped');
+    });
+
+    it('draws provisional metrics and omits metrics from an off-pillar card', () => {
+        const body = html();
+        expect(card(body, 'candidate')).toContain('class="metrics ');
+        expect(card(body, 'candidate')).toContain(catalog['col.in_flight']);
+        expect(card(body, 'outside')).not.toContain('class="metrics ');
+    });
+
+    it('draws the clean card when every real project names a known line', () => {
+        const snapshot = fixture();
+        for (const project of Object.values(snapshot.entities.projects)) {
+            project.programIds = ['pillar'];
+        }
+        const body = html(snapshot);
+        expect(body).toContain(catalog['col.no_orphans']);
+        expect(body).toContain(catalog['col.no_orphans_blurb']);
+    });
+
+    it('uses collection entry order for integer-like line keys', () => {
+        const snapshot: Snapshot = fixture();
+        snapshot.entities.programs = {
+            '10': { id: '10', title: 'Line ten', fundingIds: [], projectIds: [] },
+            '2': { id: '2', title: 'Line two', fundingIds: [], projectIds: [] }
+        };
+        const collection = snapshot.entities.collections.programs;
+        const template = collection.entries[0];
+        collection.entries = [
+            {
+                ...template,
+                id: '10',
+                title: 'Line ten',
+                fields: { ...template.fields, key: '10', title: 'Line ten' },
+                index: 0
+            },
+            {
+                ...template,
+                id: '2',
+                title: 'Line two',
+                fields: { ...template.fields, key: '2', title: 'Line two' },
+                index: 1
+            }
+        ];
+        const body = html(snapshot);
+        expect(body.indexOf('Line ten')).toBeLessThan(body.indexOf('Line two'));
+    });
+});

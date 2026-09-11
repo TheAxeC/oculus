@@ -84,6 +84,9 @@ describe('the real registrations', () => {
             'findings',
             'gallery',
             'venues',
+            'programs',
+            'domains',
+            'map',
             'focus',
             'projects',
             'archive',
@@ -134,6 +137,20 @@ describe('the real registrations', () => {
             glyph: 'views.venues_glyph'
         });
         expect(COLLECTIONS).not.toContain('venues');
+    });
+
+    it('registers Programs, Domains and Map directly with their catalog keys', () => {
+        expect(viewFor('programs')).toMatchObject({
+            label: 'views.programs',
+            glyph: 'views.programs_glyph'
+        });
+        expect(viewFor('domains')).toMatchObject({
+            label: 'views.domains',
+            glyph: 'views.domains_glyph'
+        });
+        expect(viewFor('map')).toMatchObject({ label: 'views.map', glyph: 'views.map_glyph' });
+        expect(COLLECTIONS).not.toContain('programs');
+        expect(COLLECTIONS).not.toContain('domains');
     });
 
     it('keeps a collection in its first position when it is registered again', () => {

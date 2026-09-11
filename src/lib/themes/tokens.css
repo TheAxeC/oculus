@@ -47,6 +47,11 @@
     --c-slate: #475569;
     --c-grey: #9ca3af;
     --c-grey-d: #6b7280;
+    --map-line: #475569;
+    --map-collab: #0891b2;
+    --map-edge: #94a3b8;
+    --map-related: #ec4899;
+    --map-mutual: #0891b2;
     --c-on: #fff; /* text sitting on a filled status chip */
     /* shape + type */
     --radius: 10px;

@@ -12,6 +12,7 @@ import {
     entryStatus,
     entrySubtasks,
     formFields,
+    groupProjects,
     hasStatusField,
     hrefOf,
     identityField,
@@ -342,6 +343,19 @@ function project(id: string, over: Partial<Project> = {}): Project {
         ...over
     };
 }
+
+describe('groupProjects', () => {
+    it('labels a member by its title when its short name is empty', () => {
+        const groups = groupProjects([
+            project('a', { short: '', title: 'Full title' }),
+            project('b', { short: 'B', title: 'Bee' })
+        ]);
+        expect(groups.flatMap((group) => group.members.map((one) => one.label))).toEqual([
+            'Full title',
+            'B'
+        ]);
+    });
+});
 
 describe('crossLinks', () => {
     const projects = [

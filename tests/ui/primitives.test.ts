@@ -79,6 +79,22 @@ describe('Card', () => {
     it('marks a pinned card', () => {
         expect(html(Card, { title: 'Alpha', pinned: true })).toContain('pinned');
     });
+
+    it('renders plain, HTML and clickable HTML title shapes', () => {
+        const plain = html(Card, { title: 'Plain title' });
+        const rich = html(Card, { title: 'Fallback', titleHtml: 'Rich <strong>title</strong>' });
+        const clickable = html(Card, {
+            title: 'Fallback',
+            titleHtml: 'Open <strong>title</strong>',
+            ontitle: () => {}
+        });
+        expect(plain).toContain('Plain title');
+        expect(plain).not.toContain('class="open ');
+        expect(rich).toContain('Rich <strong>title</strong>');
+        expect(rich).not.toContain('class="open ');
+        expect(clickable).toContain('class="open ');
+        expect(clickable).toContain('Open <strong>title</strong>');
+    });
 });
 
 describe('Chip', () => {

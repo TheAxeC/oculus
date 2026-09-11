@@ -11,6 +11,8 @@
     type Props = {
         /** The card's own words, already translated by the view. */
         title: string;
+        /** Trusted inline Markdown already rendered by the state layer. */
+        titleHtml?: string;
         /** A hue name from state/tones.ts. A card with none has no bar. */
         tone?: string;
         /** Draws an accent ring inside the border, for a card the view is holding on to. */
@@ -32,6 +34,7 @@
 
     let {
         title,
+        titleHtml,
         tone,
         pinned = false,
         level = 3,
@@ -51,10 +54,16 @@
     {/if}
     <div class="face">
         <svelte:element this={heading} class="title">
-            {#if ontitle === undefined}
-                {title}
-            {:else}
+            {#if ontitle !== undefined && titleHtml !== undefined}
+                <button type="button" class="open" onclick={ontitle}>
+                    {@html titleHtml}
+                </button>
+            {:else if ontitle !== undefined}
                 <button type="button" class="open" onclick={ontitle}>{title}</button>
+            {:else if titleHtml !== undefined}
+                {@html titleHtml}
+            {:else}
+                {title}
             {/if}
         </svelte:element>
         {#if meta}

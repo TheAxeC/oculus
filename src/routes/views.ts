@@ -15,10 +15,13 @@ import Findings from '$lib/views/Findings.svelte';
 import Focus from '$lib/views/Focus.svelte';
 import Gallery from '$lib/views/Gallery.svelte';
 import Hpc from '$lib/views/Hpc.svelte';
+import Map from '$lib/views/Map.svelte';
 import Project from '$lib/views/Project.svelte';
 import Projects from '$lib/views/Projects.svelte';
+import Programs from '$lib/views/Programs.svelte';
 import Status from '$lib/views/Status.svelte';
 import Venues from '$lib/views/Venues.svelte';
+import Domains from '$lib/views/Domains.svelte';
 import Agents from '$lib/views/sessions/Agents.svelte';
 import Changes from '$lib/views/sessions/Changes.svelte';
 import SessionDetail from '$lib/views/sessions/SessionDetail.svelte';
@@ -63,6 +66,27 @@ registerView({
     label: 'views.venues',
     glyph: 'views.venues_glyph',
     component: Venues
+});
+
+registerView({
+    id: 'programs',
+    label: 'views.programs',
+    glyph: 'views.programs_glyph',
+    component: Programs
+});
+
+registerView({
+    id: 'domains',
+    label: 'views.domains',
+    glyph: 'views.domains_glyph',
+    component: Domains
+});
+
+registerView({
+    id: 'map',
+    label: 'views.map',
+    glyph: 'views.map_glyph',
+    component: Map
 });
 
 // The landing board, first of the boards group: the lanes each manifest's `focus:` puts it on,

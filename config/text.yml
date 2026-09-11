@@ -813,6 +813,7 @@ text:
     in_flight: "in flight"
     total: "total"
     project: "project"
+    projects: "projects"
     orphans: "Orphans"
     untagged: "{0} untagged"
     orphans_blurb: "Real work with <b>no</b> <code>program:</code> tag yet - everything should map to a pillar or an off-pillar line. Tag it, or (for in-flight work) make the portfolio-fit call. (Off-pillar-by-design lines are below.)"
