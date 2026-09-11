@@ -8,6 +8,7 @@ import type { Snapshot } from './src/lib/data/model.ts';
 import { Hub } from './src/lib/server/channels.ts';
 import { projectFolders } from './src/lib/server/sessions/index.ts';
 import type { ProjectFolder } from './src/lib/server/sessions/group.ts';
+import { bindHookHub } from './src/lib/server/sessions/hooks.ts';
 import { attachSocket } from './src/lib/server/socket.ts';
 import { watchGit } from './src/lib/server/watch/git.ts';
 import { watchPortfolio } from './src/lib/server/watch/portfolio.ts';
@@ -30,6 +31,9 @@ function oculusSocket(): Plugin {
             const local = loadLocal(engine);
             const hub = new Hub();
             const socket = attachSocket(http, hub, { path: '/ws' });
+            // Dev routes load through Vite's own SSR graph, a third copy beside this plugin's plain
+            // import and the built app's bundle, so the same process-wide bind src/server.ts does.
+            bindHookHub(hub);
             const watcher = watchPortfolio(hub, { hub: local.hub, engine });
             const folders = (): ProjectFolder[] => {
                 const message = hub.latest('portfolio');

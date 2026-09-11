@@ -8,6 +8,7 @@
     import Workbench from '$lib/shell/Workbench.svelte';
     import type { Bookmark, NavGroup } from '$lib/shell/ActivityRail.svelte';
     import { config } from '$lib/state/entities.svelte';
+    import { waitingCount } from '$lib/state/selectors.svelte';
     import { loadLayout } from '$lib/state/layout.svelte';
     import { loadUi } from '$lib/state/ui.svelte';
     import { connect, disconnect } from '$lib/state/socket.svelte';
@@ -92,4 +93,4 @@
     });
 </script>
 
-<Workbench {groups} {bookmarks} {arrangement} />
+<Workbench {groups} {bookmarks} {arrangement} waiting={waitingCount()} />

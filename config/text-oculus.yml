@@ -28,6 +28,12 @@ text:
     git: "Workspaces with git state: {0}"
     pane_path: "Pane at {0}"
     tabs: "Tabs: {0}"
+    title_waiting: "oculus ({0} waiting)"
+
+  notify:                      # the hook push of DESIGN.md's "Sessions": routes/api/hook and the two chips SessionList draws.
+    stop: "Session finished"
+    permission_chip: "waiting on you"
+    idle_chip: "idle"
 
   ui:                          # oculus's primitives: the strings a domain-blind component needs, and no more.
     sash: "Resize"

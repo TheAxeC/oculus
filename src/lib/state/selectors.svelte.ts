@@ -155,6 +155,17 @@ function grouped(): GroupedSession[] {
     return found;
 }
 
+/** How many sessions of the payload carry an unanswered permission prompt, for the tab's title. */
+export function waitingCount(): number {
+    let count = 0;
+    for (const session of grouped()) {
+        if (session.hook?.event === 'notification' && session.hook.kind === 'permission_prompt') {
+            count += 1;
+        }
+    }
+    return count;
+}
+
 /** One session by id, with where it was grouped, or null for an id the payload does not hold. */
 export function sessionById(id: string | null): GroupedSession | null {
     if (id === null || id === '') return null;

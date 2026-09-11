@@ -13,7 +13,7 @@
     import Select from '$lib/ui/Select.svelte';
     import TextInput from '$lib/ui/TextInput.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { compactCount, modelShort, stamp } from '$lib/state/format';
+    import { clock, compactCount, modelShort, stamp } from '$lib/state/format';
     import {
         contextWindow,
         knownAreas,
@@ -79,6 +79,25 @@
     function cacheShare(session: GroupedSession): number {
         if (session.contextTokens <= 0) return 0;
         return Math.round((100 * session.lastCacheRead) / session.contextTokens);
+    }
+
+    /**
+     * The latest hook event, in words: the catalog's chip label for the two notification_type
+     * values SessionList also shows a chip for, the kind itself for any other Claude Code sends,
+     * and the stop message's own catalog word for a Stop, each with the clock it arrived at.
+     */
+    function hookLabel(session: GroupedSession): string {
+        const hook = session.hook;
+        if (hook === null) return '';
+        const when = clock(hook.at);
+        if (hook.event === 'stop') return t('js.sessions.stopped_at', when);
+        const word =
+            hook.kind === 'permission_prompt'
+                ? t('notify.permission_chip')
+                : hook.kind === 'idle_prompt'
+                  ? t('notify.idle_chip')
+                  : (hook.kind ?? '');
+        return `${word} ${when}`.trim();
     }
 
     /** The areas this session may be pinned to: the known project folders of its own workspace. */
@@ -156,6 +175,13 @@
                 )}
                 {@render field(t('js.sessions.f_version'), record.version ?? '', '')}
                 {@render field(t('js.sessions.f_started'), stamp(record.started, now), '')}
+                {#if record.hook !== null}
+                    {@render field(
+                        t('js.sessions.f_hook'),
+                        hookLabel(record),
+                        record.hook.message ?? ''
+                    )}
+                {/if}
             </dl>
 
             <div class="pin">

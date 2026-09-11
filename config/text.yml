@@ -247,6 +247,8 @@ text:
       state_ended: "ended"
       f_status: "status"
       f_pid: "pid"
+      f_hook: "hook"
+      stopped_at: "stopped at {0}"
       ended_section: "Ended ({0})"
       ended_caret: "{G.disclosure}"
       close: "{G.dismiss}"

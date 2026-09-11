@@ -240,6 +240,7 @@ export function finish(acc: Acc, state: string): SessionRecord {
         files: files.map((entry) => ({ ...entry })),
         agents: agents.map((agent) => ({ ...agent })),
         timeline: acc.timeline.slice(-MAX_TIMELINE).map((event) => ({ ...event })),
-        truncated: false
+        truncated: false,
+        hook: null
     };
 }

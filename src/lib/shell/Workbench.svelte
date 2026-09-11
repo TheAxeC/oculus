@@ -44,9 +44,14 @@
         bookmarks?: Bookmark[];
         /** The `arrangements.sessions` node of the merged config, unread, for the rail's control. */
         arrangement?: unknown;
+        /**
+         * How many sessions wait on a permission, for the document title. The page reads it from
+         * the sessions channel and hands it on, since the shell may not read entities itself.
+         */
+        waiting?: number;
     };
 
-    let { groups = [], bookmarks = [], arrangement = null }: Props = $props();
+    let { groups = [], bookmarks = [], arrangement = null, waiting = 0 }: Props = $props();
 
     let area: HTMLDivElement | undefined = $state(undefined);
 
@@ -88,6 +93,14 @@
         // The terminal palettes draw the ASCII stand-ins unless the viewer asked for the real
         // glyphs; every other theme draws what config/glyphs.yml names.
         setGlyphMode(terminalTheme(theme()) && !unicode() ? 'ascii' : 'unicode');
+    });
+
+    /**
+     * A tab in the background still says a session wants Axel: the document title carries the count
+     * of sessions with an open permission prompt, so switching tabs is not the only way to notice.
+     */
+    $effect(() => {
+        document.title = waiting > 0 ? t('app.title_waiting', waiting) : t('app.title');
     });
 
     /** The space the two trees share along the dock's direction, the sash between them removed. */

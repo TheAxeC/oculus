@@ -9,6 +9,7 @@ import type { Snapshot } from './lib/data/model.ts';
 import { Hub } from './lib/server/channels.ts';
 import { projectFolders } from './lib/server/sessions/index.ts';
 import type { ProjectFolder } from './lib/server/sessions/group.ts';
+import { bindHookHub } from './lib/server/sessions/hooks.ts';
 import { attachSocket } from './lib/server/socket.ts';
 import { watchGit } from './lib/server/watch/git.ts';
 import { watchPortfolio } from './lib/server/watch/portfolio.ts';
@@ -26,6 +27,10 @@ const { handler } = (await import(built)) as { handler: Handler };
 const server = createServer(handler);
 const hub = new Hub();
 attachSocket(server, hub, { path: '/ws' });
+// The built app's routes (routes/api/hook) are a separate module graph from this plain import, so
+// binding the real Hub onto the process-wide bridge is what lets a hook republish immediately
+// instead of waiting for the sessions watcher's next rescan; see sessions/hooks.ts's own comment.
+bindHookHub(hub);
 // The first build and the first scan happen here, before the port is open, so the first page to
 // connect is answered from memory rather than waiting for a read of the hub or of the transcripts.
 const portfolio = watchPortfolio(hub, { hub: local.hub, engine });

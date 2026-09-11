@@ -80,3 +80,14 @@ slurm:
 
 chat:
   model: ""
+
+
+# === Hook push notifications ================================================
+# Which of the Notification/Stop hooks (posted to POST /api/hook) fire a macOS notification through
+# osascript. `events` names notification_type values Claude Code sends for a Notification hook
+# (permission_prompt, idle_prompt, ...) plus the literal "stop" for the Stop hook. quiet_seconds is
+# how long the same session's same event is pushed at most once.
+notify:
+  enabled: true
+  events: [permission_prompt, idle_prompt, stop]
+  quiet_seconds: 3

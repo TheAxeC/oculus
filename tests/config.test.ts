@@ -204,7 +204,8 @@ describe("oculus's own config directory", () => {
             'linkedin_cadence_days',
             'file_index',
             'slurm',
-            'chat'
+            'chat',
+            'notify'
         ],
         'glyphs.yml': ['glyphs', 'ascii'],
         'layout.yml': [

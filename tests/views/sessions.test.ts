@@ -24,6 +24,7 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
+import { clock } from '../../src/lib/state/format.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { select } from '../../src/lib/state/selection.svelte.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
@@ -435,5 +436,73 @@ describe('the terminal placeholder', () => {
     it('says the terminal arrives with a later step', () => {
         const body = html(Terminal);
         expect(body).toContain(catalog['sessions.centre_pending']);
+    });
+});
+
+describe('a hook event on a session', () => {
+    const waiting = record('waiting-one', {
+        title: 'Waiting on a permission',
+        live: true,
+        liveStatus: 'busy',
+        state: 'working',
+        workspace: HUB,
+        area: ALPHA,
+        cwd: ALPHA,
+        hook: {
+            session: 'waiting-one',
+            event: 'notification',
+            kind: 'permission_prompt',
+            message: 'may I edit main.py?',
+            at: '2026-09-11T14:32:00.000Z'
+        }
+    });
+    const stopped = record('stopped-one', {
+        title: 'A finished run',
+        live: false,
+        state: 'ended',
+        workspace: HUB,
+        area: ALPHA,
+        cwd: ALPHA,
+        hook: {
+            session: 'stopped-one',
+            event: 'stop',
+            at: '2026-09-11T09:15:00.000Z'
+        }
+    });
+    const hookTree = [workspace(HUB, [area(ALPHA, [waiting, stopped])])];
+
+    /** A fresh, ever-growing version each call: receive() drops a message older than what it holds,
+        and each of the three tests below both sets and restores the channel. */
+    let hookVersion = 100;
+
+    function withHooks<T>(run: () => T): T {
+        receive({ channel: 'sessions', version: (hookVersion += 1), payload: payload(hookTree) });
+        const result = run();
+        receive({ channel: 'sessions', version: (hookVersion += 1), payload: payload(tree) });
+        return result;
+    }
+
+    it('draws a permission_prompt as a chip with the message as its tooltip', () => {
+        const body = withHooks(() => html(SessionList, { ended: true }));
+        expect(body).toContain(catalog['notify.permission_chip']);
+        expect(body).toContain('title="may I edit main.py?"');
+    });
+
+    it('draws the stop event as a stopped-at line in the row meta', () => {
+        const body = withHooks(() => html(SessionList, { ended: true }));
+        expect(body).toContain(
+            catalog['js.sessions.stopped_at'].replace('{0}', clock(stopped.hook?.at))
+        );
+    });
+
+    it('shows the latest hook event as a key-value row in the detail pane', () => {
+        const body = withHooks(() => {
+            select('stopped-one');
+            return html(SessionDetail);
+        });
+        expect(body).toContain(catalog['js.sessions.f_hook']);
+        expect(body).toContain(
+            catalog['js.sessions.stopped_at'].replace('{0}', clock(stopped.hook?.at))
+        );
     });
 });

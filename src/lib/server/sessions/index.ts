@@ -4,6 +4,7 @@
 import { join } from 'node:path';
 import type { Project, SessionsPayload, Snapshot } from '../../data/model.ts';
 import { group, type ProjectFolder } from './group.ts';
+import { HookStore, mergeHooks, sharedHookStore } from './hooks.ts';
 import { defaultOverridesPath } from './overrides.ts';
 import { scan, type ScanOptions } from './transcripts.ts';
 
@@ -17,6 +18,8 @@ export type SessionsOptions = ScanOptions & {
     roots?: string[];
     /** The sessions oculus drives itself, rather than only reading their transcripts. */
     attachedIds?: string[];
+    /** hooks.ts's HookStore to merge each record's `hook` field from; O12's shared one when absent. */
+    hooks?: HookStore;
 };
 
 // The payload's own shape lives in data/model.ts with the rest of the wire, since the `sessions`
@@ -35,7 +38,7 @@ export function projectFolders(hub: string, snapshot: Snapshot): ProjectFolder[]
 
 /** The records, newest first, and the tree they group into. */
 export function sessions(options: SessionsOptions = {}): SessionsPayload {
-    const records = scan(options);
+    const records = mergeHooks(scan(options), options.hooks ?? sharedHookStore(), Date.now());
     const folders =
         options.projectFolders ??
         (options.snapshot !== undefined && options.hub !== undefined

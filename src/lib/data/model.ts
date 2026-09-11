@@ -518,6 +518,21 @@ export type SessionCache = {
 };
 
 /**
+ * One event a `Notification` or `Stop` hook posted for a session. `kind` is Claude Code's
+ * `notification_type` (`permission_prompt`, `idle_prompt`, ...) and is absent on a Stop event; `at`
+ * is when the server received it, not a timestamp Claude Code sent.
+ */
+export type HookEvent = {
+    session: string;
+    event: 'notification' | 'stop';
+    kind?: string;
+    message?: string;
+    title?: string;
+    cwd?: string;
+    at: string;
+};
+
+/**
  * One session, folded from one transcript. The live fields (`live`, `liveStatus`, `pid`,
  * `registryName`, `hidden`, and `state` when the registry has an opinion) come from the registry
  * or the process probe, not from the file; a bare read leaves them at the not-live defaults.
@@ -568,6 +583,12 @@ export type SessionRecord = {
     timeline: SessionEvent[];
     /** True when the file was too large for a first read and nothing was folded. */
     truncated: boolean;
+    /**
+     * The latest Notification or Stop hook this session posted, or null before one arrives or after
+     * server/sessions/hooks.ts's HookStore has let it expire. A bare fold (finish() in record.ts)
+     * always leaves this null; server/sessions/index.ts's sessions() is what merges the store in.
+     */
+    hook: HookEvent | null;
 };
 
 /** One entry of Claude Code's session registry, for a session whose process is running. */

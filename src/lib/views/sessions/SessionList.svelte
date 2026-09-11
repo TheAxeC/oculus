@@ -16,7 +16,7 @@
     import Pane from '$lib/ui/Pane.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { modelShort, stamp } from '$lib/state/format';
+    import { clock, modelShort, stamp } from '$lib/state/format';
     import { select, selected } from '$lib/state/selection.svelte';
     import {
         sessionsByWorkspace,
@@ -156,6 +156,13 @@
                         <Glyph name={t('cards.pin_glyph')} />
                     </span>
                 {/if}
+                {#if entry.hook?.event === 'notification' && entry.hook.kind === 'permission_prompt'}
+                    <span class="hook" title={entry.hook.message ?? ''}>
+                        <Chip label={t('notify.permission_chip')} tone="amber" />
+                    </span>
+                {:else if entry.hook?.event === 'notification' && entry.hook.kind === 'idle_prompt'}
+                    <Chip label={t('notify.idle_chip')} />
+                {/if}
             </span>
             <span class="meta">
                 {#if entry.live}
@@ -167,6 +174,10 @@
                 <span class="ts">{stamp(entry.started, now)}</span>
                 <span class="sep">{t('js.sessions.meta_sep')}</span>
                 <span class="act">{activity(entry)}</span>
+                {#if entry.hook?.event === 'stop'}
+                    <span class="sep">{t('js.sessions.meta_sep')}</span>
+                    <span class="stopped">{t('js.sessions.stopped_at', clock(entry.hook.at))}</span>
+                {/if}
                 {#each entry.secondaryAreas as area (area.key)}
                     <Chip label={area.short === '' ? area.key : area.short} />
                 {/each}
@@ -369,7 +380,8 @@
 
     /* The row's title at the list's own size: the page's base size is the largest step, and a
        session's title is one line among many rather than a heading. */
-    .top .pin {
+    .top .pin,
+    .top .hook {
         flex: none;
         font-size: var(--fs-xs);
     }

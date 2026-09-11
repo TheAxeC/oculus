@@ -48,6 +48,7 @@ export function record(id: string, over: Partial<GroupedSession> = {}): GroupedS
         agents: [],
         timeline: [],
         truncated: false,
+        hook: null,
         workspace: '/ws',
         area: '/ws',
         secondaryAreas: [],
