@@ -31,6 +31,9 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { registerView } from '../../src/lib/views/registry.ts';
+import { installBadges } from '../state/rail-badges-fixture.ts';
+import { message, receive } from '../../src/lib/state/entities.svelte.ts';
+import { setVocab } from '../../src/lib/state/tones.ts';
 import {
     apply,
     closePage,
@@ -299,6 +302,36 @@ describe('the insertion mark', () => {
         expect(insertionIndex(midpoints, 400)).toBe(3);
         expect(insertionIndex([], 400)).toBe(0);
     });
+
+    it('draws an aria-hidden badge and split cells without changing the tab name', () => {
+        const body = render(Tabs, {
+            props: {
+                tabs: [
+                    {
+                        id: 'one',
+                        label: 'One',
+                        badge: '3',
+                        badgeTone: 'red',
+                        badgeTitle: 'active: 2 | idea: 1',
+                        cells: [
+                            { count: 2, color: 'green', label: 'active' },
+                            { count: 1, color: 'violet', label: 'idea' }
+                        ]
+                    }
+                ],
+                active: 'one',
+                onselect: () => {},
+                onclose: () => {}
+            }
+        }).body;
+        expect(body).toMatch(/class="tab-badge[^>]*aria-hidden="true"/);
+        expect(body).toMatch(/class="cells[^>]*aria-hidden="true"/);
+        expect(body).toContain('--tab-badge-bg: var(--c-red)');
+        expect(body).toContain('--cell-bg: var(--c-green)');
+        expect(body).toContain('--cell-bg: var(--c-violet)');
+        expect(body).toContain('title="active: 2 | idea: 1"');
+        expect(body).toContain('role="tab" aria-selected="true"');
+    });
 });
 
 // The two the application registers, mounted through the same shell with the real catalog and the
@@ -329,5 +362,85 @@ describe('the views the application registers', () => {
         const body = render(Workbench, { props: { groups: [] } }).body;
         expect(body).toContain('Unknown view: from-2027');
         expect(body).not.toContain('data-alpha');
+    });
+
+    /** The pane tab's button, excluding the activity rail and the mounted view body. */
+    function tabOf(body: string, label: string): string {
+        const found = [...body.matchAll(/<button\b[^>]*role="tab"[^>]*>[\s\S]*?<\/button>/g)]
+            .map(([button]) => button)
+            .find((button) => button.includes(`>${label}</span>`));
+        expect(found).toBeDefined();
+        return found!;
+    }
+
+    it.each([false, true])(
+        'renders a registered board badge and cells through Workbench (empty: %s)',
+        (empty) => {
+            installBadges(config, empty);
+            setVocab(config);
+            apply({
+                main: pane('q6', 'projects'),
+                panel: pane('p', 'findings'),
+                dock: 'hidden',
+                panelSize: 0.3
+            });
+            const tab = tabOf(render(Workbench, { props: { groups: [] } }).body, 'Projects');
+            expect(tab).toMatch(
+                new RegExp(
+                    `class="tab-badge[^>]*aria-hidden="true"[^>]*>\\s*${empty ? '0' : '2'}\\s*</span>`
+                )
+            );
+            expect(tab).toMatch(/class="cells[^>]*aria-hidden="true"/);
+            expect(tab).toContain(
+                `title="active: ${empty ? 0 : 1} | manuscript: 0 | idea: ${empty ? 0 : 1}"`
+            );
+            expect([...tab.matchAll(/class="cell\s/g)]).toHaveLength(3);
+            for (const tone of ['green', 'amber', 'violet']) {
+                expect(tab).toContain(`--cell-bg: var(--c-${tone})`);
+                expect(tab).toContain(`--cell-fg: var(--on-c-${tone})`);
+            }
+            const accessible = tab
+                .replace(/<span class="cells[\s\S]*<\/span>/, '')
+                .replace(/<span\b[^>]*aria-hidden="true"[^>]*>[\s\S]*?<\/span>/g, '')
+                .replace(/<[^>]+>/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            expect(accessible).toBe('Projects');
+        }
+    );
+
+    it('renders HPC cells without a pane count pill and hides both when the queue is empty', () => {
+        for (const total of [3, 0]) {
+            receive({
+                channel: 'hpc',
+                version: (message('hpc')?.version ?? 0) + 1,
+                payload: { status: 'ok', total, running: total ? 2 : 0, pending: total ? 1 : 0 }
+            });
+            apply({
+                main: {
+                    kind: 'pane',
+                    tabs: [
+                        { id: 'q6-hpc', view: 'hpc', state: {} },
+                        { id: 'a', view: 'alpha', state: {} }
+                    ],
+                    active: 'a'
+                },
+                panel: pane('p', 'findings'),
+                dock: 'hidden',
+                panelSize: 0.3
+            });
+            const body = render(Workbench, { props: { groups: [] } }).body;
+            const tab = tabOf(body, 'Live HPC');
+            expect(tab).not.toContain('class="tab-badge');
+            if (total) {
+                expect(tab).toContain('title="running: 2 | pending: 1"');
+                expect([...tab.matchAll(/class="cell\s/g)]).toHaveLength(2);
+                expect(body).toMatch(
+                    /class="badge[^>]*title="running: 2 \| pending: 1"[^>]*>\s*2 1\s*</
+                );
+            } else {
+                expect(tab).not.toContain('class="cells');
+            }
+        }
     });
 });

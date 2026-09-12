@@ -1,12 +1,14 @@
 // Layer 2, client state. Reactive rail badges over the latest portfolio and already-fetched feeds.
 // These selectors call `peekFeed`, so reading a badge never starts a request.
 
-import { config, portfolio } from './entities.svelte.ts';
+import { portfolio } from './entities.svelte.ts';
 import { peekFeed } from './feeds.svelte.ts';
-import { board, boardPreset, collectionOf } from './selectors.svelte.ts';
+import { counts as hpcCounts } from './hpc.svelte.ts';
+import { board, boardPreset, collectionOf, configMap } from './selectors.svelte.ts';
 import { splitPosts } from './linkedin.ts';
-import { glyph } from './text.ts';
-import { statusTone } from './tones.ts';
+import { glyph, t } from './text.ts';
+import { statusTone, toneOf, UNKNOWN_TONE } from './tones.ts';
+import { isMap } from '../data/guards.ts';
 import {
     actionableEntries,
     countText,
@@ -14,13 +16,14 @@ import {
     linkedinOverdue,
     liveEntries,
     liveRule,
-    numericSetting
+    numericSetting,
+    rollup,
+    typeSplit
 } from './rail-badges.ts';
 import type { FeedState } from './feeds.svelte.ts';
 
-function configMap(): Record<string, unknown> {
-    return config()?.config ?? {};
-}
+/** One coloured count drawn as a cell on a pane tab. `color` is a theme hue name. */
+export type BadgeCell = { count: number; color: string; label: string };
 
 /** A fetched feed that can replace the snapshot summary rather than erase it. */
 function available(feed: FeedState | null): feed is FeedState {
@@ -29,7 +32,7 @@ function available(feed: FeedState | null): feed is FeedState {
 
 /** The number of cards on one of the three project boards. */
 export function boardBadge(view: string): string {
-    return countText(board(boardPreset(view)).length);
+    return String(board(boardPreset(view)).length);
 }
 
 /** The number of entries in one collection's configured `nav_live` status set. */
@@ -42,6 +45,11 @@ export function collectionBadge(key: string): string {
 export function collectionBadgeTone(key: string): string {
     const rule = liveRule(configMap(), key);
     return rule?.tone ?? statusTone(rule?.match[0] ?? '');
+}
+
+/** A collection's live count followed by the label configured in `nav_live`. */
+export function collectionBadgeTitle(key: string): string {
+    return t('views.badge_title', collectionBadge(key), liveRule(configMap(), key)?.label ?? '');
 }
 
 /** Inbox entries awaiting triage, from a fetched feed when present and its summary otherwise. */
@@ -79,7 +87,7 @@ export function linkedinBadge(): string {
         numericSetting(configMap(), 'linkedin_cadence_days'),
         Date.now()
     )
-        ? glyph('warn')
+        ? glyph('bang')
         : '';
 }
 
@@ -94,4 +102,75 @@ export function applicationsBadge(): string {
                     .toLowerCase() === 'active'
         ).length
     );
+}
+
+/** The project-board types from `scan`, in the vocabulary's configured type order. */
+function projectTypeOrder(): string[] {
+    const preset = boardPreset('projects');
+    const rows = configMap().scan;
+    if (!Array.isArray(rows)) return [];
+    const types = new Set(
+        rows.flatMap((row) => {
+            if (typeof row !== 'object' || row === null || Array.isArray(row)) return [];
+            const value = row as Record<string, unknown>;
+            return value.tier === preset.id && typeof value.type === 'string' ? [value.type] : [];
+        })
+    );
+    return preset.typeOrder.filter((type) => types.has(type));
+}
+
+/** The configured split cells for a board registration. */
+export function boardCells(view: string): BadgeCell[] {
+    const preset = boardPreset(view);
+    const projects = board(preset).map((item) => item.project);
+    if (view === 'projects') {
+        const split = configMap().tab_split;
+        return typeSplit(projects, projectTypeOrder()).map((cell) => ({
+            ...cell,
+            color: splitTone(isMap(split) ? split[cell.label] : undefined)
+        }));
+    }
+    return rollup(projects, preset.rollup).map((cell) => ({
+        ...cell,
+        color: toneOf(cell.color)
+    }));
+}
+
+/** A configured tone is a CSS custom-property fragment; missing or invalid values stay neutral. */
+function splitTone(value: unknown): string {
+    return typeof value === 'string' && /^[a-z][a-z0-9-]*$/.test(value) ? value : UNKNOWN_TONE;
+}
+
+/** The running and pending queue cells, using the matching vocabulary status colours. */
+export function queueCells(): BadgeCell[] {
+    const queue = hpcCounts();
+    return [
+        {
+            count: queue.running,
+            color: statusTone('active'),
+            label: t('hpc.badge_running')
+        },
+        {
+            count: queue.pending,
+            color: statusTone('pending'),
+            label: t('hpc.badge_pending')
+        }
+    ];
+}
+
+/** The hover text shared by a split strip and its compact rail badge. */
+function cellsTitle(cells: BadgeCell[]): string {
+    return cells
+        .map((cell) => t('views.badge_cell', cell.label, cell.count))
+        .join(t('views.badge_separator'));
+}
+
+/** Hover words for one board's split counts. */
+export function boardBadgeTitle(view: string): string {
+    return cellsTitle(boardCells(view));
+}
+
+/** Hover words for the running and pending queue counts. */
+export function queueBadgeTitle(): string {
+    return cellsTitle(queueCells());
 }

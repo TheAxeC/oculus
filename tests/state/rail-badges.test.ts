@@ -9,7 +9,9 @@ import {
     linkedinOverdue,
     liveEntries,
     liveRule,
-    numericSetting
+    numericSetting,
+    rollup,
+    typeSplit
 } from '../../src/lib/state/rail-badges.ts';
 import {
     applicationsBadge,
@@ -23,15 +25,21 @@ import {
     engineDir,
     glyphCatalog,
     loadConfig,
-    textCatalog
+    textCatalog,
+    vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
+import { setVocab } from '../../src/lib/state/tones.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
+import { badgeOf, viewFor } from '../../src/lib/views/registry.ts';
+import { installBadges } from './rail-badges-fixture.ts';
+import { registerCollections } from '../../src/routes/views.ts';
 
 const now = new Date(2026, 8, 12, 12).getTime();
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));
 setGlyphs(glyphCatalog(config));
+setVocab(vocabCatalog(config));
 
 afterEach(() => {
     vi.restoreAllMocks();
@@ -39,14 +47,76 @@ afterEach(() => {
 });
 
 describe('rail badge counts', () => {
+    it('splits project types in the supplied order and keeps zero cells', () => {
+        expect(
+            typeSplit(
+                [
+                    { type: 'idea', chips: [] },
+                    { type: 'active', chips: [] },
+                    { type: 'idea', chips: [] }
+                ],
+                ['active', 'manuscript', 'idea']
+            )
+        ).toEqual([
+            { label: 'active', count: 1 },
+            { label: 'manuscript', count: 0 },
+            { label: 'idea', count: 2 }
+        ]);
+    });
+
+    const buckets = [
+        { label: 'first', keys: ['submitted'], color: '#16a34a' },
+        { label: 'papers', keys: ['journal'], color: '#db2777' }
+    ];
+
+    it('puts a project in only the first rollup bucket it matches', () => {
+        expect(rollup([{ type: 'journal', chips: ['submitted'] }], buckets)).toEqual([
+            { label: 'first', count: 1, color: '#16a34a' },
+            { label: 'papers', count: 0, color: '#db2777' }
+        ]);
+    });
+
+    it('matches a rollup bucket through a status chip', () => {
+        expect(rollup([{ type: 'other', chips: ['journal'] }], buckets)[1].count).toBe(1);
+    });
+
+    it('leaves every rollup count unchanged when no bucket matches', () => {
+        expect(rollup([{ type: 'other', chips: ['unmatched'] }], buckets)).toEqual([
+            { label: 'first', count: 0, color: '#16a34a' },
+            { label: 'papers', count: 0, color: '#db2777' }
+        ]);
+    });
+
+    it('describes the Live HPC count and its two vocabulary-coloured cells together', () => {
+        receive({
+            channel: 'hpc',
+            version: 7000,
+            payload: { status: 'ok', total: 3, running: 2, pending: 1 }
+        });
+        const badge = badgeOf(viewFor('hpc')!);
+        expect(badge).toEqual({
+            text: '2 1',
+            tabText: '',
+            title: 'running: 2 | pending: 1',
+            cells: [
+                { count: 2, color: 'green', label: 'running' },
+                { count: 1, color: 'amber', label: 'pending' }
+            ]
+        });
+    });
+
     it('reads one collection live-status rule and counts normalised entry fields', () => {
         const config = {
             nav_live: {
-                funding: { match: ['in-prep', 'submitted'], tone: 'amber' }
+                funding: { match: ['in-prep', 'submitted'], label: 'undecided', tone: 'amber' }
             }
         };
         const rule = liveRule(config, 'funding');
-        expect(rule).toEqual({ match: ['in-prep', 'submitted'], tone: 'amber' });
+        expect(rule).toEqual({
+            match: ['in-prep', 'submitted'],
+            label: 'undecided',
+            tone: 'amber'
+        });
         expect(
             liveEntries(
                 [
@@ -167,7 +237,7 @@ describe('rail badge counts', () => {
         expect([inboxBadge(), leadsBadge(), linkedinBadge(), applicationsBadge()]).toEqual([
             '4',
             '1',
-            glyphCatalog(config).warn,
+            glyphCatalog(config).bang,
             '2'
         ]);
 
@@ -210,7 +280,86 @@ describe('rail badge counts', () => {
         expect([inboxBadge(), leadsBadge(), linkedinBadge()]).toEqual([
             '4',
             '1',
-            glyphCatalog(config).warn
+            glyphCatalog(config).bang
         ]);
+    });
+});
+
+describe('registered board badge descriptors', () => {
+    const expected = {
+        projects: {
+            text: '2',
+            title: 'active: 1 | manuscript: 0 | idea: 1',
+            cells: [
+                { count: 1, label: 'active', color: 'green' },
+                { count: 0, label: 'manuscript', color: 'amber' },
+                { count: 1, label: 'idea', color: 'violet' }
+            ]
+        },
+        archive: {
+            text: '3',
+            title: 'papers: 1 | outputs: 1 | dead-ends: 1',
+            cells: [
+                { count: 1, label: 'papers', color: 'rose' },
+                { count: 1, label: 'outputs', color: 'sky' },
+                { count: 1, label: 'dead-ends', color: 'grey' }
+            ]
+        },
+        coauthor: {
+            text: '4',
+            title: 'in progress: 1 | papers: 1 | outputs: 1 | dead-ends: 1',
+            cells: [
+                { count: 1, label: 'in progress', color: 'green' },
+                { count: 1, label: 'papers', color: 'rose' },
+                { count: 1, label: 'outputs', color: 'sky' },
+                { count: 1, label: 'dead-ends', color: 'grey' }
+            ]
+        }
+    };
+
+    it.each(['projects', 'archive', 'coauthor'] as const)(
+        'assembles %s from the real registration hooks',
+        (id) => {
+            installBadges(config);
+            expect(badgeOf(viewFor(id)!)).toEqual({
+                ...expected[id],
+                tabText: expected[id].text,
+                tone: undefined
+            });
+        }
+    );
+
+    it.each(['projects', 'archive', 'coauthor'] as const)(
+        'keeps %s total and every split cell at zero',
+        (id) => {
+            installBadges(config, true);
+            const badge = badgeOf(viewFor(id)!);
+            expect(badge.text).toBe('0');
+            expect(badge.cells).toEqual(expected[id].cells.map((cell) => ({ ...cell, count: 0 })));
+        }
+    );
+
+    it('reads split tones from config independently of type_color', () => {
+        installBadges({
+            ...config,
+            tab_split: { active: 'blue', manuscript: 'cyan', idea: 'pink' }
+        });
+        expect(badgeOf(viewFor('projects')!).cells?.map((cell) => cell.color)).toEqual([
+            'blue',
+            'cyan',
+            'pink'
+        ]);
+    });
+
+    it('uses the collection rule label and hides its count at zero', () => {
+        registerCollections(['funding']);
+        installBadges(config);
+        expect(badgeOf(viewFor('funding')!)).toMatchObject({
+            text: '1',
+            title: '1 undecided',
+            tone: 'violet'
+        });
+        installBadges(config, true);
+        expect(badgeOf(viewFor('funding')!).text).toBe('');
     });
 });

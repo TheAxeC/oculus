@@ -94,7 +94,7 @@
     } from '$lib/state/ui.svelte';
     import { lookup, t } from '$lib/state/text';
     import { themes as themeList, wallpaperOnTheme } from '$lib/state/appearance';
-    import { views } from '$lib/views/registry';
+    import { badgeOf, views } from '$lib/views/registry';
     import type { Dock } from '$lib/state/layout';
 
     type Props = {
@@ -140,22 +140,17 @@
         dock(id as Dock);
     }
 
-    /** The badge's hover words: the HPC legend it already had, otherwise the view and count. */
-    function badgeTitle(view: Registration, badge: string): string {
-        return view.id === 'hpc' ? t('hpc.badge_title') : `${lookup(view.label)} ${badge}`;
-    }
-
     /** The views of one group as the choices of its list, each with its own glyph and words. */
     function groupItems(section: Section): MenuItem[] {
         return section.items.map((view) => {
-            const badge = view.badge?.() ?? '';
+            const badge = badgeOf(view);
             return {
                 id: view.id,
                 label: lookup(view.label),
                 glyph: lookup(view.glyph),
-                badge,
-                badgeTone: view.badgeTone?.(),
-                badgeTitle: badge === '' ? undefined : badgeTitle(view, badge)
+                badge: badge.text,
+                badgeTone: badge.tone,
+                badgeTitle: badge.text === '' ? undefined : badge.title
             };
         });
     }
@@ -166,8 +161,7 @@
     }
 
     /** The status pair for a registration's badge; absent leaves the accent pair in the stylesheet. */
-    function badgeStyle(view: Registration): string | undefined {
-        const tone = view.badgeTone?.();
+    function badgeStyle(tone: string | undefined): string | undefined {
         return tone === undefined
             ? undefined
             : `--badge-bg: var(--c-${tone}); --badge-fg: var(--on-c-${tone})`;
@@ -202,7 +196,7 @@
                     <p class="group">{label}</p>
                 {/if}
                 {#each section.items as view (view.id)}
-                    {@const badge = view.badge?.() ?? ''}
+                    {@const badge = badgeOf(view)}
                     <div class="control">
                         <ToolButton
                             label={lookup(view.label)}
@@ -213,13 +207,14 @@
                             onclick={(event) =>
                                 openView(view.id, event.shiftKey ? 'panel' : 'main')}
                         />
-                        {#if badge !== ''}
+                        {#if badge.text !== ''}
                             <span
                                 class="badge"
-                                style={badgeStyle(view)}
-                                title={badgeTitle(view, badge)}
+                                style={badgeStyle(badge.tone)}
+                                title={badge.title}
+                                aria-hidden="true"
                             >
-                                {badge}
+                                {badge.text}
                             </span>
                         {/if}
                     </div>

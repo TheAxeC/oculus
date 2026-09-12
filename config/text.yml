@@ -876,6 +876,8 @@ text:
     col_end: "End"
     col_gres: "GRES per node"
     badge_title: "Running and pending HPC jobs"
+    badge_running: "running"
+    badge_pending: "pending"
     footer: "Polls squeue, sacct, sinfo, and disk quota on {0}. See the HPC how-to."
 
   sessions:                    # Sessions tab shell (render/sessions.py); the live words are text.js.sessions.

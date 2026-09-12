@@ -274,6 +274,7 @@ describe("oculus's own config directory", () => {
             'nav_groups',
             'arrangements',
             'board',
+            'tab_split',
             'tab_rollup',
             'nav_live',
             'bookmarks',

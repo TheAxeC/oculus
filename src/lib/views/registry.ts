@@ -9,6 +9,20 @@
 
 import type { Component } from 'svelte';
 import type { Instance, ViewId } from '$lib/state/layout';
+import { lookup, t } from '$lib/state/text';
+
+/** A split cell carries a theme hue, its count and its configured label. */
+export type BadgeCell = { count: number; color: string; label: string };
+
+/** The badge values shared by the rail and pane tabs. */
+export type RegistrationBadge = {
+    text: string;
+    /** The text a pane tab draws: the rail's, unless the registration says its cells carry it all. */
+    tabText: string;
+    tone?: string;
+    title: string;
+    cells?: BadgeCell[];
+};
 
 /** Every view takes the instance it was mounted as, and reads its own state by that instance's id. */
 export type ViewProps = { instance: Instance };
@@ -30,7 +44,26 @@ export type Registration = {
     badge?: () => string;
     /** A hue name from state/tones.ts; absent keeps the rail's accent badge. */
     badgeTone?: () => string;
+    /** The badge's hover words, supplied by the registration's state selectors. */
+    badgeTitle?: () => string;
+    /** The split counts shown on a pane tab. */
+    badgeCells?: () => BadgeCell[];
+    /** The text a pane tab draws when it differs from the rail's; empty when the cells say it all. */
+    badgeTabText?: () => string;
 };
+
+/** Assemble a registration's hooks without depending on any particular view or state selector. */
+export function badgeOf(registration: Registration): RegistrationBadge {
+    const text = registration.badge?.() ?? '';
+    return {
+        text,
+        tabText: registration.badgeTabText?.() ?? text,
+        tone: registration.badgeTone?.(),
+        title:
+            registration.badgeTitle?.() ?? t('views.badge_title', lookup(registration.label), text),
+        cells: registration.badgeCells?.()
+    };
+}
 
 /** Insertion order is registration order, and a re-registration keeps the id's first position. */
 const registry = new Map<ViewId, Registration>();

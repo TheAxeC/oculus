@@ -73,6 +73,8 @@ board:
 # Tab-button count rollups: the little N|N|N split on the Archive/Coauthor tab buttons (like the projects
 # active/manuscript/idea one). Each segment = a bucket of type/chip keys; buckets are mutually exclusive and
 # cover every card (a card lands in the FIRST bucket whose keys its type or one of its chips matches).
+tab_split: { active: green, manuscript: amber, idea: violet }
+
 tab_rollup:
   projects:
     - { label: "in progress", keys: [active, manuscript], color: "#16a34a" }

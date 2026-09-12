@@ -5,7 +5,19 @@ import { daysUntil } from './board.ts';
 import { deadlineOf, isClosed } from './leads.ts';
 import { daysSince } from './feeds.ts';
 
-export type LiveRule = { match: string[]; tone?: string };
+export type LiveRule = { match: string[]; label?: string; tone?: string };
+
+/** The project fields a split or rollup reads. */
+export type BadgeProject = { type?: string; chips: string[] };
+
+/** One configured rollup bucket, before its colour is resolved to a theme tone. */
+export type BadgeBucket = { label: string; keys: string[]; color: string };
+
+/** One count in a split, named by the project type it counts. */
+export type SplitCount = { count: number; label: string };
+
+/** One count in a configured rollup, carrying the bucket's configured colour. */
+export type RollupCount = SplitCount & { color: string };
 
 function record(value: unknown): Record<string, unknown> | null {
     return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -22,6 +34,7 @@ export function liveRule(config: Record<string, unknown>, key: string): LiveRule
         .map((status) => status.trim().toLowerCase());
     if (match.length === 0) return null;
     const rule: LiveRule = { match };
+    if (typeof row.label === 'string') rule.label = row.label;
     if (typeof row.tone === 'string' && row.tone !== '') rule.tone = row.tone;
     return rule;
 }
@@ -84,6 +97,29 @@ export function linkedinOverdue(
 export function numericSetting(config: Record<string, unknown>, key: string): number | null {
     const value = config[key];
     return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+/** Count project types in the supplied order, including a zero cell for an absent type. */
+export function typeSplit(projects: BadgeProject[], order: string[]): SplitCount[] {
+    return order.map((label) => ({
+        label,
+        count: projects.filter((project) => project.type === label).length
+    }));
+}
+
+/** Count each project in the first bucket matching its type or one of its status chips. */
+export function rollup(projects: BadgeProject[], buckets: BadgeBucket[]): RollupCount[] {
+    const counts = buckets.map(() => 0);
+    for (const project of projects) {
+        const values = new Set([project.type, ...project.chips]);
+        const at = buckets.findIndex((bucket) => bucket.keys.some((key) => values.has(key)));
+        if (at >= 0) counts[at] += 1;
+    }
+    return buckets.map((bucket, at) => ({
+        label: bucket.label,
+        count: counts[at],
+        color: bucket.color
+    }));
 }
 
 /** Badge text, with zero represented by the empty string the rail does not draw. */

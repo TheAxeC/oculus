@@ -39,11 +39,16 @@ import { badgeText as hpcBadgeText } from '$lib/state/hpc.svelte';
 import {
     applicationsBadge,
     boardBadge,
+    boardBadgeTitle,
+    boardCells,
     collectionBadge,
+    collectionBadgeTitle,
     collectionBadgeTone,
     inboxBadge,
     leadsBadge,
-    linkedinBadge
+    linkedinBadge,
+    queueBadgeTitle,
+    queueCells
 } from '$lib/state/rail-badges.svelte';
 
 registerView({
@@ -85,7 +90,11 @@ registerView({
     label: 'views.hpc',
     glyph: 'views.hpc_glyph',
     component: Hpc,
-    badge: hpcBadgeText
+    badge: hpcBadgeText,
+    badgeTitle: queueBadgeTitle,
+    badgeCells: queueCells,
+    // The rail's compact "running pending" text; on a pane tab the two cells carry those numbers.
+    badgeTabText: () => ''
 });
 
 registerView({
@@ -160,7 +169,9 @@ registerView({
     label: 'views.projects',
     glyph: 'views.projects_glyph',
     component: Projects,
-    badge: () => boardBadge('projects')
+    badge: () => boardBadge('projects'),
+    badgeTitle: () => boardBadgeTitle('projects'),
+    badgeCells: () => boardCells('projects')
 });
 
 registerView({
@@ -168,7 +179,9 @@ registerView({
     label: 'views.archive',
     glyph: 'views.archive_glyph',
     component: Projects,
-    badge: () => boardBadge('archive')
+    badge: () => boardBadge('archive'),
+    badgeTitle: () => boardBadgeTitle('archive'),
+    badgeCells: () => boardCells('archive')
 });
 
 registerView({
@@ -176,7 +189,9 @@ registerView({
     label: 'views.coauthor',
     glyph: 'views.coauthor_glyph',
     component: Projects,
-    badge: () => boardBadge('coauthor')
+    badge: () => boardBadge('coauthor'),
+    badgeTitle: () => boardBadgeTitle('coauthor'),
+    badgeCells: () => boardCells('coauthor')
 });
 
 // One project as its own tab, opened by the title of a card. It is registered once and opened once
@@ -290,7 +305,8 @@ export function registerCollections(keys: string[]): void {
             glyph: `views.${key}_glyph`,
             component: Collection,
             badge: applications ? applicationsBadge : () => collectionBadge(key),
-            badgeTone: applications ? () => 'green' : () => collectionBadgeTone(key)
+            badgeTone: applications ? () => 'green' : () => collectionBadgeTone(key),
+            badgeTitle: applications ? undefined : () => collectionBadgeTitle(key)
         });
     }
 }

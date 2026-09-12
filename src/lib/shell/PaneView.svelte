@@ -38,7 +38,7 @@
         withoutOwn
     } from '$lib/state/drag.svelte';
     import { lookup, t } from '$lib/state/text';
-    import { viewFor } from '$lib/views/registry';
+    import { badgeOf, viewFor } from '$lib/views/registry';
     import { panes, type Instance, type Layout, type Target } from '$lib/state/layout';
 
     type Props = {
@@ -73,11 +73,16 @@
                 return { id: instance.id, label: t('ui.unknown_view', instance.view) };
             }
             const own = stateLabel(instance.state);
+            const badge = badgeOf(found);
             return {
                 id: instance.id,
                 label: own ?? lookup(found.label),
                 glyph: lookup(found.glyph),
-                hint: own === null ? undefined : lookup(found.label)
+                hint: own === null ? undefined : lookup(found.label),
+                badge: badge.tabText,
+                badgeTone: badge.tone,
+                badgeTitle: badge.title,
+                cells: badge.text === '' ? undefined : badge.cells
             };
         })
     );

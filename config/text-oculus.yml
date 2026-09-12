@@ -188,6 +188,9 @@ text:
     why_busy: "A request is in flight."
 
   views:                     # oculus's views: one label per registered view, and the glyph name it is drawn with.
+    badge_cell: "{0}: {1}"
+    badge_separator: " | "
+    badge_title: "{0} {1}"
     radar: "Lit Watch"
     radar_glyph: "litwatch"
     leads: "Position Leads"

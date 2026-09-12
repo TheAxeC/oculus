@@ -21,10 +21,13 @@ import {
     engineDir,
     glyphCatalog,
     loadConfig,
-    textCatalog
+    textCatalog,
+    vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
+import { setVocab } from '../../src/lib/state/tones.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
+import { installBadges } from '../state/rail-badges-fixture.ts';
 import {
     registerView,
     views,
@@ -40,6 +43,7 @@ const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
 setCatalog(catalog);
 setGlyphs(glyphCatalog(config));
+setVocab(vocabCatalog(config));
 
 const COLLECTIONS = collectionKeys(config);
 registerCollections(COLLECTIONS);
@@ -177,7 +181,7 @@ describe('a rail badge', () => {
         expect(group).toContain('rail-control');
     });
 
-    it('keeps the Live HPC badge title', () => {
+    it('puts the Live HPC split in the compact rail badge title', () => {
         receive({
             channel: 'hpc',
             version: 7001,
@@ -186,7 +190,33 @@ describe('a rail badge', () => {
         const hpc = render(ActivityRail, {
             props: { groups: [{ label: 'HPC', keys: ['hpc'] }] }
         }).body;
-        expect(hpc).toContain(`title="${catalog['hpc.badge_title']}"`);
+        expect(hpc).toContain('title="running: 2 | pending: 1"');
+        expect(hpc).toMatch(/class="badge[^>]*aria-hidden="true"/);
+    });
+
+    it('puts an archive rollup and a collection rule label in the rail badge titles', () => {
+        installBadges(config);
+        const body = render(ActivityRail, { props: { groups: [] } }).body;
+        const archive = body.match(
+            /data-view="archive"[\s\S]*?<span\b[^>]*class="badge[^>]*>/
+        )?.[0];
+        const funding = body.match(
+            /data-view="funding"[\s\S]*?<span\b[^>]*class="badge[^>]*>/
+        )?.[0];
+        const projects = body.match(
+            /data-view="projects"[\s\S]*?<span\b[^>]*class="badge[^>]*>/
+        )?.[0];
+        const coauthor = body.match(
+            /data-view="coauthor"[\s\S]*?<span\b[^>]*class="badge[^>]*>/
+        )?.[0];
+        expect(archive).toContain('title="papers: 1 | outputs: 1 | dead-ends: 1"');
+        expect(funding).toContain('title="1 undecided"');
+        expect(projects).toMatch(/title="active: \d+ \| manuscript: \d+ \| idea: \d+"/);
+        expect(coauthor).toMatch(
+            /title="in progress: \d+ \| papers: \d+ \| outputs: \d+ \| dead-ends: \d+"/
+        );
+        expect(archive).toContain('aria-hidden="true"');
+        expect(funding).toContain('aria-hidden="true"');
     });
 });
 
