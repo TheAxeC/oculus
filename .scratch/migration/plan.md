@@ -73,6 +73,8 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ Q4a the rail: counts and badges, the groups, the foot controls, the tray's place (landed 2026-09-12; brief `agents/briefs/Q4a.md`; review `agents/reviews/Q4a.md`)
 - ✅ Q4b the views: one type scale, the terminal's size control, the folded groups' look, the cards' surface, the intro block (landed 2026-09-12; brief `agents/briefs/Q4b.md`; review `agents/reviews/Q4b.md`; the pillar tone rule is open for Axel)
 - Q5 several sessions and terminals at once: pinned panes with labelled tabs (Axel agreed to option A on 2026-09-12 at 18:05; runs after Q4b and before O27a unless Axel orders otherwise; brief `agents/briefs/Q5.md`)
+- Q6 the counts on the pane tabs, with the cockpit's splits and rollups (Axel, 2026-09-12 19:40: "Yes, fix it"; runs after Q5; brief `agents/briefs/Q6.md`)
+- Q7 the type of every view against the cockpit, an app-wide text size control, the terminal's reflow after a size step (Axel, 2026-09-12 19:40: every view, side by side with the cockpit; runs after Q6; brief `agents/briefs/Q7.md`)
 - O27a the file browser: roots, saved workspaces, the tree and the file view (brief `agents/briefs/O27a.md`)
 - O27b the file browser: bookmarks as a collection and transient notes (`~/.oculus/bookmarks.yml`, `~/.oculus/notes/`, `notes.autosave_ms`; brief at `agents/briefs/O27b.md`) (1 commit)
 - O28 views: Memories with the copied images, Help, Audit, Config, and the cockpit's three document tabs of the More group (`RESEARCH-APPROACH.md`, `AGENT-APPROACH.md`, `HPC-UTwente-howto.md`) as O14c document tabs in the rail's More group rather than as user bookmarks (multiple commits)
