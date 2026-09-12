@@ -21,7 +21,20 @@ reviewer: codex:gpt-5.6-sol  # the reviewer stage, tried from O24a on (Axel, 202
 ```
 
 ```yaml
-dispatch: none               # nothing in flight; Q3 landed 2026-09-12, next Q3b (the terminal pane).
+dispatch:
+  package: Q3b
+  worker: codex:gpt-5.6-sol
+  worktree: .agents/worktrees/q3b
+  base: 2721d7d5ffd7d6fad3c999dac274f6334b57aece
+  launched: 2026-09-12T12:30:00+02:00
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q3b/prompt.md
+  events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q3b/events.jsonl
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q3b/report.md
+  exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q3b/exit.txt
+  pid: pending
+  session_id: pending
+  landing: not-started
+  round: 0
 ```
 
 ## The standing demands (from Axel, in force)
