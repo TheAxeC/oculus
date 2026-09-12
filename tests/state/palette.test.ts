@@ -1,8 +1,10 @@
 // The command palette's pure index, ranking and command vocabulary over a synthetic snapshot and
-// fetched feeds. No store, registry or browser is read.
+// feed entries, including the state adapter over one complete socket message.
 
 import { describe, expect, it } from 'vitest';
+import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { buildIndex, commands, match, parseCommand } from '../../src/lib/state/palette.ts';
+import { paletteSource } from '../../src/lib/state/palette-source.svelte.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
 
 const snapshot = {
@@ -70,6 +72,19 @@ const feeds = {
 
 const index = buildIndex(snapshot, feeds, [{ id: 'focus', label: 'Focus' }]);
 
+describe('paletteSource', () => {
+    it('indexes all four feeds from their first socket message', () => {
+        receive({ channel: 'feeds', version: 1, payload: feeds });
+        const fromChannel = buildIndex(null, paletteSource().feeds, []);
+        expect(fromChannel.map((item) => item.id)).toEqual([
+            'feed:leads:Chair opening',
+            'feed:radar:A paper',
+            'feed:inbox:thread-1',
+            'feed:linkedin:xx-idea.md'
+        ]);
+    });
+});
+
 describe('buildIndex', () => {
     it('opens the disclosure a feed entry may sit behind when it is revealed', () => {
         const state = (id: string) => index.find((item) => item.id === id)?.state;
@@ -81,7 +96,7 @@ describe('buildIndex', () => {
         expect(state('feed:inbox:thread-1')).toEqual({ reveal: 'thread-1', triagedOpen: true });
     });
 
-    it('indexes views, projects, every collection entry and every fetched feed entry', () => {
+    it('indexes views, projects, every collection entry and every socket feed entry', () => {
         expect(index.map((item) => item.id)).toEqual([
             'view:focus',
             'project:alpha',

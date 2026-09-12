@@ -1,5 +1,5 @@
 // Layer 2, client state. Pure rail-badge counts over collection and feed records. The reactive
-// adapter beside it supplies the snapshot, fetched feeds, config and current time.
+// adapter beside it supplies the snapshot, socket feeds, config and current time.
 
 import { daysUntil } from './board.ts';
 import { deadlineOf, isClosed } from './leads.ts';

@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, view. Inbox reads its feed on request, groups live cards by action kind, and keeps
+    // Layer 3, view. Inbox reads its socket feed, groups live cards by action kind, and keeps
     // search plus the triaged-section disclosure in this view instance's state.
 
     import Chip from '$lib/ui/Chip.svelte';

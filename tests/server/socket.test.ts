@@ -110,9 +110,9 @@ describe('attachSocket', () => {
         expect(error?.message).toMatch(/403/);
     });
 
-    it('sends a subscriber the current message and then every push', async () => {
+    it('sends a feeds subscriber the current payload and then every push', async () => {
         const started = await start();
-        started.hub.publish('portfolio', { projects: 2 });
+        started.hub.publish('feeds', { radar: { entries: [{ title: 'First' }] } });
 
         const ws = new WebSocket(`ws://127.0.0.1:${started.port}/ws`, {
             headers: { Origin: `http://127.0.0.1:${started.port}` }
@@ -120,16 +120,24 @@ describe('attachSocket', () => {
         expect(await once(ws, 'open')).toBe(null);
 
         const arrived = collect(ws, 2);
-        ws.send(JSON.stringify({ type: 'subscribe', channels: ['portfolio'] }));
+        ws.send(JSON.stringify({ type: 'subscribe', channels: ['feeds'] }));
         // The publish has to follow the subscription, which is why it waits for the first message.
         await new Promise<void>((resolve) => {
             ws.once('message', () => resolve());
         });
-        started.hub.publish('portfolio', { projects: 3 });
+        started.hub.publish('feeds', { radar: { entries: [{ title: 'Second' }] } });
 
         expect(await arrived).toEqual([
-            { channel: 'portfolio', version: 1, payload: { projects: 2 } },
-            { channel: 'portfolio', version: 2, payload: { projects: 3 } }
+            {
+                channel: 'feeds',
+                version: 1,
+                payload: { radar: { entries: [{ title: 'First' }] } }
+            },
+            {
+                channel: 'feeds',
+                version: 2,
+                payload: { radar: { entries: [{ title: 'Second' }] } }
+            }
         ]);
         ws.close();
     });

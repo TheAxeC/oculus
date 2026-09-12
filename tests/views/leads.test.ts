@@ -1,4 +1,4 @@
-// The Position Leads view rendered over a feed fixture with live, expired, undated, and run-log rows.
+// The Position Leads view rendered over a received feed with live, expired, undated, and run-log rows.
 
 import { render } from 'svelte/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -11,7 +11,7 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
-import { refetch } from '../../src/lib/state/feeds.svelte.ts';
+import { feedsFixture } from '../feeds-fixture.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import { addLead } from '../../src/lib/state/writes.svelte.ts';
@@ -117,15 +117,10 @@ function hasAction(body: string, label: string): boolean {
     return buttons.some((button) => button.includes(`>${label}</span>`));
 }
 
-function serve(body: Record<string, unknown>, status = 200): void {
-    vi.stubGlobal('fetch', () =>
-        Promise.resolve(
-            new Response(JSON.stringify(body), {
-                status,
-                headers: { 'content-type': 'application/json' }
-            })
-        )
-    );
+let feedVersion = 0;
+
+function serve(body: Record<string, unknown>, _status = 200): void {
+    receive({ channel: 'feeds', version: ++feedVersion, payload: feedsFixture('leads', body) });
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -140,7 +135,6 @@ describe('the Position Leads view', () => {
             schema,
             entries
         });
-        await refetch('leads');
         const body = render(Leads, { props: { instance: instance('leads-one') } }).body;
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('2 live');
@@ -173,7 +167,6 @@ describe('the Position Leads view', () => {
             schema,
             entries
         });
-        await refetch('leads');
         const body = render(Leads, {
             props: { instance: instance('leads-open', true, true) }
         }).body;
@@ -195,7 +188,6 @@ describe('the Position Leads view', () => {
             schema,
             entries
         });
-        await refetch('leads');
         const body = render(Leads, {
             props: { instance: instance('leads-cards', true) }
         }).body;
@@ -248,7 +240,6 @@ describe('the Position Leads view', () => {
             schema,
             entries: []
         });
-        await refetch('leads');
         const body = render(Leads, {
             props: { instance: instance('leads-add', false, false, '', true) }
         }).body;
@@ -278,7 +269,6 @@ describe('the Position Leads view', () => {
             schema,
             entries: entries.slice(0, 2)
         });
-        await refetch('leads');
         const body = render(Leads, { props: { instance: instance('leads-live-only') } }).body;
         expect(body).toContain('2 live');
         expect(body).not.toContain('expired (hidden)');
@@ -293,7 +283,6 @@ describe('the Position Leads view', () => {
             schema,
             entries: entries.slice(0, 2)
         });
-        await refetch('leads');
         const body = render(Leads, {
             props: { instance: instance('leads-zero-search', false, false, 'does-not-match') }
         }).body;
@@ -310,7 +299,6 @@ describe('the Position Leads view', () => {
             schema,
             entries: [{ title: 'Done', status: 'declined' }]
         });
-        await refetch('leads');
         const empty = render(Leads, { props: { instance: instance('leads-empty') } }).body;
         expect(empty).toContain('<code>/research-cockpit scout</code>');
         expect(empty).not.toContain('&lt;code>');
@@ -321,7 +309,6 @@ describe('the Position Leads view', () => {
             file: 'feeds/position-leads.yml',
             missing: true
         });
-        await refetch('leads');
         expect(render(Leads, { props: { instance: instance('leads-missing') } }).body).toContain(
             catalog['sf.leads_no_file']
         );

@@ -12,7 +12,7 @@
     import PostCard from './linkedin/PostCard.svelte';
     import EntryForm from './shared/EntryForm.svelte';
     import Reveal from './shared/Reveal.svelte';
-    import { feed, refetch } from '$lib/state/feeds.svelte';
+    import { feed } from '$lib/state/feeds.svelte';
     import {
         cadence,
         daysSince,
@@ -64,9 +64,7 @@
     }
 
     async function add(fields: Record<string, unknown>): Promise<WriteAnswer> {
-        const answer = await addLinkedinIdea(fields);
-        if (answer.ok && answer.refused.length === 0) await refetch('linkedin');
-        return answer;
+        return addLinkedinIdea(fields);
     }
 </script>
 

@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, view. Position Leads reads its feed on request, splits live from expired entries,
+    // Layer 3, view. Position Leads reads its socket feed, splits live from expired entries,
     // and keeps search plus the expired and run-log disclosures in this view instance's state.
 
     import Empty from '$lib/ui/Empty.svelte';

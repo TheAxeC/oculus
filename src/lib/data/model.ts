@@ -20,7 +20,14 @@ import type {
     ScanRule,
     Venue
 } from './model-entities.ts';
-import type { Career, Collection, Feeds, RawFeeds } from './model-collections.ts';
+import type {
+    Career,
+    Collection,
+    FeedData,
+    FeedKind,
+    Feeds,
+    RawFeeds
+} from './model-collections.ts';
 
 export type { FeedData, FeedEntry, FeedKind } from './model-collections.ts';
 
@@ -164,6 +171,18 @@ export type ConfigPayload = {
     text: Record<string, string>;
     findings: Finding[];
 };
+
+/** The four complete feed states carried together on the `feeds` channel. */
+export type FeedsPayload = Record<
+    FeedKind,
+    FeedData & {
+        ok: true;
+        kind: FeedKind;
+        file: string;
+        missing?: boolean;
+        error?: string;
+    }
+>;
 
 export type {
     Chip,

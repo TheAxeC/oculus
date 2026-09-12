@@ -1,5 +1,5 @@
 // Layer 2, client-state tests. Rail badges count configured collection states and feed urgency.
-// Pure cases isolate the arithmetic; the installed-store case proves feed precedence and fallback.
+// Pure cases isolate the arithmetic; the installed-store case proves channel precedence and fallback.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
@@ -20,7 +20,6 @@ import {
     linkedinBadge
 } from '../../src/lib/state/rail-badges.svelte.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
-import { refetch } from '../../src/lib/state/feeds.svelte.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -168,7 +167,7 @@ describe('rail badge counts', () => {
         expect(numericSetting({}, 'leads_badge_days')).toBe(null);
     });
 
-    it('uses snapshot summaries, good fetched feeds, and summaries after feed errors', async () => {
+    it('uses snapshot summaries, good socket feeds, and summaries after feed errors', () => {
         vi.spyOn(Date, 'now').mockReturnValue(now);
         receive({
             channel: 'config',
@@ -241,42 +240,66 @@ describe('rail badge counts', () => {
             '2'
         ]);
 
-        vi.stubGlobal('fetch', (url: string) => {
-            const kind = new URL(url, 'http://oculus.test').searchParams.get('kind');
-            const entries =
-                kind === 'inbox'
-                    ? [
-                          { kind: 'info', triaged: false },
-                          { kind: 'reply', triaged: false },
-                          { kind: 'action', triaged: true }
-                      ]
-                    : kind === 'leads'
-                      ? [
-                            { title: 'One', status: 'open', deadline: '2026-09-13' },
-                            { title: 'Two', status: 'open', deadline: '2026-09-14' }
-                        ]
-                      : [{ file: '01-post.md', title: 'Post', date: '2026-09-10', body: '' }];
-            return Promise.resolve(
-                new Response(
-                    JSON.stringify({ ok: true, kind, file: 'feed.yml', meta: {}, entries })
-                )
-            );
+        receive({
+            channel: 'feeds',
+            version: 9102,
+            payload: {
+                radar: {
+                    ok: true,
+                    kind: 'radar',
+                    file: 'radar.yml',
+                    meta: {},
+                    entries: []
+                },
+                inbox: {
+                    ok: true,
+                    kind: 'inbox',
+                    file: 'inbox.yml',
+                    meta: {},
+                    entries: [
+                        { kind: 'info', triaged: false },
+                        { kind: 'reply', triaged: false },
+                        { kind: 'action', triaged: true }
+                    ]
+                },
+                leads: {
+                    ok: true,
+                    kind: 'leads',
+                    file: 'leads.yml',
+                    meta: {},
+                    entries: [
+                        { title: 'One', status: 'open', deadline: '2026-09-13' },
+                        { title: 'Two', status: 'open', deadline: '2026-09-14' }
+                    ]
+                },
+                linkedin: {
+                    ok: true,
+                    kind: 'linkedin',
+                    file: 'linkedin',
+                    meta: {},
+                    entries: [{ file: '01-post.md', title: 'Post', date: '2026-09-10', body: '' }]
+                }
+            }
         });
-        await refetch('inbox');
-        await refetch('leads');
-        await refetch('linkedin');
         expect([inboxBadge(), leadsBadge(), linkedinBadge()]).toEqual(['1', '2', '']);
 
-        vi.stubGlobal('fetch', () =>
-            Promise.resolve(
-                new Response(JSON.stringify({ error: 'bad YAML', file: 'feed.yml' }), {
-                    status: 500
-                })
+        receive({
+            channel: 'feeds',
+            version: 9103,
+            payload: Object.fromEntries(
+                ['radar', 'inbox', 'leads', 'linkedin'].map((kind) => [
+                    kind,
+                    {
+                        ok: true,
+                        kind,
+                        file: 'feed.yml',
+                        meta: {},
+                        entries: [],
+                        error: 'bad YAML'
+                    }
+                ])
             )
-        );
-        await refetch('inbox');
-        await refetch('leads');
-        await refetch('linkedin');
+        });
         expect([inboxBadge(), leadsBadge(), linkedinBadge()]).toEqual([
             '4',
             '1',

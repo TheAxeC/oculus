@@ -1,9 +1,9 @@
 // Layer 2, client state. The reactive values the shell palette indexes when it opens. This adapter
-// keeps the pure index in palette.ts free of stores while exposing only the snapshot, fetched feeds
+// keeps the pure index in palette.ts free of stores while exposing only the snapshot, socket feeds
 // and merged config the overlay needs.
 
 import { config, portfolio } from './entities.svelte.ts';
-import { peekFeed } from './feeds.svelte.ts';
+import { feed } from './feeds.svelte.ts';
 import type { PaletteFeeds } from './palette.ts';
 import type { Snapshot } from '../data/model.ts';
 
@@ -18,10 +18,10 @@ export function paletteSource(): PaletteSource {
     return {
         snapshot: portfolio(),
         feeds: {
-            leads: peekFeed('leads'),
-            radar: peekFeed('radar'),
-            inbox: peekFeed('inbox'),
-            linkedin: peekFeed('linkedin')
+            leads: feed('leads'),
+            radar: feed('radar'),
+            inbox: feed('inbox'),
+            linkedin: feed('linkedin')
         },
         config: config()?.config ?? {}
     };

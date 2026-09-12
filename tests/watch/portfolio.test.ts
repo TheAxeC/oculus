@@ -1,4 +1,4 @@
-// watchPortfolio against a synthetic hub and a synthetic engine in temporary directories. Nothing
+// The portfolio and feed watcher against a synthetic hub and engine in temporary directories. Nothing
 // outside them is read or written, every write asserts its path is inside first, and every watcher
 // is closed when the test ends.
 
@@ -7,6 +7,10 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Hub } from '../../src/lib/server/channels.ts';
+import { handleWrite } from '../../src/lib/server/writes.ts';
+import { mintToken } from '../../src/lib/server/auth.ts';
+import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
+import { loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { Sink } from '../../src/lib/server/channels.ts';
 import {
     relevant,
@@ -14,7 +18,7 @@ import {
     watchedDirectories
 } from '../../src/lib/server/watch/portfolio.ts';
 import type { Watcher } from '../../src/lib/server/watch/portfolio.ts';
-import type { ConfigPayload, Message, Snapshot } from '../../src/lib/data/model.ts';
+import type { ConfigPayload, FeedsPayload, Message, Snapshot } from '../../src/lib/data/model.ts';
 
 const LAYOUT = [
     'scan:',
@@ -30,6 +34,7 @@ const LAYOUT = [
     'collections:',
     '  - { key: funding, file: funding/funding.yml }',
     '  - { key: events, file: network/events.yml }',
+    'linkedin_cadence_days: 30',
     ''
 ].join('\n');
 
@@ -92,6 +97,14 @@ function buildHub(): string {
     write(hub, 'registries/domains.yml', 'entries: []\n');
     write(hub, 'funding/funding.yml', 'entries: []\n');
     write(hub, 'network/events.yml', 'title: Talks\nentries: []\n');
+    write(hub, 'feeds/inbox.yml', 'meta:\n  run: 2026-09-12\nentries: []\n');
+    write(hub, 'feeds/position-leads.yml', 'meta: {}\nentries: []\n');
+    write(hub, 'feeds/literature-radar.yml', 'meta: {}\nentries: []\n');
+    write(
+        hub,
+        'theaxec.github.io/_linkedin/01-start.md',
+        '---\ntitle: "Start"\ndate: 2026-09-01\n---\n\nFirst post.\n'
+    );
     return hub;
 }
 
@@ -145,13 +158,18 @@ async function quiet(got: Message[], ms = 400): Promise<number> {
     return held;
 }
 
-/** A started watcher over a fresh hub and engine, with a sink already subscribed to both channels. */
-function start(): { hub: string; engine: string; got: Message[] } {
+/** A started watcher over a fresh hub and engine, subscribed before the starting publications. */
+function start(prepare?: (hub: string, engine: string) => void): {
+    hub: string;
+    engine: string;
+    got: Message[];
+} {
     const hub = buildHub();
     const engine = buildEngine();
+    prepare?.(hub, engine);
     const channels = new Hub();
     const client = recording();
-    channels.subscribe(client.sink, ['portfolio', 'config']);
+    channels.subscribe(client.sink, ['portfolio', 'config', 'feeds']);
     watchers.push(watchPortfolio(channels, { hub, engine }));
     return { hub, engine, got: client.got };
 }
@@ -196,20 +214,163 @@ describe('watchedDirectories', () => {
             join('/hub', 'funding'),
             join('/hub', 'network'),
             join('/hub', 'projects/active'),
-            join('/hub', 'registries')
+            join('/hub', 'registries'),
+            join('/hub', 'theaxec.github.io/_linkedin')
         ]);
     });
 });
 
 describe('watchPortfolio', () => {
-    it('publishes both channels at start, each at version 1', async () => {
+    it('opens a LinkedIn folder created after the start and publishes its posts', async () => {
+        const folder = 'later/linkedin';
+        const started = start((_hub, engine) => {
+            write(engine, 'config/sources.yml', `linkedin_dir: ${folder}\n`);
+        });
+        await quiet(started.got);
+        expect((on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).linkedin.missing).toBe(
+            true
+        );
+        const before = on(started.got, 'feeds').length;
+        // Creating the folder is the only change: the flat watch on its parent sees it appear.
+        write(started.hub, `${folder}/01-new.md`, '---\ntitle: New\n---\n');
+        await until(() => on(started.got, 'feeds').length > before, 3000);
+        expect(
+            (on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).linkedin.entries[0]?.title
+        ).toBe('New');
+
+        await quiet(started.got);
+        const opened = on(started.got, 'feeds').length;
+        write(started.hub, `${folder}/01-new.md`, '---\ntitle: Edited\n---\n');
+        await until(() => on(started.got, 'feeds').length > opened, 2000);
+        expect(
+            (on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).linkedin.entries[0]?.title
+        ).toBe('Edited');
+    });
+
+    it('publishes YAML and Markdown changes from a shared feed directory', async () => {
+        const started = start((hub, engine) => {
+            write(engine, 'config/sources.yml', 'linkedin_dir: feeds\n');
+            write(hub, 'feeds/01-shared.md', '---\ntitle: Shared\n---\n');
+        });
+        await quiet(started.got);
+        const before = on(started.got, 'feeds').length;
+        write(
+            started.hub,
+            'feeds/inbox.yml',
+            'meta: {}\nentries:\n  - { id: shared, kind: action }\n'
+        );
+        await until(() => on(started.got, 'feeds').length > before, 2000);
+        expect((on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).inbox.entries).toEqual([
+            { id: 'shared', kind: 'action' }
+        ]);
+
+        await quiet(started.got);
+        const yamlSeen = on(started.got, 'feeds').length;
+        write(started.hub, 'feeds/01-shared.md', '---\ntitle: Edited\n---\n');
+        await until(() => on(started.got, 'feeds').length > yamlSeen, 2000);
+        expect(
+            (on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).linkedin.entries[0]?.title
+        ).toBe('Edited');
+    });
+
+    it('publishes a LinkedIn post with an uppercase Markdown suffix', async () => {
         const started = start();
-        await until(() => started.got.length >= 2, 2000);
+        await quiet(started.got);
+        const before = on(started.got, 'feeds').length;
+        write(
+            started.hub,
+            'theaxec.github.io/_linkedin/02-upper.MD',
+            '---\ntitle: Uppercase\n---\n'
+        );
+        await until(() => on(started.got, 'feeds').length > before, 2000);
+        expect(
+            (on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).linkedin.entries
+        ).toContainEqual(expect.objectContaining({ file: '02-upper.MD', title: 'Uppercase' }));
+    });
+
+    it('ignores nested LinkedIn Markdown while still publishing flat changes', async () => {
+        const started = start((hub) => {
+            write(
+                hub,
+                'theaxec.github.io/_linkedin/nested/01-child.md',
+                '---\ntitle: Child\n---\n'
+            );
+        });
+        await quiet(started.got);
+        const before = started.got.length;
+        write(
+            started.hub,
+            'theaxec.github.io/_linkedin/nested/01-child.md',
+            '---\ntitle: Nested edit\n---\n'
+        );
+        await sleep(500);
+        expect(started.got).toHaveLength(before);
+
+        const feedsBefore = on(started.got, 'feeds').length;
+        write(
+            started.hub,
+            'theaxec.github.io/_linkedin/01-start.md',
+            '---\ntitle: Flat edit\n---\n'
+        );
+        await until(() => on(started.got, 'feeds').length > feedsBefore, 2000);
+        expect(
+            (on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).linkedin.entries[0]?.title
+        ).toBe('Flat edit');
+    });
+
+    it('delivers a feed field written through handleWrite in a feeds message', async () => {
+        const started = start((hub) => {
+            write(hub, 'feeds/inbox.yml', 'meta: {}\nentries:\n  - id: mail\n    kind: action\n');
+        });
+        await quiet(started.got);
+        const before = on(started.got, 'feeds').length;
+        const config = portfolioConfigFrom(loadConfig(started.engine).config);
+        expect(
+            resolve(join(started.hub, config.feeds.inbox)).startsWith(resolve(started.hub) + sep)
+        ).toBe(true);
+        const token = mintToken();
+        const response = await handleWrite(
+            new Request('http://localhost/api/write', {
+                method: 'POST',
+                headers: {
+                    host: 'localhost',
+                    origin: 'http://localhost',
+                    'content-type': 'application/json',
+                    'x-oculus-token': token
+                },
+                body: JSON.stringify({
+                    kind: 'feed-field',
+                    feed: 'inbox',
+                    id: 'mail',
+                    field: 'triaged',
+                    value: true
+                })
+            }),
+            token,
+            { hub: started.hub, config }
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toMatchObject({
+            ok: true,
+            changed: ['triaged'],
+            refused: []
+        });
+        await until(() => on(started.got, 'feeds').length > before, 2000);
+        expect((on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).inbox.entries).toEqual([
+            { id: 'mail', kind: 'action', triaged: true }
+        ]);
+    });
+
+    it('publishes portfolio, config, and feeds at start, each at version 1', async () => {
+        const started = start();
+        await until(() => started.got.length >= 3, 2000);
 
         const portfolio = on(started.got, 'portfolio');
         const config = on(started.got, 'config');
+        const feeds = on(started.got, 'feeds');
         expect(portfolio[0].version).toBe(1);
         expect(config[0].version).toBe(1);
+        expect(feeds[0].version).toBe(1);
 
         const snapshot = portfolio[0].payload as Snapshot;
         expect(snapshot.version).toBe(1);
@@ -219,6 +380,45 @@ describe('watchPortfolio', () => {
         expect(payload.text['app.title']).toBe('oculus');
         expect(payload.findings).toEqual([]);
         expect(payload.config.venues_file).toBe('registries/venues.yml');
+        expect((feeds[0].payload as FeedsPayload).linkedin.entries[0].title).toBe('Start');
+    });
+
+    it('republishes feeds beside portfolio when a YAML feed changes', async () => {
+        const started = start();
+        await quiet(started.got);
+        const portfolioBefore = on(started.got, 'portfolio').length;
+        const feedsBefore = on(started.got, 'feeds').length;
+
+        write(
+            started.hub,
+            'feeds/inbox.yml',
+            'meta:\n  run: 2026-09-13\nentries:\n  - { id: one, kind: action }\n'
+        );
+        await until(() => on(started.got, 'feeds').length > feedsBefore, 2000);
+
+        expect(on(started.got, 'portfolio')).toHaveLength(portfolioBefore + 1);
+        const feeds = on(started.got, 'feeds');
+        const payload = feeds[feeds.length - 1].payload as FeedsPayload;
+        expect(payload.inbox.entries).toEqual([{ id: 'one', kind: 'action' }]);
+    });
+
+    it('republishes feeds beside portfolio when a flat LinkedIn file changes', async () => {
+        const started = start();
+        await quiet(started.got);
+        const portfolioBefore = on(started.got, 'portfolio').length;
+        const feedsBefore = on(started.got, 'feeds').length;
+
+        write(
+            started.hub,
+            'theaxec.github.io/_linkedin/01-start.md',
+            '---\ntitle: "Changed"\ndate: 2026-09-01\n---\n\nChanged post.\n'
+        );
+        await until(() => on(started.got, 'feeds').length > feedsBefore, 2000);
+
+        expect(on(started.got, 'portfolio')).toHaveLength(portfolioBefore + 1);
+        const feeds = on(started.got, 'feeds');
+        const payload = feeds[feeds.length - 1].payload as FeedsPayload;
+        expect(payload.linkedin.entries[0].title).toBe('Changed');
     });
 
     it('republishes the portfolio when a manifest changes', async () => {
@@ -274,21 +474,29 @@ describe('watchPortfolio', () => {
         expect(started.got.length).toBe(before);
     });
 
-    it('republishes both channels when a config file changes', async () => {
+    it('republishes portfolio, config, and feeds when a config file changes', async () => {
         const started = start();
         await quiet(started.got);
         const portfolioBefore = on(started.got, 'portfolio').length;
         const configBefore = on(started.got, 'config').length;
 
+        const feedsBefore = on(started.got, 'feeds').length;
+
         write(started.engine, 'config/text.yml', TEXT.replace('"oculus"', '"oculus, live"'));
-        await until(() => on(started.got, 'config').length > configBefore, 2000);
-        await until(() => on(started.got, 'portfolio').length > portfolioBefore, 2000);
+        await until(
+            () =>
+                on(started.got, 'config').length > configBefore &&
+                on(started.got, 'portfolio').length > portfolioBefore &&
+                on(started.got, 'feeds').length > feedsBefore,
+            2000
+        );
 
         const config = on(started.got, 'config');
         const last = config[config.length - 1];
         expect(last.version).toBe(configBefore + 1);
         expect((last.payload as ConfigPayload).text['app.title']).toBe('oculus, live');
         expect(on(started.got, 'portfolio').length).toBe(portfolioBefore + 1);
+        expect(on(started.got, 'feeds').length).toBe(feedsBefore + 1);
     });
 
     it('publishes an empty portfolio, not a crash, when the config names no scan rule', async () => {

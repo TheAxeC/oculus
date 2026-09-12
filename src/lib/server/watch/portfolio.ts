@@ -1,5 +1,5 @@
-// Layer 2, server. The `portfolio` and `config` channels: build once at start, then rebuild and
-// publish whenever a YAML file the build reads changes. This is DESIGN.md's third row of "Hot
+// Layer 2, server. The `portfolio`, `config`, and `feeds` channels: build once at start, then rebuild
+// and publish whenever a source file changes. This is DESIGN.md's third row of "Hot
 // reload", the one that is identical in development and in production, and the reason the page
 // never polls.
 //
@@ -10,7 +10,8 @@
 // The filter is what keeps that cheap. `projects/` holds tens of thousands of files, nearly all of
 // them under a project's `code/` deposit or its `attic/`, so a build there would otherwise rebuild
 // the portfolio on every write. An event counts only when its filename ends in .yml and no segment
-// of its path is `code` or `attic`, which also drops an editor's swap and lock files.
+// of its path is `code` or `attic`, which also drops an editor's swap and lock files. The flat
+// LinkedIn folder also accepts the post filenames read by server/feeds.ts.
 //
 // One rebuild too many is possible and harmless: the first fs.watch of a process on darwin can
 // deliver an event for a write that happened shortly before the watch was opened, so a start that
@@ -19,10 +20,11 @@
 
 import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, sep } from 'node:path';
 import { buildPortfolio, portfolioConfigFrom } from '../../data/index.ts';
 import { loadConfig, textCatalog } from '../../data/sources/config.ts';
 import { readRoots, rootsFile } from '../files.ts';
+import { buildFeeds, isLinkedinFile } from '../feeds.ts';
 import type { ConfigPayload, PortfolioConfig } from '../../data/model.ts';
 import type { Hub } from '../channels.ts';
 
@@ -66,6 +68,13 @@ export function relevant(filename: string | null): boolean {
  * would cover the whole hub a second time, so watchPortfolio watches that one file on its own.
  */
 export function watchedDirectories(hub: string, config: PortfolioConfig): string[] {
+    const dirs = new Set(roleDirectories(hub, config));
+    dirs.add(join(hub, config.feeds.linkedin));
+    return [...dirs];
+}
+
+/** The watched directories apart from the LinkedIn folder: the ones a recursive YAML watch serves. */
+export function roleDirectories(hub: string, config: PortfolioConfig): string[] {
     const dirs = new Set<string>();
     for (const rule of config.scan) dirs.add(join(hub, rule.dir));
     for (const file of Object.values(config.registries)) dirs.add(dirname(join(hub, file)));
@@ -81,33 +90,46 @@ function reason(error: unknown): string {
 }
 
 /**
- * Watch the hub and the engine's `config/`, and publish on the `portfolio` and `config` channels.
- * A change under `config/` republishes both, since the vocabulary the build validates against and
- * the strings the page renders both live there; a change in the hub republishes `portfolio` alone.
- * A rebuild that throws is written to stderr and the previous payloads stand.
+ * Watch the hub and the engine's `config/`, publishing portfolio, config, and feed state. A config
+ * change republishes all three; a feed change republishes feeds beside portfolio; another hub
+ * change republishes portfolio alone. A rebuild that throws leaves the previous payloads standing.
  */
 export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOptions = {}): Watcher {
     const debounce = options.debounce ?? DEBOUNCE;
     const configDir = join(paths.engine, 'config');
     const handles = new Map<string, FSWatcher>();
-    /** Directories fs.watch refused, so the refusal is said once each rather than every rebuild. */
+    /** Refusals are logged once until recovery; every rebuild still retries unopened paths. */
     const refused = new Set<string>();
     let timer: ReturnType<typeof setTimeout> | null = null;
     let configTouched = false;
+    let feedsTouched = false;
     let closed = false;
 
-    const open = (dir: string, isConfig: boolean): void => {
-        if (handles.has(dir) || refused.has(dir)) return;
+    const open = (
+        dir: string,
+        isConfig: boolean,
+        isFeed = false,
+        recursive = true,
+        accepts: (filename: string | null) => boolean = relevant
+    ): boolean => {
+        if (handles.has(dir)) return false;
         try {
             handles.set(
                 dir,
-                watch(dir, { recursive: true }, (_event, filename) => {
-                    if (relevant(typeof filename === 'string' ? filename : null)) queue(isConfig);
+                watch(dir, { recursive }, (_event, filename) => {
+                    if (accepts(typeof filename === 'string' ? filename : null)) {
+                        queue(isConfig, isFeed);
+                    }
                 })
             );
+            refused.delete(dir);
+            return true;
         } catch (error) {
+            if (!refused.has(dir)) {
+                console.error(`portfolio watch: cannot watch ${dir}: ${reason(error)}`);
+            }
             refused.add(dir);
-            console.error(`portfolio watch: cannot watch ${dir}: ${reason(error)}`);
+            return false;
         }
     };
 
@@ -116,27 +138,59 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
      * recursive watch would cover the whole hub a second time. A file that is not there is not
      * watched and not refused, so a career file made later is picked up at the next rebuild.
      */
+    /**
+     * A watched directory that does not exist yet (a LinkedIn folder created after the server
+     * started) gets a flat watch on its parent, keyed apart from the directory's own handle, so its
+     * creation queues the rebuild that opens it; the parent watch is closed with the others.
+     */
+    const openParent = (dir: string, isFeed: boolean): void => {
+        const key = `parent:${dir}`;
+        if (handles.has(key)) return;
+        // The nearest ancestor that exists, and the child under it the missing path starts with.
+        let parent = dirname(dir);
+        while (!existsSync(parent) && dirname(parent) !== parent) parent = dirname(parent);
+        if (!existsSync(parent)) return;
+        const wanted = dir.slice(parent.length + 1).split(sep)[0];
+        try {
+            handles.set(
+                key,
+                watch(parent, { recursive: false }, (_event, filename) => {
+                    if (filename === wanted) queue(false, isFeed);
+                })
+            );
+        } catch (error) {
+            if (!refused.has(key)) {
+                console.error(`portfolio watch: cannot watch ${parent}: ${reason(error)}`);
+            }
+            refused.add(key);
+        }
+    };
+
     const openFile = (file: string): void => {
-        if (handles.has(file) || refused.has(file) || !existsSync(file)) return;
+        if (handles.has(file) || !existsSync(file)) return;
         try {
             handles.set(
                 file,
                 watch(file, () => {
-                    queue(false);
+                    queue(false, false);
                 })
             );
+            refused.delete(file);
         } catch (error) {
+            if (!refused.has(file)) {
+                console.error(`portfolio watch: cannot watch ${file}: ${reason(error)}`);
+            }
             refused.add(file);
-            console.error(`portfolio watch: cannot watch ${file}: ${reason(error)}`);
         }
     };
 
     /**
      * One rebuild. `withConfig` also republishes the config channel. The directory set is derived
      * again from the config that was just read, so a scan path added to layout.yml is watched from
-     * the next rebuild on; a path removed keeps its handle until the watcher is closed.
+     * the next rebuild on; a path removed keeps its handle until the watcher is closed. Unopened
+     * directories are retried, and opening a feed directory republishes its current contents.
      */
-    const rebuild = (withConfig: boolean): void => {
+    const rebuild = (withConfig: boolean, withFeeds: boolean): void => {
         try {
             const { config, findings } = loadConfig(paths.engine);
             if (withConfig) {
@@ -153,7 +207,34 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             const portfolio = portfolioConfigFrom(config);
             const version = hub.nextVersion('portfolio');
             hub.publish('portfolio', buildPortfolio(paths.hub, portfolio, version));
-            for (const dir of watchedDirectories(paths.hub, portfolio)) open(dir, false);
+            const linkedinDir = join(paths.hub, portfolio.feeds.linkedin);
+            const yamlFeedDirs = new Set([
+                dirname(join(paths.hub, portfolio.feeds.inbox)),
+                dirname(join(paths.hub, portfolio.feeds.leads)),
+                dirname(join(paths.hub, portfolio.feeds.radar))
+            ]);
+            // A directory the LinkedIn folder shares with another role (a scan tier, a registry or
+            // collection folder, a YAML feed folder) keeps the recursive watch and the YAML filter
+            // beside the flat post filter, so neither role loses its events.
+            const otherDirs = new Set(roleDirectories(paths.hub, portfolio));
+            for (const dir of watchedDirectories(paths.hub, portfolio)) {
+                const linkedin = dir === linkedinDir;
+                const shared = linkedin && otherDirs.has(dir);
+                const yamlFeed = yamlFeedDirs.has(dir);
+                const isFeed = linkedin || yamlFeed;
+                const opened = open(
+                    dir,
+                    false,
+                    isFeed,
+                    !linkedin || shared,
+                    (filename) =>
+                        (linkedin && isLinkedinFile(filename)) ||
+                        ((!linkedin || shared) && relevant(filename))
+                );
+                if (opened && isFeed) withFeeds = true;
+                if (!opened && !handles.has(dir) && !existsSync(dir)) openParent(dir, isFeed);
+            }
+            if (withFeeds) hub.publish('feeds', buildFeeds(paths.hub, portfolio));
             openFile(join(paths.hub, portfolio.career));
             open(configDir, true);
         } catch (error) {
@@ -161,19 +242,25 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
         }
     };
 
-    function queue(isConfig: boolean): void {
+    function queue(isConfig: boolean, isFeed: boolean): void {
         if (closed) return;
-        if (isConfig) configTouched = true;
+        if (isConfig) {
+            configTouched = true;
+            feedsTouched = true;
+        }
+        if (isFeed) feedsTouched = true;
         if (timer !== null) clearTimeout(timer);
         timer = setTimeout(() => {
             timer = null;
             const withConfig = configTouched;
+            const withFeeds = feedsTouched;
             configTouched = false;
-            rebuild(withConfig);
+            feedsTouched = false;
+            rebuild(withConfig, withFeeds);
         }, debounce);
     }
 
-    rebuild(true);
+    rebuild(true, true);
 
     return {
         close(): void {

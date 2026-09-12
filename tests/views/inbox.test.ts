@@ -1,4 +1,4 @@
-// The Inbox view rendered over a feed fixture with every kind, one triaged card, and a draft.
+// The Inbox view rendered over a received feed with every kind, one triaged card, and a draft.
 
 import { render } from 'svelte/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -10,7 +10,7 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
-import { refetch } from '../../src/lib/state/feeds.svelte.ts';
+import { feedsFixture } from '../feeds-fixture.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout.ts';
@@ -77,15 +77,10 @@ function hasAction(body: string, label: string): boolean {
     return buttons.some((button) => button.includes(label));
 }
 
-function serve(body: Record<string, unknown>, status = 200): void {
-    vi.stubGlobal('fetch', () =>
-        Promise.resolve(
-            new Response(JSON.stringify(body), {
-                status,
-                headers: { 'content-type': 'application/json' }
-            })
-        )
-    );
+let feedVersion = 0;
+
+function serve(body: Record<string, unknown>, _status = 200): void {
+    receive({ channel: 'feeds', version: ++feedVersion, payload: feedsFixture('inbox', body) });
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -99,7 +94,6 @@ describe('the Inbox view', () => {
             meta: { run: '2026-09-12' },
             entries
         });
-        await refetch('inbox');
         const body = render(Inbox, { props: { instance: instance('inbox-one') } }).body;
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('2026-09-12');
@@ -142,7 +136,6 @@ describe('the Inbox view', () => {
             meta: { run: '2026-09-12' },
             entries
         });
-        await refetch('inbox');
         const open = render(Inbox, {
             props: { instance: instance('inbox-open', true) }
         }).body;
@@ -168,7 +161,6 @@ describe('the Inbox view', () => {
             meta: { run: '2026-09-12' },
             entries: [entries[0], entries[2]]
         });
-        await refetch('inbox');
         const body = render(Inbox, { props: { instance: instance('inbox-no-action') } }).body;
         expect(body).toContain(`${catalog['sf.inbox_sec_reply']} (1)`);
         expect(body).not.toContain(catalog['sf.inbox_sec_action']);
@@ -187,7 +179,6 @@ describe('the Inbox view', () => {
                 { id: 'unsafe', sender: 'S', kind: 'info', url: 'javascript:alert(1)' }
             ]
         });
-        await refetch('inbox');
         const body = render(Inbox, { props: { instance: instance('inbox-fallbacks') } }).body;
         expect(card(body, 'info')).toMatch(/<h3[^>]*>[\s\S]*?Info subject[\s\S]*?<\/h3>/);
         expect(card(body, 'thread')).toContain(catalog['sf.inbox_thread']);
@@ -203,13 +194,11 @@ describe('the Inbox view', () => {
             meta: { run: '2026-09-12' },
             entries: [{ ...entries[3] }]
         });
-        await refetch('inbox');
         const clear = render(Inbox, { props: { instance: instance('inbox-clear') } }).body;
         expect(clear).toContain(catalog['sf.inbox_clear']);
         expect(clear).toContain(String(glyphs.done));
 
         serve({ ok: true, kind: 'inbox', file: 'feeds/inbox.yml', missing: true });
-        await refetch('inbox');
         const missing = render(Inbox, {
             props: { instance: instance('inbox-missing') }
         }).body;
@@ -219,7 +208,6 @@ describe('the Inbox view', () => {
         expect(missing).toContain('/research-cockpit inbox');
 
         serve({ ok: false, kind: 'inbox', file: 'feeds/inbox.yml', error: 'bad YAML' }, 500);
-        await refetch('inbox');
         const error = render(Inbox, { props: { instance: instance('inbox-error') } }).body;
         expect(error).toContain('Could not read feeds/inbox.yml: bad YAML');
         expect(error).not.toContain(catalog['sf.inbox_no_file']);

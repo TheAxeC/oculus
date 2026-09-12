@@ -10,24 +10,20 @@ import {
     statSync,
     writeFileSync
 } from 'node:fs';
-import { basename, extname, join, resolve, sep } from 'node:path';
+import { basename, join, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
 import { localDate } from '../data/dates.ts';
 import { isMap } from '../data/guards.ts';
 import { collectionSchema } from '../data/normalise.ts';
-import { engineDir, loadConfig, loadLocal } from '../data/sources/config.ts';
 import { fieldNames } from '../data/validate.ts';
-import { portfolioConfigFrom } from '../data/index.ts';
-import { sameOrigin } from './auth.ts';
 import { appendEntry, deleteEntry, renderEntry, setEntryFields } from './entry-edit.ts';
 import { saved } from './writes/entries.ts';
 import { asFieldValue } from './yaml-edit.ts';
 import type { FieldValue, Refusal } from './yaml-edit.ts';
-import type { FeedData, FeedKind, PortfolioConfig } from '../data/model.ts';
+import type { FeedData, FeedKind, FeedsPayload, PortfolioConfig } from '../data/model.ts';
 import type { WriteOutcome } from './writes.ts';
 
 export type FeedRead = FeedData & { kind: FeedKind; file: string };
-export type FeedTarget = { hub: string; config: PortfolioConfig };
 
 type FeedRule = { identity: string; fields: string[]; deletable: boolean };
 
@@ -78,6 +74,40 @@ export function readFeedFile(
     };
 }
 
+/** Read every feed into the complete state payload published on the socket. */
+export function buildFeeds(hub: string, config: PortfolioConfig): FeedsPayload {
+    const read = (kind: FeedKind): FeedsPayload[FeedKind] => {
+        const base = {
+            ok: true as const,
+            kind,
+            file: config.feeds[kind],
+            meta: {},
+            entries: []
+        };
+        try {
+            const found = readFeedFile(hub, config, kind);
+            if (found !== null) return { ok: true, ...found };
+            return {
+                ...base,
+                missing: true,
+                ...(kind === 'linkedin' ? { cadenceDays: config.linkedinCadenceDays } : {})
+            };
+        } catch (error) {
+            return {
+                ...base,
+                error: error instanceof Error ? error.message : String(error),
+                ...(kind === 'linkedin' ? { cadenceDays: config.linkedinCadenceDays } : {})
+            };
+        }
+    };
+    return {
+        radar: read('radar'),
+        leads: read('leads'),
+        inbox: read('inbox'),
+        linkedin: read('linkedin')
+    };
+}
+
 /** One small Markdown front matter block and the prose after its closing fence. */
 export function linkedinFrontMatter(source: string): Record<string, string> & { body: string } {
     const matched = /^\s*---\s*\r?\n([\s\S]*?)\r?\n---(?:\r?\n)?/.exec(source);
@@ -105,15 +135,21 @@ export function linkedinFrontMatter(source: string): Record<string, string> & { 
     };
 }
 
+/** A flat LinkedIn post or idea filename, with a case-insensitive Markdown suffix. */
+export function isLinkedinFile(file: string | null): boolean {
+    return (
+        file !== null &&
+        !/[/\\]/.test(file) &&
+        /\.md$/i.test(file) &&
+        (file.startsWith('xx-') || /^\d+-/.test(file))
+    );
+}
+
 /** Read every Markdown entry in the configured LinkedIn folder in filename order. */
 function readLinkedinFolder(folder: string, config: PortfolioConfig): FeedRead {
     if (!statSync(folder).isDirectory()) throw new Error(`${folder}: expected a directory`);
     const entries = readdirSync(folder)
-        .filter(
-            (file) =>
-                extname(file).toLowerCase() === '.md' &&
-                (file.startsWith('xx-') || /^\d+-/.test(file))
-        )
+        .filter(isLinkedinFile)
         .sort((left, right) => left.localeCompare(right))
         .map((file) => {
             const parsed = linkedinFrontMatter(readFileSync(join(folder, file), 'utf8'));
@@ -350,53 +386,4 @@ export function deleteFeedEntry(
         return { found: false, changed: [], refused: [] };
     }
     return saved(full, source, deleteEntry(source, rule.identity, id));
-}
-
-function json(status: number, body: unknown): Response {
-    return new Response(JSON.stringify(body), {
-        status,
-        headers: { 'content-type': 'application/json', 'cache-control': 'no-store' }
-    });
-}
-
-export function feedsTarget(): FeedTarget {
-    const engine = engineDir();
-    return {
-        hub: loadLocal(engine).hub,
-        config: portfolioConfigFrom(loadConfig(engine).config)
-    };
-}
-
-/** Serve one known feed to a same-origin request. */
-export function handleFeeds(request: Request, into: FeedTarget): Response {
-    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
-        return json(403, { error: 'the request did not come from this page' });
-    }
-    const named = new URL(request.url).searchParams.get('kind') ?? '';
-    if (!isFeedKind(named)) return json(400, { error: `unknown feed kind ${named}` });
-    try {
-        const found = readFeedFile(into.hub, into.config, named);
-        if (found === null) {
-            if (named === 'linkedin') {
-                return json(200, {
-                    ok: true,
-                    kind: named,
-                    file: into.config.feeds.linkedin,
-                    missing: true,
-                    entries: [],
-                    cadenceDays: into.config.linkedinCadenceDays
-                });
-            }
-            return json(200, {
-                ok: true,
-                kind: named,
-                file: into.config.feeds[named],
-                missing: true
-            });
-        }
-        return json(200, { ok: true, ...found });
-    } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        return json(500, { error: reason, kind: named, file: into.config.feeds[named] });
-    }
 }

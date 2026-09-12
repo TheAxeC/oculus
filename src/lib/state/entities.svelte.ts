@@ -8,6 +8,7 @@
 
 import type {
     ConfigPayload,
+    FeedsPayload,
     GitPayload,
     HpcPayload,
     Message,
@@ -16,22 +17,12 @@ import type {
 } from '../data/model.ts';
 
 const messages: Record<string, Message> = $state({});
-const portfolioListeners = new Set<(version: number) => void>();
 
 /** Store a message unless the channel already holds a newer one. */
 export function receive(message: Message): void {
     const held = messages[message.channel];
     if (held !== undefined && message.version < held.version) return;
     messages[message.channel] = message;
-    if (message.channel === 'portfolio') {
-        for (const listener of portfolioListeners) listener(message.version);
-    }
-}
-
-/** Run a listener after every accepted portfolio snapshot. */
-export function subscribePortfolio(listener: (version: number) => void): () => void {
-    portfolioListeners.add(listener);
-    return () => portfolioListeners.delete(listener);
 }
 
 /** The current message of a channel, or null when none has arrived. */
@@ -55,6 +46,12 @@ export function config(): ConfigPayload | null {
 export function sessions(): SessionsPayload | null {
     const held = messages.sessions;
     return held === undefined ? null : (held.payload as SessionsPayload);
+}
+
+/** All four feed states, or null before the starting `feeds` message arrives. */
+export function feeds(): FeedsPayload | null {
+    const held = messages.feeds;
+    return held === undefined ? null : (held.payload as FeedsPayload);
 }
 
 /** The git state of every workspace the sessions payload names, keyed by root. */

@@ -6,7 +6,6 @@
     import Chip from '$lib/ui/Chip.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { HUB_ROOT } from '$lib/state/collection';
-    import { refetch } from '$lib/state/feeds.svelte';
     import { openView } from '$lib/state/layout.svelte';
     import { snippet, type LinkedinEntry } from '$lib/state/linkedin';
     import { t } from '$lib/state/text';
@@ -42,7 +41,6 @@
     async function promote(): Promise<void> {
         const answer = await markPosted(entry.file);
         say(answer);
-        if (answer.ok && answer.refused.length === 0) await refetch('linkedin');
     }
 
     function edit(): void {

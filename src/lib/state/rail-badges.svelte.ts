@@ -1,8 +1,8 @@
-// Layer 2, client state. Reactive rail badges over the latest portfolio and already-fetched feeds.
-// These selectors call `peekFeed`, so reading a badge never starts a request.
+// Layer 2, client state. Reactive rail badges over the latest portfolio and socket feed payload.
+// The snapshot summary remains the starting and read-error fallback until a usable feed arrives.
 
 import { portfolio } from './entities.svelte.ts';
-import { peekFeed } from './feeds.svelte.ts';
+import { feed } from './feeds.svelte.ts';
 import { counts as hpcCounts } from './hpc.svelte.ts';
 import { board, boardPreset, collectionOf, configMap } from './selectors.svelte.ts';
 import { splitPosts } from './linkedin.ts';
@@ -25,7 +25,7 @@ import type { FeedState } from './feeds.svelte.ts';
 /** One coloured count drawn as a cell on a pane tab. `color` is a theme hue name. */
 export type BadgeCell = { count: number; color: string; label: string };
 
-/** A fetched feed that can replace the snapshot summary rather than erase it. */
+/** A socket feed with readable entries that can supply a badge count. */
 function available(feed: FeedState | null): feed is FeedState {
     return feed !== null && feed.ok && feed.error === undefined && feed.missing !== true;
 }
@@ -52,18 +52,18 @@ export function collectionBadgeTitle(key: string): string {
     return t('views.badge_title', collectionBadge(key), liveRule(configMap(), key)?.label ?? '');
 }
 
-/** Inbox entries awaiting triage, from a fetched feed when present and its summary otherwise. */
+/** Inbox entries awaiting triage, from the socket feed with the summary as fallback. */
 export function inboxBadge(): string {
-    const fetched = peekFeed('inbox');
+    const fetched = feed('inbox');
     const count = available(fetched)
         ? actionableEntries(fetched.entries)
         : (portfolio()?.entities.feeds.inbox?.actionable ?? 0);
     return countText(count);
 }
 
-/** Position Leads due inside `leads_badge_days`, preferring an already-fetched feed. */
+/** Position Leads due inside `leads_badge_days`, from the socket feed with the summary as fallback. */
 export function leadsBadge(): string {
-    const fetched = peekFeed('leads');
+    const fetched = feed('leads');
     const entries = available(fetched)
         ? fetched.entries
         : (portfolio()?.entities.feeds.leads ?? []);
@@ -78,7 +78,7 @@ export function leadsBadge(): string {
 
 /** A red mark when the newest LinkedIn post is beyond `linkedin_cadence_days`. */
 export function linkedinBadge(): string {
-    const fetched = peekFeed('linkedin');
+    const fetched = feed('linkedin');
     const lastPost = available(fetched)
         ? (splitPosts(fetched.entries).posts[0]?.date ?? null)
         : (portfolio()?.entities.feeds.linkedin?.lastPost ?? null);

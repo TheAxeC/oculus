@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, view. Lit Watch reads the radar feed on request, groups live papers by vocabulary,
+    // Layer 3, view. Lit Watch reads the radar socket feed, groups live papers by vocabulary,
     // and keeps search and the dismissed-section disclosure in this view instance's saved state.
 
     import Empty from '$lib/ui/Empty.svelte';

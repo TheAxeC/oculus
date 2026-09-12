@@ -87,7 +87,7 @@ export type Feeds = {
     linkedin: { lastPost: string | null } | null;
 };
 
-/** The generated YAML feeds served on request to their dedicated views. */
+/** The generated YAML and Markdown feeds delivered together on the feeds channel. */
 export type FeedKind = 'radar' | 'leads' | 'inbox' | 'linkedin';
 export type FeedEntry = Record<string, unknown>;
 export type FeedData = {

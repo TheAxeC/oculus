@@ -1,4 +1,4 @@
-// The LinkedIn view rendered over folder-feed fixtures covering cadence, controls, and card scope.
+// The LinkedIn view rendered over received folder feeds covering cadence, controls, and card scope.
 
 import { render } from 'svelte/server';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
@@ -10,7 +10,8 @@ import {
     loadConfig,
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { refetch } from '../../src/lib/state/feeds.svelte.ts';
+import { receive } from '../../src/lib/state/entities.svelte.ts';
+import { feedsFixture } from '../feeds-fixture.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import { addLinkedinIdea, markPosted } from '../../src/lib/state/writes.svelte.ts';
@@ -62,15 +63,10 @@ function instance(id: string, search = '', adding = false): Instance {
     return value;
 }
 
-function serve(body: Record<string, unknown>, status = 200): void {
-    vi.stubGlobal('fetch', () =>
-        Promise.resolve(
-            new Response(JSON.stringify(body), {
-                status,
-                headers: { 'content-type': 'application/json' }
-            })
-        )
-    );
+let feedVersion = 0;
+
+function serve(body: Record<string, unknown>, _status = 200): void {
+    receive({ channel: 'feeds', version: ++feedVersion, payload: feedsFixture('linkedin', body) });
 }
 
 async function draw(
@@ -86,7 +82,6 @@ async function draw(
         entries: feedEntries,
         cadenceDays: 30
     });
-    await refetch('linkedin');
     return render(Linkedin, { props: { instance: instance(id, search, adding) } }).body;
 }
 
@@ -194,7 +189,6 @@ describe('the LinkedIn view', () => {
             entries: [],
             cadenceDays: 30
         });
-        await refetch('linkedin');
         expect(
             render(Linkedin, { props: { instance: instance('linkedin-missing') } }).body
         ).toContain(catalog['sf.linkedin_no_folder']);
@@ -207,7 +201,6 @@ describe('the LinkedIn view', () => {
             },
             500
         );
-        await refetch('linkedin');
         const failed = render(Linkedin, {
             props: { instance: instance('linkedin-error') }
         }).body;

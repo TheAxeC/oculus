@@ -7,7 +7,9 @@ import { describe, expect, it } from 'vitest';
 import {
     addLead,
     addLinkedinIdea,
+    buildFeeds,
     deleteFeedEntry,
+    isLinkedinFile,
     markLinkedinPosted,
     readFeedFile,
     writeFeedField
@@ -77,6 +79,68 @@ function fixture(): { hub: string; config: PortfolioConfig } {
 }
 
 describe('feed files', () => {
+    it('uses one flat post filename rule for both Markdown suffix cases', () => {
+        expect(isLinkedinFile('01-post.md')).toBe(true);
+        expect(isLinkedinFile('01-post.MD')).toBe(true);
+        expect(isLinkedinFile('xx-idea.mD')).toBe(true);
+        expect(isLinkedinFile('nested/01-post.md')).toBe(false);
+        expect(isLinkedinFile('README.md')).toBe(false);
+        expect(isLinkedinFile(null)).toBe(false);
+        const into = fixture();
+        const file = join(into.hub, FILES.linkedin, '02-upper.MD');
+        expect(resolve(file).startsWith(resolve(into.hub) + sep)).toBe(true);
+        writeFileSync(file, '---\ntitle: Uppercase\n---\n');
+        expect(buildFeeds(into.hub, into.config).linkedin.entries).toContainEqual(
+            expect.objectContaining({ file: '02-upper.MD', title: 'Uppercase' })
+        );
+    });
+
+    it('builds one payload with all four feeds', () => {
+        const into = fixture();
+        const payload = buildFeeds(into.hub, into.config);
+        expect(Object.keys(payload)).toEqual(['radar', 'leads', 'inbox', 'linkedin']);
+        expect(payload.radar).toMatchObject({
+            ok: true,
+            kind: 'radar',
+            file: FILES.radar,
+            entries: [{ title: 'Paper' }]
+        });
+        expect(payload.linkedin.entries.map((entry) => entry.file)).toEqual([
+            '01-A-reflection.md',
+            'xx-easy-problems.md'
+        ]);
+    });
+
+    it('marks a missing feed in the payload without dropping the other feeds', () => {
+        const into = fixture();
+        into.config.feeds.radar = 'fixture/missing.yml';
+        const payload = buildFeeds(into.hub, into.config);
+        expect(payload.radar).toMatchObject({
+            ok: true,
+            kind: 'radar',
+            file: 'fixture/missing.yml',
+            meta: {},
+            entries: [],
+            missing: true
+        });
+        expect(payload.leads.entries).toHaveLength(1);
+    });
+
+    it('keeps an unreadable feed error in the payload without dropping the other feeds', () => {
+        const into = fixture();
+        writeFileSync(join(into.hub, FILES.radar), 'entries: [broken: yaml');
+        const payload = buildFeeds(into.hub, into.config);
+        expect(payload.radar).toMatchObject({
+            ok: true,
+            kind: 'radar',
+            file: FILES.radar,
+            meta: {},
+            entries: []
+        });
+        expect(payload.radar.error).toBeTruthy();
+        expect(payload.inbox.entries).toHaveLength(1);
+    });
+
     it('reads radar, leads, and inbox with map entries', () => {
         const into = fixture();
         for (const kind of ['radar', 'leads', 'inbox'] as const) {

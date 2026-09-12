@@ -1,4 +1,4 @@
-// The Lit Watch view rendered over a fetched fixture with every section and card marker.
+// The Lit Watch view rendered over a received feed message with every section and card marker.
 
 import { render } from 'svelte/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -11,7 +11,7 @@ import {
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
-import { refetch } from '../../src/lib/state/feeds.svelte.ts';
+import { feedsFixture } from '../feeds-fixture.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
@@ -58,15 +58,10 @@ function instance(id: string, dismissedOpen = false): Instance {
     return value;
 }
 
-function serve(body: Record<string, unknown>, status = 200): void {
-    vi.stubGlobal('fetch', () =>
-        Promise.resolve(
-            new Response(JSON.stringify(body), {
-                status,
-                headers: { 'content-type': 'application/json' }
-            })
-        )
-    );
+let feedVersion = 0;
+
+function serve(body: Record<string, unknown>, _status = 200): void {
+    receive({ channel: 'feeds', version: ++feedVersion, payload: feedsFixture('radar', body) });
 }
 
 afterEach(() => vi.unstubAllGlobals());
@@ -90,7 +85,6 @@ describe('the Lit Watch view', () => {
             meta: { last_run: '2026-09-11' },
             entries
         });
-        await refetch('radar');
         const body = render(Radar, { props: { instance: instance('radar-one') } }).body;
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('New-paper radar');
@@ -120,7 +114,6 @@ describe('the Lit Watch view', () => {
             meta: {},
             entries: []
         });
-        await refetch('radar');
         expect(render(Radar, { props: { instance: instance('radar-empty') } }).body).toContain(
             catalog['sf.radar_empty']
         );
@@ -131,7 +124,6 @@ describe('the Lit Watch view', () => {
             file: 'feeds/literature-radar.yml',
             missing: true
         });
-        await refetch('radar');
         const missing = render(Radar, { props: { instance: instance('radar-missing') } }).body;
         expect(missing).toContain('No radar file yet');
         expect(missing).toContain('feeds/literature-radar.yml');
@@ -148,7 +140,6 @@ describe('the Lit Watch view', () => {
                 { title: 'Newer dismissed', dismissed: 'true', found: '2026-09-02' }
             ]
         });
-        await refetch('radar');
         const body = render(Radar, {
             props: { instance: instance('radar-dismissed', true) }
         }).body;
@@ -164,7 +155,6 @@ describe('the Lit Watch view', () => {
             meta: {},
             entries: [{ bucket: 'idea', maps_to: 'new-idea-candidate' }]
         });
-        await refetch('radar');
         const body = render(Radar, { props: { instance: instance('radar-untitled') } }).body;
         expect(body).toContain(catalog['sf.radar_untitled']);
         expect(body).not.toContain(catalog['sf.radar_dismiss_tip']);
@@ -180,7 +170,6 @@ describe('the Lit Watch view', () => {
             },
             500
         );
-        await refetch('radar');
         const body = render(Radar, { props: { instance: instance('radar-error') } }).body;
         expect(body).toContain('Could not read feeds/literature-radar.yml: bad YAML');
         expect(body).not.toContain('No radar file yet');
