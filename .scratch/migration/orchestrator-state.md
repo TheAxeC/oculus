@@ -34,7 +34,13 @@ dispatch:
   pid: 73852
   session_id: 01a0952a-e892-7362-9b9e-380c3b845375
   landing: not-started
-  round: 0
+  round: 1
+  repair_launched: 2026-09-12T12:43:59+02:00
+  repair_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q3b/repair-prompt.md
+  repair_events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q3b/repair-events.jsonl
+  repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q3b/repair-report.md
+  repair_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q3b/repair-exit.txt
+  repair_pid: 12754
 ```
 
 ## The standing demands (from Axel, in force)
