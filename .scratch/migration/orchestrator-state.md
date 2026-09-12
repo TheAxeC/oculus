@@ -26,13 +26,13 @@ dispatch:
   worker: codex:gpt-5.6-sol
   worktree: .agents/worktrees/q8
   base: df62a50c5e9c68f94de11ad542ba6118c4a221b7
-  launched: pending
+  launched: 2026-09-12T21:52:06+02:00
   prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q8/prompt.md
   events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q8/events.jsonl
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q8/report.md
   exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q8/exit.txt
-  pid: pending
-  session_id: pending
+  pid: 32873
+  session_id: 01a0972d-5775-7402-ba4e-758a61dc174a
   landing: not-started
 ```
 
