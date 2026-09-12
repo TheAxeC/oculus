@@ -22,6 +22,7 @@ function project(id: string, relatedIds: string[], extra: Partial<Project> = {})
     return {
         id,
         tier: 'active',
+        ghost: false,
         type: 'active',
         title: id,
         short: id.toUpperCase(),

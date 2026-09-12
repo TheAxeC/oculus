@@ -88,6 +88,7 @@ function project(id: string, over: Partial<Project> = {}): Project {
     return {
         id,
         tier: 'active',
+        ghost: false,
         title: id,
         chips: [],
         results: [],
@@ -415,6 +416,20 @@ describe('a collection whose file has no schema', () => {
 
 describe('the funding view', () => {
     const body = html('funding');
+
+    it('combines active and manuscript funding users into one work disclosure', () => {
+        const snap = snapshot();
+        snap.entities.projects.beta = { ...snap.entities.projects.beta, fundingIds: ['FAIR'] };
+        receive({ channel: 'portfolio', version: 1, payload: snap });
+        try {
+            const mixed = html('funding');
+            expect(mixed.match(/data-project-group="work"/g)).toHaveLength(1);
+            expect(mixed).toMatch(/data-project-group="work"[\s\S]*?class="count">2<\/strong>/);
+            expect(mixed).not.toContain('data-project-group="manuscript"');
+        } finally {
+            receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+        }
+    });
 
     it('is drawn from the funding collection the snapshot now carries', () => {
         expect(body).toContain('data-collection="funding"');

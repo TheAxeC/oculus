@@ -25,8 +25,11 @@
         firstSentence,
         humanSize,
         isStale,
+        waitingLine,
         type BoardItem
     } from '$lib/state/board';
+    import { contextText } from '$lib/state/context';
+    import { portfolio } from '$lib/state/entities.svelte';
     import { files } from '$lib/state/files.svelte';
     import { openView, workbench } from '$lib/state/layout.svelte';
     import { findView } from '$lib/state/layout';
@@ -39,7 +42,7 @@
     } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
     import { chipGlyph, chipLabel, statusTone } from '$lib/state/tones';
-    import { writeManifest } from '$lib/state/writes.svelte';
+    import { openFolder, writeManifest } from '$lib/state/writes.svelte';
     import { viewFor } from '../registry';
 
     type Props = {
@@ -98,7 +101,10 @@
 
     /** What the file filter box holds, per card; it is a search and not state worth remembering. */
     let filter = $state('');
+    let copied = $state(false);
+    let copyTimer: ReturnType<typeof setTimeout> | undefined;
 
+    const snapshot = $derived(portfolio());
     const working = $derived(sessionsOf());
     const stale = $derived(isStale(item, staleLag));
     const due = $derived(deadline());
@@ -106,6 +112,20 @@
     /** The listing is asked for only once the card is open, which is the whole point of the store. */
     const held = $derived(open ? files(item.id) : null);
     const rows = $derived(matching(held?.rows ?? [], filter));
+    const wait = $derived(
+        snapshot === null
+            ? null
+            : waitingLine(item.project, snapshot.entities.venues, collaboratorNames())
+    );
+
+    /** The collaborations collection as a lookup for waiting-on ids. */
+    function collaboratorNames(): Record<string, string> {
+        const names: Record<string, string> = {};
+        for (const entry of snapshot?.entities.collections.collaborations?.entries ?? []) {
+            names[entry.id] = entry.title;
+        }
+        return names;
+    }
 
     /** The sessions working in the project's folder, whether filed there or only sitting in it. */
     function sessionsOf(): GroupedSession[] {
@@ -232,6 +252,67 @@
             label: nameOf(path)
         });
     }
+
+    /** A fixed project document opens through the document view and the hub root. */
+    function openDocument(path: string): void {
+        openView('document', 'main', {
+            root: HUB,
+            path: `${item.project.folder}/${path}`,
+            label: path
+        });
+    }
+
+    /** A real project opens its project tab; a ghost title opens its README when one exists. */
+    function openTitle(): void {
+        if (item.project.ghost) {
+            if (item.project.docs.some((doc) => doc.name === 'README.md' && doc.present)) {
+                openDocument('README.md');
+            }
+            return;
+        }
+        openView('project', 'main', { id: item.id, label: tab });
+    }
+
+    /** Whether the card title has a destination. */
+    function titleOpener(): (() => void) | undefined {
+        if (!item.project.ghost) return openTitle;
+        return item.project.docs.some((doc) => doc.name === 'README.md' && doc.present)
+            ? openTitle
+            : undefined;
+    }
+
+    /** Copy the pure context assembly, then show the catalogued transient acknowledgement. */
+    async function copyContext(): Promise<void> {
+        if (
+            snapshot === null ||
+            typeof navigator === 'undefined' ||
+            navigator.clipboard === undefined
+        ) {
+            onsaid(t('js.leads.clipboard_blocked'));
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(contextText(item.project, snapshot));
+            copied = true;
+            if (copyTimer !== undefined) clearTimeout(copyTimer);
+            copyTimer = setTimeout(() => (copied = false), 1300);
+        } catch {
+            onsaid(t('js.leads.copy_failed'));
+        }
+    }
+
+    /** Ask the authenticated local server to open this folder. */
+    async function showFolder(): Promise<void> {
+        const answer = await openFolder(item.project.folder);
+        if (!answer.ok) onsaid(t('editor.failed', answer.error ?? ''));
+    }
+
+    /** The tooltip a marked document carries, and none for an unmarked one. */
+    function docTip(doc: { human: boolean; public: boolean }): string | undefined {
+        if (doc.human) return t('helpers.doc_human_tip');
+        if (doc.public) return t('helpers.doc_public_tip');
+        return undefined;
+    }
 </script>
 
 {#snippet field(name: string, value: string)}
@@ -296,22 +377,24 @@
         {#if item.project.statusLine}
             <p class="statusline">{item.project.statusLine}</p>
         {/if}
-        {#if item.project.latest}
+        {#if item.project.ghost}
+            <p class="ghostmsg">{@html t('cards.ghostmsg')}</p>
+        {:else if item.project.latest}
             {@render field(t('cards.latest'), item.project.latest)}
         {/if}
-        {#if item.project.results.length > 0}
+        {#if !item.project.ghost && item.project.results.length > 0}
             {@render listField(t('cards.results'), item.project.results)}
         {/if}
-        {#if item.project.outcome}
+        {#if !item.project.ghost && item.project.outcome}
             {@render field(t('cards.outcome'), item.project.outcome)}
         {/if}
-        {#if item.project.next}
+        {#if !item.project.ghost && item.project.next}
             {@render field(t('cards.next'), item.project.next)}
         {/if}
-        {#if item.project.ideas.length > 0}
+        {#if !item.project.ghost && item.project.ideas.length > 0}
             {@render listField(t('cards.ideas'), item.project.ideas)}
         {/if}
-        {#if item.project.reproduced}
+        {#if !item.project.ghost && item.project.reproduced}
             {@render field(
                 t('cards.reproduced'),
                 [item.project.reproduced.date, item.project.reproduced.note]
@@ -319,7 +402,7 @@
                     .join(' | ')
             )}
         {/if}
-        {#if shows.length > 0}
+        {#if !item.project.ghost && shows.length > 0}
             <div class="field">
                 <span class="label">{t('cards.disseminated_in')}</span>
                 <div class="tags">
@@ -341,23 +424,30 @@
                 <span class="label">{t('cards.documents')}</span>
                 <div class="docs">
                     {#each item.project.docs as doc (doc.name)}
-                        <Chip label={doc.name} tone={doc.present ? 'green' : undefined} />
+                        {#if doc.present}
+                            <span class="doc" class:human={doc.human} class:public={doc.public}>
+                                <ToolButton
+                                    label={doc.label}
+                                    title={docTip(doc)}
+                                    onclick={() => openDocument(doc.name)}
+                                />
+                            </span>
+                        {:else}
+                            <Chip label={doc.label} />
+                        {/if}
                     {/each}
                 </div>
             </div>
         {/if}
-        {@render finder()}
-        <Subtasks target={{ id: item.id }} subtasks={item.project.subtasks} {onsaid} />
+        {#if !item.project.ghost}
+            {@render finder()}
+            <Subtasks target={{ id: item.id }} subtasks={item.project.subtasks} {onsaid} />
+        {/if}
     </div>
 {/snippet}
 
 <div class="slot" title={label === item.project.title ? undefined : item.project.title}>
-    <Card
-        title={label}
-        tone={item.tone}
-        pinned={item.project.pin === true}
-        ontitle={() => openView('project', 'main', { id: item.id, label: tab })}
-    >
+    <Card title={label} tone={item.tone} pinned={item.project.pin === true} ontitle={titleOpener()}>
         {#snippet meta()}
             {#if item.project.type}
                 <Chip label={item.project.type} tone={item.tone} filled />
@@ -377,12 +467,36 @@
                     />
                 </span>
             {/if}
+            {#if item.project.ghost}
+                <span title={t('cards.ghost_badge_tip')}>
+                    <Chip
+                        label={t('cards.no_manifest')}
+                        glyph={t('board.warn_glyph')}
+                        tone="amber"
+                    />
+                </span>
+            {:else}
+                <ToolButton
+                    label={item.project.pin === true ? t('cards.unpin') : t('cards.pin_to_top')}
+                    glyph={t('cards.pin_glyph')}
+                    active={item.project.pin === true}
+                    compact
+                    onclick={pin}
+                />
+            {/if}
             <ToolButton
-                label={item.project.pin === true ? t('cards.unpin') : t('cards.pin_to_top')}
-                glyph={t('cards.pin_glyph')}
-                active={item.project.pin === true}
+                label={copied ? t('js.leads.copied') : t('helpers.copy_context')}
+                title={t('helpers.copy_context_tip')}
+                glyph="copy"
                 compact
-                onclick={pin}
+                onclick={copyContext}
+            />
+            <ToolButton
+                label={t('helpers.folder')}
+                title={t('helpers.folder_tip')}
+                glyph="folder"
+                compact
+                onclick={showFolder}
             />
             {#if ontoggle}
                 <ToolButton
@@ -393,19 +507,21 @@
                     onclick={ontoggle}
                 />
             {/if}
-            <ToolButton
-                label={t('cards.edit_manifest')}
-                glyph={t('cards.edit_glyph')}
-                compact
-                onclick={() => openView('editor', 'panel', { id: item.id })}
-            />
-            {#if deposit}
+            {#if !item.project.ghost}
                 <ToolButton
-                    label={t('cards.deposit')}
-                    glyph={t('cards.deposit_glyph')}
+                    label={t('cards.edit_manifest')}
+                    glyph={t('cards.edit_glyph')}
                     compact
-                    onclick={() => openView('deposit', 'panel', { id: item.id })}
+                    onclick={() => openView('editor', 'panel', { id: item.id })}
                 />
+                {#if deposit}
+                    <ToolButton
+                        label={t('cards.deposit')}
+                        glyph={t('cards.deposit_glyph')}
+                        compact
+                        onclick={() => openView('deposit', 'panel', { id: item.id })}
+                    />
+                {/if}
             {/if}
         {/snippet}
 
@@ -438,6 +554,9 @@
                 </span>
             {/if}
         </div>
+        {#if wait !== null}
+            <p class="waiting {wait.kind}">{wait.text}</p>
+        {/if}
         {#if tagged()}
             <div class="tags">
                 {#each item.funding as tag (tag.id)}
@@ -493,7 +612,9 @@
                 {/each}
             </div>
         {/if}
-        {#if item.project.eli5}
+        {#if item.project.ghost}
+            <p class="ghostmsg">{@html t('cards.ghostmsg')}</p>
+        {:else if item.project.eli5}
             <div class="eli5">
                 <span class="label">{t('cards.eli5')}</span>
                 <p>{item.project.eli5}</p>
@@ -502,7 +623,7 @@
         {#if item.project.next}
             <p class="next">{firstSentence(item.project.next, CARD_NEXT)}</p>
         {/if}
-        {#if open}
+        {#if open && !item.project.ghost}
             {@render more()}
         {/if}
     </Card>
@@ -591,6 +712,34 @@
         margin: 2px 0 0;
         font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
+    }
+
+    .waiting {
+        margin: 3px 0 0;
+        font-size: var(--fs-sm);
+        color: var(--muted-txt, var(--muted));
+    }
+
+    .waiting.blocked {
+        color: var(--c-red-txt);
+    }
+
+    .waiting.review {
+        color: var(--c-violet-txt);
+    }
+
+    .ghostmsg {
+        margin: 6px 0 0;
+        font-size: var(--fs-sm);
+        color: var(--muted-txt, var(--muted));
+    }
+
+    .doc.human :global(.tool) {
+        border-color: var(--c-amber);
+    }
+
+    .doc.public :global(.tool) {
+        border-color: var(--c-green);
     }
 
     .label {

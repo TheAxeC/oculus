@@ -58,6 +58,7 @@ function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
     return {
         id,
         tier,
+        ghost: false,
         title: id,
         chips: [],
         results: [],
@@ -107,8 +108,14 @@ function snapshot(): Snapshot {
             domainIds: ['heart'],
             collaborators: ['someone'],
             docs: [
-                { name: 'README.md', present: true },
-                { name: 'manuscript/main.tex', present: false }
+                { name: 'README.md', label: 'README', present: true, human: false, public: false },
+                {
+                    name: 'manuscript/main.tex',
+                    label: 'TEX',
+                    present: false,
+                    human: false,
+                    public: false
+                }
             ]
         }),
         project('bravo', 'manuscripts', {
@@ -381,8 +388,9 @@ describe('an open card', () => {
 
     it('adds the project documents, present and absent', () => {
         expect(open).toContain(catalog['cards.documents']);
-        expect(open).toContain('README.md');
-        expect(open).toContain('manuscript/main.tex');
+        expect(open).toContain('>README</span>');
+        expect(open).toContain('>TEX</span>');
+        expect(open).not.toMatch(/class="label">README\.md<\/span>/);
     });
 
     it('adds none of it to a card that is not open', () => {
@@ -521,10 +529,93 @@ describe('the card controls', () => {
 
     it('draws the stale badge with the days the manifest is behind', () => {
         const body = withProjects({
-            alpha: { staleDays: 3, docs: [{ name: 'README.md', present: true, mtime: 1 }] }
+            alpha: {
+                staleDays: 3,
+                docs: [
+                    {
+                        name: 'README.md',
+                        label: 'README',
+                        present: true,
+                        human: false,
+                        public: false,
+                        mtime: 1
+                    }
+                ]
+            }
         });
         expect(body).toContain(words('cards.stale_behind', '3'));
         expect(html('projects')).not.toContain(words('cards.stale_behind', '3'));
+    });
+
+    it('draws the waiting line by precedence and offers copy-context and folder controls', () => {
+        const body = withProjects({
+            alpha: { waitingOn: ['someone'], chips: ['submitted', 'blocked'] }
+        });
+        expect(body).toMatch(/class="waiting [^"]*people/);
+        expect(body).toContain('waiting on Someone Else');
+        expect(body).toContain(catalog['helpers.copy_context']);
+        expect(body).toContain(catalog['helpers.folder']);
+    });
+
+    it('labels document controls and marks only PRESENT public', () => {
+        const body = withProjects(
+            {
+                alpha: {
+                    docs: [
+                        {
+                            name: 'README.md',
+                            label: 'README',
+                            present: true,
+                            human: false,
+                            public: false
+                        },
+                        {
+                            name: 'PRESENT.md',
+                            label: 'PRESENT',
+                            present: true,
+                            human: false,
+                            public: true
+                        }
+                    ]
+                }
+            },
+            'projects',
+            { expanded: ['alpha'] }
+        );
+        expect(body).not.toMatch(/class="doc [^"]*human/);
+        expect(body).toMatch(/class="doc [^"]*public/);
+        expect(body).not.toContain(catalog['helpers.doc_human_tip']);
+        expect(body).toContain(catalog['helpers.doc_public_tip']);
+        expect(body).toContain('>README</span>');
+        expect(body).toContain('>PRESENT</span>');
+    });
+
+    it('draws a ghost badge and message without manifest or pin controls', () => {
+        const snap = snapshot();
+        snap.entities.projects = {
+            ghost: project('ghost', 'ideas', {
+                type: 'idea',
+                ghost: true,
+                docs: [
+                    {
+                        name: 'README.md',
+                        label: 'README',
+                        present: true,
+                        human: false,
+                        public: false
+                    }
+                ]
+            })
+        };
+        receive({ channel: 'portfolio', version: 1, payload: snap });
+        const body = html('projects');
+        receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+        expect(body).toContain(catalog['cards.no_manifest']);
+        expect(body).toContain('No manifest yet');
+        expect(body).not.toContain(catalog['cards.pin_to_top']);
+        expect(body).not.toContain(catalog['cards.edit_manifest']);
+        expect(body).toContain(catalog['helpers.copy_context']);
+        expect(body).toContain(catalog['helpers.folder']);
     });
 });
 

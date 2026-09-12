@@ -18,8 +18,11 @@ import type {
 function documents(id: string, present: string[], mtime = 0): DocPresence[] {
     return ['README.md', 'code/README.md'].map((name) => ({
         name,
+        label: name === 'code/README.md' ? 'CODE' : 'README',
         path: `/hub/projects/active/${id}/${name}`,
         present: present.includes(name),
+        human: false,
+        public: false,
         mtime: present.includes(name) ? mtime : 0
     }));
 }
@@ -35,6 +38,7 @@ function manifest(data: Record<string, unknown>, id: string): RawManifest {
         folder: `projects/active/${id}`,
         id,
         tier: 'active',
+        ghost: false,
         type: 'active',
         ...data
     };
@@ -222,6 +226,7 @@ describe('normalise, the field mapping', () => {
         expect(alpha).toEqual({
             id: 'alpha',
             tier: 'active',
+            ghost: false,
             type: 'active',
             title: 'Alpha',
             short: 'a',
@@ -268,8 +273,14 @@ describe('normalise, the field mapping', () => {
             domainIds: ['heart'],
             collaborators: ['someone'],
             docs: [
-                { name: 'README.md', present: true },
-                { name: 'code/README.md', present: false }
+                { name: 'README.md', label: 'README', present: true, human: false, public: false },
+                {
+                    name: 'code/README.md',
+                    label: 'CODE',
+                    present: false,
+                    human: false,
+                    public: false
+                }
             ],
             folder: 'projects/active/alpha',
             file: '/hub/projects/active/alpha/project.yml'

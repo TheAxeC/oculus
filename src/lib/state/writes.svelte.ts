@@ -3,9 +3,7 @@
 // POSTs, so nothing here goes over the socket; what the page sees of its own write is the watcher's
 // next push of the portfolio, about a fifth of a second later.
 //
-// A 403 has one ordinary cause: the dev server restarted and minted a new token while the page kept
-// the old one. So a 403 reloads the page's data once, which runs +page.ts again and installs the new
-// token, and retries the write once. A second 403 is reported rather than retried.
+// A 403 without a field refusal can mean the server minted a new token while the page kept the old one. It reloads the page data and retries once. A field refusal, such as an open path outside the configured roots, is reported without retrying.
 
 /** What the endpoint answers with when it wrote, or refused what it was asked to write. */
 export type WriteAnswer = {
@@ -64,6 +62,11 @@ export async function writeManifest(
     fields: Record<string, unknown>
 ): Promise<WriteAnswer> {
     return send({ kind: 'manifest', id, fields });
+}
+
+/** Ask the local server to open one project folder under the hub or another configured root. */
+export async function openFolder(path: string): Promise<WriteAnswer> {
+    return send({ path }, '/api/open');
 }
 
 /** What one session write may set. A field left out is left as the overrides file has it. */
@@ -243,18 +246,24 @@ async function send(request: unknown, path = '/api/write'): Promise<WriteAnswer>
     state.error = null;
     try {
         let response = await post(request, path);
-        if (response.status === 403) {
+        let body = (await response.json()) as Partial<WriteAnswer>;
+        if (response.status === 403 && !(Array.isArray(body.refused) && body.refused.length > 0)) {
             // The import is here rather than at the top so nothing but a stale token pulls Kit's
             // navigation module in, and a server-rendered page never touches it.
             const { invalidateAll } = await import('$app/navigation');
             await invalidateAll();
             response = await post(request, path);
+            body = (await response.json()) as Partial<WriteAnswer>;
         }
-        const body = (await response.json()) as Partial<WriteAnswer>;
         if (!response.ok) {
             const error = typeof body.error === 'string' ? body.error : `HTTP ${response.status}`;
             state.error = error;
-            return { ok: false, changed: [], refused: [], error };
+            return {
+                ok: false,
+                changed: [],
+                refused: Array.isArray(body.refused) ? body.refused : [],
+                error
+            };
         }
         return {
             ok: true,

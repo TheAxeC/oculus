@@ -142,6 +142,7 @@ describe('attention lines', () => {
         return {
             id,
             tier: 'active',
+            ghost: false,
             title: id,
             chips: [],
             results: [],

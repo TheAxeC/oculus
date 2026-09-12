@@ -355,8 +355,16 @@ export function entrySubtasks(entry: Entry): Subtask[] {
     return lines;
 }
 
-/** One group of the cross-links: the projects of one type, with the words each of them opens as. */
-export type CrossGroup = { type: string; count: number; members: { id: string; label: string }[] };
+/** One member of a cross-link group. Its project type remains visible inside the broader group. */
+export type CrossMember = { id: string; label: string; type: string };
+
+/** One of the three cross-link groups the portfolio uses everywhere. */
+export type CrossGroup = {
+    type: 'work' | 'published' | 'ideas';
+    count: number;
+    members: CrossMember[];
+    warn: boolean;
+};
 
 /** The type a cross-link group is keyed by: the project's own `type:`, or its tier without one. */
 function typeOf(project: Project): string {
@@ -371,7 +379,12 @@ function typeOf(project: Project): string {
  * collection has no project-side inverse, so it is the entry's own `related:` list of project ids.
  * A related id no project of the snapshot holds is left out rather than drawn as a dead link.
  */
-export function crossLinks(entry: Entry, collectionKey: string, projects: Project[]): CrossGroup[] {
+export function crossLinks(
+    entry: Entry,
+    collectionKey: string,
+    projects: Project[],
+    archiveDead: string[]
+): CrossGroup[] {
     let named: Project[];
     if (collectionKey === FUNDING) {
         named = projects.filter((project) => project.fundingIds.includes(entry.id));
@@ -383,25 +396,54 @@ export function crossLinks(entry: Entry, collectionKey: string, projects: Projec
             .map((id) => projects.find((project) => project.id === id))
             .filter((project): project is Project => project !== undefined);
     }
-    return groupProjects(named);
+    return groupProjects(named, archiveDead);
 }
 
-/** Projects by type, the types in the order they first occur and the members in the order given. */
-export function groupProjects(projects: Project[]): CrossGroup[] {
-    const groups: CrossGroup[] = [];
-    for (const project of projects) {
+/** Projects in work, published and ideas groups, in that order and by project id within each. */
+export function groupProjects(projects: Project[], archiveDead: string[]): CrossGroup[] {
+    const grouped: Record<CrossGroup['type'], CrossMember[]> = {
+        work: [],
+        published: [],
+        ideas: []
+    };
+    for (const project of [...projects].sort((a, b) => a.id.localeCompare(b.id))) {
         const type = typeOf(project);
-        const held = groups.find((group) => group.type === type);
-        // An empty short name is no name: the graph and the cards fall back to the title alike.
-        const short = project.short?.trim() ?? '';
-        const member = { id: project.id, label: short === '' ? project.title : short };
-        if (held === undefined) groups.push({ type, count: 1, members: [member] });
-        else {
-            held.count += 1;
-            held.members.push(member);
+        if (
+            (project.tier === 'archive' || project.tier === 'coauthor') &&
+            archiveDead.includes(type)
+        ) {
+            continue;
         }
+        const group =
+            project.tier === 'archive' || project.tier === 'coauthor'
+                ? 'published'
+                : type === 'idea'
+                  ? 'ideas'
+                  : type === ''
+                    ? null
+                    : 'work';
+        if (group === null) continue;
+        const short = project.short?.trim() ?? '';
+        grouped[group].push({
+            id: project.id,
+            label: short === '' ? project.title : short,
+            type
+        });
     }
-    return groups;
+    return (['work', 'published', 'ideas'] as const)
+        .filter((type) => grouped[type].length > 0)
+        .map((type) => ({
+            type,
+            count: grouped[type].length,
+            members: grouped[type],
+            warn:
+                type === 'work' &&
+                projects.some(
+                    (project) =>
+                        grouped.work.some((member) => member.id === project.id) &&
+                        project.chips.includes('blocked')
+                )
+        }));
 }
 
 /** What the entry form draws for one field. A type no control is written for is drawn as text. */

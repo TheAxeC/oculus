@@ -201,6 +201,9 @@ fund_stages:
   - { label: "Submitted", color: "#16a34a", statuses: [submitted, under-review, "under review"] }
   - { label: "Planned",   color: "#0891b2", statuses: [planned] }
 
+# Collection lane bars are independent of the stage colours inside Funding.
+focus_lane_tones: { funding: gold, jobs: violet, teaching: teal }
+
 
 # Career host-pipeline statuses (Focus career card): status -> icon / label / colour.
 career_host_status:

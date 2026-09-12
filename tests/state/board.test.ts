@@ -29,10 +29,13 @@ import {
     stats,
     typeCounts,
     venueText,
+    waitingLine,
     type BoardItem,
     type BoardPreset
 } from '../../src/lib/state/board.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
+import { setCatalog } from '../../src/lib/state/text.ts';
 import type {
     Collection,
     Id,
@@ -43,6 +46,7 @@ import type {
     Venue
 } from '../../src/lib/data/model.ts';
 
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 setVocab({
     palette: { '#7c5cff': 'c-violet', '#0d9488': 'c-teal', '#e2374d': 'c-crimson' },
     type_color: { active: '#0d9488', manuscript: '#7c5cff', idea: '#e2374d' },
@@ -93,6 +97,7 @@ function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
     return {
         id,
         tier,
+        ghost: false,
         title: id,
         chips: [],
         results: [],
@@ -134,6 +139,62 @@ function collaborations(): Collection {
     };
 }
 
+describe('waitingLine', () => {
+    it('uses a held venue name when its short name is empty', () => {
+        const held = project('review', 'manuscripts', { venueId: 'jbi', chips: ['submitted'] });
+        expect(
+            waitingLine(
+                held,
+                {
+                    jbi: {
+                        id: 'jbi',
+                        name: 'Journal of Biomedical Informatics',
+                        short: '',
+                        themes: []
+                    }
+                },
+                {}
+            )
+        ).toEqual({ kind: 'review', text: 'under review at Journal of Biomedical Informatics' });
+        expect(waitingLine(held, {}, {})).toEqual({
+            kind: 'review',
+            text: 'under review (venue unset)'
+        });
+    });
+
+    const venues = { jbi: venue('jbi', { name: 'Journal', short: 'JBI' }) };
+    const people = { someone: 'Someone Else' };
+
+    it('uses people before submission review and blocking, resolving known collaborator ids', () => {
+        const held = project('held', 'active', {
+            waitingOn: ['someone', 'Free Name'],
+            chips: ['submitted', 'blocked'],
+            venueId: 'jbi'
+        });
+        expect(waitingLine(held, venues, people)).toEqual({
+            kind: 'people',
+            text: 'waiting on Someone Else, Free Name'
+        });
+    });
+
+    it('uses the venue for submission review, then the unset and blocked fallbacks', () => {
+        expect(
+            waitingLine(
+                project('review', 'manuscripts', { chips: ['submitted'], venueId: 'jbi' }),
+                venues,
+                people
+            )
+        ).toEqual({ kind: 'review', text: 'under review at JBI' });
+        expect(
+            waitingLine(project('unset', 'manuscripts', { chips: ['submitted'] }), venues, people)
+        ).toEqual({ kind: 'review', text: 'under review (venue unset)' });
+        expect(
+            waitingLine(project('blocked', 'active', { chips: ['blocked'] }), venues, people)
+        ).toEqual({ kind: 'blocked', text: 'blocked (external)' });
+        expect(waitingLine(project('free', 'active'), venues, people)).toBeNull();
+    });
+});
+
 /**
  * Six projects on the projects board, one on the archive board and one on the coauthor board.
  * `alpha` carries one distinctive word in every field the search reads, which is what the search
@@ -167,8 +228,14 @@ function snapshot(): Snapshot {
             domainIds: ['heart'],
             collaborators: ['someone'],
             docs: [
-                { name: 'README.md', present: true },
-                { name: 'code/README.md', present: false }
+                { name: 'README.md', label: 'README', present: true, human: false, public: false },
+                {
+                    name: 'code/README.md',
+                    label: 'CODE',
+                    present: false,
+                    human: false,
+                    public: false
+                }
             ]
         }),
         project('bravo', 'manuscripts', {
@@ -311,6 +378,20 @@ describe('presetFor', () => {
 });
 
 describe('boardItems, the tier split', () => {
+    it('counts a flat-tier ghost in the board total and the type split', () => {
+        const snap = snapshot();
+        const preset = presetFor('projects', CONFIG);
+        const before = boardItems(snap, preset);
+        snap.entities.projects.ghost = project('ghost', 'ideas', { type: 'idea', ghost: true });
+        const after = boardItems(snap, preset);
+        expect(stats(after, snap.entities.venues, CONFIG).active).toBe(
+            stats(before, snap.entities.venues, CONFIG).active + 1
+        );
+        expect(typeCounts(after).find((row) => row.type === 'idea')?.count).toBe(
+            (typeCounts(before).find((row) => row.type === 'idea')?.count ?? 0) + 1
+        );
+    });
+
     it('shows the three project tiers on the projects board', () => {
         expect(new Set(ids(ITEMS))).toEqual(
             new Set(['alpha', 'bravo', 'charlie', 'delta', 'echo', 'foxtrot'])

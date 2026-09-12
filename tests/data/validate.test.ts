@@ -49,6 +49,7 @@ function manifest(data: Record<string, unknown> = {}, id = 'alpha'): RawManifest
         folder: `projects/active/${id}`,
         id,
         tier: 'active',
+        ghost: false,
         type: 'active',
         title: 'Alpha',
         ...data

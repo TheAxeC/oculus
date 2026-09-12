@@ -15,6 +15,7 @@ import { describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Focus from '../../src/lib/views/Focus.svelte';
+import Band from '../../src/lib/views/focus/Band.svelte';
 import {
     engineDir,
     glyphCatalog,
@@ -60,6 +61,7 @@ function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
     return {
         id,
         tier,
+        ghost: false,
         title: id,
         chips: [],
         results: [],
@@ -143,6 +145,7 @@ function snapshot(): Snapshot {
             type: 'active',
             title: 'Foxtrot',
             focus: 'run',
+            staleDays: 4,
             deadline: daysOff(4),
             snooze: daysOff(40)
         }),
@@ -209,6 +212,19 @@ function snapshot(): Snapshot {
                 })
             },
             collections: {
+                funding: collection('funding', [
+                    {
+                        key: 'prep',
+                        title: 'A grant in prep',
+                        status: 'in-prep',
+                        deadline: daysOff(10),
+                        note: 'The concept is written. The budget is not.'
+                    }
+                ]),
+                applications: collection('applications', [
+                    { title: 'A live position', status: 'active' },
+                    { title: 'An applied position', status: 'applied' }
+                ]),
                 collaborations: collection('collaborations', [
                     { key: 'someone', title: 'Some One', status: 'active' }
                 ]),
@@ -340,7 +356,7 @@ describe('the board', () => {
     });
 
     it('names the manuscript that belongs on a lane and has none', () => {
-        expect(body).toContain(catalog['focus.hint_plain']);
+        expect(body).toContain('not on the board');
         expect(body).toContain('1 active/manuscript');
     });
 
@@ -403,6 +419,13 @@ describe('the command center', () => {
         expect(body).toContain('/research-cockpit litwatch');
     });
 
+    it('draws the manifest-lag line and its project opener under needs attention', () => {
+        expect(body).toMatch(/1\s+manifest/);
+        expect(body).toContain(catalog['cc.behind_refresh']);
+        const buttons = body.match(/<button[\s\S]*?<\/button>/g) ?? [];
+        expect(buttons.some((button) => button.includes('Foxtrot'))).toBe(true);
+    });
+
     it('draws the snooze buttons on a project deadline line', () => {
         for (const key of ['actions.snooze_1w', 'actions.snooze_1mo', 'actions.snooze_hide']) {
             expect(body).toContain(catalog[key]);
@@ -453,6 +476,27 @@ describe('quick add', () => {
 });
 
 describe('the strip and the band', () => {
+    it('keeps the funding lane gold when its first visible stage is submitted', () => {
+        const snap = bare();
+        snap.entities.collections.funding = collection('funding', [
+            {
+                title: 'Submitted grant',
+                status: 'submitted',
+                meta: [{ label: 'Deadline', value: '2030-01-02' }]
+            }
+        ]);
+        receive({ channel: 'portfolio', version: 1, payload: snap });
+        try {
+            const lane = render(Band, { props: { now: Date.UTC(2030, 0, 1, 12) } }).body;
+            expect(lane).toMatch(/class="lane [^"]*" style="--tone: var\(--c-gold\)"/);
+            expect(lane).toMatch(/class="stage-block [^"]*" style="--stage: var\(--c-green\)"/);
+            expect(lane).toContain('Submitted grant');
+            expect(lane).toContain('>in 1d</span>');
+        } finally {
+            receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+        }
+    });
+
     it('counts a paper under review by the venue holding it', () => {
         expect(body).toContain(catalog['focus.awaiting_response']);
         expect(body).toContain(catalog['focus.wait_review']);
@@ -467,6 +511,7 @@ describe('the strip and the band', () => {
         expect(body).toContain(catalog['focus.cards_group']);
         expect(body).toContain('A grant in prep');
         expect(body).toContain(escaped('focus.teaching_label'));
+        expect(body).toContain('A live position');
         expect(body).toContain('A course');
     });
 

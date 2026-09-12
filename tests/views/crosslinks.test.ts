@@ -4,14 +4,26 @@ import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import CrossLinks from '../../src/lib/views/shared/CrossLinks.svelte';
 import type { CrossGroup } from '../../src/lib/state/collection.ts';
-import { engineDir, glyphCatalog, loadConfig } from '../../src/lib/data/sources/config.ts';
-import { setGlyphs } from '../../src/lib/state/text.ts';
+import {
+    engineDir,
+    glyphCatalog,
+    loadConfig,
+    textCatalog
+} from '../../src/lib/data/sources/config.ts';
+import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 
-const glyphs = glyphCatalog(loadConfig(engineDir()).config);
+const config = loadConfig(engineDir()).config;
+const glyphs = glyphCatalog(config);
 setGlyphs(glyphs);
+setCatalog(textCatalog(config));
 
 const groups: CrossGroup[] = [
-    { type: 'active', count: 1, members: [{ id: 'alpha', label: 'ALPHA' }] }
+    {
+        type: 'work',
+        count: 1,
+        members: [{ id: 'alpha', label: 'ALPHA', type: 'active' }],
+        warn: true
+    }
 ];
 
 describe('CrossLinks', () => {
@@ -21,6 +33,7 @@ describe('CrossLinks', () => {
         expect(body).toContain('class="count">1</strong>');
         expect(body).toContain('class="label">active</span>');
         expect(body).toContain('aria-expanded="false"');
+        expect(body).toContain('data-project-group="work"');
         expect(body).not.toContain('>ALPHA</span>');
     });
 });

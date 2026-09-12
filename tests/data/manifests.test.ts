@@ -66,7 +66,7 @@ function buildHub(): string {
     // Nested, no category folder: the project sits straight under the tier.
     write(hub, 'projects/archive/orphan/project.yml', 'id: orphan\ntype: dropped\ntitle: Orphan\n');
 
-    // A folder with no project.yml at all: skipped in silence.
+    // A flat-tier folder with no project.yml becomes a ghost project.
     mkdirSync(join(hub, 'projects', 'ideas', 'empty-folder'), { recursive: true });
     write(hub, 'projects/ideas/empty-folder/README.md', 'no manifest here\n');
 
@@ -102,7 +102,19 @@ function byId(manifests: RawManifest[], id: string): RawManifest {
 }
 
 describe('readManifests', () => {
-    it('reads every tier and skips folders and decoys that are not projects', () => {
+    it('keeps a ghost folder id while removing its filing prefix from the title', () => {
+        const hub = buildHub();
+        mkdirSync(join(hub, 'projects/ideas/[IDEA] New method'), { recursive: true });
+        const { manifests } = readManifests(hub, SCAN);
+        expect(byId(manifests, '[IDEA] New method')).toMatchObject({
+            id: '[IDEA] New method',
+            title: 'New method',
+            type: 'idea',
+            ghost: true
+        });
+    });
+
+    it('reads every tier, includes a ghost folder and skips nested decoys', () => {
         const hub = buildHub();
         const { manifests } = readManifests(hub, SCAN);
 
@@ -111,6 +123,7 @@ describe('readManifests', () => {
             'projects/archive/orphan',
             'projects/archive/published/2026/abduction',
             'projects/coauthor/active/clinical-hccnet',
+            'projects/ideas/empty-folder',
             'projects/ideas/renamed',
             'projects/ideas/tensor-spark',
             'projects/manuscripts/btfno'
@@ -118,6 +131,22 @@ describe('readManifests', () => {
         expect(manifests.map((m) => m.id)).not.toContain('decoy');
         expect(manifests.map((m) => m.id)).not.toContain('attic-decoy');
         expect(manifests.map((m) => m.id)).not.toContain('deep-decoy');
+    });
+
+    it('builds a ghost from the folder and scan rule without treating parse failures as ghosts', () => {
+        const hub = buildHub();
+        const { manifests, findings } = readManifests(hub, SCAN);
+        expect(byId(manifests, 'empty-folder')).toEqual({
+            file: join(hub, 'projects/ideas/empty-folder/project.yml'),
+            folder: 'projects/ideas/empty-folder',
+            id: 'empty-folder',
+            tier: 'ideas',
+            ghost: true,
+            title: 'empty-folder',
+            type: 'idea'
+        });
+        expect(manifests.find((item) => item.id === 'broken')).toBeUndefined();
+        expect(findings.some((item) => item.file.endsWith('/broken/project.yml'))).toBe(true);
     });
 
     it('carries the provenance of a flat project', () => {
@@ -213,7 +242,7 @@ describe('readManifests', () => {
             { dir: 'projects/nowhere', type: 'ghost' }
         ]);
 
-        expect(manifests.length).toBe(7);
+        expect(manifests.length).toBe(8);
         expect(findings).toContainEqual({
             file: join(hub, 'projects/nowhere'),
             key: 'scan',

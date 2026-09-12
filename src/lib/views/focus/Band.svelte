@@ -3,17 +3,19 @@
     // is not a project. Three columns, the grants stacked by the stage their status names, the job
     // applications still out for an answer, and this year's teaching.
     //
-    // A card opens its collection's own tab. A grant has none: the schemes are a registry entity,
-    // so no collection view is registered over funding/funding.yml until O24, and a grant card is
-    // read rather than clicked.
+    // Every card opens its collection tab and sets that tab's transient reveal id, so the exact
+    // entry scrolls into view and flashes after the view opens.
 
     import Chip from '$lib/ui/Chip.svelte';
-    import Glyph from '$lib/ui/Glyph.svelte';
-    import { firstSentence } from '$lib/state/board';
-    import { band, daysTone, type BandItem } from '$lib/state/focus';
+    import ToolButton from '$lib/ui/ToolButton.svelte';
+    import { daysUntil, firstSentence } from '$lib/state/board';
+    import { daysTone } from '$lib/state/focus';
+    import { collectionLanes, type BandItem } from '$lib/state/focus-lanes';
+    import { toneOf } from '$lib/state/tones';
     import { configMap } from '$lib/state/selectors.svelte';
     import { portfolio } from '$lib/state/entities.svelte';
     import { openView } from '$lib/state/layout.svelte';
+    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import { t } from '$lib/state/text';
 
     type Props = { now: number };
@@ -27,8 +29,13 @@
     const snapshot = $derived(portfolio());
     const cards = $derived(
         snapshot === null
-            ? { funding: [], applications: [], education: [] }
-            : band(snapshot, config, now)
+            ? {
+                  funding: [],
+                  applications: [],
+                  education: [],
+                  tones: { funding: '', jobs: '', teaching: '' }
+              }
+            : collectionLanes(snapshot, config)
     );
 
     const anything = $derived(
@@ -36,29 +43,34 @@
     );
 
     /** A card's countdown, and nothing for one with no date. */
-    function tail(item: BandItem): string {
-        if (item.days === null) return '';
-        return item.days < 0 ? t('focus.days_ago', -item.days) : t('focus.in_days', item.days);
+    function remaining(item: BandItem): number | null {
+        return daysUntil(item.deadline ?? '', now);
+    }
+
+    /** Open the collection and ask it to reveal the exact entry this card names. */
+    function reveal(item: BandItem): void {
+        const instance = openView(item.entry, 'main');
+        const current = instanceState(instance);
+        const held =
+            typeof current === 'object' && current !== null && !Array.isArray(current)
+                ? current
+                : {};
+        setInstanceState(instance, { ...held, reveal: item.id, search: '' });
     }
 </script>
 
-{#snippet entry(item: BandItem)}
-    {@const date = tail(item)}
+{#snippet entry(item: BandItem, glyph: string)}
+    {@const days = remaining(item)}
     <div class="entry">
         <div class="entry-h">
-            {#if item.entry === undefined}
-                <span class="entry-name">{item.title}</span>
-            {:else}
-                {@const key = item.entry}
-                <button type="button" class="entry-name link" onclick={() => openView(key, 'main')}>
-                    {item.title}
-                </button>
-            {/if}
-            {#if date !== ''}
+            <span class="entry-name">
+                <ToolButton label={item.title} {glyph} onclick={() => reveal(item)} />
+            </span>
+            {#if days !== null}
                 <span class="badge">
                     <Chip
-                        label={date}
-                        tone={daysTone(item.days)}
+                        label={days < 0 ? t('focus.days_ago', -days) : t('focus.in_days', days)}
+                        tone={daysTone(days)}
                         glyph={t('cards.deadline_glyph')}
                     />
                 </span>
@@ -70,17 +82,17 @@
     </div>
 {/snippet}
 
-{#snippet column(label: string, glyph: string, sub: string, rows: BandItem[])}
+{#snippet column(label: string, glyph: string, sub: string, tone: string, rows: BandItem[])}
     {#if rows.length > 0}
-        <div class="lane">
+        <div class="lane" style={`--tone: var(--c-${tone})`}>
             <div class="lane-h">
-                <span class="lane-name"><Glyph name={glyph} />{label}</span>
+                <span class="lane-name">{label}</span>
                 <span class="count">{rows.length}</span>
             </div>
             <p class="lane-sub">{sub}</p>
             <div class="lane-body">
                 {#each rows as item, at (`${at}:${item.title}`)}
-                    {@render entry(item)}
+                    {@render entry(item, glyph)}
                 {/each}
             </div>
         </div>
@@ -92,10 +104,10 @@
         <summary>{t('focus.cards_group')}</summary>
         <div class="lanes">
             {#if cards.funding.length > 0}
-                <div class="lane">
+                <div class="lane" style={`--tone: var(--c-${cards.tones.funding})`}>
                     <div class="lane-h">
                         <span class="lane-name">
-                            <Glyph name={t('focus.funding_glyph')} />{t('focus.funding_label')}
+                            {t('focus.funding_lane')}
                         </span>
                         <span class="count">
                             {cards.funding.reduce((n, stage) => n + stage.items.length, 0)}
@@ -104,26 +116,31 @@
                     <p class="lane-sub">{t('focus.funding_sub')}</p>
                     <div class="lane-body">
                         {#each cards.funding as stage (stage.label)}
-                            <p class="stage" style={`--tone: var(--c-${stage.tone}-txt)`}>
-                                {stage.label}
-                            </p>
-                            {#each stage.items as item, at (`${at}:${item.title}`)}
-                                {@render entry(item)}
-                            {/each}
+                            <div
+                                class="stage-block"
+                                style={`--stage: var(--c-${toneOf(stage.color)})`}
+                            >
+                                <p class="stage">{stage.label}</p>
+                                {#each stage.items as item, at (`${at}:${item.title}`)}
+                                    {@render entry(item, t('focus.funding_glyph'))}
+                                {/each}
+                            </div>
                         {/each}
                     </div>
                 </div>
             {/if}
             {@render column(
-                t('focus.jobs_label'),
+                t('focus.jobs_lane'),
                 t('focus.jobs_glyph'),
                 t('focus.jobs_sub'),
+                cards.tones.jobs,
                 cards.applications
             )}
             {@render column(
-                t('focus.teaching_label'),
+                t('focus.teaching_lane'),
                 t('focus.teaching_glyph'),
                 t('focus.teaching_sub'),
+                cards.tones.teaching,
                 cards.education
             )}
         </div>
@@ -162,6 +179,7 @@
         min-width: 0;
         padding: 8px;
         border: 1px solid var(--line);
+        border-top: 3px solid var(--tone, var(--line));
         border-radius: 8px;
         background: var(--panel);
     }
@@ -200,12 +218,20 @@
     }
 
     .stage {
-        margin: 6px 0 0;
+        margin: 0 0 4px;
         font-size: var(--fs-3xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.06em;
-        color: var(--tone, var(--muted));
+        color: var(--muted-txt, var(--muted));
+    }
+
+    .stage-block {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        padding-left: 6px;
+        border-left: 3px solid var(--stage, var(--line));
     }
 
     .entry {
@@ -232,20 +258,12 @@
         color: var(--ink-txt, var(--ink));
     }
 
-    button.link {
-        padding: 0;
+    .entry-name :global(.tool) {
         border: 0;
         background: none;
-        font: inherit;
+        padding: 0;
+        color: var(--ink-txt, var(--ink));
         font-size: var(--fs-md);
-        text-align: left;
-        cursor: pointer;
-    }
-
-    button.link:hover,
-    button.link:focus-visible {
-        color: var(--accent-txt, var(--accent));
-        text-decoration: underline;
     }
 
     .badge {

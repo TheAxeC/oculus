@@ -15,6 +15,7 @@
         type SchemaField
     } from '$lib/state/collection';
     import { t } from '$lib/state/text';
+    import { archiveDead } from '$lib/state/selectors.svelte';
     import { freeTone, quartileTone, type Project, type Venue } from '$lib/state/venues';
 
     type Props = {
@@ -30,7 +31,7 @@
 
     let { venue, projects, concentrated, entry, schema, editing, onedit, onsaid }: Props = $props();
 
-    const groups = $derived(groupProjects(projects));
+    const groups = $derived(groupProjects(projects, archiveDead()));
     const metadata = $derived(
         [
             venue.jif && !['none', ' - '].includes(venue.jif.toLowerCase())

@@ -63,14 +63,14 @@ for (const asked of COLLECTIONS) {
 report('collection', collections.findings);
 
 // Document presence over every manifest's folder, counted per document name.
-const counts = new Map<string, number>(PROJECT_DOCS.map((name) => [name, 0]));
+const counts = new Map<string, number>(PROJECT_DOCS.map(({ name }) => [name, 0]));
 for (const manifest of manifests) {
     for (const doc of projectDocs(join(hub, manifest.folder))) {
         if (doc.present) counts.set(doc.name, (counts.get(doc.name) ?? 0) + 1);
     }
 }
 console.log(`project documents, over ${manifests.length} project folders:`);
-for (const name of PROJECT_DOCS) console.log(`  ${name}: ${counts.get(name)}`);
+for (const { name } of PROJECT_DOCS) console.log(`  ${name}: ${counts.get(name)}`);
 
 console.log(`config keys: ${Object.keys(config.config).join(', ')}`);
 report('config', config.findings);

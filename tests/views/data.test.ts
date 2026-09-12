@@ -81,6 +81,7 @@ function project(id: string): Project {
     return {
         id,
         tier: 'active',
+        ghost: false,
         type: 'active',
         title: 'Linked project',
         short: 'LP',
@@ -196,7 +197,7 @@ describe('the Data view', () => {
         expect(html).toContain('Fetch wget');
         expect(html).toContain('ECG signals');
         expect(html).toContain('Recover from the source.');
-        expect(html).toContain('data-project-group="active"');
+        expect(html).toContain('data-project-group="work"');
         expect(html).toContain('class="label">active</span>');
         expect(html).toContain('aria-expanded="false"');
         expect(html).not.toContain('>LP</span>');

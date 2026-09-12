@@ -49,6 +49,7 @@ function project(id: string, venueId: string, type: string): Project {
     return {
         id,
         tier: type === 'manuscript' ? 'manuscripts' : 'active',
+        ghost: false,
         type,
         title: id,
         short: id.toUpperCase(),
@@ -235,7 +236,7 @@ describe('the journal section and venue card', () => {
         expect(journal).toContain(catalog['col.ven_conc']);
         expect(journal).toContain(catalog['col.ven_conc_tip']);
         expect(journal).toContain('class="label">active</span>');
-        expect(journal).toContain('class="label">manuscript</span>');
+        expect(journal).toContain('class="count">2</strong>');
         expect(journal).toContain('aria-expanded="false"');
         expect(journal).not.toContain('>ALPHA</span>');
         expect(journal).not.toContain('>BETA</span>');

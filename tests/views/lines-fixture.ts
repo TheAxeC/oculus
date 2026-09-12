@@ -36,6 +36,7 @@ function project(id: string, fields: Partial<Project> = {}): Project {
     return {
         id,
         tier: 'active',
+        ghost: false,
         type: 'active',
         title: id,
         short: id.toUpperCase(),

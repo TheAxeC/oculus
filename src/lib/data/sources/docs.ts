@@ -33,13 +33,21 @@ export function isFinding(result: DocRead): result is Finding {
  * a file: nothing under `attic/` is on the list, so an attic copy is never seen.
  */
 export const PROJECT_DOCS = [
-    'README.md',
-    'PRESENT.md',
-    'RESULTS.md',
-    'code/README.md',
-    'manuscript/main.pdf',
-    'manuscript/main.tex'
+    { name: 'README.md', label: 'README' },
+    { name: 'PRESENT.md', label: 'PRESENT' },
+    { name: 'RESULTS.md', label: 'RESULTS' },
+    { name: 'code/README.md', label: 'CODE' },
+    { name: 'manuscript/main.pdf', label: 'PDF' },
+    { name: 'manuscript/main.tex', label: 'TEX' }
 ];
+
+/** The cockpit's document marks follow labels, including future NOTES and DIARY entries. */
+function marks(label: string): { human: boolean; public: boolean } {
+    return {
+        human: label === 'NOTES' || label === 'DIARY',
+        public: label === 'PRESENT'
+    };
+}
 
 /**
  * A `---` line at the very start of the file, the block up to the next line that is `---` or
@@ -104,9 +112,9 @@ export function readDoc(path: string): DocRead {
  * from: a document written after the project.yml is a manifest that is behind its own folder.
  */
 export function projectDocs(folder: string): DocPresence[] {
-    return PROJECT_DOCS.map((name) => {
+    return PROJECT_DOCS.map(({ name, label }) => {
         const path = join(folder, name);
         const stat = fileStat(path);
-        return { name, path, present: stat.present, mtime: stat.mtime };
+        return { name, label, path, present: stat.present, mtime: stat.mtime, ...marks(label) };
     });
 }

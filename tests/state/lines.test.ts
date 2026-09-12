@@ -22,6 +22,7 @@ function project(
     return {
         id,
         tier,
+        ghost: false,
         type,
         title: id,
         chips: [],

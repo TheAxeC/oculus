@@ -18,6 +18,7 @@ import { isMap, text as str } from '../data/guards.ts';
 export type { Id, Project, Venue } from '../data/model.ts';
 import { DEADLINE_SOON, daysUntil } from './board.ts';
 import { UNKNOWN_TONE, toneOf } from './tones.ts';
+import { entryDate, manifestsBehind, type ManifestBehind } from './focus-lanes.ts';
 
 /** The clusters of `focus_lanes`, top to bottom: your move, then on others, then idea to project. */
 export const CLUSTERS = ['now', 'parked', 'incubate'];
@@ -145,6 +146,7 @@ export type Ticker = {
     subtasks: TickerItem[];
     venueLoad: Tally[];
     snoozed: TickerItem[];
+    behind: ManifestBehind | null;
 };
 
 /** The awaiting-a-response strip: who you chase, what you wait on, and how much is simply blocked. */
@@ -158,36 +160,6 @@ export type Waiting = {
     applications: string[];
     /** Career hosts emailed and not yet answered. */
     hosts: string[];
-};
-
-/** One card of the band under the lanes. */
-export type BandItem = {
-    title: string;
-    /**
-     * The collection key, so a click opens the file's own tab. A funding scheme has none: the
-     * registry already carries the file, so no collection view is registered over it.
-     */
-    entry?: string;
-    days: number | null;
-    /**
-     * The card's one line of prose: the entry's own `note:`, and its `sub:` descriptor when it has
-     * none, which is what the education file writes instead. The view shortens it to a sentence.
-     */
-    note?: string;
-};
-
-/** One stage stacked inside the funding column of the band. */
-export type BandStage = {
-    label: string;
-    tone: string;
-    items: BandItem[];
-};
-
-/** The band: grant applications by stage, positions out for an answer, teaching this year. */
-export type Band = {
-    funding: BandStage[];
-    applications: BandItem[];
-    education: BandItem[];
 };
 
 function num(value: unknown): number {
@@ -411,15 +383,6 @@ export function waiting(
 function isoOf(value: unknown): string {
     const text = str(value).trim();
     return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : '';
-}
-
-/**
- * The date a collection entry counts down to: its own `deadline:`, and its `date:` when that is a
- * whole day. A year-only `date:` is not a date and never triggers.
- */
-function entryDate(entry: Entry): string {
-    const deadline = isoOf(entry.fields.deadline);
-    return deadline === '' ? isoOf(entry.fields.date) : deadline;
 }
 
 /** The entries of one collection of the snapshot, and none when it holds no such file. */
@@ -710,7 +673,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         followups,
         subtasks,
         venueLoad: venueLoad(projects, snapshot.entities.venues, warn),
-        snoozed: asleep
+        snoozed: asleep,
+        behind: manifestsBehind(projects, config)
     };
 }
 
@@ -821,84 +785,6 @@ export function venueLoad(projects: Project[], venues: Record<Id, Venue>, warn: 
                 b.count - a.count ||
                 (a.label < b.label ? -1 : a.label > b.label ? 1 : a.id < b.id ? -1 : 1)
         );
-}
-
-/** The stages of `fund_stages`, and the statuses each one gathers. */
-function fundStages(
-    config: Record<string, unknown>
-): { label: string; tone: string; statuses: string[] }[] {
-    const rows = config.fund_stages;
-    if (!Array.isArray(rows)) return [];
-    const out: { label: string; tone: string; statuses: string[] }[] = [];
-    for (const row of rows) {
-        if (!isMap(row)) continue;
-        const statuses = Array.isArray(row.statuses)
-            ? row.statuses.filter((one): one is string => typeof one === 'string')
-            : [];
-        out.push({
-            label: str(row.label),
-            tone: toneOf(str(row.color)),
-            statuses: statuses.map((one) => one.toLowerCase())
-        });
-    }
-    return out;
-}
-
-/** A band card sorts by its date, and by its title when it has none. */
-function bandOrder(a: BandItem, b: BandItem): number {
-    if (a.days !== null && b.days !== null) return a.days - b.days;
-    if (a.days !== null) return -1;
-    if (b.days !== null) return 1;
-    return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
-}
-
-function bandItem(entry: Entry, key: string, now: number): BandItem {
-    const note = str(entry.fields.note) === '' ? str(entry.fields.sub) : str(entry.fields.note);
-    const card: BandItem = {
-        title: entry.title,
-        entry: key,
-        days: daysUntil(entryDate(entry), now)
-    };
-    if (note !== '') card.note = note;
-    return card;
-}
-
-/**
- * The band under the lanes: the durable work that is not a project. Grants stack by the stage their
- * status names, positions are the applications still out for an answer, and teaching is what the
- * education file marks as running this academic year.
- */
-export function band(snapshot: Snapshot, config: Record<string, unknown>, now: number): Band {
-    const collections = snapshot.entities.collections;
-    const grants = Object.values(snapshot.entities.funding);
-    const funding: BandStage[] = [];
-    for (const stage of fundStages(config)) {
-        const items = grants
-            .filter((scheme) => stage.statuses.includes((scheme.status ?? '').toLowerCase()))
-            .map((scheme) => {
-                const card: BandItem = {
-                    title: scheme.title,
-                    days: daysUntil(isoOf(scheme.deadline), now)
-                };
-                const note = scheme.note ?? scheme.sub ?? '';
-                if (note !== '') card.note = note;
-                return card;
-            })
-            .sort(bandOrder);
-        if (items.length > 0) funding.push({ label: stage.label, tone: stage.tone, items });
-    }
-    const applications = entriesOf(collections, 'applications')
-        .filter((entry) => {
-            const status = str(entry.fields.status);
-            return status !== '' && !terminal(config, status);
-        })
-        .map((entry) => bandItem(entry, 'applications', now))
-        .sort(bandOrder);
-    const education = entriesOf(collections, 'education')
-        .filter((entry) => statusFlag(config, str(entry.fields.status), 'live_subtasks'))
-        .map((entry) => bandItem(entry, 'education', now))
-        .sort(bandOrder);
-    return { funding, applications, education };
 }
 
 /** The tone a number of days is drawn in: past is red, inside the fortnight amber, else none. */

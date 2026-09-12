@@ -9,6 +9,7 @@ function project(id: string, tier: Tier, type: string, chips: string[] = []): Pr
     return {
         id,
         tier,
+        ghost: false,
         type,
         chips,
         title: id,

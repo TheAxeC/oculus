@@ -350,6 +350,7 @@ function project(id: string, over: Partial<Project> = {}): Project {
     return {
         id,
         tier: 'active',
+        ghost: false,
         title: id,
         chips: [],
         results: [],
@@ -371,14 +372,53 @@ function project(id: string, over: Partial<Project> = {}): Project {
 }
 
 describe('groupProjects', () => {
-    it('labels a member by its title when its short name is empty', () => {
-        const groups = groupProjects([
-            project('a', { short: '', title: 'Full title' }),
-            project('b', { short: 'B', title: 'Bee' })
+    it('uses only the supplied dead-outcome vocabulary', () => {
+        const projects = [
+            project('a', { tier: 'archive', type: 'dropped' }),
+            project('b', { tier: 'archive', type: 'custom-paused' })
+        ];
+        expect(
+            groupProjects(projects, ['custom-paused'])[0].members.map((member) => member.id)
+        ).toEqual(['a']);
+        expect(groupProjects(projects, ['dropped'])[0].members.map((member) => member.id)).toEqual([
+            'b'
         ]);
-        expect(groups.flatMap((group) => group.members.map((one) => one.label))).toEqual([
-            'Full title',
-            'B'
+    });
+
+    it('forms work, published and ideas groups, keeps member types and warns for blocked work', () => {
+        const groups = groupProjects(
+            [
+                project('a', {
+                    type: 'active',
+                    short: '',
+                    title: 'Full title',
+                    chips: ['blocked']
+                }),
+                project('b', { tier: 'archive', type: 'published', short: 'B', title: 'Bee' }),
+                project('c', { tier: 'ideas', type: 'idea', title: 'Idea' }),
+                project('d', { tier: 'archive', type: 'dropped', title: 'Dropped' })
+            ],
+            ['dropped']
+        );
+        expect(groups).toEqual([
+            {
+                type: 'work',
+                count: 1,
+                members: [{ id: 'a', label: 'Full title', type: 'active' }],
+                warn: true
+            },
+            {
+                type: 'published',
+                count: 1,
+                members: [{ id: 'b', label: 'B', type: 'published' }],
+                warn: false
+            },
+            {
+                type: 'ideas',
+                count: 1,
+                members: [{ id: 'c', label: 'Idea', type: 'idea' }],
+                warn: false
+            }
         ]);
     });
 });
@@ -392,23 +432,40 @@ describe('crossLinks', () => {
 
     it("groups the projects a funding scheme's key names, by type with a count", () => {
         const scheme = entry(0, { title: 'FAIR' });
-        expect(crossLinks({ ...scheme, id: 'FAIR' }, 'funding', projects)).toEqual([
-            { type: 'active', count: 1, members: [{ id: 'alpha', label: 'Alpha' }] },
-            { type: 'manuscript', count: 1, members: [{ id: 'beta', label: 'beta' }] }
+        expect(crossLinks({ ...scheme, id: 'FAIR' }, 'funding', projects, [])).toEqual([
+            {
+                type: 'work',
+                count: 2,
+                members: [
+                    { id: 'alpha', label: 'Alpha', type: 'active' },
+                    { id: 'beta', label: 'beta', type: 'manuscript' }
+                ],
+                warn: false
+            }
         ]);
     });
 
     it("groups the projects a collaborator's key names", () => {
         const who = entry(0, { title: 'Naesens' });
-        expect(crossLinks({ ...who, id: 'naesens' }, 'collaborations', projects)).toEqual([
-            { type: 'active', count: 1, members: [{ id: 'gamma', label: 'gamma' }] }
+        expect(crossLinks({ ...who, id: 'naesens' }, 'collaborations', projects, [])).toEqual([
+            {
+                type: 'work',
+                count: 1,
+                members: [{ id: 'gamma', label: 'gamma', type: 'active' }],
+                warn: false
+            }
         ]);
     });
 
     it("reads the entry's own related list for every other collection, and skips a dead id", () => {
         const talk = entry(0, { title: 'A talk', related: ['alpha', 'nobody'] });
-        expect(crossLinks(talk, 'events', projects)).toEqual([
-            { type: 'active', count: 1, members: [{ id: 'alpha', label: 'Alpha' }] }
+        expect(crossLinks(talk, 'events', projects, [])).toEqual([
+            {
+                type: 'work',
+                count: 1,
+                members: [{ id: 'alpha', label: 'Alpha', type: 'active' }],
+                warn: false
+            }
         ]);
     });
 });

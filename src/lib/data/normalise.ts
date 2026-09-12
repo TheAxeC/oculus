@@ -137,7 +137,10 @@ function docs(found: DocPresence[] | undefined): DocFlag[] {
     return (found ?? []).map((doc) =>
         compact({
             name: doc.name,
+            label: doc.label,
             present: doc.present,
+            human: doc.human,
+            public: doc.public,
             mtime: doc.present && doc.mtime > 0 ? doc.mtime : undefined
         })
     );
@@ -224,6 +227,7 @@ function project(manifest: RawManifest, found: DocPresence[] | undefined): Proje
     return compact({
         id: manifest.id,
         tier: manifest.tier as Tier,
+        ghost: manifest.ghost,
         category: str(manifest.category),
         type: str(manifest.type),
         title: str(manifest.title) ?? '',

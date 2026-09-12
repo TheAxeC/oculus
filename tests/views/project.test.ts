@@ -49,6 +49,7 @@ function project(): Record_ {
     return {
         id: 'alpha',
         tier: 'manuscripts',
+        ghost: false,
         type: 'manuscript',
         title: 'Alpha, the whole title',
         chips: ['lead'],
@@ -67,11 +68,17 @@ function project(): Record_ {
         domainIds: [],
         collaborators: [],
         docs: [
-            { name: 'README.md', present: true },
-            { name: 'PRESENT.md', present: false },
-            { name: 'RESULTS.md', present: true },
-            { name: 'code/README.md', present: false },
-            { name: 'manuscript/main.pdf', present: true }
+            { name: 'README.md', label: 'README', present: true, human: false, public: false },
+            { name: 'PRESENT.md', label: 'PRESENT', present: false, human: false, public: true },
+            { name: 'RESULTS.md', label: 'RESULTS', present: true, human: false, public: false },
+            { name: 'code/README.md', label: 'CODE', present: false, human: false, public: false },
+            {
+                name: 'manuscript/main.pdf',
+                label: 'PDF',
+                present: true,
+                human: false,
+                public: false
+            }
         ],
         folder: 'projects/manuscripts/alpha',
         file: `${FOLDER}/project.yml`,

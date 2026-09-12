@@ -316,6 +316,7 @@ describe("oculus's own config directory", () => {
             'holding_color',
             'priority_levels',
             'fund_stages',
+            'focus_lane_tones',
             'career_host_status',
             'career_score_dims',
             'archive_categories',
@@ -332,6 +333,23 @@ describe("oculus's own config directory", () => {
 
     it('merges without a finding, so no key is defined in two files', () => {
         expect(loadConfig(engineDir()).findings).toEqual([]);
+    });
+
+    it('holds the cross-link exclusions and independent collection lane tones', () => {
+        const { config } = loadConfig(engineDir());
+        expect(config.archive_dead).toEqual([
+            'nogo',
+            'dropped',
+            'disproved',
+            'abandoned',
+            'parked'
+        ]);
+        expect(config.focus_lane_tones).toEqual({
+            funding: 'gold',
+            jobs: 'violet',
+            teaching: 'teal'
+        });
+        expect(typeof config.stale_lag_days).toBe('number');
     });
 
     it('holds exactly the expected top-level keys, and no more', () => {

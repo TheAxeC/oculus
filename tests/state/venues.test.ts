@@ -23,6 +23,7 @@ function project(id: string, over: Partial<Project> = {}): Project {
     return {
         id,
         tier: 'active',
+        ghost: false,
         title: id,
         chips: [],
         results: [],

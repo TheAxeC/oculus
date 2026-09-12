@@ -14,6 +14,7 @@ import { chipKeys, chipLabel, domainLabel, domainTone, typeTone } from './tones.
 import type { Id, Project, Snapshot, Tier, Venue } from '../data/model.ts';
 // `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
 import { isMap, strings, text as str } from '../data/guards.ts';
+import { t } from './text.ts';
 
 /** The value a facet gives what has none: no year, no funding, no compute, no code deposit. */
 export const NONE = '__none__';
@@ -575,6 +576,39 @@ const VENUE_WARN = 4;
 
 /** The `stale_lag_days` the config names when it names none. */
 export const STALE_LAG = 1;
+
+/** The derived line under a project's chips, and the class that gives the line its kind. */
+export type WaitingLine = { kind: 'people' | 'review' | 'blocked'; text: string };
+
+/**
+ * What a project is waiting on. Explicit people win over submission review, which wins over a
+ * generic external block. A collaborator id not in the collection remains useful as written.
+ */
+export function waitingLine(
+    project: Project,
+    venues: Record<Id, Venue>,
+    collaborators: Record<Id, string>
+): WaitingLine | null {
+    if (project.waitingOn.length > 0) {
+        const names = project.waitingOn.map((id) => collaborators[id] ?? id).join(', ');
+        return { kind: 'people', text: t('helpers.waiting_on', names) };
+    }
+    if (project.chips.includes('submitted')) {
+        const venue = project.venueId === undefined ? undefined : venues[project.venueId];
+        const name = venue === undefined ? '' : venue.short?.trim() || venue.name;
+        return {
+            kind: 'review',
+            text:
+                venue === undefined
+                    ? t('helpers.under_review_unset')
+                    : t('helpers.under_review_at', name)
+        };
+    }
+    if (project.chips.includes('blocked')) {
+        return { kind: 'blocked', text: t('helpers.blocked_external') };
+    }
+    return null;
+}
 
 /** A number out of the merged config, and the fallback behavior.yml's own comment names. */
 function setting(config: Record<string, unknown>, key: string, fallback: number): number {

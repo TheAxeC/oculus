@@ -127,12 +127,38 @@ describe('readDoc', () => {
 });
 
 describe('projectDocs', () => {
+    it('marks future NOTES and DIARY entries from their labels alone', () => {
+        const root = scratch();
+        const length = PROJECT_DOCS.length;
+        PROJECT_DOCS.push(
+            { name: 'NOTES.md', label: 'NOTES' },
+            { name: 'DIARY.md', label: 'DIARY' }
+        );
+        try {
+            expect(
+                projectDocs(root)
+                    .filter((doc) => doc.human)
+                    .map((doc) => doc.label)
+            ).toEqual(['NOTES', 'DIARY']);
+        } finally {
+            PROJECT_DOCS.splice(length);
+        }
+    });
+
     it('reports every name in the fixed order, present or not', () => {
         const root = scratch();
         write(root, 'README.md', 'the one private doc\n');
 
         const docs = projectDocs(root);
-        expect(docs.map((d) => d.name)).toEqual(PROJECT_DOCS);
+        expect(docs.map((d) => ({ name: d.name, label: d.label }))).toEqual(PROJECT_DOCS);
+        expect(docs.map((d) => d.label)).toEqual([
+            'README',
+            'PRESENT',
+            'RESULTS',
+            'CODE',
+            'PDF',
+            'TEX'
+        ]);
         expect(docs[0]).toMatchObject({
             name: 'README.md',
             path: join(root, 'README.md'),
@@ -157,6 +183,27 @@ describe('projectDocs', () => {
         ]);
     });
 
+    it('marks only PRESENT public and no current document human', () => {
+        const root = scratch();
+        const docs = projectDocs(root);
+        expect(docs.find((doc) => doc.name === 'README.md')).toMatchObject({
+            human: false,
+            public: false
+        });
+        expect(docs.find((doc) => doc.name === 'PRESENT.md')).toMatchObject({
+            human: false,
+            public: true
+        });
+        expect(docs.find((doc) => doc.name === 'code/README.md')).toMatchObject({
+            human: false,
+            public: false
+        });
+        expect(docs.find((doc) => doc.name === 'manuscript/main.tex')).toMatchObject({
+            human: false,
+            public: false
+        });
+    });
+
     it('never looks under attic', () => {
         const root = scratch();
         write(root, 'attic/README.md', 'an old copy\n');
@@ -176,7 +223,7 @@ describe('projectDocs', () => {
         const root = scratch();
         const docs = projectDocs(join(root, 'nowhere'));
 
-        expect(docs.map((d) => d.name)).toEqual(PROJECT_DOCS);
+        expect(docs.map((d) => d.name)).toEqual(PROJECT_DOCS.map((doc) => doc.name));
         expect(present(docs)).toEqual([]);
     });
 

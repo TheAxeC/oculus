@@ -40,6 +40,7 @@ function project(): Project {
     return {
         id: 'alpha',
         tier: 'manuscripts',
+        ghost: false,
         type: 'manuscript',
         title: 'Alpha, the whole title',
         short: 'Alpha',

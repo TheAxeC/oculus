@@ -13,6 +13,11 @@ const NEVER_DESCEND = ['code', 'attic'];
 
 const MANIFEST = 'project.yml';
 
+/** Remove the filing prefix from a folder's display title. */
+function stripPrefix(name: string): string {
+    return name.replace(/^\[[^\]]+\]\s*/, '');
+}
+
 /** Hub-relative path with forward slashes, whatever the platform's separator is. */
 function hubPath(hub: string, dir: string): string {
     return relative(hub, dir).split(sep).join('/');
@@ -131,7 +136,7 @@ function record(
         type = data.type;
     }
 
-    const built: RawManifest = { ...data, file, folder, id, tier };
+    const built: RawManifest = { ...data, file, folder, id, tier, ghost: false };
     const written = mtimeOf(file);
     if (written !== undefined) built.fileMtime = written;
     if (category !== undefined) built.category = category;
@@ -140,12 +145,32 @@ function record(
     return built;
 }
 
+/** A flat-tier folder with no manifest, with only its filesystem provenance and scan rule. */
+function ghost(
+    hub: string,
+    folderPath: string,
+    tier: Tier,
+    ruleType: string | undefined
+): RawManifest {
+    const folder = hubPath(hub, folderPath);
+    const id = folder.split('/').pop() ?? folder;
+    return {
+        file: join(folderPath, MANIFEST),
+        folder,
+        id,
+        tier,
+        ghost: true,
+        title: stripPrefix(id),
+        ...(ruleType === undefined ? {} : { type: ruleType })
+    };
+}
+
 /**
  * Read every project.yml the scan rules reach.
  *
  * A flat rule reads `<hub>/<dir>/<name>/project.yml` and gives each manifest the rule's `type`.
  * A nested rule walks `<hub>/<dir>` to any depth, takes `type` from the manifest, and records the
- * first folder under the tier as `category`. A folder without a project.yml is skipped in silence;
+ * first folder under the tier as `category`. A flat-tier folder without a project.yml is a ghost;
  * a manifest that does not parse, or parses to something other than a map, is a finding and no
  * record. Records come back sorted by `folder`, so two runs on one tree agree byte for byte.
  */
@@ -166,12 +191,14 @@ export function readManifests(
 
         const paths: string[][] = rule.nested
             ? nestedProjects(base)
-            : subdirs(base)
-                  .filter((name) => hasManifest(join(base, name)))
-                  .map((name) => [name]);
+            : subdirs(base).map((name) => [name]);
 
         for (const segments of paths) {
             const folderPath = join(base, ...segments);
+            if (!hasManifest(folderPath)) {
+                manifests.push(ghost(hub, folderPath, tier, rule.type));
+                continue;
+            }
             const data = readManifest(join(folderPath, MANIFEST), findings);
             if (data === null) continue;
             const category = rule.nested && segments.length > 1 ? segments[0] : undefined;

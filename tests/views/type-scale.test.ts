@@ -62,10 +62,10 @@ const VIEWS: Record<string, string> = {
     'data/Facets.svelte': '.label=fs-xxs',
     'domains/DomainCard.svelte': '',
     'focus/Band.svelte':
-        'summary=fs-xs | .lane-name=fs-md | .count=fs-xs | .lane-sub=fs-xs | .stage=fs-3xs | .entry-name=fs-md | button.link=fs-md | .note=fs-xs',
+        'summary=fs-xs | .lane-name=fs-md | .count=fs-xs | .lane-sub=fs-xs | .stage=fs-3xs | .entry-name=fs-md | .entry-name :global(.tool)=fs-md | .note=fs-xs',
     'focus/CareerPanel.svelte':
         '.career > summary=fs-sm | .seclbl=fs-xxs | .sub=fs-md | .note=fs-sm | .fact=fs-sm | .fact b=fs-xxs | .milestone=fs-md | .caveat=fs-sm | .order li=fs-sm | .ordernote=fs-xs | .inst=fs-xs | .tag=fs-xs | .when=fs-xs | .host-h=fs-sm | .rank=fs-xxs | .move=fs-sm | .crit li=fs-sm | .empty=fs-md',
-    'focus/CommandCenter.svelte': '.head > b=fs-sm | .lbl=fs-xs | .sub=fs-md',
+    'focus/CommandCenter.svelte': '.head > b=fs-sm | .lbl=fs-xs | .sub=fs-md | .behind=fs-md',
     'focus/Lanes.svelte':
         'summary=fs-xs | .hint=fs-md | .lane-name=fs-md | .count=fs-xs | .lane-sub=fs-xs | .flames=fs-xxs | .chipicon=fs-xs | .name=fs-md | .wait, .next=fs-xs',
     'focus/QuickAdd.svelte': '.lbl=fs-xs',
@@ -103,7 +103,7 @@ const VIEWS: Record<string, string> = {
     'shared/Intro.svelte': '.intro=fs-md',
     'shared/NewIdeaForm.svelte': '',
     'shared/ProjectCard.svelte':
-        '.folder=fs-xs | .session=fs-sm | .venue, .authors=fs-sm | .eli5 p=fs-md | .next=fs-sm | .label=fs-xxs | .statusline=fs-sm | .field .value=fs-md | .frow=fs-md | .capped=fs-xs',
+        '.folder=fs-xs | .session=fs-sm | .venue, .authors=fs-sm | .eli5 p=fs-md | .next=fs-sm | .waiting=fs-sm | .ghostmsg=fs-sm | .label=fs-xxs | .statusline=fs-sm | .field .value=fs-md | .frow=fs-md | .capped=fs-xs',
     'shared/Reveal.svelte': '',
     'shared/Subtasks.svelte': '.label=fs-xs | .count, .box=fs-xs | .do=fs-md',
     'venues/Facets.svelte': '.label=fs-xxs',

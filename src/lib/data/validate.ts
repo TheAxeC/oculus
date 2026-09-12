@@ -12,7 +12,17 @@ import { isMap } from './guards.ts';
 import { collectionSchema } from './normalise.ts';
 
 /** Keys the reader itself adds to every manifest record; no schema names them. */
-const PROVENANCE = ['file', 'fileMtime', 'folder', 'id', 'tier', 'category', 'type', 'manifestId'];
+const PROVENANCE = [
+    'file',
+    'fileMtime',
+    'folder',
+    'id',
+    'tier',
+    'category',
+    'type',
+    'ghost',
+    'manifestId'
+];
 
 /** The field names of the schema, split into top-level names and the inner names of each prefix. */
 type SchemaKeys = {

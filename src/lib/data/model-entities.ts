@@ -84,6 +84,8 @@ export type RawManifest = {
     category?: string;
     /** From the scan rule on a flat tier, from the manifest itself on a nested one. */
     type?: string;
+    /** True only when the scan found a flat-tier folder with no project.yml. */
+    ghost: boolean;
     /** The manifest's own `id` value, exactly as read, whatever its type. */
     manifestId?: unknown;
 };
@@ -142,9 +144,15 @@ export type RawCollection = {
 export type DocPresence = {
     /** Folder-relative path, one of the fixed list in sources/docs.ts. */
     name: string;
+    /** The document control's cockpit label, distinct from its file name. */
+    label: string;
     /** Absolute path the document would sit at, whether or not it is there. */
     path: string;
     present: boolean;
+    /** A NOTES or DIARY document reserved for human edits. */
+    human: boolean;
+    /** A document intended for public presentation or deposit. */
+    public: boolean;
     /** Last write of the file in milliseconds, and 0 for a document that is not there. */
     mtime: number;
 };
@@ -178,7 +186,10 @@ export type Reproduced = {
  */
 export type DocFlag = {
     name: string;
+    label: string;
     present: boolean;
+    human: boolean;
+    public: boolean;
     /** Last write of the file in milliseconds, absent for a document that is not there. */
     mtime?: number;
 };
@@ -213,6 +224,8 @@ export type Subtask = {
 export type Project = {
     id: Id;
     tier: Tier;
+    /** A discovered folder that has no project.yml. */
+    ghost: boolean;
     category?: string;
     type?: string;
     title: string;

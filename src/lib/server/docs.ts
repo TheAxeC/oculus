@@ -28,7 +28,9 @@ export type DocTarget = { hub: string; config: PortfolioConfig };
  * calls for. The other two entries of that list are a PDF and a LaTeX source, and neither is
  * something `marked` can render, so both are refused here rather than answered with rubbish.
  */
-export const MARKDOWN_DOCS = PROJECT_DOCS.filter((name) => name.endsWith('.md'));
+export const MARKDOWN_DOCS = PROJECT_DOCS.map((doc) => doc.name).filter((name) =>
+    name.endsWith('.md')
+);
 
 /** What the endpoint answers with: the rendered document, and the frontmatter block it had. */
 export type DocAnswer = { html: string; frontmatter: Record<string, unknown> | null };

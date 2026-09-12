@@ -31,6 +31,7 @@
     import { openView } from '$lib/state/layout.svelte';
     import { t } from '$lib/state/text';
     import { statusTone } from '$lib/state/tones';
+    import { archiveDead } from '$lib/state/selectors.svelte';
     import { writeEntry } from '$lib/state/writes.svelte';
 
     type Props = {
@@ -69,7 +70,7 @@
 
     const status = $derived(entryStatus(entry));
     const pinned = $derived(isPinned(entry));
-    const groups = $derived(crossLinks(entry, collection, projects));
+    const groups = $derived(crossLinks(entry, collection, projects, archiveDead()));
     const lines = $derived(entrySubtasks(entry));
     const value = $derived(identityValue(entry, schema));
 

@@ -13,6 +13,7 @@
     import Empty from '$lib/ui/Empty.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
+    import ToolButton from '$lib/ui/ToolButton.svelte';
     import { DEADLINE_SOON, daysUntil, firstSentence } from '$lib/state/board';
     import {
         CLUSTERS,
@@ -34,6 +35,7 @@
     import { t } from '$lib/state/text';
     import { chipGlyph, chipLabel } from '$lib/state/tones';
     import { writeManifest } from '$lib/state/writes.svelte';
+    import { openView } from '$lib/state/layout.svelte';
 
     type Props = {
         now: number;
@@ -153,6 +155,21 @@
         said(await writeManifest(project.id, { priority: nextPriority(project) }));
     }
 
+    /** An unplaced ghost has no project tab; its README is the only title-like destination. */
+    function openMissing(project: Project): void {
+        if (project.ghost) {
+            if (project.docs.some((doc) => doc.name === 'README.md' && doc.present)) {
+                openView('document', 'main', {
+                    root: 'hub',
+                    path: `${project.folder}/README.md`,
+                    label: 'README.md'
+                });
+            }
+            return;
+        }
+        onproject(project.id);
+    }
+
     /** How many flames a card draws: none means one, faint, so the badge can be clicked to set one. */
     function flames(project: Project): number {
         return Math.max(flamesOf(project, config), 1);
@@ -194,27 +211,33 @@
     <div
         class="card"
         role="listitem"
-        draggable="true"
+        draggable={!project.ghost}
         title={project.title}
         ondragstart={(event) => started(project, event)}
         ondragend={ended}
     >
         <div class="card-h">
-            <button
-                type="button"
-                class="flames"
-                class:unset={flamesOf(project, config) === 0}
-                title={project.priority ?? t('focus.set_priority')}
-                onclick={() => cyclePriority(project)}
-            >
-                {#each { length: flames(project) } as _, at (at)}
-                    <Glyph name={t('focus.fire_glyph')} />
-                {/each}
-            </button>
+            {#if project.ghost}
+                <span class="chipicon" title={t('cards.ghost_badge_tip')}>
+                    <Glyph name={t('board.warn_glyph')} />
+                </span>
+            {:else}
+                <button
+                    type="button"
+                    class="flames"
+                    class:unset={flamesOf(project, config) === 0}
+                    title={project.priority ?? t('focus.set_priority')}
+                    onclick={() => cyclePriority(project)}
+                >
+                    {#each { length: flames(project) } as _, at (at)}
+                        <Glyph name={t('focus.fire_glyph')} />
+                    {/each}
+                </button>
+            {/if}
             {#each project.chips.slice(0, CARD_CHIPS) as chip (chip)}
                 <span class="chipicon" title={chipLabel(chip)}>{chipGlyph(chip)}</span>
             {/each}
-            <button type="button" class="name" onclick={() => onproject(project.id)}>
+            <button type="button" class="name" onclick={() => openMissing(project)}>
                 {labelOf(project)}
             </button>
             {#if due}
@@ -222,12 +245,14 @@
                     <Chip label={due.label} tone={due.tone} glyph={t('cards.deadline_glyph')} />
                 </span>
             {/if}
-            <Menu
-                label={t('focus.move_to')}
-                items={menuFor(project)}
-                placement="down"
-                onpick={(id) => choose(project, id)}
-            />
+            {#if !project.ghost}
+                <Menu
+                    label={t('focus.move_to')}
+                    items={menuFor(project)}
+                    placement="down"
+                    onpick={(id) => choose(project, id)}
+                />
+            {/if}
         </div>
         {#if wait !== ''}
             <p class="wait">{wait}</p>
@@ -275,19 +300,6 @@
                     <Glyph name={t('focus.ideas_glyph')} />{t('focus.cluster_incubate')}
                 {/if}
             </summary>
-            {#if cluster === 'now' && missing.length > 0}
-                <p class="hint">
-                    <button
-                        type="button"
-                        class="hint-link"
-                        title={t('focus.hint_link')}
-                        onclick={() => onproject(missing[0].id)}
-                    >
-                        {t('focus.hint_count', missing.length)}
-                    </button>
-                    {t('focus.hint_plain')}
-                </p>
-            {/if}
             <div class="lanes">
                 {#each inCluster as one (one.key)}
                     {@render lane(one, items[one.key] ?? [], false)}
@@ -314,6 +326,19 @@
     </div>
 </details>
 
+{#if missing.length > 0}
+    <p class="hint">
+        <span class="hint-link">
+            <ToolButton
+                label={t('focus.hint_count', missing.length)}
+                title={t('focus.hint_link')}
+                onclick={() => openMissing(missing[0])}
+            />
+        </span>
+        {@html t('focus.hint_tail')}
+    </p>
+{/if}
+
 <style>
     summary {
         display: flex;
@@ -333,7 +358,7 @@
         color: var(--muted-txt, var(--muted));
     }
 
-    .hint-link {
+    .hint-link :global(.tool) {
         padding: 0;
         border: 0;
         background: none;

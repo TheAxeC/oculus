@@ -71,7 +71,8 @@ describe('the Programs view', () => {
         const body = html();
         expect(body).toContain(catalog['col.orphans']);
         expect(body).toContain('1 untagged');
-        expect(body).toContain('class="label">manuscript</span>');
+        expect(body).toContain('class="label">active</span>');
+        expect(body).not.toContain('class="label">manuscript</span>');
         expect(body).toContain('aria-expanded="false"');
         expect(body).not.toContain('>ORPHAN</span>');
         expect(body).toContain(catalog['col.provisional_h']);

@@ -15,7 +15,6 @@ import { engineDir, loadConfig, vocabCatalog } from '../../src/lib/data/sources/
 import { setVocab } from '../../src/lib/state/tones.ts';
 import {
     backlog,
-    band,
     holdingTone,
     laneItems,
     lanes,
@@ -57,6 +56,7 @@ function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
     return {
         id,
         tier,
+        ghost: false,
         title: id,
         chips: [],
         results: [],
@@ -131,7 +131,12 @@ function snapshot(): Snapshot {
             deadline: '2026-09-21',
             venueId: 'confx'
         }),
-        project('run-plain', 'active', { type: 'active', title: 'Plain', focus: 'run' }),
+        project('run-plain', 'active', {
+            type: 'active',
+            title: 'Plain',
+            focus: 'run',
+            staleDays: 3
+        }),
         project('push-late', 'manuscripts', {
             type: 'manuscript',
             title: 'Late',
@@ -223,6 +228,15 @@ function snapshot(): Snapshot {
                 sent: scheme('sent', { title: 'A grant sent', status: 'submitted' })
             },
             collections: {
+                funding: collection('funding', [
+                    {
+                        key: 'prep',
+                        title: 'A grant in prep',
+                        status: 'in-prep',
+                        deadline: '2026-09-20'
+                    },
+                    { key: 'sent', title: 'A grant sent', status: 'submitted' }
+                ]),
                 events: collection(
                     'events',
                     [
@@ -429,23 +443,6 @@ describe('venueLoad', () => {
             { id: 'bspc', label: 'Same', count: 4 },
             { id: 'jbi', label: 'Same', count: 4 }
         ]);
-    });
-});
-
-describe('band', () => {
-    it('stacks the grants by the stage their status names, with the days to each', () => {
-        const cards = band(snap, config, NOW);
-        expect(cards.funding.map((stage) => [stage.label, stage.items.length])).toEqual([
-            ['In prep', 1],
-            ['Submitted', 1]
-        ]);
-        expect(cards.funding[0].items[0]).toEqual({ title: 'A grant in prep', days: 9 });
-    });
-
-    it('takes the positions still out and the teaching of this academic year', () => {
-        const cards = band(snap, config, NOW);
-        expect(cards.applications.map((one) => one.title)).toEqual(['A position']);
-        expect(cards.education.map((one) => one.title)).toEqual(['A course']);
     });
 });
 

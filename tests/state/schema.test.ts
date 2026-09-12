@@ -56,6 +56,7 @@ function project(over: Partial<Project> = {}): Project {
     return {
         id: 'alpha',
         tier: 'manuscripts',
+        ghost: false,
         title: 'A title',
         chips: ['submitted'],
         statusLine: 'the line',

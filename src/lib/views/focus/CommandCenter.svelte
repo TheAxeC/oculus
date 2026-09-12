@@ -59,6 +59,12 @@
         typeof config.venue_conc_warn === 'number' ? config.venue_conc_warn : 4
     );
 
+    /** The singular or plural manifest noun, with literal catalog keys for the static audit. */
+    function manifestWord(count: number): string {
+        if (count === 1) return t('cc.manifest');
+        return t('cc.manifests');
+    }
+
     /** An ISO date a snooze button pushes an item out to. */
     function snoozeDate(days: number): string {
         return new Date(now + days * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
@@ -313,6 +319,7 @@
             view.followups.length +
             view.snoozed.length +
             attentionView.rows.length +
+            (week?.behind === null || week?.behind === undefined ? 0 : 1) +
             refreshView.rows.length >
             0
     );
@@ -444,12 +451,34 @@
         </div>
 
         {@render group(t('cc.grp_overdue_label'), t('cc.grp_overdue_glyph'), view.overdue)}
-        {#if attentionView.rows.length > 0}
+        {#if attentionView.rows.length > 0 || week?.behind}
             <div class="grp">
                 <p class="lbl">
                     <Glyph name={t('cc.grp_attention_glyph')} />{t('cc.grp_attention_label')}
                 </p>
-                <Ticker rows={attentionView.rows} onpick={pickAttention} />
+                {#if attentionView.rows.length > 0}
+                    <Ticker rows={attentionView.rows} onpick={pickAttention} />
+                {/if}
+                {#if week?.behind}
+                    <div class="behind">
+                        <Glyph name={t('board.stale_glyph')} />
+                        <b>
+                            {week.behind.count}
+                            {manifestWord(week.behind.count)}
+                        </b>
+                        <span>{t('cc.behind_refresh')}</span>
+                        {#each week.behind.projects as project (project.id)}
+                            <ToolButton
+                                label={project.label}
+                                title={t('cards.stale_behind', project.days)}
+                                onclick={() => onproject(project.id)}
+                            />
+                        {/each}
+                        {#if week.behind.more > 0}
+                            <span>{t('cc.more', week.behind.more)}</span>
+                        {/if}
+                    </div>
+                {/if}
             </div>
         {/if}
 
@@ -557,5 +586,21 @@
         margin: 6px 0 2px;
         font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
+    }
+
+    .behind {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 5px;
+        margin-top: 3px;
+        font-size: var(--fs-md);
+    }
+
+    .behind :global(.tool) {
+        border: 0;
+        background: none;
+        padding: 0;
+        color: var(--accent-txt, var(--accent));
     }
 </style>
