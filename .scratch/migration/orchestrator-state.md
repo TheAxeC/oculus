@@ -21,7 +21,19 @@ reviewer: codex:gpt-5.6-sol  # the reviewer stage, tried from O24a on (Axel, 202
 ```
 
 ```yaml
-dispatch: none
+dispatch:
+  package: Q9
+  worker: codex:gpt-5.6-sol
+  worktree: .agents/worktrees/q9
+  base: 0dc604bd9859c0d28c4505bb2c8471b8b7e82584
+  launched: pending
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q9/prompt.md
+  events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q9/events.jsonl
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q9/report.md
+  exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q9/exit.txt
+  pid: pending
+  session_id: pending
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
