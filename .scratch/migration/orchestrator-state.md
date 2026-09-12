@@ -31,8 +31,8 @@ dispatch:
   events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O25f/events.jsonl
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O25f/report.md
   exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O25f/exit.txt
-  pid: pending
-  session_id: pending
+  pid: 3832
+  session_id: 01a095cf-2a7d-7782-8c26-605b16ff41e1
   landing: not-started
   round: 0
 ```
