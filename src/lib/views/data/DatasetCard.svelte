@@ -171,7 +171,7 @@
     .description,
     .note {
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .description {
@@ -180,7 +180,7 @@
 
     .links a {
         color: var(--accent-txt, var(--accent));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     :global(body.rice) .card {

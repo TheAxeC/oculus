@@ -281,7 +281,7 @@
 
     .body {
         margin: 6px 0 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         overflow-wrap: anywhere;
     }
 
@@ -302,7 +302,7 @@
         margin: 6px 0 0;
         padding-left: 8px;
         border-left: 2px solid var(--accent);
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         overflow-wrap: anywhere;
     }
 
@@ -323,7 +323,7 @@
     }
 
     .value {
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         overflow-wrap: anywhere;
     }
 

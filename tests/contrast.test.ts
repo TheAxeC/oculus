@@ -1,7 +1,7 @@
 // Every text-on-background pair the tokens declare, under every theme, at 4.5:1 or better.
 //
 // The pairs are the ones a component can actually produce: a `-txt` colour on the page, the panel
-// and the chip; a hue's `-txt` on its own tint; and the on-chip ink on its filled chip. A pair below
+// the card and the chip; a hue's `-txt` on its own tint; and the on-chip ink on its filled chip. A pair below
 // the threshold is printed with its ratio and fails. It is never fixed by loosening the threshold or
 // by editing a colour here: a colour is an authored value in tokens.css or themes.css, and a failure
 // is a finding about that value or about derive.ts, not something this file repairs.
@@ -26,8 +26,8 @@ setAppearance(loadConfig(engineDir()).config);
 const NAMES = themes().map((entry) => entry.name);
 const MINIMUM = 4.5;
 
-/** The three surfaces any text can land on. */
-const SURFACES = ['--bg', '--panel', '--chip'];
+/** The four surfaces any text can land on. */
+const SURFACES = ['--bg', '--panel', '--card', '--chip'];
 
 type Pair = { fg: string; bg: string; ratio: number };
 

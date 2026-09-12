@@ -259,7 +259,7 @@
         margin: 0;
         padding-top: 8px;
         border-top: 1px solid var(--line);
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 

@@ -359,7 +359,7 @@
 
     .said {
         margin: 0 0 8px;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 

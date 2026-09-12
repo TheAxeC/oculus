@@ -8,6 +8,7 @@
     import Search from '$lib/ui/Search.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import Intro from './shared/Intro.svelte';
     import PostCard from './linkedin/PostCard.svelte';
     import EntryForm from './shared/EntryForm.svelte';
     import Reveal from './shared/Reveal.svelte';
@@ -95,21 +96,23 @@
         {:else if data.error !== undefined}
             <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
         {:else}
-            <div
-                class="cadence"
-                class:overdue={status === 'overdue'}
-                class:ontrack={status === 'ontrack'}
-                data-cadence={status}
-            >
-                {#if status === 'no-dates'}
-                    <span>{t('sf.linkedin_no_dates')}</span>
-                {:else if status === 'overdue'}
-                    <Glyph name="warn" />
-                    <span>{t('sf.linkedin_overdue', days ?? '', data.cadenceDays ?? '')}</span>
-                {:else}
-                    <span>{t('sf.linkedin_ontrack', days ?? '')}</span>
-                {/if}
-            </div>
+            <Intro>
+                <span
+                    class="cadence"
+                    class:overdue={status === 'overdue'}
+                    class:ontrack={status === 'ontrack'}
+                    data-cadence={status}
+                >
+                    {#if status === 'no-dates'}
+                        <span>{t('sf.linkedin_no_dates')}</span>
+                    {:else if status === 'overdue'}
+                        <Glyph name="warn" />
+                        <span>{t('sf.linkedin_overdue', days ?? '', data.cadenceDays ?? '')}</span>
+                    {:else}
+                        <span>{t('sf.linkedin_ontrack', days ?? '')}</span>
+                    {/if}
+                </span>
+            </Intro>
 
             {#if status === 'overdue'}
                 <div class="nudge">

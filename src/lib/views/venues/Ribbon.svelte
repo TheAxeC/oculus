@@ -110,7 +110,7 @@
         gap: 6px;
         margin-bottom: 8px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .nextitem {
@@ -128,7 +128,7 @@
         gap: 8px;
         margin-bottom: 8px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .spark pre {

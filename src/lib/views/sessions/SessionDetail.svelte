@@ -380,7 +380,7 @@
     }
 
     .pin .outcome {
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -395,7 +395,7 @@
         display: flex;
         align-items: baseline;
         gap: 8px;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 

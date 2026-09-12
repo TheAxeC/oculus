@@ -9,6 +9,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import LeadCard from './leads/LeadCard.svelte';
     import EntryForm from './shared/EntryForm.svelte';
+    import Intro from './shared/Intro.svelte';
     import Reveal from './shared/Reveal.svelte';
     import { inlineMarkdown } from '$lib/state/collection';
     import { config } from '$lib/state/entities.svelte';
@@ -78,13 +79,13 @@
         {:else if data.error !== undefined}
             <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
         {:else}
-            <p class="intro">
-                {t(
+            <Intro
+                html={t(
                     'sf.leads_intro',
                     split.live.length,
                     split.expired.length > 0 ? t('sf.leads_exp_note', split.expired.length) : ''
                 )}
-            </p>
+            />
 
             {#if said !== ''}
                 <p class="said">{said}</p>
@@ -175,13 +176,11 @@
         gap: 12px;
     }
 
-    .intro,
     .said,
     .empty {
         margin: 0;
     }
 
-    .intro,
     .said,
     .empty {
         color: var(--muted-txt, var(--muted));
@@ -210,6 +209,6 @@
         margin: 8px 0 0;
         padding-left: 24px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 </style>

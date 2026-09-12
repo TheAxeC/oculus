@@ -152,11 +152,11 @@
 
     .turn {
         min-width: 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .turn.tool {
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .head {
@@ -207,20 +207,20 @@
 
     .cut {
         margin: 2px 0 0;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 
     .failed {
         margin: 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 
     /* The document block of a rendered answer, as the project view draws a README. */
     .doc {
         margin-top: 2px;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         color: var(--ink-txt, var(--ink));
         overflow-wrap: anywhere;
     }
@@ -247,7 +247,7 @@
     .doc :global(code),
     .doc :global(pre) {
         font-family: var(--font-mono);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .doc :global(pre) {

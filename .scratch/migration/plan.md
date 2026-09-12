@@ -71,7 +71,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ O25g the Focus ticker's feed lines open their views (landed 2026-09-12; brief `agents/briefs/O25g.md`; review `agents/reviews/O25g.md`)
 - ✅ O26 view: Live HPC (landed 2026-09-11; brief `agents/briefs/O26.md`)
 - ✅ Q4a the rail: counts and badges, the groups, the foot controls, the tray's place (landed 2026-09-12; brief `agents/briefs/Q4a.md`; review `agents/reviews/Q4a.md`)
-- Q4b the views: one type scale, the terminal's size control, the folded groups' look, the (booked 2026-09-12; brief `agents/briefs/Q4b.md`)
+- ✅ Q4b the views: one type scale, the terminal's size control, the folded groups' look, the cards' surface, the intro block (landed 2026-09-12; brief `agents/briefs/Q4b.md`; review `agents/reviews/Q4b.md`; the pillar tone rule is open for Axel)
 - Q5 several sessions and terminals at once: pinned panes with labelled tabs (Axel agreed to option A on 2026-09-12 at 18:05; runs after Q4b and before O27a unless Axel orders otherwise; brief `agents/briefs/Q5.md`)
 - O27a the file browser: roots, saved workspaces, the tree and the file view (brief `agents/briefs/O27a.md`)
 - O27b the file browser: bookmarks as a collection and transient notes (`~/.oculus/bookmarks.yml`, `~/.oculus/notes/`, `notes.autosave_ms`; brief at `agents/briefs/O27b.md`) (1 commit)

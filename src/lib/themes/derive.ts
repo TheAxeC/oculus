@@ -22,7 +22,7 @@ const HEX = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/;
 const HEX_VALUE = /^#[0-9a-fA-F]{3,6}$/;
 
 /** The tokens a derived token is computed from: the palette hues and the chrome colours. */
-const COLOUR_TOKEN = /^--(?:c-[a-z0-9-]+|accent|muted|ink|line|chip|panel|bg)$/;
+const COLOUR_TOKEN = /^--(?:c-[a-z0-9-]+|accent|muted|ink|line|chip|card|panel|bg)$/;
 
 const ONE_THIRD = 1 / 3;
 const ONE_SIXTH = 1 / 6;
@@ -151,7 +151,7 @@ export function readable(fg: string, bg: string, minimum = 4.5): string {
  * Returns `--on-<token>` for every colour token the theme defines, and the `-txt` family for the
  * three chrome colours that carry text (`--muted`, `--accent`, `--ink`) and for every palette hue.
  * A hue's `-txt` is made readable on its own `--c-<hue>-bg` first when it has one, then on `--chip`,
- * `--panel` and `--bg` in turn, so it clears on every surface it can land on rather than only on the
+ * `--card`, `--panel` and `--bg` in turn, so it clears on every surface it can land on rather than only on the
  * tinted pill it was measured against. Hues that are themselves a tint (`-bg`), a derived value
  * (`-txt`, `-on`) or the on-chip ink (`--c-on`) are skipped, since nothing places text on them.
  *
@@ -169,9 +169,10 @@ export function deriveTokens(theme: Record<string, string>): Record<string, stri
     for (const key of keys) derived[`--on-${key.slice(2)}`] = contrastOn(effective[key]);
 
     const chip = effective['--chip'] || effective['--panel'] || effective['--bg'];
+    const card = effective['--card'] || effective['--panel'] || effective['--bg'];
     const panel = effective['--panel'] || effective['--bg'];
     const page = effective['--bg'];
-    const grounds = [chip, panel, page].filter((ground) => Boolean(ground));
+    const grounds = [chip, card, panel, page].filter((ground) => Boolean(ground));
 
     const everywhere = (colour: string, own?: string): string => {
         let out = colour;

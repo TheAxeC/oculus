@@ -92,6 +92,7 @@ describe('the Lit Watch view', () => {
         });
         await refetch('radar');
         const body = render(Radar, { props: { instance: instance('radar-one') } }).body;
+        expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('New-paper radar');
         expect(body).toContain('4 tracked');
         expect(body).not.toContain('{G.');

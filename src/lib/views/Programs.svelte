@@ -5,6 +5,7 @@
     import Pane from '$lib/ui/Pane.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
+    import Intro from '$lib/views/shared/Intro.svelte';
     import Reveal from '$lib/views/shared/Reveal.svelte';
     import ArchivalCard from '$lib/views/programs/ArchivalCard.svelte';
     import LineCard from '$lib/views/programs/LineCard.svelte';
@@ -80,19 +81,20 @@
     }
 </script>
 
+{#snippet introActions()}
+    {#if collection?.schema !== undefined}
+        <ToolButton
+            label={t('col.add')}
+            title={t('col.add_tip')}
+            active={adding}
+            onclick={() => (adding = !adding)}
+        />
+    {/if}
+{/snippet}
+
 <Pane title={t('views.programs')}>
     <div class="programs-view" data-instance={instance.id}>
-        <div class="intro">
-            <span>{@html inlineMarkdown(t('col.programs_intro'))}</span>
-            {#if collection?.schema !== undefined}
-                <ToolButton
-                    label={t('col.add')}
-                    title={t('col.add_tip')}
-                    active={adding}
-                    onclick={() => (adding = !adding)}
-                />
-            {/if}
-        </div>
+        <Intro html={inlineMarkdown(t('col.programs_intro'))} actions={introActions} />
         {#if adding && collection?.schema !== undefined}
             <EntryForm
                 collection="programs"
@@ -192,15 +194,6 @@
         min-width: 0;
     }
 
-    .intro {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 12px;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
-    }
-
     .cards {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
@@ -221,6 +214,6 @@
     .said {
         margin: 6px 0 0;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 </style>

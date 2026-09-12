@@ -269,7 +269,7 @@
     .sub,
     .note {
         margin: 4px 0 0;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -290,7 +290,7 @@
 
     .fact b {
         margin-right: 5px;
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--accent-txt, var(--accent));
@@ -307,7 +307,7 @@
         border-left: 3px solid var(--c-orange);
         border-radius: 6px;
         background: var(--chip);
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .order {
@@ -317,11 +317,19 @@
 
     .order li {
         margin: 2px 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
-    .ordernote,
-    .inst,
+    .ordernote {
+        font-size: var(--fs-md);
+        color: var(--muted-txt, var(--muted));
+    }
+
+    .inst {
+        font-size: var(--fs-sm);
+        color: var(--muted-txt, var(--muted));
+    }
+
     .tag {
         font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
@@ -365,7 +373,7 @@
         text-align: center;
         border-radius: 50%;
         background: var(--chip);
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         color: var(--muted-txt, var(--muted));
     }
@@ -394,7 +402,7 @@
         border-radius: 4px;
         background: var(--chip);
         font: inherit;
-        font-size: var(--fs-3xs);
+        font-size: var(--fs-sm);
         font-weight: 700;
         text-transform: uppercase;
         color: var(--muted-txt, var(--muted));
@@ -414,12 +422,12 @@
 
     .crit li {
         margin: 2px 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .empty {
         margin: 0;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 </style>

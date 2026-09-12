@@ -21,14 +21,15 @@ function html(empty = false): string {
 describe('the Domains view', () => {
     it('draws the intro, add control and populated domain in file order', () => {
         const body = html();
+        expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain(catalog['col.domains_intro']);
         expect(body).toContain(catalog['col.add']);
         expect(body).toContain('data-reveal="heart"');
         expect(body).toContain('Heart <strong>domain</strong>');
         expect(body).toContain(`2 ${catalog['col.projects']}`);
         expect(body).toContain('Heart blurb.');
-        expect(body).toContain('>1 active</span>');
-        expect(body).toContain('>1 published</span>');
+        expect(body).toContain('class="label">active</span>');
+        expect(body).toContain('class="label">published</span>');
         expect(body).toContain('aria-expanded="false"');
         expect(body).not.toContain('>ALPHA</span>');
         expect(body).not.toContain('>OLD</span>');

@@ -174,7 +174,11 @@
         gap: 4px;
     }
 
-    .deadline,
+    .deadline {
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-xs);
+    }
+
     .sub {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);

@@ -253,6 +253,7 @@ describe('a collection as its own tab', () => {
     const body = html();
 
     it("draws the pane with the file's own title and its intro as rendered Markdown", () => {
+        expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('Talks and Events');
         expect(body).toContain('one <strong>calendar</strong> of appearances');
     });
@@ -439,7 +440,7 @@ describe('the funding view', () => {
 
     it("groups the projects whose manifest names the scheme's key", () => {
         expect(body).toContain(catalog['collection.related']);
-        expect(body).toContain('>1 active</span>');
+        expect(body).toContain('class="label">active</span>');
         expect(body).toContain('aria-expanded="false"');
         expect(body).not.toContain('>Alpha</span>');
     });
@@ -470,7 +471,7 @@ describe('the code view', () => {
     it("draws the repo cards under it, with the projects the entry's related list names", () => {
         const card = cards(body)[0];
         expect(card).toContain('a repo');
-        expect(card).toContain('>1 active</span>');
+        expect(card).toContain('class="label">active</span>');
         expect(card).toContain('aria-expanded="false"');
         expect(card).not.toContain('>Alpha</span>');
     });

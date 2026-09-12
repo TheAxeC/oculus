@@ -195,7 +195,7 @@
     }
 
     .do {
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         min-width: 0;
     }
 

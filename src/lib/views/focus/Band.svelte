@@ -188,7 +188,7 @@
 
     .lane-sub {
         margin: 2px 0 6px;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -201,7 +201,7 @@
 
     .stage {
         margin: 6px 0 0;
-        font-size: var(--fs-3xs);
+        font-size: var(--fs-xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -254,7 +254,7 @@
 
     .note {
         margin: 2px 0 0;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 </style>

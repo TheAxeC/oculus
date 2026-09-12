@@ -6,6 +6,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import DomainCard from '$lib/views/domains/DomainCard.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
+    import Intro from '$lib/views/shared/Intro.svelte';
     import Reveal from '$lib/views/shared/Reveal.svelte';
     import { inlineMarkdown } from '$lib/state/collection';
     import { portfolio } from '$lib/state/entities.svelte';
@@ -46,19 +47,20 @@
     }
 </script>
 
+{#snippet introActions()}
+    {#if collection?.schema !== undefined}
+        <ToolButton
+            label={t('col.add')}
+            title={t('col.add_tip')}
+            active={adding}
+            onclick={() => (adding = !adding)}
+        />
+    {/if}
+{/snippet}
+
 <Pane title={t('views.domains')}>
     <div class="domains-view" data-instance={instance.id}>
-        <div class="intro">
-            <span>{@html inlineMarkdown(t('col.domains_intro'))}</span>
-            {#if collection?.schema !== undefined}
-                <ToolButton
-                    label={t('col.add')}
-                    title={t('col.add_tip')}
-                    active={adding}
-                    onclick={() => (adding = !adding)}
-                />
-            {/if}
-        </div>
+        <Intro html={inlineMarkdown(t('col.domains_intro'))} actions={introActions} />
         {#if adding && collection?.schema !== undefined}
             <EntryForm
                 collection="domains"
@@ -103,15 +105,6 @@
         min-width: 0;
     }
 
-    .intro {
-        display: flex;
-        align-items: flex-start;
-        justify-content: space-between;
-        gap: 12px;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
-    }
-
     .cards {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(290px, 1fr));
@@ -122,6 +115,6 @@
     .empty,
     .said {
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 </style>

@@ -79,7 +79,7 @@
         align-items: baseline;
         gap: 6px;
         min-width: 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .dot {
@@ -94,11 +94,16 @@
         flex: 0 0 auto;
     }
 
-    .mo,
     .st {
         flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
+    }
+
+    .mo {
+        flex: 0 0 auto;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
     }
 
     .ds {

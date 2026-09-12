@@ -205,6 +205,8 @@ function venueCard(body: string, id: string): string {
 describe('the Venues controls and facets', () => {
     it('draws add, search, and theme toggles most frequent first', () => {
         const body = html();
+        expect(body).toMatch(/class="intro(?:\s|")/);
+        expect(body).toContain(catalog['col.venues_intro']);
         expect(body).toContain(catalog['col.add']);
         expect(body).toContain('data-reveal="journal"');
         expect(body).toContain('Search Venues ...');
@@ -232,8 +234,8 @@ describe('the journal section and venue card', () => {
         expect(journal).toContain('--tone: var(--c-green)');
         expect(journal).toContain(catalog['col.ven_conc']);
         expect(journal).toContain(catalog['col.ven_conc_tip']);
-        expect(journal).toContain('>1 active</span>');
-        expect(journal).toContain('>1 manuscript</span>');
+        expect(journal).toContain('class="label">active</span>');
+        expect(journal).toContain('class="label">manuscript</span>');
         expect(journal).toContain('aria-expanded="false"');
         expect(journal).not.toContain('>ALPHA</span>');
         expect(journal).not.toContain('>BETA</span>');

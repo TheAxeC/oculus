@@ -19,6 +19,7 @@
     import Segment from '$lib/ui/Segment.svelte';
     import Select from '$lib/ui/Select.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import Toolbar from '$lib/ui/Toolbar.svelte';
     import { terminalFontPx } from '$lib/state/appearance';
     import { hubRoot, sessionsByWorkspace } from '$lib/state/selectors.svelte';
     import { pinnedTerminal, select, selectedTerminal } from '$lib/state/selection.svelte';
@@ -34,7 +35,8 @@
         type TerminalKind
     } from '$lib/state/terminals.svelte';
     import { t } from '$lib/state/text';
-    import { instanceState, theme } from '$lib/state/ui.svelte';
+    import { instanceState, setTerminalFont, terminalFont, theme } from '$lib/state/ui.svelte';
+    import { untrack } from 'svelte';
     import type { MenuItem } from '$lib/ui/Menu.svelte';
     import type { ViewProps } from '$lib/views/registry';
     import type { ITheme, Terminal as Grid } from '@xterm/xterm';
@@ -128,12 +130,18 @@
     }
 
     /** The configured grid size, or the body type scale when config leaves it unset. */
-    function fontSize(): number | undefined {
-        const configured = terminalFontPx();
+    function fontSize(chosen: number | null): number | undefined {
+        const configured = chosen ?? terminalFontPx();
         if (configured !== null) return configured;
         const root = getComputedStyle(document.body);
         const computed = Number.parseFloat(root.getPropertyValue('--fs-md').trim());
         return Number.isFinite(computed) && computed >= 1 ? computed : undefined;
+    }
+
+    /** Move the chosen size by one CSS pixel from the value currently in force. */
+    function stepFont(by: number): void {
+        const current = fontSize(terminalFont());
+        if (current !== undefined) setTerminalFont(current + by);
     }
 
     /** Tell the terminal its pane's size, over the socket, or by the endpoint when it is closed. */
@@ -178,7 +186,7 @@
             ]);
             if (!alive) return;
             const fit = new addon.FitAddon();
-            const size = fontSize();
+            const size = fontSize(untrack(terminalFont));
             const options = {
                 theme: palette(),
                 convertEol: false
@@ -233,10 +241,11 @@
         };
     });
 
-    // A theme switch repaints the grid: the tokens on the root element have changed, and xterm holds
-    // the strings it was given rather than reading them again.
+    // A theme or terminal-size change updates the mounted grid: xterm holds the values it was given
+    // rather than reading CSS or the UI store again.
     $effect(() => {
         const name = theme();
+        const chosen = terminalFont();
         const wanted = id;
         if (name === '') return;
         // The class that carries the new tokens is put on the body by the workbench's own effect,
@@ -245,7 +254,7 @@
         const frame = requestAnimationFrame(() => {
             if (grid === null) return;
             grid.options.theme = palette();
-            const size = fontSize();
+            const size = fontSize(chosen);
             if (size !== undefined && grid.options.fontSize !== size) {
                 grid.options.fontSize = size;
             }
@@ -256,7 +265,30 @@
     });
 </script>
 
-<Pane title={t('sessions.view_terminal')}>
+{#snippet tools()}
+    <Toolbar label={t('sessions.view_terminal')}>
+        <ToolButton
+            label={t('sessions.terminal_smaller')}
+            glyph="collapse"
+            compact
+            onclick={() => stepFont(-1)}
+        />
+        <ToolButton
+            label={t('sessions.terminal_larger')}
+            glyph="expand"
+            compact
+            onclick={() => stepFont(1)}
+        />
+        <ToolButton
+            label={t('sessions.terminal_reset')}
+            glyph="refresh"
+            compact
+            onclick={() => setTerminalFont(null)}
+        />
+    </Toolbar>
+{/snippet}
+
+<Pane title={t('sessions.view_terminal')} toolbar={tools}>
     <div class="terminal" data-instance={instance.id}>
         {#if id === null}
             <div class="start">
@@ -319,7 +351,7 @@
 
     .failure {
         margin: 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         color: var(--c-red-txt, var(--ink));
     }
 </style>

@@ -10,6 +10,7 @@
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import InboxCard from './inbox/InboxCard.svelte';
+    import Intro from './shared/Intro.svelte';
     import Reveal from './shared/Reveal.svelte';
     import { feed } from '$lib/state/feeds.svelte';
     import {
@@ -83,12 +84,12 @@
         {:else if data.error !== undefined}
             <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
         {:else}
-            <div class="meta">
+            <Intro>
                 <Chip label={`${t('sf.inbox_triaged')} ${run}`} tone="teal" />
                 {#if split.triaged.length > 0}
                     <span>{t('sf.inbox_triaged_suffix', split.triaged.length)}</span>
                 {/if}
-            </div>
+            </Intro>
 
             {#if said !== ''}
                 <p class="said">{said}</p>
@@ -137,14 +138,6 @@
     .inbox {
         display: grid;
         gap: 12px;
-    }
-
-    .meta {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 6px;
-        color: var(--muted-txt, var(--muted));
     }
 
     .said,

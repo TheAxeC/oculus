@@ -509,7 +509,7 @@
 <style>
     .folder {
         font-family: var(--font-mono);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
         word-break: break-all;
     }
@@ -544,7 +544,7 @@
 
     .session {
         border-color: var(--line);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         padding: 1px 6px;
     }
 
@@ -583,7 +583,7 @@
     .eli5 p,
     .next {
         margin: 2px 0 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .next {
@@ -606,7 +606,7 @@
 
     .statusline {
         margin: 0 0 6px;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .field {
@@ -615,7 +615,7 @@
 
     .field .value {
         margin: 2px 0 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     ul.value {
@@ -635,7 +635,7 @@
         display: flex;
         align-items: baseline;
         gap: 6px;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
     }
 
     .fname {
@@ -669,7 +669,7 @@
 
     .capped {
         margin: 4px 0 0;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 </style>

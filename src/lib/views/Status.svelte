@@ -63,7 +63,7 @@
         padding: 12px 16px;
         box-sizing: border-box;
         color: var(--ink-txt, var(--ink));
-        font-size: var(--fs-lg);
+        font-size: var(--fs-md);
     }
 
     .socket {

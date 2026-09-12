@@ -214,7 +214,7 @@
     .said,
     .failed {
         margin: 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -336,7 +336,7 @@
         display: flex;
         align-items: center;
         gap: 4px;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 

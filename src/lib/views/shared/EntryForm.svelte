@@ -346,7 +346,7 @@
     }
 
     .said {
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 

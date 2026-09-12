@@ -1,4 +1,4 @@
-// The appearance store: the theme, the CRT overlay, the wallpaper, the glyph mode and what each
+// The appearance store: the theme, the CRT overlay, the wallpaper, the glyph mode, the terminal size and what each
 // view instance remembers, read and written through a fake storage. Nothing here touches
 // localStorage, and the theme names it accepts are the ones config/appearance.yml lists, so a theme
 // that was dropped from that file cannot come back out of a browser that still holds it.
@@ -25,10 +25,12 @@ import {
     requestUpdateTray,
     setCrt,
     setInstanceState,
+    setTerminalFont,
     setTheme,
     setUnicode,
     setWallpaper,
     theme,
+    terminalFont,
     unicode,
     updateTrayRequested,
     wallpaper
@@ -67,16 +69,18 @@ describe('the appearance store', () => {
         expect(crt()).toBe(crtDefault());
         expect(wallpaper()).toBe(wallpaperOnTheme(DEFAULT_THEME));
         expect(unicode()).toBe(false);
+        expect(terminalFont()).toBe(null);
         expect(instanceState('a')).toBe(undefined);
     });
 
-    it('saves the four appearance flags and one blob per instance under the one key', () => {
+    it('saves the five appearance values and one blob per instance under the one key', () => {
         const storage = fakeStorage();
         loadUi(storage);
         setTheme('mocha');
         setCrt(true);
         setWallpaper(true);
         setUnicode(true);
+        setTerminalFont(14.5);
         setInstanceState('a', { filter: 'active' });
         setInstanceState('b', 3);
 
@@ -87,8 +91,32 @@ describe('the appearance store', () => {
             crt: true,
             wallpaper: true,
             unicode: true,
+            terminalFont: 14.5,
             instances: { a: { filter: 'active' }, b: 3 }
         });
+    });
+
+    it('bounds a chosen terminal size and restores the null config default', () => {
+        const storage = fakeStorage();
+        loadUi(storage);
+        setTerminalFont(2);
+        expect(terminalFont()).toBe(6);
+        setTerminalFont(45);
+        expect(terminalFont()).toBe(40);
+        setTerminalFont(null);
+        expect(terminalFont()).toBe(null);
+        expect(saved(storage).terminalFont).toBe(null);
+    });
+
+    it('bounds a saved terminal size and rejects a non-number', () => {
+        expect(loadUi(fakeStorage({ version: UI_VERSION, terminalFont: 80, instances: {} }))).toBe(
+            true
+        );
+        expect(terminalFont()).toBe(40);
+        expect(
+            loadUi(fakeStorage({ version: UI_VERSION, terminalFont: 'large', instances: {} }))
+        ).toBe(true);
+        expect(terminalFont()).toBe(null);
     });
 
     it('reads the wallpaper and the glyph mode back, each on its own', () => {

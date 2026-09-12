@@ -11,6 +11,7 @@
 body.dark {
     --bg: #0b1120;
     --panel: #121a2b;
+    --card: #1b2638;
     --ink: #e7ecf3;
     --muted: #94a3b8;
     --line: #243049;
@@ -30,6 +31,7 @@ body.dark {
 body.vscode-dark-modern {
     --bg: #181818;
     --panel: #1f1f1f;
+    --card: #262626;
     --ink: #cccccc;
     --muted: #9d9d9d;
     --line: #2b2b2b;
@@ -46,6 +48,7 @@ body.vscode-dark-modern {
 body.vscode-light-modern {
     --bg: #f8f8f8;
     --panel: #ffffff;
+    --card: #f3f3f3;
     --ink: #3b3b3b;
     --muted: #616161;
     --line: #e5e5e5;
@@ -57,6 +60,7 @@ body.vscode-light-modern {
 body.mocha {
     --bg: #181825;
     --panel: #1e1e2e;
+    --card: #292c3c;
     --ink: #cdd6f4;
     --muted: #7f849c;
     --line: #313244;
@@ -93,6 +97,7 @@ body.mocha {
 body.gruvbox {
     --bg: #1d2021;
     --panel: #282828;
+    --card: #32302f;
     --ink: #ebdbb2;
     --muted: #928374;
     --line: #3c3836;
@@ -129,6 +134,7 @@ body.gruvbox {
 body.nord {
     --bg: #2e3440;
     --panel: #3b4252;
+    --card: #434c5e;
     --ink: #eceff4;
     --muted: #8b96aa;
     --line: #434c5e;
@@ -165,6 +171,7 @@ body.nord {
 body.tokyonight {
     --bg: #16161e;
     --panel: #1a1b26;
+    --card: #20222f;
     --ink: #c0caf5;
     --muted: #565f89;
     --line: #292e42;
@@ -209,6 +216,7 @@ body.tokyonight {
 body.rosepine {
     --bg: #191724;
     --panel: #1f1d2e;
+    --card: #232135;
     --ink: #e0def4;
     --muted: #6e6a86;
     --line: #26233a;
@@ -253,6 +261,7 @@ body.rosepine {
 body.everforest {
     --bg: #272e33;
     --panel: #2d353b;
+    --card: #343f44;
     --ink: #d3c6aa;
     --muted: #859289;
     --line: #3d484d;
@@ -297,6 +306,7 @@ body.everforest {
 body.dracula {
     --bg: #21222c;
     --panel: #282a36;
+    --card: #343746;
     --ink: #f8f8f2;
     --muted: #6272a4;
     --line: #44475a;
@@ -341,6 +351,7 @@ body.dracula {
 body.latte {
     --bg: #eff1f5;
     --panel: #ffffff;
+    --card: #e6e9ef;
     --ink: #4c4f69;
     --muted: #7c7f93;
     --line: #ccd0da;
@@ -385,6 +396,7 @@ body.latte {
 body.solarized {
     --bg: #002b36;
     --panel: #073642;
+    --card: #0a3f4c;
     --ink: #93a1a1;
     --muted: #586e75;
     --line: #0b4451;
@@ -429,6 +441,7 @@ body.solarized {
 body.kanagawa {
     --bg: #1f1f28;
     --panel: #2a2a37;
+    --card: #31313f;
     --ink: #dcd7ba;
     --muted: #727169;
     --line: #363646;
@@ -473,6 +486,7 @@ body.kanagawa {
 body.gruvboxlight {
     --bg: #f9f5d7;
     --panel: #fbf1c7;
+    --card: #f2e5bc;
     --ink: #3c3836;
     --muted: #7c6f64;
     --line: #ebdbb2;
@@ -517,6 +531,7 @@ body.gruvboxlight {
 body.synthwave {
     --bg: #241b2f;
     --panel: #2a2139;
+    --card: #34294f;
     --ink: #f4eee4;
     --muted: #848bbd;
     --line: #463465;
@@ -561,6 +576,7 @@ body.synthwave {
 body.tokyoneon {
     --bg: #0f0f17;
     --panel: #16161e;
+    --card: #1c1d2b;
     --ink: #c8d3f5;
     --muted: #636da6;
     --line: #252636;

@@ -142,6 +142,7 @@ describe('the Position Leads view', () => {
         });
         await refetch('leads');
         const body = render(Leads, { props: { instance: instance('leads-one') } }).body;
+        expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('2 live');
         expect(body).toContain('3 expired');
         expect(body).toContain(catalog['sf.leads_search']);

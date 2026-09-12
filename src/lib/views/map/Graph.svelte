@@ -424,7 +424,7 @@
 
     text {
         fill: var(--ink-txt, var(--ink));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         pointer-events: none;
     }
 

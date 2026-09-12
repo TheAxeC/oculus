@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, primitive. A panel-coloured box with a title, a meta row under it, a body and an
+    // Layer 3, primitive. A card-surface box with a title, a meta row under it, a body and an
     // optional footer. It knows no domain: what the chips in the meta row say and what the body
     // holds are the caller's snippets.
     //
@@ -82,7 +82,7 @@
     .card {
         position: relative;
         display: flex;
-        background: var(--panel);
+        background: var(--card);
         border: 1px solid var(--line);
         border-radius: var(--radius);
         box-shadow: var(--shadow);
@@ -142,6 +142,10 @@
         align-items: center;
         gap: 6px;
         margin-top: 6px;
+    }
+
+    .meta :global(.chip) {
+        font-size: var(--fs-xs);
     }
 
     .body {

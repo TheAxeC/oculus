@@ -22,6 +22,7 @@
     import Coverage from './collection/Coverage.svelte';
     import EntryCard from './collection/EntryCard.svelte';
     import EntryForm from './shared/EntryForm.svelte';
+    import Intro from './shared/Intro.svelte';
     import Reveal from './shared/Reveal.svelte';
     import {
         FUNDING,
@@ -138,7 +139,7 @@
 <Pane title={title()} toolbar={tools}>
     <div class="collection" data-instance={instance.id} data-collection={instance.view}>
         {#if collection?.intro}
-            <p class="intro">{@html inlineMarkdown(collection.intro)}</p>
+            <Intro html={inlineMarkdown(collection.intro)} />
         {/if}
 
         {#if facets.length > 0 || unfunded.length > 0}
@@ -236,12 +237,6 @@
 </Pane>
 
 <style>
-    .intro {
-        margin: 0 0 10px;
-        font-size: var(--fs-sm);
-        color: var(--muted-txt, var(--muted));
-    }
-
     .facets,
     .row {
         display: flex;
@@ -262,7 +257,12 @@
         color: var(--accent-txt, var(--accent));
     }
 
-    .said,
+    .said {
+        margin: 0 0 6px;
+        font-size: var(--fs-md);
+        color: var(--muted-txt, var(--muted));
+    }
+
     .sub {
         margin: 0 0 6px;
         font-size: var(--fs-sm);

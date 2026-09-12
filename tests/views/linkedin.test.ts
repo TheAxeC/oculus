@@ -151,6 +151,7 @@ describe('the LinkedIn view', () => {
 
     it('draws on-track, overdue with nudge, and no-date cadence states', async () => {
         const ontrack = await draw('linkedin-ontrack');
+        expect(ontrack).toMatch(/class="intro(?:\s|")/);
         expect(ontrack).toContain('data-cadence="ontrack"');
         expect(ontrack).toContain(catalog['sf.linkedin_ontrack'].replace('{0}', '2'));
 

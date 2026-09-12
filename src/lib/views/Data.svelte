@@ -5,6 +5,7 @@
     import Pane from '$lib/ui/Pane.svelte';
     import Search from '$lib/ui/Search.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import Intro from './shared/Intro.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
     import Reveal from '$lib/views/shared/Reveal.svelte';
     import Facets from '$lib/views/data/Facets.svelte';
@@ -61,12 +62,12 @@
 
 <Pane title={t('views.data')}>
     <div class="data" data-instance={instance.id}>
-        <div class="intro">
-            <p>{@html t('col.ds_intro', allDatasets.length, accessSummary(allDatasets))}</p>
-            {#if collection?.intro}
-                <p>{@html inlineMarkdown(collection.intro)}</p>
-            {/if}
-        </div>
+        <Intro
+            lines={[
+                t('col.ds_intro', allDatasets.length, accessSummary(allDatasets)),
+                ...(collection?.intro ? [inlineMarkdown(collection.intro)] : [])
+            ]}
+        />
 
         <div class="controls">
             <Search
@@ -131,15 +132,10 @@
         min-width: 0;
     }
 
-    .intro,
     .said,
     .empty {
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
-    }
-
-    .intro p {
-        margin: 0 0 6px;
+        font-size: var(--fs-md);
     }
 
     .controls {

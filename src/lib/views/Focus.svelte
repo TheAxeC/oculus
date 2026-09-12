@@ -159,7 +159,7 @@
 
     .said {
         margin: 0;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
         color: var(--accent-txt, var(--accent));
     }
 

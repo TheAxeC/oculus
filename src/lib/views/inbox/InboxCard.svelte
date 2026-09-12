@@ -120,7 +120,11 @@
 </div>
 
 <style>
-    .age,
+    .age {
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-xs);
+    }
+
     .sub {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);

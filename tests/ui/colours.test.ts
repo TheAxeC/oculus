@@ -1,9 +1,9 @@
 // Every colour a component paints is inside the set tests/contrast.test.ts measured.
 //
-// That test walks every `--<x>-txt` on `--bg`, `--panel` and `--chip`, every `--c-<hue>-txt` on its
+// That test walks every `--<x>-txt` on `--bg`, `--panel`, `--card` and `--chip`, every `--c-<hue>-txt` on its
 // own tint, and every `--on-c-<hue>` on `--c-<hue>`, under all seventeen themes. A component that only
 // ever paints text with a `-txt` token or an `--on-` token, and only ever fills with a surface or a
-// hue, can produce only pairs out of that set and the five `--on-<surface>` on `--<surface>` pairs
+// hue, can produce only pairs out of that set and the six `--on-<surface>` on `--<surface>` pairs
 // measured at the foot of this file. It reads the style of every component under ui/, shell/, views/
 // and routes/ and fails on a declaration outside the rule, naming the file, the selector and the
 // declaration.
@@ -45,7 +45,7 @@ const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src');
 const ROOTS = ['lib/ui', 'lib/shell', 'lib/views', 'routes'];
 
 /** Backgrounds a component may name directly. */
-const SURFACES = ['--bg', '--panel', '--chip', '--line', '--accent'];
+const SURFACES = ['--bg', '--panel', '--card', '--chip', '--line', '--accent'];
 
 /** Keywords that are not a colour. */
 const NEUTRAL = ['none', 'transparent', 'initial', 'unset', 'revert'];
@@ -446,6 +446,24 @@ describe('the surfaces a component may fill and paint on', () => {
         }
         expect(measured).toBe(names.length * SURFACES.length);
         expect(failures).toEqual([]);
+    });
+
+    it('defines the card surface in the root and every theme block', () => {
+        expect(
+            Object.entries(blocks)
+                .filter(([, tokens]) => tokens['--panel'] !== undefined)
+                .filter(([, tokens]) => tokens['--card'] === undefined)
+                .map(([name]) => name)
+        ).toEqual([]);
+    });
+
+    it('keeps the card surface distinct from the panel in every resolved theme', () => {
+        expect(
+            names.filter((name) => {
+                const theme = resolveTheme(blocks, themeClass(name));
+                return theme['--card'] === theme['--panel'];
+            })
+        ).toEqual([]);
     });
 });
 

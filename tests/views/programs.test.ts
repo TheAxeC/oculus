@@ -23,9 +23,32 @@ function card(body: string, id: string): string {
     return body.slice(start, end);
 }
 
+function withPillarTypes(types: string[]): Snapshot {
+    const snapshot = fixture();
+    const template = snapshot.entities.projects.alpha;
+    snapshot.entities.projects = Object.fromEntries(
+        types.map((type, index) => {
+            const id = `member-${index}`;
+            return [
+                id,
+                {
+                    ...template,
+                    id,
+                    title: id,
+                    short: id.toUpperCase(),
+                    type,
+                    programIds: ['pillar']
+                }
+            ];
+        })
+    );
+    return snapshot;
+}
+
 describe('the Programs view', () => {
     it('draws the intro, add control, line metrics, prose, edits and project groups', () => {
         const body = html();
+        expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain(catalog['col.programs_intro']);
         expect(body).toContain(catalog['col.add']);
         expect(body).toContain('data-reveal="pillar"');
@@ -36,18 +59,19 @@ describe('the Programs view', () => {
         expect(body).toContain('1 strong');
         expect(body).toContain('A <strong>goal</strong>.');
         expect(body).toContain('Funded by <strong>Tests</strong>.');
-        expect(body).toContain('>1 active</span>');
+        expect(body).toContain('class="label">active</span>');
         expect(body).toContain('aria-expanded="false"');
         expect(body).not.toContain('>ALPHA</span>');
         expect(body).toContain('data-program="dormant"');
         expect(body).toMatch(/data-program="dormant"[^>]*class="[^"]*dormant/);
+        expect(card(body, 'pillar')).toContain('--tone: var(--c-orange)');
     });
 
     it('draws orphan, provisional, off-pillar and archival sections', () => {
         const body = html();
         expect(body).toContain(catalog['col.orphans']);
         expect(body).toContain('1 untagged');
-        expect(body).toContain('>1 manuscript</span>');
+        expect(body).toContain('class="label">manuscript</span>');
         expect(body).toContain('aria-expanded="false"');
         expect(body).not.toContain('>ORPHAN</span>');
         expect(body).toContain(catalog['col.provisional_h']);
@@ -64,6 +88,23 @@ describe('the Programs view', () => {
         expect(card(body, 'candidate')).toContain('class="metrics ');
         expect(card(body, 'candidate')).toContain(catalog['col.in_flight']);
         expect(card(body, 'outside')).not.toContain('class="metrics ');
+    });
+
+    it('breaks a type tie by configured type order regardless of member order', () => {
+        const activeFirst = card(html(withPillarTypes(['active', 'manuscript'])), 'pillar');
+        const manuscriptFirst = card(html(withPillarTypes(['manuscript', 'active'])), 'pillar');
+        expect(activeFirst).toContain('--tone: var(--c-orange)');
+        expect(manuscriptFirst).toContain('--tone: var(--c-orange)');
+    });
+
+    it('uses the majority project type as the pillar tone', () => {
+        const body = html(withPillarTypes(['active', 'manuscript', 'manuscript']));
+        expect(card(body, 'pillar')).toContain('--tone: var(--c-teal)');
+    });
+
+    it('uses grey for a dormant pillar', () => {
+        const body = html(withPillarTypes(['published']));
+        expect(card(body, 'pillar')).toContain('--tone: var(--c-grey)');
     });
 
     it('draws the clean card when every real project names a known line', () => {

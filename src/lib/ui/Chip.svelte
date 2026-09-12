@@ -58,7 +58,7 @@
         border-radius: var(--radius-pill);
         background: var(--chip);
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         white-space: nowrap;
     }
 

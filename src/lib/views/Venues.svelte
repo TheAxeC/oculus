@@ -9,6 +9,7 @@
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
+    import Intro from '$lib/views/shared/Intro.svelte';
     import Reveal from '$lib/views/shared/Reveal.svelte';
     import Facets from '$lib/views/venues/Facets.svelte';
     import Ribbon from '$lib/views/venues/Ribbon.svelte';
@@ -80,6 +81,7 @@
 
 <Pane title={t('views.venues')} toolbar={tools}>
     <div class="venues" data-instance={instance.id}>
+        <Intro html={t('col.venues_intro')} />
         {#if adding && collection?.schema !== undefined}
             <EntryForm
                 collection="venues"
@@ -188,7 +190,7 @@
     .said {
         margin: 8px 0;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .facet-row {

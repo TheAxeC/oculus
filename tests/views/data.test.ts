@@ -164,6 +164,7 @@ describe('the Data view', () => {
         setInstanceState(INSTANCE, { search: '', off: [], reveal: 'open' });
         const html = render(Data, { props: { instance: instance() } }).body;
 
+        expect(html).toMatch(/class="intro(?:\s|")/);
         expect(html).toContain(
             '5 datasets (1 credentialed | 1 open | 1 private | 1 public | 1 registration)'
         );
@@ -196,7 +197,7 @@ describe('the Data view', () => {
         expect(html).toContain('ECG signals');
         expect(html).toContain('Recover from the source.');
         expect(html).toContain('data-project-group="active"');
-        expect(html).toContain('>1 active</span>');
+        expect(html).toContain('class="label">active</span>');
         expect(html).toContain('aria-expanded="false"');
         expect(html).not.toContain('>LP</span>');
         expect(html).toContain('href="https://example.org/open"');

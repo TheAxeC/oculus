@@ -551,7 +551,7 @@ describe('the agents view', () => {
 });
 
 describe('the terminal view with nothing selected', () => {
-    it('offers the three kinds, a directory and the control that starts one', () => {
+    it('offers the three kinds, a directory, the start control and three size controls', () => {
         select(null);
         const body = html(Terminal);
         expect(body).toContain(catalog['sessions.no_terminal']);
@@ -561,6 +561,10 @@ describe('the terminal view with nothing selected', () => {
         expect(body).toContain(catalog['sessions.kind_shell']);
         expect(body).toContain(catalog['sessions.cwd']);
         expect(body).toContain(catalog['sessions.cwd_empty']);
+        expect(body).toContain(catalog['sessions.terminal_smaller']);
+        expect(body).toContain(catalog['sessions.terminal_larger']);
+        expect(body).toContain(catalog['sessions.terminal_reset']);
+        expect(body.match(/class="tool[^"]*compact/g)).toHaveLength(3);
     });
 });
 

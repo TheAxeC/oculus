@@ -7,6 +7,7 @@
     import Search from '$lib/ui/Search.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import Intro from './shared/Intro.svelte';
     import Bucket from './radar/Bucket.svelte';
     import RadarCard from './radar/RadarCard.svelte';
     import Reveal from './shared/Reveal.svelte';
@@ -67,16 +68,13 @@
         {:else if data.error !== undefined}
             <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
         {:else}
-            <p class="intro">
-                <span>{@html t('sf.radar_intro_head')}</span>
-                <span
-                    >{@html t(
-                        'sf.radar_intro_tail',
-                        live.length,
-                        String(lastRun || t('sf.radar_no_date'))
-                    )}</span
-                >
-            </p>
+            <Intro
+                html={`${t('sf.radar_intro_head')} ${t(
+                    'sf.radar_intro_tail',
+                    live.length,
+                    String(lastRun || t('sf.radar_no_date'))
+                )}`}
+            />
 
             {#if said !== ''}
                 <p class="said">{said}</p>
@@ -141,17 +139,8 @@
         gap: 12px;
     }
 
-    .intro,
     .said {
         margin: 0;
-    }
-
-    .intro {
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .intro span + span {
-        margin-left: 6px;
     }
 
     .dismissed {

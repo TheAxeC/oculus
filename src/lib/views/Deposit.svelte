@@ -407,7 +407,7 @@
 
     .mt {
         color: var(--muted-txt);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .grp {
@@ -443,19 +443,19 @@
 
     .none {
         color: var(--muted-txt);
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         margin: 0;
     }
 
     .warn {
         color: var(--c-amber-txt);
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         margin: 0;
     }
 
     .outcome {
         color: var(--ink-txt);
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         margin: 0;
     }
 

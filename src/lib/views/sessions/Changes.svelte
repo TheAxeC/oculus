@@ -458,7 +458,7 @@
         align-items: baseline;
         gap: 6px;
         min-width: 0;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .pa {
@@ -476,14 +476,27 @@
         font-family: var(--font-mono);
     }
 
-    .to,
     .ct,
     .mark,
-    .bin,
-    .none {
+    .bin {
         flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
+    }
+
+    .to {
+        flex: 0 0 auto;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
+    }
+
+    .none {
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-md);
+    }
+
+    .cacts .none {
+        font-size: var(--fs-sm);
     }
 
     .to,
@@ -517,7 +530,7 @@
 
     .outcome {
         margin: 2px 0 0;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
     }
 
     /* The controls sit at the right of a row and are the last thing on it. */
@@ -549,14 +562,15 @@
     }
 
     .branch .lb,
-    .newbranch .lb,
-    .branch .mt {
+    .newbranch .lb {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
     }
 
     .branch .mt {
         margin-left: auto;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
     }
 
     /* The terminal shape: a status listing, in the face git prints it in. */

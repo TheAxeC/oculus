@@ -2,12 +2,14 @@
     // Layer 3, shared view partial. Project cross-links grouped by type, with each member opening
     // the existing project tab. Programs and Domains use the same compact presentation.
 
+    import Disclosure from '$lib/ui/Disclosure.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { groupProjects, type CrossGroup, type Project } from '$lib/state/collection';
     import { openView } from '$lib/state/layout.svelte';
 
-    type Props =
+    type Source =
         { projects: Project[]; groups?: never } | { projects?: never; groups: CrossGroup[] };
+    type Props = Source;
 
     let { projects, groups }: Props = $props();
     const shown = $derived(groups ?? groupProjects(projects ?? []));
@@ -28,9 +30,9 @@
 <div class="groups">
     {#each shown as group (group.type)}
         <div class="group" data-project-group={group.type}>
-            <ToolButton
-                label={`${group.count} ${group.type}`}
-                active={isOpen(group.type)}
+            <Disclosure
+                count={group.count}
+                label={group.type}
                 expanded={isOpen(group.type)}
                 onclick={() => toggle(group.type)}
             />

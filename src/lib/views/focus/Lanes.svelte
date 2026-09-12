@@ -329,7 +329,7 @@
 
     .hint {
         margin: 6px 0 0;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -398,7 +398,7 @@
 
     .lane-sub {
         margin: 2px 0 6px;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -451,7 +451,7 @@
     .flames {
         display: inline-flex;
         flex: 0 0 auto;
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         line-height: 1;
     }
 
@@ -493,7 +493,7 @@
     .wait,
     .next {
         margin: 2px 0 0;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 </style>

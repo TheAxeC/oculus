@@ -456,7 +456,7 @@
     .failure {
         margin: 0;
         color: var(--c-red-txt, var(--ink));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .row .menu {
@@ -497,7 +497,7 @@
     }
 
     .hide .confirm {
-        font-size: var(--fs-xxs);
+        font-size: var(--fs-xs);
         text-transform: uppercase;
         letter-spacing: 0.04em;
     }
@@ -577,13 +577,17 @@
     .meta {
         flex-wrap: wrap;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .meta .act {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
+    }
+
+    .meta .ts {
+        font-size: var(--fs-xs);
     }
 
     .sep {
@@ -624,7 +628,7 @@
         background: none;
         color: var(--muted-txt, var(--muted));
         font: inherit;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         text-align: left;
         padding: 4px 0;
         cursor: pointer;

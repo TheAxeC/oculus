@@ -555,7 +555,7 @@
 
     .sub {
         margin: 6px 0 2px;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 </style>

@@ -18,7 +18,8 @@
         type TierRow,
         type Venue
     } from '$lib/state/lines';
-    import { toneOf } from '$lib/state/tones';
+    import { toneOf, typeTone, UNKNOWN_TONE } from '$lib/state/tones';
+    import { configMap } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
 
     type Props = {
@@ -51,6 +52,37 @@
     const funding = $derived(
         typeof entry?.fields.funding === 'string' ? entry.fields.funding : undefined
     );
+    const tone = $derived.by(() => {
+        if (isDormant(projects)) return UNKNOWN_TONE;
+        const counts = new Map<string, number>();
+        for (const project of projects) {
+            const type = (project.type ?? '').toLowerCase();
+            counts.set(type, (counts.get(type) ?? 0) + 1);
+        }
+        // A tie between types breaks by the vocabulary's own order of types, `type_order`, and by
+        // the colour table's order when the config names none.
+        const held = configMap();
+        const listed = Array.isArray(held.type_order)
+            ? held.type_order.filter((type): type is string => typeof type === 'string')
+            : [];
+        const colours = held.type_color;
+        const order =
+            listed.length > 0
+                ? listed
+                : typeof colours === 'object' && colours !== null && !Array.isArray(colours)
+                  ? Object.keys(colours)
+                  : [];
+        const rank = new Map(order.map((type, index) => [type.toLowerCase(), index]));
+        const winner = [...counts].sort(([left, leftCount], [right, rightCount]) => {
+            if (leftCount !== rightCount) return rightCount - leftCount;
+            const byConfig =
+                (rank.get(left) ?? Number.MAX_SAFE_INTEGER) -
+                (rank.get(right) ?? Number.MAX_SAFE_INTEGER);
+            if (byConfig !== 0) return byConfig;
+            return left < right ? -1 : left > right ? 1 : 0;
+        })[0]?.[0];
+        return typeTone(winner ?? '');
+    });
 
     function projectWord(): string {
         return projects.length === 1 ? t('col.project') : t('col.projects');
@@ -58,7 +90,7 @@
 </script>
 
 <div class:dormant={isDormant(projects)} class:muted data-program={line.id}>
-    <Card title={line.title} titleHtml={inlineMarkdown(line.title)}>
+    <Card title={line.title} titleHtml={inlineMarkdown(line.title)} {tone}>
         {#snippet meta()}
             <Chip label={`${projects.length} ${projectWord()}`} />
             {#if entry !== null && schema !== undefined}

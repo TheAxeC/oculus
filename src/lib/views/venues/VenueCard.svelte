@@ -169,10 +169,14 @@
     }
 
     .meta,
-    .users,
-    .wants {
+    .users {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
+    }
+
+    .wants {
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-md);
     }
 
     .meta .sep {

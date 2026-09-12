@@ -1,6 +1,6 @@
 /* The palette, ported from the cockpit's assets/css/01-base.css :root block, values unchanged.
    Two layers of colour:
-     - chrome  (--bg/--panel/--ink/--muted/--line/--chip/--accent/--shadow), the surfaces;
+     - chrome  (--bg/--panel/--card/--ink/--muted/--line/--chip/--accent/--shadow), the surfaces;
      - palette (--c-*), the status hues shared by the sheets and the config vocabulary.
    A theme is a block of overrides on these tokens and never a per-rule edit; themes.css holds the
    sixteen blocks. Every colour a component uses resolves through a token here, so the contrast test
@@ -9,6 +9,7 @@
 :root {
     --bg: #f1f5f9;
     --panel: #fff;
+    --card: #f1f5f9;
     --ink: #0f172a;
     --muted: #64748b;
     --line: #e2e8f0;
