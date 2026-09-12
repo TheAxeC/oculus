@@ -8,7 +8,7 @@ export type { Project };
 export type RadarEntry = Record<string, unknown>;
 export type RadarBucket = { key: string; glyph: string; label: string; color: string };
 export type RadarGroup = { bucket: RadarBucket; entries: RadarEntry[] };
-export type RadarState = { search: string; dismissedOpen: boolean };
+export type RadarState = { search: string; dismissedOpen: boolean; reveal?: string };
 
 /** Valid bucket rows from the merged vocabulary, preserving its order. */
 export function radarBuckets(raw: unknown): RadarBucket[] {
@@ -115,8 +115,10 @@ export function parseRadarState(raw: unknown): RadarState {
         return { search: '', dismissedOpen: false };
     }
     const held = raw as Record<string, unknown>;
-    return {
+    const state: RadarState = {
         search: typeof held.search === 'string' ? held.search : '',
         dismissedOpen: held.dismissedOpen === true
     };
+    if (typeof held.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
+    return state;
 }

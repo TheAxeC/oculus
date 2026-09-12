@@ -119,6 +119,15 @@ describe('the rail, drawn', () => {
         expect(body).toContain('>Smaller</p>');
         for (const id of SMALL) expect(count(body, `data-view="${id}"`)).toBe(1);
     });
+
+    it('draws the search and update controls from the catalog', () => {
+        expect(body).toContain('data-action="search"');
+        expect(body).toContain('data-action="update"');
+        expect(body).toContain(`aria-label="${catalog['app.search']}"`);
+        expect(body).toContain(`aria-label="${catalog['js.tasks.update_tasks']}"`);
+        expect(body).toContain(catalog['app.search_tip']);
+        expect(body).toContain(catalog['app.update_tip']);
+    });
 });
 
 describe('a rail badge', () => {

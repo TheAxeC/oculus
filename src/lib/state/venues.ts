@@ -21,6 +21,7 @@ export type VenuesState = {
     off: string[];
     journalsOpen: boolean;
     conferencesOpen: boolean;
+    reveal?: string;
 };
 
 const MONTHS = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
@@ -163,12 +164,14 @@ export function parseVenuesState(raw: unknown): VenuesState {
     };
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return fallback;
     const held = raw as Record<string, unknown>;
-    return {
+    const state: VenuesState = {
         search: typeof held.search === 'string' ? held.search : '',
         off: strings(held.off),
         journalsOpen: typeof held.journalsOpen === 'boolean' ? held.journalsOpen : true,
         conferencesOpen: typeof held.conferencesOpen === 'boolean' ? held.conferencesOpen : true
     };
+    if (typeof held.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
+    return state;
 }
 
 export type { Project, Venue } from '../data/model.ts';

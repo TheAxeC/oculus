@@ -14,8 +14,10 @@
     import ActivityRail, { type Bookmark, type NavGroup } from './ActivityRail.svelte';
     import DropLayer from './DropLayer.svelte';
     import PageStrip, { type Arrangement } from './PageStrip.svelte';
+    import Palette from './Palette.svelte';
     import PaneView from './PaneView.svelte';
     import SplitView from './SplitView.svelte';
+    import UpdateTray from './UpdateTray.svelte';
     import Sash, { SASH_PX } from '$lib/ui/Sash.svelte';
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
     import {
@@ -57,6 +59,9 @@
     let { groups = [], bookmarks = [], arrangements = [], waiting = 0 }: Props = $props();
 
     let area: HTMLDivElement | undefined = $state(undefined);
+    let paletteOpen = $state(false);
+    let palettePrefill = $state('');
+    let updateOpen = $state(false);
 
     const dock = $derived(dockedAt());
     const share = $derived(panelSize());
@@ -77,6 +82,34 @@
      * which is why the shortcut is Ctrl and a held Cmd is refused.
      */
     function keys(event: KeyboardEvent): void {
+        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
+            event.preventDefault();
+            if (paletteOpen) paletteOpen = false;
+            else openPalette('');
+            return;
+        }
+        if (event.key === 'Escape' && paletteOpen) {
+            event.preventDefault();
+            paletteOpen = false;
+            return;
+        }
+        if (event.key === 'Escape' && updateOpen) {
+            event.preventDefault();
+            updateOpen = false;
+            return;
+        }
+        if (
+            event.key === ':' &&
+            !paletteOpen &&
+            !event.metaKey &&
+            !event.ctrlKey &&
+            !event.altKey &&
+            !typingIn(event.target)
+        ) {
+            event.preventDefault();
+            openPalette(':');
+            return;
+        }
         if (event.ctrlKey && !event.metaKey && /^[1-9]$/.test(event.key)) {
             if (pageShortcut(Number(event.key))) event.preventDefault();
             return;
@@ -85,6 +118,27 @@
         if (dragging() !== null || focus === null) return;
         event.preventDefault();
         restorePanes();
+    }
+
+    /** Whether a colon belongs to a field rather than to the workbench command palette. */
+    function typingIn(target: EventTarget | null): boolean {
+        if (!(target instanceof HTMLElement)) return false;
+        return (
+            target.matches('input, textarea, select') ||
+            target.isContentEditable ||
+            target.closest('[contenteditable="true"]') !== null
+        );
+    }
+
+    function openPalette(prefill: string): void {
+        updateOpen = false;
+        palettePrefill = prefill;
+        paletteOpen = true;
+    }
+
+    function openUpdate(): void {
+        paletteOpen = false;
+        updateOpen = true;
     }
 
     /** The wallpaper is drawn when the viewer wants one and the theme is one it shows under. */
@@ -145,7 +199,7 @@
              negative depth paints over the page's own background and under every panel. -->
         <div class="wallpaper" style={image}></div>
     {/if}
-    <ActivityRail {groups} {bookmarks} />
+    <ActivityRail {groups} {bookmarks} onsearch={() => openPalette('')} onupdate={openUpdate} />
     <div class="column">
         <PageStrip {arrangements} />
         <div class="area {direction}" bind:this={area}>
@@ -191,6 +245,13 @@
     </div>
 </div>
 <DropLayer />
+<Palette
+    open={paletteOpen}
+    prefill={palettePrefill}
+    onclose={() => (paletteOpen = false)}
+    onupdate={openUpdate}
+/>
+<UpdateTray open={updateOpen} onclose={() => (updateOpen = false)} />
 
 <style>
     .workbench {

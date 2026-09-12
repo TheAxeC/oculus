@@ -48,6 +48,9 @@ export type TerminalAnswer = {
     error: string;
 };
 
+/** The four unattended update skills accepted by the server's task action. */
+export type TaskKind = 'litwatch' | 'scout' | 'linkedin' | 'inbox';
+
 /** What a `pty:` subscriber is handed: the decoded bytes, and whether they are the scrollback. */
 export type PtyListener = (bytes: Uint8Array, scrollback: boolean) => void;
 
@@ -148,6 +151,15 @@ export async function recoverDataset(
     rows: number = ROWS
 ): Promise<TerminalAnswer> {
     return post({ action: 'recover', key, cols, rows });
+}
+
+/** Start one update skill as a Claude terminal; the server supplies its argv and hub directory. */
+export async function startTask(
+    kind: TaskKind,
+    cols: number = COLS,
+    rows: number = ROWS
+): Promise<TerminalAnswer> {
+    return post({ action: 'task', kind, cols, rows });
 }
 
 /**

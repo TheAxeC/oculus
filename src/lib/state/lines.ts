@@ -12,6 +12,25 @@ const FLIGHT = ['active', 'manuscript'];
 export type TierRow = { key: string; label: string; color?: string };
 export type TierCount = TierRow & { count: number };
 export type ArchiveGroup = { type: string; count: number; projects: Project[] };
+export type ProgramsState = { reveal?: string };
+export type DomainsState = { reveal?: string };
+
+/** The optional palette destination shared by the two registry-line views. */
+function parseRevealState(raw: unknown): { reveal?: string } {
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
+    const reveal = (raw as Record<string, unknown>).reveal;
+    return typeof reveal === 'string' && reveal !== '' ? { reveal } : {};
+}
+
+/** Saved state of one Programs instance. */
+export function parseProgramsState(raw: unknown): ProgramsState {
+    return parseRevealState(raw);
+}
+
+/** Saved state of one Domains instance. */
+export function parseDomainsState(raw: unknown): DomainsState {
+    return parseRevealState(raw);
+}
 
 /** Real projects that name one research line, preserving project order. */
 export function lineMembers(line: Program, projects: Project[], dead: string[] = []): Project[] {

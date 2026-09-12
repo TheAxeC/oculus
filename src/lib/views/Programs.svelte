@@ -5,12 +5,20 @@
     import Pane from '$lib/ui/Pane.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
+    import Reveal from '$lib/views/shared/Reveal.svelte';
     import ArchivalCard from '$lib/views/programs/ArchivalCard.svelte';
     import LineCard from '$lib/views/programs/LineCard.svelte';
     import OrphansCard from '$lib/views/programs/OrphansCard.svelte';
     import { inlineMarkdown } from '$lib/state/collection';
     import { portfolio } from '$lib/state/entities.svelte';
-    import { archival, lineMembers, orphans, type TierRow } from '$lib/state/lines';
+    import {
+        archival,
+        lineMembers,
+        orphans,
+        parseProgramsState,
+        type ProgramsState,
+        type TierRow
+    } from '$lib/state/lines';
     import {
         archiveDead,
         collectionOf,
@@ -19,9 +27,11 @@
         venues
     } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
+    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
 
     let { instance }: ViewProps = $props();
+    const held = $derived(parseProgramsState(instanceState(instance.id)));
     const collection = $derived(collectionOf('programs'));
     const lines = $derived.by(() => {
         const entities = Object.values(portfolio()?.entities.programs ?? {});
@@ -61,6 +71,10 @@
     let editing = $state<string | null>(null);
     let said = $state('');
 
+    function write(next: Partial<ProgramsState>): void {
+        setInstanceState(instance.id, { ...held, ...next });
+    }
+
     function entryFor(id: string) {
         return collection?.entries.find((entry) => entry.id === id) ?? null;
     }
@@ -94,17 +108,19 @@
 
         <div class="cards">
             {#each pillars as line (line.id)}
-                <LineCard
-                    {line}
-                    projects={lineMembers(line, allProjects, dead)}
-                    venues={allVenues}
-                    {tiers}
-                    entry={entryFor(line.id)}
-                    schema={collection?.schema}
-                    editing={editing === line.id}
-                    onedit={() => (editing = editing === line.id ? null : line.id)}
-                    onsaid={(words) => (said = words)}
-                />
+                <Reveal id={line.id} wanted={held.reveal} onrevealed={() => write({ reveal: '' })}>
+                    <LineCard
+                        {line}
+                        projects={lineMembers(line, allProjects, dead)}
+                        venues={allVenues}
+                        {tiers}
+                        entry={entryFor(line.id)}
+                        schema={collection?.schema}
+                        editing={editing === line.id}
+                        onedit={() => (editing = editing === line.id ? null : line.id)}
+                        onsaid={(words) => (said = words)}
+                    />
+                </Reveal>
             {/each}
             <OrphansCard projects={unmatched} />
         </div>
@@ -115,17 +131,23 @@
                 <p class="note">{@html inlineMarkdown(t('col.provisional_note'))}</p>
                 <div class="cards">
                     {#each provisional as line (line.id)}
-                        <LineCard
-                            {line}
-                            projects={lineMembers(line, allProjects, dead)}
-                            venues={allVenues}
-                            {tiers}
-                            entry={entryFor(line.id)}
-                            schema={collection?.schema}
-                            editing={editing === line.id}
-                            onedit={() => (editing = editing === line.id ? null : line.id)}
-                            onsaid={(words) => (said = words)}
-                        />
+                        <Reveal
+                            id={line.id}
+                            wanted={held.reveal}
+                            onrevealed={() => write({ reveal: '' })}
+                        >
+                            <LineCard
+                                {line}
+                                projects={lineMembers(line, allProjects, dead)}
+                                venues={allVenues}
+                                {tiers}
+                                entry={entryFor(line.id)}
+                                schema={collection?.schema}
+                                editing={editing === line.id}
+                                onedit={() => (editing = editing === line.id ? null : line.id)}
+                                onsaid={(words) => (said = words)}
+                            />
+                        </Reveal>
                     {/each}
                 </div>
             </section>
@@ -137,18 +159,24 @@
                 <p class="note">{@html inlineMarkdown(t('col.offpillar_note'))}</p>
                 <div class="cards">
                     {#each offpillar as line (line.id)}
-                        <LineCard
-                            {line}
-                            projects={lineMembers(line, allProjects, dead)}
-                            venues={allVenues}
-                            {tiers}
-                            entry={entryFor(line.id)}
-                            schema={collection?.schema}
-                            muted
-                            editing={editing === line.id}
-                            onedit={() => (editing = editing === line.id ? null : line.id)}
-                            onsaid={(words) => (said = words)}
-                        />
+                        <Reveal
+                            id={line.id}
+                            wanted={held.reveal}
+                            onrevealed={() => write({ reveal: '' })}
+                        >
+                            <LineCard
+                                {line}
+                                projects={lineMembers(line, allProjects, dead)}
+                                venues={allVenues}
+                                {tiers}
+                                entry={entryFor(line.id)}
+                                schema={collection?.schema}
+                                muted
+                                editing={editing === line.id}
+                                onedit={() => (editing = editing === line.id ? null : line.id)}
+                                onsaid={(words) => (said = words)}
+                            />
+                        </Reveal>
                     {/each}
                     {#if archived.length > 0}
                         <ArchivalCard groups={archived} />

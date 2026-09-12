@@ -1,4 +1,4 @@
-// The page's end of a terminal: the four posts to /api/terminal, the two messages it writes on the
+// The page's end of a terminal: the posts to /api/terminal, the two messages it writes on the
 // socket, and what a `pty:` channel does that no other channel does.
 //
 // Nothing here opens a socket or a connection: `WebSocket` is a stub that records what was written
@@ -21,6 +21,7 @@ import {
     resizeTerminal,
     sendInput,
     sendResize,
+    startTask,
     startTerminal,
     stopTerminal,
     subscribePty,
@@ -227,6 +228,18 @@ describe('the four actions of /api/terminal', () => {
         expect(lastBody()).toEqual({
             action: 'recover',
             key: 'mimic-iv',
+            cols: 96,
+            rows: 28
+        });
+    });
+
+    it('starts an update task without sending a command or directory from the page', async () => {
+        serving(200, { ok: true, terminal: terminal({ id: 'ffee00-claude' }) });
+        const answer = await startTask('litwatch', 96, 28);
+        expect(answer).toEqual({ ok: true, id: 'ffee00-claude', error: '' });
+        expect(lastBody()).toEqual({
+            action: 'task',
+            kind: 'litwatch',
             cols: 96,
             rows: 28
         });

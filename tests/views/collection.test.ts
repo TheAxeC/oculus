@@ -374,6 +374,14 @@ describe('a collection the snapshot does not carry', () => {
     });
 });
 
+describe('a palette reveal', () => {
+    it('keeps the target id in instance state and marks the matching card for the mount effect', () => {
+        const body = html('events', { reveal: 'A visit' });
+        expect(body).toContain('data-reveal="A visit"');
+        expect(body).toContain('data-reveal="A talk"');
+    });
+});
+
 describe('the controls a card carries', () => {
     const card = cards(html())[0];
 

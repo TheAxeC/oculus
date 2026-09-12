@@ -6,6 +6,8 @@ export type InboxKind = 'reply' | 'action' | 'info';
 export type InboxState = {
     search: string;
     triagedOpen: boolean;
+    /** The palette destination, cleared by the view after it scrolls and flashes the card. */
+    reveal?: string;
 };
 export type SplitInbox = {
     replies: InboxEntry[];
@@ -71,8 +73,10 @@ export function inboxSearch(entries: InboxEntry[], search: string): InboxEntry[]
 /** Read search and the triaged disclosure from one view instance. */
 export function parseInboxState(raw: unknown): InboxState {
     const held = record(raw);
-    return {
+    const state: InboxState = {
         search: typeof held?.search === 'string' ? held.search : '',
         triagedOpen: held?.triagedOpen === true
     };
+    if (typeof held?.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
+    return state;
 }

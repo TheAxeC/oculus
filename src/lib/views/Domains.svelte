@@ -6,14 +6,17 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import DomainCard from '$lib/views/domains/DomainCard.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
+    import Reveal from '$lib/views/shared/Reveal.svelte';
     import { inlineMarkdown } from '$lib/state/collection';
     import { portfolio } from '$lib/state/entities.svelte';
-    import { domainMembers } from '$lib/state/lines';
+    import { domainMembers, parseDomainsState, type DomainsState } from '$lib/state/lines';
     import { archiveDead, collectionOf, projects } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
+    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
 
     let { instance }: ViewProps = $props();
+    const held = $derived(parseDomainsState(instanceState(instance.id)));
     const collection = $derived(collectionOf('domains'));
     const domains = $derived.by(() => {
         const entities = Object.values(portfolio()?.entities.domains ?? {});
@@ -34,6 +37,10 @@
     let adding = $state(false);
     let editing = $state<string | null>(null);
     let said = $state('');
+
+    function write(next: Partial<DomainsState>): void {
+        setInstanceState(instance.id, { ...held, ...next });
+    }
     function entryFor(id: string) {
         return collection?.entries.find((entry) => entry.id === id) ?? null;
     }
@@ -69,16 +76,22 @@
         {:else}
             <div class="cards">
                 {#each shown as item (item.domain.id)}
-                    <DomainCard
-                        domain={item.domain}
-                        projects={item.projects}
-                        entry={entryFor(item.domain.id)}
-                        schema={collection?.schema}
-                        editing={editing === item.domain.id}
-                        onedit={() =>
-                            (editing = editing === item.domain.id ? null : item.domain.id)}
-                        onsaid={(words) => (said = words)}
-                    />
+                    <Reveal
+                        id={item.domain.id}
+                        wanted={held.reveal}
+                        onrevealed={() => write({ reveal: '' })}
+                    >
+                        <DomainCard
+                            domain={item.domain}
+                            projects={item.projects}
+                            entry={entryFor(item.domain.id)}
+                            schema={collection?.schema}
+                            editing={editing === item.domain.id}
+                            onedit={() =>
+                                (editing = editing === item.domain.id ? null : item.domain.id)}
+                            onsaid={(words) => (said = words)}
+                        />
+                    </Reveal>
                 {/each}
             </div>
         {/if}

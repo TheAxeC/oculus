@@ -13,7 +13,7 @@ function html(empty = false): string {
     const snapshot = fixture();
     if (empty) snapshot.entities.projects = {};
     install(snapshot, empty ? 2403 : 2402);
-    setInstanceState(INSTANCE, {});
+    setInstanceState(INSTANCE, { reveal: 'heart' });
     const instance: Instance = { id: INSTANCE, view: 'domains', state: {} };
     return render(Domains, { props: { instance } }).body;
 }
@@ -23,6 +23,7 @@ describe('the Domains view', () => {
         const body = html();
         expect(body).toContain(catalog['col.domains_intro']);
         expect(body).toContain(catalog['col.add']);
+        expect(body).toContain('data-reveal="heart"');
         expect(body).toContain('Heart <strong>domain</strong>');
         expect(body).toContain(`2 ${catalog['col.projects']}`);
         expect(body).toContain('Heart blurb.');

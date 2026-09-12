@@ -9,6 +9,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import LeadCard from './leads/LeadCard.svelte';
     import EntryForm from './shared/EntryForm.svelte';
+    import Reveal from './shared/Reveal.svelte';
     import { inlineMarkdown } from '$lib/state/collection';
     import { config } from '$lib/state/entities.svelte';
     import { feed } from '$lib/state/feeds.svelte';
@@ -20,6 +21,7 @@
         type LeadsState
     } from '$lib/state/leads';
     import { t } from '$lib/state/text';
+    import { feedIdentity } from '$lib/state/palette';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import { addLead } from '$lib/state/writes.svelte';
     import type { ViewProps } from './registry';
@@ -102,7 +104,13 @@
             {#if live.length > 0}
                 <div class="cards">
                     {#each live as entry, at (`${String(entry.title ?? '')}:${at}`)}
-                        <LeadCard {entry} {vocab} onsaid={(words) => (said = words)} />
+                        <Reveal
+                            id={feedIdentity('leads', entry)}
+                            wanted={held.reveal}
+                            onrevealed={() => write({ reveal: '' })}
+                        >
+                            <LeadCard {entry} {vocab} onsaid={(words) => (said = words)} />
+                        </Reveal>
                     {/each}
                 </div>
             {:else if split.live.length === 0}
@@ -121,12 +129,18 @@
                     {#if held.expiredOpen}
                         <div class="cards">
                             {#each expired as entry, at (`${String(entry.title ?? '')}:${at}`)}
-                                <LeadCard
-                                    {entry}
-                                    {vocab}
-                                    expired
-                                    onsaid={(words) => (said = words)}
-                                />
+                                <Reveal
+                                    id={feedIdentity('leads', entry)}
+                                    wanted={held.reveal}
+                                    onrevealed={() => write({ reveal: '' })}
+                                >
+                                    <LeadCard
+                                        {entry}
+                                        {vocab}
+                                        expired
+                                        onsaid={(words) => (said = words)}
+                                    />
+                                </Reveal>
                             {/each}
                         </div>
                     {/if}

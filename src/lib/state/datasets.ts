@@ -5,7 +5,7 @@ import { dataAccessTone } from './tones.ts';
 import type { Dataset } from '../data/model.ts';
 
 export type ThemeFacet = { theme: string; label: string; count: number };
-export type DataState = { search: string; off: string[] };
+export type DataState = { search: string; off: string[]; reveal?: string };
 
 function strings(value: unknown): string[] {
     return Array.isArray(value)
@@ -83,10 +83,12 @@ export function parseDataState(raw: unknown): DataState {
         return { search: '', off: [] };
     }
     const held = raw as Record<string, unknown>;
-    return {
+    const state: DataState = {
         search: typeof held.search === 'string' ? held.search : '',
         off: strings(held.off)
     };
+    if (typeof held.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
+    return state;
 }
 
 export type { Dataset } from '../data/model.ts';

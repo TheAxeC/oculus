@@ -4,13 +4,13 @@
 // Nothing here runs tmux, `claude` or `codex`. handleTerminal is called with an options bag holding
 // a `run` that records the argv and answers the list itself, and a `recordFor` the test owns instead
 // of the bridge to the last published payload, so no session store, no registry and no hub is read.
-// The only real path any case touches is the temporary directory, and only to have statSync say it
-// is there.
+// The only real path any case touches is the temporary directory: to have statSync say it is there,
+// and, for the task cases, to hold a local.yml the route reads and that afterAll removes.
 
-import { existsSync } from 'node:fs';
+import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { handleTerminal, type TerminalOptions } from '../../src/lib/server/pty/routes.ts';
 import { record } from '../sessions-fixture.ts';
 import type { SessionRecord } from '../../src/lib/data/model.ts';
@@ -30,6 +30,18 @@ expect(HERE.length).toBeGreaterThan(1);
 const GONE = join(HERE, 'oculus-no-such-directory-for-o19');
 expect(GONE.startsWith(HERE + sep)).toBe(true);
 expect(existsSync(GONE)).toBe(false);
+
+const TASK_CONFIG = mkdtempSync(join(HERE, 'oculus-task-route-'));
+expect(resolve(TASK_CONFIG).startsWith(HERE + sep)).toBe(true);
+const TASK_LOCAL = join(TASK_CONFIG, 'local.yml');
+writeFileSync(TASK_LOCAL, `hub: ${HERE}\nclaude_bin: /opt/Claude CLI/claude\n`);
+const TASK_DEFAULT_LOCAL = join(TASK_CONFIG, 'default.yml');
+writeFileSync(TASK_DEFAULT_LOCAL, `hub: ${HERE}\n`);
+
+afterAll(() => {
+    delete process.env.OCULUS_LOCAL;
+    rmSync(TASK_CONFIG, { recursive: true, force: true });
+});
 
 /**
  * A tmux that runs nothing: it keeps every argv, remembers what set-option was told, and answers
@@ -259,5 +271,54 @@ describe('POST /api/terminal, the recover action', () => {
         expect(response.status).toBe(400);
         expect((await answer(response)).error).toBe('key is not a valid dataset key');
         expect(driver.calls).toEqual([]);
+    });
+});
+
+describe('POST /api/terminal, the task action', () => {
+    it('starts every accepted task in the hub with the configured Claude binary and fixed argv', async () => {
+        process.env.OCULUS_LOCAL = TASK_LOCAL;
+        for (const kind of ['litwatch', 'scout', 'linkedin', 'inbox']) {
+            const driver = tmux();
+            const response = await handleTerminal(
+                request({ action: 'task', kind, cols: 92, rows: 27 }),
+                TOKEN,
+                { run: driver.run }
+            );
+            expect(response.status).toBe(200);
+            const terminal = (await answer(response)).terminal as { name: string };
+            expect(terminal.name).toBe(`task ${kind}`);
+            const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
+            expect(started[started.indexOf('-c') + 1]).toBe(HERE);
+            expect(started[started.indexOf('-x') + 1]).toBe('92');
+            expect(started[started.indexOf('-y') + 1]).toBe('27');
+            expect(started[started.length - 1]).toBe(
+                `'/opt/Claude CLI/claude' '-p' '--output-format' 'stream-json' '--verbose' '--include-partial-messages' '--dangerously-skip-permissions' '/research-cockpit ${kind}'`
+            );
+        }
+    });
+
+    it('refuses another task kind without starting a terminal', async () => {
+        process.env.OCULUS_LOCAL = TASK_LOCAL;
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({ action: 'task', kind: 'audit', cols: 80, rows: 24 }),
+            TOKEN,
+            { run: driver.run }
+        );
+        expect(response.status).toBe(400);
+        expect(driver.calls).toEqual([]);
+    });
+
+    it('uses Claude from PATH when local configuration names no binary', async () => {
+        process.env.OCULUS_LOCAL = TASK_DEFAULT_LOCAL;
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({ action: 'task', kind: 'scout', cols: 80, rows: 24 }),
+            TOKEN,
+            { run: driver.run }
+        );
+        expect(response.status).toBe(200);
+        const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
+        expect(started[started.length - 1]).toMatch(/^'claude' '-p'/);
     });
 });

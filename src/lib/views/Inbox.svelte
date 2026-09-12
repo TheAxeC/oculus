@@ -10,6 +10,7 @@
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import InboxCard from './inbox/InboxCard.svelte';
+    import Reveal from './shared/Reveal.svelte';
     import { feed } from '$lib/state/feeds.svelte';
     import {
         inboxSearch,
@@ -19,6 +20,7 @@
         type InboxState
     } from '$lib/state/inbox';
     import { t } from '$lib/state/text';
+    import { feedIdentity } from '$lib/state/palette';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
 
@@ -56,7 +58,13 @@
             <h3>{label} ({entries.length})</h3>
             <div class="cards">
                 {#each entries as entry, at (`${String(entry.id ?? '')}:${at}`)}
-                    <InboxCard {entry} onsaid={(words) => (said = words)} />
+                    <Reveal
+                        id={feedIdentity('inbox', entry)}
+                        wanted={held.reveal}
+                        onrevealed={() => write({ reveal: '' })}
+                    >
+                        <InboxCard {entry} onsaid={(words) => (said = words)} />
+                    </Reveal>
                 {/each}
             </div>
         </section>
@@ -109,7 +117,13 @@
                     {#if held.triagedOpen && triaged.length > 0}
                         <div class="cards">
                             {#each triaged as entry, at (`${String(entry.id ?? '')}:${at}`)}
-                                <InboxCard {entry} triaged onsaid={(words) => (said = words)} />
+                                <Reveal
+                                    id={feedIdentity('inbox', entry)}
+                                    wanted={held.reveal}
+                                    onrevealed={() => write({ reveal: '' })}
+                                >
+                                    <InboxCard {entry} triaged onsaid={(words) => (said = words)} />
+                                </Reveal>
                             {/each}
                         </div>
                     {/if}

@@ -9,6 +9,7 @@
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
+    import Reveal from '$lib/views/shared/Reveal.svelte';
     import Facets from '$lib/views/venues/Facets.svelte';
     import Ribbon from '$lib/views/venues/Ribbon.svelte';
     import VenueCard from '$lib/views/venues/VenueCard.svelte';
@@ -115,17 +116,23 @@
                         <div class="cards">
                             {#each journals as venue (venue.id)}
                                 {@const use = venueUsers(venue, allProjects)}
-                                <VenueCard
-                                    {venue}
-                                    projects={use.projects}
-                                    concentrated={use.concentrated}
-                                    entry={entryFor(venue.id)}
-                                    schema={collection?.schema}
-                                    editing={editing === venue.id}
-                                    onedit={() =>
-                                        (editing = editing === venue.id ? null : venue.id)}
-                                    onsaid={(words) => (said = words)}
-                                />
+                                <Reveal
+                                    id={venue.id}
+                                    wanted={held.reveal}
+                                    onrevealed={() => write({ reveal: '' })}
+                                >
+                                    <VenueCard
+                                        {venue}
+                                        projects={use.projects}
+                                        concentrated={use.concentrated}
+                                        entry={entryFor(venue.id)}
+                                        schema={collection?.schema}
+                                        editing={editing === venue.id}
+                                        onedit={() =>
+                                            (editing = editing === venue.id ? null : venue.id)}
+                                        onsaid={(words) => (said = words)}
+                                    />
+                                </Reveal>
                             {/each}
                         </div>
                     {/if}
@@ -147,17 +154,23 @@
                         <div class="cards">
                             {#each conferences as venue (venue.id)}
                                 {@const use = venueUsers(venue, allProjects)}
-                                <VenueCard
-                                    {venue}
-                                    projects={use.projects}
-                                    concentrated={use.concentrated}
-                                    entry={entryFor(venue.id)}
-                                    schema={collection?.schema}
-                                    editing={editing === venue.id}
-                                    onedit={() =>
-                                        (editing = editing === venue.id ? null : venue.id)}
-                                    onsaid={(words) => (said = words)}
-                                />
+                                <Reveal
+                                    id={venue.id}
+                                    wanted={held.reveal}
+                                    onrevealed={() => write({ reveal: '' })}
+                                >
+                                    <VenueCard
+                                        {venue}
+                                        projects={use.projects}
+                                        concentrated={use.concentrated}
+                                        entry={entryFor(venue.id)}
+                                        schema={collection?.schema}
+                                        editing={editing === venue.id}
+                                        onedit={() =>
+                                            (editing = editing === venue.id ? null : venue.id)}
+                                        onsaid={(words) => (said = words)}
+                                    />
+                                </Reveal>
                             {/each}
                         </div>
                     {/if}

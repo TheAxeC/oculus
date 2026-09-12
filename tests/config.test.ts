@@ -60,20 +60,32 @@ describe('loadLocal', () => {
 
     it('falls back to the defaults when there is no file', () => {
         const dir = scratch();
-        expect(loadLocal(dir)).toEqual({ hub: resolve(dir, '..', '..'), port: DEFAULT_PORT });
+        expect(loadLocal(dir)).toEqual({
+            hub: resolve(dir, '..', '..'),
+            port: DEFAULT_PORT,
+            claudeBin: 'claude'
+        });
         expect(warn).not.toHaveBeenCalled();
     });
 
     it('takes both keys from the file', () => {
         const dir = scratch();
         writeLocal(dir, 'hub: /srv/research-hub\nport: 8791\n');
-        expect(loadLocal(dir)).toEqual({ hub: '/srv/research-hub', port: 8791 });
+        expect(loadLocal(dir)).toEqual({
+            hub: '/srv/research-hub',
+            port: 8791,
+            claudeBin: 'claude'
+        });
     });
 
     it('reports an unknown key once and ignores it', () => {
         const dir = scratch();
         writeLocal(dir, 'hub: /srv/research-hub\ncolour: teal\n');
-        expect(loadLocal(dir)).toEqual({ hub: '/srv/research-hub', port: DEFAULT_PORT });
+        expect(loadLocal(dir)).toEqual({
+            hub: '/srv/research-hub',
+            port: DEFAULT_PORT,
+            claudeBin: 'claude'
+        });
         expect(warn).toHaveBeenCalledTimes(1);
         expect(String(warn.mock.calls[0][0])).toContain('colour');
     });
@@ -93,8 +105,20 @@ describe('loadLocal', () => {
         expect(loadLocal(dir)).toEqual({
             hub: '/srv/research-hub',
             port: DEFAULT_PORT,
+            claudeBin: 'claude',
             sessionsCache: '/srv/state/cache.json',
             sessionsOverrides: join(dir, 'state', 'sessions.json')
+        });
+        expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('takes the Claude binary used by update-task terminals', () => {
+        const dir = scratch();
+        writeLocal(dir, 'claude_bin: /opt/Claude CLI/claude\n');
+        expect(loadLocal(dir)).toEqual({
+            hub: resolve(dir, '..', '..'),
+            port: DEFAULT_PORT,
+            claudeBin: '/opt/Claude CLI/claude'
         });
         expect(warn).not.toHaveBeenCalled();
     });
@@ -118,7 +142,11 @@ describe('loadLocal', () => {
             expect(resolve(named).startsWith(resolve(elsewhere) + sep)).toBe(true);
             writeFileSync(named, 'hub: /srv/from-the-override\nport: 8792\n');
             process.env.OCULUS_LOCAL = named;
-            expect(loadLocal(dir)).toEqual({ hub: '/srv/from-the-override', port: 8792 });
+            expect(loadLocal(dir)).toEqual({
+                hub: '/srv/from-the-override',
+                port: 8792,
+                claudeBin: 'claude'
+            });
         });
 
         it('resolves a relative hub against the named file own folder', () => {

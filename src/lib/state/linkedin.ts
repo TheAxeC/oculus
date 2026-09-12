@@ -17,6 +17,8 @@ export type LinkedinState = {
     search: string;
     /** Whether the add-idea form is open, kept with the view instance. */
     adding: boolean;
+    /** The palette destination, cleared by the view after it scrolls and flashes the card. */
+    reveal?: string;
 };
 
 export type LinkedinCadence = 'no-dates' | 'overdue' | 'ontrack';
@@ -135,8 +137,10 @@ export function linkedinSearch(entries: LinkedinEntry[], search: string): Linked
 /** Read search and add-form state from one view instance. */
 export function parseLinkedinState(raw: unknown): LinkedinState {
     const held = record(raw);
-    return {
+    const state: LinkedinState = {
         search: typeof held?.search === 'string' ? held.search : '',
         adding: held?.adding === true
     };
+    if (typeof held?.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
+    return state;
 }

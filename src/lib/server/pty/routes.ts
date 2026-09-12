@@ -3,7 +3,8 @@
 // join them, the pattern lib/server/docs.ts and lib/server/writes.ts already hold.
 //
 // A GET lists the terminals and is same-origin only, like every read. A POST starts, stops, resizes
-// or resumes a terminal, or starts dataset recovery, and additionally carries the write token,
+// or resumes a terminal, starts dataset recovery, or starts an update task, and additionally
+// carries the write token,
 // since it is a write in DESIGN.md's "Auth" sense: it runs a process on the machine.
 //
 // The resume action is DESIGN.md's one explicit migration: an observed session becomes a terminal
@@ -37,6 +38,10 @@ const LIVE = 'sessions.resume_live';
 
 /** The longest name a terminal may carry, which is what sessions.ts `label` accepts. */
 const NAME_MAX = 80;
+
+/** The four update skills the palette and tray may start. */
+const TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
+type TaskKind = (typeof TASKS)[number];
 
 export type TerminalOptions = StartOptions & {
     /**
@@ -139,6 +144,47 @@ async function recoverDataset(
     return json(200, { ok: true, terminal });
 }
 
+/** The server-built shell command for one unattended Claude task. */
+function taskCommand(binary: string, kind: TaskKind): string {
+    return [
+        binary,
+        '-p',
+        '--output-format',
+        'stream-json',
+        '--verbose',
+        '--include-partial-messages',
+        '--dangerously-skip-permissions',
+        `/research-cockpit ${kind}`
+    ]
+        .map(shellWord)
+        .join(' ');
+}
+
+/** Start one of the four update skills as a Claude terminal in the configured hub root. */
+async function startTask(
+    kind: unknown,
+    cols: unknown,
+    rows: unknown,
+    options: TerminalOptions
+): Promise<Response> {
+    if (typeof kind !== 'string' || !TASKS.includes(kind as TaskKind)) {
+        return json(400, { error: `kind must be one of ${TASKS.join(', ')}` });
+    }
+    const local = loadLocal(engineDir());
+    const terminal = await startTerminal(
+        {
+            kind: 'claude',
+            cwd: local.hub,
+            cols: cols as number,
+            rows: rows as number,
+            name: `task ${kind}`
+        },
+        { ...options, command: taskCommand(local.claudeBin, kind as TaskKind) }
+    );
+    refreshTerminals();
+    return json(200, { ok: true, terminal });
+}
+
 /** POST /api/terminal: start, stop, resize, resume or recover one terminal. */
 export async function handleTerminal(
     request: Request,
@@ -184,6 +230,9 @@ export async function handleTerminal(
         if (message.action === 'recover') {
             return await recoverDataset(message.key, message.cols, message.rows, options);
         }
+        if (message.action === 'task') {
+            return await startTask(message.kind, message.cols, message.rows, options);
+        }
         if (message.action === 'stop') {
             if (!isTerminalId(message.id)) return json(400, { error: 'id is not a terminal id' });
             await stopTerminal(message.id, options);
@@ -216,5 +265,5 @@ export async function handleTerminal(
     } catch (error) {
         return json(400, { error: reason(error) });
     }
-    return json(400, { error: 'action must be start, stop, resize, resume or recover' });
+    return json(400, { error: 'action must be start, stop, resize, resume, recover or task' });
 }

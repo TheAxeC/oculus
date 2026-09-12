@@ -10,6 +10,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import PostCard from './linkedin/PostCard.svelte';
     import EntryForm from './shared/EntryForm.svelte';
+    import Reveal from './shared/Reveal.svelte';
     import { feed, refetch } from '$lib/state/feeds.svelte';
     import {
         cadence,
@@ -23,6 +24,7 @@
         type SchemaField
     } from '$lib/state/linkedin';
     import { t } from '$lib/state/text';
+    import { feedIdentity } from '$lib/state/palette';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import { addLinkedinIdea, type WriteAnswer } from '$lib/state/writes.svelte';
     import type { ViewProps } from './registry';
@@ -143,11 +145,17 @@
                 {#if ideas.length > 0}
                     <div class="cards" data-linkedin-section="ideas">
                         {#each ideas as entry (entry.file)}
-                            <PostCard
-                                {entry}
-                                folder={data.file}
-                                onsaid={(words) => (said = words)}
-                            />
+                            <Reveal
+                                id={feedIdentity('linkedin', entry)}
+                                wanted={held.reveal}
+                                onrevealed={() => write({ reveal: '' })}
+                            >
+                                <PostCard
+                                    {entry}
+                                    folder={data.file}
+                                    onsaid={(words) => (said = words)}
+                                />
+                            </Reveal>
                         {/each}
                     </div>
                 {:else if split.ideas.length === 0}
@@ -163,12 +171,18 @@
                 {#if posts.length > 0}
                     <div class="cards" data-linkedin-section="posted">
                         {#each posts as entry (entry.file)}
-                            <PostCard
-                                {entry}
-                                folder={data.file}
-                                posted
-                                onsaid={(words) => (said = words)}
-                            />
+                            <Reveal
+                                id={feedIdentity('linkedin', entry)}
+                                wanted={held.reveal}
+                                onrevealed={() => write({ reveal: '' })}
+                            >
+                                <PostCard
+                                    {entry}
+                                    folder={data.file}
+                                    posted
+                                    onsaid={(words) => (said = words)}
+                                />
+                            </Reveal>
                         {/each}
                     </div>
                 {:else if split.posts.length === 0}

@@ -187,7 +187,8 @@ function html(items: Venue[] = VENUES): string {
         search: '',
         off: [],
         journalsOpen: true,
-        conferencesOpen: true
+        conferencesOpen: true,
+        reveal: 'journal'
     });
     const instance: Instance = { id: INSTANCE, view: 'venues', state: {} };
     return render(Venues, { props: { instance } }).body;
@@ -205,6 +206,7 @@ describe('the Venues controls and facets', () => {
     it('draws add, search, and theme toggles most frequent first', () => {
         const body = html();
         expect(body).toContain(catalog['col.add']);
+        expect(body).toContain('data-reveal="journal"');
         expect(body).toContain('Search Venues ...');
         expect(body).toContain(catalog['col.ven_themes_facet']);
         expect(body.indexOf('ml 2')).toBeLessThan(body.indexOf('systems 1'));

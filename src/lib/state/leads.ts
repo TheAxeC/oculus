@@ -9,6 +9,8 @@ export type LeadsState = {
     runlogOpen: boolean;
     /** Whether the add form is open, kept with the instance so a re-render does not close it. */
     adding: boolean;
+    /** The palette destination, cleared by the view after it scrolls and flashes the card. */
+    reveal?: string;
 };
 export type SplitLeads = { live: LeadEntry[]; expired: LeadEntry[] };
 
@@ -109,10 +111,12 @@ export function leadsSearch(entries: LeadEntry[], search: string): LeadEntry[] {
 /** Read the search and the two disclosure states from one view instance. */
 export function parseLeadsState(raw: unknown): LeadsState {
     const held = record(raw);
-    return {
+    const state: LeadsState = {
         search: typeof held?.search === 'string' ? held.search : '',
         expiredOpen: held?.expiredOpen === true,
         runlogOpen: held?.runlogOpen === true,
         adding: held?.adding === true
     };
+    if (typeof held?.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
+    return state;
 }

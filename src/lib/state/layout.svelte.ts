@@ -374,9 +374,10 @@ export function focused(): Focus | null {
  * `state` is what the opener has to say to the view: the project a card wants opened or edited. A
  * state carrying an `id` names which instance is wanted, so opening one project twice activates the
  * tab it is already in and opening a second project opens a second tab; a state carrying no `id`
- * retargets whatever instance of the view is open, as it did before.
+ * retargets whatever instance of the view is open, as it did before. The returned id names the
+ * instance activated or created, so its separate UI state can be updated by the caller.
  */
-export function openView(view: ViewId, where: Target, state?: unknown): void {
+export function openView(view: ViewId, where: Target, state?: unknown): string {
     // A maximised pane hides everything else, so a view opened into the other tree would land out
     // of sight; opening it is what the rail was clicked for, so the arrangement comes back instead.
     const focus = focusedPane(workbench());
@@ -391,13 +392,14 @@ export function openView(view: ViewId, where: Target, state?: unknown): void {
         if (state !== undefined) change(where, (current) => restate(current, existing.id, state));
         activateInstance(where, existing.id);
         if (where === 'panel' && dockedAt() === 'hidden') dock('right');
-        return;
+        return existing.id;
     }
     const instance = newInstance(view, state ?? {});
     const path = into !== null && inside !== null ? into : activePath(tree, active()[where]);
     active()[where] = instance.id;
     change(where, (current) => openInstance(current, path, instance));
     if (where === 'panel' && dockedAt() === 'hidden') dock('right');
+    return instance.id;
 }
 
 /**

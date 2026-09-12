@@ -9,6 +9,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Bucket from './radar/Bucket.svelte';
     import RadarCard from './radar/RadarCard.svelte';
+    import Reveal from './shared/Reveal.svelte';
     import { config, portfolio } from '$lib/state/entities.svelte';
     import { feed } from '$lib/state/feeds.svelte';
     import {
@@ -21,6 +22,7 @@
         type RadarState
     } from '$lib/state/radar';
     import { t } from '$lib/state/text';
+    import { feedIdentity } from '$lib/state/palette';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
 
@@ -86,6 +88,8 @@
                     entries={group.entries}
                     {lastRun}
                     {projects}
+                    reveal={held.reveal}
+                    onrevealed={() => write({ reveal: '' })}
                     onsaid={(words) => (said = words)}
                 />
             {/each}
@@ -105,13 +109,19 @@
                     {#if held.dismissedOpen}
                         <div class="cards">
                             {#each searchedDismissed as entry, at (`${String(entry.title ?? '')}:${at}`)}
-                                <RadarCard
-                                    {entry}
-                                    {lastRun}
-                                    {projects}
-                                    dismissed
-                                    onsaid={(words) => (said = words)}
-                                />
+                                <Reveal
+                                    id={feedIdentity('radar', entry)}
+                                    wanted={held.reveal}
+                                    onrevealed={() => write({ reveal: '' })}
+                                >
+                                    <RadarCard
+                                        {entry}
+                                        {lastRun}
+                                        {projects}
+                                        dismissed
+                                        onsaid={(words) => (said = words)}
+                                    />
+                                </Reveal>
                             {/each}
                         </div>
                     {/if}

@@ -4,6 +4,8 @@
 
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import RadarCard from './RadarCard.svelte';
+    import Reveal from '../shared/Reveal.svelte';
+    import { feedIdentity } from '$lib/state/palette';
     import { sortBucket, type Project, type RadarBucket, type RadarEntry } from '$lib/state/radar';
     import { t } from '$lib/state/text';
     import { toneOf } from '$lib/state/tones';
@@ -14,9 +16,11 @@
         lastRun: unknown;
         projects: Record<string, Project>;
         onsaid: (words: string) => void;
+        reveal?: string;
+        onrevealed: () => void;
     };
 
-    let { bucket, entries, lastRun, projects, onsaid }: Props = $props();
+    let { bucket, entries, lastRun, projects, onsaid, reveal = '', onrevealed }: Props = $props();
     let open = $state(true);
     const ordered = $derived(sortBucket(entries));
 </script>
@@ -31,7 +35,9 @@
     {#if open}
         <div class="cards">
             {#each ordered as entry, at (`${String(entry.title ?? '')}:${at}`)}
-                <RadarCard {entry} {lastRun} {projects} {onsaid} />
+                <Reveal id={feedIdentity('radar', entry)} wanted={reveal} {onrevealed}>
+                    <RadarCard {entry} {lastRun} {projects} {onsaid} />
+                </Reveal>
             {/each}
         </div>
     {/if}

@@ -40,6 +40,10 @@ const ALLOWED: Record<string, string[]> = {
         'state/ui',
         'state/text',
         'state/appearance',
+        'state/palette',
+        'state/palette-source',
+        'state/selection',
+        'state/terminals',
         'views/registry'
     ],
     views: ['ui/**', 'state/**', 'views/registry', 'views/shared/**'],

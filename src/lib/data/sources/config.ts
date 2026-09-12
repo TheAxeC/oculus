@@ -29,12 +29,21 @@ export type LocalConfig = {
      * machine sets it, and the sessions layer then uses ~/.oculus/sessions.json.
      */
     sessionsOverrides?: string;
+    /** Absolute or PATH-resolved Claude CLI used by unattended update-task terminals. */
+    claudeBin: string;
 };
 
 /** 8787 belongs to the cockpit and is never used. */
 export const DEFAULT_PORT = 8790;
 
-const LOCAL_KEYS = ['hub', 'port', 'hpc_host', 'sessions_cache', 'sessions_overrides'];
+const LOCAL_KEYS = [
+    'hub',
+    'port',
+    'hpc_host',
+    'sessions_cache',
+    'sessions_overrides',
+    'claude_bin'
+];
 
 /**
  * Walk up from a starting file until a directory holds both package.json and config/.
@@ -51,9 +60,9 @@ export function engineDir(from: string = fileURLToPath(import.meta.url)): string
     }
 }
 
-/** The defaults: the hub is two directories above tools/oculus, the port is 8790. */
+/** The defaults: the hub is two directories above tools/oculus, the port is 8790, and Claude is resolved on PATH. */
 export function localDefaults(engine: string): LocalConfig {
-    return { hub: resolve(engine, '..', '..'), port: DEFAULT_PORT };
+    return { hub: resolve(engine, '..', '..'), port: DEFAULT_PORT, claudeBin: 'claude' };
 }
 
 /**
@@ -114,6 +123,12 @@ export function loadLocal(engine: string): LocalConfig {
             throw new Error(`${file}: hpc_host must be a non-empty string`);
         }
         config.hpcHost = record.hpc_host;
+    }
+    if (record.claude_bin !== undefined) {
+        if (typeof record.claude_bin !== 'string' || record.claude_bin.length === 0) {
+            throw new Error(`${file}: claude_bin must be a non-empty string`);
+        }
+        config.claudeBin = record.claude_bin;
     }
     // The two session paths are absent unless the machine names them, so a config that says
     // nothing about sessions leaves the defaults to the module that owns them.

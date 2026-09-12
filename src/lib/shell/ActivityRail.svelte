@@ -81,6 +81,7 @@
 
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
+    import ToolButton from '$lib/ui/ToolButton.svelte';
     import Tooltip from '$lib/ui/Tooltip.svelte';
     import { dock, dockedAt, openView } from '$lib/state/layout.svelte';
     import {
@@ -103,9 +104,13 @@
         groups?: NavGroup[];
         /** The `bookmarks` list of the merged config; the page reads it and passes it on. */
         bookmarks?: Bookmark[];
+        /** Open the workbench search overlay. */
+        onsearch?: () => void;
+        /** Open the update-task tray. */
+        onupdate?: () => void;
     };
 
-    let { groups = [], bookmarks = [] }: Props = $props();
+    let { groups = [], bookmarks = [], onsearch = () => {}, onupdate = () => {} }: Props = $props();
 
     /* A view registered as not listed (the editor, a project, a document) is opened from a card or a
        bookmark and has nothing to show when opened bare, so the rail draws no button for it. */
@@ -221,6 +226,24 @@
     </div>
 
     <div class="controls">
+        <div data-action="search">
+            <ToolButton
+                label={t('app.search')}
+                title={t('app.search_tip')}
+                glyph="cmd"
+                compact
+                onclick={onsearch}
+            />
+        </div>
+        <div data-action="update">
+            <ToolButton
+                label={t('js.tasks.update_tasks')}
+                title={t('app.update_tip')}
+                glyph="refresh"
+                compact
+                onclick={onupdate}
+            />
+        </div>
         <Menu
             label={t('ui.theme')}
             glyph={lookup('ui.theme_glyph')}
@@ -311,6 +334,11 @@
        which is how the theme menu and the panel's dock came to be unreachable. */
     .controls {
         flex-shrink: 0;
+    }
+
+    .controls > div {
+        display: flex;
+        justify-content: center;
     }
 
     /* The group's button is a Menu, which is a flex row of its own; this gives it the top margin a

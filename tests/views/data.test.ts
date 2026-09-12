@@ -161,7 +161,7 @@ function instance(): Instance {
 describe('the Data view', () => {
     it('draws the intro, controls, facets and every dataset card in file order', () => {
         receive({ channel: 'portfolio', version: 25, payload: snapshot(DATASETS) });
-        setInstanceState(INSTANCE, { search: '', off: [] });
+        setInstanceState(INSTANCE, { search: '', off: [], reveal: 'open' });
         const html = render(Data, { props: { instance: instance() } }).body;
 
         expect(html).toContain(
@@ -170,6 +170,7 @@ describe('the Data view', () => {
         expect(html).toContain('Registry <strong>intro</strong> from the file.');
         expect(html).toContain('Search datasets | name | modality | project ...');
         expect(html).toContain('+ add');
+        expect(html).toContain('data-reveal="open"');
         expect(html).toContain('ECG 3');
         expect(html).toContain('scans 2');
         expect(html.match(/data-dataset=/g)).toHaveLength(5);

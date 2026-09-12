@@ -50,6 +50,8 @@ export type CollectionState = {
     search: string;
     statuses: string[];
     hidden: string[];
+    /** The palette destination, cleared by the view after it scrolls and flashes the card. */
+    reveal?: string;
 };
 
 /** The state of an instance nobody has typed in yet. */
@@ -68,12 +70,19 @@ function savedList(value: unknown): string[] {
 export function parseCollectionState(raw: unknown): CollectionState {
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw))
         return emptyCollectionState();
-    const held = raw as { search?: unknown; statuses?: unknown; hidden?: unknown };
-    return {
+    const held = raw as {
+        search?: unknown;
+        statuses?: unknown;
+        hidden?: unknown;
+        reveal?: unknown;
+    };
+    const state: CollectionState = {
         search: typeof held.search === 'string' ? held.search : '',
         statuses: savedList(held.statuses),
         hidden: savedList(held.hidden)
     };
+    if (typeof held.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
+    return state;
 }
 
 const CHIP_FIELDS = ['tags', 'related'];

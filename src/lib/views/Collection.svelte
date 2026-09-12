@@ -22,6 +22,7 @@
     import Coverage from './collection/Coverage.svelte';
     import EntryCard from './collection/EntryCard.svelte';
     import EntryForm from './shared/EntryForm.svelte';
+    import Reveal from './shared/Reveal.svelte';
     import {
         FUNDING,
         NO_FUNDING,
@@ -188,18 +189,24 @@
         {:else}
             <div class="cards" role="list">
                 {#each shown as entry (entry.index)}
-                    <EntryCard
-                        {entry}
-                        collection={key}
-                        {schema}
-                        projects={all}
-                        statuses={lifecycle}
-                        editing={editing === entry.id}
-                        onedit={() => (editing = editing === entry.id ? null : entry.id)}
-                        ondragfrom={(value) => (dragged = value)}
-                        ondropon={drop}
-                        onsaid={(words) => (said = words)}
-                    />
+                    <Reveal
+                        id={entry.id}
+                        wanted={held.reveal}
+                        onrevealed={() => write({ reveal: '' })}
+                    >
+                        <EntryCard
+                            {entry}
+                            collection={key}
+                            {schema}
+                            projects={all}
+                            statuses={lifecycle}
+                            editing={editing === entry.id}
+                            onedit={() => (editing = editing === entry.id ? null : entry.id)}
+                            ondragfrom={(value) => (dragged = value)}
+                            ondropon={drop}
+                            onsaid={(words) => (said = words)}
+                        />
+                    </Reveal>
                 {/each}
                 {#if unfunded.length > 0 && !held.hidden.includes(NO_FUNDING)}
                     <div class="slot" data-entry={NO_FUNDING} role="listitem">

@@ -37,6 +37,11 @@ export function feed(kind: FeedKind): FeedState | null {
     return held[kind] ?? null;
 }
 
+/** The held answer without requesting it, for the palette that indexes only feeds already fetched. */
+export function peekFeed(kind: FeedKind): FeedState | null {
+    return held[kind] ?? null;
+}
+
 /** Fetch a kind now and replace its held answer. */
 export async function refetch(kind: FeedKind): Promise<FeedState | null> {
     const at = version();

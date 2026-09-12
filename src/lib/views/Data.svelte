@@ -6,6 +6,7 @@
     import Search from '$lib/ui/Search.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
+    import Reveal from '$lib/views/shared/Reveal.svelte';
     import Facets from '$lib/views/data/Facets.svelte';
     import DatasetCard from '$lib/views/data/DatasetCard.svelte';
     import {
@@ -104,15 +105,21 @@
         {:else}
             <div class="cards">
                 {#each shown as dataset (dataset.id)}
-                    <DatasetCard
-                        {dataset}
-                        projects={users(dataset.projectIds)}
-                        entry={entryFor(dataset.id)}
-                        schema={collection?.schema}
-                        editing={editing === dataset.id}
-                        onedit={() => (editing = editing === dataset.id ? null : dataset.id)}
-                        onsaid={(words) => (said = words)}
-                    />
+                    <Reveal
+                        id={dataset.id}
+                        wanted={held.reveal}
+                        onrevealed={() => write({ reveal: '' })}
+                    >
+                        <DatasetCard
+                            {dataset}
+                            projects={users(dataset.projectIds)}
+                            entry={entryFor(dataset.id)}
+                            schema={collection?.schema}
+                            editing={editing === dataset.id}
+                            onedit={() => (editing = editing === dataset.id ? null : dataset.id)}
+                            onsaid={(words) => (said = words)}
+                        />
+                    </Reveal>
                 {/each}
             </div>
         {/if}

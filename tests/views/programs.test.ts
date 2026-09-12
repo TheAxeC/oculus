@@ -12,7 +12,7 @@ const INSTANCE = 'programs-one';
 
 function html(snapshot = fixture()): string {
     install(snapshot);
-    setInstanceState(INSTANCE, {});
+    setInstanceState(INSTANCE, { reveal: 'pillar' });
     const instance: Instance = { id: INSTANCE, view: 'programs', state: {} };
     return render(Programs, { props: { instance } }).body;
 }
@@ -28,6 +28,7 @@ describe('the Programs view', () => {
         const body = html();
         expect(body).toContain(catalog['col.programs_intro']);
         expect(body).toContain(catalog['col.add']);
+        expect(body).toContain('data-reveal="pillar"');
         expect(body).toContain('Pillar <strong>One</strong>');
         expect(body).toContain(`1 ${catalog['col.project']}`);
         expect(body).toContain(catalog['col.in_flight']);
