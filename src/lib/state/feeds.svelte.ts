@@ -2,7 +2,7 @@
 // A portfolio version change schedules another request for every kind the page has fetched.
 
 import { message, subscribePortfolio } from './entities.svelte.ts';
-import type { FeedEntry, FeedKind } from '../data/model.ts';
+import type { FeedEntry, FeedKind, SchemaField } from '../data/model.ts';
 
 export type FeedState = {
     ok: true;
@@ -10,6 +10,7 @@ export type FeedState = {
     file: string;
     meta: Record<string, unknown>;
     entries: FeedEntry[];
+    schema?: SchemaField[];
     missing?: boolean;
     error?: string;
 };
@@ -72,6 +73,7 @@ export async function refetch(kind: FeedKind): Promise<FeedState | null> {
             file: typeof body.file === 'string' ? body.file : '',
             meta,
             entries,
+            schema: Array.isArray(body.schema) ? (body.schema as SchemaField[]) : undefined,
             missing: body.missing === true
         };
         return held[kind] ?? null;

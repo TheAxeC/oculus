@@ -8,6 +8,19 @@ import { handleFeeds } from '../../src/lib/server/feeds.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 
+const LEAD_SCHEMA = `schema:
+  - { field: title, type: text }
+  - { field: inst, type: text }
+  - { field: country, type: text }
+  - { field: typ, type: text }
+  - { field: focus, type: textarea }
+  - { field: fit, type: textarea }
+  - { field: status, type: select, options: [open, applied, declined] }
+  - { field: date, type: date }
+  - { field: deadline, type: text }
+  - { field: url, type: text }
+`;
+
 function target() {
     const hub = mkdtempSync(join(tmpdir(), 'oculus-feed-route-'));
     mkdirSync(join(hub, 'fixture'), { recursive: true });
@@ -18,7 +31,8 @@ function target() {
         linkedin: 'fixture/linkedin'
     };
     for (const file of [feeds.radar, feeds.leads, feeds.inbox]) {
-        writeFileSync(join(hub, file), 'meta: {}\nentries:\n  - title: One\n');
+        const schema = file === feeds.leads ? LEAD_SCHEMA : '';
+        writeFileSync(join(hub, file), `meta: {}\n${schema}entries:\n  - title: One\n`);
     }
     return { hub, config: { ...portfolioConfigFrom(loadConfig(engineDir()).config), feeds } };
 }
@@ -40,6 +54,24 @@ describe('the feed endpoint', () => {
             expect(response.status).toBe(200);
             expect(await response.json()).toMatchObject({ ok: true, kind });
         }
+    });
+
+    it("answers the leads file's schema in its own order", async () => {
+        const response = handleFeeds(request('leads'), target());
+        const body = await response.json();
+        expect(body.schema.map((field: { field: string }) => field.field)).toEqual([
+            'title',
+            'inst',
+            'country',
+            'typ',
+            'focus',
+            'fit',
+            'status',
+            'date',
+            'deadline',
+            'url'
+        ]);
+        expect(body.schema[6].options).toEqual(['open', 'applied', 'declined']);
     });
 
     it('answers 400 for an unknown kind and 403 for another origin', () => {

@@ -21,10 +21,9 @@ const LAYERS = ['data', 'server', 'state', 'ui', 'shell', 'views', 'themes'];
 // there once instead of twice, and only a view may import it. A file under `views/shared/` is in the
 // views layer itself, so the row binds it too and it may reach no other view's partials.
 //
-// `data/guards` joined `data/model` in the state row with Q1's one module for the four type guards
-// fifteen modules had each declared for themselves. It is the same kind of permission as the model:
-// pure, with no reader and no I/O in it. The model's own concern modules (`data/model-*`) are
-// reached through the facade only, which is why they are not listed here.
+// `data/guards` and `data/dates` join `data/model` in the state row as pure helpers with no reader
+// and no I/O. The model's own concern modules (`data/model-*`) are reached through the facade only,
+// which is why they are not listed here.
 //
 // The shell's row names the state modules the workbench is made of, one at a time: `state/drag`
 // joined `state/layout` and `state/ui` with the docking of O10b, since the one drag in progress is
@@ -44,7 +43,7 @@ const ALLOWED: Record<string, string[]> = {
         'views/registry'
     ],
     views: ['ui/**', 'state/**', 'views/registry', 'views/shared/**'],
-    state: ['state/**', 'data/model', 'data/guards'],
+    state: ['state/**', 'data/model', 'data/guards', 'data/dates'],
     data: ['data/**'],
     server: ['server/**', 'data/**'],
     themes: ['themes/**']

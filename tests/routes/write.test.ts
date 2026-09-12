@@ -12,6 +12,7 @@ import { join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { handleWrite } from '../../src/lib/server/writes.ts';
 import { mintToken } from '../../src/lib/server/auth.ts';
+import { localDate } from '../../src/lib/data/dates.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { WriteTarget } from '../../src/lib/server/writes.ts';
@@ -30,7 +31,14 @@ const DATA =
 
 const CAREER = 'title: Career\nhosts:\n  - { name: "Naesens", status: "warm" }\n';
 const RADAR = 'meta: {}\nentries:\n  - title: "Paper"\n';
-const LEADS = 'meta: {}\nentries:\n  - title: "Lead"\n';
+const LEADS = `meta: {}
+schema:
+  - { field: title, type: text }
+  - { field: status, type: select, options: [open, applied, declined] }
+  - { field: date, type: date }
+entries:
+  - title: "Lead"
+`;
 const INBOX = 'meta: {}\nentries:\n  - id: "mail-1"\n';
 
 const TOKEN = mintToken();
@@ -123,6 +131,30 @@ describe('the write endpoint', () => {
             into
         );
         expect(await removal.json()).toEqual({ ok: true, changed: ['entries'], refused: [] });
+    });
+
+    it('adds a lead with defaults and refuses one without a title', async () => {
+        const into = target();
+        const added = await handleWrite(
+            request({ kind: 'lead-add', fields: { title: 'Another lead' } }),
+            TOKEN,
+            into
+        );
+        expect(await added.json()).toEqual({ ok: true, changed: ['entries'], refused: [] });
+        expect(readFileSync(join(into.hub, 'feeds/position-leads.yml'), 'utf8')).toContain(
+            `  - title: Another lead\n    status: open\n    date: ${localDate(Date.now())}`
+        );
+
+        const refused = await handleWrite(
+            request({ kind: 'lead-add', fields: { title: ' ' } }),
+            TOKEN,
+            into
+        );
+        expect(await refused.json()).toEqual({
+            ok: true,
+            changed: [],
+            refused: [{ field: 'title', reason: 'a lead needs a title' }]
+        });
     });
     it('refuses a request with no token', async () => {
         const into = target();
@@ -330,6 +362,7 @@ const KINDS: Record<string, unknown> = {
         order: ['Another task', 'Review the draft']
     },
     'delete-entry': { kind: 'delete-entry', collection: 'tasks', id: 'Review the draft' },
+    'lead-add': { kind: 'lead-add', fields: { title: 'A lead' } },
     'new-idea': { kind: 'new-idea', fields: { id: 'a-new-idea', title: 'A new idea' } }
 };
 
@@ -342,6 +375,7 @@ const MALFORMED: Record<string, unknown> = {
     'new-entry': { kind: 'new-entry', collection: 42, fields: {} },
     reorder: { kind: 'reorder', collection: 'tasks', order: [42] },
     'delete-entry': { kind: 'delete-entry', collection: 'tasks', id: 42 },
+    'lead-add': { kind: 'lead-add', fields: 'not a map' },
     'new-idea': { kind: 'new-idea', fields: { title: 'no id' } }
 };
 

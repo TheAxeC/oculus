@@ -20,7 +20,7 @@ import { setHidden, setOverride } from './sessions/overrides.ts';
 import { createIdea, writeManifest } from './writes/manifest.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 import { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
-import { deleteFeedEntry, isFeedKind, writeFeedField } from './feeds.ts';
+import { addLead, deleteFeedEntry, isFeedKind, writeFeedField } from './feeds.ts';
 import {
     deleteEntryWrite,
     entryWrite,
@@ -28,6 +28,7 @@ import {
     feedFieldWrite,
     hostWrite,
     manifestWrite,
+    leadAddWrite,
     newEntry,
     newIdea,
     reorderWrite,
@@ -72,6 +73,7 @@ export {
     feedFieldWrite,
     hostWrite,
     manifestWrite,
+    leadAddWrite,
     newEntry,
     newIdea,
     reorderWrite,
@@ -237,6 +239,13 @@ export async function handleWrite(
         if (!outcome.found) {
             return json(404, { error: `no entry ${feedDelete.id} in ${feedDelete.feed}` });
         }
+        return answer(outcome);
+    }
+
+    const lead = leadAddWrite(body);
+    if (lead !== null) {
+        const outcome = addLead(into.hub, into.config, lead.fields);
+        if (!outcome.found) return json(404, { error: 'the leads feed is not on this hub' });
         return answer(outcome);
     }
 

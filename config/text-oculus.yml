@@ -186,6 +186,8 @@ text:
   views:                     # oculus's views: one label per registered view, and the glyph name it is drawn with.
     radar: "Lit Watch"
     radar_glyph: "litwatch"
+    leads: "Position Leads"
+    leads_glyph: "scout"
     hpc: "Live HPC"
     hpc_glyph: "hpc"
     status: "Status"

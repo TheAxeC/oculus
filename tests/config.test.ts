@@ -368,7 +368,6 @@ describe("oculus's own config directory", () => {
         'help',
         'audit',
         'config',
-        'leads',
         'inbox',
         'linkedin'
     ];

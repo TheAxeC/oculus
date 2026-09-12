@@ -90,7 +90,12 @@ export type Feeds = {
 /** The generated YAML feeds served on request to their dedicated views. */
 export type FeedKind = 'radar' | 'leads' | 'inbox';
 export type FeedEntry = Record<string, unknown>;
-export type FeedData = { meta: Record<string, unknown>; entries: FeedEntry[] };
+export type FeedData = {
+    meta: Record<string, unknown>;
+    entries: FeedEntry[];
+    /** The file's own ordered entry schema, when it carries one. */
+    schema?: SchemaField[];
+};
 
 /** What sources/feeds.ts returns. It is already JSON-safe, so the snapshot carries it unchanged. */
 export type RawFeeds = Feeds;

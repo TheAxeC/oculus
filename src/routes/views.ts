@@ -16,6 +16,7 @@ import Findings from '$lib/views/Findings.svelte';
 import Focus from '$lib/views/Focus.svelte';
 import Gallery from '$lib/views/Gallery.svelte';
 import Hpc from '$lib/views/Hpc.svelte';
+import Leads from '$lib/views/Leads.svelte';
 import Map from '$lib/views/Map.svelte';
 import Project from '$lib/views/Project.svelte';
 import Projects from '$lib/views/Projects.svelte';
@@ -39,6 +40,13 @@ registerView({
     label: 'views.radar',
     glyph: 'views.radar_glyph',
     component: Radar
+});
+
+registerView({
+    id: 'leads',
+    label: 'views.leads',
+    glyph: 'views.leads_glyph',
+    component: Leads
 });
 
 registerView({

@@ -165,6 +165,11 @@ export async function deleteFeedEntry(feed: string, id: string): Promise<WriteAn
     return send({ kind: 'feed-delete', feed, id });
 }
 
+/** Add one position lead through the feed file's own schema. */
+export async function addLead(fields: Record<string, unknown>): Promise<WriteAnswer> {
+    return send({ kind: 'lead-add', fields });
+}
+
 /** Add one entry to a collection, rendered from that file's own schema. */
 export async function newEntry(
     collection: string,

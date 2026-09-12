@@ -81,6 +81,9 @@ export type FeedFieldWrite = {
 /** One generated feed entry removed by its feed-specific identity. */
 export type FeedDeleteWrite = { kind: 'feed-delete'; feed: string; id: string };
 
+/** One position lead appended from the feed file's own form schema. */
+export type LeadAddWrite = { kind: 'lead-add'; fields: Record<string, unknown> };
+
 const ACTIONS: SubtaskAction[] = ['done', 'reopen', 'snooze', 'delete'];
 
 /** The `target` of a subtask body: `{ id }` for a manifest, `{ collection, id }` for an entry. */
@@ -231,6 +234,12 @@ export function feedDeleteWrite(body: unknown): FeedDeleteWrite | null {
     if (typeof body.feed !== 'string' || body.feed === '') return null;
     if (typeof body.id !== 'string' || body.id === '') return null;
     return { kind: 'feed-delete', feed: body.feed, id: body.id };
+}
+
+/** The body as one new position lead. */
+export function leadAddWrite(body: unknown): LeadAddWrite | null {
+    if (!isMap(body) || body.kind !== 'lead-add' || !isMap(body.fields)) return null;
+    return { kind: 'lead-add', fields: body.fields };
 }
 
 /** The body as a new idea, or null when it is not one. */

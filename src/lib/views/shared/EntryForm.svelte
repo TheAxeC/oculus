@@ -1,12 +1,27 @@
+<script module lang="ts">
+    // Layer 3, shared view partial. The add-write choice is exported so server-rendered form tests
+    // exercise the same branch the save control uses without needing a browser DOM.
+
+    import { newEntry, type WriteAnswer as AddWriteAnswer } from '$lib/state/writes.svelte';
+
+    /** Use a file-specific add write when supplied, and the collection write otherwise. */
+    export function addFromForm(
+        collection: string,
+        fields: Record<string, unknown>,
+        onadd?: (fields: Record<string, unknown>) => Promise<AddWriteAnswer>
+    ): Promise<AddWriteAnswer> {
+        return onadd === undefined ? newEntry(collection, fields) : onadd(fields);
+    }
+</script>
+
 <script lang="ts">
     // Layer 3, shared view partial. The add and edit form of one collection,
     // drawn from that file's own `schema:` and from nothing this module knows: the controls are the
     // schema's fields in the schema's order, through formFields() of state/collection.ts.
     //
-    // Adding and editing are one form with two saves: with no entry it is newEntry(), with one it is
-    // writeEntry() over the id the reader gave that entry, and the delete beside the save is
-    // deleteEntry() behind the confirm. What the reader sees change is the watcher's next push of the
-    // portfolio, so nothing here edits the entry it was handed.
+    // Adding and editing are one form with two saves: with no entry it uses the caller's add write
+    // when one is supplied and newEntry() otherwise; with one it is writeEntry() over the id the
+    // reader gave that entry. The delete beside the save is deleteEntry() behind the confirm.
     //
     // A `metalist` is kept as rows apart from the scalar controls because each row writes two
     // values and is saved as one flat map.
@@ -29,7 +44,7 @@
     } from '$lib/state/collection';
     import { configMap } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
-    import { deleteEntry, newEntry, writeEntry, type WriteAnswer } from '$lib/state/writes.svelte';
+    import { deleteEntry, writeEntry, type WriteAnswer } from '$lib/state/writes.svelte';
 
     type Props = {
         /** The collection key, which is what a write names its file by. */
@@ -37,12 +52,14 @@
         schema: SchemaField[] | undefined;
         /** The entry the form edits, or null when the form adds one. */
         entry: Entry | null;
+        /** A dedicated add write for a schema-driven file that is not a collection. */
+        onadd?: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
         onclose: () => void;
         /** What a write answered, for the one outcome line the view holds. */
         onsaid: (said: string) => void;
     };
 
-    let { collection, schema, entry, onclose, onsaid }: Props = $props();
+    let { collection, schema, entry, onadd, onclose, onsaid }: Props = $props();
 
     type MetaRow = { label: string; value: string };
     type Draft = string | boolean | MetaRow[];
@@ -173,7 +190,7 @@
         asked = '';
         const answer =
             entry === null
-                ? await newEntry(collection, wanted)
+                ? await addFromForm(collection, wanted, onadd)
                 : await writeEntry(collection, entry.id, wanted);
         said(answer);
         if (answer.ok && answer.refused.length === 0) onclose();

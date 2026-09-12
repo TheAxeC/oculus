@@ -7,9 +7,45 @@ import { receive } from '../../src/lib/state/entities.svelte.ts';
 afterEach(() => vi.unstubAllGlobals());
 
 describe('feed state', () => {
+    it("keeps the leads file's schema on the fetched state", async () => {
+        const schema = [
+            { field: 'title', type: 'text' },
+            { field: 'status', type: 'select', options: ['open', 'applied', 'declined'] }
+        ];
+        vi.stubGlobal('fetch', () =>
+            Promise.resolve(
+                new Response(
+                    JSON.stringify({
+                        ok: true,
+                        kind: 'leads',
+                        file: 'feeds/leads.yml',
+                        meta: {},
+                        schema,
+                        entries: []
+                    })
+                )
+            )
+        );
+        await refetch('leads');
+        expect(feed('leads')?.schema).toEqual(schema);
+    });
+
     it('holds the last answer and refetches a fetched kind after a portfolio push', async () => {
         let calls = 0;
         vi.stubGlobal('fetch', (url: string) => {
+            if (!url.includes('kind=radar')) {
+                return Promise.resolve(
+                    new Response(
+                        JSON.stringify({
+                            ok: true,
+                            kind: 'leads',
+                            file: 'feeds/leads.yml',
+                            meta: {},
+                            entries: []
+                        })
+                    )
+                );
+            }
             calls += 1;
             expect(url).toBe('/api/feeds?kind=radar');
             return Promise.resolve(

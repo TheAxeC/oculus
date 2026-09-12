@@ -80,6 +80,7 @@ describe('the real registrations', () => {
     it('registers every view the application has, in registration order', () => {
         expect(real().map((view) => view.id)).toEqual([
             'radar',
+            'leads',
             'hpc',
             'status',
             'findings',
@@ -129,6 +130,14 @@ describe('the real registrations', () => {
             id: 'radar',
             label: 'views.radar',
             glyph: 'views.radar_glyph'
+        });
+    });
+
+    it('registers Position Leads directly with its catalog label and glyph', () => {
+        expect(viewFor('leads')).toMatchObject({
+            id: 'leads',
+            label: 'views.leads',
+            glyph: 'views.leads_glyph'
         });
     });
 
