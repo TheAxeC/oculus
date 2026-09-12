@@ -165,12 +165,12 @@
 
     .sub {
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .date {
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
     }
 
     .row,

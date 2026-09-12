@@ -230,11 +230,21 @@
     .doc :global(h3),
     .doc :global(h4) {
         margin: 12px 0 4px;
-        font-size: var(--fs-lg);
         color: var(--ink-txt, var(--ink));
     }
 
-    .doc :global(h3),
+    .doc :global(h1) {
+        font-size: var(--fs-3xl);
+    }
+
+    .doc :global(h2) {
+        font-size: var(--fs-2xl);
+    }
+
+    .doc :global(h3) {
+        font-size: var(--fs-xl);
+    }
+
     .doc :global(h4) {
         font-size: var(--fs-md);
     }
@@ -271,7 +281,7 @@
 
     .doc :global(table) {
         border-collapse: collapse;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
     }
 
     .doc :global(th),

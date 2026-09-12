@@ -158,7 +158,7 @@
     h3 {
         margin: 0;
         color: var(--ink-txt, var(--ink));
-        font-size: var(--fs-lg);
+        font-size: var(--fs-xl);
     }
 
     .meta,

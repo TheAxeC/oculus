@@ -270,7 +270,7 @@
         background: none;
         color: var(--muted-txt, var(--muted));
         font: inherit;
-        font-size: var(--fs-md);
+        font-size: var(--fs-lg);
         padding: 4px 6px;
         cursor: pointer;
     }

@@ -156,7 +156,7 @@
     .group h3 {
         margin: 0;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
+        font-size: var(--fs-lg);
     }
 
     .cards {

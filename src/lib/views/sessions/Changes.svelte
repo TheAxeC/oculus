@@ -460,9 +460,17 @@
         align-items: center;
         gap: 6px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
         text-transform: uppercase;
         letter-spacing: 0.04em;
+    }
+
+    /* The cockpit's .sesssec-h and .sessgrph: a section heading one step above a group's. */
+    .sec-h {
+        font-size: var(--fs-sm);
+    }
+
+    .group-h {
+        font-size: var(--fs-xs);
     }
 
     .sec-h {
@@ -486,7 +494,7 @@
         align-items: baseline;
         gap: 6px;
         min-width: 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
     }
 
     .pa {
@@ -515,12 +523,12 @@
     .to {
         flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
     }
 
     .none {
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
+        font-size: var(--fs-xs);
     }
 
     .cacts .none {
@@ -598,7 +606,7 @@
     .branch .mt {
         margin-left: auto;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
     }
 
     /* The terminal shape: a status listing, in the face git prints it in. */

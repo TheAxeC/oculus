@@ -78,6 +78,6 @@
     footer {
         margin-top: 12px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
     }
 </style>

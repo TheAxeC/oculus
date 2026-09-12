@@ -387,7 +387,7 @@
     }
 
     .lane-name {
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         font-weight: 700;
     }
 
@@ -398,7 +398,7 @@
 
     .lane-sub {
         margin: 2px 0 6px;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -451,7 +451,7 @@
     .flames {
         display: inline-flex;
         flex: 0 0 auto;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-xxs);
         line-height: 1;
     }
 
@@ -475,7 +475,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         font-weight: 650;
         color: var(--ink-txt, var(--ink));
     }
@@ -493,7 +493,7 @@
     .wait,
     .next {
         margin: 2px 0 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
     }
 </style>

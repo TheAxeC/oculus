@@ -37,7 +37,8 @@
         type TerminalKind
     } from '$lib/state/terminals.svelte';
     import { t } from '$lib/state/text';
-    import { setTerminalFont, terminalFont, theme } from '$lib/state/ui.svelte';
+    import { setTerminalFont, terminalFont, textScale, theme } from '$lib/state/ui.svelte';
+    import { scheduleReflow } from './reflow';
     import { untrack } from 'svelte';
     import type { MenuItem } from '$lib/ui/Menu.svelte';
     import type { ViewProps } from '$lib/views/registry';
@@ -144,11 +145,14 @@
     }
 
     /** The configured grid size, or the body type scale when config leaves it unset. */
-    function fontSize(chosen: number | null): number | undefined {
+    function fontSize(chosen: number | null, scale = textScale() ?? 1): number | undefined {
         const configured = chosen ?? terminalFontPx();
         if (configured !== null) return configured;
         const root = getComputedStyle(document.body);
-        const computed = Number.parseFloat(root.getPropertyValue('--fs-md').trim());
+        const base = Number.parseFloat(
+            root.getPropertyValue('--fs-md').match(/[\d.]+px/)?.[0] ?? ''
+        );
+        const computed = base * scale;
         return Number.isFinite(computed) && computed >= 1 ? computed : undefined;
     }
 
@@ -200,7 +204,7 @@
             ]);
             if (!alive) return;
             const fit = new addon.FitAddon();
-            const size = fontSize(untrack(terminalFont));
+            const size = fontSize(untrack(terminalFont), untrack(textScale) ?? 1);
             const options = {
                 theme: palette(),
                 convertEol: false
@@ -260,22 +264,29 @@
     $effect(() => {
         const name = theme();
         const chosen = terminalFont();
+        const scale = textScale() ?? 1;
         const wanted = id;
         if (name === '') return;
         // The class that carries the new tokens is put on the body by the workbench's own effect,
         // and this one may run before it in the same flush; reading the palette on the next frame
         // reads it after the body has changed. (The first Chrome check read the old palette.)
-        const frame = requestAnimationFrame(() => {
-            if (grid === null) return;
-            grid.options.theme = palette();
-            const size = fontSize(chosen);
-            if (size !== undefined && grid.options.fontSize !== size) {
-                grid.options.fontSize = size;
+        return scheduleReflow(
+            requestAnimationFrame,
+            cancelAnimationFrame,
+            () => {
+                if (grid === null) return false;
+                grid.options.theme = palette();
+                const size = fontSize(chosen, scale);
+                if (size !== undefined && grid.options.fontSize !== size) {
+                    grid.options.fontSize = size;
+                }
+                return true;
+            },
+            () => {
+                refit?.();
+                if (wanted !== null) resized(wanted);
             }
-            refit?.();
-            if (wanted !== null) resized(wanted);
-        });
-        return () => cancelAnimationFrame(frame);
+        );
     });
 </script>
 

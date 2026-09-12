@@ -54,7 +54,7 @@
 
     .title {
         margin: 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;

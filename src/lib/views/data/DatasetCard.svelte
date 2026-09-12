@@ -157,7 +157,7 @@
     h3 {
         margin: 0;
         color: var(--ink-txt, var(--ink));
-        font-size: var(--fs-lg);
+        font-size: var(--fs-xl);
     }
 
     .description,
@@ -180,7 +180,7 @@
 
     .links a {
         color: var(--accent-txt, var(--accent));
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
     }
 
     :global(body.rice) .card {

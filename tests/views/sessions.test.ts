@@ -21,6 +21,7 @@ import SessionList, {
 import Terminal from '../../src/lib/views/sessions/Terminal.svelte';
 import Timeline from '../../src/lib/views/sessions/Timeline.svelte';
 import Transcript from '../../src/lib/views/sessions/Transcript.svelte';
+import { scheduleReflow } from '../../src/lib/views/sessions/reflow.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -628,6 +629,41 @@ describe('the terminal view with nothing selected', () => {
         expect(body).toContain(catalog['sessions.terminal_larger']);
         expect(body).toContain(catalog['sessions.terminal_reset']);
         expect(body.match(/class="tool[^"]*compact/g)).toHaveLength(3);
+    });
+});
+
+describe('a terminal option change', () => {
+    it('updates the grid one frame before it fits and reports the measured size', () => {
+        const queued = new Map<number, () => void>();
+        const order: string[] = [];
+        let next = 0;
+        const frame = (run: () => void): number => {
+            const id = (next += 1);
+            queued.set(id, run);
+            return id;
+        };
+        const cancel = (id: number): void => {
+            queued.delete(id);
+        };
+
+        scheduleReflow(
+            frame,
+            cancel,
+            () => {
+                order.push('options');
+                return true;
+            },
+            () => {
+                order.push('fit');
+                order.push('resize');
+            }
+        );
+
+        expect(order).toEqual([]);
+        queued.get(1)?.();
+        expect(order).toEqual(['options']);
+        queued.get(2)?.();
+        expect(order).toEqual(['options', 'fit', 'resize']);
     });
 });
 

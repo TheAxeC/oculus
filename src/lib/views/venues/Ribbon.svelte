@@ -55,9 +55,11 @@
 {/if}
 
 <div class="spark" title={t('col.ven_spark_tip', Math.max(...data.counts, 0))}>
-    <span>{t('col.ven_spark_lbl')}</span>
+    <span class="spark-label">{t('col.ven_spark_lbl')}</span>
     <pre>{spark}</pre>
-    <span>{data.months.map((month) => monthLabel(month.index)[0]).join('')}</span>
+    <span class="spark-months"
+        >{data.months.map((month) => monthLabel(month.index)[0]).join('')}</span
+    >
 </div>
 
 <div class="legend">
@@ -110,7 +112,14 @@
         gap: 6px;
         margin-bottom: 8px;
         color: var(--muted-txt, var(--muted));
+    }
+
+    .next {
         font-size: var(--fs-sm);
+    }
+
+    .legend {
+        font-size: var(--fs-xs);
     }
 
     .nextitem {
@@ -128,12 +137,21 @@
         gap: 8px;
         margin-bottom: 8px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
     }
 
     .spark pre {
         margin: 0;
         color: var(--accent-txt, var(--accent));
+        font-size: var(--fs-xl);
+    }
+
+    .spark-label {
+        font-size: var(--fs-xxs);
+    }
+
+    .spark-months {
+        font-size: var(--fs-3xs);
     }
 
     :global(body.rice) .spark {
@@ -163,7 +181,7 @@
     .monthname {
         margin-bottom: 4px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-xxs);
         font-weight: 700;
     }
 

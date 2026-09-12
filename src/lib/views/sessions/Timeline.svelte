@@ -149,7 +149,7 @@
         align-items: baseline;
         gap: 6px;
         min-width: 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
     }
 
     .ts {

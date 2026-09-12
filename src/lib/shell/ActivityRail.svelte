@@ -85,12 +85,15 @@
     import {
         crt,
         setCrt,
+        setTextScale,
         setTheme,
         setUnicode,
         setWallpaper,
         theme,
+        textScale,
         unicode,
-        wallpaper
+        wallpaper,
+        stepTextScale
     } from '$lib/state/ui.svelte';
     import { lookup, t } from '$lib/state/text';
     import { themes as themeList, wallpaperOnTheme } from '$lib/state/appearance';
@@ -269,6 +272,30 @@
             rail
             items={themes}
             onpick={(name) => setTheme(name)}
+        />
+        <ToolButton
+            label={t('app.text_smaller')}
+            glyph="collapse"
+            compact
+            rail
+            disabled={(textScale() ?? 1) <= 0.7}
+            onclick={() => stepTextScale(-1)}
+        />
+        <ToolButton
+            label={t('app.text_larger')}
+            glyph="expand"
+            compact
+            rail
+            disabled={(textScale() ?? 1) >= 1.6}
+            onclick={() => stepTextScale(1)}
+        />
+        <ToolButton
+            label={t('app.text_reset')}
+            glyph="refresh"
+            compact
+            rail
+            disabled={textScale() === null}
+            onclick={() => setTextScale(null)}
         />
         <ToolButton
             label={t('ui.crt')}

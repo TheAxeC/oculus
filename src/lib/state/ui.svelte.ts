@@ -1,9 +1,9 @@
 // Layer 2, client state. What the page looks like and what each open view remembers: the theme, the
-// CRT overlay, the wallpaper, the glyph mode, the terminal size, and one blob of state per view instance, keyed by the
+// CRT overlay, the wallpaper, the glyph mode, the app and terminal sizes, and one blob of state per view instance, keyed by the
 // instance id the layout gives it. Two instances of the same view therefore remember different
 // things, which is what DESIGN.md's "Layout as data" means by separate state by construction.
 //
-// The five appearance values save together under the one key, so what a browser was left looking
+// The six appearance values save together under the one key, so what a browser was left looking
 // like comes back whole. What they start as is config/appearance.yml's, read through
 // state/appearance.ts, and never a literal here.
 //
@@ -26,13 +26,14 @@ type Ui = {
     crt: boolean;
     wallpaper: boolean;
     unicode: boolean;
+    textScale: number | null;
     terminalFont: number | null;
     /** One entry per view instance, by instance id. The shape of the value is the view's own. */
     instances: Record<string, unknown>;
 };
 
 /**
- * What a browser that has saved nothing starts on. Three of the five come from
+ * What a browser that has saved nothing starts on. Three of the six come from
  * config/appearance.yml rather than from a literal here: the theme is the first of its list, the
  * overlay is its `crt.default`, and the wallpaper is on wherever one is configured and the theme it
  * starts on is one the wallpaper shows under. The glyphs start as the theme's own, which is the
@@ -45,6 +46,7 @@ function defaultUi(): Ui {
         crt: crtDefault(),
         wallpaper: wallpaperOnTheme(theme),
         unicode: false,
+        textScale: null,
         terminalFont: null,
         instances: {}
     };
@@ -80,6 +82,11 @@ export function wallpaper(): boolean {
 /** Whether the real glyphs are kept on a terminal theme instead of their ASCII stand-ins. */
 export function unicode(): boolean {
     return store.current.unicode;
+}
+
+/** The app-wide multiplier, or null when the default multiplier of one is in force. */
+export function textScale(): number | null {
+    return store.current.textScale;
 }
 
 /** The terminal grid size chosen by the viewer, or null when the config default is in force. */
@@ -143,6 +150,7 @@ export function loadUi(storage: Storable = localStorage): boolean {
         crt: typeof held.crt === 'boolean' ? held.crt : started.crt,
         wallpaper: typeof held.wallpaper === 'boolean' ? held.wallpaper : started.wallpaper,
         unicode: held.unicode === true,
+        textScale: boundedTextScale(held.textScale),
         terminalFont:
             typeof held.terminalFont === 'number' && Number.isFinite(held.terminalFont)
                 ? Math.min(40, Math.max(6, held.terminalFont))
@@ -183,6 +191,23 @@ export function setWallpaper(on: boolean): void {
 /** Keep the real glyphs on a terminal theme, or let it use the ASCII stand-ins. */
 export function setUnicode(on: boolean): void {
     save({ ...store.current, unicode: on });
+}
+
+/** A tenth-step app-wide multiplier from 0.7 to 1.6, or the null default at one. */
+export function setTextScale(scale: number | null): void {
+    save({ ...store.current, textScale: boundedTextScale(scale) });
+}
+
+/** Move the app-wide multiplier by one tenth in either direction. */
+export function stepTextScale(by: -1 | 1): void {
+    setTextScale((textScale() ?? 1) + by / 10);
+}
+
+/** Normalise saved and chosen scale values to the ten supported steps and the null default. */
+function boundedTextScale(scale: unknown): number | null {
+    if (typeof scale !== 'number' || !Number.isFinite(scale)) return null;
+    const bounded = Math.min(1.6, Math.max(0.7, Math.round(scale * 10) / 10));
+    return bounded === 1 ? null : bounded;
 }
 
 /** Choose a terminal grid size between 6 and 40 CSS pixels, or restore the config default. */

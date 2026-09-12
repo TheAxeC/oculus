@@ -177,7 +177,7 @@
         display: flex;
         align-items: center;
         gap: 4px;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         font-weight: 700;
     }
 
@@ -188,7 +188,7 @@
 
     .lane-sub {
         margin: 2px 0 6px;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -201,7 +201,7 @@
 
     .stage {
         margin: 6px 0 0;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-3xs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.06em;
@@ -228,7 +228,7 @@
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         color: var(--ink-txt, var(--ink));
     }
 
@@ -237,7 +237,7 @@
         border: 0;
         background: none;
         font: inherit;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         text-align: left;
         cursor: pointer;
     }
@@ -254,7 +254,7 @@
 
     .note {
         margin: 2px 0 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
     }
 </style>

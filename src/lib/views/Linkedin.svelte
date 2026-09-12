@@ -242,7 +242,7 @@
         align-items: center;
         gap: 4px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
+        font-size: var(--fs-lg);
     }
 
     .cards {

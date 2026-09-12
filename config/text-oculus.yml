@@ -32,6 +32,9 @@ text:
     search: "Search"
     search_tip: "Search projects, entries and tabs (Cmd-K or Ctrl-K)"
     update_tip: "Open the update tasks"
+    text_smaller: "Smaller text"
+    text_larger: "Larger text"
+    text_reset: "Reset text size"
     palette_empty: "No match"
     palette_unavailable: "Unavailable"
   notify:                      # the hook push of DESIGN.md's "Sessions": routes/api/hook and the two chips SessionList draws.

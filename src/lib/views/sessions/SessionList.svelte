@@ -523,7 +523,7 @@
         align-items: center;
         gap: 6px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         text-transform: uppercase;
         letter-spacing: 0.04em;
     }
@@ -617,7 +617,7 @@
     .top .pin,
     .top .hook {
         flex: none;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-3xs);
     }
 
     .top .nm {
@@ -630,7 +630,7 @@
     .meta {
         flex-wrap: wrap;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
     }
 
     .meta .act {

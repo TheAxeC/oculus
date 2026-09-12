@@ -261,13 +261,13 @@
 <style>
     .grip {
         cursor: grab;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-lg);
         color: var(--muted-txt, var(--muted));
     }
 
     .sub {
         margin: 0 0 4px;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -315,7 +315,7 @@
 
     .label {
         flex: 0 0 auto;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-xxs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;

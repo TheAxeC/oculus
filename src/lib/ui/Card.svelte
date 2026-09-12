@@ -108,7 +108,7 @@
 
     .title {
         margin: 0;
-        font-size: var(--fs-lg);
+        font-size: var(--fs-xl);
         font-weight: 700;
         color: var(--ink-txt, var(--ink));
     }

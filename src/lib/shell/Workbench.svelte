@@ -32,7 +32,14 @@
         restorePanes
     } from '$lib/state/layout.svelte';
     import { dragging } from '$lib/state/drag.svelte';
-    import { crt, theme, unicode, updateTrayRequested, wallpaper } from '$lib/state/ui.svelte';
+    import {
+        crt,
+        textScale,
+        theme,
+        unicode,
+        updateTrayRequested,
+        wallpaper
+    } from '$lib/state/ui.svelte';
     import { PANEL_DEFAULT, paneAt, resize, type Layout } from '$lib/state/layout';
     import { setGlyphMode, t } from '$lib/state/text';
     import {
@@ -163,6 +170,7 @@
     );
 
     $effect(() => {
+        document.documentElement.style.setProperty('--text-scale', String(textScale() ?? 1));
         applyTheme(document, [themeClass(theme()), wall ? WALL_CLASS : ''].join(' '), crt());
         applyWallpaper(document, paper, wall);
         // The terminal palettes draw the ASCII stand-ins unless the viewer asked for the real

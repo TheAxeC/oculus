@@ -244,7 +244,7 @@
         align-items: center;
         gap: 6px;
         padding: 8px 12px;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
@@ -259,17 +259,22 @@
 
     .seclbl {
         margin: 10px 0 3px;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-xxs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.05em;
         color: var(--accent-txt, var(--accent));
     }
 
-    .sub,
-    .note {
+    .sub {
         margin: 4px 0 0;
         font-size: var(--fs-md);
+        color: var(--muted-txt, var(--muted));
+    }
+
+    .note {
+        margin: 4px 0 0;
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -290,7 +295,7 @@
 
     .fact b {
         margin-right: 5px;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-xxs);
         text-transform: uppercase;
         letter-spacing: 0.04em;
         color: var(--accent-txt, var(--accent));
@@ -307,7 +312,14 @@
         border-left: 3px solid var(--c-orange);
         border-radius: 6px;
         background: var(--chip);
+    }
+
+    .milestone {
         font-size: var(--fs-md);
+    }
+
+    .caveat {
+        font-size: var(--fs-sm);
     }
 
     .order {
@@ -317,16 +329,16 @@
 
     .order li {
         margin: 2px 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
     }
 
     .ordernote {
-        font-size: var(--fs-md);
+        font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
     }
 
     .inst {
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
     }
 
@@ -373,7 +385,7 @@
         text-align: center;
         border-radius: 50%;
         background: var(--chip);
-        font-size: var(--fs-xs);
+        font-size: var(--fs-xxs);
         font-weight: 700;
         color: var(--muted-txt, var(--muted));
     }
@@ -422,7 +434,7 @@
 
     .crit li {
         margin: 2px 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
     }
 
     .empty {

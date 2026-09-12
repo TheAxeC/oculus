@@ -25,11 +25,14 @@ import {
     requestUpdateTray,
     setCrt,
     setInstanceState,
+    setTextScale,
     setTerminalFont,
     setTheme,
     setUnicode,
     setWallpaper,
+    stepTextScale,
     theme,
+    textScale,
     terminalFont,
     unicode,
     updateTrayRequested,
@@ -69,17 +72,19 @@ describe('the appearance store', () => {
         expect(crt()).toBe(crtDefault());
         expect(wallpaper()).toBe(wallpaperOnTheme(DEFAULT_THEME));
         expect(unicode()).toBe(false);
+        expect(textScale()).toBe(null);
         expect(terminalFont()).toBe(null);
         expect(instanceState('a')).toBe(undefined);
     });
 
-    it('saves the five appearance values and one blob per instance under the one key', () => {
+    it('saves the six appearance values and one blob per instance under the one key', () => {
         const storage = fakeStorage();
         loadUi(storage);
         setTheme('mocha');
         setCrt(true);
         setWallpaper(true);
         setUnicode(true);
+        setTextScale(1.3);
         setTerminalFont(14.5);
         setInstanceState('a', { filter: 'active' });
         setInstanceState('b', 3);
@@ -91,6 +96,7 @@ describe('the appearance store', () => {
             crt: true,
             wallpaper: true,
             unicode: true,
+            textScale: 1.3,
             terminalFont: 14.5,
             instances: { a: { filter: 'active' }, b: 3 }
         });
@@ -106,6 +112,49 @@ describe('the appearance store', () => {
         setTerminalFont(null);
         expect(terminalFont()).toBe(null);
         expect(saved(storage).terminalFont).toBe(null);
+    });
+
+    it('saves tenth-step app scales, bounds them, and uses null for the default one', () => {
+        const storage = fakeStorage();
+        loadUi(storage);
+        setTextScale(0.51);
+        expect(textScale()).toBe(0.7);
+        setTextScale(1.74);
+        expect(textScale()).toBe(1.6);
+        setTextScale(1.24);
+        expect(textScale()).toBe(1.2);
+        setTextScale(1);
+        expect(textScale()).toBe(null);
+        expect(saved(storage).textScale).toBe(null);
+    });
+
+    it('steps down from the default, stops at the upper bound, and returns to null at one', () => {
+        const storage = fakeStorage();
+        loadUi(storage);
+        stepTextScale(-1);
+        expect(textScale()).toBe(0.9);
+        expect(saved(storage).textScale).toBe(0.9);
+        setTextScale(1.5);
+        stepTextScale(1);
+        expect(textScale()).toBe(1.6);
+        stepTextScale(1);
+        expect(textScale()).toBe(1.6);
+        expect(saved(storage).textScale).toBe(1.6);
+        setTextScale(0.9);
+        stepTextScale(1);
+        expect(textScale()).toBe(null);
+        expect(saved(storage).textScale).toBe(null);
+    });
+
+    it('bounds a saved app scale and rejects a non-number', () => {
+        expect(loadUi(fakeStorage({ version: UI_VERSION, textScale: 5, instances: {} }))).toBe(
+            true
+        );
+        expect(textScale()).toBe(1.6);
+        expect(
+            loadUi(fakeStorage({ version: UI_VERSION, textScale: 'large', instances: {} }))
+        ).toBe(true);
+        expect(textScale()).toBe(null);
     });
 
     it('bounds a saved terminal size and rejects a non-number', () => {

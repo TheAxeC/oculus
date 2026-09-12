@@ -209,6 +209,6 @@
         margin: 8px 0 0;
         padding-left: 24px;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
     }
 </style>

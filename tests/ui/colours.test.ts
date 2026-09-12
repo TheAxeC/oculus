@@ -428,6 +428,23 @@ describe('the surfaces a component may fill and paint on', () => {
     setAppearance(loadConfig(engineDir()).config);
     const names = themes().map((entry) => entry.name);
 
+    it('keeps both type scales at their cockpit pixels when the app scale is one', () => {
+        const expected = {
+            ':root': [8.5, 9.5, 10.5, 11.5, 12.5, 13.5, 15, 19, 24],
+            rice: [8, 9, 10, 10.5, 11.5, 12.5, 13.5, 16, 20]
+        };
+        const tokens = ['3xs', 'xxs', 'xs', 'sm', 'md', 'lg', 'xl', '2xl', '3xl'];
+        for (const [block, pixels] of Object.entries(expected)) {
+            expect(
+                tokens.map((token) => {
+                    const value = blocks[block][`--fs-${token}`];
+                    const match = value.match(/^calc\(([\d.]+)px \* var\(--text-scale, 1\)\)$/);
+                    return match === null ? Number.NaN : Number(match[1]);
+                })
+            ).toEqual(pixels);
+        }
+    });
+
     it('keeps every --on-<surface> on its surface at 4.5:1, under every theme', () => {
         const failures: string[] = [];
         let measured = 0;

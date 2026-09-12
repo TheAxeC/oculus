@@ -108,7 +108,7 @@
         align-items: baseline;
         gap: 6px;
         min-width: 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
     }
 
     .dot {
@@ -132,7 +132,7 @@
     .mo {
         flex: 0 0 auto;
         color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
     }
 
     .ds {

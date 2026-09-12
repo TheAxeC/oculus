@@ -511,7 +511,7 @@
 <style>
     .folder {
         font-family: var(--font-mono);
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
         word-break: break-all;
     }
@@ -582,18 +582,19 @@
         margin-top: 8px;
     }
 
-    .eli5 p,
-    .next {
+    .eli5 p {
         margin: 2px 0 0;
         font-size: var(--fs-md);
     }
 
     .next {
+        margin: 2px 0 0;
+        font-size: var(--fs-sm);
         color: var(--muted-txt, var(--muted));
     }
 
     .label {
-        font-size: var(--fs-xs);
+        font-size: var(--fs-xxs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
@@ -608,7 +609,7 @@
 
     .statusline {
         margin: 0 0 6px;
-        font-size: var(--fs-md);
+        font-size: var(--fs-sm);
     }
 
     .field {
@@ -671,7 +672,7 @@
 
     .capped {
         margin: 4px 0 0;
-        font-size: var(--fs-md);
+        font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
     }
 </style>

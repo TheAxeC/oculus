@@ -250,7 +250,7 @@
     }
 
     .label {
-        font-size: var(--fs-xs);
+        font-size: var(--fs-xxs);
         font-weight: 700;
         text-transform: uppercase;
         letter-spacing: 0.04em;
@@ -265,7 +265,7 @@
 
     .sub {
         margin: 0 0 6px;
-        font-size: var(--fs-sm);
+        font-size: var(--fs-md);
         color: var(--muted-txt, var(--muted));
     }
 

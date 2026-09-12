@@ -39,7 +39,7 @@
 
     .label {
         color: var(--accent-txt, var(--accent));
-        font-size: var(--fs-xs);
+        font-size: var(--fs-xxs);
         font-weight: 700;
         letter-spacing: 0.04em;
         text-transform: uppercase;

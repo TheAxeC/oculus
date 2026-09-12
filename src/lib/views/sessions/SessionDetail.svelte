@@ -407,7 +407,7 @@
         color: var(--muted-txt, var(--muted));
         text-transform: uppercase;
         letter-spacing: 0.04em;
-        font-size: var(--fs-xs);
+        font-size: var(--fs-sm);
         align-self: center;
     }
 

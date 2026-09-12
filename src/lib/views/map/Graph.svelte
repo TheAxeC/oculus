@@ -351,7 +351,13 @@
                             rx="3"
                         ></rect>
                     {/if}
-                    <text x={node.x + node.radius + 4} y={node.y + 4}>{node.label}</text>
+                    <text
+                        class:line-label={node.kind === 'line'}
+                        x={node.x + node.radius + 4}
+                        y={node.y + 4}
+                    >
+                        {node.label}
+                    </text>
                     <title>{node.label}</title>
                 </g>
             {/each}
@@ -424,8 +430,12 @@
 
     text {
         fill: var(--ink-txt, var(--ink));
-        font-size: var(--fs-sm);
+        font-size: var(--fs-xs);
         pointer-events: none;
+    }
+
+    text.line-label {
+        font-size: var(--fs-sm);
     }
 
     path {

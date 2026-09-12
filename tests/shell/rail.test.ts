@@ -26,6 +26,7 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
+import { setTextScale } from '../../src/lib/state/ui.svelte.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { installBadges } from '../state/rail-badges-fixture.ts';
 import {
@@ -132,13 +133,42 @@ describe('the rail, drawn', () => {
         for (const id of SMALL) expect(count(body, `data-view="${id}"`)).toBe(1);
     });
 
-    it('draws the search and update controls from the catalog', () => {
+    it('draws the search, update, and three app text controls from the catalog', () => {
         expect(body).toContain('data-action="search"');
         expect(body).toContain('data-action="update"');
         expect(body).toContain(`aria-label="${catalog['app.search']}"`);
         expect(body).toContain(`aria-label="${catalog['js.tasks.update_tasks']}"`);
         expect(body).toContain(catalog['app.search_tip']);
         expect(body).toContain(catalog['app.update_tip']);
+        expect(body).toContain(`aria-label="${catalog['app.text_smaller']}"`);
+        expect(body).toContain(`aria-label="${catalog['app.text_larger']}"`);
+        expect(body).toContain(`aria-label="${catalog['app.text_reset']}"`);
+        for (const label of ['app.text_smaller', 'app.text_larger', 'app.text_reset']) {
+            expect(buttonWith(body, `aria-label="${catalog[label]}"`)).toMatch(
+                /class="[^"]*rail-control/
+            );
+        }
+    });
+});
+
+describe('the app text controls', () => {
+    it.each([
+        { scale: null, disabled: [false, false, true] },
+        { scale: 0.7, disabled: [true, false, false] },
+        { scale: 1.6, disabled: [false, true, false] }
+    ])('disables the applicable controls at scale $scale', ({ scale, disabled }) => {
+        setTextScale(scale);
+        try {
+            const body = render(ActivityRail, { props: { groups: [] } }).body;
+            const keys = ['app.text_smaller', 'app.text_larger', 'app.text_reset'];
+            for (const [index, key] of keys.entries()) {
+                const button = buttonWith(body, `aria-label="${catalog[key]}"`);
+                expect(button).toBeDefined();
+                expect(/\sdisabled(?:[\s=>])/.test(button!)).toBe(disabled[index]);
+            }
+        } finally {
+            setTextScale(null);
+        }
     });
 });
 
