@@ -160,6 +160,17 @@ export function defaultPages(label: string): Pages {
     return { pages: [page], current: page.id };
 }
 
+/** Move one page to a clamped index while leaving the page on screen unchanged. */
+export function movePage(held: Pages, id: string, index: number): Pages {
+    const at = held.pages.findIndex((page) => page.id === id);
+    if (at < 0) return held;
+    const pages = held.pages.filter((page) => page.id !== id);
+    const next = Math.max(0, Math.min(Math.trunc(index), pages.length));
+    if (next === at) return held;
+    pages.splice(next, 0, held.pages[at]);
+    return { pages, current: held.current };
+}
+
 /** The panel's share, held between PANEL_MIN and PANEL_MAX; anything that is not a number is the default. */
 export function clampPanel(fraction: number): number {
     if (!Number.isFinite(fraction)) return PANEL_DEFAULT;

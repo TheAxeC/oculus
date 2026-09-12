@@ -114,6 +114,7 @@
                         class="face"
                         role="tab"
                         aria-selected={tab.id === active}
+                        data-drag-handle={onpointerdown === undefined ? undefined : ''}
                         onclick={() => onselect(tab.id)}
                         onpointerdown={(event) => down(tab.id, event)}
                     >

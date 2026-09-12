@@ -16,6 +16,8 @@
         glyph?: string;
         /** Draw it as the one in force. */
         active?: boolean;
+        /** Whether this button's controlled content is open. Omitted for buttons with no content. */
+        expanded?: boolean;
         onclick: () => void;
         /** The tooltip, when it should say more than the label does. A button with none shows none. */
         title?: string;
@@ -38,6 +40,7 @@
         label,
         glyph,
         active = false,
+        expanded,
         onclick,
         title,
         checked,
@@ -59,6 +62,7 @@
         class:compact={iconOnly}
         role={checked === undefined ? undefined : 'radio'}
         aria-checked={checked}
+        aria-expanded={expanded}
         aria-label={iconOnly ? label : undefined}
         {disabled}
         {onclick}

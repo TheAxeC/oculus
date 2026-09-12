@@ -11,6 +11,7 @@
     import Chip from '$lib/ui/Chip.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
     import EntryForm from '../shared/EntryForm.svelte';
     import Subtasks from '../shared/Subtasks.svelte';
     import {
@@ -242,19 +243,7 @@
             {#if groups.length > 0}
                 <div class="row">
                     <span class="label">{t('collection.related')}</span>
-                    {#each groups as group (group.type)}
-                        <Chip label={`${group.count} ${group.type}`} />
-                        {#each group.members as member (member.id)}
-                            <ToolButton
-                                label={member.label}
-                                onclick={() =>
-                                    openView('project', 'main', {
-                                        id: member.id,
-                                        label: member.label
-                                    })}
-                            />
-                        {/each}
-                    {/each}
+                    <CrossLinks {groups} />
                 </div>
             {/if}
 

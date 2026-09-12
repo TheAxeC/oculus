@@ -195,7 +195,9 @@ describe('the Data view', () => {
         expect(html).toContain('ECG signals');
         expect(html).toContain('Recover from the source.');
         expect(html).toContain('data-project-group="active"');
-        expect(html).toContain('LP');
+        expect(html).toContain('>1 active</span>');
+        expect(html).toContain('aria-expanded="false"');
+        expect(html).not.toContain('>LP</span>');
         expect(html).toContain('href="https://example.org/open"');
         expect(html).toContain('target="_blank"');
         expect(html).toContain('Recover');

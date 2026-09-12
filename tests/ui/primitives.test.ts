@@ -17,6 +17,7 @@ import Chip from '../../src/lib/ui/Chip.svelte';
 import Confirm from '../../src/lib/ui/Confirm.svelte';
 import Empty from '../../src/lib/ui/Empty.svelte';
 import Meter from '../../src/lib/ui/Meter.svelte';
+import { menuPlacement } from '../../src/lib/ui/Menu.svelte';
 import Pane from '../../src/lib/ui/Pane.svelte';
 import Search from '../../src/lib/ui/Search.svelte';
 import Segment from '../../src/lib/ui/Segment.svelte';
@@ -52,6 +53,23 @@ function html<Props extends Record<string, unknown>>(
 ): string {
     return render(component, { props }).body;
 }
+
+describe('Menu placement', () => {
+    it('anchors beside the containing rail and falls back to the button', () => {
+        const button = { right: 44, top: 100, height: 20, bottom: 120 };
+        const rail = { right: 52, top: 0, height: 800, bottom: 800 };
+        expect(menuPlacement(button, rail, 800)).toBe('left: 56px; top: 100px; max-height: 692px;');
+        expect(menuPlacement(button, null, 800)).toBe('left: 48px; top: 100px; max-height: 692px;');
+    });
+
+    it('anchors a button in the lower half by its bottom edge', () => {
+        const button = { right: 44, top: 600, height: 20, bottom: 620 };
+        const rail = { right: 52, top: 0, height: 800, bottom: 800 };
+        expect(menuPlacement(button, rail, 800)).toBe(
+            'left: 56px; bottom: 180px; max-height: 612px;'
+        );
+    });
+});
 
 describe('Card', () => {
     it('draws its title at the level it was given', () => {
@@ -360,6 +378,11 @@ describe('Tooltip', () => {
         expect(body).toContain('role="presentation"');
         expect(body).not.toContain('aria-describedby');
         expect(body).toContain('role="tooltip"');
+    });
+
+    it('puts only a focusable wrapper in the tab order', () => {
+        expect(tip({ focusable: true })).toContain('tabindex="0"');
+        expect(tip({})).not.toContain('tabindex=');
     });
 });
 

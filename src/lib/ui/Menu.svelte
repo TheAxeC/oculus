@@ -1,4 +1,28 @@
 <script module lang="ts">
+    /** The rectangle fields used to place a compact menu beside its button or containing rail. */
+    export type MenuRect = { right: number; top: number; height: number; bottom: number };
+
+    /** How far the compact list stays from the viewport edge and from the containing rail. */
+    const EDGE = 8;
+    const GAP = 4;
+
+    /** The fixed-position style for a compact menu, anchored to the rail when one contains it. */
+    export function menuPlacement(
+        button: MenuRect,
+        rail: MenuRect | null,
+        viewportHeight: number
+    ): string {
+        const anchor = rail ?? button;
+        const left = `left: ${Math.round(anchor.right + GAP)}px;`;
+        if (button.top + button.height / 2 < viewportHeight / 2) {
+            const room = viewportHeight - button.top - EDGE;
+            return `${left} top: ${Math.round(button.top)}px; max-height: ${Math.round(room)}px;`;
+        }
+        const room = button.bottom - EDGE;
+        const bottom = viewportHeight - button.bottom;
+        return `${left} bottom: ${Math.round(bottom)}px; max-height: ${Math.round(room)}px;`;
+    }
+
     /**
      * One choice in the list. `active` marks the one in force, which the menu shows as checked, and
      * `glyph` is a name in `glyphs:` drawn before the words, for a list whose choices are things
@@ -89,10 +113,6 @@
     /** The inline position of a list opening beside the rail, measured when it opens. */
     let placed = $state('');
 
-    /** How far from the window's edge a list beside the rail may reach, and its gap from the rail. */
-    const EDGE = 8;
-    const GAP = 4;
-
     /**
      * Where a list beside the rail goes, in window coordinates: level with its button, hanging down
      * from the button's top when the button is in the upper half of the window and rising from its
@@ -103,14 +123,8 @@
     function place(): string {
         if (!beside || button === undefined || typeof window === 'undefined') return '';
         const rect = button.getBoundingClientRect();
-        const left = `left: ${Math.round(rect.right + GAP)}px;`;
-        if (rect.top + rect.height / 2 < window.innerHeight / 2) {
-            const room = window.innerHeight - rect.top - EDGE;
-            return `${left} top: ${Math.round(rect.top)}px; max-height: ${Math.round(room)}px;`;
-        }
-        const room = rect.bottom - EDGE;
-        const bottom = window.innerHeight - rect.bottom;
-        return `${left} bottom: ${Math.round(bottom)}px; max-height: ${Math.round(room)}px;`;
+        const rail = button.closest('[data-rail]')?.getBoundingClientRect() ?? null;
+        return menuPlacement(rect, rail, window.innerHeight);
     }
 
     /** The hue of one item's dot, as the one inline style this primitive writes. */

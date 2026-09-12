@@ -35,7 +35,9 @@ describe('the Programs view', () => {
         expect(body).toContain('1 strong');
         expect(body).toContain('A <strong>goal</strong>.');
         expect(body).toContain('Funded by <strong>Tests</strong>.');
-        expect(body).toContain('ALPHA');
+        expect(body).toContain('>1 active</span>');
+        expect(body).toContain('aria-expanded="false"');
+        expect(body).not.toContain('>ALPHA</span>');
         expect(body).toContain('data-program="dormant"');
         expect(body).toMatch(/data-program="dormant"[^>]*class="[^"]*dormant/);
     });
@@ -44,7 +46,9 @@ describe('the Programs view', () => {
         const body = html();
         expect(body).toContain(catalog['col.orphans']);
         expect(body).toContain('1 untagged');
-        expect(body).toContain('ORPHAN');
+        expect(body).toContain('>1 manuscript</span>');
+        expect(body).toContain('aria-expanded="false"');
+        expect(body).not.toContain('>ORPHAN</span>');
         expect(body).toContain(catalog['col.provisional_h']);
         expect(body).toContain('Candidate line');
         expect(body).toContain(catalog['col.offpillar_h']);

@@ -293,34 +293,6 @@ text:
       card_one: "1 session"
       card_live: "{0} live"
 
-  fetch:                       # neofetch-style panel at the top of the Focus board (terminal themes only).
-    # A fetch block is a LOGO next to `key: value` lines, in a window - not a chart, and not squeezed into
-    # the header bar. The logo is an isometric block-term core; keep it here so the .py stays free of art.
-    # NOTE: in a YAML block scalar the FIRST line fixes the indentation, so the art's least-indented line
-    # must come first - anything further left later would end the block and break the whole file.
-    logo: |-
-      +--------+
-      |        |\
-      |  [##]  | \
-      |        |  +
-      +--------+  |
-       \        \ |
-        \        \|
-         +--------+
-    titlebar: "axel@research"
-    window: "fetch"
-    # The lines are operational - what you would act on this morning, not an inventory of the portfolio.
-    lbl_next: "next up"
-    lbl_review: "review"
-    lbl_ready: "ready"
-    lbl_blocked: "blocked"
-    lbl_hpc: "hpc"
-    lbl_tasks: "tasks"
-    val_in_days: "{0} in {1}d"
-    val_overdue: "{0} overdue {1}d"
-    none: "nothing dated"
-    tip: "what needs doing - the same numbers the command center and the boards carry"
-
   board:                       # the ONE shared project board - Projects / Archive / Coauthor (page.py _board).
                                # facet_* = a filter group's heading, which is ALSO lower-cased into the
                                # "Filter by ..." summary; a group only renders when its board has something to
@@ -832,6 +804,8 @@ text:
     domains_intro: "My projects by <b>application domain</b> (the field - colour-coded as on the cards). A different cut from Research Lines (method). Edit <code>registries/domains.yml</code>."
     domains_empty: "No domains."
     ven_jif: "JIF {0}"
+    ven_conc: "concentrated"
+    ven_conc_tip: "Two or more active or manuscript projects target this venue; the venue policy is to spread them"
     ven_wos: "WoS {0}"
     ven_scopus: "Scopus {0}"
     ven_site: "site"

@@ -155,7 +155,7 @@
     const offersWallpaper = $derived(wallpaperOnTheme(theme()));
 </script>
 
-<nav class="rail" aria-label={t('ui.rail')}>
+<nav class="rail" data-rail aria-label={t('ui.rail')}>
     <div class="views">
         <!-- Keyed by position: two config groups may carry the same label, and a duplicate key
              would be an error rather than a repeated heading. -->

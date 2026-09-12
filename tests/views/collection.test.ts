@@ -432,7 +432,8 @@ describe('the funding view', () => {
     it("groups the projects whose manifest names the scheme's key", () => {
         expect(body).toContain(catalog['collection.related']);
         expect(body).toContain('>1 active</span>');
-        expect(body).toContain('Alpha');
+        expect(body).toContain('aria-expanded="false"');
+        expect(body).not.toContain('>Alpha</span>');
     });
 
     it('draws the card of the projects no scheme covers, and its facet toggle', () => {
@@ -461,7 +462,9 @@ describe('the code view', () => {
     it("draws the repo cards under it, with the projects the entry's related list names", () => {
         const card = cards(body)[0];
         expect(card).toContain('a repo');
-        expect(card).toContain('Alpha');
+        expect(card).toContain('>1 active</span>');
+        expect(card).toContain('aria-expanded="false"');
+        expect(card).not.toContain('>Alpha</span>');
     });
 });
 

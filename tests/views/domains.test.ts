@@ -26,8 +26,11 @@ describe('the Domains view', () => {
         expect(body).toContain('Heart <strong>domain</strong>');
         expect(body).toContain(`2 ${catalog['col.projects']}`);
         expect(body).toContain('Heart blurb.');
-        expect(body).toContain('ALPHA');
-        expect(body).toContain('OLD');
+        expect(body).toContain('>1 active</span>');
+        expect(body).toContain('>1 published</span>');
+        expect(body).toContain('aria-expanded="false"');
+        expect(body).not.toContain('>ALPHA</span>');
+        expect(body).not.toContain('>OLD</span>');
         expect(body).not.toContain('data-domain="empty"');
         expect(body).toContain('--tone: var(--c-crimson)');
     });

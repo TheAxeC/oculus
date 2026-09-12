@@ -9,8 +9,9 @@
     // strip is drawn with the same tab primitive a pane's tabs are drawn with: a page looks like
     // what it is, a tab of workbenches, and the rail is left as it was.
     //
-    // It holds only what is being asked: the page a close is waiting on, and the name being typed
-    // while one is renamed. Everything else is the layout store's.
+    // It holds only what is being asked: the page a close is waiting on, the name being typed while
+    // one is renamed, and the page drag with its insertion point. Everything else is the layout
+    // store's.
 
     import Confirm from '$lib/ui/Confirm.svelte';
     import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
@@ -19,12 +20,14 @@
     import {
         closePage,
         currentPage,
+        movePage,
         openArrangement,
         openPage,
         pages,
         renamePage,
         switchPage
     } from '$lib/state/layout.svelte';
+    import { THRESHOLD, withoutOwn, type Point } from '$lib/state/drag.svelte';
     import { panes, type Page } from '$lib/state/layout';
     import { lookup, t } from '$lib/state/text';
 
@@ -48,6 +51,17 @@
 
     /** The name being typed, or null when no page is being renamed. */
     let draft: string | null = $state(null);
+
+    /** A page press before or after it has crossed the shared drag threshold. */
+    let moving: { id: string; origin: Point; armed: boolean } | null = $state(null);
+
+    /**
+     * The insertion index under the pointer, or null outside the strip. It is kept from the first
+     * move, since the strip reports it before the document listener below has armed the drag; the
+     * mark is drawn, and the drop lands, only once the drag is armed.
+     */
+    let hovered: number | null = $state(null);
+    const dropIndex = $derived.by(() => (moving?.armed === true ? hovered : null));
 
     const shown = $derived(pages());
     const current = $derived(currentPage());
@@ -105,6 +119,77 @@
         if (found !== undefined) openArrangement(found.node, found.label);
     }
 
+    /** Hold a page until the pointer has moved far enough to distinguish the gesture from a click. */
+    function press(id: string, point: Point): void {
+        moving = { id, origin: point, armed: false };
+        hovered = null;
+        listen(true);
+    }
+
+    function pointerMove(event: PointerEvent): void {
+        if (moving === null || moving.armed) return;
+        const distance = Math.hypot(
+            event.clientX - moving.origin.x,
+            event.clientY - moving.origin.y
+        );
+        if (distance >= THRESHOLD) moving = { ...moving, armed: true };
+    }
+
+    function stripHover(index: number | null): void {
+        hovered = index;
+    }
+
+    /** Drop the held page at the strip's insertion point, translated past its own old position. */
+    function pointerUp(): void {
+        const held = moving;
+        const index = dropIndex;
+        moving = null;
+        hovered = null;
+        listen(false);
+        if (held?.armed !== true || index === null) return;
+        const own = shown.findIndex((page) => page.id === held.id);
+        movePage(held.id, withoutOwn(index, own));
+    }
+
+    function cancel(): void {
+        moving = null;
+        hovered = null;
+        listen(false);
+    }
+
+    function dragKeys(event: KeyboardEvent): void {
+        if (event.key !== 'Escape' || moving === null) return;
+        event.preventDefault();
+        cancel();
+    }
+
+    function listen(on: boolean): void {
+        if (typeof document === 'undefined') return;
+        if (on) {
+            document.addEventListener('pointermove', pointerMove);
+            document.addEventListener('pointerup', pointerUp);
+            document.addEventListener('pointercancel', cancel);
+            document.addEventListener('keydown', dragKeys);
+            return;
+        }
+        document.removeEventListener('pointermove', pointerMove);
+        document.removeEventListener('pointerup', pointerUp);
+        document.removeEventListener('pointercancel', cancel);
+        document.removeEventListener('keydown', dragKeys);
+    }
+
+    /** Move the current page one place when a focused control in the strip receives the shortcut. */
+    function pageKeys(event: KeyboardEvent): void {
+        if (!event.ctrlKey || !event.shiftKey || event.metaKey) return;
+        const step = event.key === 'ArrowLeft' ? -1 : event.key === 'ArrowRight' ? 1 : 0;
+        if (step === 0) return;
+        const at = shown.findIndex((page) => page.id === current.id);
+        movePage(current.id, at + step);
+        event.preventDefault();
+    }
+
+    $effect(() => () => listen(false));
+
     /** Enter takes the name that was typed, Escape drops it; every other key is the box's own. */
     function keys(event: KeyboardEvent): void {
         if (event.key === 'Enter' && draft !== null) {
@@ -119,8 +204,19 @@
     }
 </script>
 
-<section class="strip" aria-label={t('ui.pages')}>
-    <Tabs {tabs} active={current.id} onselect={switchPage} onclose={close} menu={pageMenu} />
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions the shortcut bubbles from the tab or
+     menu control that has focus; the region itself does not enter the tab order. -->
+<section class="strip" aria-label={t('ui.pages')} onkeydown={pageKeys}>
+    <Tabs
+        {tabs}
+        active={current.id}
+        onselect={switchPage}
+        onclose={close}
+        onpointerdown={press}
+        onhoverindex={stripHover}
+        {dropIndex}
+        menu={pageMenu}
+    />
 </section>
 
 {#if closing !== null}

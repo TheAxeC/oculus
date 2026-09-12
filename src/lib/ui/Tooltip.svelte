@@ -34,10 +34,18 @@
          * describes nothing, so it is for a tooltip that only repeats the control's own name.
          */
         presentational?: boolean;
+        /** Put a wrapper around non-control content in the tab order so its tooltip opens on focus. */
+        focusable?: boolean;
         children: Snippet;
     };
 
-    let { text, placement = 'below', presentational = false, children }: Props = $props();
+    let {
+        text,
+        placement = 'below',
+        presentational = false,
+        focusable = false,
+        children
+    }: Props = $props();
 
     /** How long the pointer rests before the words appear. */
     const DELAY = 150;
@@ -95,13 +103,15 @@
     }
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<!-- The wrapper is not a control and takes no focus: the handlers only decide when the words are
-     drawn, and the control inside it is what is pressed, focused and described. -->
+<!-- svelte-ignore a11y_no_static_element_interactions, a11y_no_noninteractive_tabindex -->
+<!-- The wrapper normally takes no focus because the control inside it is focused and described.
+     With focusable it wraps non-control content such as a Chip and enters the tab order so focusin
+     reveals the description. -->
 <span
     class="tip"
     bind:this={box}
     role={presentational ? 'presentation' : undefined}
+    tabindex={focusable ? 0 : undefined}
     aria-describedby={presentational || text === '' ? undefined : id}
     onpointerenter={later}
     onpointerleave={hide}

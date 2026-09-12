@@ -223,14 +223,29 @@ describe('the journal section and venue card', () => {
         expect(body).toContain('<strong>elsarticle</strong>');
         expect(body).toContain('href="https://example.org/journal"');
         expect(body).toContain('Clinical <strong>methods</strong>.');
-        expect(body).toContain('ALPHA');
-        expect(body).toContain('BETA');
         const journal = venueCard(body, 'journal');
         expect(journal).toMatch(/class="card [^"]*concentrated"/);
         expect(journal).toMatch(/class="chip [^"]*toned"/);
         expect(journal).toContain('--tone: var(--c-violet)');
         expect(journal).toContain('--tone: var(--c-green)');
+        expect(journal).toContain(catalog['col.ven_conc']);
+        expect(journal).toContain(catalog['col.ven_conc_tip']);
+        expect(journal).toContain('>1 active</span>');
+        expect(journal).toContain('>1 manuscript</span>');
+        expect(journal).toContain('aria-expanded="false"');
+        expect(journal).not.toContain('>ALPHA</span>');
+        expect(journal).not.toContain('>BETA</span>');
         expect(body).toContain('>clinical</span>');
+    });
+
+    it('draws the concentration legend with its explanation', () => {
+        const body = html();
+        const firstCard = body.indexOf('<article');
+        const legend = body.slice(0, firstCard);
+        expect(legend).toContain(catalog['col.ven_conc']);
+        expect(legend).toContain(catalog['col.ven_conc_tip']);
+        expect(legend).toContain('--tone: var(--c-violet)');
+        expect(legend).toContain('tabindex="0"');
     });
 
     it('omits the project cross-link block from a venue with no users', () => {

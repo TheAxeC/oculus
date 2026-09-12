@@ -45,6 +45,52 @@ test('Ctrl+2 shows the second page and Ctrl+1 the first', async ({ page }) => {
     await expect(first).toHaveAttribute('aria-selected', 'false');
 });
 
+test('dragging the second page before the first saves their order', async ({ page }) => {
+    await page.goto('/');
+    const strip = page.getByRole('region', { name: t('ui.pages') });
+    await strip.getByRole('button', { name: t('ui.page_menu') }).click();
+    await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
+
+    const first = strip.getByRole('tab', { name: t('ui.page_default', 1) });
+    const second = strip.getByRole('tab', { name: t('ui.page_default', 2) });
+    const firstBox = await first.boundingBox();
+    const secondBox = await second.boundingBox();
+    expect(firstBox).not.toBeNull();
+    expect(secondBox).not.toBeNull();
+    if (firstBox === null || secondBox === null) return;
+
+    await page.mouse.move(secondBox.x + secondBox.width / 2, secondBox.y + secondBox.height / 2);
+    await page.mouse.down();
+    await page.mouse.move(firstBox.x + 1, firstBox.y + firstBox.height / 2, { steps: 5 });
+    await expect(strip.locator('span.mark')).toHaveCount(1);
+    await page.mouse.up();
+
+    await expect(strip.getByRole('tab').first()).toHaveAccessibleName(t('ui.page_default', 2));
+    await page.reload();
+    await expect(strip.getByRole('tab').first()).toHaveAccessibleName(t('ui.page_default', 2));
+});
+
+test('Ctrl+Shift+Left and Right move the focused page and save its position', async ({ page }) => {
+    await page.goto('/');
+    const strip = page.getByRole('region', { name: t('ui.pages') });
+    await strip.getByRole('button', { name: t('ui.page_menu') }).click();
+    await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
+
+    const second = strip.getByRole('tab', { name: t('ui.page_default', 2) });
+    await second.focus();
+    await second.press('Control+Shift+ArrowLeft');
+    await expect(strip.getByRole('tab').first()).toHaveAccessibleName(t('ui.page_default', 2));
+
+    await page.reload();
+    await expect(strip.getByRole('tab').first()).toHaveAccessibleName(t('ui.page_default', 2));
+
+    await strip.getByRole('tab', { name: t('ui.page_default', 2) }).focus();
+    await page.keyboard.press('Control+Shift+ArrowRight');
+    await expect(strip.getByRole('tab').first()).toHaveAccessibleName(t('ui.page_default', 1));
+    await page.reload();
+    await expect(strip.getByRole('tab').first()).toHaveAccessibleName(t('ui.page_default', 1));
+});
+
 test('closing a page asks first: cancel keeps it, confirm removes it', async ({ page }) => {
     await page.goto('/');
     const strip = page.getByRole('region', { name: t('ui.pages') });

@@ -20,6 +20,7 @@ import {
     focusedPane,
     isInstanceOf,
     maximise,
+    movePage as movePageIn,
     newInstance,
     newPage,
     openInstance,
@@ -210,6 +211,11 @@ export function renamePage(id: string, label: string): void {
         ...store.current,
         pages: store.current.pages.map((page) => (page.id === id ? { ...page, label } : page))
     });
+}
+
+/** Move a page to a clamped position in the strip and save the new order. */
+export function movePage(id: string, index: number): void {
+    savePages(movePageIn(store.current, id, index));
 }
 
 /**

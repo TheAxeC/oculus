@@ -11,6 +11,7 @@ import {
     LAYOUT_VERSION,
     checkPages,
     defaultPages,
+    movePage,
     newPage,
     parseLayout,
     serialiseLayout,
@@ -278,5 +279,44 @@ describe('the store: the page operations', () => {
         expect(held?.pages.map((page) => page.label)).toEqual(['Page 1', 'Runs']);
         expect(held?.current).toBe(currentPage().id);
         expect(held?.pages[1].workbench.dock).toBe('hidden');
+    });
+});
+
+describe('movePage', () => {
+    /** Three named pages with the second one current. */
+    function held(): Pages {
+        const pages = [newPage('One'), newPage('Two'), newPage('Three')];
+        return { pages, current: pages[1].id };
+    }
+
+    function labels(value: Pages): string[] {
+        return value.pages.map((page) => page.label);
+    }
+
+    it('moves a page to the front', () => {
+        const value = held();
+        expect(labels(movePage(value, value.pages[2].id, 0))).toEqual(['Three', 'One', 'Two']);
+    });
+
+    it('moves a page to the end', () => {
+        const value = held();
+        expect(labels(movePage(value, value.pages[0].id, 2))).toEqual(['Two', 'Three', 'One']);
+    });
+
+    it('clamps a destination past the end', () => {
+        const value = held();
+        expect(labels(movePage(value, value.pages[1].id, 99))).toEqual(['One', 'Three', 'Two']);
+    });
+
+    it('does nothing for an unknown page id', () => {
+        const value = held();
+        expect(movePage(value, 'missing', 0)).toBe(value);
+    });
+
+    it('keeps the current page current when that page moves', () => {
+        const value = held();
+        const moved = movePage(value, value.current, 0);
+        expect(moved.current).toBe(value.current);
+        expect(labels(moved)).toEqual(['Two', 'One', 'Three']);
     });
 });

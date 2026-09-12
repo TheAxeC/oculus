@@ -5,6 +5,8 @@
     import Chip from '$lib/ui/Chip.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import Tooltip from '$lib/ui/Tooltip.svelte';
+    import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
     import {
         groupProjects,
@@ -12,7 +14,6 @@
         type Entry,
         type SchemaField
     } from '$lib/state/collection';
-    import { openView } from '$lib/state/layout.svelte';
     import { t } from '$lib/state/text';
     import { freeTone, quartileTone, type Project, type Venue } from '$lib/state/venues';
 
@@ -57,6 +58,11 @@
         <h3>{@html inlineMarkdown(venue.name)}</h3>
         {#if venue.quartile}
             <Chip label={venue.quartile} tone={quartileTone(venue.quartile)} />
+        {/if}
+        {#if concentrated}
+            <Tooltip text={t('col.ven_conc_tip')} focusable>
+                <Chip label={t('col.ven_conc')} tone="violet" />
+            </Tooltip>
         {/if}
         {#if venue.free}
             <Chip label={venue.free} tone={freeTone(venue.free)} />
@@ -108,19 +114,7 @@
     {#if groups.length > 0}
         <div class="users">
             <span class="label">{t('collection.related')}</span>
-            {#each groups as group (group.type)}
-                <Chip label={`${group.count} ${group.type}`} />
-                {#each group.members as member (member.id)}
-                    <ToolButton
-                        label={member.label}
-                        onclick={() =>
-                            openView('project', 'main', {
-                                id: member.id,
-                                label: member.label
-                            })}
-                    />
-                {/each}
-            {/each}
+            <CrossLinks {groups} />
         </div>
     {/if}
 

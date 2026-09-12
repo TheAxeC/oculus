@@ -4,6 +4,8 @@
 
     import Pane from '$lib/ui/Pane.svelte';
     import Search from '$lib/ui/Search.svelte';
+    import Chip from '$lib/ui/Chip.svelte';
+    import Tooltip from '$lib/ui/Tooltip.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
@@ -91,7 +93,12 @@
             <p class="said">{said}</p>
         {/if}
 
-        <Facets {facets} off={held.off} ontoggle={toggleTheme} />
+        <div class="facet-row">
+            <Facets {facets} off={held.off} ontoggle={toggleTheme} />
+            <Tooltip text={t('col.ven_conc_tip')} focusable>
+                <Chip label={t('col.ven_conc')} tone="violet" />
+            </Tooltip>
+        </div>
 
         {#if allVenues.length === 0}
             <p class="empty">{@html t('col.ven_empty')}</p>
@@ -169,6 +176,13 @@
         margin: 8px 0;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
+    }
+
+    .facet-row {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 6px;
     }
 
     .empty {

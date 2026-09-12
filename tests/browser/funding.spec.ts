@@ -45,6 +45,14 @@ test('a scheme cross-link opens the project tab', async ({ page }) => {
 
     const card = page.locator('.cards [data-entry]').filter({ hasText: held.title });
     await expect(card).toContainText(t('collection.related'));
+    const related = card.locator('.row').filter({ hasText: t('collection.related') });
+    const group = related.getByRole('button', { name: /^\d+ .+$/ }).first();
+    await group.click();
+    await expect(group).toHaveAttribute('aria-expanded', 'true');
+    await group.click();
+    await expect(group).toHaveAttribute('aria-expanded', 'false');
+    await expect(card.getByRole('button', { name, exact: true })).toHaveCount(0);
+    await group.click();
     await card.getByRole('button', { name, exact: true }).click();
     await expect(page.getByRole('tab', { name })).toBeVisible();
     // The project tab's card draws the full title, so the folder is what names it here.

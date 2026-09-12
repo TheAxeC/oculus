@@ -16,7 +16,13 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
-import { loadLayout, openPage, renamePage, pages } from '../../src/lib/state/layout.svelte.ts';
+import {
+    loadLayout,
+    movePage,
+    openPage,
+    renamePage,
+    pages
+} from '../../src/lib/state/layout.svelte.ts';
 import { fakeStorage } from '../state/layout-fixture.ts';
 
 const { config } = loadConfig(engineDir());
@@ -24,10 +30,11 @@ setCatalog(textCatalog(config));
 setGlyphs(glyphCatalog(config));
 
 /** Two pages, the second one current, which is what the strip is asked to draw. */
-function strip(): string {
+function strip(reorder = false): string {
     loadLayout(fakeStorage());
     renamePage(pages()[0].id, 'Reading');
     openPage('Runs');
+    if (reorder) movePage(pages()[1].id, 0);
     return render(PageStrip, {
         props: { arrangements: [{ name: 'sessions', label: 'Sessions', node: null }] }
     }).body;
@@ -40,6 +47,15 @@ describe('the page strip', () => {
         expect([...body.matchAll(/role="tab"/g)]).toHaveLength(2);
         expect(body).toContain('Reading');
         expect(body).toContain('Runs');
+    });
+
+    it('gives every page tab a drag handle', () => {
+        expect([...body.matchAll(/data-drag-handle=""/g)]).toHaveLength(2);
+    });
+
+    it('draws pages in the order held by the layout store', () => {
+        const moved = strip(true);
+        expect(moved.indexOf('Runs')).toBeLessThan(moved.indexOf('Reading'));
     });
 
     it('marks the page on screen and no other', () => {
