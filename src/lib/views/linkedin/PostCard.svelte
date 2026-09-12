@@ -1,12 +1,28 @@
-<script lang="ts">
+<script module lang="ts">
     // Layer 3, view partial of views/Linkedin.svelte. One idea or numbered post with its metadata,
-    // snippet, promotion write, and document action. Folder and cadence rules stay outside this card.
+    // snippet, promotion write, and source action. Folder and cadence rules stay outside this card.
 
+    import { HUB_ROOT } from '$lib/state/collection';
+    import { openView } from '$lib/state/layout.svelte';
+    import { sourceTabState } from '$lib/state/source.svelte';
+
+    export function linkedinSourcePath(folder: string, file: string): string {
+        return `${folder.replace(/\/$/, '')}/${file}`;
+    }
+
+    export function openLinkedinSource(folder: string, file: string): string {
+        return openView(
+            'source',
+            'main',
+            sourceTabState(HUB_ROOT, linkedinSourcePath(folder, file))
+        );
+    }
+</script>
+
+<script lang="ts">
     import Card from '$lib/ui/Card.svelte';
     import Chip from '$lib/ui/Chip.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { HUB_ROOT } from '$lib/state/collection';
-    import { openView } from '$lib/state/layout.svelte';
     import { snippet, type LinkedinEntry } from '$lib/state/linkedin';
     import { t } from '$lib/state/text';
     import { markPosted, type WriteAnswer } from '$lib/state/writes.svelte';
@@ -21,7 +37,7 @@
     let { entry, folder, posted = false, onsaid }: Props = $props();
 
     const number = $derived(/^\d+/.exec(entry.file)?.[0] ?? '');
-    const path = $derived(`${folder.replace(/\/$/, '')}/${entry.file}`);
+    const path = $derived(linkedinSourcePath(folder, entry.file));
 
     function say(answer: WriteAnswer): void {
         if (!answer.ok) {
@@ -44,11 +60,16 @@
     }
 
     function edit(): void {
-        openView('document', 'main', { root: HUB_ROOT, path, label: entry.title });
+        openLinkedinSource(folder, entry.file);
     }
 </script>
 
-<div data-linkedin-card={entry.file} data-editor-path={path}>
+<div
+    data-linkedin-card={entry.file}
+    data-editor-view="source"
+    data-editor-root={HUB_ROOT}
+    data-editor-path={path}
+>
     <Card title={entry.title}>
         {#snippet meta()}
             <Chip label={posted ? number : t('sf.linkedin_idea_tag')} />

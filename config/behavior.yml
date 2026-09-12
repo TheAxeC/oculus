@@ -2,7 +2,7 @@
 # behavior.yml
 # oculus's own configuration - thresholds and horizons: the soft limits an audit warns on, how long
 # before a feed counts as stale, how far ahead each kind of date is shown, and the two subsystem
-# cadences. Merged with the other config/*.yml by loadConfig().
+# cadences. Source roots and permitted file extensions live in sources.yml. Merged by loadConfig().
 # ===========================================================================
 
 

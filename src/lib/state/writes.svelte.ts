@@ -12,6 +12,8 @@ export type WriteAnswer = {
     refused: { field: string; reason: string }[];
     /** Set when the request itself was refused, rather than a field of it. */
     error?: string;
+    /** True when the request never reached the server: the fetch itself threw. */
+    network?: boolean;
     /** What the endpoint had to say: git's own output, or the suggested commit message. */
     output?: string;
     /** The branch rows of a deposit `branches` action. Absent on every other write. */
@@ -241,7 +243,7 @@ export async function writeDeposit(
 }
 
 /** One write, with the one retry a stale token gets. */
-async function send(request: unknown, path = '/api/write'): Promise<WriteAnswer> {
+export async function send(request: unknown, path = '/api/write'): Promise<WriteAnswer> {
     state.pending += 1;
     state.error = null;
     try {
@@ -275,7 +277,7 @@ async function send(request: unknown, path = '/api/write'): Promise<WriteAnswer>
     } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
         state.error = message;
-        return { ok: false, changed: [], refused: [], error: message };
+        return { ok: false, changed: [], refused: [], error: message, network: true };
     } finally {
         state.pending -= 1;
     }

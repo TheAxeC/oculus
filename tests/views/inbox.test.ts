@@ -95,6 +95,7 @@ describe('the Inbox view', () => {
             entries
         });
         const body = render(Inbox, { props: { instance: instance('inbox-one') } }).body;
+        expect(body).not.toContain('data-edit-source');
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('2026-09-12');
         expect(body).toContain(catalog['sf.inbox_triaged_suffix'].replace('{0}', '1'));

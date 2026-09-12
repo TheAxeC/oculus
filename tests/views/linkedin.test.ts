@@ -3,6 +3,9 @@
 import { render } from 'svelte/server';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import Linkedin from '../../src/lib/views/Linkedin.svelte';
+import { openLinkedinSource } from '../../src/lib/views/linkedin/PostCard.svelte';
+import { findInstance } from '../../src/lib/state/instance.ts';
+import { layout, loadLayout } from '../../src/lib/state/layout.svelte.ts';
 import { addFromForm } from '../../src/lib/views/shared/EntryForm.svelte';
 import {
     engineDir,
@@ -108,6 +111,22 @@ afterEach(() => vi.unstubAllGlobals());
 afterAll(() => vi.useRealTimers());
 
 describe('the LinkedIn view', () => {
+    it('opens Edit in a source tab using the hub-relative folder and post file', () => {
+        loadLayout({ getItem: () => null, setItem: () => {} });
+        const folder = 'theaxec.github.io/_linkedin';
+        const id = openLinkedinSource(folder, 'xx-zeta.md');
+        expect(findInstance(layout(), id)?.instance).toEqual({
+            id,
+            view: 'source',
+            state: {
+                root: 'hub',
+                path: `${folder}/xx-zeta.md`,
+                label: 'xx-zeta.md'
+            }
+        });
+        expect(openLinkedinSource(`${folder}/`, 'xx-zeta.md')).toBe(id);
+    });
+
     it('draws search, add form, ordered sections, metadata, snippets, and card-scoped actions', async () => {
         const body = await draw('linkedin-all', entries, '', true);
         expect(body).toContain(catalog['sf.linkedin_search'].replace('&', '&amp;'));
@@ -124,6 +143,8 @@ describe('the LinkedIn view', () => {
         expect(hasAction(idea, catalog['sf.linkedin_markpost'])).toBe(true);
         expect(hasAction(idea, catalog['sf.linkedin_edit'])).toBe(true);
         expect(idea).toContain('data-editor-path="theaxec.github.io/_linkedin/xx-alpha.md"');
+        expect(idea).toContain('data-editor-view="source"');
+        expect(idea).toContain('data-editor-root="hub"');
 
         const post = card(body, '02-new.md');
         expect(post).toContain('>02</span>');

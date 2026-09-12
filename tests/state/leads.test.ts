@@ -9,9 +9,11 @@ import {
     isClosed,
     isExpired,
     leadsSearch,
+    leadId,
     localDate,
     parseLeadsState,
-    splitLeads
+    splitLeads,
+    visibleLeads
 } from '../../src/lib/state/leads.ts';
 
 const { config } = loadConfig(engineDir());
@@ -79,13 +81,39 @@ describe('position lead selectors', () => {
         );
         expect(leadsSearch(entries, 'postdoc missing')).toEqual([]);
         expect(
-            parseLeadsState({ search: 'ai', expiredOpen: true, runlogOpen: true, adding: true })
-        ).toEqual({ search: 'ai', expiredOpen: true, runlogOpen: true, adding: true });
+            parseLeadsState({
+                search: 'ai',
+                expiredOpen: true,
+                runlogOpen: true,
+                adding: true,
+                showDismissed: true
+            })
+        ).toEqual({
+            search: 'ai',
+            expiredOpen: true,
+            runlogOpen: true,
+            adding: true,
+            showDismissed: true
+        });
         expect(parseLeadsState(null)).toEqual({
             search: '',
             expiredOpen: false,
             runlogOpen: false,
-            adding: false
+            adding: false,
+            showDismissed: false
         });
+    });
+
+    it('hides dismissed stable ids until the toggle shows every lead', () => {
+        const entries = [
+            { title: 'First role', inst: 'One', url: 'https://example.org/jobs/first' },
+            { title: 'Second role', inst: 'Two' }
+        ];
+        expect(leadId(entries[0])).toBe('https-example-org-jobs-first');
+        expect(leadId(entries[1])).toBe('second-role-two');
+        expect(visibleLeads(entries, ['https-example-org-jobs-first'], false)).toEqual([
+            entries[1]
+        ]);
+        expect(visibleLeads(entries, ['https-example-org-jobs-first'], true)).toEqual(entries);
     });
 });

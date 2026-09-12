@@ -8,6 +8,7 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { Hub } from '../../src/lib/server/channels.ts';
 import { handleWrite } from '../../src/lib/server/writes.ts';
+import { handleSource } from '../../src/lib/server/source.ts';
 import { mintToken } from '../../src/lib/server/auth.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { loadConfig } from '../../src/lib/data/sources/config.ts';
@@ -358,6 +359,42 @@ describe('watchPortfolio', () => {
         await until(() => on(started.got, 'feeds').length > before, 2000);
         expect((on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).inbox.entries).toEqual([
             { id: 'mail', kind: 'action', triaged: true }
+        ]);
+    });
+
+    it('republishes a whole feed file saved through handleSource on the feeds channel', async () => {
+        const started = start();
+        await quiet(started.got);
+        const before = on(started.got, 'feeds').length;
+        const config = portfolioConfigFrom(loadConfig(started.engine).config);
+        const path = config.feeds.inbox;
+        expect(resolve(join(started.hub, path)).startsWith(resolve(started.hub) + sep)).toBe(true);
+        const token = mintToken();
+        const response = await handleSource(
+            new Request('http://localhost/api/source', {
+                method: 'POST',
+                headers: {
+                    host: 'localhost',
+                    origin: 'http://localhost',
+                    'content-type': 'application/json',
+                    'x-oculus-token': token
+                },
+                body: JSON.stringify({
+                    root: 'fixture',
+                    path,
+                    content:
+                        'meta: {}\nentries:\n  - id: source-mail\n    kind: action\n    triaged: true\n'
+                })
+            }),
+            token,
+            [{ key: 'fixture', dir: started.hub }],
+            ['.yml']
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ ok: true });
+        await until(() => on(started.got, 'feeds').length > before, 2000);
+        expect((on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).inbox.entries).toEqual([
+            { id: 'source-mail', kind: 'action', triaged: true }
         ]);
     });
 

@@ -1,7 +1,7 @@
 // The Position Leads view rendered over a received feed with live, expired, undated, and run-log rows.
 
 import { render } from 'svelte/server';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Leads from '../../src/lib/views/Leads.svelte';
 import { addFromForm } from '../../src/lib/views/shared/EntryForm.svelte';
 import {
@@ -13,7 +13,8 @@ import {
 import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { feedsFixture } from '../feeds-fixture.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
-import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
+import { loadUi, setInstanceState, setLeadDismissed } from '../../src/lib/state/ui.svelte.ts';
+import { leadId } from '../../src/lib/state/leads.ts';
 import { addLead } from '../../src/lib/state/writes.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout.ts';
 
@@ -96,10 +97,11 @@ function instance(
     expiredOpen = false,
     runlogOpen = false,
     search = '',
-    adding = false
+    adding = false,
+    showDismissed = false
 ): Instance {
     const value: Instance = { id, view: 'leads', state: {} };
-    setInstanceState(id, { search, expiredOpen, runlogOpen, adding });
+    setInstanceState(id, { search, expiredOpen, runlogOpen, adding, showDismissed });
     return value;
 }
 
@@ -123,9 +125,52 @@ function serve(body: Record<string, unknown>, _status = 200): void {
     receive({ channel: 'feeds', version: ++feedVersion, payload: feedsFixture('leads', body) });
 }
 
+beforeEach(() => loadUi({ getItem: () => null, setItem: () => {} }));
 afterEach(() => vi.unstubAllGlobals());
 
 describe('the Position Leads view', () => {
+    it('hides dismissed cards, shows their count, and restores their card action under the toggle', () => {
+        const dismissed = entries[0];
+        setLeadDismissed(leadId(dismissed), true);
+        setLeadDismissed('no-longer-in-the-feed', true);
+        serve({
+            ok: true,
+            kind: 'leads',
+            file: 'feeds/position-leads.yml',
+            meta: {},
+            schema,
+            entries
+        });
+
+        const hidden = render(Leads, { props: { instance: instance('leads-hidden') } }).body;
+        expect(hidden).not.toContain('data-lead="**Strong** role"');
+        expect(hidden).toContain(catalog['js.leads.show_dismissed'].replace('{0}', '2'));
+
+        const shown = render(Leads, {
+            props: { instance: instance('leads-shown', false, false, '', false, true) }
+        }).body;
+        expect(shown).toContain('data-lead="**Strong** role"');
+        expect(shown).toContain(catalog['js.leads.hide_dismissed'].replace('{0}', '2'));
+        expect(card(shown, '**Strong** role')).toContain(catalog['actions.reopen']);
+    });
+
+    it('keeps the live grid without the no-live message when every live card is dismissed', () => {
+        const entry = entries[0];
+        setLeadDismissed(leadId(entry), true);
+        serve({
+            ok: true,
+            kind: 'leads',
+            file: 'feeds/position-leads.yml',
+            meta: {},
+            schema,
+            entries: [entry]
+        });
+        const body = render(Leads, { props: { instance: instance('all-dismissed') } }).body;
+        expect(body).toMatch(/class="cards(?:\s|")/);
+        expect(body).not.toContain('data-lead=');
+        expect(body).not.toContain(catalog['sf.leads_empty']);
+    });
+
     it('draws the intro, controls, ordered live cards, details, and collapsed sections', async () => {
         serve({
             ok: true,
@@ -136,6 +181,7 @@ describe('the Position Leads view', () => {
             entries
         });
         const body = render(Leads, { props: { instance: instance('leads-one') } }).body;
+        expect(body).not.toContain('data-edit-source');
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('2 live');
         expect(body).toContain('3 expired');

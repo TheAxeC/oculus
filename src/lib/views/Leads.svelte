@@ -16,14 +16,21 @@
     import { feed } from '$lib/state/feeds.svelte';
     import {
         leadsSearch,
+        leadId,
         localDate,
         parseLeadsState,
         splitLeads,
+        visibleLeads,
         type LeadsState
     } from '$lib/state/leads';
     import { t } from '$lib/state/text';
     import { feedIdentity } from '$lib/state/palette';
-    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
+    import {
+        instanceState,
+        leadsDismissed,
+        setInstanceState,
+        setLeadDismissed
+    } from '$lib/state/ui.svelte';
     import { addLead } from '$lib/state/writes.svelte';
     import type { ViewProps } from './registry';
 
@@ -33,7 +40,16 @@
     const data = $derived(feed('leads'));
     const held = $derived(parseLeadsState(instanceState(instance.id)));
     const vocab = $derived(config()?.config ?? {});
-    const split = $derived(splitLeads(data?.entries ?? [], today));
+    const entries = $derived(data?.entries ?? []);
+    const dismissed = $derived(leadsDismissed());
+    const dismissedCount = $derived(dismissed.length);
+    const allSplit = $derived(splitLeads(entries, today));
+    const split = $derived(splitLeads(visibleLeads(entries, dismissed, held.showDismissed), today));
+    const dismissedToggleLabel = $derived(
+        held.showDismissed
+            ? t('js.leads.hide_dismissed', dismissedCount)
+            : t('js.leads.show_dismissed', dismissedCount)
+    );
     const live = $derived(leadsSearch(split.live, held.search));
     const expired = $derived(leadsSearch(split.expired, held.search));
     const log = $derived(
@@ -67,6 +83,15 @@
             active={held.adding}
             onclick={() => write({ adding: !held.adding })}
         />
+        {#if dismissedCount > 0}
+            <ToolButton
+                label={dismissedToggleLabel}
+                glyph="dismiss"
+                active={held.showDismissed}
+                pressed={held.showDismissed}
+                onclick={() => write({ showDismissed: !held.showDismissed })}
+            />
+        {/if}
     </Toolbar>
 {/snippet}
 
@@ -82,8 +107,10 @@
             <Intro
                 html={t(
                     'sf.leads_intro',
-                    split.live.length,
-                    split.expired.length > 0 ? t('sf.leads_exp_note', split.expired.length) : ''
+                    allSplit.live.length,
+                    allSplit.expired.length > 0
+                        ? t('sf.leads_exp_note', allSplit.expired.length)
+                        : ''
                 )}
             />
 
@@ -102,7 +129,7 @@
                 />
             {/if}
 
-            {#if live.length > 0}
+            {#if allSplit.live.length > 0}
                 <div class="cards">
                     {#each live as entry, at (`${String(entry.title ?? '')}:${at}`)}
                         <Reveal
@@ -110,11 +137,21 @@
                             wanted={held.reveal}
                             onrevealed={() => write({ reveal: '' })}
                         >
-                            <LeadCard {entry} {vocab} onsaid={(words) => (said = words)} />
+                            <LeadCard
+                                {entry}
+                                {vocab}
+                                dismissed={dismissed.includes(leadId(entry))}
+                                ondismiss={() =>
+                                    setLeadDismissed(
+                                        leadId(entry),
+                                        !dismissed.includes(leadId(entry))
+                                    )}
+                                onsaid={(words) => (said = words)}
+                            />
                         </Reveal>
                     {/each}
                 </div>
-            {:else if split.live.length === 0}
+            {:else}
                 <p class="empty">{@html t('sf.leads_empty')}</p>
             {/if}
 
@@ -139,6 +176,12 @@
                                         {entry}
                                         {vocab}
                                         expired
+                                        dismissed={dismissed.includes(leadId(entry))}
+                                        ondismiss={() =>
+                                            setLeadDismissed(
+                                                leadId(entry),
+                                                !dismissed.includes(leadId(entry))
+                                            )}
                                         onsaid={(words) => (said = words)}
                                     />
                                 </Reveal>

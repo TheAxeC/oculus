@@ -156,12 +156,6 @@ describe('layout instance pins', () => {
         expect(instanceLayoutState('main')).toEqual({});
     });
 
-    it('uses a session pin as the instance identity after an explicit id', () => {
-        expect(stateId({ session: 'one', label: 'One' })).toBe('one');
-        expect(stateId({ id: 'project', session: 'one' })).toBe('project');
-        expect(stateId({ label: 'One' })).toBe(null);
-    });
-
     it('keeps one pinned tab per session and a separate unpinned tab', () => {
         show([{ id: 'following', view: 'session-detail', state: {} }]);
 

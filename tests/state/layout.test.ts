@@ -19,14 +19,12 @@ import {
     closePane,
     defaultWorkbench,
     equalSizes,
-    findInstance,
     focusedPane,
     holderOf,
     maximise,
     moveInstance,
     openInstance,
     paneAt,
-    panes,
     parseWorkbench,
     resize,
     restore,
@@ -86,18 +84,6 @@ describe('reading the tree', () => {
         expect(paneAt(tree, [1])).toBe(null);
         expect(paneAt(tree, [4])).toBe(null);
         expect(paneAt(tree, [0, 0])).toBe(null);
-    });
-
-    it('lists every pane with its path, depth first', () => {
-        expect(panes(three()).map((found) => found.path)).toEqual([[0], [1, 0], [1, 1]]);
-        expect(panes(pane([])).map((found) => found.path)).toEqual([[]]);
-    });
-
-    it('finds an instance, its pane and its index', () => {
-        const tree = split('row', [0.5, 0.5], [pane(['a', 'b']), pane(['c'])]);
-        expect(findInstance(tree, 'b')).toEqual({ instance: instance('b'), path: [0], index: 1 });
-        expect(findInstance(tree, 'c')).toEqual({ instance: instance('c'), path: [1], index: 0 });
-        expect(findInstance(tree, 'z')).toBe(null);
     });
 });
 

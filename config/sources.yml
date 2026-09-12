@@ -1,7 +1,7 @@
 # ===========================================================================
 # sources.yml
 # oculus's own configuration - what the portfolio reads: where the projects are, and which registry,
-# collection, document and feed file each surface is built from. Merged with the other config/*.yml
+# collection, document and feed file each surface is built from, plus local roots and permitted text extensions. Merged with the other config/*.yml
 # by loadConfig(); every key here is a top-level key of the merged map.
 # ===========================================================================
 
@@ -87,6 +87,11 @@ linkedin_dir: theaxec.github.io/_linkedin
 # Career tab: per-scheme `statement:` fields surface on the Funding tab; the strategy
 # (order of work | hosts | eligibility | dropped) lives in CAREER.yml and surfaces on the Focus "Career strategy" panel.
 career_file: CAREER.yml
+
+
+# Text files the source tab may save, and the superset it may open (read-only unless editable).
+editable_extensions: [".md", ".yml", ".yaml", ".tex", ".bib", ".txt"]
+viewable_extensions: [".md", ".yml", ".yaml", ".tex", ".bib", ".txt", ".py", ".sh", ".slurm", ".json", ".csv", ".r", ".m", ".cpp", ".h", ".c", ".hpp", ".js", ".css", ".html", ".toml", ".cfg", ".ini", ".log"]
 
 
 # Roots the server may serve local files from (api/file/<key>/<path>), one directory per key. A dir is

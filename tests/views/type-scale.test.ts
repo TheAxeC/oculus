@@ -53,6 +53,7 @@ const VIEWS: Record<string, string> = {
         '.heading=fs-xs | .said, .failed=fs-md | .doc=fs-md | .doc :global(h1)=fs-3xl | .doc :global(h2)=fs-2xl | .doc :global(h3)=fs-xl | .doc :global(h4)=fs-md | .doc :global(code)=fs-sm | .doc :global(table)=fs-md | .nm=fs-md | .meta=fs-sm',
     'Projects.svelte': '.said=fs-md',
     'Radar.svelte': '',
+    'Source.svelte': '',
     'Status.svelte': '.view=fs-md',
     'Venues.svelte': '.said=fs-md | .empty=fs-md',
     'collection/Coverage.svelte': '.label=fs-xxs',
@@ -99,6 +100,7 @@ const VIEWS: Record<string, string> = {
     'sessions/Transcript.svelte':
         '.turn=fs-md | .turn.tool=fs-sm | .who=fs-xs | .ts=fs-xs | .cut=fs-md | .failed=fs-md | .doc=fs-md | .doc :global(h1), .doc :global(h2), .doc :global(h3), .doc :global(h4)=fs-md | .doc :global(code), .doc :global(pre)=fs-sm',
     'shared/CrossLinks.svelte': '',
+    'shared/EditBar.svelte': '.edit-bar=fs-sm',
     'shared/EntryForm.svelte': '.label=fs-xs | .said=fs-md',
     'shared/Intro.svelte': '.intro=fs-md',
     'shared/NewIdeaForm.svelte': '',
@@ -106,6 +108,7 @@ const VIEWS: Record<string, string> = {
         '.folder=fs-xs | .session=fs-sm | .venue, .authors=fs-sm | .eli5 p=fs-md | .next=fs-sm | .waiting=fs-sm | .ghostmsg=fs-sm | .label=fs-xxs | .statusline=fs-sm | .field .value=fs-md | .frow=fs-md | .capped=fs-xs',
     'shared/Reveal.svelte': '',
     'shared/Subtasks.svelte': '.label=fs-xs | .count, .box=fs-xs | .do=fs-md',
+    'source/Editor.svelte': '.message=fs-sm | .mirror=fs-sm | .input :global(.area)=fs-sm',
     'venues/Facets.svelte': '.label=fs-xxs',
     'venues/Ribbon.svelte':
         '.next=fs-sm | .legend=fs-xs | .spark=fs-xs | .spark pre=fs-xl | .spark-label=fs-xxs | .spark-months=fs-3xs | .monthname=fs-xxs',

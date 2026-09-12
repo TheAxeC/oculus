@@ -10,6 +10,7 @@
 // neither an arrangement nor a page is changed without being written down.
 // Unpinning keeps the instance in place, so two unpinned instances of one view may coexist.
 
+import { clearInstanceState } from './ui.svelte.ts';
 import {
     activePath,
     activate,
@@ -355,6 +356,7 @@ export function closeInstanceIn(target: Target, id: string): void {
     const held = active();
     if (held[target] === id) held[target] = null;
     apply(settleFocus(withTree(target, closeInstance(layout(target), id))));
+    clearInstanceState(id);
 }
 
 /** The arrangement with one of its trees replaced, which is what an operation on a tree returns. */

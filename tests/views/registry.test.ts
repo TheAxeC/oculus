@@ -100,6 +100,7 @@ describe('the real registrations', () => {
             'editor',
             'deposit',
             'document',
+            'source',
             'session-list',
             'session-detail',
             'terminal',
@@ -156,6 +157,15 @@ describe('the real registrations', () => {
             id: 'linkedin',
             label: 'views.linkedin',
             glyph: 'views.linkedin_glyph'
+        });
+    });
+
+    it('registers the source editor as an unlisted file view', () => {
+        expect(viewFor('source')).toMatchObject({
+            id: 'source',
+            label: 'views.source',
+            glyph: 'views.source_glyph',
+            listed: false
         });
     });
 

@@ -9,6 +9,8 @@ export type LeadsState = {
     runlogOpen: boolean;
     /** Whether the add form is open, kept with the instance so a re-render does not close it. */
     adding: boolean;
+    /** Whether cards dismissed in this browser are shown for possible restoration. */
+    showDismissed: boolean;
     /** The palette destination, cleared by the view after it scrolls and flashes the card. */
     reveal?: string;
 };
@@ -30,6 +32,28 @@ function record(value: unknown): Record<string, unknown> | null {
 function word(entry: LeadEntry, field: string): string {
     const value = entry[field];
     return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
+}
+
+/** The cockpit-compatible stable id: posting URL, or title and institution, reduced to a slug. */
+export function leadId(entry: LeadEntry): string {
+    const url = word(entry, 'url');
+    const source = url.startsWith('http') ? url : `${word(entry, 'title')}-${word(entry, 'inst')}`;
+    return source
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/-{2,}/g, '-')
+        .replace(/^-|-$/g, '');
+}
+
+/** Hide dismissed entries, or return every entry while the restoration toggle is on. */
+export function visibleLeads(
+    entries: LeadEntry[],
+    dismissed: string[],
+    showing: boolean
+): LeadEntry[] {
+    if (showing) return entries;
+    const hidden = new Set(dismissed);
+    return entries.filter((entry) => !hidden.has(leadId(entry)));
 }
 
 /** Applied, declined, and closed statuses take a lead out of the live list. */
@@ -115,7 +139,8 @@ export function parseLeadsState(raw: unknown): LeadsState {
         search: typeof held?.search === 'string' ? held.search : '',
         expiredOpen: held?.expiredOpen === true,
         runlogOpen: held?.runlogOpen === true,
-        adding: held?.adding === true
+        adding: held?.adding === true,
+        showDismissed: held?.showDismissed === true
     };
     if (typeof held?.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
     return state;

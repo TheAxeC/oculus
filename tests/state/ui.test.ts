@@ -21,10 +21,12 @@ import {
     UI_VERSION,
     crt,
     instanceState,
+    leadsDismissed,
     loadUi,
     requestUpdateTray,
     setCrt,
     setInstanceState,
+    setLeadDismissed,
     setTextScale,
     setTerminalFont,
     setTheme,
@@ -74,6 +76,7 @@ describe('the appearance store', () => {
         expect(unicode()).toBe(false);
         expect(textScale()).toBe(null);
         expect(terminalFont()).toBe(null);
+        expect(leadsDismissed()).toEqual([]);
         expect(instanceState('a')).toBe(undefined);
     });
 
@@ -86,6 +89,7 @@ describe('the appearance store', () => {
         setUnicode(true);
         setTextScale(1.3);
         setTerminalFont(14.5);
+        setLeadDismissed('lead-one', true);
         setInstanceState('a', { filter: 'active' });
         setInstanceState('b', 3);
 
@@ -98,8 +102,32 @@ describe('the appearance store', () => {
             unicode: true,
             textScale: 1.3,
             terminalFont: 14.5,
+            leadsDismissed: ['lead-one'],
             instances: { a: { filter: 'active' }, b: 3 }
         });
+    });
+
+    it('saves unique dismissed leads per browser and restores one without changing the others', () => {
+        const storage = fakeStorage();
+        loadUi(storage);
+        setLeadDismissed('lead-one', true);
+        setLeadDismissed('lead-two', true);
+        setLeadDismissed('lead-one', true);
+        expect(leadsDismissed()).toEqual(['lead-two', 'lead-one']);
+        setLeadDismissed('lead-one', false);
+        expect(leadsDismissed()).toEqual(['lead-two']);
+        expect(saved(storage).leadsDismissed).toEqual(['lead-two']);
+
+        expect(
+            loadUi(
+                fakeStorage({
+                    version: UI_VERSION,
+                    leadsDismissed: ['lead-two', '', 3, 'lead-two'],
+                    instances: {}
+                })
+            )
+        ).toBe(true);
+        expect(leadsDismissed()).toEqual(['lead-two']);
     });
 
     it('bounds a chosen terminal size and restores the null config default', () => {
@@ -212,6 +240,31 @@ describe('the appearance store', () => {
         expect(theme()).toBe('nord');
         expect(crt()).toBe(true);
         expect(instanceState('a')).toEqual({ at: 2 });
+    });
+
+    it('saves and restores distinct source working and saved copies by instance id', () => {
+        const first = fakeStorage();
+        loadUi(first);
+        const one = {
+            text: 'unsaved one',
+            saved: 'disk one',
+            loaded: true,
+            error: '',
+            message: ''
+        };
+        const two = {
+            text: 'unsaved two',
+            saved: 'disk two',
+            loaded: true,
+            error: '',
+            message: ''
+        };
+        setInstanceState('source-one', one);
+        setInstanceState('source-two', two);
+        const second = fakeStorage(saved(first));
+        expect(loadUi(second)).toBe(true);
+        expect(instanceState('source-one')).toEqual(one);
+        expect(instanceState('source-two')).toEqual(two);
     });
 
     it('keeps two instances of the same view apart by their ids', () => {

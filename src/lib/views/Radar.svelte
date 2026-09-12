@@ -8,6 +8,7 @@
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Intro from './shared/Intro.svelte';
+    import EditBar from './shared/EditBar.svelte';
     import Bucket from './radar/Bucket.svelte';
     import RadarCard from './radar/RadarCard.svelte';
     import Reveal from './shared/Reveal.svelte';
@@ -25,6 +26,7 @@
     import { t } from '$lib/state/text';
     import { feedIdentity } from '$lib/state/palette';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
+    import { HUB_ROOT } from '$lib/state/collection';
     import type { ViewProps } from './registry';
 
     let { instance }: ViewProps = $props();
@@ -61,6 +63,9 @@
 
 <Pane title={t('views.radar')} toolbar={tools}>
     <div class="radar" data-instance={instance.id}>
+        {#if data !== null && !data.missing}
+            <EditBar files={[{ root: HUB_ROOT, path: data.file }]} />
+        {/if}
         {#if data === null}
             <Empty message={t('app.waiting')} glyph="litwatch" />
         {:else if data.missing}

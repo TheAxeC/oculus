@@ -9,15 +9,30 @@
         oninput: (value: string) => void;
         /** How tall it opens. It grows no further on its own; the box scrolls. */
         rows?: number;
+        /** Whether the caller offers this text for viewing but not editing. */
+        readOnly?: boolean;
+        /** Browser spelling support, off for source code. */
+        spellcheck?: boolean;
         /**
          * A key pressed in the box, for a caller where a key means something other than a character:
          * the composer sends on Enter and recalls what it sent on the up arrow. The caller decides
          * whether the key still types, since only it knows.
          */
         onkeydown?: (event: KeyboardEvent) => void;
+        /** The caller may keep a visual mirror aligned with this field. */
+        onscroll?: (event: Event) => void;
     };
 
-    let { value, label, oninput, rows = 3, onkeydown }: Props = $props();
+    let {
+        value,
+        label,
+        oninput,
+        rows = 3,
+        readOnly = false,
+        spellcheck = true,
+        onkeydown,
+        onscroll
+    }: Props = $props();
 
     function typed(event: Event): void {
         const field = event.currentTarget;
@@ -25,7 +40,16 @@
     }
 </script>
 
-<textarea class="area" {rows} aria-label={label} oninput={typed} {onkeydown}>{value}</textarea>
+<textarea
+    class="area"
+    {rows}
+    aria-label={label}
+    {value}
+    readonly={readOnly}
+    {spellcheck}
+    oninput={typed}
+    {onkeydown}
+    {onscroll}></textarea>
 
 <style>
     .area {

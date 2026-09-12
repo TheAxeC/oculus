@@ -6,11 +6,13 @@
 
 import {
     closeSync,
+    fchmodSync,
     mkdirSync,
     openSync,
     readFileSync,
     renameSync,
     rmSync,
+    statSync,
     writeSync
 } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -32,14 +34,29 @@ let counter = 0;
  * in one process cannot collide. Throws only when the directory cannot be written.
  */
 export function writeJsonAtomic(path: string, payload: unknown): void {
+    writeTextAtomic(path, JSON.stringify(payload));
+}
+
+/** Write one text file whole through a temporary neighbour and an atomic rename. */
+export function writeTextAtomic(path: string, content: string): void {
     const folder = dirname(path) || '.';
     mkdirSync(folder, { recursive: true });
     counter += 1;
     const temporary = join(folder, `.oculus-write-${process.pid}-${Date.now()}-${counter}`);
+    // An existing file keeps its mode: the replacement is created with it before the rename, so a
+    // private file (0600) does not come back world-readable through the process's umask.
+    let mode: number | undefined;
     try {
-        const handle = openSync(temporary, 'w');
+        mode = statSync(path).mode & 0o777;
+    } catch {
+        mode = undefined;
+    }
+    try {
+        const handle =
+            mode === undefined ? openSync(temporary, 'w') : openSync(temporary, 'w', mode);
         try {
-            writeSync(handle, JSON.stringify(payload));
+            writeSync(handle, content);
+            if (mode !== undefined) fchmodSync(handle, mode);
         } finally {
             closeSync(handle);
         }

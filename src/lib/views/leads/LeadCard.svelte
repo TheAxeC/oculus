@@ -8,7 +8,7 @@
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { inlineMarkdown } from '$lib/state/collection';
-    import { fitKey, fitTone, isClosed, type LeadEntry } from '$lib/state/leads';
+    import { fitKey, fitTone, isClosed, leadId, type LeadEntry } from '$lib/state/leads';
     import { t } from '$lib/state/text';
     import { deleteFeedEntry, writeFeedField, type WriteAnswer } from '$lib/state/writes.svelte';
 
@@ -16,10 +16,12 @@
         entry: LeadEntry;
         vocab: unknown;
         expired?: boolean;
+        dismissed?: boolean;
+        ondismiss: () => void;
         onsaid: (words: string) => void;
     };
 
-    let { entry, vocab, expired = false, onsaid }: Props = $props();
+    let { entry, vocab, expired = false, dismissed = false, ondismiss, onsaid }: Props = $props();
     let sure = $state(false);
 
     const text = (field: string): string => {
@@ -27,6 +29,7 @@
         return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
     };
     const title = $derived(text('title'));
+    const identity = $derived(leadId(entry));
     const institution = $derived(text('inst'));
     const country = $derived(text('country'));
     const type = $derived(text('typ'));
@@ -86,7 +89,7 @@
                     {/if}
                 </span>
             {/if}
-            {#if title !== ''}
+            {#if identity !== ''}
                 <span class="actions">
                     {#if status !== 'applied'}
                         <ToolButton
@@ -117,6 +120,12 @@
                         title={t('actions.delete_lead_tip')}
                         compact
                         onclick={() => (sure = true)}
+                    />
+                    <ToolButton
+                        label={dismissed ? t('actions.reopen') : t('actions.decline_tip')}
+                        glyph="dismiss"
+                        compact
+                        onclick={ondismiss}
                     />
                 </span>
             {/if}

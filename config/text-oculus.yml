@@ -228,6 +228,8 @@ text:
     project_glyph: "folder"
     editor: "Editor"
     editor_glyph: "edit"
+    source: "Source"
+    source_glyph: "edit"
     venues: "Venues"
     venues_glyph: "venue"
     data: "Data"

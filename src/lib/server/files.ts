@@ -16,7 +16,7 @@
 
 import { createReadStream, realpathSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
-import { extname, isAbsolute, join, resolve, sep } from 'node:path';
+import { dirname, extname, isAbsolute, join, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 import { engineDir, loadConfig, loadLocal } from '../data/sources/config.ts';
 import { sameOrigin } from './auth.ts';
@@ -69,6 +69,45 @@ function real(path: string): string | null {
         return realpathSync(path);
     } catch {
         return null;
+    }
+}
+
+/** Resolve an existing file under a named root, refusing missing roots, directories and escapes. */
+export function resolveRootFile(list: Root[], key: string, path: string): string | null {
+    const result = resolveRootFileResult(list, key, path);
+    return 'path' in result ? result.path : null;
+}
+
+/** The same resolution, retaining the distinction between a missing file and a root escape. */
+export function resolveRootFileResult(
+    list: Root[],
+    key: string,
+    path: string
+): { path: string } | { error: 'outside' | 'missing' } {
+    const root = list.find((one) => one.key === key);
+    if (root === undefined) return { error: 'outside' };
+    const dir = real(root.dir);
+    if (dir === null) return { error: 'outside' };
+    const candidate = resolve(dir, path);
+    const full = real(candidate);
+    if (full === null) {
+        if (!inside(candidate, dir)) return { error: 'outside' };
+        // A missing child of a symlinked directory can still be outside the named root.
+        let parent = dirname(candidate);
+        while (inside(parent, dir)) {
+            const ancestor = real(parent);
+            if (ancestor !== null) return { error: inside(ancestor, dir) ? 'missing' : 'outside' };
+            const next = dirname(parent);
+            if (next === parent) break;
+            parent = next;
+        }
+        return { error: 'missing' };
+    }
+    if (!inside(full, dir)) return { error: 'outside' };
+    try {
+        return statSync(full).isFile() ? { path: full } : { error: 'missing' };
+    } catch {
+        return { error: 'missing' };
     }
 }
 
@@ -149,17 +188,8 @@ export function serveFile(request: Request, list: Root[], key: string, path: str
     if (!sameOrigin(request, request.headers.get('host') ?? '')) {
         return new Response(null, { status: 403 });
     }
-    const root = list.find((one) => one.key === key);
-    if (root === undefined) return new Response(null, { status: 404 });
-    const dir = real(root.dir);
-    if (dir === null) return new Response(null, { status: 404 });
-    const full = real(resolve(dir, path));
-    if (full === null || !inside(full, dir)) return new Response(null, { status: 404 });
-    try {
-        if (!statSync(full).isFile()) return new Response(null, { status: 404 });
-    } catch {
-        return new Response(null, { status: 404 });
-    }
+    const full = resolveRootFile(list, key, path);
+    if (full === null) return new Response(null, { status: 404 });
     // The bytes are streamed: a manual is megabytes and nothing here holds one in memory.
     const body = Readable.toWeb(createReadStream(full)) as ReadableStream;
     return new Response(body, {

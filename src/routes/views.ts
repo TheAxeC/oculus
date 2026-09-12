@@ -25,6 +25,7 @@ import Projects from '$lib/views/Projects.svelte';
 import Programs from '$lib/views/Programs.svelte';
 import Radar from '$lib/views/Radar.svelte';
 import Status from '$lib/views/Status.svelte';
+import Source from '$lib/views/Source.svelte';
 import Venues from '$lib/views/Venues.svelte';
 import Domains from '$lib/views/Domains.svelte';
 import Agents from '$lib/views/sessions/Agents.svelte';
@@ -233,6 +234,15 @@ registerView({
     label: 'views.document',
     glyph: 'views.document_glyph',
     component: Document,
+    listed: false
+});
+
+// One editable or viewable text file, opened once per root and path and labelled with its file name.
+registerView({
+    id: 'source',
+    label: 'views.source',
+    glyph: 'views.source_glyph',
+    component: Source,
     listed: false
 });
 

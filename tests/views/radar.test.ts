@@ -3,6 +3,9 @@
 import { render } from 'svelte/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Radar from '../../src/lib/views/Radar.svelte';
+import { openSourceFile } from '../../src/lib/views/shared/EditBar.svelte';
+import { findInstance } from '../../src/lib/state/instance.ts';
+import { layout, loadLayout } from '../../src/lib/state/layout.svelte.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -67,6 +70,21 @@ function serve(body: Record<string, unknown>, _status = 200): void {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('the Lit Watch view', () => {
+    it('opens the bar file as a source tab and reuses the same file instance', () => {
+        loadLayout({ getItem: () => null, setItem: () => {} });
+        const file = { root: 'hub', path: 'feeds/literature-radar.yml' };
+        const id = openSourceFile(file);
+        expect(findInstance(layout(), id)?.instance).toEqual({
+            id,
+            view: 'source',
+            state: {
+                ...file,
+                label: 'literature-radar.yml'
+            }
+        });
+        expect(openSourceFile(file)).toBe(id);
+    });
+
     it('draws its intro, search, ordered sections, card details, actions, and collapsed dismissed section', async () => {
         const snapshot = {
             version: 301,
@@ -86,6 +104,9 @@ describe('the Lit Watch view', () => {
             entries
         });
         const body = render(Radar, { props: { instance: instance('radar-one') } }).body;
+        expect(body).toContain('data-edit-source');
+        expect(body).toContain('data-source-root="hub"');
+        expect(body).toContain('data-source-path="feeds/literature-radar.yml"');
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('New-paper radar');
         expect(body).toContain('4 tracked');
