@@ -5,8 +5,9 @@
 
 import { describe, expect, it } from 'vitest';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
+import { apply } from '../../src/lib/state/layout.svelte.ts';
+import { defaultWorkbench, type Instance } from '../../src/lib/state/layout.ts';
 import { select } from '../../src/lib/state/selection.svelte.ts';
-import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import {
     contextWindow,
     gitFor,
@@ -175,20 +176,30 @@ describe('sessionsForProject', () => {
 });
 
 describe('sessionFor and the context window', () => {
+    /** Put one view instance with this state in the layout that sessionFor reads. */
+    function holdInstance(id: string, state: unknown): void {
+        const instance: Instance = { id, view: 'session-detail', state };
+        const base = defaultWorkbench();
+        apply({
+            ...base,
+            main: { kind: 'pane', tabs: [instance], active: id }
+        });
+    }
+
     it('follows the selection when the instance pins nothing', () => {
-        setInstanceState('one', {});
+        holdInstance('one', {});
         select('live-two');
         expect(sessionFor('one')?.id).toBe('live-two');
     });
 
     it('shows the pinned session instead, whatever is selected', () => {
-        setInstanceState('two', { session: 'ended-one' });
+        holdInstance('two', { session: 'ended-one' });
         select('live-two');
         expect(sessionFor('two')?.id).toBe('ended-one');
     });
 
     it('shows nothing when the pinned session is no longer in the payload', () => {
-        setInstanceState('three', { session: 'gone-away' });
+        holdInstance('three', { session: 'gone-away' });
         expect(sessionFor('three')).toBe(null);
     });
 

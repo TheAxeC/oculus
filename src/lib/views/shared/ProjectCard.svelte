@@ -121,16 +121,18 @@
         return '--tone: var(--c-slate)';
     }
 
-    /** Whether any of the six session views is open in either tree. */
+    /** Whether an unpinned session view is open in either tree and will follow this selection. */
     function sessionViewOpen(): boolean {
         const trees = [workbench().main, workbench().panel];
-        return SESSION_VIEWS.some((view) => trees.some((tree) => findView(tree, view) !== null));
+        return SESSION_VIEWS.some((view) =>
+            trees.some((tree) => findView(tree, view, null) !== null)
+        );
     }
 
     /** Pick a session from a card: every session view follows, and the panel opens when none is up. */
     function pick(entry: GroupedSession): void {
         select(entry.id);
-        if (!sessionViewOpen()) openView('session-detail', 'panel', { session: entry.id });
+        if (!sessionViewOpen()) openView('session-detail', 'panel');
     }
 
     /** The deadline badge: the date once submitted, how overdue it is, or how long is left. */

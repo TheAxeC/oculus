@@ -44,7 +44,7 @@
 
     function terminalOpen(): boolean {
         return [workbench().main, workbench().panel].some(
-            (tree) => findView(tree, 'terminal') !== null
+            (tree) => findView(tree, 'terminal', null) !== null
         );
     }
 

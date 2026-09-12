@@ -190,27 +190,28 @@ export function activePath(layout: Layout, id: string | null): number[] {
 }
 
 /**
- * The `id` an instance state carries, or null for a state that carries none. It is what makes two
- * projects two instances of one view: the project view is registered once, so the view id alone no
- * longer says which tab is which, and the id in the state does.
+ * The identity an instance state carries, or null for a state that carries none. A project uses
+ * `id`; a session or terminal pin uses `session`. Either makes two records two instances of one
+ * registered view, while opening the same record again activates its existing instance.
  */
 export function stateId(state: unknown): string | null {
     if (typeof state !== 'object' || state === null || Array.isArray(state)) return null;
-    const held = (state as Record<string, unknown>).id;
-    return typeof held === 'string' && held !== '' ? held : null;
+    const held = state as Record<string, unknown>;
+    if (typeof held.id === 'string' && held.id !== '') return held.id;
+    return typeof held.session === 'string' && held.session !== '' ? held.session : null;
 }
 
-/** Whether a tab is the instance being looked for: its view, and its state id when one is wanted. */
-export function isInstanceOf(tab: Instance, view: ViewId, id: string | null = null): boolean {
+/** Whether a tab has this view and identity. An omitted identity matches every instance. */
+export function isInstanceOf(tab: Instance, view: ViewId, id?: string | null): boolean {
     if (tab.view !== view) return false;
-    return id === null || stateId(tab.state) === id;
+    return id === undefined || stateId(tab.state) === id;
 }
 
 /**
- * The instance of this view in the tree, or null when the tree holds none. Given a state id, only an
- * instance opened for that id counts, so a second project opens a second tab.
+ * The instance of this view in the tree, or null when the tree holds none. An omitted identity finds
+ * any instance, an explicit null finds the unpinned one, and a string finds that record's instance.
  */
-export function findView(layout: Layout, view: ViewId, id: string | null = null): Instance | null {
+export function findView(layout: Layout, view: ViewId, id?: string | null): Instance | null {
     for (const { pane } of panes(layout)) {
         const found = pane.tabs.find((tab) => isInstanceOf(tab, view, id));
         if (found !== undefined) return found;

@@ -16,6 +16,8 @@
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { clock } from '$lib/state/format';
+    import { instanceLayoutState, pinInstance, unpinInstance } from '$lib/state/layout.svelte';
+    import { pinnedSession } from '$lib/state/selection.svelte';
     import { sessionFor } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
     import { follow, turnsFor, type Turn } from '$lib/state/transcript.svelte';
@@ -24,6 +26,7 @@
     let { instance }: ViewProps = $props();
 
     const record = $derived(sessionFor(instance.id));
+    const panePin = $derived(pinnedSession(instanceLayoutState(instance.id)));
     const held = $derived(turnsFor(record?.id ?? ''));
     const turns = $derived(held.turns);
 
@@ -74,6 +77,17 @@
         column.scrollTop = column.scrollHeight;
     }
 
+    /** Pin this transcript to what it shows, or return it to following the selection. */
+    function togglePanePin(): void {
+        if (panePin !== null) {
+            unpinInstance(instance.id);
+            return;
+        }
+        if (record !== null) {
+            pinInstance(instance.id, record.id, record.title);
+        }
+    }
+
     /** What the block is labelled: who said it, or that a tool was called. */
     function roleLabel(role: string): string {
         if (role === 'user') return t('sessions.turn_user');
@@ -100,6 +114,14 @@
 <Pane title={t('sessions.view_transcript')}>
     {#snippet toolbar()}
         <Toolbar label={t('sessions.turn_toolbar')}>
+            {#if record !== null || panePin !== null}
+                <ToolButton
+                    label={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
+                    title={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
+                    pressed={panePin !== null}
+                    onclick={togglePanePin}
+                />
+            {/if}
             <ToolButton
                 label={t('sessions.turn_end')}
                 glyph={t('sessions.turn_end_glyph')}

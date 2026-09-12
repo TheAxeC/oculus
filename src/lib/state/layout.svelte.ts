@@ -8,6 +8,7 @@
 // the current page, so an operation names the tree it applies to and nothing else knows about pages.
 // Every change reaches the store through apply() or savePages(), which are also what save, so
 // neither an arrangement nor a page is changed without being written down.
+// Unpinning keeps the instance in place, so two unpinned instances of one view may coexist.
 
 import {
     activePath,
@@ -16,6 +17,7 @@ import {
     closeInstance,
     closePane,
     defaultPages,
+    findInstance,
     findView,
     focusedPane,
     isInstanceOf,
@@ -110,6 +112,57 @@ export function workbench(): Workbench {
 export function layout(target: Target = 'main'): Layout {
     const current = workbench();
     return target === 'main' ? current.main : current.panel;
+}
+
+/** One layout instance's own saved state, from whichever tree of the current page holds it. */
+export function instanceLayoutState(id: string): unknown {
+    const current = workbench();
+    const main = findInstance(current.main, id);
+    if (main !== null) return main.instance.state;
+    return findInstance(current.panel, id)?.instance.state;
+}
+
+/** Replace one instance's layout state in the tree that holds it. A missing id changes nothing. */
+export function restateInstance(id: string, state: unknown): void {
+    for (const target of ['main', 'panel'] as const) {
+        if (findInstance(layout(target), id) === null) continue;
+        change(target, (tree) => restate(tree, id, state));
+        return;
+    }
+}
+
+/** Pin one instance, or activate the same view's existing pin in either tree without changing the caller. */
+export function pinInstance(id: string, session: string, label: string): void {
+    const current = workbench();
+    const caller = findInstance(current.main, id) ?? findInstance(current.panel, id);
+    if (caller === null) return;
+    for (const target of ['main', 'panel'] as const) {
+        const existing = findView(layout(target), caller.instance.view, session);
+        if (existing === null) continue;
+        activateInstance(target, existing.id);
+        return;
+    }
+    restateInstance(id, { session, label });
+}
+
+/** Clear the pin and label in place; another unpinned instance of the view may already exist. */
+export function unpinInstance(id: string): void {
+    restateInstance(id, {});
+}
+
+/**
+ * Open another session view pinned to the session a detail shows, in the main area. A view already
+ * pinned to that session in either tree is activated where it is, so one session never gets two
+ * pinned tabs of one view.
+ */
+export function openPinnedView(view: ViewId, session: string, label: string): string {
+    for (const target of ['main', 'panel'] as const) {
+        const existing = findView(layout(target), view, session);
+        if (existing === null) continue;
+        activateInstance(target, existing.id);
+        return existing.id;
+    }
+    return openView(view, 'main', { session, label });
 }
 
 /** Where the panel sits. */
@@ -371,11 +424,11 @@ export function focused(): Focus | null {
  * pane. The panel is shown when a view is opened into it and it was hidden, since opening a view
  * into something invisible would look like nothing happening.
  *
- * `state` is what the opener has to say to the view: the project a card wants opened or edited. A
- * state carrying an `id` names which instance is wanted, so opening one project twice activates the
- * tab it is already in and opening a second project opens a second tab; a state carrying no `id`
- * retargets whatever instance of the view is open, as it did before. The returned id names the
- * instance activated or created, so its separate UI state can be updated by the caller.
+ * `state` is what the opener has to say to the view: the project a card wants opened or the session
+ * a pane pins. A state carrying an `id` or `session` names which instance is wanted, so opening one
+ * record twice activates its existing tab and opening a second record creates another. A state
+ * carrying neither retargets the unpinned instance, while pinned instances stay fixed. The returned
+ * id names the instance activated or created, so its separate UI state can be updated by the caller.
  */
 export function openView(view: ViewId, where: Target, state?: unknown): string {
     // A maximised pane hides everything else, so a view opened into the other tree would land out
@@ -405,9 +458,9 @@ export function openView(view: ViewId, where: Target, state?: unknown): string {
 /**
  * The instance of a view in one pane, or null when it holds none. While a pane is maximised it is
  * the only pane a view can be opened into, so it is the only one an already-open instance may be
- * found in: activating a tab of a pane nobody can see would look like nothing happening. A state id
- * narrows it the same way findView does.
+ * found in: activating a tab of a pane nobody can see would look like nothing happening. A state
+ * identity narrows it the same way findView does.
  */
-function findIn(pane: Pane, view: ViewId, id: string | null = null): Instance | null {
+function findIn(pane: Pane, view: ViewId, id: string | null): Instance | null {
     return pane.tabs.find((tab) => isInstanceOf(tab, view, id)) ?? null;
 }

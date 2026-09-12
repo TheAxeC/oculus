@@ -1,3 +1,50 @@
+<script module lang="ts">
+    // Layer 3, view. Exported session and terminal menu item builders supply the row menus and their tests.
+
+    import type { MenuItem } from '$lib/ui/Menu.svelte';
+    import { t } from '$lib/state/text';
+
+    type SessionRow = { id: string; live: boolean; cwd: string | null };
+
+    /** The actions in a session row's menu, including the pinned pane available on every row. */
+    export function sessionRowItems(row: SessionRow, armedResume: string): MenuItem[] {
+        const items: MenuItem[] = [
+            {
+                id: 'pinned',
+                label: t('sessions.open_pinned'),
+                title: t('sessions.open_pinned_tip')
+            },
+            {
+                id: 'transcript',
+                label: t('sessions.transcript_open'),
+                glyph: t('sessions.transcript_glyph')
+            }
+        ];
+        if (!row.live) {
+            items.push({
+                id: 'resume',
+                label:
+                    armedResume === row.id
+                        ? t('sessions.resume_confirm', row.cwd ?? '')
+                        : t('sessions.resume'),
+                glyph: t('sessions.resume_glyph')
+            });
+        }
+        return items;
+    }
+
+    /** The action in a terminal row's menu. */
+    export function terminalRowItems(): MenuItem[] {
+        return [
+            {
+                id: 'pinned',
+                label: t('sessions.open_pinned'),
+                title: t('sessions.open_pinned_tip')
+            }
+        ];
+    }
+</script>
+
 <script lang="ts">
     // Layer 3, view. The rail of sessions: every workspace, its areas, and the rows in them, newest
     // activity first at every level, which is the order the payload already carries.
@@ -13,7 +60,7 @@
     import Chip from '$lib/ui/Chip.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
-    import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
+    import Menu from '$lib/ui/Menu.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
@@ -27,7 +74,6 @@
         type GroupedSession,
         type Workspace
     } from '$lib/state/selectors.svelte';
-    import { t } from '$lib/state/text';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import {
         resumeRefusal,
@@ -175,23 +221,6 @@
         if (!answer.ok) failure = answer.error;
     }
 
-    /** What a row's menu offers: the transcript, and the resume, reading as the confirm once armed. */
-    function rowItems(row: GroupedSession): MenuItem[] {
-        const confirm = t('sessions.resume_confirm', row.cwd ?? '');
-        return [
-            {
-                id: 'transcript',
-                label: t('sessions.transcript_open'),
-                glyph: t('sessions.transcript_glyph')
-            },
-            {
-                id: 'resume',
-                label: armedResume === row.id ? confirm : t('sessions.resume'),
-                glyph: t('sessions.resume_glyph')
-            }
-        ];
-    }
-
     /**
      * Show one row's turns. The row becomes the selection first, since the transcript view draws the
      * selected session; a transcript view already up is activated rather than a second one opened.
@@ -202,10 +231,20 @@
         openView('transcript', where);
     }
 
-    /** Whether a terminal view is already up, so a resume does not rearrange a workbench. */
+    /** Open one session as a labelled detail tab that no later selection retargets. */
+    function openPinnedSession(row: GroupedSession): void {
+        openView('session-detail', 'main', { session: row.id, label: row.title });
+    }
+
+    /** Open one terminal as a labelled tab that no later selection retargets. */
+    function openPinnedTerminal(entry: Terminal): void {
+        openView('terminal', 'main', { session: entry.id, label: entry.name });
+    }
+
+    /** Whether an unpinned terminal is already up and will follow a resumed terminal. */
     function terminalOpen(): boolean {
         const trees = [workbench().main, workbench().panel];
-        return trees.some((tree) => findView(tree, 'terminal') !== null);
+        return trees.some((tree) => findView(tree, 'terminal', null) !== null);
     }
 
     /**
@@ -287,21 +326,22 @@
                 {/each}
             </span>
         </button>
+        <div class="menu">
+            <Menu
+                label={t('ui.row_menu')}
+                items={sessionRowItems(entry, armedResume)}
+                glyph={t('ui.pane_menu_glyph')}
+                compact
+                placement="down"
+                align="right"
+                onpick={(id) => {
+                    if (id === 'pinned') openPinnedSession(entry);
+                    if (id === 'resume') void resume(entry);
+                    if (id === 'transcript') openTranscript(entry);
+                }}
+            />
+        </div>
         {#if !entry.live}
-            <div class="menu">
-                <Menu
-                    label={t('ui.row_menu')}
-                    items={rowItems(entry)}
-                    glyph={t('ui.pane_menu_glyph')}
-                    compact
-                    placement="down"
-                    align="right"
-                    onpick={(id) => {
-                        if (id === 'resume') void resume(entry);
-                        if (id === 'transcript') openTranscript(entry);
-                    }}
-                />
-            </div>
             <button
                 type="button"
                 class="hide"
@@ -352,6 +392,19 @@
                 <span class="ts">{stamp(entry.created, now)}</span>
             </span>
         </button>
+        <div class="menu">
+            <Menu
+                label={t('ui.row_menu')}
+                items={terminalRowItems()}
+                glyph={t('ui.pane_menu_glyph')}
+                compact
+                placement="down"
+                align="right"
+                onpick={(picked) => {
+                    if (picked === 'pinned') openPinnedTerminal(entry);
+                }}
+            />
+        </div>
         <button
             type="button"
             class="hide"

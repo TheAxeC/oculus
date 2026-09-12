@@ -13,10 +13,18 @@
     import Select from '$lib/ui/Select.svelte';
     import TextInput from '$lib/ui/TextInput.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import Toolbar from '$lib/ui/Toolbar.svelte';
     import { clock, compactCount, modelShort, stamp } from '$lib/state/format';
-    import { openView, workbench } from '$lib/state/layout.svelte';
+    import {
+        instanceLayoutState,
+        openView,
+        openPinnedView,
+        pinInstance,
+        unpinInstance,
+        workbench
+    } from '$lib/state/layout.svelte';
     import { findView } from '$lib/state/layout';
-    import { select } from '$lib/state/selection.svelte';
+    import { pinnedSession, select } from '$lib/state/selection.svelte';
     import {
         contextWindow,
         knownAreas,
@@ -56,6 +64,7 @@
     const now = Date.now();
 
     const record = $derived(sessionFor(instance.id));
+    const panePin = $derived(pinnedSession(instanceLayoutState(instance.id)));
     const limit = $derived(windowFor(record));
     const used = $derived(record === null ? 0 : record.contextTokens);
     const level = $derived(limit > 0 ? used / limit : 0);
@@ -153,10 +162,21 @@
         openView('transcript', where);
     }
 
-    /** Whether a terminal view is already up, so a resume does not rearrange a workbench. */
+    /** Pin this detail to what it shows, or return it to following the workbench selection. */
+    function togglePanePin(): void {
+        if (panePin !== null) {
+            unpinInstance(instance.id);
+            return;
+        }
+        if (record !== null) {
+            pinInstance(instance.id, record.id, record.title);
+        }
+    }
+
+    /** Whether an unpinned terminal is already up and will follow a resumed terminal. */
     function terminalOpen(): boolean {
         const trees = [workbench().main, workbench().panel];
-        return trees.some((tree) => findView(tree, 'terminal') !== null);
+        return trees.some((tree) => findView(tree, 'terminal', null) !== null);
     }
 
     /**
@@ -195,7 +215,50 @@
     </div>
 {/snippet}
 
-<Pane title={t('sessions.detail_title')}>
+{#snippet tools()}
+    <Toolbar label={t('sessions.detail_title')}>
+        {#if record !== null || panePin !== null}
+            <ToolButton
+                label={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
+                title={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
+                pressed={panePin !== null}
+                onclick={togglePanePin}
+            />
+        {/if}
+        {#if panePin !== null && record !== null}
+            <ToolButton
+                label={t('sessions.view_transcript')}
+                glyph={t('sessions.transcript_glyph')}
+                onclick={() => {
+                    if (record !== null) openPinnedView('transcript', record.id, record.title);
+                }}
+            />
+            <ToolButton
+                label={t('sessions.view_timeline')}
+                glyph={t('sessions.timeline_glyph')}
+                onclick={() => {
+                    if (record !== null) openPinnedView('timeline', record.id, record.title);
+                }}
+            />
+            <ToolButton
+                label={t('sessions.view_changes')}
+                glyph={t('sessions.changes_glyph')}
+                onclick={() => {
+                    if (record !== null) openPinnedView('changes', record.id, record.title);
+                }}
+            />
+            <ToolButton
+                label={t('sessions.view_agents')}
+                glyph={t('sessions.agents_glyph')}
+                onclick={() => {
+                    if (record !== null) openPinnedView('agents', record.id, record.title);
+                }}
+            />
+        {/if}
+    </Toolbar>
+{/snippet}
+
+<Pane title={t('sessions.detail_title')} toolbar={tools}>
     <div class="detail" data-instance={instance.id}>
         {#if record === null}
             <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />

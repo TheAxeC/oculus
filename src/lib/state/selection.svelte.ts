@@ -29,8 +29,8 @@ export function selected(): string | null {
 
 /**
  * The session a view instance pinned, from the state it saved, or null when it follows the
- * selection. Pure over what it is handed, so a view reads it out of instanceState() and nothing
- * about the pin needs a second store.
+ * selection. Pure over what it is handed, so a view reads it out of the layout instance and
+ * nothing about the pin needs a second store.
  */
 export function pinnedSession(state: unknown): string | null {
     if (typeof state !== 'object' || state === null || Array.isArray(state)) return null;

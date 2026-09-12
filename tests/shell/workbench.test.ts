@@ -53,8 +53,8 @@ registerView({
     component: Beta
 });
 
-function pane(id: string, view: string): Layout {
-    return { kind: 'pane', tabs: [{ id, view, state: {} }], active: id };
+function pane(id: string, view: string, state: unknown = {}): Layout {
+    return { kind: 'pane', tabs: [{ id, view, state }], active: id };
 }
 
 /** Two panes side by side in the main area, one pane in the panel. */
@@ -110,6 +110,17 @@ describe('the workbench', () => {
     it('labels each tab from the registry', () => {
         expect(docked).toContain('Status');
         expect(docked).toContain('Findings');
+    });
+
+    it('uses an instance label on the tab and keeps the view name in its tooltip', () => {
+        apply({
+            main: pane('pinned', 'alpha', { session: 'one', label: 'Pinned session' }),
+            panel: pane('panel', 'beta'),
+            dock: 'right',
+            panelSize: 0.3
+        });
+        const body = render(Workbench, { props: { groups: [] } }).body;
+        expect(body).toMatch(/Pinned session.*class="bubble[^"]*"[^>]*>Status</s);
     });
 
     it('mounts the active instance of every pane', () => {

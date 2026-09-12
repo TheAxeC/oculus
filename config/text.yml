@@ -903,6 +903,10 @@ text:
     ended_glyph: "disclosure"
     empty_glyph: "circle_empty"
     select_tip: "show this session in the other session views"
+    open_pinned: "Open in its own pane"
+    open_pinned_tip: "keep it in a pane of its own"
+    pin_pane: "Pin this pane"
+    unpin_pane: "Unpin this pane"
     # oculus: the pin row of the session panel, which writes the per-session overrides file.
     pin_label: "Pin"
     pin_tip: "file this session under a project folder instead of the one its files scored"

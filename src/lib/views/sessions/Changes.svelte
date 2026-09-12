@@ -27,7 +27,10 @@
     import TextArea from '$lib/ui/TextArea.svelte';
     import TextInput from '$lib/ui/TextInput.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import Toolbar from '$lib/ui/Toolbar.svelte';
     import { elide, relativeTo } from '$lib/state/format';
+    import { instanceLayoutState, pinInstance, unpinInstance } from '$lib/state/layout.svelte';
+    import { pinnedSession } from '$lib/state/selection.svelte';
     import {
         gitFor,
         sessionFor,
@@ -58,6 +61,7 @@
     type Ask = { message: string; detail: string; act: () => void };
 
     const record = $derived(sessionFor(instance.id));
+    const panePin = $derived(pinnedSession(instanceLayoutState(instance.id)));
     const workspace = $derived(record?.workspace ?? '');
     const files = $derived(record?.files ?? []);
     const repo = $derived(workspace === '' ? null : gitFor(workspace));
@@ -84,6 +88,17 @@
     const upstream = $derived(current?.upstream ?? '');
 
     const canCommit = $derived(staged.length > 0 && message.trim() !== '' && !busy);
+
+    /** Pin these changes to what they show, or return them to following the selection. */
+    function togglePanePin(): void {
+        if (panePin !== null) {
+            unpinInstance(instance.id);
+            return;
+        }
+        if (record !== null) {
+            pinInstance(instance.id, record.id, record.title);
+        }
+    }
 
     // The branch list is a read of its own rather than a field of the `git` payload: the payload is
     // what the watcher publishes for every workspace on every change, and the branches of a
@@ -363,7 +378,20 @@
     </div>
 {/snippet}
 
-<Pane title={t('sessions.view_changes')}>
+{#snippet tools()}
+    <Toolbar label={t('sessions.view_changes')}>
+        {#if record !== null || panePin !== null}
+            <ToolButton
+                label={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
+                title={panePin === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
+                pressed={panePin !== null}
+                onclick={togglePanePin}
+            />
+        {/if}
+    </Toolbar>
+{/snippet}
+
+<Pane title={t('sessions.view_changes')} toolbar={tools}>
     <div class="changes" data-instance={instance.id}>
         {#if record === null}
             <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />

@@ -76,7 +76,8 @@
             return {
                 id: instance.id,
                 label: own ?? lookup(found.label),
-                glyph: lookup(found.glyph)
+                glyph: lookup(found.glyph),
+                hint: own === null ? undefined : lookup(found.label)
             };
         })
     );

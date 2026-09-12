@@ -14,7 +14,10 @@ import { render } from 'svelte/server';
 import Agents from '../../src/lib/views/sessions/Agents.svelte';
 import Changes from '../../src/lib/views/sessions/Changes.svelte';
 import SessionDetail from '../../src/lib/views/sessions/SessionDetail.svelte';
-import SessionList from '../../src/lib/views/sessions/SessionList.svelte';
+import SessionList, {
+    sessionRowItems,
+    terminalRowItems
+} from '../../src/lib/views/sessions/SessionList.svelte';
 import Terminal from '../../src/lib/views/sessions/Terminal.svelte';
 import Timeline from '../../src/lib/views/sessions/Timeline.svelte';
 import Transcript from '../../src/lib/views/sessions/Transcript.svelte';
@@ -27,6 +30,7 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { clock } from '../../src/lib/state/format.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
+import { apply } from '../../src/lib/state/layout.svelte.ts';
 import { select } from '../../src/lib/state/selection.svelte.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
@@ -34,7 +38,7 @@ import { forget, hold, type Turn } from '../../src/lib/state/transcript.svelte.t
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import { area, git, payload, record, terminal, workspace } from '../sessions-fixture.ts';
 import type { Component } from 'svelte';
-import type { Instance } from '../../src/lib/state/layout.ts';
+import { defaultWorkbench, type Instance } from '../../src/lib/state/layout.ts';
 import type { ViewProps } from '../../src/lib/views/registry.ts';
 
 const { config } = loadConfig(engineDir());
@@ -194,11 +198,27 @@ let counter = 0;
 /** One view rendered as a fresh instance, with the state that instance has saved. */
 function html(view: Component<ViewProps>, state: unknown = {}, id = `probe-${(counter += 1)}`) {
     setInstanceState(id, state);
-    const instance: Instance = { id, view: 'probe', state: {} };
+    const instance: Instance = { id, view: 'probe', state };
+    const base = defaultWorkbench();
+    apply({
+        ...base,
+        main: { kind: 'pane', tabs: [instance], active: id }
+    });
     return render(view, { props: { instance } }).body;
 }
 
 describe('the session list', () => {
+    it('offers a labelled pinned pane action for sessions and terminals', () => {
+        const session = sessionRowItems(live, '').find((item) => item.id === 'pinned');
+        const terminal = terminalRowItems().find((item) => item.id === 'pinned');
+        expect(session).toEqual({
+            id: 'pinned',
+            label: catalog['sessions.open_pinned'],
+            title: catalog['sessions.open_pinned_tip']
+        });
+        expect(terminal).toEqual(session);
+    });
+
     it('draws every workspace, its areas and its live rows', () => {
         select('live-one');
         const body = html(SessionList);
@@ -341,9 +361,28 @@ describe('the session detail', () => {
         select('live-one');
         expect(html(SessionDetail, { session: 'ended-one' })).toContain('The ended one');
     });
+
+    it('offers pin and unpin in place and four pinned session views', () => {
+        select('live-one');
+        expect(html(SessionDetail)).toContain(catalog['sessions.pin_pane']);
+        const body = html(SessionDetail, { session: 'ended-one', label: 'The ended one' });
+        expect(body).toContain(catalog['sessions.unpin_pane']);
+        expect(body).toContain(catalog['sessions.view_transcript']);
+        expect(body).toContain(catalog['sessions.view_timeline']);
+        expect(body).toContain(catalog['sessions.view_changes']);
+        expect(body).toContain(catalog['sessions.view_agents']);
+    });
 });
 
 describe('the timeline', () => {
+    it('offers pin and unpin in place', () => {
+        select('live-one');
+        expect(html(Timeline)).toContain(catalog['sessions.pin_pane']);
+        expect(html(Timeline, { session: 'ended-one', label: 'The ended one' })).toContain(
+            catalog['sessions.unpin_pane']
+        );
+    });
+
     it('draws every event with its kind, and prints a kind it does not know', () => {
         select('live-one');
         const body = html(Timeline);
@@ -379,6 +418,14 @@ describe('the timeline', () => {
 // The turns are put in through hold(), the module's test-only door: this suite renders on the server,
 // where the module fetches nothing, so there is no request to stub.
 describe('the transcript view', () => {
+    it('offers pin and unpin in place', () => {
+        select('live-one');
+        expect(html(Transcript)).toContain(catalog['sessions.pin_pane']);
+        expect(html(Transcript, { session: 'ended-one', label: 'The ended one' })).toContain(
+            catalog['sessions.unpin_pane']
+        );
+    });
+
     const turn = (over: Partial<Turn> = {}): Turn => ({
         at: '2026-09-10T08:00:00.000Z',
         role: 'user',
@@ -442,6 +489,14 @@ function count(body: string, label: string): number {
 }
 
 describe('the changes view', () => {
+    it('offers pin and unpin in place', () => {
+        select('live-one');
+        expect(html(Changes)).toContain(catalog['sessions.pin_pane']);
+        expect(html(Changes, { session: 'ended-one', label: 'The ended one' })).toContain(
+            catalog['sessions.unpin_pane']
+        );
+    });
+
     it('lists the files the session touched, relative to its workspace', () => {
         select('live-one');
         const body = html(Changes);
@@ -525,6 +580,14 @@ describe('the changes view', () => {
 });
 
 describe('the agents view', () => {
+    it('offers pin and unpin in place', () => {
+        select('live-one');
+        expect(html(Agents)).toContain(catalog['sessions.pin_pane']);
+        expect(html(Agents, { session: 'ended-one', label: 'The ended one' })).toContain(
+            catalog['sessions.unpin_pane']
+        );
+    });
+
     it('draws one row per agent, newest first, with its status and its span', () => {
         select('live-one');
         const body = html(Agents);
@@ -664,6 +727,19 @@ describe('a terminal in the payload', () => {
         select(null);
     });
 
+    it('offers pin and unpin in place', () => {
+        const body = withTerminals(() => {
+            select(pane.id);
+            return html(Terminal);
+        });
+        expect(body).toContain(catalog['sessions.pin_pane']);
+        select(null);
+        const pinned = withTerminals(() => html(Terminal, { session: pane.id, label: pane.name }));
+        expect(pinned).toContain(catalog['sessions.unpin_pane']);
+        expect(pinned).toContain(`data-terminal="${pane.id}"`);
+        select(null);
+    });
+
     it('lists it under the terminals heading, with its directory and a stop control', () => {
         const body = withTerminals(() => html(SessionList));
         expect(body).toContain(catalog['sessions.terminals']);
@@ -694,12 +770,11 @@ describe('resuming a session into a terminal', () => {
         select(null);
     });
 
-    it('puts a row menu on an ended row and none on a live one', () => {
+    it('puts a row menu on every session row', () => {
         const ended = html(SessionList, { ended: true });
         expect(ended).toContain(`aria-label="${catalog['ui.row_menu']}"`);
-        // The default state leaves the ended section collapsed, so only live rows are drawn.
         const liveOnly = html(SessionList);
         expect(liveOnly).toContain('The live one');
-        expect(liveOnly).not.toContain(`aria-label="${catalog['ui.row_menu']}"`);
+        expect(liveOnly).toContain(`aria-label="${catalog['ui.row_menu']}"`);
     });
 });

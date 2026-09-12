@@ -21,6 +21,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import { terminalFontPx } from '$lib/state/appearance';
+    import { instanceLayoutState, pinInstance, unpinInstance } from '$lib/state/layout.svelte';
     import { hubRoot, sessionsByWorkspace } from '$lib/state/selectors.svelte';
     import { pinnedTerminal, select, selectedTerminal } from '$lib/state/selection.svelte';
     import {
@@ -29,13 +30,14 @@
         sendResize,
         startTerminal,
         subscribePty,
+        terminalById,
         terminals,
         titleStripper,
         unsubscribePty,
         type TerminalKind
     } from '$lib/state/terminals.svelte';
     import { t } from '$lib/state/text';
-    import { instanceState, setTerminalFont, terminalFont, theme } from '$lib/state/ui.svelte';
+    import { setTerminalFont, terminalFont, theme } from '$lib/state/ui.svelte';
     import { untrack } from 'svelte';
     import type { MenuItem } from '$lib/ui/Menu.svelte';
     import type { ViewProps } from '$lib/views/registry';
@@ -81,13 +83,25 @@
     let measure: (() => { cols: number; rows: number } | null) | null = null;
     let refit: (() => void) | null = null;
 
-    const pinned = $derived(pinnedTerminal(instanceState(instance.id)));
+    const pinned = $derived(pinnedTerminal(instanceLayoutState(instance.id)));
     const id = $derived(pinned ?? selectedTerminal());
+    const terminal = $derived(terminalById(id));
     const roots = $derived(sessionsByWorkspace(true).map((one) => one.key));
     const hub = $derived(hubRoot());
 
     /** Where the next terminal starts: what was picked, and the hub until something is. */
     const chosen = $derived(where === '' ? hub : where);
+
+    /** Pin this terminal to what it shows, or return it to following the terminal selection. */
+    function togglePanePin(): void {
+        if (pinned !== null) {
+            unpinInstance(instance.id);
+            return;
+        }
+        if (terminal !== null) {
+            pinInstance(instance.id, terminal.id, terminal.name);
+        }
+    }
 
     /** Where a terminal may be started: the workspaces the payload knows, and the hub itself. */
     const places = $derived(
@@ -267,6 +281,14 @@
 
 {#snippet tools()}
     <Toolbar label={t('sessions.view_terminal')}>
+        {#if terminal !== null || pinned !== null}
+            <ToolButton
+                label={pinned === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
+                title={pinned === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
+                pressed={pinned !== null}
+                onclick={togglePanePin}
+            />
+        {/if}
         <ToolButton
             label={t('sessions.terminal_smaller')}
             glyph="collapse"

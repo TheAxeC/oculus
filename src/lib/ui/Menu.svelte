@@ -31,6 +31,8 @@
     export type MenuItem = {
         id: string;
         label: string;
+        /** The item's hover words, when they say more than its label. */
+        title?: string;
         active?: boolean;
         glyph?: string;
         /** A hue name from state/tones.ts, drawn as a dot before the label. */
@@ -223,6 +225,7 @@
                     class:current={item.active === true}
                     role="menuitem"
                     aria-current={item.active === true}
+                    title={item.title}
                     bind:this={entries[index]}
                     onclick={(event) => pick(item.id, event)}
                     onkeydown={(event) => keys(event, index)}
