@@ -188,8 +188,8 @@ describe('the groups of the real config', () => {
         expect(rest.map((view) => view.id).filter((id) => COLLECTIONS.includes(id))).toEqual([]);
     });
 
-    it('draws the Feeds heading with Lit Watch and Position Leads', () => {
-        expect(section('Feeds').map((view) => view.id)).toEqual(['radar', 'leads']);
+    it('draws the Feeds heading with Lit Watch, Position Leads, and Inbox', () => {
+        expect(section('Feeds').map((view) => view.id)).toEqual(['radar', 'leads', 'inbox']);
         expect(section('Feeds').length).toBeLessThanOrEqual(GROUP_MAX);
         expect(render(ActivityRail, { props: { groups: realGroups() } }).body).toContain(
             '>Feeds</p>'

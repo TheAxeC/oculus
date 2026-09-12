@@ -682,6 +682,7 @@ text:
     inbox_heading: "Inbox"
     inbox_intro: "- last triaged <b>{0}</b> | {1} to reply | {2} to action | {3} informational{4}. LOCAL-only | read-only on Gmail (drafts are suggestions, nothing sent)."
     inbox_triaged_suffix: " | {0} triaged"
+    inbox_thread: "(thread)"
     inbox_search: "Search inbox ..."
     inbox_sec_reply: "To reply"
     inbox_sec_action: "To action / do"

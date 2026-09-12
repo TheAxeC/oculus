@@ -188,6 +188,8 @@ text:
     radar_glyph: "litwatch"
     leads: "Position Leads"
     leads_glyph: "scout"
+    inbox: "Inbox"
+    inbox_glyph: "inbox"
     hpc: "Live HPC"
     hpc_glyph: "hpc"
     status: "Status"

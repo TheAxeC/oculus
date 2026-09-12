@@ -81,6 +81,7 @@ describe('the real registrations', () => {
         expect(real().map((view) => view.id)).toEqual([
             'radar',
             'leads',
+            'inbox',
             'hpc',
             'status',
             'findings',
@@ -138,6 +139,14 @@ describe('the real registrations', () => {
             id: 'leads',
             label: 'views.leads',
             glyph: 'views.leads_glyph'
+        });
+    });
+
+    it('registers Inbox directly with its catalog label and glyph', () => {
+        expect(viewFor('inbox')).toMatchObject({
+            id: 'inbox',
+            label: 'views.inbox',
+            glyph: 'views.inbox_glyph'
         });
     });
 
