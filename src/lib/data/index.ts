@@ -142,6 +142,7 @@ export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioC
         registries,
         collections,
         feeds,
+        linkedinCadenceDays: Number(merged.linkedin_cadence_days),
         career: path('career_file', CAREER_FILE),
         schema: merged.manifest_schema,
         vocab

@@ -1,4 +1,4 @@
-// Layer 2, server. The ten write bodies the endpoint knows, each as the type it is and the one
+// Layer 2, server. The write bodies the endpoint knows, each as the type it is and the one
 // function that reads a request body into it, or into null.
 //
 // Nothing here touches a file. A parser is pure over its one argument, which is what lets
@@ -83,6 +83,10 @@ export type FeedDeleteWrite = { kind: 'feed-delete'; feed: string; id: string };
 
 /** One position lead appended from the feed file's own form schema. */
 export type LeadAddWrite = { kind: 'lead-add'; fields: Record<string, unknown> };
+
+/** One LinkedIn idea stub and one idea promoted to a numbered post. */
+export type LinkedinIdeaWrite = { kind: 'linkedin-idea'; title: string; category: string };
+export type LinkedinPostWrite = { kind: 'linkedin-post'; file: string };
 
 const ACTIONS: SubtaskAction[] = ['done', 'reopen', 'snooze', 'delete'];
 
@@ -240,6 +244,20 @@ export function feedDeleteWrite(body: unknown): FeedDeleteWrite | null {
 export function leadAddWrite(body: unknown): LeadAddWrite | null {
     if (!isMap(body) || body.kind !== 'lead-add' || !isMap(body.fields)) return null;
     return { kind: 'lead-add', fields: body.fields };
+}
+
+/** The body as one new LinkedIn idea. Empty titles reach the writer and become field refusals. */
+export function linkedinIdeaWrite(body: unknown): LinkedinIdeaWrite | null {
+    if (!isMap(body) || body.kind !== 'linkedin-idea') return null;
+    if (typeof body.title !== 'string') return null;
+    if (body.category !== undefined && typeof body.category !== 'string') return null;
+    return { kind: 'linkedin-idea', title: body.title, category: body.category ?? '' };
+}
+
+/** The body as one LinkedIn idea filename to promote. */
+export function linkedinPostWrite(body: unknown): LinkedinPostWrite | null {
+    if (!isMap(body) || body.kind !== 'linkedin-post' || typeof body.file !== 'string') return null;
+    return { kind: 'linkedin-post', file: body.file };
 }
 
 /** The body as a new idea, or null when it is not one. */

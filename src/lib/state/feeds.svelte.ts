@@ -10,6 +10,7 @@ export type FeedState = {
     file: string;
     meta: Record<string, unknown>;
     entries: FeedEntry[];
+    cadenceDays?: number;
     schema?: SchemaField[];
     missing?: boolean;
     error?: string;
@@ -73,6 +74,7 @@ export async function refetch(kind: FeedKind): Promise<FeedState | null> {
             file: typeof body.file === 'string' ? body.file : '',
             meta,
             entries,
+            cadenceDays: typeof body.cadenceDays === 'number' ? body.cadenceDays : undefined,
             schema: Array.isArray(body.schema) ? (body.schema as SchemaField[]) : undefined,
             missing: body.missing === true
         };

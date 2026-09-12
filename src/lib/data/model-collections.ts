@@ -88,11 +88,13 @@ export type Feeds = {
 };
 
 /** The generated YAML feeds served on request to their dedicated views. */
-export type FeedKind = 'radar' | 'leads' | 'inbox';
+export type FeedKind = 'radar' | 'leads' | 'inbox' | 'linkedin';
 export type FeedEntry = Record<string, unknown>;
 export type FeedData = {
     meta: Record<string, unknown>;
     entries: FeedEntry[];
+    /** The configured posting interval, present on the LinkedIn folder feed. */
+    cadenceDays?: number;
     /** The file's own ordered entry schema, when it carries one. */
     schema?: SchemaField[];
 };

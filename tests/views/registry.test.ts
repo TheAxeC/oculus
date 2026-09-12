@@ -82,6 +82,7 @@ describe('the real registrations', () => {
             'radar',
             'leads',
             'inbox',
+            'linkedin',
             'hpc',
             'status',
             'findings',
@@ -147,6 +148,14 @@ describe('the real registrations', () => {
             id: 'inbox',
             label: 'views.inbox',
             glyph: 'views.inbox_glyph'
+        });
+    });
+
+    it('registers LinkedIn directly with its catalog label and glyph', () => {
+        expect(viewFor('linkedin')).toMatchObject({
+            id: 'linkedin',
+            label: 'views.linkedin',
+            glyph: 'views.linkedin_glyph'
         });
     });
 

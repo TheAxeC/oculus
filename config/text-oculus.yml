@@ -190,6 +190,8 @@ text:
     leads_glyph: "scout"
     inbox: "Inbox"
     inbox_glyph: "inbox"
+    linkedin: "LinkedIn"
+    linkedin_glyph: "linkedin"
     hpc: "Live HPC"
     hpc_glyph: "hpc"
     status: "Status"

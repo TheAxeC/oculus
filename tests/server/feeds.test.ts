@@ -1,12 +1,14 @@
 // The feed reader and writers over fixture files in a temporary hub, never the real feeds folder.
 
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
     addLead,
+    addLinkedinIdea,
     deleteFeedEntry,
+    markLinkedinPosted,
     readFeedFile,
     writeFeedField
 } from '../../src/lib/server/feeds.ts';
@@ -18,7 +20,8 @@ import type { FeedKind, PortfolioConfig } from '../../src/lib/data/model.ts';
 const FILES: Record<FeedKind, string> = {
     radar: 'fixture/radar.yml',
     leads: 'fixture/leads.yml',
-    inbox: 'fixture/inbox.yml'
+    inbox: 'fixture/inbox.yml',
+    linkedin: 'fixture/linkedin'
 };
 
 const LEAD_SCHEMA = `schema:
@@ -56,6 +59,20 @@ function fixture(): { hub: string; config: PortfolioConfig } {
             `meta:\n  last_run: 2026-09-11\n${schema}entries:\n  - ${identity}: "${id}"\n`
         );
     }
+    const linkedin = join(hub, FILES.linkedin);
+    expect(resolve(linkedin).startsWith(resolve(hub) + sep)).toBe(true);
+    mkdirSync(linkedin, { recursive: true });
+    writeFileSync(
+        join(linkedin, '01-A-reflection.md'),
+        '---\ntitle: "A quoted title"\ncategory: reflection\ndate: 2026-08-01\n---\n\nPosted body.\n'
+    );
+    writeFileSync(
+        join(linkedin, 'xx-easy-problems.md'),
+        '---\ntitle: "Easy problems"\ncategory: research\ndate: 2026-09-12\n---\n\nIdea body.\n'
+    );
+    writeFileSync(join(linkedin, 'README.md'), 'Not a post.\n');
+    writeFileSync(join(linkedin, 'draft-another.md'), 'Not a numbered post.\n');
+    writeFileSync(join(linkedin, 'xx-easy-problems.jpeg'), 'image');
     return { hub, config };
 }
 
@@ -69,6 +86,36 @@ describe('feed files', () => {
                 meta: { last_run: '2026-09-11' }
             });
         }
+    });
+
+    it('scans the LinkedIn folder and strips one pair of title quotes', () => {
+        const into = fixture();
+        const found = readFeedFile(into.hub, into.config, 'linkedin');
+        expect(found).toMatchObject({
+            kind: 'linkedin',
+            file: FILES.linkedin,
+            cadenceDays: 30,
+            entries: [
+                {
+                    file: '01-A-reflection.md',
+                    title: 'A quoted title',
+                    date: '2026-08-01',
+                    category: 'reflection',
+                    body: 'Posted body.',
+                    idea: false
+                },
+                {
+                    file: 'xx-easy-problems.md',
+                    title: 'Easy problems',
+                    body: 'Idea body.',
+                    idea: true
+                }
+            ]
+        });
+        expect(found?.entries.map((entry) => entry.file)).toEqual([
+            '01-A-reflection.md',
+            'xx-easy-problems.md'
+        ]);
     });
 
     it('reads the lead file schema with all ten fields and its status options', () => {
@@ -106,6 +153,71 @@ describe('feed files', () => {
 });
 
 describe('feed writes', () => {
+    it('adds a dated LinkedIn idea with a safe slug and numbered collision suffix', () => {
+        const into = fixture();
+        expect(addLinkedinIdea(into.hub, into.config, 'Easy problems', 'research')).toEqual({
+            found: true,
+            changed: ['file'],
+            refused: []
+        });
+        const file = join(into.hub, FILES.linkedin, 'xx-easy-problems-2.md');
+        expect(readFileSync(file, 'utf8')).toBe(
+            `---\nlayout: post\ntitle: "Easy problems"\ncategory: "research"\npublish: True\ndate: ${localDate(Date.now())}\n---\n\n`
+        );
+    });
+
+    it('bounds the filename of an idea with a very long title', () => {
+        const into = fixture();
+        expect(addLinkedinIdea(into.hub, into.config, 'a'.repeat(256), '').refused).toEqual([]);
+        const found = readFeedFile(into.hub, into.config, 'linkedin');
+        const added = found?.entries.find((entry) => String(entry.title) === 'a'.repeat(256));
+        expect(added?.file).toBe(`xx-${'a'.repeat(80)}.md`);
+    });
+
+    it('reads an escaped double-quoted title back from a newly written idea', () => {
+        const into = fixture();
+        expect(
+            addLinkedinIdea(into.hub, into.config, 'He said "yes"', 'reflection').refused
+        ).toEqual([]);
+        const found = readFeedFile(into.hub, into.config, 'linkedin');
+        expect(found?.entries.find((entry) => entry.file === 'xx-he-said-yes.md')).toMatchObject({
+            title: 'He said "yes"',
+            category: 'reflection',
+            idea: true
+        });
+    });
+
+    it('promotes an idea past 01-A and moves its same-basename sidecar', () => {
+        const into = fixture();
+        expect(markLinkedinPosted(into.hub, into.config, 'xx-easy-problems.md')).toEqual({
+            found: true,
+            changed: ['file'],
+            refused: []
+        });
+        const folder = join(into.hub, FILES.linkedin);
+        expect(existsSync(join(folder, '02-easy-problems.md'))).toBe(true);
+        expect(existsSync(join(folder, '02-easy-problems.jpeg'))).toBe(true);
+        expect(existsSync(join(folder, 'xx-easy-problems.md'))).toBe(false);
+        expect(existsSync(join(folder, 'xx-easy-problems.jpeg'))).toBe(false);
+    });
+
+    it('refuses missing titles, non-idea names, missing ideas, and paths outside the hub', () => {
+        const into = fixture();
+        expect(addLinkedinIdea(into.hub, into.config, '   ', 'research').refused).toEqual([
+            { field: 'title', reason: 'a LinkedIn idea needs a title' }
+        ]);
+        expect(markLinkedinPosted(into.hub, into.config, '01-A-reflection.md').refused).toEqual([
+            { field: 'file', reason: 'a LinkedIn post must name an xx-*.md idea' }
+        ]);
+        expect(markLinkedinPosted(into.hub, into.config, '../xx-easy-problems.md').refused).toEqual(
+            [{ field: 'file', reason: 'a LinkedIn post must name an xx-*.md idea' }]
+        );
+        expect(markLinkedinPosted(into.hub, into.config, 'xx-missing.md').found).toBe(false);
+        into.config.feeds.linkedin = '../outside';
+        expect(addLinkedinIdea(into.hub, into.config, 'Outside', 'research').found).toBe(false);
+        expect(existsSync(resolve(into.hub, '../outside', 'xx-outside.md'))).toBe(false);
+    });
+
     it('adds a lead in schema order with date and status defaults', () => {
         const into = fixture();
         expect(

@@ -1,4 +1,4 @@
-// The GET feed route handler over three fixture files in a temporary hub.
+// The GET feed route handler over fixture files and a LinkedIn folder in a temporary hub.
 
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -34,6 +34,11 @@ function target() {
         const schema = file === feeds.leads ? LEAD_SCHEMA : '';
         writeFileSync(join(hub, file), `meta: {}\n${schema}entries:\n  - title: One\n`);
     }
+    mkdirSync(join(hub, feeds.linkedin), { recursive: true });
+    writeFileSync(
+        join(hub, feeds.linkedin, '01-post.md'),
+        '---\ntitle: "One post"\ndate: 2026-09-01\ncategory: research\n---\n\nBody.\n'
+    );
     return { hub, config: { ...portfolioConfigFrom(loadConfig(engineDir()).config), feeds } };
 }
 
@@ -49,11 +54,21 @@ function request(kind: string, origin = 'http://127.0.0.1:8790'): Request {
 
 describe('the feed endpoint', () => {
     it('answers every known kind', async () => {
-        for (const kind of ['radar', 'leads', 'inbox']) {
+        for (const kind of ['radar', 'leads', 'inbox', 'linkedin']) {
             const response = handleFeeds(request(kind), target());
             expect(response.status).toBe(200);
             expect(await response.json()).toMatchObject({ ok: true, kind });
         }
+    });
+
+    it('answers LinkedIn entries with the configured cadence', async () => {
+        const response = handleFeeds(request('linkedin'), target());
+        expect(await response.json()).toMatchObject({
+            ok: true,
+            kind: 'linkedin',
+            cadenceDays: 30,
+            entries: [{ file: '01-post.md', title: 'One post', idea: false }]
+        });
     });
 
     it("answers the leads file's schema in its own order", async () => {
@@ -89,6 +104,35 @@ describe('the feed endpoint', () => {
             kind: 'radar',
             file: 'fixture/missing.yml',
             missing: true
+        });
+    });
+
+    it('answers an empty LinkedIn list, cadence, and missing marker when its folder is absent', async () => {
+        const into = target();
+        into.config.feeds.linkedin = 'fixture/missing-linkedin';
+        const response = handleFeeds(request('linkedin'), into);
+        expect(await response.json()).toEqual({
+            ok: true,
+            kind: 'linkedin',
+            file: 'fixture/missing-linkedin',
+            missing: true,
+            entries: [],
+            cadenceDays: 30
+        });
+    });
+
+    it('answers the missing marker when linkedin_dir names a regular file', async () => {
+        const into = target();
+        into.config.feeds.linkedin = 'fixture/not-a-folder';
+        writeFileSync(join(into.hub, into.config.feeds.linkedin), 'regular file\n');
+        const response = handleFeeds(request('linkedin'), into);
+        expect(await response.json()).toEqual({
+            ok: true,
+            kind: 'linkedin',
+            file: 'fixture/not-a-folder',
+            missing: true,
+            entries: [],
+            cadenceDays: 30
         });
     });
 

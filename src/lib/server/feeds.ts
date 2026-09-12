@@ -1,9 +1,16 @@
-// Layer 2, server. Reads and edits the three YAML feed files used by feed views.
+// Layer 2, server. Reads and edits the generated YAML feeds and the LinkedIn Markdown folder.
 // The feed table keeps paths, identities, and writable fields together so reads and writes cannot
 // disagree about which generated file or entry they address.
 
-import { existsSync, readFileSync } from 'node:fs';
-import { join, resolve, sep } from 'node:path';
+import {
+    existsSync,
+    readFileSync,
+    readdirSync,
+    renameSync,
+    statSync,
+    writeFileSync
+} from 'node:fs';
+import { basename, extname, join, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
 import { localDate } from '../data/dates.ts';
 import { isMap } from '../data/guards.ts';
@@ -27,11 +34,12 @@ type FeedRule = { identity: string; fields: string[]; deletable: boolean };
 export const FEED_RULES: Record<FeedKind, FeedRule> = {
     radar: { identity: 'title', fields: ['dismissed'], deletable: false },
     inbox: { identity: 'id', fields: ['triaged'], deletable: false },
-    leads: { identity: 'title', fields: ['status'], deletable: true }
+    leads: { identity: 'title', fields: ['status'], deletable: true },
+    linkedin: { identity: 'file', fields: [], deletable: false }
 };
 
 export function isFeedKind(value: string): value is FeedKind {
-    return value === 'radar' || value === 'leads' || value === 'inbox';
+    return value === 'radar' || value === 'leads' || value === 'inbox' || value === 'linkedin';
 }
 
 /** Resolve one configured feed path only when it remains inside the hub. */
@@ -50,6 +58,8 @@ export function readFeedFile(
     const file = feedFile(hub, config, kind);
     if (file === null) throw new Error(`the ${kind} feed path is outside the hub`);
     if (!existsSync(file)) return null;
+    if (kind === 'linkedin' && !statSync(file).isDirectory()) return null;
+    if (kind === 'linkedin') return readLinkedinFolder(file, config);
     const parsed: unknown = parse(readFileSync(file, 'utf8'));
     if (!isMap(parsed)) throw new Error(`${file}: expected a map of keys`);
     const meta = parsed.meta === undefined ? {} : parsed.meta;
@@ -66,6 +76,161 @@ export function readFeedFile(
         entries,
         ...(schema === undefined ? {} : { schema })
     };
+}
+
+/** One small Markdown front matter block and the prose after its closing fence. */
+export function linkedinFrontMatter(source: string): Record<string, string> & { body: string } {
+    const matched = /^\s*---\s*\r?\n([\s\S]*?)\r?\n---(?:\r?\n)?/.exec(source);
+    const fields: Record<string, string> = {};
+    if (matched !== null) {
+        for (const line of matched[1].split(/\r?\n/)) {
+            const split = line.indexOf(':');
+            if (split < 0) continue;
+            const key = line.slice(0, split).trim();
+            let value = line.slice(split + 1).trim();
+            if (value.length >= 2 && value.startsWith('"') && value.endsWith('"')) {
+                try {
+                    const decoded: unknown = JSON.parse(value);
+                    value = typeof decoded === 'string' ? decoded : value.slice(1, -1);
+                } catch {
+                    value = value.slice(1, -1);
+                }
+            }
+            if (key !== '') fields[key] = value;
+        }
+    }
+    return {
+        ...fields,
+        body: (matched === null ? source : source.slice(matched[0].length)).trim()
+    };
+}
+
+/** Read every Markdown entry in the configured LinkedIn folder in filename order. */
+function readLinkedinFolder(folder: string, config: PortfolioConfig): FeedRead {
+    if (!statSync(folder).isDirectory()) throw new Error(`${folder}: expected a directory`);
+    const entries = readdirSync(folder)
+        .filter(
+            (file) =>
+                extname(file).toLowerCase() === '.md' &&
+                (file.startsWith('xx-') || /^\d+-/.test(file))
+        )
+        .sort((left, right) => left.localeCompare(right))
+        .map((file) => {
+            const parsed = linkedinFrontMatter(readFileSync(join(folder, file), 'utf8'));
+            return {
+                file,
+                title: parsed.title || file,
+                date: parsed.date ?? '',
+                category: parsed.category ?? '',
+                body: parsed.body,
+                idea: file.startsWith('xx-')
+            };
+        });
+    return {
+        kind: 'linkedin',
+        file: config.feeds.linkedin,
+        meta: {},
+        entries,
+        cadenceDays: config.linkedinCadenceDays
+    };
+}
+
+function outcome(changed: string[] = [], refused: Refusal[] = []): WriteOutcome {
+    return { found: true, changed, refused };
+}
+
+function linkedinFolder(hub: string, config: PortfolioConfig): string | null {
+    const folder = feedFile(hub, config, 'linkedin');
+    if (folder === null || !existsSync(folder) || !statSync(folder).isDirectory()) return null;
+    return folder;
+}
+
+/** How many characters of the slug a filename keeps, so a long title stays well inside a name's limit. */
+const SLUG_MAX = 80;
+
+function slugOf(title: string): string {
+    const slug = title
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, SLUG_MAX)
+        .replace(/-+$/, '');
+    return slug || 'post';
+}
+
+/** Add one empty LinkedIn idea file without leaving its configured folder. */
+export function addLinkedinIdea(
+    hub: string,
+    config: PortfolioConfig,
+    titleValue: unknown,
+    categoryValue: unknown
+): WriteOutcome {
+    const title = typeof titleValue === 'string' ? titleValue.trim() : '';
+    if (title === '') {
+        return outcome([], [{ field: 'title', reason: 'a LinkedIn idea needs a title' }]);
+    }
+    const folder = linkedinFolder(hub, config);
+    if (folder === null) return { found: false, changed: [], refused: [] };
+    const category = typeof categoryValue === 'string' ? categoryValue.trim() : '';
+    const slug = slugOf(title);
+    let file = `xx-${slug}.md`;
+    let suffix = 2;
+    while (existsSync(join(folder, file))) {
+        file = `xx-${slug}-${suffix}.md`;
+        suffix += 1;
+    }
+    const source = [
+        '---',
+        'layout: post',
+        `title: ${JSON.stringify(title)}`,
+        `category: ${JSON.stringify(category)}`,
+        'publish: True',
+        `date: ${localDate(Date.now())}`,
+        '---',
+        '',
+        ''
+    ].join('\n');
+    writeFileSync(join(folder, file), source, 'utf8');
+    return outcome(['file']);
+}
+
+/** Rename an idea and each same-basename sidecar to the next numbered post basename. */
+export function markLinkedinPosted(
+    hub: string,
+    config: PortfolioConfig,
+    fileValue: unknown
+): WriteOutcome {
+    const file = typeof fileValue === 'string' ? basename(fileValue) : '';
+    const matched = /^xx-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/.exec(file);
+    if (matched === null || file !== fileValue) {
+        return outcome(
+            [],
+            [{ field: 'file', reason: 'a LinkedIn post must name an xx-*.md idea' }]
+        );
+    }
+    const folder = linkedinFolder(hub, config);
+    if (folder === null) return { found: false, changed: [], refused: [] };
+    const source = join(folder, file);
+    if (!existsSync(source) || !statSync(source).isFile()) {
+        return { found: false, changed: [], refused: [] };
+    }
+    const names = readdirSync(folder);
+    const highest = names.reduce((value, name) => {
+        const number = /^(\d+)-/.exec(name);
+        return number === null ? value : Math.max(value, Number(number[1]));
+    }, 0);
+    const prefix = String(highest + 1).padStart(2, '0');
+    const stem = `xx-${matched[1]}`;
+    const moving = names.filter((name) => name === file || name.startsWith(`${stem}.`));
+    const targets = moving.map((name) => `${prefix}-${name.slice(3)}`);
+    if (targets.some((name) => existsSync(join(folder, name)))) {
+        return outcome(
+            [],
+            [{ field: 'file', reason: 'the numbered LinkedIn post exists already' }]
+        );
+    }
+    moving.forEach((name, at) => renameSync(join(folder, name), join(folder, targets[at])));
+    return outcome(['file']);
 }
 
 /** Append one position lead in the order of the feed file's own schema. */
@@ -212,6 +377,16 @@ export function handleFeeds(request: Request, into: FeedTarget): Response {
     try {
         const found = readFeedFile(into.hub, into.config, named);
         if (found === null) {
+            if (named === 'linkedin') {
+                return json(200, {
+                    ok: true,
+                    kind: named,
+                    file: into.config.feeds.linkedin,
+                    missing: true,
+                    entries: [],
+                    cadenceDays: into.config.linkedinCadenceDays
+                });
+            }
             return json(200, {
                 ok: true,
                 kind: named,

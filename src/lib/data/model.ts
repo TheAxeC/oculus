@@ -85,6 +85,8 @@ export type PortfolioConfig = {
     collections: CollectionFile[];
     /** The four generated feed files, hub-relative. */
     feeds: FeedFiles;
+    /** The configured interval between LinkedIn posts. */
+    linkedinCadenceDays: number;
     /** The career file, hub-relative. */
     career: string;
     schema: unknown;

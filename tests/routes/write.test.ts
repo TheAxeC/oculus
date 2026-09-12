@@ -66,6 +66,13 @@ function target(): WriteTarget {
         mkdirSync(join(file, '..'), { recursive: true });
         writeFileSync(file, body);
     }
+    const linkedin = join(dir, 'theaxec.github.io', '_linkedin');
+    expect(resolve(linkedin).startsWith(resolve(dir) + sep)).toBe(true);
+    mkdirSync(linkedin, { recursive: true });
+    writeFileSync(
+        join(linkedin, 'xx-route-idea.md'),
+        '---\ntitle: "Route idea"\ncategory: research\ndate: 2026-09-12\n---\n\n'
+    );
     const real = portfolioConfigFrom(loadConfig(engineDir()).config);
     // The overrides file is inside the same temporary directory, so a session write in this suite
     // can never reach ~/.oculus/sessions.json.
@@ -111,6 +118,28 @@ function manifestOf(into: WriteTarget): string {
 }
 
 describe('the write endpoint', () => {
+    it('adds and promotes LinkedIn files through the two write kinds', async () => {
+        const into = target();
+        const added = await handleWrite(
+            request({ kind: 'linkedin-idea', title: 'A fresh idea', category: 'reflection' }),
+            TOKEN,
+            into
+        );
+        expect(await added.json()).toEqual({ ok: true, changed: ['file'], refused: [] });
+        expect(
+            existsSync(join(into.hub, 'theaxec.github.io', '_linkedin', 'xx-a-fresh-idea.md'))
+        ).toBe(true);
+        const posted = await handleWrite(
+            request({ kind: 'linkedin-post', file: 'xx-route-idea.md' }),
+            TOKEN,
+            into
+        );
+        expect(await posted.json()).toEqual({ ok: true, changed: ['file'], refused: [] });
+        expect(
+            existsSync(join(into.hub, 'theaxec.github.io', '_linkedin', '01-route-idea.md'))
+        ).toBe(true);
+    });
+
     it('writes a feed field and deletes an allowed feed entry', async () => {
         const into = target();
         const field = await handleWrite(
@@ -363,6 +392,8 @@ const KINDS: Record<string, unknown> = {
     },
     'delete-entry': { kind: 'delete-entry', collection: 'tasks', id: 'Review the draft' },
     'lead-add': { kind: 'lead-add', fields: { title: 'A lead' } },
+    'linkedin-idea': { kind: 'linkedin-idea', title: 'A LinkedIn idea', category: 'research' },
+    'linkedin-post': { kind: 'linkedin-post', file: 'xx-route-idea.md' },
     'new-idea': { kind: 'new-idea', fields: { id: 'a-new-idea', title: 'A new idea' } }
 };
 
@@ -376,6 +407,8 @@ const MALFORMED: Record<string, unknown> = {
     reorder: { kind: 'reorder', collection: 'tasks', order: [42] },
     'delete-entry': { kind: 'delete-entry', collection: 'tasks', id: 42 },
     'lead-add': { kind: 'lead-add', fields: 'not a map' },
+    'linkedin-idea': { kind: 'linkedin-idea', title: 42, category: 'research' },
+    'linkedin-post': { kind: 'linkedin-post', file: 42 },
     'new-idea': { kind: 'new-idea', fields: { title: 'no id' } }
 };
 

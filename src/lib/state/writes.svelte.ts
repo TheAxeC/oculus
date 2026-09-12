@@ -170,6 +170,20 @@ export async function addLead(fields: Record<string, unknown>): Promise<WriteAns
     return send({ kind: 'lead-add', fields });
 }
 
+/** Add one LinkedIn idea stub through the configured folder. */
+export async function addLinkedinIdea(fields: Record<string, unknown>): Promise<WriteAnswer> {
+    return send({
+        kind: 'linkedin-idea',
+        title: typeof fields.title === 'string' ? fields.title : '',
+        category: typeof fields.category === 'string' ? fields.category : ''
+    });
+}
+
+/** Rename one LinkedIn idea and its same-basename sidecars as the next numbered post. */
+export async function markPosted(file: string): Promise<WriteAnswer> {
+    return send({ kind: 'linkedin-post', file });
+}
+
 /** Add one entry to a collection, rendered from that file's own schema. */
 export async function newEntry(
     collection: string,

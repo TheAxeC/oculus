@@ -361,15 +361,7 @@ describe("oculus's own config directory", () => {
     // Every key under nav_groups either names a view that is registered now or one of the ids a
     // later package of the migration will register. A key that is neither is a typo: the rail draws
     // nothing for it and says nothing about it, which is the failure this catches.
-    const RESERVED = [
-        'approach',
-        'agent-approach',
-        'memories',
-        'help',
-        'audit',
-        'config',
-        'linkedin'
-    ];
+    const RESERVED = ['approach', 'agent-approach', 'memories', 'help', 'audit', 'config'];
 
     it('names a registered view or a reserved id in every key of every rail group', () => {
         const { config } = loadConfig(engineDir());

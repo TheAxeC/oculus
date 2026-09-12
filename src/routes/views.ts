@@ -18,6 +18,7 @@ import Gallery from '$lib/views/Gallery.svelte';
 import Hpc from '$lib/views/Hpc.svelte';
 import Inbox from '$lib/views/Inbox.svelte';
 import Leads from '$lib/views/Leads.svelte';
+import Linkedin from '$lib/views/Linkedin.svelte';
 import Map from '$lib/views/Map.svelte';
 import Project from '$lib/views/Project.svelte';
 import Projects from '$lib/views/Projects.svelte';
@@ -55,6 +56,13 @@ registerView({
     label: 'views.inbox',
     glyph: 'views.inbox_glyph',
     component: Inbox
+});
+
+registerView({
+    id: 'linkedin',
+    label: 'views.linkedin',
+    glyph: 'views.linkedin_glyph',
+    component: Linkedin
 });
 
 registerView({

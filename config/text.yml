@@ -757,6 +757,9 @@ text:
     linkedin_hooks: "<b>Fresh hooks from your work:</b> The Self-Explaining Hospital vision | BT-FNO diversity-scaling law | federated multicellular-tensor fibrotic wins | interpretable block-term ECG."
     linkedin_addidea_tip: "new LinkedIn idea draft (served mode)"
     linkedin_addidea: "+ idea"
+    linkedin_form_title: "Post title"
+    linkedin_form_category: "Category"
+    linkedin_form_category_help: "e.g. reflection / mentorship / research"
     linkedin_ideas_hdr: "Ideas ({0})"
     linkedin_posted_hdr: "Posted ({0})"
 

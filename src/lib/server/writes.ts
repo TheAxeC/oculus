@@ -20,7 +20,14 @@ import { setHidden, setOverride } from './sessions/overrides.ts';
 import { createIdea, writeManifest } from './writes/manifest.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 import { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
-import { addLead, deleteFeedEntry, isFeedKind, writeFeedField } from './feeds.ts';
+import {
+    addLead,
+    addLinkedinIdea,
+    deleteFeedEntry,
+    isFeedKind,
+    markLinkedinPosted,
+    writeFeedField
+} from './feeds.ts';
 import {
     deleteEntryWrite,
     entryWrite,
@@ -29,6 +36,8 @@ import {
     hostWrite,
     manifestWrite,
     leadAddWrite,
+    linkedinIdeaWrite,
+    linkedinPostWrite,
     newEntry,
     newIdea,
     reorderWrite,
@@ -74,6 +83,8 @@ export {
     hostWrite,
     manifestWrite,
     leadAddWrite,
+    linkedinIdeaWrite,
+    linkedinPostWrite,
     newEntry,
     newIdea,
     reorderWrite,
@@ -246,6 +257,26 @@ export async function handleWrite(
     if (lead !== null) {
         const outcome = addLead(into.hub, into.config, lead.fields);
         if (!outcome.found) return json(404, { error: 'the leads feed is not on this hub' });
+        return answer(outcome);
+    }
+
+    const linkedinIdea = linkedinIdeaWrite(body);
+    if (linkedinIdea !== null) {
+        const outcome = addLinkedinIdea(
+            into.hub,
+            into.config,
+            linkedinIdea.title,
+            linkedinIdea.category
+        );
+        if (!outcome.found) return json(404, { error: 'the LinkedIn folder is not on this hub' });
+        return answer(outcome);
+    }
+
+    const linkedinPost = linkedinPostWrite(body);
+    if (linkedinPost !== null) {
+        const outcome = markLinkedinPosted(into.hub, into.config, linkedinPost.file);
+        if (!outcome.found)
+            return json(404, { error: 'the LinkedIn idea file is not on this hub' });
         return answer(outcome);
     }
 

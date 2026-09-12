@@ -178,6 +178,7 @@ describe('watchedDirectories', () => {
                 radar: 'feeds/literature-radar.yml',
                 linkedin: 'theaxec.github.io/_linkedin'
             },
+            linkedinCadenceDays: 30,
             career: 'CAREER.yml',
             registries: {
                 venues: 'registries/venues.yml',

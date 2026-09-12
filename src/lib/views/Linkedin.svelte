@@ -1,0 +1,237 @@
+<script lang="ts">
+    // Layer 3, view. LinkedIn reads its Markdown-folder feed, draws posting cadence and two card
+    // sections, and keeps search plus the add-form disclosure in this view instance's saved state.
+
+    import Empty from '$lib/ui/Empty.svelte';
+    import Glyph from '$lib/ui/Glyph.svelte';
+    import Pane from '$lib/ui/Pane.svelte';
+    import Search from '$lib/ui/Search.svelte';
+    import Toolbar from '$lib/ui/Toolbar.svelte';
+    import ToolButton from '$lib/ui/ToolButton.svelte';
+    import PostCard from './linkedin/PostCard.svelte';
+    import EntryForm from './shared/EntryForm.svelte';
+    import { feed, refetch } from '$lib/state/feeds.svelte';
+    import {
+        cadence,
+        daysSince,
+        linkedinSearch,
+        localDate,
+        parseLinkedinState,
+        pickIdea,
+        splitPosts,
+        type LinkedinState,
+        type SchemaField
+    } from '$lib/state/linkedin';
+    import { t } from '$lib/state/text';
+    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
+    import { addLinkedinIdea, type WriteAnswer } from '$lib/state/writes.svelte';
+    import type { ViewProps } from './registry';
+
+    let { instance }: ViewProps = $props();
+
+    const today = localDate(Date.now());
+    const data = $derived(feed('linkedin'));
+    const held = $derived(parseLinkedinState(instanceState(instance.id)));
+    const split = $derived(splitPosts(data?.entries ?? []));
+    const ideas = $derived(linkedinSearch(split.ideas, held.search));
+    const posts = $derived(linkedinSearch(split.posts, held.search));
+    const days = $derived(daysSince(split.posts, today));
+    const status = $derived(
+        data?.cadenceDays === undefined ? 'no-dates' : cadence(days, data.cadenceDays)
+    );
+    const picked = $derived(pickIdea(split.ideas, today));
+    const schema = $derived<SchemaField[]>([
+        {
+            field: 'title',
+            type: 'text',
+            required: true,
+            label: t('sf.linkedin_form_title')
+        },
+        {
+            field: 'category',
+            type: 'text',
+            label: t('sf.linkedin_form_category'),
+            help: t('sf.linkedin_form_category_help')
+        }
+    ]);
+    let said = $state('');
+
+    function write(next: Partial<LinkedinState>): void {
+        setInstanceState(instance.id, { ...held, ...next });
+    }
+
+    async function add(fields: Record<string, unknown>): Promise<WriteAnswer> {
+        const answer = await addLinkedinIdea(fields);
+        if (answer.ok && answer.refused.length === 0) await refetch('linkedin');
+        return answer;
+    }
+</script>
+
+{#snippet tools()}
+    <Toolbar label={t('sf.linkedin_search')}>
+        <Search
+            value={held.search}
+            placeholder={t('sf.linkedin_search')}
+            oninput={(search) => write({ search })}
+        />
+        <ToolButton
+            label={t('sf.linkedin_addidea')}
+            title={t('sf.linkedin_addidea_tip')}
+            glyph="idea"
+            active={held.adding}
+            onclick={() => write({ adding: !held.adding })}
+        />
+    </Toolbar>
+{/snippet}
+
+<Pane title={t('views.linkedin')} toolbar={tools}>
+    <div class="linkedin" data-instance={instance.id}>
+        {#if data === null}
+            <Empty message={t('app.waiting')} glyph="linkedin" />
+        {:else if data.missing}
+            <Empty message={t('sf.linkedin_no_folder')} glyph="warn" />
+        {:else if data.error !== undefined}
+            <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
+        {:else}
+            <div
+                class="cadence"
+                class:overdue={status === 'overdue'}
+                class:ontrack={status === 'ontrack'}
+                data-cadence={status}
+            >
+                {#if status === 'no-dates'}
+                    <span>{t('sf.linkedin_no_dates')}</span>
+                {:else if status === 'overdue'}
+                    <Glyph name="warn" />
+                    <span>{t('sf.linkedin_overdue', days ?? '', data.cadenceDays ?? '')}</span>
+                {:else}
+                    <span>{t('sf.linkedin_ontrack', days ?? '')}</span>
+                {/if}
+            </div>
+
+            {#if status === 'overdue'}
+                <div class="nudge">
+                    <strong>
+                        <Glyph name="pin" />
+                        {t('sf.linkedin_postdue')}
+                    </strong>
+                    <span>{@html t('sf.linkedin_nudge')}</span>
+                    <strong>{picked?.title ?? t('sf.linkedin_default_pick')}</strong>
+                </div>
+            {/if}
+
+            {#if said !== ''}
+                <p class="said">{said}</p>
+            {/if}
+
+            {#if held.adding}
+                <EntryForm
+                    collection="linkedin"
+                    {schema}
+                    entry={null}
+                    onadd={add}
+                    onclose={() => write({ adding: false })}
+                    onsaid={(words) => (said = words)}
+                />
+            {/if}
+
+            <section>
+                <h3>
+                    <Glyph name="idea" />
+                    <span>{t('sf.linkedin_ideas_hdr', split.ideas.length)}</span>
+                </h3>
+                {#if ideas.length > 0}
+                    <div class="cards" data-linkedin-section="ideas">
+                        {#each ideas as entry (entry.file)}
+                            <PostCard
+                                {entry}
+                                folder={data.file}
+                                onsaid={(words) => (said = words)}
+                            />
+                        {/each}
+                    </div>
+                {:else if split.ideas.length === 0}
+                    <Empty message={t('sf.linkedin_no_ideas')} glyph="idea" />
+                {/if}
+            </section>
+
+            <section>
+                <h3>
+                    <Glyph name="done" />
+                    <span>{t('sf.linkedin_posted_hdr', split.posts.length)}</span>
+                </h3>
+                {#if posts.length > 0}
+                    <div class="cards" data-linkedin-section="posted">
+                        {#each posts as entry (entry.file)}
+                            <PostCard
+                                {entry}
+                                folder={data.file}
+                                posted
+                                onsaid={(words) => (said = words)}
+                            />
+                        {/each}
+                    </div>
+                {:else if split.posts.length === 0}
+                    <Empty message={t('sf.linkedin_no_posts')} glyph="done" />
+                {/if}
+            </section>
+        {/if}
+    </div>
+</Pane>
+
+<style>
+    .linkedin {
+        display: grid;
+        gap: 12px;
+    }
+
+    .cadence {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--muted-txt, var(--muted));
+    }
+
+    .cadence.overdue {
+        color: var(--c-red-txt);
+    }
+
+    .cadence.ontrack {
+        color: var(--c-green-txt);
+    }
+
+    .nudge {
+        padding: 8px 10px;
+        border-left: 3px solid var(--c-red);
+        background: var(--chip);
+    }
+
+    .nudge strong,
+    .nudge span {
+        margin-right: 4px;
+    }
+
+    .said,
+    h3 {
+        margin: 0;
+    }
+
+    .said {
+        color: var(--muted-txt, var(--muted));
+    }
+
+    h3 {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-md);
+    }
+
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
+        gap: 8px;
+        margin-top: 8px;
+    }
+</style>
