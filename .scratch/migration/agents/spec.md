@@ -45,6 +45,7 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 - The layer boundaries in `DESIGN.md`: `ui/` imports no state and no view; `shell/` imports no view by name; `views/` imports no shell and no other view; nothing client-side imports `lib/server/`. `tests/boundaries.test.ts` enforces them and must pass.
 - One line per paragraph or bullet in any Markdown or YAML you edit. No hard wrapping.
 - No dependency the brief did not name. `npm install` of something new is a report, not an action.
+- The browser suite (`tests/browser/*.spec.ts`, with its helpers `rail.ts`, `hub.ts`, `words.ts`, `serve.ts`) is run by the orchestrator after you report, and its selectors are load-bearing: a `data-view`, `data-group`, `data-entry`, `data-lead`, `data-reveal` or class it selects on, and a control name it clicks, is part of the tree's contract. Before you change the rail, a card's markup, a tab or a control's name, read `grep -rn 'data-\|locator(\|getByRole' tests/browser` and keep every selector resolving, or change the spec with the markup and say so in the report (amendment of 2026-09-12, after O25c and Q4a each broke the suite without knowing).
 - A test never asserts a known defect. A threshold is never loosened to make a check pass; a check that only passes after loosening is a finding to report.
 - The cockpit under `tools/cockpit` is a cautionary reference for what its code got wrong, never a justification. Port its facts (the transcript format, the registry, the grouping clamp, the four git commands), not its structure.
 
