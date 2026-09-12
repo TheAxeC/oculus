@@ -415,14 +415,20 @@ describe('ticker, snooze', () => {
 });
 
 describe('venueLoad', () => {
-    it('warns at the threshold and not one below it', () => {
-        const venues = { bspc: venue('bspc', { short: 'BSPC' }) };
-        const aimed = (count: number) =>
+    it('warns at the threshold and keeps equal labels separate by registry id', () => {
+        const venues = {
+            bspc: venue('bspc', { short: 'Same' }),
+            jbi: venue('jbi', { short: 'Same' })
+        };
+        const aimed = (id: string, count: number) =>
             Array.from({ length: count }, (_, at) =>
-                project(`p${at}`, 'active', { venueId: 'bspc' })
+                project(`${id}-${at}`, 'active', { venueId: id })
             );
-        expect(venueLoad(aimed(3), venues, 4)).toEqual([]);
-        expect(venueLoad(aimed(4), venues, 4)).toEqual([{ label: 'BSPC', count: 4 }]);
+        expect(venueLoad(aimed('bspc', 3), venues, 4)).toEqual([]);
+        expect(venueLoad([...aimed('bspc', 4), ...aimed('jbi', 4)], venues, 4)).toEqual([
+            { id: 'bspc', label: 'Same', count: 4 },
+            { id: 'jbi', label: 'Same', count: 4 }
+        ]);
     });
 });
 

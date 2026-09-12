@@ -62,7 +62,12 @@
         <li>
             <Glyph name={row.glyph} />
             {#if onpick !== undefined && row.id !== '' && row.plain !== true}
-                <button type="button" class="name" onclick={() => onpick(row.id)}>
+                <button
+                    type="button"
+                    class="name"
+                    data-ticker-id={row.id}
+                    onclick={() => onpick(row.id)}
+                >
                     {row.label}
                 </button>
             {:else}

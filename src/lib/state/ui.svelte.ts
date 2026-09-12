@@ -50,6 +50,9 @@ function defaultUi(): Ui {
 
 const store: { current: Ui } = $state({ current: defaultUi() });
 
+/** A transient signal from a view to the shell that owns the Update tray. */
+const updateTray = $state({ requested: 0 });
+
 /** Where save() writes, once loadUi has named it. Nothing is saved before that. */
 let backing: Storable | null = null;
 
@@ -80,6 +83,16 @@ export function unicode(): boolean {
 /** What a view instance saved, or undefined when it has saved nothing yet. */
 export function instanceState(id: string): unknown {
     return store.current.instances[id];
+}
+
+/** Ask the shell to open the Update tray. Every request changes the observed value. */
+export function requestUpdateTray(): void {
+    updateTray.requested += 1;
+}
+
+/** The request value the workbench observes without putting shell state in a view. */
+export function updateTrayRequested(): number {
+    return updateTray.requested;
 }
 
 /** A theme name config/appearance.yml lists, and the default for one it does not. */

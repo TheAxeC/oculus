@@ -11,7 +11,7 @@
 // src/lib/data/sources/config.ts.
 
 import { spawn } from 'node:child_process';
-import { cpSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -36,6 +36,14 @@ const hub = inside(join(temp, 'demo'), tmpdir());
 const local = inside(join(temp, 'local.yml'), tmpdir());
 
 cpSync(join(engine, 'demo'), hub, { recursive: true });
+// The Focus board draws a position lead only inside `leads_horizon_days` of today, so the demo's
+// dated lead is moved to a week from now in the copy: the spec that clicks its line holds on any day.
+const leads = inside(join(hub, 'feeds', 'position-leads.yml'), tmpdir());
+const soon = new Date(Date.now() + 7 * 86_400_000).toISOString().slice(0, 10);
+writeFileSync(
+    leads,
+    readFileSync(leads, 'utf8').replace('deadline: "2026-09-15"', `deadline: "${soon}"`)
+);
 writeFileSync(local, `hub: ${hub}\nport: ${PORT}\n`);
 // The specs read the hub's path from here, since a Playwright spec runs in its own process and
 // cannot be handed anything by this one. The file is gitignored.

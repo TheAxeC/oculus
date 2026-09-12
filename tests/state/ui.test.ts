@@ -22,6 +22,7 @@ import {
     crt,
     instanceState,
     loadUi,
+    requestUpdateTray,
     setCrt,
     setInstanceState,
     setTheme,
@@ -29,6 +30,7 @@ import {
     setWallpaper,
     theme,
     unicode,
+    updateTrayRequested,
     wallpaper
 } from '../../src/lib/state/ui.svelte.ts';
 
@@ -185,5 +187,14 @@ describe('the appearance store', () => {
             setTheme(entry.name);
             expect(theme()).toBe(entry.name);
         }
+    });
+});
+
+describe('the Update tray request', () => {
+    it('changes the observed counter once for every request', () => {
+        const before = updateTrayRequested();
+        requestUpdateTray();
+        requestUpdateTray();
+        expect(updateTrayRequested()).toBe(before + 2);
     });
 });

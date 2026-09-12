@@ -32,7 +32,7 @@
         restorePanes
     } from '$lib/state/layout.svelte';
     import { dragging } from '$lib/state/drag.svelte';
-    import { crt, theme, unicode, wallpaper } from '$lib/state/ui.svelte';
+    import { crt, theme, unicode, updateTrayRequested, wallpaper } from '$lib/state/ui.svelte';
     import { PANEL_DEFAULT, paneAt, resize, type Layout } from '$lib/state/layout';
     import { setGlyphMode, t } from '$lib/state/text';
     import {
@@ -62,6 +62,7 @@
     let paletteOpen = $state(false);
     let palettePrefill = $state('');
     let updateOpen = $state(false);
+    let handledUpdateRequest = $state(updateTrayRequested());
 
     const dock = $derived(dockedAt());
     const share = $derived(panelSize());
@@ -140,6 +141,14 @@
         paletteOpen = false;
         updateOpen = true;
     }
+
+    /** A view requests the shell-owned tray by changing the ui store's transient counter. */
+    $effect(() => {
+        const requested = updateTrayRequested();
+        if (requested === handledUpdateRequest) return;
+        handledUpdateRequest = requested;
+        openUpdate();
+    });
 
     /** The wallpaper is drawn when the viewer wants one and the theme is one it shows under. */
     const wall = $derived(wallpaper() && wallpaperOnTheme(theme()));

@@ -159,6 +159,24 @@ function snapshot(): Snapshot {
             chips: ['submitted'],
             venueId: 'jbi'
         }),
+        project('golf', 'manuscripts', {
+            type: 'manuscript',
+            title: 'Golf',
+            focus: 'review',
+            venueId: 'jbi'
+        }),
+        project('hotel', 'manuscripts', {
+            type: 'manuscript',
+            title: 'Hotel',
+            focus: 'review',
+            venueId: 'jbi'
+        }),
+        project('india', 'manuscripts', {
+            type: 'manuscript',
+            title: 'India',
+            focus: 'review',
+            venueId: 'jbi'
+        }),
         project('delta', 'ideas', { type: 'idea', title: 'Delta', focus: 'holding' }),
         project('echo', 'manuscripts', { type: 'manuscript', title: 'Echo' })
     ];
@@ -412,6 +430,17 @@ describe('the command center', () => {
     it('draws a position lead with its own countdown', () => {
         expect(body).toContain(escaped('cc.dlcat_position'));
         expect(body).toContain('A lead');
+    });
+
+    it('draws lead, attention and refresh lines as controls', () => {
+        const buttons = body.match(/<button[\s\S]*?<\/button>/g) ?? [];
+        expect(buttons.some((button) => button.includes('A lead'))).toBe(true);
+        expect(buttons.some((button) => button.includes('>3<'))).toBe(true);
+        expect(buttons.some((button) => button.includes('/research-cockpit litwatch'))).toBe(true);
+        const venue = buttons.find((button) =>
+            button.includes('data-ticker-id="attention:venue:jbi"')
+        );
+        expect(venue).toContain('JBI');
     });
 });
 

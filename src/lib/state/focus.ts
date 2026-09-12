@@ -91,7 +91,8 @@ export type Priority = {
  * What a ticker line's buttons act on, and nothing about what they say. A view derives the buttons
  * from the shape: a `manifest` or an `entry` is snoozed, an `entry` carrying `statuses` also gets
  * its lifecycle buttons, a line carrying a `subtask` key is ticked, reopened, snoozed or deleted, a
- * `followup` is cleared, a snoozed line is woken, and a `lead` carries none until the Leads view.
+ * `followup` is cleared, a snoozed line is woken, and a `lead` carries none: its line opens the Leads view, where its
+ * actions are.
  *
  * Keeping the words out is what lets one view draw every group: the buttons are the write path's
  * vocabulary and the sentences are config/text.yml's, and neither of them is here.
@@ -133,8 +134,8 @@ export type TickerItem = {
     snoozed: boolean;
 };
 
-/** A label with a count: a person waited on, a venue holding papers, a venue carrying too many. */
-export type Tally = { label: string; count: number };
+/** A label with a count, and the registry id when the tally names one venue. */
+export type Tally = { id?: string; label: string; count: number };
 
 /** What the ticker answers. Each list is already in the order it is shown in. */
 export type Ticker = {
@@ -806,10 +807,20 @@ export function venueLoad(projects: Project[], venues: Record<Id, Venue>, warn: 
     for (const project of projects) {
         const id = project.venueId;
         if (id === undefined || id === '') continue;
-        const name = venueLabel(venues[id]) === '' ? id : venueLabel(venues[id]);
-        counts[name] = (counts[name] ?? 0) + 1;
+        counts[id] = (counts[id] ?? 0) + 1;
     }
-    return tallies(counts).filter((one) => one.count >= warn);
+    return Object.entries(counts)
+        .map(([id, count]) => ({
+            id,
+            label: venueLabel(venues[id]) === '' ? id : venueLabel(venues[id]),
+            count
+        }))
+        .filter((one) => one.count >= warn)
+        .sort(
+            (a, b) =>
+                b.count - a.count ||
+                (a.label < b.label ? -1 : a.label > b.label ? 1 : a.id < b.id ? -1 : 1)
+        );
 }
 
 /** The stages of `fund_stages`, and the statuses each one gathers. */

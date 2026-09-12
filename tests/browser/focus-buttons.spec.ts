@@ -11,6 +11,7 @@ import { t, vocabulary } from './words.ts';
 
 const TRANSFER = 'projects/active/graph-transfer';
 const BANDITS = 'projects/active/graph-bandits';
+const LEAD = 'Assistant Professor, Machine Learning';
 
 /** What quick add types into the follow-up box, and what the manifest must then hold. */
 const NOTE = 'ask the coauthor';
@@ -38,6 +39,17 @@ test('a deadline line snoozes to the Snoozed group and wakes back unchanged', as
     await asleep.getByRole('button', { name: t('actions.unsnooze'), exact: true }).click();
     await expect(page.locator('details').filter({ hasText: t('cc.snoozed', 1) })).toHaveCount(0);
     expect(readHubFile(`${TRANSFER}/project.yml`)).toBe(before);
+});
+
+test('a lead line opens and reveals its card in the Leads view', async ({ page }) => {
+    await boot(page);
+    await openView(page, 'focus', t('views.focus'));
+
+    await page.getByRole('button', { name: LEAD, exact: true }).click();
+    await expect(page.getByRole('tab', { name: t('views.leads') })).toBeVisible();
+    const revealed = page.locator(`[data-reveal="${LEAD}"]`);
+    await expect(revealed.locator(`[data-lead="${LEAD}"]`)).toBeVisible();
+    await expect(revealed).toBeInViewport();
 });
 
 test('the flame badge and the card menu drive the manifest priority', async ({ page }) => {

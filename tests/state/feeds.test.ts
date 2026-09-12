@@ -3,6 +3,9 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { feed, refetch } from '../../src/lib/state/feeds.svelte.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
+import { attention } from '../../src/lib/state/feeds.ts';
+import { NO_FEEDS } from '../entities-fixture.ts';
+import type { Project, Snapshot } from '../../src/lib/data/model.ts';
 
 afterEach(() => vi.unstubAllGlobals());
 
@@ -131,5 +134,73 @@ describe('feed state', () => {
             file: 'feeds/inbox.yml',
             error: 'bad YAML'
         });
+    });
+});
+
+describe('attention lines', () => {
+    function paper(id: string, venueId: string): Project {
+        return {
+            id,
+            tier: 'active',
+            title: id,
+            chips: [],
+            results: [],
+            ideas: [],
+            waitingOn: [],
+            followups: [],
+            subtasks: [],
+            relatedIds: [],
+            fundingIds: [],
+            datasetIds: [],
+            programIds: [],
+            domainIds: [],
+            collaborators: [],
+            docs: [],
+            folder: `projects/active/${id}`,
+            file: `/hub/projects/active/${id}/project.yml`,
+            venueId
+        };
+    }
+
+    it('carries registry ids and keeps two venues with one label separate', () => {
+        const snapshot: Snapshot = {
+            version: 1,
+            entities: {
+                feeds: NO_FEEDS,
+                career: null,
+                projects: {
+                    first: paper('first', 'journal'),
+                    second: paper('second', 'journal-two')
+                },
+                venues: {
+                    journal: { id: 'journal', name: 'Journal Name', short: 'JN', themes: [] },
+                    'journal-two': {
+                        id: 'journal-two',
+                        name: 'Other Journal',
+                        short: 'JN',
+                        themes: []
+                    }
+                },
+                datasets: {},
+                programs: {},
+                domains: {},
+                funding: {},
+                collections: {}
+            },
+            relations: {
+                projectVenue: [],
+                projectFunding: [],
+                projectDataset: [],
+                projectProgram: [],
+                projectDomain: [],
+                projectRelated: [],
+                fundingProgram: []
+            },
+            findings: []
+        };
+        expect(attention(snapshot, { venue_conc_warn: 1 }, Date.now())).toEqual([
+            { kind: 'venue', id: 'journal', count: 1, label: 'JN' },
+            { kind: 'venue', id: 'journal-two', count: 1, label: 'JN' }
+        ]);
     });
 });

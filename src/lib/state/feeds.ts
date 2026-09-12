@@ -29,6 +29,8 @@ export type AttentionItem = {
     count: number;
     /** The venue a `venue` line is about. The other two kinds name nothing. */
     label?: string;
+    /** The venue registry id a `venue` line opens. The other two kinds name no entry. */
+    id?: string;
 };
 
 /** One "refresh live data" nudge: which feed, and how many days since it ran, or null for never. */
@@ -88,7 +90,7 @@ export function attention(
         ['ideas', 'active', 'manuscripts'].includes(project.tier)
     );
     for (const one of venueLoad(projects, snapshot.entities.venues, warn)) {
-        out.push({ kind: 'venue', count: one.count, label: one.label });
+        out.push({ kind: 'venue', id: one.id, count: one.count, label: one.label });
     }
     return out;
 }

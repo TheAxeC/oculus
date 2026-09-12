@@ -3,9 +3,11 @@
     // columns under one heading, with the buttons each line can be acted on by.
     //
     // It counts nothing. The groups are state/focus.ts's ticker and state/feeds.ts's attention and
-    // refresh lines; what is here is the markup, the words and the writes. A line says what it is
-    // and what it can be written to (`kind` and `target`), and this file turns the first into a
-    // sentence through config/text.yml and the second into buttons through state/writes.svelte.ts.
+    // refresh lines; what is here is the markup, the words, the writes and the opening controls. A
+    // line says what it is and what it can be written to (`kind` and `target`), and this file turns
+    // the first into a sentence through config/text.yml and the second into buttons through
+    // state/writes.svelte.ts. Lead and attention lines open their views; refresh lines ask the
+    // shell for the Update tray through the ui store.
     //
     // The right of the heading row holds the live HPC pill (O26): the running and pending counts
     // from state/hpc.svelte.ts, drawn only while the cluster answers and the queue is not empty,
@@ -24,6 +26,7 @@
     import { configMap } from '$lib/state/selectors.svelte';
     import { portfolio } from '$lib/state/entities.svelte';
     import { openView } from '$lib/state/layout.svelte';
+    import { instanceState, requestUpdateTray, setInstanceState } from '$lib/state/ui.svelte';
     import { t } from '$lib/state/text';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { pillText } from '$lib/state/hpc.svelte';
@@ -89,9 +92,9 @@
     /**
      * The buttons one line carries, from its target alone. A subtask is ticked, snoozed and
      * deleted; a project, an entry or a scheme is snoozed; an entry also gets the lifecycle
-     * statuses of its own collection, minus the one it is in; a follow-up is cleared; a lead
-     * carries none until the Leads view of O25, and neither does a conference call, since the
-     * venue registry's schema has no status field to write.
+     * statuses of its own collection, minus the one it is in; a follow-up is cleared. A lead opens
+     * the Leads view but carries no write, and neither does a conference call, since the venue
+     * registry's schema has no status field to write.
      */
     function actionsFor(line: TickerItem): TickerAction[] | undefined {
         const target = line.target;
@@ -121,7 +124,7 @@
 
     /** Whether a line names something the board can open, which decides if its name is a button. */
     function opens(line: TickerItem): boolean {
-        return line.id !== undefined || line.entry !== undefined;
+        return line.id !== undefined || line.entry !== undefined || line.target?.kind === 'lead';
     }
 
     /** The word a collection's own dates are named by. The keys are literal so keys.test.ts sees them. */
@@ -246,12 +249,16 @@
         };
     });
 
-    /** The "needs attention" rows: a count, its words, and no buttons. */
-    const attentionRows: TickerRow[] = $derived(
-        needs.map((one) => {
+    /** The "needs attention" rows: a count, its words, and the view each line opens. */
+    const attentionView = $derived.by(() => {
+        const index: Record<string, (typeof needs)[number]> = {};
+        const rows = needs.map((one, at): TickerRow => {
+            const id =
+                one.kind === 'venue' ? `attention:venue:${one.id ?? at}` : `attention:${one.kind}`;
+            index[id] = one;
             if (one.kind === 'inbox') {
                 return {
-                    id: '',
+                    id,
                     glyph: attentionGlyph(one.kind),
                     label: String(one.count),
                     tail: t('cc.emails')
@@ -259,7 +266,7 @@
             }
             if (one.kind === 'linkedin') {
                 return {
-                    id: '',
+                    id,
                     glyph: attentionGlyph(one.kind),
                     label: `${one.count} ${t('cc.days')}`,
                     tail: t('cc.since_linkedin'),
@@ -267,18 +274,22 @@
                 };
             }
             return {
-                id: '',
+                id,
                 glyph: attentionGlyph(one.kind),
                 label: t('cc.venue_count', one.label ?? '', one.count),
                 tail: t('cc.venue_load_tail', warnAt),
                 tone: 'amber'
             };
-        })
-    );
+        });
+        return { index, rows };
+    });
 
     /** The "refresh live data" rows: what is stale, how stale, and the command that refreshes it. */
-    const refreshRows: TickerRow[] = $derived(
-        nudges.map((one) => {
+    const refreshView = $derived.by(() => {
+        const index: Record<string, (typeof nudges)[number]> = {};
+        const rows = nudges.map((one, at): TickerRow => {
+            const id = `refresh:${one.feed}:${at}`;
+            index[id] = one;
             const label =
                 one.feed === 'inbox'
                     ? t('cc.refresh_inbox_plain', one.days ?? 0)
@@ -288,9 +299,10 @@
                             'cc.refresh_litwatch_plain',
                             one.days === null ? t('cc.never_run') : t('cc.last_refreshed', one.days)
                         );
-            return { id: '', glyph: refreshGlyph(one.feed), label };
-        })
-    );
+            return { id, glyph: refreshGlyph(one.feed), label };
+        });
+        return { index, rows };
+    });
 
     /** Whether the strip has anything at all to say. */
     const anything = $derived(
@@ -300,17 +312,49 @@
             view.subtaskOpen.length +
             view.followups.length +
             view.snoozed.length +
-            attentionRows.length +
-            refreshRows.length >
+            attentionView.rows.length +
+            refreshView.rows.length >
             0
     );
+
+    /** Put transient reveal state on the instance that was activated, never in layout identity. */
+    function reveal(view: 'leads' | 'venues', item: string, expiredOpen = false): void {
+        const id = openView(view, 'main');
+        const current = instanceState(id);
+        const held =
+            typeof current === 'object' && current !== null && !Array.isArray(current)
+                ? current
+                : {};
+        setInstanceState(id, {
+            ...held,
+            reveal: item,
+            ...(expiredOpen ? { expiredOpen: true } : {}),
+            search: ''
+        });
+    }
 
     /** A ticker line opens what it names: a project's tab, or the collection file's own tab. */
     function pick(id: string): void {
         const line = view.index[id];
         if (line === undefined) return;
-        if (line.id !== undefined) onproject(line.id);
+        if (line.target?.kind === 'lead') reveal('leads', line.target.id, true);
+        else if (line.id !== undefined) onproject(line.id);
         else if (line.entry !== undefined) openView(line.entry, 'main');
+    }
+
+    /** Open the view named by one attention line, revealing the exact venue when it names one. */
+    function pickAttention(id: string): void {
+        const line = attentionView.index[id];
+        if (line?.kind === 'inbox') openView('inbox', 'main');
+        else if (line?.kind === 'linkedin') openView('linkedin', 'main');
+        else if (line?.kind === 'venue' && line.id !== undefined) {
+            reveal('venues', line.id);
+        }
+    }
+
+    /** Open the shell-owned Update tray for a nudge that still belongs to the rendered rows. */
+    function pickRefresh(id: string): void {
+        if (refreshView.index[id] !== undefined) requestUpdateTray();
     }
 
     /** What one snooze button writes: an ISO date a week or a month out, or the hidden flag. */
@@ -400,7 +444,14 @@
         </div>
 
         {@render group(t('cc.grp_overdue_label'), t('cc.grp_overdue_glyph'), view.overdue)}
-        {@render group(t('cc.grp_attention_label'), t('cc.grp_attention_glyph'), attentionRows)}
+        {#if attentionView.rows.length > 0}
+            <div class="grp">
+                <p class="lbl">
+                    <Glyph name={t('cc.grp_attention_glyph')} />{t('cc.grp_attention_label')}
+                </p>
+                <Ticker rows={attentionView.rows} onpick={pickAttention} />
+            </div>
+        {/if}
 
         {#if view.categories.length > 0}
             <div class="grp">
@@ -425,7 +476,14 @@
             view.subtaskOpen
         )}
         {@render group(t('cc.grp_followups_label'), t('cc.grp_followups_glyph'), view.followups)}
-        {@render group(t('cc.grp_refresh_label'), t('cc.refresh_glyph'), refreshRows)}
+        {#if refreshView.rows.length > 0}
+            <div class="grp">
+                <p class="lbl">
+                    <Glyph name={t('cc.refresh_glyph')} />{t('cc.grp_refresh_label')}
+                </p>
+                <Ticker rows={refreshView.rows} onpick={pickRefresh} />
+            </div>
+        {/if}
 
         {#if view.snoozed.length > 0}
             <details class="grp">
