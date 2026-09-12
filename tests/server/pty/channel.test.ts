@@ -43,18 +43,21 @@ function driver(): {
     calls: string[][];
     emit(id: string, bytes: Buffer): void;
     attached(): string[];
+    screen(text: string): void;
 } {
     const calls: string[][] = [];
     let output: (id: string, bytes: Buffer) => void = () => {};
     let ids: string[] = [];
+    let screen = SCREEN;
     return {
         calls,
         emit: (id, bytes) => output(id, bytes),
         attached: () => ids,
+        screen: (text) => (screen = text),
         driver: {
             run(args: string[]): Promise<string> {
                 calls.push(args);
-                if (args[0] === 'capture-pane') return Promise.resolve(SCREEN);
+                if (args[0] === 'capture-pane') return Promise.resolve(screen);
                 if (args[0] === 'list-sessions') return Promise.resolve(LIST);
                 return Promise.resolve('');
             },
@@ -154,6 +157,28 @@ describe('a page attached to a terminal', () => {
         await settle();
         expect(page.messages.map((message) => message.version)).toEqual([0, 1, 2]);
         expect(page.messages.slice(1).map(decode)).toEqual(['one', 'two']);
+    });
+
+    it('resends scrollback on the same sink without duplicating later chunks', async () => {
+        const { held, driver: record } = terminals();
+        const page = recorder();
+        held.subscribed(page.sink, [CHANNEL], TOKEN);
+        await settle();
+        record.screen('the pane after the view switch\n');
+        held.subscribed(page.sink, [CHANNEL], TOKEN);
+        await settle();
+
+        expect(page.messages.map((message) => message.version)).toEqual([0, 0]);
+        expect(page.messages.map(decode)).toEqual([
+            SCREEN.replace('\n', '\r\n'),
+            'the pane after the view switch\r\n'
+        ]);
+        expect(record.calls.filter(([command]) => command === 'capture-pane')).toHaveLength(2);
+
+        record.emit(ID, Buffer.from('after'));
+        await settle();
+        expect(page.messages.map((message) => message.version)).toEqual([0, 0, 1]);
+        expect(decode(page.messages[2])).toBe('after');
     });
 
     it('sends no chunk to a page that never attached to that terminal', async () => {

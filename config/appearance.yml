@@ -1,7 +1,7 @@
 # ===========================================================================
 # appearance.yml
 # oculus's own configuration - what the chrome looks like: the UI theme picker's list, the wallpaper
-# behind the panels, and the CRT overlay's default. Merged with the other config/*.yml by loadConfig().
+# behind the panels, the CRT overlay's default, and the terminal grid's text size. Merged with the other config/*.yml by loadConfig().
 # ===========================================================================
 
 
@@ -29,6 +29,12 @@ themes:
   - { name: solarized,    class: "rice solarized",     label: "◆ solarized" }
   - { name: latte,        class: "rice latte",         label: "◆ latte (light)" }
   - { name: gruvboxlight, class: "rice gruvboxlight",  label: "◆ gruvbox light" }
+
+
+# === Terminal ===============================================================
+# The terminal grid paints its own text and cannot inherit the page's size. `font_px` is CSS pixels; leave the key out to follow the theme's `--fs-md` token instead.
+terminal:
+  font_px: 12.5
 
 
 # === Wallpaper ==============================================================

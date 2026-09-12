@@ -270,7 +270,7 @@ export function textCatalog(config: Record<string, unknown>): Record<string, str
  * The keys of the merged config the client state installs before the page renders: the colours and
  * the chip vocabulary state/tones.ts reads, and the theme list, the wallpaper and the CRT default
  * state/appearance.ts reads. `domains` is the research domains of config/vocab.yml; `themes`,
- * `wallpaper` and `crt` are config/appearance.yml's.
+ * `wallpaper`, `crt` and `terminal` are config/appearance.yml's.
  */
 export const VOCAB_KEYS = [
     'palette',
@@ -281,7 +281,8 @@ export const VOCAB_KEYS = [
     'domains',
     'themes',
     'wallpaper',
-    'crt'
+    'crt',
+    'terminal'
 ];
 
 /**

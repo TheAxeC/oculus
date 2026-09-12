@@ -9,7 +9,7 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
     CRT_CLASS,
     WALL_BLUR,
@@ -21,7 +21,12 @@ import {
     type Themeable
 } from '../../src/lib/ui/theme.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
-import { setAppearance, themeClass, wallpaperSettings } from '../../src/lib/state/appearance.ts';
+import {
+    setAppearance,
+    terminalFontPx,
+    themeClass,
+    wallpaperSettings
+} from '../../src/lib/state/appearance.ts';
 
 const THEMES_DIR = resolve(
     dirname(fileURLToPath(import.meta.url)),
@@ -33,7 +38,10 @@ const THEMES_DIR = resolve(
 );
 const TOKENS = readFileSync(join(THEMES_DIR, 'tokens.css'), 'utf8');
 const THEMES = readFileSync(join(THEMES_DIR, 'themes.css'), 'utf8');
-setAppearance(loadConfig(engineDir()).config);
+const APPEARANCE = loadConfig(engineDir()).config;
+setAppearance(APPEARANCE);
+
+afterEach(() => setAppearance(APPEARANCE));
 
 /** A document as applyTheme needs one, with everything it was handed kept. */
 function fakeDocument() {
@@ -123,5 +131,20 @@ describe('applyWallpaper', () => {
         expect(set[WALL_PANEL]).toBe(`${settings?.panel}%`);
         expect(set[WALL_PANEL]).toMatch(/^\d+%$/);
         expect(set[WALL_BLUR]).toMatch(/^\d+(?:\.\d+)?px$/);
+    });
+});
+
+describe('terminalFontPx', () => {
+    it('reads and bounds the configured CSS pixel size, and is null when its key is absent', () => {
+        setAppearance({ terminal: { font_px: 13 } });
+        expect(terminalFontPx()).toBe(13);
+        setAppearance({ terminal: { font_px: 99 } });
+        expect(terminalFontPx()).toBe(40);
+        setAppearance({ terminal: { font_px: 1 } });
+        expect(terminalFontPx()).toBe(6);
+        setAppearance({ terminal: { font_px: 'large' } });
+        expect(terminalFontPx()).toBeNull();
+        setAppearance({ terminal: {} });
+        expect(terminalFontPx()).toBeNull();
     });
 });

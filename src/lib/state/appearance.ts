@@ -1,6 +1,6 @@
 // Layer 2, client state. config/appearance.yml as the page reads it: the picker's order, the class
 // string each theme puts on the body, the words it is offered under, the wallpaper's numbers and
-// what the CRT overlay starts as. It is
+// what the CRT overlay and terminal text size start as. It is
 // installed the way the tone vocabulary is - the server ships the `themes` key as the page's data at
 // first load, and every later edit of config/appearance.yml arrives on the `config` channel - so a
 // theme is added by editing YAML and nothing else.
@@ -42,6 +42,7 @@ let list: Theme[] = [];
 let byName: Record<string, Theme> = {};
 let paper: Wallpaper | null = null;
 let crt = false;
+let terminalFont: number | null = null;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -59,6 +60,12 @@ function numberAt(node: unknown, key: string, fallback: number, low: number, hig
     const value = isRecord(node) ? node[key] : undefined;
     if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
     return Math.min(high, Math.max(low, value));
+}
+
+/** The bounded terminal size, or null when the key is absent or not a finite number. */
+function readTerminalFont(config: Record<string, unknown>): number | null {
+    const value = numberAt(config.terminal, 'font_px', Number.NaN, 6, 40);
+    return Number.isFinite(value) ? value : null;
 }
 
 /** A fraction as the percentage color-mix takes. */
@@ -102,6 +109,7 @@ export function setAppearance(config: Record<string, unknown>): void {
     byName = {};
     paper = readWallpaper(config);
     crt = isRecord(config.crt) && config.crt.default === true;
+    terminalFont = readTerminalFont(config);
     const rows = config.themes;
     if (!Array.isArray(rows)) return;
     for (const row of rows) {
@@ -140,6 +148,11 @@ export function defaultTheme(): string {
 /** What the CRT overlay starts as, the `crt.default` of config/appearance.yml. */
 export function crtDefault(): boolean {
     return crt;
+}
+
+/** The terminal grid's configured CSS pixel size, or null when it follows the page's type scale. */
+export function terminalFontPx(): number | null {
+    return terminalFont;
 }
 
 /** The wallpaper's numbers, or null when config/appearance.yml configures none. */

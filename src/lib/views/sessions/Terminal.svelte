@@ -19,6 +19,7 @@
     import Segment from '$lib/ui/Segment.svelte';
     import Select from '$lib/ui/Select.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import { terminalFontPx } from '$lib/state/appearance';
     import { hubRoot, sessionsByWorkspace } from '$lib/state/selectors.svelte';
     import { pinnedTerminal, select, selectedTerminal } from '$lib/state/selection.svelte';
     import {
@@ -76,6 +77,7 @@
     /** The grid and its fit addon, while one is mounted. */
     let grid: Grid | null = null;
     let measure: (() => { cols: number; rows: number } | null) | null = null;
+    let refit: (() => void) | null = null;
 
     const pinned = $derived(pinnedTerminal(instanceState(instance.id)));
     const id = $derived(pinned ?? selectedTerminal());
@@ -125,6 +127,15 @@
         return colours;
     }
 
+    /** The configured grid size, or the body type scale when config leaves it unset. */
+    function fontSize(): number | undefined {
+        const configured = terminalFontPx();
+        if (configured !== null) return configured;
+        const root = getComputedStyle(document.body);
+        const computed = Number.parseFloat(root.getPropertyValue('--fs-md').trim());
+        return Number.isFinite(computed) && computed >= 1 ? computed : undefined;
+    }
+
     /** Tell the terminal its pane's size, over the socket, or by the endpoint when it is closed. */
     function resized(to: string): void {
         const size = measure?.() ?? null;
@@ -167,12 +178,20 @@
             ]);
             if (!alive) return;
             const fit = new addon.FitAddon();
-            const term = new xterm.Terminal({ theme: palette(), convertEol: false });
+            const size = fontSize();
+            const options = {
+                theme: palette(),
+                convertEol: false
+            };
+            const term = new xterm.Terminal(
+                size === undefined ? options : { ...options, fontSize: size }
+            );
             term.loadAddon(fit);
             term.open(at);
             fit.fit();
             grid = term;
             measure = () => ({ cols: term.cols, rows: term.rows });
+            refit = () => fit.fit();
             const typed = term.onData((data: string) => sendInput(wanted, data));
             // A shell names its tmux window after the running command with `ESC k <name> ESC \`,
             // which xterm does not know and would print as the name itself; the title is dropped,
@@ -204,6 +223,7 @@
                 term.dispose();
                 grid = null;
                 measure = null;
+                refit = null;
             };
             if (!alive) close();
         })();
@@ -217,12 +237,20 @@
     // the strings it was given rather than reading them again.
     $effect(() => {
         const name = theme();
+        const wanted = id;
         if (name === '') return;
         // The class that carries the new tokens is put on the body by the workbench's own effect,
         // and this one may run before it in the same flush; reading the palette on the next frame
         // reads it after the body has changed. (The first Chrome check read the old palette.)
         const frame = requestAnimationFrame(() => {
-            if (grid !== null) grid.options.theme = palette();
+            if (grid === null) return;
+            grid.options.theme = palette();
+            const size = fontSize();
+            if (size !== undefined && grid.options.fontSize !== size) {
+                grid.options.fontSize = size;
+            }
+            refit?.();
+            if (wanted !== null) resized(wanted);
         });
         return () => cancelAnimationFrame(frame);
     });

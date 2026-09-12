@@ -388,15 +388,16 @@ export class Terminals {
      */
     async #attach(sink: Sink, id: string): Promise<void> {
         const sinks = this.#attached.get(id) ?? new Set<Sink>();
-        if (sinks.has(sink)) return;
-        sinks.add(sink);
-        this.#attached.set(id, sinks);
-        this.#hub.merge(ptyChannel(id), mergeChunks);
-        const held = this.#held.get(sink) ?? new Set<string>();
-        held.add(id);
-        this.#held.set(sink, held);
-        this.#hub.subscribe(sink, [ptyChannel(id)], false);
-        this.#driver.attached([...this.#attached.keys()]);
+        if (!sinks.has(sink)) {
+            sinks.add(sink);
+            this.#attached.set(id, sinks);
+            this.#hub.merge(ptyChannel(id), mergeChunks);
+            const held = this.#held.get(sink) ?? new Set<string>();
+            held.add(id);
+            this.#held.set(sink, held);
+            this.#hub.subscribe(sink, [ptyChannel(id)], false);
+            this.#driver.attached([...this.#attached.keys()]);
+        }
         let text = '';
         try {
             text = await this.#driver.run(captureArgs(id, this.#lines));

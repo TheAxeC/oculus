@@ -221,7 +221,7 @@ describe('loadConfig', () => {
 describe("oculus's own config directory", () => {
     /** Every top-level key the ten files hold, by the file it now sits in. */
     const EXPECTED: Record<string, string[]> = {
-        'appearance.yml': ['themes', 'wallpaper', 'crt'],
+        'appearance.yml': ['themes', 'wallpaper', 'crt', 'terminal'],
         'behavior.yml': [
             'read_limits',
             'stale_days',
