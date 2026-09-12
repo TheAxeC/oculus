@@ -70,7 +70,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ O25f the Update action and the Cmd-K search (landed 2026-09-12; brief `agents/briefs/O25f.md`; review `agents/reviews/O25f.md`)
 - ✅ O25g the Focus ticker's feed lines open their views (landed 2026-09-12; brief `agents/briefs/O25g.md`; review `agents/reviews/O25g.md`)
 - ✅ O26 view: Live HPC (landed 2026-09-11; brief `agents/briefs/O26.md`)
-- Q4a the rail: counts and badges, the groups, the foot controls, the tray's place (booked 2026-09-12; brief `agents/briefs/Q4a.md`)
+- ✅ Q4a the rail: counts and badges, the groups, the foot controls, the tray's place (landed 2026-09-12; brief `agents/briefs/Q4a.md`; review `agents/reviews/Q4a.md`)
 - Q4b the views: one type scale, the terminal's size control, the folded groups' look, the (booked 2026-09-12; brief `agents/briefs/Q4b.md`)
 - Q5 several terminals at once: a design decision for Axel before anything is built (raised 2026-09-12: "I would like to have multiple terminals open at once as well ... we should discuss this properly first"). Today one Terminal view instance shows the selected terminal (`selectedTerminal()`), the rail's Terminal button reuses that instance, and every terminal is a tmux session listed in the sessions list; a view instance can be pinned to one terminal through its instance state (`pinnedTerminal()`), which no control sets. The options and the recommendation are in the state file under the pause note; nothing runs until Axel picks one
 - O27a the file browser: roots, saved workspaces, the tree and the file view (brief `agents/briefs/O27a.md`)

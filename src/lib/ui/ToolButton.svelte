@@ -18,7 +18,9 @@
         active?: boolean;
         /** Whether this button's controlled content is open. Omitted for buttons with no content. */
         expanded?: boolean;
-        onclick: () => void;
+        /** A toggle button's current state. Omitted for ordinary action buttons. */
+        pressed?: boolean;
+        onclick: (event: MouseEvent) => void;
         /** The tooltip, when it should say more than the label does. A button with none shows none. */
         title?: string;
         /** One of an exclusive group: the button becomes a radio and reports this as its state. */
@@ -34,6 +36,12 @@
          * with no glyph ignores this, since a button with nothing on it is not a control.
          */
         compact?: boolean;
+        /** Use the activity rail's one full-width, 34 px control box. */
+        rail?: boolean;
+        /** A rail view id, rendered on the button for browser navigation. */
+        dataView?: string;
+        /** A configured bookmark identity, rendered on the button for browser navigation. */
+        dataBookmark?: string;
     };
 
     let {
@@ -41,11 +49,15 @@
         glyph,
         active = false,
         expanded,
+        pressed,
         onclick,
         title,
         checked,
         disabled = false,
-        compact = false
+        compact = false,
+        rail = false,
+        dataView,
+        dataBookmark
     }: Props = $props();
 
     const iconOnly = $derived(compact && glyph !== undefined);
@@ -54,16 +66,25 @@
 
 <!-- A button of an exclusive group is a radio its group owns, and a radiogroup owns radios: a
      wrapper with semantics of its own between them would leave the group with no radios in it. -->
-<Tooltip text={tip} presentational={checked !== undefined}>
+<Tooltip
+    text={tip}
+    placement={rail ? 'beside' : 'below'}
+    presentational={checked !== undefined}
+    block={rail}
+>
     <button
         type="button"
         class="tool"
         class:active
         class:compact={iconOnly}
+        class:rail-control={rail}
         role={checked === undefined ? undefined : 'radio'}
         aria-checked={checked}
         aria-expanded={expanded}
+        aria-pressed={pressed}
         aria-label={iconOnly ? label : undefined}
+        data-view={dataView}
+        data-bookmark={dataBookmark}
         {disabled}
         {onclick}
     >
@@ -94,6 +115,17 @@
 
     .tool.compact {
         padding: 3px 5px;
+    }
+
+    .tool.rail-control {
+        justify-content: center;
+        width: 100%;
+        height: 34px;
+        box-sizing: border-box;
+        background: none;
+        color: var(--ink-txt, var(--ink));
+        font-size: var(--fs-xl);
+        padding: 0;
     }
 
     .tool:hover:not(:disabled) {
@@ -137,5 +169,10 @@
     :global(body.rice) .tool::after {
         content: ']';
         opacity: 0.5;
+    }
+
+    :global(body.rice) .tool.rail-control {
+        height: 34px;
+        padding: 0;
     }
 </style>

@@ -50,7 +50,7 @@ leads_horizon_days: 21       # ⏰ academic-position-lead deadlines from positio
 
 conf_horizon_months: 1       # 🎤 venues.yml conference deadlines, in whole months ahead (default 1 = this/next)
 
-leads_badge_days: 14         # amber count badge on the Projects tab, leads due within N days (default 14)
+leads_badge_days: 14         # amber count badge on Position Leads, leads due within N days (default 14)
 
 
 venue_conc_warn: 4           # ⚠ "venue load" Focus nudge when >= N in-flight papers target one venue

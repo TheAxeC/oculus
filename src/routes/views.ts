@@ -35,7 +35,16 @@ import Terminal from '$lib/views/sessions/Terminal.svelte';
 import Timeline from '$lib/views/sessions/Timeline.svelte';
 import Transcript from '$lib/views/sessions/Transcript.svelte';
 import { registerView } from '$lib/views/registry';
-import { badgeText } from '$lib/state/hpc.svelte';
+import { badgeText as hpcBadgeText } from '$lib/state/hpc.svelte';
+import {
+    applicationsBadge,
+    boardBadge,
+    collectionBadge,
+    collectionBadgeTone,
+    inboxBadge,
+    leadsBadge,
+    linkedinBadge
+} from '$lib/state/rail-badges.svelte';
 
 registerView({
     id: 'radar',
@@ -48,21 +57,27 @@ registerView({
     id: 'leads',
     label: 'views.leads',
     glyph: 'views.leads_glyph',
-    component: Leads
+    component: Leads,
+    badge: leadsBadge,
+    badgeTone: () => 'amber'
 });
 
 registerView({
     id: 'inbox',
     label: 'views.inbox',
     glyph: 'views.inbox_glyph',
-    component: Inbox
+    component: Inbox,
+    badge: inboxBadge,
+    badgeTone: () => 'red'
 });
 
 registerView({
     id: 'linkedin',
     label: 'views.linkedin',
     glyph: 'views.linkedin_glyph',
-    component: Linkedin
+    component: Linkedin,
+    badge: linkedinBadge,
+    badgeTone: () => 'red'
 });
 
 registerView({
@@ -70,7 +85,7 @@ registerView({
     label: 'views.hpc',
     glyph: 'views.hpc_glyph',
     component: Hpc,
-    badge: badgeText
+    badge: hpcBadgeText
 });
 
 registerView({
@@ -144,21 +159,24 @@ registerView({
     id: 'projects',
     label: 'views.projects',
     glyph: 'views.projects_glyph',
-    component: Projects
+    component: Projects,
+    badge: () => boardBadge('projects')
 });
 
 registerView({
     id: 'archive',
     label: 'views.archive',
     glyph: 'views.archive_glyph',
-    component: Projects
+    component: Projects,
+    badge: () => boardBadge('archive')
 });
 
 registerView({
     id: 'coauthor',
     label: 'views.coauthor',
     glyph: 'views.coauthor_glyph',
-    component: Projects
+    component: Projects,
+    badge: () => boardBadge('coauthor')
 });
 
 // One project as its own tab, opened by the title of a card. It is registered once and opened once
@@ -265,11 +283,14 @@ registerView({
 // id's first position, so a second call over the same keys changes nothing.
 export function registerCollections(keys: string[]): void {
     for (const key of keys) {
+        const applications = key === 'applications';
         registerView({
             id: key,
             label: `views.${key}`,
             glyph: `views.${key}_glyph`,
-            component: Collection
+            component: Collection,
+            badge: applications ? applicationsBadge : () => collectionBadge(key),
+            badgeTone: applications ? () => 'green' : () => collectionBadgeTone(key)
         });
     }
 }

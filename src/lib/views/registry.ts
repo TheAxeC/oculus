@@ -28,6 +28,8 @@ export type Registration = {
     listed?: boolean;
     /** Live text drawn beside the rail glyph; an empty string draws no badge. */
     badge?: () => string;
+    /** A hue name from state/tones.ts; absent keeps the rail's accent badge. */
+    badgeTone?: () => string;
 };
 
 /** Insertion order is registration order, and a re-registration keeps the id's first position. */

@@ -93,4 +93,12 @@ describe('UpdateTray', () => {
         }
         expect(body).toContain(catalog['js.tasks.inbox_note']);
     });
+
+    it('opens on a full-window ground with a dialog inside it', () => {
+        const body = render(UpdateTray, {
+            props: { open: true, onclose: () => {} }
+        }).body;
+        expect(body).toMatch(/class="[^"]*ground[^"]*"[^>]*role="presentation"/);
+        expect(body).toMatch(/class="[^"]*tray[^"]*"[^>]*role="dialog"/);
+    });
 });

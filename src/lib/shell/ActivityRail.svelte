@@ -79,10 +79,8 @@
     // shift-click does it in the panel, which is the whole of what the rail decides; where a view
     // then lands inside that tree is the store's.
 
-    import Glyph from '$lib/ui/Glyph.svelte';
     import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import Tooltip from '$lib/ui/Tooltip.svelte';
     import { dock, dockedAt, openView } from '$lib/state/layout.svelte';
     import {
         crt,
@@ -142,18 +140,37 @@
         dock(id as Dock);
     }
 
+    /** The badge's hover words: the HPC legend it already had, otherwise the view and count. */
+    function badgeTitle(view: Registration, badge: string): string {
+        return view.id === 'hpc' ? t('hpc.badge_title') : `${lookup(view.label)} ${badge}`;
+    }
+
     /** The views of one group as the choices of its list, each with its own glyph and words. */
     function groupItems(section: Section): MenuItem[] {
-        return section.items.map((view) => ({
-            id: view.id,
-            label: lookup(view.label),
-            glyph: lookup(view.glyph)
-        }));
+        return section.items.map((view) => {
+            const badge = view.badge?.() ?? '';
+            return {
+                id: view.id,
+                label: lookup(view.label),
+                glyph: lookup(view.glyph),
+                badge,
+                badgeTone: view.badgeTone?.(),
+                badgeTitle: badge === '' ? undefined : badgeTitle(view, badge)
+            };
+        });
     }
 
     /** The glyph a group's button carries: the group's own, or its first view's when it has none. */
     function groupGlyph(section: Section): string {
         return section.glyph ?? lookup(section.items[0].glyph);
+    }
+
+    /** The status pair for a registration's badge; absent leaves the accent pair in the stylesheet. */
+    function badgeStyle(view: Registration): string | undefined {
+        const tone = view.badgeTone?.();
+        return tone === undefined
+            ? undefined
+            : `--badge-bg: var(--c-${tone}); --badge-fg: var(--on-c-${tone})`;
     }
 
     /** The wallpaper toggle is drawn only where there is one to switch: it is config and a theme. */
@@ -175,6 +192,7 @@
                         {label}
                         glyph={groupGlyph(section)}
                         compact
+                        rail
                         items={groupItems(section)}
                         onpick={(id, event) => openView(id, event.shiftKey ? 'panel' : 'main')}
                     />
@@ -184,23 +202,27 @@
                     <p class="group">{label}</p>
                 {/if}
                 {#each section.items as view (view.id)}
-                    <Tooltip text={lookup(view.label)} placement="beside">
-                        <button
-                            type="button"
-                            class="view"
-                            data-view={view.id}
-                            aria-label={lookup(view.label)}
+                    {@const badge = view.badge?.() ?? ''}
+                    <div class="control">
+                        <ToolButton
+                            label={lookup(view.label)}
+                            glyph={lookup(view.glyph)}
+                            dataView={view.id}
+                            compact
+                            rail
                             onclick={(event) =>
                                 openView(view.id, event.shiftKey ? 'panel' : 'main')}
-                        >
-                            <Glyph name={lookup(view.glyph)} />
-                            {#if view.badge?.()}
-                                <span class="badge" title={t('hpc.badge_title')}
-                                    >{view.badge()}</span
-                                >
-                            {/if}
-                        </button>
-                    </Tooltip>
+                        />
+                        {#if badge !== ''}
+                            <span
+                                class="badge"
+                                style={badgeStyle(view)}
+                                title={badgeTitle(view, badge)}
+                            >
+                                {badge}
+                            </span>
+                        {/if}
+                    </div>
                 {/each}
             {/if}
         {/each}
@@ -210,17 +232,16 @@
         {#if bookmarks.length > 0}
             <p class="group">{t('ui.docs')}</p>
             {#each bookmarks as mark (`${mark.root}/${mark.path}`)}
-                <Tooltip text={mark.label} placement="beside">
-                    <button
-                        type="button"
-                        class="view"
-                        data-bookmark={`${mark.root}/${mark.path}`}
-                        aria-label={mark.label}
+                <div class="control">
+                    <ToolButton
+                        label={mark.label}
+                        glyph={t('views.document_glyph')}
+                        dataBookmark={`${mark.root}/${mark.path}`}
+                        compact
+                        rail
                         onclick={() => openView('document', 'main', documentState(mark))}
-                    >
-                        <Glyph name={t('views.document_glyph')} />
-                    </button>
-                </Tooltip>
+                    />
+                </div>
             {/each}
         {/if}
     </div>
@@ -232,6 +253,7 @@
                 title={t('app.search_tip')}
                 glyph="cmd"
                 compact
+                rail
                 onclick={onsearch}
             />
         </div>
@@ -241,6 +263,7 @@
                 title={t('app.update_tip')}
                 glyph="refresh"
                 compact
+                rail
                 onclick={onupdate}
             />
         </div>
@@ -248,45 +271,44 @@
             label={t('ui.theme')}
             glyph={lookup('ui.theme_glyph')}
             compact
+            rail
             items={themes}
             onpick={(name) => setTheme(name)}
         />
-        <Tooltip text={t('ui.crt')} placement="beside">
-            <button
-                type="button"
-                class="toggle"
-                aria-pressed={crt()}
-                onclick={() => setCrt(!crt())}
-            >
-                {t('ui.crt_on')}
-            </button>
-        </Tooltip>
+        <ToolButton
+            label={t('ui.crt')}
+            glyph="darkmode"
+            active={crt()}
+            pressed={crt()}
+            compact
+            rail
+            onclick={() => setCrt(!crt())}
+        />
         {#if offersWallpaper}
-            <Tooltip text={t('ui.wallpaper_title')} placement="beside">
-                <button
-                    type="button"
-                    class="toggle"
-                    aria-pressed={wallpaper()}
-                    onclick={() => setWallpaper(!wallpaper())}
-                >
-                    {t('ui.wallpaper')}
-                </button>
-            </Tooltip>
+            <ToolButton
+                label={t('ui.wallpaper_title')}
+                glyph="memories"
+                active={wallpaper()}
+                pressed={wallpaper()}
+                compact
+                rail
+                onclick={() => setWallpaper(!wallpaper())}
+            />
         {/if}
-        <Tooltip text={t('ui.unicode_title')} placement="beside">
-            <button
-                type="button"
-                class="toggle"
-                aria-pressed={unicode()}
-                onclick={() => setUnicode(!unicode())}
-            >
-                {t('ui.unicode')}
-            </button>
-        </Tooltip>
+        <ToolButton
+            label={t('ui.unicode_title')}
+            glyph="code"
+            active={unicode()}
+            pressed={unicode()}
+            compact
+            rail
+            onclick={() => setUnicode(!unicode())}
+        />
         <Menu
             label={dockLabel}
             glyph={lookup('ui.dock_glyph')}
             compact
+            rail
             items={docks}
             onpick={(where) => pick(where)}
         />
@@ -336,11 +358,6 @@
         flex-shrink: 0;
     }
 
-    .controls > div {
-        display: flex;
-        justify-content: center;
-    }
-
     /* The group's button is a Menu, which is a flex row of its own; this gives it the top margin a
        heading would have had, so a flyout sits where the heading it replaces sat. */
     .flyout {
@@ -356,19 +373,10 @@
         letter-spacing: 0.04em;
     }
 
-    .view {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 34px;
-        border: 1px solid transparent;
-        border-radius: var(--radius-sm);
-        background: none;
-        color: var(--ink-txt, var(--ink));
-        font: inherit;
-        font-size: var(--fs-xl);
-        cursor: pointer;
+    .control {
         position: relative;
+        display: block;
+        width: 100%;
     }
 
     .badge {
@@ -377,41 +385,10 @@
         bottom: -2px;
         padding: 0 3px;
         border-radius: var(--radius-pill);
-        background: var(--chip);
-        color: var(--accent-txt, var(--accent));
+        background: var(--badge-bg, var(--chip));
+        color: var(--badge-fg, var(--accent-txt, var(--accent)));
+        font-family: var(--font-num);
         font-size: var(--fs-3xs);
-    }
-
-    /* The three switches at the foot: the overlay, the wallpaper and the glyphs. The rail is 52 px
-       wide and the words come from the catalog, so a long one wraps rather than being cut. */
-    .toggle {
-        border: 1px solid var(--line);
-        border-radius: var(--radius-sm);
-        background: var(--chip);
-        color: var(--ink-txt, var(--ink));
-        font: inherit;
-        font-size: var(--fs-3xs);
-        line-height: 1.3;
-        text-align: center;
-        overflow-wrap: anywhere;
-        padding: 4px 2px;
-        cursor: pointer;
-    }
-
-    .view:hover,
-    .toggle:hover {
-        border-color: var(--accent);
-    }
-
-    .toggle[aria-pressed='true'] {
-        color: var(--accent-txt, var(--accent));
-        border-color: var(--accent);
-    }
-
-    .view:focus-visible,
-    .toggle:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
     }
 
     /* Over a wallpaper the rail goes translucent with the panes, and takes the pane's colour while

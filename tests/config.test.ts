@@ -391,6 +391,23 @@ describe("oculus's own config directory", () => {
     // nothing for it and says nothing about it, which is the failure this catches.
     const RESERVED = ['approach', 'agent-approach', 'memories', 'help', 'audit', 'config'];
 
+    it('keeps boards separate from the configured Pillars group', () => {
+        const { config } = loadConfig(engineDir());
+        const groups = config.nav_groups as Record<
+            string,
+            { label: string; glyph?: string; keys: string[] }[]
+        >;
+        expect(groups.boards).toEqual([
+            { label: 'Boards', keys: ['focus', 'projects', 'coauthor', 'archive'] }
+        ]);
+        expect(groups.structure).toEqual([
+            { label: 'Pillars', glyph: 'program', keys: ['programs', 'domains', 'map'] }
+        ]);
+        expect(Object.keys(groups).indexOf('structure')).toBe(
+            Object.keys(groups).indexOf('boards') + 1
+        );
+    });
+
     it('names a registered view or a reserved id in every key of every rail group', () => {
         const { config } = loadConfig(engineDir());
         registerCollections(collectionKeys(config));

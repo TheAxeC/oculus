@@ -35,6 +35,12 @@
         glyph?: string;
         /** A hue name from state/tones.ts, drawn as a dot before the label. */
         tone?: string;
+        /** Live text drawn at the end of the item; an empty string draws no badge. */
+        badge?: string;
+        /** A hue name from state/tones.ts; absent uses the accent pair. */
+        badgeTone?: string;
+        /** The badge's hover words. */
+        badgeTitle?: string;
     };
 </script>
 
@@ -78,6 +84,8 @@
          * right edge of the window lines up `right`, or its list runs off the screen.
          */
         align?: 'left' | 'right';
+        /** Use the activity rail's one full-width, 34 px opener box. */
+        rail?: boolean;
     };
 
     let {
@@ -87,7 +95,8 @@
         glyph,
         compact = false,
         placement = 'up',
-        align = 'left'
+        align = 'left',
+        rail = false
     }: Props = $props();
 
     let open = $state(false);
@@ -132,6 +141,13 @@
         return `--tone: var(--c-${tone})`;
     }
 
+    /** The status pair for one item's badge. */
+    function badgeStyle(tone: string | undefined): string | undefined {
+        return tone === undefined
+            ? undefined
+            : `--badge-bg: var(--c-${tone}); --badge-fg: var(--on-c-${tone})`;
+    }
+
     function toggle(): void {
         open = !open;
         if (open) {
@@ -170,11 +186,12 @@
 <div class="menu" bind:this={box}>
     <!-- A compact menu is an icon in a narrow column, so its words go beside it; a menu that shows
          its label has room underneath. -->
-    <Tooltip text={label} placement={compact ? 'beside' : 'below'} presentational>
+    <Tooltip text={label} placement={compact ? 'beside' : 'below'} presentational block={rail}>
         <button
             type="button"
             class="opener"
             class:compact
+            class:rail-control={rail}
             bind:this={button}
             aria-haspopup="menu"
             aria-expanded={open}
@@ -217,6 +234,18 @@
                         <Glyph name={item.glyph} />
                     {/if}
                     <span class="label">{item.label}</span>
+                    {#if item.badge}
+                        <!-- Hidden from the accessible name: the item keeps its label as its name,
+                             which is what a menuitem lookup by name and the browser suite rely on. -->
+                        <span
+                            class="item-badge"
+                            style={badgeStyle(item.badgeTone)}
+                            title={item.badgeTitle}
+                            aria-hidden="true"
+                        >
+                            {item.badge}
+                        </span>
+                    {/if}
                 </button>
             {/each}
         </div>
@@ -253,6 +282,14 @@
     .opener.compact {
         justify-content: center;
         font-size: var(--fs-lg);
+    }
+
+    .opener.rail-control {
+        height: 34px;
+        box-sizing: border-box;
+        background: none;
+        font-size: var(--fs-xl);
+        padding: 0;
     }
 
     .list {
@@ -330,6 +367,16 @@
         text-align: left;
         padding: 4px 6px;
         cursor: pointer;
+    }
+
+    .item-badge {
+        margin-left: auto;
+        padding: 0 4px;
+        border-radius: var(--radius-pill);
+        background: var(--badge-bg, var(--chip));
+        color: var(--badge-fg, var(--accent-txt, var(--accent)));
+        font-family: var(--font-num);
+        font-size: var(--fs-3xs);
     }
 
     .item:hover {

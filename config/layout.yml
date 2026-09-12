@@ -16,7 +16,9 @@
 # view's glyph.
 nav_groups:
   boards:
-    - { label: "Boards",        keys: [focus, projects, coauthor, archive, programs, domains, map] }
+    - { label: "Boards",        keys: [focus, projects, coauthor, archive] }
+  structure:
+    - { label: "Pillars",       glyph: program, keys: [programs, domains, map] }   # eight letters fit the rail; the pillars, their domains and the map of both
   sessions:
     - { label: "Sessions",      glyph: chat,  keys: [session-list, session-detail, terminal, transcript, timeline, changes, agents] }
   collections:

@@ -276,6 +276,20 @@ describe('Pane, Empty, Toolbar, ToolButton, Segment and Search', () => {
         expect(body).not.toContain('role="radio"');
     });
 
+    it('draws the rail variant as the shared rail box and keeps toggle state', () => {
+        const body = html(ToolButton, {
+            label: 'Overlay',
+            glyph: 'darkmode',
+            compact: true,
+            rail: true,
+            pressed: true,
+            onclick: () => {}
+        });
+        expect(body).toContain('rail-control');
+        expect(body).toContain('aria-pressed="true"');
+        expect(body).toContain('Overlay');
+    });
+
     it('draws no tooltip for a tool button that was given no words', () => {
         const body = html(ToolButton, { label: 'Reset', onclick: () => {} });
         expect(body).not.toContain('role="tooltip"');

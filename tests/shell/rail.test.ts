@@ -24,6 +24,7 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
+import { receive } from '../../src/lib/state/entities.svelte.ts';
 import {
     registerView,
     views,
@@ -54,6 +55,13 @@ function probe(id: string): Registration {
 /** How many times a fragment occurs in a rendering. */
 function count(body: string, fragment: string): number {
     return body.split(fragment).length - 1;
+}
+
+/** The rendered button carrying one attribute, or nothing when the attribute stayed on a wrapper. */
+function buttonWith(body: string, attribute: string): string | undefined {
+    return [...body.matchAll(/<button\b[^>]*>/g)]
+        .map(([button]) => button)
+        .find((button) => button.includes(attribute));
 }
 
 describe('arrange', () => {
@@ -131,13 +139,54 @@ describe('the rail, drawn', () => {
 });
 
 describe('a rail badge', () => {
-    it('draws the registration badge beside its glyph', () => {
-        registerView({ ...probe('badged'), badge: () => '3 5' });
+    it('draws a toned registration badge beside its glyph and nothing at zero', () => {
+        registerView({ ...probe('badged'), badge: () => '3 5', badgeTone: () => 'red' });
+        registerView({ ...probe('zero-badge'), badge: () => '', badgeTone: () => 'green' });
         const body = render(ActivityRail, {
-            props: { groups: [{ label: 'Badge', keys: ['badged'] }] }
+            props: { groups: [{ label: 'Badge', keys: ['badged', 'zero-badge'] }] }
         }).body;
         expect(body).toMatch(/class="badge\s/);
         expect(body).toContain('3 5');
+        expect(body).toContain('--badge-bg: var(--c-red)');
+        expect(body).not.toContain('--badge-bg: var(--c-green)');
+        expect(body).toContain('title="Status 3 5"');
+    });
+
+    it('puts browser identities and the rail box class on direct and bookmark buttons', () => {
+        const direct = render(ActivityRail, {
+            props: {
+                groups: [{ label: 'Controls', keys: ['badged'] }],
+                bookmarks: [{ label: 'Manual', root: 'docs', path: 'manual.html' }]
+            }
+        }).body;
+        const view = buttonWith(direct, 'data-view="badged"');
+        const bookmark = buttonWith(direct, 'data-bookmark="docs/manual.html"');
+        expect(view).toMatch(/class="[^"]*rail-control/);
+        expect(bookmark).toMatch(/class="[^"]*rail-control/);
+        expect(direct).not.toContain('<div class="control" data-view=');
+        expect(direct).not.toContain('<div class="control" data-bookmark=');
+    });
+
+    it('gives the large-group opener the same rail box class', () => {
+        const ids = ['flyout-1', 'flyout-2', 'flyout-3', 'flyout-4', 'flyout-5'];
+        for (const id of ids) registerView(probe(id));
+        const rendered = render(ActivityRail, {
+            props: { groups: [{ label: 'Flyout', glyph: 'chat', keys: ids }] }
+        }).body;
+        const group = rendered.match(/data-group="Flyout"[\s\S]*?<button\b[^>]*>/)?.[0] ?? '';
+        expect(group).toContain('rail-control');
+    });
+
+    it('keeps the Live HPC badge title', () => {
+        receive({
+            channel: 'hpc',
+            version: 7001,
+            payload: { status: 'ok', total: 3, running: 2, pending: 1 }
+        });
+        const hpc = render(ActivityRail, {
+            props: { groups: [{ label: 'HPC', keys: ['hpc'] }] }
+        }).body;
+        expect(hpc).toContain(`title="${catalog['hpc.badge_title']}"`);
     });
 });
 
@@ -208,5 +257,16 @@ describe('the groups of the real config', () => {
         expect(render(ActivityRail, { props: { groups: realGroups() } }).body).toContain(
             '>Feeds</p>'
         );
+    });
+
+    it('keeps the four boards together and puts Programs, Domains and Map under Pillars', () => {
+        expect(section('Boards').map((view) => view.id)).toEqual([
+            'focus',
+            'projects',
+            'coauthor',
+            'archive'
+        ]);
+        expect(section('Pillars').map((view) => view.id)).toEqual(['programs', 'domains', 'map']);
+        expect(realGroups().find((group) => group.label === 'Pillars')?.glyph).toBe('program');
     });
 });

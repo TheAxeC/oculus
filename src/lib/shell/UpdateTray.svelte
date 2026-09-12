@@ -70,43 +70,66 @@
 </script>
 
 {#if open}
-    <div class="tray" role="dialog" aria-modal="true" aria-label={t('js.tasks.update_tasks')}>
-        <header>
-            <h2>{t('js.tasks.update_tasks')}</h2>
-            <ToolButton label={t('js.tasks.close')} glyph="dismiss" compact onclick={onclose} />
-        </header>
-        <div class="tasks">
-            {#each tasks as task (task.kind)}
-                <div class="task" data-task={task.kind}>
-                    <ToolButton
-                        label={task.label}
-                        title={task.note}
-                        active={running === task.kind}
-                        disabled={running !== null}
-                        onclick={() => start(task.kind)}
-                    />
-                    <span class="last">{task.last ?? t('app.palette_unavailable')}</span>
-                    {#if task.kind === 'inbox'}
-                        <span class="note">{t('js.tasks.note_prefix', task.note)}</span>
-                    {/if}
-                </div>
-            {/each}
+    <div
+        class="ground"
+        role="presentation"
+        onclick={(event) => {
+            if (event.target === event.currentTarget) onclose();
+        }}
+    >
+        <div class="tray" role="dialog" aria-modal="true" aria-label={t('js.tasks.update_tasks')}>
+            <header>
+                <h2>{t('js.tasks.update_tasks')}</h2>
+                <ToolButton label={t('js.tasks.close')} glyph="dismiss" compact onclick={onclose} />
+            </header>
+            <div class="tasks">
+                {#each tasks as task (task.kind)}
+                    <div class="task" data-task={task.kind}>
+                        <ToolButton
+                            label={task.label}
+                            title={task.note}
+                            active={running === task.kind}
+                            disabled={running !== null}
+                            onclick={() => start(task.kind)}
+                        />
+                        <span class="last">{task.last ?? t('app.palette_unavailable')}</span>
+                        {#if task.kind === 'inbox'}
+                            <span class="note">{t('js.tasks.note_prefix', task.note)}</span>
+                        {/if}
+                    </div>
+                {/each}
+            </div>
+            {#if said !== ''}
+                <p class="said">{said}</p>
+            {/if}
         </div>
-        {#if said !== ''}
-            <p class="said">{said}</p>
-        {/if}
     </div>
 {/if}
 
 <style>
-    .tray {
+    .ground {
         position: fixed;
+        inset: 0;
         z-index: 65;
-        top: 12px;
-        left: calc(var(--rail-width) + 8px);
+        display: flex;
+        align-items: flex-start;
+        justify-content: center;
+        padding: 10vh 16px 16px;
+    }
+
+    .ground::before {
+        position: absolute;
+        inset: 0;
+        content: '';
+        background: var(--bg);
+        opacity: 0.72;
+    }
+
+    .tray {
+        position: relative;
         display: grid;
         gap: 10px;
-        width: min(34rem, calc(100vw - var(--rail-width) - 32px));
+        width: min(42rem, 100%);
         padding: 12px;
         border: 1px solid var(--line);
         border-radius: var(--radius-sm);

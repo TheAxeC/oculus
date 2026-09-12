@@ -36,6 +36,8 @@
         presentational?: boolean;
         /** Put a wrapper around non-control content in the tab order so its tooltip opens on focus. */
         focusable?: boolean;
+        /** Fill the available width, for a control in the activity rail's fixed-width column. */
+        block?: boolean;
         children: Snippet;
     };
 
@@ -44,6 +46,7 @@
         placement = 'below',
         presentational = false,
         focusable = false,
+        block = false,
         children
     }: Props = $props();
 
@@ -109,6 +112,7 @@
      reveals the description. -->
 <span
     class="tip"
+    class:block
     bind:this={box}
     role={presentational ? 'presentation' : undefined}
     tabindex={focusable ? 0 : undefined}
@@ -131,6 +135,11 @@
     .tip {
         display: inline-flex;
         min-width: 0;
+    }
+
+    .tip.block {
+        display: flex;
+        width: 100%;
     }
 
     /* The control fills the wrapper, so a wrapped button is exactly as wide as the unwrapped one was

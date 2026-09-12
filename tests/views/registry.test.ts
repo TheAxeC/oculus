@@ -210,6 +210,23 @@ describe('the real registrations', () => {
             ['projects', 'archive', 'coauthor'].includes(view.id)
         );
         expect(new Set(board.map((view) => view.component)).size).toBe(1);
+        expect(board.every((view) => typeof view.badge === 'function')).toBe(true);
+    });
+
+    it('registers every configured rail count and its urgency tone', () => {
+        for (const id of ['leads', 'inbox', 'linkedin']) {
+            expect(typeof viewFor(id)?.badge).toBe('function');
+            expect(typeof viewFor(id)?.badgeTone).toBe('function');
+        }
+        expect(viewFor('leads')?.badgeTone?.()).toBe('amber');
+        expect(viewFor('inbox')?.badgeTone?.()).toBe('red');
+        expect(viewFor('linkedin')?.badgeTone?.()).toBe('red');
+        expect(viewFor('applications')?.badgeTone?.()).toBe('green');
+        for (const key of COLLECTIONS) {
+            expect(typeof viewFor(key)?.badge).toBe('function');
+            expect(typeof viewFor(key)?.badgeTone).toBe('function');
+        }
+        expect(typeof viewFor('hpc')?.badge).toBe('function');
     });
 
     it('names a label key config/text.yml holds', () => {
