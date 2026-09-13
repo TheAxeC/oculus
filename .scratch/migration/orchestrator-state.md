@@ -34,10 +34,14 @@ dispatch:
   pid: 77650
   session_id: 01a09c94-f6c9-7202-a944-8a9f9c43ab25
   landing: not-started
-  round: 0
-  wip: e15ea86e
+  round: 1
+  wip: e15ea86e (on r3), rebased onto main in the worktree as r3-land 284ee6f1 (clean; the seven checks green there, 2009 tests)
+  repair_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R3/repair-prompt.md
+  repair_events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R3/repair-events.jsonl
+  repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R3/repair-report.md
+  repair_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R3/repair-exit.txt
   review_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R3/review-report.md
-  notes: the worker finished at 23:44 (exit 0, all eight items done, dev through a per-request scope in the Vite plugin since Kit's dev server does not populate event.platform); the seven checks pass in the worktree from the orchestrator's shell (129 files, 2004 tests); the reviewer runs since 23:52; no globals, the brief of 2026-09-13 22:10 with its premises checked at 23:05; after it R7, R4, R5, R6, R8, then R9; no dispatch after 06:00 on 2026-09-14, nothing in flight at 07:05.
+  notes: the worker finished at 23:44 (exit 0, all eight items done, dev through a per-request scope in the Vite plugin since Kit's dev server does not populate event.platform); the seven checks pass in the worktree from the orchestrator's shell (129 files, 2004 tests); the first review (agents/reviews/R3.md, 00:10) found a module-level listener set left between the sessions and usage watchers, the git suggestion path dropping the published roots, GET /api/terminal answering from a cache a POST does not await, npm run preview broken by the emulator, five stale comments and five missing tests; the repair round runs on the worker's thread in the worktree (on branch r3-land) since 00:15; no globals, the brief of 2026-09-13 22:10 with its premises checked at 23:05; after it R7, R4, R5, R6, R8, then R9; no dispatch after 06:00 on 2026-09-14, nothing in flight at 07:05.
 ```
 
 ## The standing demands (from Axel, in force)
