@@ -21,7 +21,20 @@ reviewer: codex:gpt-5.6-sol  # the reviewer stage, tried from O24a on (Axel, 202
 ```
 
 ```yaml
-dispatch: none
+dispatch:
+  package: Q13
+  worker: codex:gpt-5.6-sol
+  worktree: .agents/worktrees/q13
+  base: 82183e0d364a8b593e9c2073bf7030ac46a0ff14
+  launched: pending
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q13/prompt.md
+  events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q13/events.jsonl
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q13/report.md
+  exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q13/exit.txt
+  pid: pending
+  session_id: pending
+  landing: not-started
+  notes: Axel lifted the pause on 2026-09-13 at 13:55 for Q13 and Q14 ("Please continue with Q13 and Q14, then report back"); after Q14 lands the orchestrator reports and pauses again; D19 then Q16 then Q17 follow in that order once he lifts it
 ```
 
 ## The standing demands (from Axel, in force)
