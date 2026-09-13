@@ -62,6 +62,7 @@ dispatch:
 
 - D19c fix, one-shot sessions: every `usage_refresh_min` minutes and on Refresh, a Claude Code session is started, sent `/usage`, read and killed; nothing resident between ticks (the two hidden sessions idle at 137 MB and 177 MB; Axel 2026-09-14 00:00 "wtf 150MB"). Built on main right after R3 lands.
 - D19c fix, the card tells the truth: after a Refresh that produced no newer figures, the refresher line names the fetch time and that Claude Code renews the figures after five minutes; only then. Built with the item above.
+- Whether "no globals" reaches the browser's state modules (`src/lib/state/*.svelte.ts` hold their runes at module level by the state layer's design, one module graph; 12 module-level collections there: `inflight`, `versions`, `listeners`, `marks`, `registry` and the like): Axel's ruling needed; the boundaries test's module-state rule covers the server side only until then.
 - R10, history out of code comments (462 lines in 94 files under src, tests and bin name a package id, a session or a date; the rule is in the hub CLAUDE.md, the spec and the skill): booked in plan.md after R8, not started.
 - Audit of every "sharp edges, unresolved" list in the landing notes below (42 packages, O1 to O25e) against the tree: each still-open edge becomes a booked plan line or a fix. Scheduled 2026-09-14 while R7's worker runs; not started.
 
