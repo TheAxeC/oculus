@@ -38,13 +38,22 @@
     // its derived tokens, the wallpaper's layer and the properties its translucent surfaces read,
     // and which of the two glyph vocabularies renders.
 
-    import ActivityRail, { type Bookmark, type NavGroup } from './ActivityRail.svelte';
+    import ActivityRail, { railOrder, type Bookmark, type NavGroup } from './ActivityRail.svelte';
     import DropLayer from './DropLayer.svelte';
+    import { activateCursor, focusSearch, scrollContainer, scrollRegion } from './key-dom';
     import PageStrip, { type Arrangement } from './PageStrip.svelte';
     import Palette from './Palette.svelte';
     import PaneView from './PaneView.svelte';
     import SplitView from './SplitView.svelte';
     import UpdateTray from './UpdateTray.svelte';
+    import {
+        horizontalCursor,
+        initialKeyState,
+        resolveKey,
+        rowCursor,
+        type KeyAction
+    } from './keys';
+    import KeySheet from '$lib/ui/KeySheet.svelte';
     import Sash, { SASH_PX } from '$lib/ui/Sash.svelte';
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
     import {
@@ -54,6 +63,7 @@
         dockedAt,
         focused,
         layout,
+        openView,
         pageShortcut,
         panelSize,
         resizePanel,
@@ -70,6 +80,7 @@
     } from '$lib/state/ui.svelte';
     import { PANEL_DEFAULT, paneAt, resize, type Layout } from '$lib/state/layout';
     import { setGlyphMode, t } from '$lib/state/text';
+    import { views } from '$lib/views/registry';
     import {
         terminalTheme,
         themeClass,
@@ -97,7 +108,12 @@
     let paletteOpen = $state(false);
     let palettePrefill = $state('');
     let updateOpen = $state(false);
+    let sheetOpen = $state(false);
     let handledUpdateRequest = $state(updateTrayRequested());
+    let keyState = initialKeyState();
+    let cursorIndex = -1;
+    let cursorPane: HTMLElement | null = null;
+    let lastFocusedPane: HTMLElement | null = null;
 
     const dock = $derived(dockedAt());
     const share = $derived(panelSize());
@@ -111,6 +127,16 @@
     /** The page on screen: its trees are the ones drawn, and its id is what remounts them. */
     const page = $derived(currentPage());
     const activeMain = $derived(activeInstance('main'));
+    const activePanel = $derived(activeInstance('panel'));
+    const navigation = $derived(
+        railOrder(
+            views().filter((view) => view.listed !== false),
+            groups
+        )
+    );
+    const cursorScope = $derived(
+        `${page.id}:${activeMain?.id ?? ''}:${activePanel?.id ?? ''}:${focus?.target ?? ''}:${focus?.path.join('.') ?? ''}`
+    );
 
     /**
      * Escape restores the arrangement, and Ctrl+1 to Ctrl+9 show a page. A drag in progress consumes
@@ -119,6 +145,23 @@
      * which is why the shortcut is Ctrl and a held Cmd is refused.
      */
     function keys(event: KeyboardEvent): void {
+        if (
+            sheetOpen &&
+            !typingIn(event.target) &&
+            !paletteOpen &&
+            !updateOpen &&
+            document.querySelector('[role="alertdialog"]') === null &&
+            !event.defaultPrevented &&
+            !event.metaKey &&
+            !event.ctrlKey &&
+            !event.altKey &&
+            (event.key === '?' || event.key === 'Escape')
+        ) {
+            event.preventDefault();
+            sheetOpen = false;
+            return;
+        }
+        if (sheetOpen) return;
         if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
             event.preventDefault();
             if (paletteOpen) paletteOpen = false;
@@ -151,10 +194,135 @@
             if (pageShortcut(Number(event.key))) event.preventDefault();
             return;
         }
+        const pane = focusedPaneElement();
+        const result = resolveKey(
+            event,
+            navigation,
+            {
+                currentView: pane?.dataset.paneView ?? null,
+                target: pane?.dataset.paneTarget === 'panel' ? 'panel' : 'main',
+                cursorActive: cursorIndex >= 0,
+                typing: typingIn(event.target),
+                paletteOpen,
+                trayOpen: updateOpen,
+                confirmOpen: document.querySelector('[role="alertdialog"]') !== null
+            },
+            keyState,
+            Date.now()
+        );
+        keyState = result.state;
+        if (result.action !== null) {
+            if (perform(result.action, pane)) event.preventDefault();
+            return;
+        }
         if (event.key !== 'Escape' || event.defaultPrevented) return;
         if (dragging() !== null || focus === null) return;
         event.preventDefault();
         restorePanes();
+    }
+
+    /** Perform one DOM-independent routing decision against the pane currently addressed. */
+    function perform(action: KeyAction, pane: HTMLElement | null): boolean {
+        if (action.kind === 'open') {
+            clearCursor();
+            openView(action.view, action.target);
+        } else if (action.kind === 'cursor') {
+            return moveCursor(pane, action.direction);
+        } else if (action.kind === 'activate') {
+            return activateCursor(cursorPane);
+        } else if (action.kind === 'search') {
+            return focusSearch(pane);
+        } else if (action.kind === 'scroll') {
+            return scrollRegion(scrollContainer(pane), action.edge);
+        } else if (action.kind === 'sheet') {
+            clearCursor();
+            sheetOpen = !sheetOpen;
+        } else {
+            clearCursor();
+        }
+        return true;
+    }
+
+    /** The pane reached last, falling back to the active main pane when focus is outside a pane. */
+    function focusedPaneElement(): HTMLElement | null {
+        const element = document.activeElement;
+        if (element instanceof HTMLElement) {
+            const pane = element.closest<HTMLElement>('[data-pane]');
+            if (pane !== null) return pane;
+        }
+        if (cursorPane?.isConnected) return cursorPane;
+        if (lastFocusedPane?.isConnected) return lastFocusedPane;
+        if (focus !== null) return document.querySelector<HTMLElement>('[data-pane]');
+        const active = activeMain?.id;
+        if (active === undefined) return null;
+        return (
+            [...document.querySelectorAll<HTMLElement>('[data-pane]')].find(
+                (pane) => pane.dataset.paneActive === active
+            ) ?? null
+        );
+    }
+
+    /** Visible Card primitives in one pane, in their DOM display order. */
+    function cards(pane: HTMLElement | null): HTMLElement[] {
+        if (pane === null) return [];
+        return [...pane.querySelectorAll<HTMLElement>('[data-card]')].filter(
+            (card) => card.offsetParent !== null
+        );
+    }
+
+    function selectCard(pane: HTMLElement, index: number): boolean {
+        const visible = cards(pane);
+        if (index < 0 || index >= visible.length) return false;
+        clearCursor();
+        cursorPane = pane;
+        cursorIndex = index;
+        visible[index].setAttribute('data-cursor', '');
+        visible[index].scrollIntoView({ block: 'center', behavior: 'smooth' });
+        return true;
+    }
+
+    function moveCursor(
+        pane: HTMLElement | null,
+        direction: 'left' | 'right' | 'up' | 'down'
+    ): boolean {
+        if (pane === null) return false;
+        const visible = cards(pane);
+        const current = pane === cursorPane ? cursorIndex : -1;
+        const next =
+            direction === 'left' || direction === 'right'
+                ? horizontalCursor(current, visible.length, direction === 'left' ? -1 : 1)
+                : rowCursor(
+                      visible.map((card) => card.getBoundingClientRect()),
+                      current,
+                      direction === 'up' ? -1 : 1
+                  );
+        return selectCard(pane, next);
+    }
+
+    function clearCursor(): void {
+        document.querySelectorAll('[data-card][data-cursor]').forEach((card) => {
+            card.removeAttribute('data-cursor');
+        });
+        cursorIndex = -1;
+        cursorPane = null;
+    }
+
+    function paneFocused(event: FocusEvent): void {
+        const target = event.target;
+        const pane =
+            target instanceof HTMLElement ? target.closest<HTMLElement>('[data-pane]') : null;
+        if (pane === lastFocusedPane) return;
+        lastFocusedPane = pane;
+        clearCursor();
+    }
+
+    function panePressed(event: PointerEvent): void {
+        const target = event.target;
+        const pane =
+            target instanceof HTMLElement ? target.closest<HTMLElement>('[data-pane]') : null;
+        if (pane === lastFocusedPane) return;
+        lastFocusedPane = pane;
+        clearCursor();
     }
 
     /** Whether a colon belongs to a field rather than to the workbench command palette. */
@@ -168,12 +336,16 @@
     }
 
     function openPalette(prefill: string): void {
+        clearCursor();
+        sheetOpen = false;
         updateOpen = false;
         palettePrefill = prefill;
         paletteOpen = true;
     }
 
     function openUpdate(): void {
+        clearCursor();
+        sheetOpen = false;
         paletteOpen = false;
         updateOpen = true;
     }
@@ -215,6 +387,11 @@
         document.title = windowTitle(waiting, activeLabel(activeMain));
     });
 
+    /** A page, view, or maximised-pane change invalidates the card list the DOM cursor indexed. */
+    $effect(() => {
+        if (cursorScope !== '') clearCursor();
+    });
+
     /** The space the two trees share along the dock's direction, the sash between them removed. */
     function room(): number {
         if (area === undefined) return 0;
@@ -237,7 +414,7 @@
     <PaneView {node} target="panel" {path} />
 {/snippet}
 
-<svelte:window onkeydown={keys} />
+<svelte:window onkeydown={keys} onfocusin={paneFocused} onpointerdown={panePressed} />
 
 <div class="workbench">
     {#if wall}
@@ -298,6 +475,14 @@
     onupdate={openUpdate}
 />
 <UpdateTray open={updateOpen} onclose={() => (updateOpen = false)} />
+{#if sheetOpen}
+    <KeySheet
+        title={t('js.keys.title')}
+        hint={t('js.keys.hint')}
+        rows={t('js.keys.rows')}
+        onclose={() => (sheetOpen = false)}
+    />
+{/if}
 
 <style>
     .workbench {

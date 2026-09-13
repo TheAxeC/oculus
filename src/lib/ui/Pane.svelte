@@ -24,7 +24,7 @@
             <div class="tools">{@render toolbar()}</div>
         {/if}
     </header>
-    <div class="body">
+    <div class="body" data-scroll>
         {#if children}
             {@render children()}
         {/if}

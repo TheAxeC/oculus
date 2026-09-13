@@ -80,7 +80,12 @@
             if (!Array.isArray(list)) continue;
             for (const entry of list) {
                 if (typeof entry !== 'object' || entry === null) continue;
-                const group = entry as { label?: unknown; keys?: unknown; glyph?: unknown };
+                const group = entry as {
+                    label?: unknown;
+                    keys?: unknown;
+                    glyph?: unknown;
+                    chord?: unknown;
+                };
                 if (typeof group.label !== 'string' || !Array.isArray(group.keys)) continue;
                 const read: NavGroup = {
                     label: group.label,
@@ -89,6 +94,9 @@
                 // The glyph a large group's one button carries. A value that is not a name is left
                 // off rather than drawn, and the rail then falls back to the first view's glyph.
                 if (typeof group.glyph === 'string') read.glyph = group.glyph;
+                if (typeof group.chord === 'string' && /^[a-z]$/.test(group.chord)) {
+                    read.chord = group.chord;
+                }
                 found.push(read);
             }
         }

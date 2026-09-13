@@ -1,12 +1,13 @@
 <script module lang="ts">
     import type { Registration } from '$lib/views/registry';
+    import type { RailOrder } from './keys';
 
     /**
      * One group of the rail: a heading and the view ids it claims, as `nav_groups` in the config.
      * `glyph` is a name in config/glyphs.yml and is drawn only where the group is one button with a
      * list; a group that has none and is drawn that way carries its first view's glyph.
      */
-    export type NavGroup = { label: string; keys: string[]; glyph?: string };
+    export type NavGroup = { label: string; keys: string[]; glyph?: string; chord?: string };
 
     /**
      * One entry of the rail's Docs section, as `bookmarks` in the config: a local file under one of
@@ -34,7 +35,12 @@
     }
 
     /** The rail as it is drawn: a group's registrations, or the ungrouped ones under no heading. */
-    type Section = { label: string | null; items: Registration[]; glyph?: string };
+    type Section = {
+        label: string | null;
+        items: Registration[];
+        glyph?: string;
+        chord?: string;
+    };
 
     /**
      * How many views a group may hold and still be drawn as a heading over one button per view. A
@@ -65,11 +71,27 @@
             if (items.length === 0) continue;
             const section: Section = { label: group.label, items };
             if (group.glyph !== undefined) section.glyph = group.glyph;
+            if (group.chord !== undefined) section.chord = group.chord;
             sections.push(section);
         }
         const rest = registrations.filter((view) => !taken.has(view.id));
         if (rest.length > 0) sections.push({ label: null, items: rest });
         return sections;
+    }
+
+    /** Direct digits, every view in display order, and the configured entries behind flyout chords. */
+    export function railOrder(registrations: Registration[], groups: NavGroup[]): RailOrder {
+        const sections = arrange(registrations, groups);
+        const direct = sections
+            .filter((section) => section.label === null || section.items.length <= GROUP_MAX)
+            .flatMap((section) => section.items.map((view) => view.id));
+        const all = sections.flatMap((section) => section.items.map((view) => view.id));
+        const chords: Record<string, string[]> = {};
+        for (const section of sections) {
+            if (section.items.length <= GROUP_MAX || section.chord === undefined) continue;
+            chords[section.chord] = section.items.map((view) => view.id);
+        }
+        return { direct, all, chords };
     }
 </script>
 
@@ -184,7 +206,7 @@
                  icon per view; a small one stays a heading over its buttons. The list opens where
                  the theme menu at the foot does, since `compact` is what fixes it beside the rail. -->
             {#if label !== null && section.items.length > GROUP_MAX}
-                <div class="flyout" data-group={label}>
+                <div class="flyout" data-group={label} data-chord={section.chord}>
                     <p class="group">{label}</p>
                     <Menu
                         {label}

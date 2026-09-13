@@ -59,7 +59,7 @@ text:
       # `?` cheat sheet (02-views.js). One row per line: "key | what it does".
       title: "keyboard"
       hint: "press ? or Esc to close"
-      rows: "1-9 | switch tab;;c1-c9 | Collections menu;;m1-m9 | More menu;;Tab / Shift-Tab | next / previous tab;;j / k | move the card cursor left / right;;i / o | move the card cursor up / down a row;;Enter | expand the card under the cursor;;/ | focus this board's search;;g g | top of page;;G | bottom of page;;Cmd-K | jump palette;;: | command line;;Esc | clear the cursor"
+      rows: "1-9 | switch tab;;c1-c9 | Collections menu;;m1-m9 | More menu;;Tab / Shift-Tab | next / previous tab;;j / k | move the card cursor left / right;;i / o | move the card cursor up / down a row;;Enter | expand the card under the cursor;;/ | focus this board's search;;g g | top of page;;G | bottom of page;;Cmd-K | jump palette;;: | command line;;Esc | clear the cursor;;Ctrl+1-9 | switch page;;Ctrl+Shift+Left / Right | move the page"
     boot:
       # dmesg-style boot log (02-views.js), printed from the #ckboot build facts. One key per line;
       # add or remove a line here and the log changes - no JS edit. {0}.. are the args listed in page.py.

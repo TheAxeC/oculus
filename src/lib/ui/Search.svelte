@@ -29,6 +29,7 @@
 
 <input
     class="search"
+    data-search
     type="search"
     {value}
     {placeholder}

@@ -130,7 +130,13 @@
             />
         </Toolbar>
     {/snippet}
-    <div class="chat" bind:this={column} onscroll={scrolled} data-instance={instance.id}>
+    <div
+        class="chat"
+        bind:this={column}
+        onscroll={scrolled}
+        data-instance={instance.id}
+        data-scroll
+    >
         {#if record === null}
             <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
         {:else if held.error !== ''}

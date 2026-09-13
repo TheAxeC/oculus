@@ -15,6 +15,7 @@ import { render } from 'svelte/server';
 import ActivityRail, {
     GROUP_MAX,
     arrange,
+    railOrder,
     type NavGroup
 } from '../../src/lib/shell/ActivityRail.svelte';
 import {
@@ -100,6 +101,19 @@ describe('arrange', () => {
         );
         expect(found[0].glyph).toBe('chat');
         expect(found[1].glyph).toBe(undefined);
+    });
+
+    it('exposes direct digits, full display order, and configured flyout chords', () => {
+        const registrations = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map(probe);
+        const found = railOrder(registrations, [
+            { label: 'Direct', keys: ['b', 'a'] },
+            { label: 'Flyout', keys: ['c', 'd', 'e', 'f', 'g'], chord: 'c' }
+        ]);
+        expect(found).toEqual({
+            direct: ['b', 'a'],
+            all: ['b', 'a', 'c', 'd', 'e', 'f', 'g'],
+            chords: { c: ['c', 'd', 'e', 'f', 'g'] }
+        });
     });
 });
 
@@ -366,12 +380,42 @@ describe('the groups of the real config', () => {
 
     it('draws headings above the Sessions and Academic life flyout openers', () => {
         const body = render(ActivityRail, { props: { groups: realGroups() } }).body;
-        for (const label of ['Sessions', 'Academic life']) {
+        for (const [label, chord] of [
+            ['Sessions', 'm'],
+            ['Academic life', 'c']
+        ]) {
             expect(body).toContain(`data-group="${label}"`);
+            expect(body).toContain(`data-chord="${chord}"`);
             expect(body).toMatch(
                 new RegExp(`<p class="group[^"]*">${label}<\\/p>[\\s\\S]*?aria-label="${label}"`)
             );
         }
+    });
+
+    it('exposes the real rail order and the two configured flyout chords', () => {
+        const order = railOrder(
+            views().filter((view) => view.listed !== false),
+            realGroups()
+        );
+        expect(order.direct.slice(0, 4)).toEqual(['focus', 'projects', 'coauthor', 'archive']);
+        expect(order.all).toContain('funding');
+        expect(order.chords.c).toEqual([
+            'funding',
+            'events',
+            'education',
+            'applications',
+            'collaborations',
+            'tasks'
+        ]);
+        expect(order.chords.m).toEqual([
+            'session-list',
+            'session-detail',
+            'terminal',
+            'transcript',
+            'timeline',
+            'changes',
+            'agents'
+        ]);
     });
 
     it('puts the other two collections, Venues and Data under Sources', () => {

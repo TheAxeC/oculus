@@ -48,7 +48,7 @@
     const style = $derived(tone === undefined ? undefined : `--tone: var(--c-${tone})`);
 </script>
 
-<article class="card" class:toned={tone !== undefined} class:pinned {style}>
+<article class="card" class:toned={tone !== undefined} class:pinned {style} data-card>
     {#if tone !== undefined}
         <span class="bar"></span>
     {/if}
@@ -93,6 +93,11 @@
        unpinned one are the same size and a list of them does not jump. */
     .card.pinned {
         box-shadow: inset 0 0 0 2px var(--accent);
+    }
+
+    :global(.card[data-cursor]) {
+        outline: 2px solid var(--accent);
+        outline-offset: -3px;
     }
 
     .bar {

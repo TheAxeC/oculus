@@ -44,6 +44,8 @@
         dataView?: string;
         /** A configured bookmark identity, rendered on the button for browser navigation. */
         dataBookmark?: string;
+        /** Marks the project-card control the keyboard cursor activates when its title is plain. */
+        dataCardToggle?: boolean;
     };
 
     let {
@@ -60,7 +62,8 @@
         rail = false,
         stacked = false,
         dataView,
-        dataBookmark
+        dataBookmark,
+        dataCardToggle = false
     }: Props = $props();
 
     const compactGlyph = $derived(compact && glyph !== undefined);
@@ -90,6 +93,7 @@
         aria-label={iconOnly ? label : undefined}
         data-view={dataView}
         data-bookmark={dataBookmark}
+        data-card-toggle={dataCardToggle || undefined}
         {disabled}
         {onclick}
     >

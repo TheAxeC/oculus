@@ -528,6 +528,7 @@
                     glyph={open ? t('cards.collapse_glyph') : t('cards.expand_glyph')}
                     active={open}
                     compact
+                    dataCardToggle
                     onclick={ontoggle}
                 />
             {/if}

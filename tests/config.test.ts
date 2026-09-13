@@ -478,6 +478,27 @@ describe("oculus's own config directory", () => {
         );
     });
 
+    it('configures one lowercase chord on each flyout with a keyboard prefix', () => {
+        const { config } = loadConfig(engineDir());
+        const groups = Object.values(
+            config.nav_groups as Record<
+                string,
+                { label: string; glyph?: string; chord?: string; keys: string[] }[]
+            >
+        ).flat();
+        expect(
+            groups
+                .filter((group) => group.chord !== undefined)
+                .map((group) => [group.label, group.chord])
+        ).toEqual([
+            ['Sessions', 'm'],
+            ['Academic life', 'c']
+        ]);
+        for (const group of groups) {
+            if (group.chord !== undefined) expect(group.chord).toMatch(/^[a-z]$/);
+        }
+    });
+
     it('names a registered view or a reserved id in every key of every rail group', () => {
         const { config } = loadConfig(engineDir());
         registerCollections(collectionKeys(config));

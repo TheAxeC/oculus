@@ -8,6 +8,7 @@
 // in tests/ui/theme.test.ts, the drag store is tests/state/drag.test.ts, and the drag itself is
 // checked in a browser. The insertion mark below is rendered from a prop, not from a pointer.
 
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import DropLayer from '../../src/lib/shell/DropLayer.svelte';
@@ -118,6 +119,14 @@ describe('the workbench', () => {
     it('draws one rail button per registered view', () => {
         const rail = [...docked.matchAll(/data-view="([^"]*)"/g)].map((match) => match[1]);
         expect(rail).toEqual(['alpha', 'beta']);
+    });
+
+    it('includes the catalog-backed keyboard sheet in the workbench markup', () => {
+        const source = readFileSync('src/lib/shell/Workbench.svelte', 'utf8');
+        expect(source).toContain("title={t('js.keys.title')}");
+        expect(source).toContain("hint={t('js.keys.hint')}");
+        expect(source).toContain("rows={t('js.keys.rows')}");
+        expect(source).toContain('<KeySheet');
     });
 
     // Four strips, not three: the page strip over the whole area is drawn with the same primitive,

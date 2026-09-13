@@ -6,16 +6,16 @@
 # ===========================================================================
 
 
-# The rail's groups: each group = { label, keys, glyph? } is drawn as a heading over the views it names, in the order listed here; a view no group names trails at the end, and a group naming no registered view is not drawn. A key is a view id; the ids under "Academic life", "Sources" and "Personal" are views a later step registers. Each view button draws its label under its glyph. A group holding more than four registered views is drawn instead as one labelled button with the list beside it. `glyph` is a name in glyphs.yml and is what that one button carries; a group drawn that way without one carries its first view's glyph.
+# The rail's groups: each group = { label, keys, glyph?, chord? } is drawn as a heading over the views it names, in the order listed here; a view no group names trails at the end, and a group naming no registered view is not drawn. A key is a view id; the ids under "Academic life", "Sources" and "Personal" are views a later step registers. Each view button draws its label under its glyph. A group holding more than four registered views is drawn instead as one labelled button with the list beside it. `glyph` is a name in glyphs.yml and is what that one button carries; a group drawn that way without one carries its first view's glyph. `chord` is its optional one-letter keyboard prefix.
 nav_groups:
   boards:
     - { label: "Boards",        keys: [focus, projects, coauthor, archive] }
   structure:
     - { label: "Pillars",       glyph: program, keys: [programs, domains, map] }   # eight letters fit the rail; the pillars, their domains and the map of both
   sessions:
-    - { label: "Sessions",      glyph: chat,  keys: [session-list, session-detail, terminal, transcript, timeline, changes, agents] }
+    - { label: "Sessions",      glyph: chat,  chord: m, keys: [session-list, session-detail, terminal, transcript, timeline, changes, agents] }
   collections:
-    - { label: "Academic life", glyph: scout, keys: [funding, events, education, applications, collaborations, tasks] }
+    - { label: "Academic life", glyph: scout, chord: c, keys: [funding, events, education, applications, collaborations, tasks] }
     - { label: "Sources",       keys: [venues, data, code, statements] }
   feeds:
     - { label: "Feeds",         glyph: scout, keys: [radar, leads, inbox, linkedin] }

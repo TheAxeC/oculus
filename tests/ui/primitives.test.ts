@@ -15,6 +15,7 @@ import Card from '../../src/lib/ui/Card.svelte';
 import Chip from '../../src/lib/ui/Chip.svelte';
 import Confirm from '../../src/lib/ui/Confirm.svelte';
 import Empty from '../../src/lib/ui/Empty.svelte';
+import KeySheet, { sheetRows } from '../../src/lib/ui/KeySheet.svelte';
 import Meter from '../../src/lib/ui/Meter.svelte';
 import { menuPlacement } from '../../src/lib/ui/Menu.svelte';
 import Pane from '../../src/lib/ui/Pane.svelte';
@@ -95,6 +96,10 @@ describe('Card', () => {
 
     it('marks a pinned card', () => {
         expect(html(Card, { title: 'Alpha', pinned: true })).toContain('pinned');
+    });
+
+    it('marks every card for the shell cursor', () => {
+        expect(html(Card, { title: 'Alpha' })).toContain('data-card');
     });
 
     it('renders plain, HTML and clickable HTML title shapes', () => {
@@ -246,6 +251,10 @@ describe('Pane, Empty, Toolbar, ToolButton, Segment and Search', () => {
         expect(html(Pane, { title: 'Gallery' })).toContain('Gallery');
     });
 
+    it('marks the view body as the keyboard scroll region', () => {
+        expect(html(Pane, { title: 'Gallery' })).toMatch(/<div class="body[^"']*" data-scroll/);
+    });
+
     it('shows an empty state its message and its glyph', () => {
         const body = html(Empty, { message: 'Nothing here.', glyph: 'circle_empty' });
         expect(body).toContain('Nothing here.');
@@ -315,8 +324,33 @@ describe('Pane, Empty, Toolbar, ToolButton, Segment and Search', () => {
     it('is a search box named by its placeholder', () => {
         const body = html(Search, { value: 'bt', placeholder: 'Filter', oninput: () => {} });
         expect(body).toContain('type="search"');
+        expect(body).toContain('data-search');
         expect(body).toContain('aria-label="Filter"');
         expect(body).toContain('value="bt"');
+    });
+});
+
+describe('KeySheet', () => {
+    it('splits catalog rows on the row and column separators', () => {
+        expect(sheetRows('1-9 | switch tab;;g g | top | smooth')).toEqual([
+            { key: '1-9', meaning: 'switch tab' },
+            { key: 'g g', meaning: 'top' }
+        ]);
+    });
+
+    it('draws its heading, hint, and one row per shortcut', () => {
+        const body = html(KeySheet, {
+            title: 'Keyboard',
+            hint: 'Press ? to close',
+            rows: '1-9 | switch tab;;g g | top',
+            onclose: () => undefined
+        });
+        expect(body).toContain('role="dialog"');
+        expect(body).toContain('Keyboard');
+        expect(body).toContain('Press ? to close');
+        expect([...body.matchAll(/<kbd\b/g)]).toHaveLength(2);
+        expect(body).toContain('1-9');
+        expect(body).toContain('switch tab');
     });
 });
 

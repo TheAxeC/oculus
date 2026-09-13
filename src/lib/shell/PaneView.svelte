@@ -191,7 +191,13 @@
     }
 </script>
 
-<div class="pane">
+<div
+    class="pane"
+    data-pane
+    data-pane-target={target}
+    data-pane-active={active}
+    data-pane-view={shown?.view}
+>
     <Tabs
         {tabs}
         {active}
@@ -205,7 +211,13 @@
     <!-- svelte-ignore a11y_no_static_element_interactions the body is where a view is mounted, and
          the two pointer handlers only report where a drop would land while a drag is in progress.
          Every drop they report has an item in the pane menu, which is the keyboard path. -->
-    <div class="body" bind:this={body} onpointermove={bodyHover} onpointerleave={bodyLeave}>
+    <div
+        class="body"
+        data-pane-body
+        bind:this={body}
+        onpointermove={bodyHover}
+        onpointerleave={bodyLeave}
+    >
         {#if shown !== undefined && registration !== undefined}
             {@const View = registration.component}
             <View instance={shown} />
