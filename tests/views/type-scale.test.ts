@@ -77,7 +77,7 @@ const VIEWS: Record<string, string> = {
     'hpc/Jobs.svelte': 'table=fs-sm',
     'hpc/Log.svelte': 'header=fs-sm | pre=fs-xs',
     'hpc/Quota.svelte': '.quota=fs-sm | h3=fs-sm',
-    'hpc/Recent.svelte': 'details :global(table)=fs-sm',
+    'hpc/Recent.svelte': 'summary=fs-sm | details :global(table)=fs-sm',
     'inbox/InboxCard.svelte': '.age=fs-sm | .sub=fs-md',
     'leads/LeadCard.svelte': '.deadline=fs-sm | .sub=fs-md',
     'linkedin/PostCard.svelte': '.date=fs-sm',

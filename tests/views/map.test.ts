@@ -3,7 +3,7 @@
 import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import MapView from '../../src/lib/views/Map.svelte';
-import Graph from '../../src/lib/views/map/Graph.svelte';
+import Graph, { writeRelated } from '../../src/lib/views/map/Graph.svelte';
 import { buildGraph } from '../../src/lib/state/graph.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout.ts';
@@ -58,6 +58,17 @@ function edgeTag(body: string, id: string): string {
 }
 
 describe('the Map view', () => {
+    it('draws the catalogued edge failure when the manifest write refuses related', async () => {
+        const write = async () => ({
+            ok: true,
+            changed: [],
+            refused: [{ field: 'related', reason: 'fixture refusal' }]
+        });
+        await expect(writeRelated('alpha', ['beta'], write)).resolves.toBe(
+            catalog['js.map.edge_failed'].replace('{0}', 'related: fixture refusal')
+        );
+    });
+
     it('draws the head, legend, tools, archived toggle and visible SVG graph', () => {
         const body = html();
         expect(body).toContain(catalog['map.head']);

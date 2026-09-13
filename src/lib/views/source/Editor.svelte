@@ -15,10 +15,10 @@
         message?: string;
         oninput: (value: string) => void;
         onsave: () => void;
-        oncancel: () => void;
+        onrevert: () => void;
     };
 
-    let { path, text, editable, message = '', oninput, onsave, oncancel }: Props = $props();
+    let { path, text, editable, message = '', oninput, onsave, onrevert }: Props = $props();
     let mirror: HTMLPreElement | undefined = $state(undefined);
 
     const painted = $derived(highlight(text, languageFor(path)));
@@ -35,7 +35,11 @@
         {#if editable}
             <ToolButton label={t('editor.save')} glyph="check" onclick={onsave} />
         {/if}
-        <ToolButton label={t('js.common.cancel')} onclick={oncancel} />
+        <ToolButton
+            label={t('editor.revert')}
+            glyph={t('editor.revert_glyph')}
+            onclick={onrevert}
+        />
         {#if message !== ''}
             <span class="message" aria-live="polite">{message}</span>
         {/if}

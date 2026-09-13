@@ -3,6 +3,7 @@
 import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import Programs from '../../src/lib/views/Programs.svelte';
+import LineCard from '../../src/lib/views/programs/LineCard.svelte';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
@@ -91,21 +92,49 @@ describe('the Programs view', () => {
         expect(card(body, 'outside')).not.toContain('class="metrics ');
     });
 
-    it('breaks a type tie by configured type order regardless of member order', () => {
+    it('uses the registry color regardless of member order or project type', () => {
         const activeFirst = card(html(withPillarTypes(['active', 'manuscript'])), 'pillar');
         const manuscriptFirst = card(html(withPillarTypes(['manuscript', 'active'])), 'pillar');
         expect(activeFirst).toContain('--tone: var(--c-orange)');
         expect(manuscriptFirst).toContain('--tone: var(--c-orange)');
-    });
-
-    it('uses the majority project type as the pillar tone', () => {
         const body = html(withPillarTypes(['active', 'manuscript', 'manuscript']));
-        expect(card(body, 'pillar')).toContain('--tone: var(--c-teal)');
+        expect(card(body, 'pillar')).toContain('--tone: var(--c-orange)');
     });
 
-    it('uses grey for a dormant pillar', () => {
+    it('draws a plain card when the registry entry has no color, including when dormant', () => {
         const body = html(withPillarTypes(['published']));
-        expect(card(body, 'pillar')).toContain('--tone: var(--c-grey)');
+        expect(card(body, 'dormant')).not.toContain('--tone:');
+    });
+
+    it('draws a plain pillar card for an off-palette hex', () => {
+        const snapshot = fixture();
+        snapshot.entities.programs.pillar.color = '#123456';
+        const body = card(html(snapshot), 'pillar');
+        const article = body.match(/<article\b[^>]*>/)?.[0];
+        expect(article).toBeDefined();
+        expect(article).not.toContain('--tone:');
+    });
+
+    it('draws the Colour field and saved value in the Programs edit form', () => {
+        const snapshot = fixture();
+        install(snapshot);
+        const collection = snapshot.entities.collections.programs;
+        const body = render(LineCard, {
+            props: {
+                line: snapshot.entities.programs.pillar,
+                projects: [],
+                venues: [],
+                tiers: [],
+                entry: collection.entries.find((entry) => entry.id === 'pillar')!,
+                schema: collection.schema,
+                editing: true,
+                onedit: () => {},
+                onsaid: () => {}
+            }
+        }).body;
+        expect(body).toContain('data-form="edit"');
+        expect(body).toMatch(/<input[^>]*value="#ea580c"[^>]*aria-label="Colour"/);
+        expect(body).toContain("hex colour of the pillar's card");
     });
 
     it('draws the clean card when every real project names a known line', () => {

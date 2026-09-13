@@ -175,7 +175,9 @@
                     {/each}
                 {/if}
                 {#if count === 0}
-                    <p class="empty">{t('app.palette_empty')}</p>
+                    <p class="empty">
+                        {parsed === null ? t('app.palette_empty') : t('js.leads.cmd_unknown')}
+                    </p>
                 {/if}
             </div>
         </div>

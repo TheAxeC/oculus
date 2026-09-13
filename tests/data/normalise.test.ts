@@ -163,7 +163,9 @@ function portfolio(): RawPortfolio {
                     themes: ['ecg']
                 }
             ]),
-            programs: entries('programs', [{ key: 'federated', title: 'Federated learning' }]),
+            programs: entries('programs', [
+                { key: 'federated', title: 'Federated learning', color: '#2563eb' }
+            ]),
             domains: entries('domains', [{ key: 'heart', title: 'Cardiology' }]),
             funding: entries('funding', [
                 { key: 'FAIR', title: 'Flanders AI', tags: ['flanders'] },
@@ -488,6 +490,10 @@ describe("normalise, a collection's schema", () => {
 });
 
 describe('normalise, the relations', () => {
+    it('carries a program registry color into the entity', () => {
+        expect(snapshot.entities.programs.federated.color).toBe('#2563eb');
+    });
+
     it('writes one table per relation, sorted by the pair', () => {
         expect(snapshot.relations).toEqual({
             projectVenue: [['alpha', 'bspc']],

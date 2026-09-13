@@ -185,6 +185,7 @@
                  the theme menu at the foot does, since `compact` is what fixes it beside the rail. -->
             {#if label !== null && section.items.length > GROUP_MAX}
                 <div class="flyout" data-group={label}>
+                    <p class="group">{label}</p>
                     <Menu
                         {label}
                         glyph={groupGlyph(section)}
@@ -301,8 +302,9 @@
             onclick={() => setTextScale(null)}
         />
         <ToolButton
-            label={t('ui.crt')}
-            glyph="darkmode"
+            label={t('ui.crt_on')}
+            title={t('ui.crt_title')}
+            glyph="crt"
             active={crt()}
             pressed={crt()}
             compact
@@ -311,8 +313,9 @@
         />
         {#if offersWallpaper}
             <ToolButton
-                label={t('ui.wallpaper_title')}
-                glyph="memories"
+                label={t('ui.wallpaper')}
+                title={t('ui.wallpaper_title')}
+                glyph="wallpaper"
                 active={wallpaper()}
                 pressed={wallpaper()}
                 compact
@@ -321,8 +324,9 @@
             />
         {/if}
         <ToolButton
-            label={t('ui.unicode_title')}
-            glyph="code"
+            label={t('ui.unicode')}
+            title={t('ui.unicode_title')}
+            glyph="unicode"
             active={unicode()}
             pressed={unicode()}
             compact

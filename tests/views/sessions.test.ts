@@ -752,14 +752,13 @@ describe('a terminal in the payload', () => {
         return result;
     }
 
-    it('draws the mount point and the composer when it is the selection', () => {
+    it('draws the terminal grid without a composer when it is the selection', () => {
         const body = withTerminals(() => {
             select(pane.id);
             return html(Terminal);
         });
         expect(body).toContain(`data-terminal="${pane.id}"`);
-        expect(body).toContain(catalog['sessions.send']);
-        expect(body).toContain(catalog['sessions.compose']);
+        expect(body).not.toContain('textarea');
         select(null);
     });
 

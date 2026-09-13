@@ -89,10 +89,15 @@ export function setVocab(config: Record<string, unknown>): void {
  * since a tone must name a `--c-<tone>` the stylesheets define.
  */
 export function toneOf(hex: string): string {
+    return paletteTone(hex) ?? UNKNOWN_TONE;
+}
+
+/** A palette hue, or undefined when the value has no usable palette token. */
+export function paletteTone(hex: string): string | undefined {
     const token = palette[String(hex).trim().toLowerCase()];
-    if (token === undefined || !token.startsWith('c-')) return UNKNOWN_TONE;
+    if (token === undefined || !token.startsWith('c-')) return undefined;
     const tone = token.slice('c-'.length);
-    return TONE.test(tone) ? tone : UNKNOWN_TONE;
+    return TONE.test(tone) ? tone : undefined;
 }
 
 /** The dataset access colour from `data_access`, with an unknown value kept neutral. */

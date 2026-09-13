@@ -12,7 +12,6 @@ import { render } from 'svelte/server';
 import { createRawSnippet } from 'svelte';
 import type { Component } from 'svelte';
 import Card from '../../src/lib/ui/Card.svelte';
-import Composer from '../../src/lib/ui/Composer.svelte';
 import Chip from '../../src/lib/ui/Chip.svelte';
 import Confirm from '../../src/lib/ui/Confirm.svelte';
 import Empty from '../../src/lib/ui/Empty.svelte';
@@ -461,32 +460,5 @@ describe('Confirm', () => {
         const body = html(Confirm, { ...props, detail: '' });
         expect(body).not.toContain('There is no undo.');
         expect(body).toContain('Throw the change away?');
-    });
-});
-
-describe('Composer', () => {
-    it('draws the box and the send control with the words it was given', () => {
-        const body = html(Composer, {
-            label: 'Write to this terminal',
-            send: 'Send',
-            onsend: () => undefined
-        });
-        expect(body).toContain('aria-label="Write to this terminal"');
-        expect(body).toContain('Send');
-    });
-
-    it('offers the routes it was given and none when there are none', () => {
-        const routed = html(Composer, {
-            label: 'Write',
-            send: 'Send',
-            onsend: () => undefined,
-            routes: [{ id: 'a1b2c3-shell', label: 'a shell' }],
-            routeLabel: 'Send to another terminal instead',
-            onroute: () => undefined
-        });
-        expect(routed).toContain('Send to another terminal instead');
-
-        const alone = html(Composer, { label: 'Write', send: 'Send', onsend: () => undefined });
-        expect(alone).not.toContain('Send to another terminal instead');
     });
 });

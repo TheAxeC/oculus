@@ -349,6 +349,7 @@ export type Dataset = {
 export type Program = {
     id: Id;
     title: string;
+    color?: string;
     kind?: string;
     goal?: string;
     blurb?: string;

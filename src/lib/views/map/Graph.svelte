@@ -1,3 +1,26 @@
+<script module lang="ts">
+    // Layer 3, Map partial. The edge writer turns the endpoint answer into the map's status text.
+
+    import { t as catalogText } from '$lib/state/text';
+    import type { WriteAnswer } from '$lib/state/writes.svelte';
+
+    type ManifestWriter = (id: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
+
+    /** Write one related list and return no status on success or the catalogued refusal on failure. */
+    export async function writeRelated(
+        id: string,
+        related: string[],
+        write: ManifestWriter
+    ): Promise<string> {
+        const answer = await write(id, { related });
+        if (answer.ok && answer.refused.length === 0) return '';
+        const reason =
+            answer.error ??
+            answer.refused.map((item) => `${item.field}: ${item.reason}`).join('; ');
+        return catalogText('js.map.edge_failed', reason);
+    }
+</script>
+
 <script lang="ts">
     // Layer 3, Map partial. The hand-drawn SVG graph and its drag, pan, zoom, open and related-edge
     // interactions. Geometry comes from the pure seeded layout in state/graph.ts.
@@ -62,6 +85,7 @@
     let drag: PointNode | null = null;
     let linkSource: PointNode | null = $state(null);
     let linkTarget: PointNode | null = $state(null);
+    let status = $state('');
     let moved = false;
     let start = { x: 0, y: 0 };
     let pointer = $state({ x: 0, y: 0 });
@@ -196,7 +220,7 @@
         const related = project.relatedIds.includes(target.entityId)
             ? project.relatedIds.filter((id) => id !== target.entityId)
             : [...project.relatedIds, target.entityId];
-        await writeManifest(source.entityId, { related });
+        status = await writeRelated(source.entityId, related, writeManifest);
     }
 
     function open(node: PointNode): void {
@@ -263,6 +287,9 @@
 </script>
 
 <div class="graph-wrap">
+    {#if status !== ''}
+        <p class="status" role="status">{status}</p>
+    {/if}
     <svg
         bind:this={svg}
         viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
@@ -367,12 +394,26 @@
 
 <style>
     .graph-wrap {
+        position: relative;
         min-height: 420px;
         height: calc(100% - 78px);
         border: 1px solid var(--line);
         border-radius: var(--radius);
         background: var(--panel);
         overflow: hidden;
+    }
+
+    .status {
+        position: absolute;
+        z-index: 1;
+        top: 8px;
+        left: 8px;
+        margin: 0;
+        padding: 4px 8px;
+        color: var(--c-red-d-txt);
+        background: var(--panel);
+        border: 1px solid var(--c-red);
+        border-radius: var(--radius-sm);
     }
 
     svg {

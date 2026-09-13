@@ -1,5 +1,6 @@
 // The Position Leads view rendered over a received feed with live, expired, undated, and run-log rows.
 
+import { readFileSync } from 'node:fs';
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Leads from '../../src/lib/views/Leads.svelte';
@@ -26,16 +27,21 @@ setGlyphs(glyphs);
 receive({ channel: 'config', version: 401, payload: { config, text: catalog, findings: [] } });
 
 const schema = [
-    { field: 'title', type: 'text' },
-    { field: 'inst', type: 'text' },
-    { field: 'country', type: 'text' },
-    { field: 'typ', type: 'text' },
-    { field: 'focus', type: 'textarea' },
-    { field: 'fit', type: 'textarea' },
-    { field: 'status', type: 'select', options: ['open', 'applied', 'declined'] },
-    { field: 'date', type: 'date' },
-    { field: 'deadline', type: 'text' },
-    { field: 'url', type: 'text' }
+    { field: 'title', type: 'text', label: 'Title' },
+    { field: 'inst', type: 'text', label: 'Institution' },
+    { field: 'country', type: 'text', label: 'Country' },
+    { field: 'typ', type: 'text', label: 'Type' },
+    { field: 'focus', type: 'textarea', label: 'Focus' },
+    { field: 'fit', type: 'textarea', label: 'Fit' },
+    {
+        field: 'status',
+        type: 'select',
+        options: ['open', 'applied', 'declined'],
+        label: 'Status'
+    },
+    { field: 'date', type: 'date', label: 'Date' },
+    { field: 'deadline', type: 'text', label: 'Deadline' },
+    { field: 'url', type: 'text', label: 'URL' }
 ];
 
 const entries = [
@@ -119,6 +125,13 @@ function hasAction(body: string, label: string): boolean {
     return buttons.some((button) => button.includes(`>${label}</span>`));
 }
 
+function expectHideControl(body: string, label: string): void {
+    const start = body.indexOf(`aria-label="${label}"`);
+    expect(start).toBeGreaterThanOrEqual(0);
+    const tooltip = body.slice(start).match(/<span\b[^>]*role="tooltip"[^>]*>([^<]*)<\/span>/);
+    expect(tooltip?.[1]).toBe(label);
+}
+
 let feedVersion = 0;
 
 function serve(body: Record<string, unknown>, _status = 200): void {
@@ -129,6 +142,16 @@ beforeEach(() => loadUi({ getItem: () => null, setItem: () => {} }));
 afterEach(() => vi.unstubAllGlobals());
 
 describe('the Position Leads view', () => {
+    it('passes both hide states through the control title prop', () => {
+        const source = readFileSync(
+            new URL('../../src/lib/views/leads/LeadCard.svelte', import.meta.url),
+            'utf8'
+        );
+        expect(source).toContain(
+            "title={dismissed ? t('actions.show_lead') : t('actions.hide_lead')}"
+        );
+    });
+
     it('hides dismissed cards, shows their count, and restores their card action under the toggle', () => {
         const dismissed = entries[0];
         setLeadDismissed(leadId(dismissed), true);
@@ -151,7 +174,7 @@ describe('the Position Leads view', () => {
         }).body;
         expect(shown).toContain('data-lead="**Strong** role"');
         expect(shown).toContain(catalog['js.leads.hide_dismissed'].replace('{0}', '2'));
-        expect(card(shown, '**Strong** role')).toContain(catalog['actions.reopen']);
+        expectHideControl(card(shown, '**Strong** role'), catalog['actions.show_lead']);
     });
 
     it('keeps the live grid without the no-live message when every live card is dismissed', () => {
@@ -244,6 +267,7 @@ describe('the Position Leads view', () => {
         expect(hasAction(open, catalog['actions.applied'])).toBe(true);
         expect(hasAction(open, catalog['actions.decline'])).toBe(true);
         expect(hasAction(open, catalog['actions.reopen'])).toBe(false);
+        expectHideControl(open, catalog['actions.hide_lead']);
         expect(hasAction(open, catalog['actions.del'])).toBe(true);
         expect(open).toContain(String(glyphs.deadline));
         expect(open).toContain('>Belgium</span>');
@@ -289,7 +313,7 @@ describe('the Position Leads view', () => {
         const body = render(Leads, {
             props: { instance: instance('leads-add', false, false, '', true) }
         }).body;
-        const positions = schema.map((field) => body.indexOf(`aria-label="${field.field}"`));
+        const positions = schema.map((field) => body.indexOf(`aria-label="${field.label}"`));
         expect(positions.every((at) => at >= 0)).toBe(true);
         expect(positions).toEqual([...positions].sort((left, right) => left - right));
     });

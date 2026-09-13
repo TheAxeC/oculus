@@ -1,8 +1,6 @@
 <script lang="ts">
-    // Layer 3, view. One terminal pane: xterm.js over the `pty:` channel of O17, the composer under
-    // it, and the control that starts one when nothing is selected. DESIGN.md's migration order puts
-    // this at step 6, and its "PTY" is what the two halves do: the grid is the pane's own bytes, and
-    // the composer is how a prompt is given to an agent, including to an agent in another pane.
+    // Layer 3, view. One terminal pane: xterm.js over the `pty:` channel of O17 and the control that
+    // starts one when nothing is selected. The grid takes keyboard input and carries its own bytes.
     //
     // xterm.js is loaded inside the effect rather than at the top of the module: it needs a DOM, and
     // this view renders on the server like every other. The effect runs in the browser alone, so the
@@ -13,7 +11,6 @@
     // API. This is the one file in the application that reads a computed token.
 
     import '@xterm/xterm/css/xterm.css';
-    import Composer from '$lib/ui/Composer.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Segment from '$lib/ui/Segment.svelte';
@@ -31,7 +28,6 @@
         startTerminal,
         subscribePty,
         terminalById,
-        terminals,
         titleStripper,
         unsubscribePty,
         type TerminalKind
@@ -40,7 +36,6 @@
     import { setTerminalFont, terminalFont, textScale, theme } from '$lib/state/ui.svelte';
     import { scheduleReflow } from './reflow';
     import { untrack } from 'svelte';
-    import type { MenuItem } from '$lib/ui/Menu.svelte';
     import type { ViewProps } from '$lib/views/registry';
     import type { ITheme, Terminal as Grid } from '@xterm/xterm';
 
@@ -112,13 +107,6 @@
             .map((key) => ({ id: key, label: key }))
     );
 
-    /** The other terminals the composer may route to. One in the payload is a live tmux session. */
-    const routes: MenuItem[] = $derived(
-        terminals()
-            .filter((one) => one.id !== id)
-            .map((one) => ({ id: one.id, label: one.name }))
-    );
-
     const kinds = $derived([
         { id: 'claude', label: t('sessions.kind_claude'), glyph: t('sessions.kind_claude_glyph') },
         { id: 'codex', label: t('sessions.kind_codex'), glyph: t('sessions.kind_codex_glyph') },
@@ -177,16 +165,6 @@
                 : await startTerminal(kind, chosen, size.cols, size.rows);
         failure = answer.error;
         if (answer.ok && answer.id !== '') select(answer.id);
-    }
-
-    /** What the composer sends goes to this pane's terminal, and Enter with it. */
-    function sendHere(text: string): void {
-        if (id !== null) sendInput(id, `${text}\r`);
-    }
-
-    /** What the composer routed goes to another terminal, which is DESIGN.md's human routing. */
-    function sendThere(to: string, text: string): void {
-        sendInput(to, `${text}\r`);
     }
 
     // One effect for one mounted grid: it is torn down and built again when the terminal changes,
@@ -346,14 +324,6 @@
             </div>
         {:else}
             <div class="grid" bind:this={body} data-terminal={id}></div>
-            <Composer
-                label={t('sessions.compose')}
-                send={t('sessions.send')}
-                routeLabel={t('sessions.route_to')}
-                {routes}
-                onsend={sendHere}
-                onroute={sendThere}
-            />
         {/if}
     </div>
 </Pane>

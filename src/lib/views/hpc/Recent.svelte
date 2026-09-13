@@ -29,7 +29,8 @@
 </script>
 
 {#snippet cell(row: Record<string, unknown>, column: Column)}
-    {#if column.key === 'state'}<Chip
+    {#if column.key === 'state'}
+        <Chip
             label={String(row.state)}
             tone={String(row.state) === 'COMPLETED'
                 ? 'green'
@@ -37,7 +38,8 @@
                   ? 'slate'
                   : 'red'}
         />
-    {:else if column.key === 'mem'}<Chip
+    {:else if column.key === 'mem'}
+        <Chip
             label={row.memPct === null
                 ? t('hpc.none')
                 : t(
@@ -48,26 +50,28 @@
                   )}
             tone={efficiencyTone(row.memPct as number | null)}
         />
-    {:else if column.key === 'cpu'}<Chip
+    {:else if column.key === 'cpu'}
+        <Chip
             label={row.cpuPct === null ? t('hpc.none') : t('hpc.percent', Number(row.cpuPct))}
             tone={efficiencyTone(row.cpuPct as number | null)}
         />
-    {:else if column.key === 'actions'}<ToolButton
-            label={t('js.slurm.log')}
-            onclick={() => onlog(String(row.id))}
-        />
-    {:else}{String(row[column.key] ?? '')}{/if}
+    {:else if column.key === 'actions'}
+        <ToolButton label={t('js.slurm.log')} onclick={() => onlog(String(row.id))} />
+    {:else}
+        {String(row[column.key] ?? '')}
+    {/if}
 {/snippet}
-{#if rows.length}<details>
-        <summary>{t('js.slurm.recent_summary', rows.length)}</summary><Table
-            {columns}
-            rows={tableRows}
-            rowKey="id"
-            {cell}
-        />
-    </details>{/if}
+{#if rows.length}
+    <details>
+        <summary>{t('js.slurm.recent_summary', rows.length)}</summary>
+        <Table {columns} rows={tableRows} rowKey="id" {cell} />
+    </details>
+{/if}
 
 <style>
+    summary {
+        font-size: var(--fs-sm);
+    }
     details :global(table) {
         font-size: var(--fs-sm);
     }

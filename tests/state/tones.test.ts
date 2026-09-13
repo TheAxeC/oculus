@@ -15,6 +15,7 @@ import {
     statusTone,
     domainTone,
     toneOf,
+    paletteTone,
     typeTone
 } from '../../src/lib/state/tones.ts';
 
@@ -69,6 +70,27 @@ describe('toneOf', () => {
     it('gives the unknown tone for a token no custom property could be named after', () => {
         synthetic();
         expect(toneOf('#123456')).toBe(UNKNOWN_TONE);
+    });
+});
+
+describe('paletteTone', () => {
+    it('resolves palette hues with case and whitespace normalization', () => {
+        synthetic();
+        expect(paletteTone('  #7C5CFF  ')).toBe('violet');
+        expect(paletteTone('#0d9488')).toBe('teal');
+    });
+
+    it('leaves absent hexes and unusable tokens without a tone', () => {
+        synthetic();
+        expect(paletteTone('#abcdef')).toBeUndefined();
+        expect(paletteTone('#64748b')).toBeUndefined();
+        expect(paletteTone('#123456')).toBeUndefined();
+        expect(paletteTone('')).toBeUndefined();
+    });
+
+    it('preserves an explicitly configured grey hue', () => {
+        setVocab({ palette: { '#123456': 'c-grey' } });
+        expect(paletteTone('#123456')).toBe('grey');
     });
 });
 

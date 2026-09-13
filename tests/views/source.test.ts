@@ -8,7 +8,7 @@ import Source from '../../src/lib/views/Source.svelte';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { loadUi, instanceState } from '../../src/lib/state/ui.svelte.ts';
 import {
-    cancelSourceDraft,
+    revertSourceDraft,
     editSourceDraft,
     loadSourceDraft,
     saveSourceDraft,
@@ -32,7 +32,7 @@ receive({ channel: 'config', version: 1, payload: { config, text: catalog, findi
 beforeEach(() => loadUi({ getItem: () => null, setItem: () => {} }));
 afterEach(() => vi.unstubAllGlobals());
 
-const actions = { oninput: () => {}, onsave: () => {}, oncancel: () => {} };
+const actions = { oninput: () => {}, onsave: () => {}, onrevert: () => {} };
 
 describe('the source editor', () => {
     it('restores the working and saved copies when Source is rendered again after another tab', async () => {
@@ -62,7 +62,7 @@ describe('the source editor', () => {
             saved: 'saved original'
         });
         expect(fetcher).toHaveBeenCalledTimes(2);
-        cancelSourceDraft(instance.id);
+        revertSourceDraft(instance.id);
         expect(render(Source, { props: { instance } }).body).toContain('saved original');
     });
 
@@ -95,7 +95,7 @@ describe('the source editor', () => {
         expect(body).not.toContain(`>${catalog['editor.save']}</span>`);
     });
 
-    it('draws the highlight mirror, editable textarea, Save, Cancel, and saved word', () => {
+    it('draws the highlight mirror, editable textarea, Save, Revert, and saved word', () => {
         const { body } = render(Editor, {
             props: {
                 path: 'notes.yml',
@@ -109,7 +109,8 @@ describe('the source editor', () => {
         expect(body).toContain('source-key');
         expect(body).toContain('&lt; B');
         expect(body).toContain(`>${catalog['editor.save']}</span>`);
-        expect(body).toContain(`>${catalog['js.common.cancel']}</span>`);
+        expect(body).toContain(`>${catalog['editor.revert']}</span>`);
+        expect(body).toContain(glyphCatalog(config)[catalog['editor.revert_glyph']]);
         expect(body).toContain(catalog['js.filters.saved']);
         expect(body).not.toContain('readonly');
     });
@@ -125,6 +126,6 @@ describe('the source editor', () => {
         });
         expect(body).toContain('readonly');
         expect(body).not.toContain(`>${catalog['editor.save']}</span>`);
-        expect(body).toContain(`>${catalog['js.common.cancel']}</span>`);
+        expect(body).toContain(`>${catalog['editor.revert']}</span>`);
     });
 });

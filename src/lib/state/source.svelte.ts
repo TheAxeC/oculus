@@ -77,8 +77,8 @@ export function editSourceDraft(id: string, text: string): void {
     updateDraft(id, { text, message: '' });
 }
 
-/** Cancel restores the last saved copy without closing the tab. */
-export function cancelSourceDraft(id: string): void {
+/** Revert restores the last saved copy without closing the tab. */
+export function revertSourceDraft(id: string): void {
     updateDraft(id, { text: sourceDraft(id).saved, message: '' });
 }
 

@@ -68,6 +68,7 @@ const programs: Program[] = [
     {
         id: 'pillar',
         title: 'Pillar **One**',
+        color: '#ea580c',
         goal: 'A **goal**.',
         blurb: 'Pillar blurb.',
         fundingIds: [],
@@ -116,6 +117,7 @@ const programEntries = programs.map((line, index) =>
         line.id,
         {
             title: line.title,
+            color: line.color ?? '',
             kind: line.kind ?? 'pillar',
             goal: line.goal ?? '',
             funding: line.id === 'pillar' ? 'Funded by **Tests**.' : '',
@@ -137,6 +139,16 @@ function collection(id: string, file: string, entries: Entry[]): Collection {
         schema: [
             { field: 'key', type: 'text', required: true },
             { field: 'title', type: 'text', required: true },
+            ...(id === 'programs'
+                ? [
+                      {
+                          field: 'color',
+                          type: 'text',
+                          label: 'Colour',
+                          help: "hex colour of the pillar's card"
+                      }
+                  ]
+                : []),
             { field: 'blurb', type: 'textarea' }
         ],
         entries

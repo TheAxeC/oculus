@@ -11,7 +11,7 @@
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import DropLayer from '../../src/lib/shell/DropLayer.svelte';
-import Workbench from '../../src/lib/shell/Workbench.svelte';
+import Workbench, { activeLabel, windowTitle } from '../../src/lib/shell/Workbench.svelte';
 import Tabs, {
     horizontalWheelDelta,
     insertionIndex,
@@ -87,6 +87,34 @@ function html(dock: Dock, groups: { label: string; keys: string[] }[] = []): str
 const docked = html('right');
 
 describe('the workbench', () => {
+    it('uses the instance label for the active main tab title', () => {
+        const label = activeLabel({
+            id: 'pinned',
+            view: 'alpha',
+            state: { label: 'Pinned session' }
+        });
+        expect(label).toBe('Pinned session');
+        expect(windowTitle(0, label)).toBe('axel@research: ~/Pinned session');
+    });
+
+    it('uses the registered label when the instance has no nonempty label', () => {
+        for (const state of [null, {}, { label: '' }, { label: 3 }]) {
+            expect(activeLabel({ id: 'one', view: 'alpha', state })).toBe('Status');
+        }
+    });
+
+    it('names an unknown view and handles an empty main tree', () => {
+        expect(activeLabel({ id: 'unknown', view: 'from-2027', state: {} })).toBe(
+            'Unknown view: from-2027'
+        );
+        expect(activeLabel(null)).toBe('oculus');
+    });
+
+    it('builds the active main tab title with the configured host and a leading waiting count', () => {
+        expect(windowTitle(0, 'Status')).toBe('axel@research: ~/Status');
+        expect(windowTitle(2, 'Status')).toBe('oculus (2 waiting) | axel@research: ~/Status');
+    });
+
     it('draws one rail button per registered view', () => {
         const rail = [...docked.matchAll(/data-view="([^"]*)"/g)].map((match) => match[1]);
         expect(rail).toEqual(['alpha', 'beta']);

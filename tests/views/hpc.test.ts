@@ -101,6 +101,12 @@ describe('Live HPC view', () => {
         expect(source).toMatch(/\.ok\s*{[^}]*--c-green-d-txt[^}]*font-weight:\s*600/s);
         expect(source).toMatch(/\.bad\s*{[^}]*--c-red-d-txt[^}]*font-weight:\s*600/s);
     });
+    it('lays the disk meters out in responsive columns', () => {
+        const source = readFileSync('src/lib/views/hpc/Quota.svelte', 'utf8');
+        expect(source).toMatch(
+            /\.meters\s*{[^}]*grid-template-columns:\s*repeat\(auto-fill, minmax\(230px, 1fr\)\)/s
+        );
+    });
     it('draws the empty queue words in the header and queue body', () => {
         const body = draw({ ...payload, jobs: [], running: 0, total: 0 }, 3);
         expect(body).toContain('queue empty');

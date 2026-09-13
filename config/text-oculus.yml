@@ -29,7 +29,7 @@ text:
     git: "Workspaces with git state: {0}"
     pane_path: "Pane at {0}"
     tabs: "Tabs: {0}"
-    title_waiting: "oculus ({0} waiting)"
+    title_waiting: "oculus ({0} waiting) | {1}"
     search: "Search"
     search_tip: "Search projects, entries and tabs (Cmd-K or Ctrl-K)"
     update_tip: "Open the update tasks"
@@ -57,11 +57,11 @@ text:
     # the rest of the appearance controls at the foot of the rail. The theme list itself is data
     # rather than strings, and lives in appearance.yml as { name, class, label }.
     title: "Theme: {0} - hover for the picker (light, dark, and the terminal palettes)"
-    crt_on: "▚ crt"
+    crt_on: "crt"
     crt_title: "CRT overlay: scanlines + vignette. Cosmetic only."
-    unicode: "◇ unicode"
+    unicode: "unicode"
     unicode_title: "Keep the real glyphs on a terminal theme instead of their ASCII stand-ins."
-    wallpaper: "▨ wallpaper"
+    wallpaper: "wallpaper"
     wallpaper_title: "Wallpaper behind the panels - and the slight transparency that goes with it"
     accent_title: "Accent colour - used for state (active tab, selection, focus). Same as :accent"
     accent_reset: "back to the theme's own accent"

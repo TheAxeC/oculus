@@ -38,6 +38,7 @@ import {
 import {
     LAYOUT_KEY,
     activateInstance,
+    activeInstance,
     apply,
     change,
     closeInstanceIn,
@@ -668,6 +669,25 @@ describe('checkWorkbench', () => {
 });
 
 describe('the store', () => {
+    it('uses the first pane active tab by default', () => {
+        loadLayout(fakeStorage());
+        apply(bench(split('row', [0.5, 0.5], [pane(['a', 'b'], 'b'), pane(['c'])]), pane([])));
+        expect(activeInstance()).toEqual(instance('b'));
+        expect(activeInstance('panel')).toBeNull();
+    });
+
+    it('follows the most recently activated main pane independently of the panel', () => {
+        loadLayout(fakeStorage());
+        apply(bench(split('row', [0.5, 0.5], [pane(['a', 'b']), pane(['c', 'd'])]), pane(['p'])));
+        activateInstance('main', 'd');
+        expect(activeInstance()).toEqual(instance('d'));
+        activateInstance('panel', 'p');
+        expect(activeInstance()).toEqual(instance('d'));
+        expect(activeInstance('panel')).toEqual(instance('p'));
+        activateInstance('main', 'b');
+        expect(activeInstance()).toEqual(instance('b'));
+    });
+
     it('starts from the default when storage holds nothing, and says so', () => {
         const storage = fakeStorage();
         expect(loadLayout(storage)).toBe(false);

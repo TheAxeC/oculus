@@ -9,7 +9,7 @@
     import Editor from './source/Editor.svelte';
     import { configMap } from '$lib/state/selectors.svelte';
     import {
-        cancelSourceDraft,
+        revertSourceDraft,
         editSourceDraft,
         loadSourceDraft,
         saveSourceDraft,
@@ -64,7 +64,7 @@
                 message={draft.message}
                 oninput={(value) => editSourceDraft(instance.id, value)}
                 onsave={save}
-                oncancel={() => cancelSourceDraft(instance.id)}
+                onrevert={() => revertSourceDraft(instance.id)}
             />
         {/if}
     </div>

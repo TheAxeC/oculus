@@ -321,6 +321,7 @@ function program(entry: RawRegistryEntry): Program {
     return compact({
         id: entry.key,
         title: str(entry.title) ?? '',
+        color: str(entry.color),
         kind: str(entry.kind),
         goal: str(entry.goal),
         blurb: str(entry.blurb),

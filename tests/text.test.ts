@@ -93,6 +93,15 @@ describe('glyph', () => {
         expect(glyph('check')).toBe('+');
     });
 
+    it('holds dedicated glyphs and ASCII stand-ins for the three rail toggles', () => {
+        setGlyphs(GLYPHS);
+        setAscii(ASCII);
+        for (const name of ['crt', 'wallpaper', 'unicode']) {
+            expect(GLYPHS[name]).toBeTypeOf('string');
+            expect(ASCII[GLYPHS[name]]).toBeTypeOf('string');
+        }
+    });
+
     it('draws a character the stand-ins do not hold as it is', () => {
         setGlyphs(GLYPHS);
         setAscii(ASCII);

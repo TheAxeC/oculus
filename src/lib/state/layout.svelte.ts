@@ -115,6 +115,13 @@ export function layout(target: Target = 'main'): Layout {
     return target === 'main' ? current.main : current.panel;
 }
 
+/** The active tab of the pane most recently activated in one tree, or the first pane by default. */
+export function activeInstance(target: Target = 'main'): Instance | null {
+    const tree = layout(target);
+    const pane = paneAt(tree, activePath(tree, active()[target]));
+    return pane?.tabs.find((instance) => instance.id === pane.active) ?? null;
+}
+
 /** One layout instance's own saved state, from whichever tree of the current page holds it. */
 export function instanceLayoutState(id: string): unknown {
     const current = workbench();

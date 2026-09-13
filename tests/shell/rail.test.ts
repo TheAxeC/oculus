@@ -19,15 +19,17 @@ import ActivityRail, {
 } from '../../src/lib/shell/ActivityRail.svelte';
 import {
     collectionKeys,
+    asciiCatalog,
     engineDir,
     glyphCatalog,
     loadConfig,
     textCatalog,
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
+import { setAscii, setCatalog, setGlyphMode, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
-import { setTextScale } from '../../src/lib/state/ui.svelte.ts';
+import { setAppearance } from '../../src/lib/state/appearance.ts';
+import { setTextScale, setTheme } from '../../src/lib/state/ui.svelte.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { installBadges } from '../state/rail-badges-fixture.ts';
 import {
@@ -46,6 +48,7 @@ const catalog = textCatalog(config);
 setCatalog(catalog);
 setGlyphs(glyphCatalog(config));
 setVocab(vocabCatalog(config));
+setAppearance(config);
 
 const COLLECTIONS = collectionKeys(config);
 registerCollections(COLLECTIONS);
@@ -117,9 +120,9 @@ describe('the rail, drawn', () => {
         expect(SMALL.length).toBeLessThanOrEqual(GROUP_MAX);
     });
 
-    it('draws the big group as one opener with no heading and no button of its own', () => {
+    it('draws the big group as one opener under its heading and no button of its own', () => {
         expect(count(body, 'data-group="Bigger"')).toBe(1);
-        expect(body).not.toContain('>Bigger</p>');
+        expect(body).toContain('>Bigger</p>');
         for (const id of BIG) expect(body).not.toContain(`data-view="${id}"`);
     });
 
@@ -168,6 +171,52 @@ describe('the rail, drawn', () => {
             expect(buttonWith(body, `aria-label="${catalog[label]}"`)).toMatch(
                 /class="[^"]*rail-control/
             );
+        }
+    });
+
+    it('draws the three appearance toggles with their own glyphs and short labels', () => {
+        setTheme('mocha');
+        try {
+            const themed = render(ActivityRail, { props: { groups } }).body;
+            for (const [key, glyph] of [
+                ['ui.crt_on', 'crt'],
+                ['ui.wallpaper', 'wallpaper'],
+                ['ui.unicode', 'unicode']
+            ]) {
+                const button = themed.match(
+                    new RegExp(
+                        `<button[^>]*aria-label="${catalog[key]}"[^>]*>[\\s\\S]*?<\\/button>`
+                    )
+                )?.[0];
+                expect(button).toBeDefined();
+                expect(button).toContain(glyphCatalog(config)[glyph]);
+            }
+        } finally {
+            setTheme('light');
+        }
+    });
+
+    it('draws the three appearance toggles with ASCII stand-ins in ASCII mode', () => {
+        setTheme('mocha');
+        setAscii(asciiCatalog(config));
+        setGlyphMode('ascii');
+        try {
+            const themed = render(ActivityRail, { props: { groups } }).body;
+            for (const [key, name, standIn] of [
+                ['ui.crt_on', 'crt', '[/]'],
+                ['ui.wallpaper', 'wallpaper', '[w]'],
+                ['ui.unicode', 'unicode', '&lt;>']
+            ]) {
+                const button = [...themed.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)]
+                    .map(([html]) => html)
+                    .find((html) => html.includes(`aria-label="${catalog[key]}"`));
+                expect(button).toBeDefined();
+                expect(button).toContain(`>${standIn}</span>`);
+                expect(button).not.toContain(glyphCatalog(config)[name]);
+            }
+        } finally {
+            setGlyphMode('unicode');
+            setTheme('light');
         }
     });
 });
@@ -313,6 +362,16 @@ describe('the groups of the real config', () => {
             'tasks'
         ]);
         expect(section('Academic life').length).toBeGreaterThan(GROUP_MAX);
+    });
+
+    it('draws headings above the Sessions and Academic life flyout openers', () => {
+        const body = render(ActivityRail, { props: { groups: realGroups() } }).body;
+        for (const label of ['Sessions', 'Academic life']) {
+            expect(body).toContain(`data-group="${label}"`);
+            expect(body).toMatch(
+                new RegExp(`<p class="group[^"]*">${label}<\\/p>[\\s\\S]*?aria-label="${label}"`)
+            );
+        }
     });
 
     it('puts the other two collections, Venues and Data under Sources', () => {

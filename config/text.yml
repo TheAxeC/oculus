@@ -447,6 +447,8 @@ text:
     decline: "decline"
     reopen_lead_tip: "reopen (back to the radar)"
     reopen: "reopen"
+    hide_lead: "hide this lead in this browser"
+    show_lead: "show this lead again"
     delete_lead_tip: "delete this lead (removes the entry)"
     del: "del"
     set_field: "set {0}: {1}"
@@ -925,7 +927,7 @@ text:
     rename_glyph: "check"
     write_saved: "saved"
     write_failed: "not saved"
-    # oculus, O18: the terminal view over xterm.js, the composer under it, and the terminals in the rail.
+    # oculus, O18: the terminal view over xterm.js (Q13 removed the composer under it) and the terminals in the rail.
     terminals: "Terminals"
     no_terminal: "No terminal is selected. Start one, or pick one in the rail."
     start_terminal: "Start a terminal"
@@ -937,9 +939,6 @@ text:
     kind_shell_glyph: "terminal_shell"
     cwd: "Directory to start in"
     cwd_empty: "The research hub"
-    compose: "Write to this terminal"
-    send: "Send"
-    route_to: "Send to another terminal instead"
     terminal_smaller: "Smaller terminal text"
     terminal_larger: "Larger terminal text"
     terminal_reset: "Reset terminal text size"

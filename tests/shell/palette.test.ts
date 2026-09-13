@@ -79,6 +79,14 @@ describe('Palette', () => {
         expect(body).toContain('view id');
         expect(body).toContain(catalog['app.palette_unavailable']);
     });
+
+    it('draws the command-specific unknown line when no command matches', () => {
+        const body = render(Palette, {
+            props: { ...props, open: true, prefill: ':nonesuch' }
+        }).body;
+        expect(body).toContain(catalog['js.leads.cmd_unknown']);
+        expect(body).not.toContain(catalog['app.palette_empty']);
+    });
 });
 
 describe('UpdateTray', () => {

@@ -122,7 +122,8 @@
                         onclick={() => (sure = true)}
                     />
                     <ToolButton
-                        label={dismissed ? t('actions.reopen') : t('actions.decline_tip')}
+                        label={dismissed ? t('actions.show_lead') : t('actions.hide_lead')}
+                        title={dismissed ? t('actions.show_lead') : t('actions.hide_lead')}
                         glyph="dismiss"
                         compact
                         onclick={ondismiss}

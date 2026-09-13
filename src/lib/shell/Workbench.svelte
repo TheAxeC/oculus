@@ -1,3 +1,30 @@
+<script module lang="ts">
+    // Layer 3, shell. The pure document-title builder keeps its DOM-free string contract testable.
+
+    import { lookup, t as catalogText } from '$lib/state/text';
+    import { viewFor } from '$lib/views/registry';
+    import type { Instance } from '$lib/state/layout';
+
+    /** The words on the active main tab, including the per-instance label when it has one. */
+    export function activeLabel(instance: Instance | null): string {
+        if (instance === null) return catalogText('app.title');
+        if (typeof instance.state === 'object' && instance.state !== null) {
+            const held = (instance.state as Record<string, unknown>).label;
+            if (typeof held === 'string' && held !== '') return held;
+        }
+        const registered = viewFor(instance.view);
+        return registered === undefined
+            ? catalogText('ui.unknown_view', instance.view)
+            : lookup(registered.label);
+    }
+
+    /** The active main tab title, with a waiting count in front when a session needs attention. */
+    export function windowTitle(waiting: number, label: string): string {
+        const active = catalogText('js.nav.title_fmt', catalogText('js.nav.host'), label);
+        return waiting > 0 ? catalogText('app.title_waiting', waiting, active) : active;
+    }
+</script>
+
 <script lang="ts">
     // Layer 3, shell. The page: the rail, the main tree, and the panel beside or below it. It reads
     // the arrangement from the store and every change goes back through the store, so the whole of
@@ -22,6 +49,7 @@
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
     import {
         change,
+        activeInstance,
         currentPage,
         dockedAt,
         focused,
@@ -82,6 +110,7 @@
 
     /** The page on screen: its trees are the ones drawn, and its id is what remounts them. */
     const page = $derived(currentPage());
+    const activeMain = $derived(activeInstance('main'));
 
     /**
      * Escape restores the arrangement, and Ctrl+1 to Ctrl+9 show a page. A drag in progress consumes
@@ -183,7 +212,7 @@
      * of sessions with an open permission prompt, so switching tabs is not the only way to notice.
      */
     $effect(() => {
-        document.title = waiting > 0 ? t('app.title_waiting', waiting) : t('app.title');
+        document.title = windowTitle(waiting, activeLabel(activeMain));
     });
 
     /** The space the two trees share along the dock's direction, the sash between them removed. */
