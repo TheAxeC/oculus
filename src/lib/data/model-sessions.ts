@@ -359,10 +359,14 @@ export type HpcPayload = {
 export type UsageTool = 'claude' | 'codex';
 export type UsageAccountConfig = { tool: UsageTool; dir: string; label: string };
 export type UsageWindow = {
-    name: 'five_hour' | 'seven_day' | 'primary' | 'secondary';
+    name: 'five_hour' | 'seven_day' | 'weekly_model' | 'primary' | 'secondary';
     usedPercent: number;
     resetsAt: number;
     windowMinutes: number;
+    model?: string;
+    severity?: 'normal' | 'warning' | 'critical';
+    active?: boolean;
+    observedAt: string;
 };
 export type UsageLiveSession = {
     sessionId: string;
@@ -381,6 +385,7 @@ export type UsageAccount = {
     tier: string;
     tierLabel: string;
     billing: string;
+    fetchedAt?: string;
     windows: UsageWindow[];
     live: UsageLiveSession[];
 };

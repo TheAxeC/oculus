@@ -2,12 +2,11 @@
 // Claude status folders are watched here. Codex rollout changes, including new day folders, reach this watcher through the sessions watcher's onSessionsChange signal.
 
 import { mkdirSync, watch } from 'node:fs';
-import type { FSWatcher } from 'node:fs';
-import { basename, join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import type { UsageAccountConfig, UsagePayload } from '../../data/model.ts';
 import type { Hub } from '../channels.ts';
 import { onSessionsChange } from '../watch/sessions.ts';
-import { defaultUsageRoot, usageAccounts, type UsageTiers } from './accounts.ts';
+import { claudeAccountFile, defaultUsageRoot, usageAccounts, type UsageTiers } from './accounts.ts';
 import { UsageTranscriptFold } from './transcripts.ts';
 
 export const USAGE_DEBOUNCE = 500;
@@ -23,6 +22,11 @@ export type UsageWatchOptions = {
     fold?: UsageTranscriptFold;
     /** Milliseconds between clock-driven rebuilds; the debounce coalesces one with a file event. */
     interval?: number;
+    /** Folder watcher override for tests; production uses node:fs watch. */
+    watchFolder?: (
+        folder: string,
+        changed: (filename: string | Buffer | null) => void
+    ) => { close(): void };
 };
 export type UsageWatcher = { refresh(): Promise<void>; close(): void };
 
@@ -37,7 +41,11 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
     const now = options.now ?? Date.now;
     const usageRoot = options.usageRoot ?? defaultUsageRoot();
     const fold = options.fold ?? new UsageTranscriptFold();
-    const handles: FSWatcher[] = [];
+    const watchFolder =
+        options.watchFolder ??
+        ((folder: string, changed: (filename: string | Buffer | null) => void) =>
+            watch(folder, { recursive: false }, (_event, filename) => changed(filename)));
+    const handles: { close(): void }[] = [];
     let timer: ReturnType<typeof setTimeout> | null = null;
     let closed = false;
     let pending = Promise.resolve();
@@ -68,9 +76,13 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
         }, debounce);
     };
 
-    const open = (folder: string): void => {
+    const open = (folder: string, changed: (filename: string | Buffer | null) => boolean): void => {
         try {
-            handles.push(watch(folder, { recursive: false }, queue));
+            handles.push(
+                watchFolder(folder, (filename) => {
+                    if (changed(filename)) queue();
+                })
+            );
         } catch (error) {
             console.error(`usage watch: cannot watch ${folder}: ${reason(error)}`);
         }
@@ -81,10 +93,14 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
             const folder = join(usageRoot, basename(account.dir));
             try {
                 mkdirSync(folder, { recursive: true });
-                open(folder);
+                open(folder, () => true);
             } catch (error) {
                 console.error(`usage watch: cannot create ${folder}: ${reason(error)}`);
             }
+            const accountFile = claudeAccountFile(account.dir);
+            open(dirname(accountFile), (filename) =>
+                filename === null ? true : String(filename) === basename(accountFile)
+            );
             continue;
         }
     }

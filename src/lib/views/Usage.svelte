@@ -8,7 +8,7 @@
     import Pane from '$lib/ui/Pane.svelte';
     import Table, { type Column } from '$lib/ui/Table.svelte';
     import { usage } from '$lib/state/entities.svelte';
-    import { basename } from '$lib/state/format';
+    import { basename, clock } from '$lib/state/format';
     import { t } from '$lib/state/text';
     import type { UsageAccount, UsageDay, UsageWindow } from '$lib/state/usage';
     import type { ViewProps } from './registry';
@@ -27,8 +27,11 @@
         { key: 'cacheCreation', label: t('usage.col_cache_creation'), numeric: true }
     ];
 
-    function tone(percent: number): string {
-        return percent >= 90 ? 'red' : percent >= 75 ? 'amber' : 'green';
+    function tone(window: UsageWindow): string {
+        if (window.severity === 'critical') return 'red';
+        if (window.severity === 'warning') return 'amber';
+        if (window.severity === 'normal') return 'green';
+        return window.usedPercent >= 90 ? 'red' : window.usedPercent >= 75 ? 'amber' : 'green';
     }
 
     function duration(resetsAt: number, builtAt: string): string {
@@ -43,16 +46,40 @@
     function windowLabel(window: UsageWindow): string {
         if (window.name === 'five_hour') return t('usage.five_hour');
         if (window.name === 'seven_day') return t('usage.seven_day');
+        if (window.name === 'weekly_model') return t('usage.weekly_model', window.model ?? '');
         if (window.name === 'primary') return t('usage.primary');
         return t('usage.secondary');
     }
 
     function windowText(window: UsageWindow, builtAt: string): string {
+        if (window.name === 'five_hour' && window.observedAt === '' && window.resetsAt === 0) {
+            return t('usage.no_window');
+        }
         return t(
             'usage.window_text',
             Math.round(window.usedPercent),
             t('usage.resets_in', duration(window.resetsAt, builtAt))
         );
+    }
+
+    function orderedWindows(windows: UsageWindow[]): UsageWindow[] {
+        const order: Record<UsageWindow['name'], number> = {
+            five_hour: 0,
+            seven_day: 1,
+            weekly_model: 2,
+            primary: 0,
+            secondary: 1
+        };
+        return [...windows].sort((left, right) => order[left.name] - order[right.name]);
+    }
+
+    function newestObservation(windows: UsageWindow[]): string {
+        return windows.reduce((newest, window) => {
+            if (window.observedAt === '') return newest;
+            return newest === '' || Date.parse(window.observedAt) > Date.parse(newest)
+                ? window.observedAt
+                : newest;
+        }, '');
     }
 
     function historyRows(rows: UsageDay[]): Record<string, unknown>[] {
@@ -85,6 +112,8 @@
         {#if data && data.accounts.length}
             <div class="accounts">
                 {#each data.accounts as account (`${account.tool}:${account.label}`)}
+                    {@const windows = orderedWindows(account.windows)}
+                    {@const observedAt = newestObservation(windows)}
                     <Card title={account.label} level={3}>
                         {#snippet meta()}
                             <Chip label={account.tool} />
@@ -102,20 +131,23 @@
                             {/if}
                         {/snippet}
                         {#if hasStatus(account)}
-                            {#if account.windows.length}
+                            {#if windows.length}
                                 <div class="windows">
-                                    {#each account.windows as window (window.name)}
+                                    {#each windows as window (`${window.name}:${window.model ?? ''}`)}
                                         <div class="window">
                                             <span class="window-name">{windowLabel(window)}</span>
                                             <Meter
                                                 value={window.usedPercent / 100}
-                                                tone={tone(window.usedPercent)}
+                                                tone={tone(window)}
                                                 label={windowLabel(window)}
                                                 text={windowText(window, data.builtAt)}
                                             />
                                         </div>
                                     {/each}
                                 </div>
+                                {#if account.tool === 'claude' && observedAt !== ''}
+                                    <p class="observed">{t('usage.observed', clock(observedAt))}</p>
+                                {/if}
                             {/if}
                             {#if account.live.length}
                                 <section class="live">
@@ -203,6 +235,12 @@
     .window-name,
     .live-row {
         font-size: var(--fs-sm);
+    }
+
+    .observed {
+        margin: 6px 0 0;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-xs);
     }
 
     .live {

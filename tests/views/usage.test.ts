@@ -43,7 +43,8 @@ describe('Usage', () => {
                             name: 'five_hour',
                             usedPercent: 28.999999999999996,
                             resetsAt: Date.parse('2026-09-13T14:00:00Z') / 1000,
-                            windowMinutes: 300
+                            windowMinutes: 300,
+                            observedAt: '2026-09-13T12:00:00Z'
                         }
                     ],
                     live: [
@@ -92,6 +93,9 @@ describe('Usage', () => {
         const live = html.match(/<div class="live-row[^>]*>([\s\S]*?)<\/div>/)?.[1] ?? '';
         expect(live).toContain('Opus');
         expect(live).toContain('12% context');
+        // The words are rounded; the meter's fill keeps the exact width, which nobody reads.
+        expect(html).toMatch(/class="text[^"]*">29% \|/);
+        expect(html).not.toMatch(/>28\.999/);
         expect(html).toContain('resets in 2h 0m');
         expect(html).toContain('abcdefgh');
         expect(html).toContain('$1.25');
@@ -115,6 +119,61 @@ describe('Usage', () => {
         const html = draw({ accounts: [], days: [], builtAt: '2026-09-13T12:00:00.000Z' });
         expect(html).toContain('No usage accounts are configured.');
         expect(html).toContain('No token use was recorded in the last seven days.');
+    });
+
+    it('orders Claude windows, applies cached severity and shows the newest observation', () => {
+        const html = draw({
+            accounts: [
+                {
+                    tool: 'claude',
+                    label: 'Personal',
+                    dir: '/tmp/.claude',
+                    email: '',
+                    organisation: '',
+                    tier: '',
+                    tierLabel: '',
+                    billing: '',
+                    fetchedAt: '2026-09-13T14:30:00',
+                    windows: [
+                        {
+                            name: 'weekly_model',
+                            model: 'Fable',
+                            usedPercent: 5,
+                            resetsAt: Date.parse('2026-09-14T20:00:00Z') / 1000,
+                            windowMinutes: 10080,
+                            severity: 'critical',
+                            active: true,
+                            observedAt: '2026-09-13T14:30:00'
+                        },
+                        {
+                            name: 'seven_day',
+                            usedPercent: 20,
+                            resetsAt: Date.parse('2026-09-14T20:00:00Z') / 1000,
+                            windowMinutes: 10080,
+                            severity: 'warning',
+                            active: false,
+                            observedAt: '2026-09-13T13:00:00'
+                        },
+                        {
+                            name: 'five_hour',
+                            usedPercent: 0,
+                            resetsAt: 0,
+                            windowMinutes: 300,
+                            observedAt: ''
+                        }
+                    ],
+                    live: []
+                }
+            ],
+            days: [],
+            builtAt: '2026-09-13T12:00:00.000Z'
+        });
+        expect(html.indexOf('5 hour')).toBeLessThan(html.indexOf('7 day'));
+        expect(html.indexOf('7 day')).toBeLessThan(html.indexOf('Fable this week'));
+        expect(html).toContain('no window open');
+        expect(html).toContain('--tone: var(--c-red)');
+        expect(html).toContain('--tone: var(--c-amber)');
+        expect(html).toContain('as of 14:30');
     });
 
     it('names the status-line install when a Claude account has no snapshot', () => {

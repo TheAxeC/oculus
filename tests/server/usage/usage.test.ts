@@ -8,7 +8,9 @@ import type { UsageAccountConfig, UsagePayload } from '../../../src/lib/data/mod
 import { Hub } from '../../../src/lib/server/channels.ts';
 import {
     claudeAccount,
+    claudeCachedUsage,
     latestWindows,
+    mergeClaudeWindows,
     newestCodexLimits,
     usageAccounts
 } from '../../../src/lib/server/usage/accounts.ts';
@@ -35,6 +37,18 @@ function write(path: string, body: string, mtime: number = NOW): void {
 
 function line(value: unknown): string {
     return `${JSON.stringify(value)}\n`;
+}
+
+function cachedUsage(fetchedAtMs: number, limits: unknown[]): string {
+    return JSON.stringify({
+        cachedUsageUtilization: {
+            fetchedAtMs,
+            utilization: {
+                five_hour: { utilization: 99 },
+                limits
+            }
+        }
+    });
 }
 
 beforeEach(() => {
@@ -91,6 +105,141 @@ describe('usage readers', () => {
             billing: 'stripe',
             subscriptionCreatedAt: '2026-01-01'
         });
+    });
+
+    it('reads the cached Claude limits and ignores the utilization summaries and other kinds', () => {
+        const dir = scratch();
+        write(
+            join(dir, '.claude.json'),
+            cachedUsage(Date.parse('2026-09-13T12:24:05.152Z'), [
+                {
+                    kind: 'session',
+                    percent: 26,
+                    severity: 'normal',
+                    resets_at: '2026-09-13T17:00:00.000Z',
+                    scope: null,
+                    is_active: true,
+                    ignored: 'secret'
+                },
+                {
+                    kind: 'weekly_all',
+                    percent: 3,
+                    severity: 'warning',
+                    resets_at: '2026-09-14T20:00:00.000Z',
+                    scope: null,
+                    is_active: false
+                },
+                {
+                    kind: 'weekly_scoped',
+                    percent: 6,
+                    severity: 'critical',
+                    resets_at: '2026-09-14T20:00:00.000Z',
+                    scope: { model: { id: 'ignored', display_name: 'Fable' }, surface: 'ignored' },
+                    is_active: false
+                },
+                { kind: 'monthly', percent: 100, resets_at: '2026-10-01T00:00:00Z' }
+            ])
+        );
+        expect(claudeCachedUsage(dir)).toEqual({
+            fetchedAt: '2026-09-13T12:24:05.152Z',
+            windows: [
+                {
+                    name: 'five_hour',
+                    usedPercent: 26,
+                    resetsAt: Date.parse('2026-09-13T17:00:00.000Z') / 1000,
+                    windowMinutes: 300,
+                    severity: 'normal',
+                    active: true,
+                    observedAt: '2026-09-13T12:24:05.152Z'
+                },
+                {
+                    name: 'seven_day',
+                    usedPercent: 3,
+                    resetsAt: Date.parse('2026-09-14T20:00:00.000Z') / 1000,
+                    windowMinutes: 10080,
+                    severity: 'warning',
+                    active: false,
+                    observedAt: '2026-09-13T12:24:05.152Z'
+                },
+                {
+                    name: 'weekly_model',
+                    model: 'Fable',
+                    usedPercent: 6,
+                    resetsAt: Date.parse('2026-09-14T20:00:00.000Z') / 1000,
+                    windowMinutes: 10080,
+                    severity: 'critical',
+                    active: false,
+                    observedAt: '2026-09-13T12:24:05.152Z'
+                }
+            ]
+        });
+    });
+
+    it('treats a timestamp Date cannot hold as no observation, and carries a real one to the account', () => {
+        const dir = scratch();
+        write(join(dir, '.claude.json'), cachedUsage(1e20, []));
+        expect(claudeCachedUsage(dir).fetchedAt).toBe('');
+        write(join(dir, '.claude.json'), cachedUsage(Date.parse('2026-09-13T12:24:05.152Z'), []));
+        const [account] = usageAccounts(
+            [{ tool: 'claude', dir, label: 'Claude' }],
+            {},
+            join(dir, 'status'),
+            NOW
+        );
+        expect(account.fetchedAt).toBe('2026-09-13T12:24:05.152Z');
+    });
+
+    it('returns no cached bars when cachedUsageUtilization is absent', () => {
+        const dir = scratch();
+        write(join(dir, '.claude.json'), JSON.stringify({ oauthAccount: { emailAddress: 'a' } }));
+        expect(claudeCachedUsage(dir)).toEqual({ fetchedAt: '', windows: [] });
+    });
+
+    it('merges each shared window by observation time and always supplies the five-hour window', () => {
+        const cache = [
+            {
+                name: 'five_hour' as const,
+                usedPercent: 20,
+                resetsAt: 200,
+                windowMinutes: 300,
+                observedAt: '2026-09-13T12:00:00Z'
+            },
+            {
+                name: 'seven_day' as const,
+                usedPercent: 30,
+                resetsAt: 300,
+                windowMinutes: 10080,
+                observedAt: '2026-09-13T14:00:00Z'
+            }
+        ];
+        const status = [
+            {
+                name: 'five_hour' as const,
+                usedPercent: 40,
+                resetsAt: 400,
+                windowMinutes: 300,
+                observedAt: '2026-09-13T13:00:00Z'
+            },
+            {
+                name: 'seven_day' as const,
+                usedPercent: 50,
+                resetsAt: 500,
+                windowMinutes: 10080,
+                observedAt: '2026-09-13T13:00:00Z'
+            }
+        ];
+        expect(mergeClaudeWindows(cache, status).map((window) => window.usedPercent)).toEqual([
+            40, 30
+        ]);
+        expect(mergeClaudeWindows([], [])).toEqual([
+            {
+                name: 'five_hour',
+                usedPercent: 0,
+                resetsAt: 0,
+                windowMinutes: 300,
+                observedAt: ''
+            }
+        ]);
     });
 
     it('takes the newest rate_limits object from the newest Codex rollout', () => {
@@ -393,7 +542,8 @@ describe('usage watcher', () => {
                     name: 'primary',
                     usedPercent: 47,
                     resetsAt: NOW / 1000 + 3600,
-                    windowMinutes: 10080
+                    windowMinutes: 10080,
+                    observedAt: ''
                 }
             ]);
         } finally {
@@ -411,10 +561,96 @@ describe('usage watcher', () => {
         };
         const fresher = { rate_limits: { seven_day: { used_percentage: 91, resets_at: 5000 } } };
         const nextWindow = { rate_limits: { five_hour: { used_percentage: 2, resets_at: 200 } } };
-        expect(latestWindows([older, fresher, nextWindow, null])).toEqual([
-            { name: 'five_hour', usedPercent: 2, resetsAt: 200, windowMinutes: 300 },
-            { name: 'seven_day', usedPercent: 91, resetsAt: 5000, windowMinutes: 10080 }
+        expect(
+            latestWindows([
+                { data: older, observedAt: '2026-09-13T10:00:00Z' },
+                { data: fresher, observedAt: '2026-09-13T11:00:00Z' },
+                { data: nextWindow, observedAt: '2026-09-13T12:00:00Z' },
+                { data: null, observedAt: '2026-09-13T13:00:00Z' }
+            ])
+        ).toEqual([
+            {
+                name: 'five_hour',
+                usedPercent: 2,
+                resetsAt: 200,
+                windowMinutes: 300,
+                observedAt: '2026-09-13T12:00:00Z'
+            },
+            {
+                name: 'seven_day',
+                usedPercent: 91,
+                resetsAt: 5000,
+                windowMinutes: 10080,
+                observedAt: '2026-09-13T11:00:00Z'
+            }
         ]);
+    });
+
+    it('rebuilds when Claude Code rewrites an account file', async () => {
+        const root = scratch();
+        const claude = join(root, 'claude');
+        const watched = new Map<string, (filename: string | Buffer | null) => void>();
+        mkdirSync(join(claude, 'projects'), { recursive: true });
+        write(join(claude, '.claude.json'), JSON.stringify({ oauthAccount: {} }));
+        const hub = new Hub();
+        const watcher = watchUsage(hub, {
+            accounts: [{ tool: 'claude', dir: claude, label: 'Claude' }],
+            tiers: {},
+            usageRoot: join(root, 'status'),
+            debounce: 1,
+            interval: 60_000,
+            now: () => NOW,
+            watchFolder: (folder, changed) => {
+                watched.set(folder, changed);
+                return { close() {} };
+            }
+        });
+        try {
+            await watcher.refresh();
+            const published = new Promise<void>((resolve, reject) => {
+                const timeout = setTimeout(
+                    () => reject(new Error('account-file refresh timed out')),
+                    2000
+                );
+                hub.subscribe(
+                    {
+                        send: async () => {
+                            const windows = (hub.latest('usage')?.payload as UsagePayload)
+                                .accounts[0].windows;
+                            if (windows.some((window) => window.name === 'weekly_model')) {
+                                clearTimeout(timeout);
+                                resolve();
+                            }
+                        },
+                        close() {}
+                    },
+                    ['usage'],
+                    false
+                );
+            });
+            write(
+                join(claude, '.claude.json'),
+                cachedUsage(NOW, [
+                    {
+                        kind: 'weekly_scoped',
+                        percent: 42,
+                        severity: 'normal',
+                        resets_at: '2026-09-14T20:00:00Z',
+                        scope: { model: { display_name: 'Fable' } },
+                        is_active: true
+                    }
+                ])
+            );
+            watched.get(claude)?.('.claude.json');
+            await published;
+            expect(
+                (hub.latest('usage')?.payload as UsagePayload).accounts[0].windows
+            ).toContainEqual(
+                expect.objectContaining({ name: 'weekly_model', model: 'Fable', usedPercent: 42 })
+            );
+        } finally {
+            watcher.close();
+        }
     });
 
     it('rebuilds on its clock when nothing changes on disk', async () => {
@@ -429,7 +665,8 @@ describe('usage watcher', () => {
             usageRoot: join(root, 'status'),
             debounce: 1,
             interval: 5,
-            now: () => NOW + ticks++ * 1000
+            now: () => NOW + ticks++ * 1000,
+            watchFolder: () => ({ close() {} })
         });
         await watcher.refresh();
         const first = hub.latest('usage')?.version;
@@ -469,7 +706,8 @@ describe('usage watcher', () => {
             tiers: {},
             usageRoot: status,
             debounce: 1,
-            now: () => NOW
+            now: () => NOW,
+            watchFolder: () => ({ close() {} })
         });
         await watcher.refresh();
         const payload = hub.latest('usage')?.payload as UsagePayload;
@@ -484,7 +722,16 @@ describe('usage watcher', () => {
                     tier: '',
                     tierLabel: '',
                     billing: '',
-                    windows: [],
+                    fetchedAt: '',
+                    windows: [
+                        {
+                            name: 'five_hour',
+                            usedPercent: 0,
+                            resetsAt: 0,
+                            windowMinutes: 300,
+                            observedAt: ''
+                        }
+                    ],
                     live: []
                 }
             ],

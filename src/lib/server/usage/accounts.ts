@@ -22,6 +22,11 @@ import { isMap } from '../../data/guards.ts';
 import { rollouts } from '../sessions/codex.ts';
 
 export type UsageTiers = Record<string, string>;
+export type ClaudeUsageCache = { fetchedAt: string; windows: UsageWindow[] };
+export type ClaudeStatusSnapshot = {
+    data: Record<string, unknown> | null;
+    observedAt: string;
+};
 
 function json(path: string): Record<string, unknown> | null {
     try {
@@ -38,6 +43,15 @@ function text(value: unknown): string {
 
 function number(value: unknown): number | null {
     return typeof value === 'number' && Number.isFinite(value) ? value : null;
+}
+
+function severity(value: unknown): UsageWindow['severity'] {
+    return value === 'normal' || value === 'warning' || value === 'critical' ? value : undefined;
+}
+
+function unixSeconds(value: unknown): number | null {
+    const milliseconds = Date.parse(text(value));
+    return Number.isFinite(milliseconds) ? milliseconds / 1000 : null;
 }
 
 function tierLabel(tier: string, tiers: UsageTiers): string {
@@ -69,11 +83,58 @@ export function claudeAccount(dir: string): Record<string, string> {
     };
 }
 
+/** Read Claude Code's cached utilization observation without exposing other account-file data. */
+export function claudeCachedUsage(dir: string): ClaudeUsageCache {
+    const root = json(claudeAccountFile(dir));
+    const cache =
+        root !== null && isMap(root.cachedUsageUtilization) ? root.cachedUsageUtilization : {};
+    const fetchedAtMs = number(cache.fetchedAtMs);
+    // A value outside what Date can hold (the reviewer's 1e20) would throw in toISOString.
+    const fetchedAt =
+        fetchedAtMs === null || Math.abs(fetchedAtMs) > 8.64e15
+            ? ''
+            : new Date(fetchedAtMs).toISOString();
+    const utilization = isMap(cache.utilization) ? cache.utilization : {};
+    const limits = Array.isArray(utilization.limits) ? utilization.limits : [];
+    const windows: UsageWindow[] = [];
+
+    for (const candidate of limits) {
+        if (!isMap(candidate)) continue;
+        const usedPercent = number(candidate.percent);
+        const resetsAt = unixSeconds(candidate.resets_at);
+        if (usedPercent === null || resetsAt === null) continue;
+        const common = {
+            usedPercent,
+            resetsAt,
+            severity: severity(candidate.severity),
+            active: candidate.is_active === true,
+            observedAt: fetchedAt
+        };
+        if (candidate.kind === 'session') {
+            windows.push({ name: 'five_hour', windowMinutes: 300, ...common });
+        } else if (candidate.kind === 'weekly_all') {
+            windows.push({ name: 'seven_day', windowMinutes: 10080, ...common });
+        } else if (candidate.kind === 'weekly_scoped') {
+            const scope = isMap(candidate.scope) ? candidate.scope : {};
+            const model = isMap(scope.model) ? text(scope.model.display_name) : '';
+            if (model !== '') {
+                windows.push({
+                    name: 'weekly_model',
+                    model,
+                    windowMinutes: 10080,
+                    ...common
+                });
+            }
+        }
+    }
+    return { fetchedAt, windows };
+}
+
 export function defaultUsageRoot(): string {
     return join(homedir(), '.oculus', 'usage', 'claude');
 }
 
-function claudeWindows(data: Record<string, unknown>): UsageWindow[] {
+function claudeWindows(data: Record<string, unknown>, observedAt: string): UsageWindow[] {
     const limits = isMap(data.rate_limits) ? data.rate_limits : {};
     const rows: UsageWindow[] = [];
     for (const [key, name, minutes] of [
@@ -85,7 +146,7 @@ function claudeWindows(data: Record<string, unknown>): UsageWindow[] {
         const usedPercent = number(value.used_percentage);
         const resetsAt = number(value.resets_at);
         if (usedPercent === null || resetsAt === null) continue;
-        rows.push({ name, usedPercent, resetsAt, windowMinutes: minutes });
+        rows.push({ name, usedPercent, resetsAt, windowMinutes: minutes, observedAt });
     }
     return rows;
 }
@@ -96,11 +157,11 @@ function claudeWindows(data: Record<string, unknown>): UsageWindow[] {
  * the settings change. Within one window (the same resets_at) usage only rises, so the highest
  * percentage is the latest observation; a later resets_at is a newer window altogether.
  */
-export function latestWindows(snapshots: (Record<string, unknown> | null)[]): UsageWindow[] {
+export function latestWindows(snapshots: ClaudeStatusSnapshot[]): UsageWindow[] {
     const best = new Map<UsageWindow['name'], UsageWindow>();
     for (const snapshot of snapshots) {
-        if (snapshot === null) continue;
-        for (const window of claudeWindows(snapshot)) {
+        if (snapshot.data === null) continue;
+        for (const window of claudeWindows(snapshot.data, snapshot.observedAt)) {
             const held = best.get(window.name);
             if (
                 held === undefined ||
@@ -112,6 +173,38 @@ export function latestWindows(snapshots: (Record<string, unknown> | null)[]): Us
         }
     }
     return [...best.values()];
+}
+
+function observedTime(window: UsageWindow): number {
+    const milliseconds = Date.parse(window.observedAt);
+    return Number.isFinite(milliseconds) ? milliseconds : Number.NEGATIVE_INFINITY;
+}
+
+/** Merge cached bars with status-line fallbacks, choosing the cache when observations tie. */
+export function mergeClaudeWindows(cached: UsageWindow[], status: UsageWindow[]): UsageWindow[] {
+    const merged: UsageWindow[] = [];
+    for (const name of ['five_hour', 'seven_day'] as const) {
+        const fromCache = cached.find((window) => window.name === name);
+        const fromStatus = status.find((window) => window.name === name);
+        if (fromCache !== undefined && fromStatus !== undefined) {
+            merged.push(
+                observedTime(fromCache) >= observedTime(fromStatus) ? fromCache : fromStatus
+            );
+        } else if (fromCache !== undefined) {
+            merged.push(fromCache);
+        } else if (fromStatus !== undefined) {
+            merged.push(fromStatus);
+        } else if (name === 'five_hour') {
+            merged.push({
+                name: 'five_hour',
+                usedPercent: 0,
+                resetsAt: 0,
+                windowMinutes: 300,
+                observedAt: ''
+            });
+        }
+    }
+    return [...merged, ...cached.filter((window) => window.name === 'weekly_model')];
 }
 
 function statusFiles(dir: string): { path: string; mtimeMs: number }[] {
@@ -155,6 +248,7 @@ function claudeUsage(
     now: number
 ): UsageAccount {
     const identity = claudeAccount(account.dir);
+    const cached = claudeCachedUsage(account.dir);
     const files = statusFiles(join(usageRoot, basename(account.dir)));
     const live = files
         .filter((file) => now - file.mtimeMs <= 60 * 60 * 1000)
@@ -169,7 +263,16 @@ function claudeUsage(
         tier: identity.tier,
         tierLabel: tierLabel(identity.tier, tiers),
         billing: identity.billing,
-        windows: latestWindows(files.map((file) => json(file.path))),
+        fetchedAt: cached.fetchedAt,
+        windows: mergeClaudeWindows(
+            cached.windows,
+            latestWindows(
+                files.map((file) => ({
+                    data: json(file.path),
+                    observedAt: new Date(file.mtimeMs).toISOString()
+                }))
+            )
+        ),
         live
     };
 }
@@ -240,7 +343,7 @@ function codexWindows(limits: Record<string, unknown>): UsageWindow[] {
         const resetsAt = number(value.resets_at);
         const windowMinutes = number(value.window_minutes);
         if (usedPercent === null || resetsAt === null || windowMinutes === null) continue;
-        rows.push({ name, usedPercent, resetsAt, windowMinutes });
+        rows.push({ name, usedPercent, resetsAt, windowMinutes, observedAt: '' });
     }
     return rows;
 }
