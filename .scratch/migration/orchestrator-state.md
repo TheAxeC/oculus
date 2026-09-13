@@ -53,6 +53,13 @@ dispatch:
 - Conventions on every authored file: ASCII, one line per paragraph or bullet in Markdown and YAML, every source file under 1000 lines, strings in `config/text.yml`, colours as tokens, glyphs from `glyphs.yml`.
 - `plan.md` stays lean (Axel, 2026-09-13, after two rounds of bloat): a package line is one sentence, the decision, its date and the pointer to its brief, at most 400 characters; a ruling line the same; every explanation, rationale, line number, premise and landing detail lives in the brief or in this file's landing notes, never in `plan.md`. Before any commit that touches `plan.md`: `awk 'length > 400' tools/oculus/.scratch/migration/plan.md` must print nothing but the header paragraph. And not one piece of information may be lost by shortening (Axel, 2026-09-13 22:10): when a `plan.md` line is shortened or rewritten, its previous text is first appended whole to the package's `agents/briefs/<package>.md` (a ruling's or a note's to the section "Rulings in full" below), and the commit that shortens it carries both; a line whose previous text is not in a file of this ledger is not shortened. The check: every line of the committed `plan.md` before the change is found verbatim in the ledger after it.
 
+## Open items (repeated in every report until closed; Axel, 2026-09-14 00:05: a reported gap is booked here the same moment, never mentioned once and dropped)
+
+- D19c fix, one-shot sessions: every `usage_refresh_min` minutes and on Refresh, a Claude Code session is started, sent `/usage`, read and killed; nothing resident between ticks (the two hidden sessions idle at 137 MB and 177 MB; Axel 2026-09-14 00:00 "wtf 150MB"). Built on main right after R3 lands.
+- D19c fix, the card tells the truth: after a Refresh that produced no newer figures, the refresher line names the fetch time and that Claude Code renews the figures after five minutes; only then. Built with the item above.
+- R6's plan line names the account file's fetch time as the refresher's success signal; Claude Code rewrites that file only after 5 minutes, so the line's premise is wrong. Axel's ruling needed before R6 is dispatched: the landed rule (the sheet's words or a newer file) or a change of his choosing.
+- Audit of every "sharp edges, unresolved" list in the landing notes below (42 packages, O1 to O25e) against the tree: each still-open edge becomes a booked plan line or a fix. Scheduled 2026-09-14 while R7's worker runs; not started.
+
 ## Verification, every package
 
 Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate for the C packages.
