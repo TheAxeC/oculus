@@ -53,7 +53,13 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
             ready: Promise.resolve(),
             refresh: () => Promise.resolve(true),
             refreshAll: () => Promise.resolve(),
-            state: () => ({ state: 'running', since: '', reason: '', lastRefresh: '' }),
+            state: () => ({
+                state: 'running',
+                since: '',
+                reason: '',
+                lastRefresh: '',
+                renewed: true
+            }),
             close: () => {}
         },
         token: ROUTE_TOKEN,

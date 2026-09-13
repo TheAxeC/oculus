@@ -119,11 +119,16 @@
                 t('usage.refresher_down', clock(refresher.since), refresherReason(refresher.reason))
             );
         }
+        if (refresher.state === 'refreshing') {
+            return t('usage.refresher', t('usage.refresher_refreshing'));
+        }
+        // A refresh inside Claude Code's five-minute window changes no figure; the card says so.
+        const stale = !refresher.renewed && account.fetchedAt !== undefined;
         return t(
             'usage.refresher',
-            refresher.state === 'running'
-                ? t('usage.refresher_running')
-                : t('usage.refresher_restarting')
+            stale
+                ? t('usage.refresher_stale', clock(account.fetchedAt ?? ''))
+                : t('usage.refresher_running')
         );
     }
 </script>

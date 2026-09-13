@@ -38,7 +38,11 @@ function draw(payload: UsagePayload): string {
     return render(Usage, { props: { instance } }).body;
 }
 
-function refreshPayload(state: 'running' | 'restarting' = 'running'): UsagePayload {
+function refreshPayload(
+    state: 'running' | 'refreshing' = 'running',
+    renewed = true,
+    fetchedAt?: string
+): UsagePayload {
     return {
         accounts: [
             {
@@ -50,9 +54,16 @@ function refreshPayload(state: 'running' | 'restarting' = 'running'): UsagePaylo
                 tier: '',
                 tierLabel: '',
                 billing: '',
+                fetchedAt,
                 windows: [],
                 live: [],
-                refresher: { state, since: '2026-09-13T12:00:00Z', reason: '', lastRefresh: '' }
+                refresher: {
+                    state,
+                    since: '2026-09-13T12:00:00Z',
+                    reason: '',
+                    lastRefresh: '',
+                    renewed
+                }
             }
         ],
         days: [],
@@ -61,8 +72,16 @@ function refreshPayload(state: 'running' | 'restarting' = 'running'): UsagePaylo
 }
 
 describe('Usage', () => {
-    it.each(['running', 'restarting'] as const)('renders the %s refresher state', (state) => {
+    it.each(['running', 'refreshing'] as const)('renders the %s refresher state', (state) => {
         expect(draw(refreshPayload(state))).toContain(`refresher: ${state}`);
+    });
+
+    it('says when a refresh renewed nothing and when Claude Code renews the figures', () => {
+        const html = draw(refreshPayload('running', false, '2026-09-13T12:34:00Z'));
+        expect(html).toContain(
+            'refresher: running, figures fetched at 14:34; Claude Code renews them after five minutes'
+        );
+        expect(draw(refreshPayload('running', false))).toContain('refresher: running');
     });
 
     it('sends the card account and token, shows refusal until the next usage payload', async () => {
@@ -85,9 +104,9 @@ describe('Usage', () => {
         expect(render(Usage, { props: { instance } }).body).toContain(
             'refresh refused: the write token was refused'
         );
-        const next = draw(refreshPayload('restarting'));
+        const next = draw(refreshPayload('refreshing'));
         expect(next).not.toContain('refresh refused:');
-        expect(next).toContain('refresher: restarting');
+        expect(next).toContain('refresher: refreshing');
     });
 
     it('shows network failures and non-JSON refusals as the failed request', async () => {
@@ -300,7 +319,8 @@ describe('Usage', () => {
                         state: 'down',
                         since: '2026-09-13T12:34:00.000Z',
                         reason: 'usage_limit',
-                        lastRefresh: '2026-09-13T12:30:00.000Z'
+                        lastRefresh: '2026-09-13T12:30:00.000Z',
+                        renewed: false
                     }
                 }
             ],

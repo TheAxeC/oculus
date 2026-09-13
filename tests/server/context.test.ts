@@ -40,7 +40,8 @@ describe('ServerContext', () => {
                 state: 'running' as const,
                 since: '',
                 reason: '',
-                lastRefresh: ''
+                lastRefresh: '',
+                renewed: true
             })),
             close: closes[4]
         }));
@@ -150,7 +151,13 @@ describe('ServerContext', () => {
                 ready: Promise.resolve(),
                 refresh: async () => true,
                 refreshAll: async () => {},
-                state: () => ({ state: 'running', since: '', reason: '', lastRefresh: '' }),
+                state: () => ({
+                    state: 'running',
+                    since: '',
+                    reason: '',
+                    lastRefresh: '',
+                    renewed: true
+                }),
                 close() {}
             }),
             watchUsage: (_hub, options) => {

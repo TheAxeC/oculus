@@ -377,10 +377,13 @@ export type UsageLiveSession = {
     cwd: string;
 };
 export type UsageRefresher = {
-    state: 'running' | 'restarting' | 'down';
+    /** `refreshing` while a tick runs, `running` after a good one, `down` after a failed one. */
+    state: 'running' | 'refreshing' | 'down';
     since: string;
     reason: string;
     lastRefresh: string;
+    /** Whether the last refresh moved the account file; Claude Code renews it only after five minutes. */
+    renewed: boolean;
 };
 export type UsageAccount = {
     tool: UsageTool;

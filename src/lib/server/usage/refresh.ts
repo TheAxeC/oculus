@@ -1,6 +1,6 @@
-// Layer 2, server. One hidden tmux session per Claude account asks Claude Code to refresh its
-// cached usage figures. Stable names let a restarted oculus process find the same sessions, while
-// a serialized queue per account prevents a route request and a scheduled tick from duplicating it.
+// Layer 2, server. One short-lived tmux session per Claude account and per refresh asks Claude Code
+// for its usage figures: started, sent /usage, read and killed, so nothing stays resident between
+// ticks. A serialized queue per account keeps a route request and a scheduled tick from overlapping.
 
 import type { UsageAccountConfig, UsageRefresher } from '../../data/model.ts';
 import { usageAccountLabel } from '../../data/sources/config.ts';
@@ -10,6 +10,8 @@ import { claudeUsageFetchedAt, isDefaultClaudeDir } from './accounts.ts';
 
 export const USAGE_WAIT_MS = 15_000;
 export const USAGE_POLL_MS = 250;
+/** How long after the sheet shows the account file is given to move before the refresh counts as not renewed. */
+export const USAGE_RENEW_WAIT_MS = 3_000;
 /** How long a freshly started Claude Code may take to show its prompt before /usage is typed. */
 export const USAGE_START_WAIT_MS = 30_000;
 const COLS = 80;
@@ -22,8 +24,6 @@ export type UsageRefreshReason =
     | 'prompt_missing'
     | 'start_failed'
     | 'refresh_failed';
-
-type HeldState = UsageRefresher & { restart: boolean };
 
 export type UsageRefreshOptions = {
     accounts: UsageAccountConfig[];
@@ -53,7 +53,7 @@ function shellWord(value: string): string {
     return `'${value.replaceAll("'", `'"'"'`)}'`;
 }
 
-/** The stable tmux name for one account's hidden refresher. */
+/** The tmux name of one account's refresh session; the same name every tick, so a leftover is found. */
 export function usageSessionName(account: UsageAccountConfig): string {
     return `${USAGE_PREFIX}${usageAccountLabel(account.label)}`;
 }
@@ -107,8 +107,8 @@ export function hasPrompt(screen: string): boolean {
 
 /**
  * The usage sheet /usage opens. Its words prove the command ran even when the account file stays
- * put: Claude Code 2.1.270 rewrites cachedUsageUtilization only once the cached one is five minutes
- * old (its constant zAs=300000 beside the writer), so a refresh inside that window changes no file.
+ * put: Claude Code rewrites cachedUsageUtilization only once the cached one is five minutes old, so
+ * a refresh inside that window changes no file and the figures stay the cached ones.
  */
 export function sheetShown(screen: string): boolean {
     return /current week/i.test(plain(screen));
@@ -129,7 +129,7 @@ function wait(milliseconds: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, milliseconds));
 }
 
-/** Start the per-account queues and the configured cadence. Closing leaves tmux sessions alive. */
+/** Start the per-account queues and the configured cadence. Every tick starts and kills its own session. */
 export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWatcher {
     if (!Number.isFinite(options.refreshMin) || options.refreshMin <= 0) {
         throw new Error('usage_refresh_min must be a positive number');
@@ -140,18 +140,18 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
     const now = options.now ?? Date.now;
     const pause = options.pause ?? wait;
     const onChange = options.onChange ?? (() => {});
-    const held = new Map<string, HeldState>();
+    const held = new Map<string, UsageRefresher>();
     const down = new Map<string, { reason: string; since: string }>();
     const queues = new Map<string, Promise<void>>();
     let closed = false;
 
     for (const account of accounts) {
         held.set(account.dir, {
-            state: 'restarting',
+            state: 'refreshing',
             since: iso(now),
             reason: '',
             lastRefresh: '',
-            restart: false
+            renewed: false
         });
     }
 
@@ -159,8 +159,8 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
         account: UsageAccountConfig,
         state: UsageRefresher['state'],
         reason: string,
-        restart: boolean,
-        lastRefresh?: string
+        lastRefresh?: string,
+        renewed?: boolean
     ): void => {
         const previous = held.get(account.dir);
         const changed = previous?.state !== state || previous.reason !== reason;
@@ -175,37 +175,28 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
         held.set(account.dir, {
             state,
             reason,
-            restart,
             since,
-            lastRefresh: lastRefresh ?? previous?.lastRefresh ?? ''
+            lastRefresh: lastRefresh ?? previous?.lastRefresh ?? '',
+            renewed: renewed ?? previous?.renewed ?? false
         });
         onChange();
-    };
-
-    const exists = async (account: UsageAccountConfig): Promise<boolean> => {
-        try {
-            await exec(['has-session', '-t', usageSessionName(account)]);
-            return true;
-        } catch {
-            return false;
-        }
     };
 
     const stop = async (account: UsageAccountConfig): Promise<void> => {
         try {
             await exec(['kill-session', '-t', usageSessionName(account)]);
         } catch {
-            // A session that disappeared between capture and kill is already stopped.
+            // No session of that name is the usual case; a tick leaves none behind.
         }
     };
 
     const start = async (account: UsageAccountConfig): Promise<boolean> => {
-        publish(account, 'restarting', '', false);
+        publish(account, 'refreshing', '');
         try {
             await exec(usageStartArgs(account, options.hub, options.claudeBin, options.model));
             return true;
         } catch {
-            publish(account, 'down', 'start_failed', true);
+            publish(account, 'down', 'start_failed');
             return false;
         }
     };
@@ -237,65 +228,47 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
         return false;
     };
 
+    /** One refresh: a session started, the prompt awaited, /usage sent, the result read, the session killed. */
     const one = async (account: UsageAccountConfig): Promise<void> => {
         if (closed) return;
-        const previous = held.get(account.dir);
-        let present = await exists(account);
-        if (present) {
-            let dead = false;
-            try {
-                const screen = await exec(visibleCaptureArgs(account));
-                dead = /(?:dead pane|pane (?:is )?dead)/i.test(plain(screen));
-                // A retained dead pane may still show its old screen. Read tmux's own flag too.
-                const flag = await exec([
-                    'display-message',
-                    '-p',
-                    '-t',
-                    usageSessionName(account),
-                    '#{pane_dead}'
-                ]);
-                dead ||= flag.trim() === '1';
-            } catch {
-                dead = true;
-            }
-            if (previous?.restart === true || dead) {
-                await stop(account);
-                present = false;
-            }
-        }
-        if (!present && !(await start(account))) return;
+        // A session of this name left by a crash or an earlier server is never reused.
+        await stop(account);
+        if (!(await start(account))) return;
         try {
             const id = `usage-${usageAccountLabel(account.label)}`;
             // Keys typed before the prompt is up are lost, so a session is given time to show it.
             const ready = await promptShown(account);
-            if (!ready) {
+            if (ready !== true) {
                 await stop(account);
-                publish(account, 'down', paneReason(ready === null ? '' : lastScreen), true);
+                if (ready === false) publish(account, 'down', paneReason(lastScreen));
                 return;
             }
             const sent = now();
             await exec(sendKeysArgs(id, { literal: '/usage' }));
             await exec(sendKeysArgs(id, { key: 'Enter' }));
             const fresh = await refreshed(account, sent);
-            await exec(sendKeysArgs(id, { key: 'Escape' }));
+            await stop(account);
             if (closed) return;
             if (!fresh) {
-                await stop(account);
-                publish(account, 'down', paneReason(lastScreen), true);
+                publish(account, 'down', paneReason(lastScreen));
                 return;
             }
-            // Escape closes the sheet; a prompt that does not come back is a session to replace.
-            const back = await promptShown(account);
-            if (back === null) return;
-            if (!back) {
-                await stop(account);
-                publish(account, 'down', paneReason(lastScreen), true);
-                return;
+            // The sheet shows a moment before Claude Code writes the file, so the file is given a
+            // short grace before the refresh is called one that renewed nothing.
+            const moved = (): boolean => {
+                const fetched = claudeUsageFetchedAt(account.dir);
+                return fetched !== null && fetched > sent;
+            };
+            let renewed = moved();
+            const grace = now() + USAGE_RENEW_WAIT_MS;
+            while (!renewed && !closed && now() < grace) {
+                await pause(Math.min(USAGE_POLL_MS, grace - now()));
+                renewed = moved();
             }
-            publish(account, 'running', '', false, iso(now));
+            publish(account, 'running', '', iso(now), renewed);
         } catch {
             await stop(account);
-            publish(account, 'down', 'refresh_failed', true);
+            publish(account, 'down', 'refresh_failed');
         }
     };
 
@@ -330,14 +303,15 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
         state(account: UsageAccountConfig): UsageRefresher {
             const state = held.get(account.dir);
             if (state === undefined) {
-                return { state: 'down', since: iso(now), reason: 'start_failed', lastRefresh: '' };
+                return {
+                    state: 'down',
+                    since: iso(now),
+                    reason: 'start_failed',
+                    lastRefresh: '',
+                    renewed: false
+                };
             }
-            return {
-                state: state.state,
-                since: state.since,
-                reason: state.reason,
-                lastRefresh: state.lastRefresh
-            };
+            return { ...state };
         },
         close(): void {
             closed = true;
