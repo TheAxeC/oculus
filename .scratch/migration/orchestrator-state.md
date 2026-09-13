@@ -34,6 +34,10 @@ dispatch:
   pid: 46474
   session_id: 01a09a2a-349f-7ec0-98c9-ebdeaf27a4ee
   landing: not-started
+  review_pid: 340
+  review_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q12/review-exit.txt
+  review_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q12/review-report.md
+  notes: the worker's report is read and its diff saved as /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q12/diff.patch; verify in the worktree is green (1874 tests, one known git-watcher flake, browser 23 of 24: tests/browser/pages.spec.ts "closing a page asks first" fails by design since the default page no longer holds a panel tab, to be fixed at landing by opening a second view into the new page before the close); the first review is running; next steps are the repair round if the review finds misses, then wip, cherry-pick, the spec fix, verify on main, the Chrome check on TEST (the HPC header's green live word, the rail labels at 98 px, the tab strip's scroll controls with seven tabs open, the empty panel), the booking, then the PAUSE Axel asked for after Q11 and Q12
 ```
 
 ## The standing demands (from Axel, in force)
