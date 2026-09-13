@@ -26,13 +26,13 @@ dispatch:
   worker: codex:gpt-5.6-sol
   worktree: .agents/worktrees/d19
   base: 101737b6fc99921ef25f8ae2d6b0c990928c3836
-  launched: pending
+  launched: 2026-09-13T15:51:51+02:00
   prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19/prompt.md
   events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19/events.jsonl
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19/report.md
   exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19/exit.txt
-  pid: pending
-  session_id: pending
+  pid: 26903
+  session_id: 01a09b09-e523-7c63-8147-13e2372e52cd
   landing: not-started
   notes: Axel lifted the pause at 16:00 for D19 alone ("Continue with D19, then pause again"); this session now runs on his second account (CLAUDE_CONFIG_DIR=~/.claude-work, the university Max 5x login; the note is in tools/oculus/README.md and the memory); at landing the orchestrator installs the status-line command in ~/.claude/settings.json (shared by both accounts through the symlink) with Axel's yes carried by the package, checks the view on TEST, books, reports and pauses
 ```
