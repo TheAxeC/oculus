@@ -12,7 +12,11 @@ import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import DropLayer from '../../src/lib/shell/DropLayer.svelte';
 import Workbench from '../../src/lib/shell/Workbench.svelte';
-import Tabs, { insertionIndex } from '../../src/lib/ui/Tabs.svelte';
+import Tabs, {
+    horizontalWheelDelta,
+    insertionIndex,
+    tabScrollState
+} from '../../src/lib/ui/Tabs.svelte';
 import {
     THRESHOLD,
     cancel,
@@ -301,6 +305,40 @@ describe('the insertion mark', () => {
         expect(insertionIndex(midpoints, 99)).toBe(2);
         expect(insertionIndex(midpoints, 400)).toBe(3);
         expect(insertionIndex([], 400)).toBe(0);
+    });
+
+    it('draws both overflow controls hidden until the client measures the strip', () => {
+        const body = strip(null);
+        expect(body).toContain('aria-label="Scroll tabs left"');
+        expect(body).toContain('aria-label="Scroll tabs right"');
+        expect([...body.matchAll(/class="scroll-control[^"]*" hidden/g)]).toHaveLength(2);
+    });
+
+    it('derives overflow edges and horizontal wheel travel from browser measurements', () => {
+        expect(tabScrollState(300, 100, 0)).toEqual({
+            overflowing: true,
+            atStart: true,
+            atEnd: false
+        });
+        expect(tabScrollState(300, 100, 100)).toEqual({
+            overflowing: true,
+            atStart: false,
+            atEnd: false
+        });
+        expect(tabScrollState(300, 100, 200)).toEqual({
+            overflowing: true,
+            atStart: false,
+            atEnd: true
+        });
+        expect(tabScrollState(100, 100, 0).overflowing).toBe(false);
+        expect(horizontalWheelDelta(2, 20)).toBe(20);
+        expect(horizontalWheelDelta(-30, 4)).toBe(-30);
+    });
+
+    it('hides controls when shrinking tabs fit the width available without controls', () => {
+        // A 210 px strip has a 170 px viewport while its two controls take 40 px.
+        expect(tabScrollState(190, 170, 0, 210).overflowing).toBe(false);
+        expect(tabScrollState(230, 170, 0, 210).overflowing).toBe(true);
     });
 
     it('draws an aria-hidden badge and split cells without changing the tab name', () => {

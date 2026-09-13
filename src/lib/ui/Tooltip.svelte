@@ -26,7 +26,7 @@
     type Props = {
         /** The words, already translated by the caller. The empty string draws no bubble at all. */
         text: string;
-        /** Under the control, or beside it: the rail is 52 px wide and has no room underneath. */
+        /** Under the control, or beside it: the rail is narrow and has no room underneath. */
         placement?: 'below' | 'beside';
         /**
          * Make the wrapper presentational, for a control whose parent owns it by role: a tab inside

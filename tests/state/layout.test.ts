@@ -672,8 +672,8 @@ describe('the store', () => {
         const storage = fakeStorage();
         expect(loadLayout(storage)).toBe(false);
         expect(viewsOf(layout('main'))).toEqual(['status']);
-        expect(viewsOf(layout('panel'))).toEqual(['findings']);
-        expect(dockedAt()).toBe('right');
+        expect(viewsOf(layout('panel'))).toEqual([]);
+        expect(dockedAt()).toBe('hidden');
         expect(panelSize()).toBe(PANEL_DEFAULT);
     });
 
@@ -798,7 +798,7 @@ describe('the store', () => {
         dock('hidden');
         openView('venues', 'panel');
         expect(dockedAt()).toBe('right');
-        expect(viewsOf(layout('panel'))).toEqual(['findings', 'venues']);
+        expect(viewsOf(layout('panel'))).toEqual(['venues']);
         expect(viewsOf(layout('main'))).toEqual(['status']);
     });
 

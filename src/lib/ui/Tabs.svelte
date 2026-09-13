@@ -27,6 +27,32 @@
         const found = midpoints.findIndex((middle) => x < middle);
         return found < 0 ? midpoints.length : found;
     }
+
+    export type TabScrollState = {
+        overflowing: boolean;
+        atStart: boolean;
+        atEnd: boolean;
+    };
+
+    /** Overflow uses the width without controls; edge state uses the current viewport, with one pixel of rounding slack. */
+    export function tabScrollState(
+        scrollWidth: number,
+        clientWidth: number,
+        scrollLeft: number,
+        widthWithoutControls: number = clientWidth
+    ): TabScrollState {
+        const end = Math.max(0, scrollWidth - clientWidth);
+        return {
+            overflowing: scrollWidth - widthWithoutControls > 1,
+            atStart: scrollLeft <= 1,
+            atEnd: scrollLeft >= end - 1
+        };
+    }
+
+    /** Turn either axis of a wheel gesture into horizontal movement, preserving trackpad intent. */
+    export function horizontalWheelDelta(deltaX: number, deltaY: number): number {
+        return Math.abs(deltaX) > Math.abs(deltaY) ? deltaX : deltaY;
+    }
 </script>
 
 <script lang="ts">
@@ -44,6 +70,7 @@
 
     import type { Snippet } from 'svelte';
     import Glyph from './Glyph.svelte';
+    import ToolButton from './ToolButton.svelte';
     import Tooltip from './Tooltip.svelte';
     import { t } from '$lib/state/text';
 
@@ -79,6 +106,58 @@
      * leaves null behind rather than shortening the array, so every read skips what is not there.
      */
     let faces: (HTMLElement | undefined | null)[] = $state([]);
+    let strip: HTMLDivElement | undefined = $state(undefined);
+    let opener: HTMLDivElement | undefined = $state(undefined);
+    let scroller: HTMLDivElement | undefined = $state(undefined);
+    let scroll = $state<TabScrollState>({ overflowing: false, atStart: true, atEnd: true });
+
+    function measureScroll(): void {
+        if (scroller === undefined || strip === undefined) return;
+        const widthWithoutControls = strip.clientWidth - (opener?.offsetWidth ?? 0);
+        scroll = tabScrollState(
+            scroller.scrollWidth,
+            scroller.clientWidth,
+            scroller.scrollLeft,
+            widthWithoutControls
+        );
+    }
+
+    $effect(() => {
+        const node = scroller;
+        const watched = faces.slice(0, tabs.length);
+        if (node === undefined || typeof ResizeObserver === 'undefined') return;
+        const observer = new ResizeObserver(measureScroll);
+        observer.observe(node);
+        if (strip !== undefined) observer.observe(strip);
+        if (opener !== undefined) observer.observe(opener);
+        for (const face of watched) if (face !== undefined && face !== null) observer.observe(face);
+        queueMicrotask(measureScroll);
+        return () => observer.disconnect();
+    });
+
+    $effect(() => {
+        const selected = active;
+        const index = tabs.findIndex((tab) => tab.id === selected);
+        queueMicrotask(() => {
+            faces[index]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            measureScroll();
+        });
+    });
+
+    function scrollOne(direction: -1 | 1): void {
+        if (scroller === undefined) return;
+        const width = faces.find((face) => face !== undefined && face !== null)?.offsetWidth ?? 0;
+        scroller.scrollBy({ left: direction * width, behavior: 'smooth' });
+    }
+
+    function wheel(event: WheelEvent): void {
+        if (scroller === undefined || !scroll.overflowing) return;
+        const delta = horizontalWheelDelta(event.deltaX, event.deltaY);
+        if (delta === 0) return;
+        event.preventDefault();
+        scroller.scrollLeft += delta;
+        measureScroll();
+    }
 
     function down(id: string, event: PointerEvent): void {
         onpointerdown?.(id, { x: event.clientX, y: event.clientY });
@@ -116,8 +195,19 @@
      would be inserted and do nothing else; the strip is not a control and takes no focus. They sit
      on the wrapper rather than on the tab list, since a tablist with handlers on it is a widget
      that must take focus, and this one is still only a list of buttons. -->
-<div class="strip" onpointermove={over} onpointerleave={out}>
-    <div class="tabs" role="tablist">
+<div class="strip" bind:this={strip} onpointermove={over} onpointerleave={out}>
+    <div class="scroll-control scroll-left" hidden={!scroll.overflowing}>
+        <ToolButton
+            label={t('ui.tabs_scroll_left')}
+            glyph="arrow_to"
+            compact
+            disabled={scroll.atStart}
+            onclick={() => scrollOne(-1)}
+        />
+    </div>
+    <!-- svelte-ignore a11y_no_static_element_interactions the wheel translates vertical wheel
+         travel into the horizontal scrolling this strip already owns. -->
+    <div class="tabs" role="tablist" bind:this={scroller} onscroll={measureScroll} onwheel={wheel}>
         {#each tabs as tab, index (tab.id)}
             {#if dropIndex === index}
                 <span class="mark" aria-hidden="true"></span>
@@ -179,8 +269,19 @@
             <span class="mark" aria-hidden="true"></span>
         {/if}
     </div>
+    <div class="scroll-control" hidden={!scroll.overflowing}>
+        <ToolButton
+            label={t('ui.tabs_scroll_right')}
+            glyph="arrow_to"
+            compact
+            disabled={scroll.atEnd}
+            onclick={() => scrollOne(1)}
+        />
+    </div>
     {#if menu !== undefined}
-        <div class="opener">{@render menu()}</div>
+        <div class="opener" bind:this={opener}>
+            {@render menu()}
+        </div>
     {/if}
 </div>
 
@@ -199,6 +300,26 @@
         flex: 1 1 auto;
         min-width: 0;
         overflow-x: auto;
+        scrollbar-width: none;
+    }
+
+    .tabs::-webkit-scrollbar {
+        display: none;
+    }
+
+    .scroll-control {
+        display: flex;
+        align-items: center;
+        flex: 0 0 auto;
+        padding: 2px;
+    }
+
+    .scroll-control[hidden] {
+        display: none;
+    }
+
+    .scroll-left :global(.glyph) {
+        transform: rotate(180deg);
     }
 
     .opener {

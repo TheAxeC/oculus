@@ -88,6 +88,8 @@
         align?: 'left' | 'right';
         /** Use the activity rail's one full-width, 34 px opener box. */
         rail?: boolean;
+        /** Draw a compact rail glyph above its visible label instead of hiding the label. */
+        stacked?: boolean;
     };
 
     let {
@@ -98,7 +100,8 @@
         compact = false,
         placement = 'up',
         align = 'left',
-        rail = false
+        rail = false,
+        stacked = false
     }: Props = $props();
 
     let open = $state(false);
@@ -194,6 +197,7 @@
             class="opener"
             class:compact
             class:rail-control={rail}
+            class:stacked
             bind:this={button}
             aria-haspopup="menu"
             aria-expanded={open}
@@ -203,7 +207,7 @@
             {#if glyph !== undefined}
                 <Glyph name={glyph} />
             {/if}
-            {#if !compact}
+            {#if !compact || stacked}
                 <span class="label">{label}</span>
             {/if}
         </button>
@@ -293,6 +297,24 @@
         background: none;
         font-size: var(--fs-xl);
         padding: 0;
+    }
+
+    .opener.stacked {
+        flex-direction: column;
+        gap: 1px;
+    }
+
+    .opener.stacked :global(.label) {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-3xs);
+        line-height: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .list {

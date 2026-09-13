@@ -5,6 +5,7 @@
 // every test a context of its own, so each test starts from the one default page.
 
 import { expect, test } from '@playwright/test';
+import { openView } from './rail.ts';
 import { t } from './words.ts';
 
 test('the menu adds a page and renames it', async ({ page }) => {
@@ -98,7 +99,9 @@ test('closing a page asks first: cancel keeps it, confirm removes it', async ({ 
     await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
     await expect(strip.getByRole('tab')).toHaveCount(2);
 
-    // The default workbench holds two tabs, the main area's and the panel's, so the close asks.
+    // A new page holds one tab, the Status view, and its panel is empty; a second view opened into
+    // it makes two, so the close asks.
+    await openView(page, 'focus', t('views.focus'));
     await strip.getByRole('tab', { name: t('ui.page_default', 2) }).hover();
     await strip
         .getByRole('button', { name: t('ui.close_tab') })

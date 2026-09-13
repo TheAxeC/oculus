@@ -87,9 +87,8 @@ export const PANEL_MIN = 0.1;
 export const PANEL_MAX = 0.6;
 export const PANEL_DEFAULT = 0.3;
 
-/** The view the main area starts on, and the one the panel starts on. */
+/** The view the main area starts on. */
 export const MAIN_VIEW = 'status';
-export const PANEL_VIEW = 'findings';
 
 /** The envelope version serialiseLayout writes and parseLayout demands: the list of pages. */
 export const LAYOUT_VERSION = 3;
@@ -132,7 +131,7 @@ export function defaultLayout(): Layout {
     return emptyPane();
 }
 
-/** One pane holding one new instance of a view, which is what each tree of the default holds. */
+/** One pane holding one new instance of a view. */
 function paneOf(view: ViewId): Pane {
     const instance = newInstance(view);
     return { kind: 'pane', tabs: [instance], active: instance.id };
@@ -142,8 +141,8 @@ function paneOf(view: ViewId): Pane {
 export function defaultWorkbench(): Workbench {
     return {
         main: paneOf(MAIN_VIEW),
-        panel: paneOf(PANEL_VIEW),
-        dock: 'right',
+        panel: emptyPane(),
+        dock: 'hidden',
         panelSize: PANEL_DEFAULT
     };
 }

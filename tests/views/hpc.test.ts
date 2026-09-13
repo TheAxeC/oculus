@@ -1,4 +1,5 @@
 // The Live HPC view rendered to HTML: its four heads and every drawable acceptance item use one synthetic socket payload.
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Hpc from '../../src/lib/views/Hpc.svelte';
@@ -90,16 +91,28 @@ describe('Live HPC view', () => {
         expect(body).toMatch(/class="mixed\s/);
         expect(body).toMatch(/class="allocated\s/);
     });
-    it('draws the empty queue line', () =>
-        expect(draw({ ...payload, jobs: [], running: 0, total: 0 }, 2)).toContain(
-            'No jobs in the queue for you right now.'
-        ));
-    it.each(['starting', 'unreachable', 'error'] as const)('draws the %s head state', (status) =>
-        expect(
-            draw(
-                { ...payload, status, hint: 'fixture' },
-                3 + ['starting', 'unreachable', 'error'].indexOf(status)
-            )
-        ).toContain(status === 'starting' ? 'polling cluster...' : status)
-    );
+    it('draws the live status in its own positive span', () => {
+        const body = draw(payload, 2);
+        expect(body).toMatch(/class="[^"]*ok[^"]*"[^>]*>[^<]*live/);
+        expect(body).toContain('1 running');
+    });
+    it('assigns the live and failure status spans their semantic colour tokens and bold weight', () => {
+        const source = readFileSync('src/lib/views/hpc/Head.svelte', 'utf8');
+        expect(source).toMatch(/\.ok\s*{[^}]*--c-green-d-txt[^}]*font-weight:\s*600/s);
+        expect(source).toMatch(/\.bad\s*{[^}]*--c-red-d-txt[^}]*font-weight:\s*600/s);
+    });
+    it('draws the empty queue words in the header and queue body', () => {
+        const body = draw({ ...payload, jobs: [], running: 0, total: 0 }, 3);
+        expect(body).toContain('queue empty');
+        expect(body).toContain('No jobs in the queue for you right now.');
+    });
+    it.each(['starting', 'unreachable', 'error'] as const)('draws the %s head state', (status) => {
+        const body = draw(
+            { ...payload, status, hint: 'fixture' },
+            4 + ['starting', 'unreachable', 'error'].indexOf(status)
+        );
+        expect(body).toContain(status === 'starting' ? 'polling cluster...' : status);
+        if (status === 'starting') expect(body).not.toMatch(/class="[^"]*bad[^"]*"/);
+        else expect(body).toMatch(/class="[^"]*bad[^"]*"/);
+    });
 });

@@ -70,12 +70,14 @@ const VIEWS: Record<string, string> = {
     'focus/Lanes.svelte':
         'summary=fs-xs | .hint=fs-md | .lane-name=fs-md | .count=fs-xs | .lane-sub=fs-xs | .flames=fs-xxs | .chipicon=fs-xs | .name=fs-md | .wait, .next=fs-xs',
     'focus/QuickAdd.svelte': '.lbl=fs-xs',
-    'hpc/Capacity.svelte': '.meter=fs-sm',
-    'hpc/Head.svelte': '',
-    'hpc/Jobs.svelte': 'table=fs-md',
-    'hpc/Log.svelte': '',
-    'hpc/Quota.svelte': '',
-    'hpc/Recent.svelte': '',
+    // Axel allows these HPC differences from the cockpit: sm tables, header, disk and capacity
+    // labels, plus an sm log heading and xs monospace log body.
+    'hpc/Capacity.svelte': '.meter=fs-sm | summary=fs-sm | details :global(table)=fs-sm',
+    'hpc/Head.svelte': '.meta=fs-sm',
+    'hpc/Jobs.svelte': 'table=fs-sm',
+    'hpc/Log.svelte': 'header=fs-sm | pre=fs-xs',
+    'hpc/Quota.svelte': '.quota=fs-sm | h3=fs-sm',
+    'hpc/Recent.svelte': 'details :global(table)=fs-sm',
     'inbox/InboxCard.svelte': '.age=fs-sm | .sub=fs-md',
     'leads/LeadCard.svelte': '.deadline=fs-sm | .sub=fs-md',
     'linkedin/PostCard.svelte': '.date=fs-sm',
@@ -123,12 +125,14 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/views/shared/Intro.svelte': '.intro=fs-md',
     'src/lib/ui/Table.svelte': 'table=fs-md | th=fs-xs',
     'src/lib/ui/Pane.svelte': '.title=fs-sm',
+    'src/lib/ui/Meter.svelte': '.text=fs-xs',
     'src/lib/ui/Toolbar.svelte': '',
-    'src/lib/ui/ToolButton.svelte': '.tool=fs-sm | .tool.rail-control=fs-xl',
+    'src/lib/ui/ToolButton.svelte':
+        '.tool=fs-sm | .tool.rail-control=fs-xl | .tool.stacked :global(.label)=fs-3xs',
     'src/lib/ui/Empty.svelte': '.empty=fs-md | :global(body.rice) .empty=fs-xs',
     'src/lib/ui/Tabs.svelte': '.tab-badge=fs-xs | .cells=fs-xxs | .face, .close=fs-lg',
     'src/lib/ui/Menu.svelte':
-        '.opener=fs-sm | .opener.compact=fs-lg | .opener.rail-control=fs-xl | .item=fs-sm | .item-badge=fs-3xs',
+        '.opener=fs-sm | .opener.compact=fs-lg | .opener.rail-control=fs-xl | .opener.stacked :global(.label)=fs-3xs | .item=fs-sm | .item-badge=fs-3xs',
     'src/lib/shell/ActivityRail.svelte': '.group=fs-3xs | .badge=fs-3xs',
     'src/lib/shell/Workbench.svelte': ''
 };

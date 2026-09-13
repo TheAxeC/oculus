@@ -9,6 +9,7 @@
 // What this does NOT cover: the list opening. There is no DOM in this suite, so no menu is clicked
 // and no $effect runs; a closed Menu renders its opener and no list, which is what is asserted.
 
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import ActivityRail, {
@@ -133,6 +134,26 @@ describe('the rail, drawn', () => {
         for (const id of SMALL) expect(count(body, `data-view="${id}"`)).toBe(1);
     });
 
+    it('draws each direct view label under its glyph without moving its browser identity', () => {
+        for (const id of SMALL) {
+            const button = body.match(
+                new RegExp(`<button[^>]*data-view="${id}"[\\s\\S]*?<\\/button>`)
+            )?.[0];
+            expect(button).toMatch(/class="[^"]*stacked[^"]*"/);
+            expect(button).toMatch(/class="glyph[^"]*"[\s\S]*class="label[^"]*">Status/);
+        }
+    });
+
+    it('uses the measured rail width and clips labels without removing their tooltip', () => {
+        const tokens = readFileSync('src/lib/themes/tokens.css', 'utf8');
+        const button = readFileSync('src/lib/ui/ToolButton.svelte', 'utf8');
+        expect(tokens).toContain('--rail-width: 98px');
+        expect(button).toMatch(
+            /\.tool\.stacked :global\(\.label\)\s*{[^}]*text-overflow:\s*ellipsis/s
+        );
+        expect(body).toMatch(/role="tooltip"[^>]*>Status<\/span>/);
+    });
+
     it('draws the search, update, and three app text controls from the catalog', () => {
         expect(body).toContain('data-action="search"');
         expect(body).toContain('data-action="update"');
@@ -196,7 +217,9 @@ describe('a rail badge', () => {
         const view = buttonWith(direct, 'data-view="badged"');
         const bookmark = buttonWith(direct, 'data-bookmark="docs/manual.html"');
         expect(view).toMatch(/class="[^"]*rail-control/);
+        expect(view).toMatch(/class="[^"]*stacked/);
         expect(bookmark).toMatch(/class="[^"]*rail-control/);
+        expect(bookmark).toMatch(/class="[^"]*stacked/);
         expect(direct).not.toContain('<div class="control" data-view=');
         expect(direct).not.toContain('<div class="control" data-bookmark=');
     });
@@ -209,6 +232,7 @@ describe('a rail badge', () => {
         }).body;
         const group = rendered.match(/data-group="Flyout"[\s\S]*?<button\b[^>]*>/)?.[0] ?? '';
         expect(group).toContain('rail-control');
+        expect(group).toContain('stacked');
     });
 
     it('puts the Live HPC split in the compact rail badge title', () => {

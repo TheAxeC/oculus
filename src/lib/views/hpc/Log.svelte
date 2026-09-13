@@ -40,6 +40,7 @@
         display: flex;
         justify-content: space-between;
         padding: 6px;
+        font-size: var(--fs-sm);
     }
     header span {
         display: flex;
@@ -52,5 +53,7 @@
         padding: 8px;
         background: var(--bg);
         color: var(--ink-txt, var(--ink));
+        font-family: var(--font-mono);
+        font-size: var(--fs-xs);
     }
 </style>

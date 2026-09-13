@@ -66,3 +66,9 @@
             {cell}
         />
     </details>{/if}
+
+<style>
+    details :global(table) {
+        font-size: var(--fs-sm);
+    }
+</style>

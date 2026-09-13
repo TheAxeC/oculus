@@ -83,5 +83,9 @@
     }
     summary {
         cursor: pointer;
+        font-size: var(--fs-sm);
+    }
+    details :global(table) {
+        font-size: var(--fs-sm);
     }
 </style>

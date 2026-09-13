@@ -190,6 +190,7 @@
                         glyph={groupGlyph(section)}
                         compact
                         rail
+                        stacked
                         items={groupItems(section)}
                         onpick={(id, event) => openView(id, event.shiftKey ? 'panel' : 'main')}
                     />
@@ -207,6 +208,7 @@
                             dataView={view.id}
                             compact
                             rail
+                            stacked
                             onclick={(event) =>
                                 openView(view.id, event.shiftKey ? 'panel' : 'main')}
                         />
@@ -237,6 +239,7 @@
                         dataBookmark={`${mark.root}/${mark.path}`}
                         compact
                         rail
+                        stacked
                         onclick={() => openView('document', 'main', documentState(mark))}
                     />
                 </div>
@@ -350,7 +353,7 @@
         background: var(--bg);
         border-right: 1px solid var(--line);
         /* The two menus at the foot open beside the rail; hiding overflow here would clip them to
-           the rail's 52 px, which is what happened on first sight. The view list scrolls on its own. */
+           the rail's width. The view list scrolls on its own. */
         overflow: visible;
     }
 
@@ -362,8 +365,8 @@
         min-height: 0;
     }
 
-    /* The list scrolls on a short window, with no scrollbar drawn: a bar in a 52 px strip covers the
-       glyphs it sits beside, and the wheel and the trackpad reach every entry without it. */
+    /* The list scrolls on a short window, with no scrollbar drawn: a bar in the rail covers the
+       controls it sits beside, and the wheel and the trackpad reach every entry without it. */
     .views {
         overflow-y: auto;
         scrollbar-width: none;

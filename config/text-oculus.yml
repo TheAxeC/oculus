@@ -47,6 +47,8 @@ text:
     sash: "Resize"
     close_tab: "Close tab"
     close_glyph: "dismiss"     # a name in `glyphs:`, not a character: the close control's icon.
+    tabs_scroll_left: "Scroll tabs left"
+    tabs_scroll_right: "Scroll tabs right"
     unknown_view: "Unknown view: {0}"
     rail: "Views"
     theme: "Theme"

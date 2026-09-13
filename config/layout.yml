@@ -6,14 +6,7 @@
 # ===========================================================================
 
 
-# The rail's groups: each group = { label, keys, glyph? } is drawn as a heading over the views it names,
-# in the order listed here; a view no group names trails at the end, and a group naming no registered
-# view is not drawn. A key is a view id; the ids under "Academic life", "Sources" and "Personal" are
-# views a later step registers. The heading sits in a 52 px strip, so a label drawn there is eight
-# letters at most; a group holding more than four registered views is drawn instead as one button with
-# the list beside it, and its label is that button's tooltip rather than a heading. `glyph` is a name in
-# glyphs.yml and is what that one button carries; a group drawn that way without one carries its first
-# view's glyph.
+# The rail's groups: each group = { label, keys, glyph? } is drawn as a heading over the views it names, in the order listed here; a view no group names trails at the end, and a group naming no registered view is not drawn. A key is a view id; the ids under "Academic life", "Sources" and "Personal" are views a later step registers. Each view button draws its label under its glyph. A group holding more than four registered views is drawn instead as one labelled button with the list beside it. `glyph` is a name in glyphs.yml and is what that one button carries; a group drawn that way without one carries its first view's glyph.
 nav_groups:
   boards:
     - { label: "Boards",        keys: [focus, projects, coauthor, archive] }

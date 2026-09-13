@@ -38,6 +38,8 @@
         compact?: boolean;
         /** Use the activity rail's one full-width, 34 px control box. */
         rail?: boolean;
+        /** Draw a compact rail glyph above its visible label instead of hiding the label. */
+        stacked?: boolean;
         /** A rail view id, rendered on the button for browser navigation. */
         dataView?: string;
         /** A configured bookmark identity, rendered on the button for browser navigation. */
@@ -56,12 +58,14 @@
         disabled = false,
         compact = false,
         rail = false,
+        stacked = false,
         dataView,
         dataBookmark
     }: Props = $props();
 
-    const iconOnly = $derived(compact && glyph !== undefined);
-    const tip = $derived(title ?? (iconOnly ? label : ''));
+    const compactGlyph = $derived(compact && glyph !== undefined);
+    const iconOnly = $derived(compactGlyph && !stacked);
+    const tip = $derived(title ?? (compactGlyph ? label : ''));
 </script>
 
 <!-- A button of an exclusive group is a radio its group owns, and a radiogroup owns radios: a
@@ -78,6 +82,7 @@
         class:active
         class:compact={iconOnly}
         class:rail-control={rail}
+        class:stacked
         role={checked === undefined ? undefined : 'radio'}
         aria-checked={checked}
         aria-expanded={expanded}
@@ -126,6 +131,24 @@
         color: var(--ink-txt, var(--ink));
         font-size: var(--fs-xl);
         padding: 0;
+    }
+
+    .tool.stacked {
+        flex-direction: column;
+        gap: 1px;
+    }
+
+    .tool.stacked :global(.label) {
+        display: block;
+        width: 100%;
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-3xs);
+        line-height: 1;
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .tool:hover:not(:disabled) {
