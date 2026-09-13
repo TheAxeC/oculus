@@ -26,13 +26,13 @@ dispatch:
   worker: codex:gpt-5.6-sol
   worktree: .agents/worktrees/d19b
   base: a0323c549daaaac4f8334a5c7ab851fabbc81f1a
-  launched: pending
+  launched: 2026-09-13T20:39:41+02:00
   prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19b/prompt.md
   events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19b/events.jsonl
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19b/report.md
   exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19b/exit.txt
-  pid: pending
-  session_id: pending
+  pid: 10505
+  session_id: 01a09c11-68bb-7950-8a0f-f4e80d9951fa
   landing: not-started
   notes: Axel asked for the Fable and 5-hour percentages at 17:45, after D19 landed and after he found the D19 report false about his own oculus (local.yml never written, fixed at 17:1x, and the window rule fixed at 17:36 as f35361f0); the source is Claude Code's cachedUsageUtilization in each account file; at landing the view is checked in Playwright's Chrome on the built server and on his dev server on 8790 after a restart, then the PAUSE
 ```
