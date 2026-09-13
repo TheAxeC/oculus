@@ -34,7 +34,15 @@ dispatch:
   pid: 71724
   session_id: 01a09acc-a51c-7861-8928-bc7f16fef167
   landing: not-started
-  notes: the second of the two packages Axel asked for at 13:35 ("Please continue with Q13 and Q14, then report back"); after Q14 lands the orchestrator reports and pauses; the report also carries Q13's landing; D19, Q16, Q17 follow once he lifts the pause
+  round: 1
+  repair_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q14/repair-prompt.md
+  repair_events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q14/repair-events.jsonl
+  repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q14/repair-report.md
+  repair_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q14/repair-exit.txt
+  repair_pid: 56744
+  repair_launched: 2026-09-13T15:16:43+02:00
+  review_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q14/review-report.md
+  notes: the worker's report is read and its diff saved as /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q14/diff.patch, the seven checks green in the worktree from the orchestrator's shell on the rerun (1926 tests; four workbench tests and the entry-edit test failed once under load and passed alone and on the rerun); the first review is in agents/reviews/Q14.md (three defects: Tab from a panel pane opened in main, `/` swallowed on a view without a search box, `G` picked a nested scroller); the repair round is running on the worker's thread; next: the second review over diff-2.patch, wip, cherry-pick, tests/browser/keyboard.spec.ts written and run at landing, verify on main, the Chrome check on TEST, the booking, then the REPORT and the PAUSE. It is the second of the two packages Axel asked for at 13:35 ("Please continue with Q13 and Q14, then report back"); after Q14 lands the orchestrator reports and pauses; the report also carries Q13's landing; D19, Q16, Q17 follow once he lifts the pause
 ```
 
 ## The standing demands (from Axel, in force)
