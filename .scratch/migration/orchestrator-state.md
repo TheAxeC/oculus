@@ -21,7 +21,20 @@ reviewer: codex:gpt-5.6-sol  # the reviewer stage, tried from O24a on (Axel, 202
 ```
 
 ```yaml
-dispatch: none
+dispatch:
+  package: D19c
+  worker: codex:gpt-5.6-sol
+  worktree: .agents/worktrees/d19c
+  base: bb45cc90177545d1fb2a72dc1b2a43e069ad49fc
+  launched: pending
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19c/prompt.md
+  events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19c/events.jsonl
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19c/report.md
+  exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19c/exit.txt
+  pid: pending
+  session_id: pending
+  landing: not-started
+  notes: Axel's decision of 21:25 (every 10 minutes, yes to the hidden sessions, restart on any failure) after the orchestrator's test at 21:18 that /usage in a tmux session refreshes the account file; main's working tree carries an uncommitted per-bar as-of edit to views/Usage.svelte and text-oculus.yml awaiting his revert or keep, to be resolved before the cherry-pick; at landing the sessions are started for real on his machine, the card checked on his dev server on 8790 (restarted), then the PAUSE
 ```
 
 ## The standing demands (from Axel, in force)
