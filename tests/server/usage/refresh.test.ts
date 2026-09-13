@@ -62,9 +62,18 @@ afterEach(() => {
 });
 
 function tmux(present = false) {
+    const sessions = new Set<string>(present ? [NAME] : []);
     const stub = {
         calls: [] as string[][],
-        present,
+        /** Whether the single-account session exists; `sessions` holds every name. */
+        get present(): boolean {
+            return sessions.has(NAME);
+        },
+        set present(value: boolean) {
+            if (value) sessions.add(NAME);
+            else sessions.delete(NAME);
+        },
+        sessions,
         dead: false,
         deadFlag: false,
         startsFail: false,
@@ -74,15 +83,15 @@ function tmux(present = false) {
         afterKeys: undefined as string | undefined,
         async run(args: string[]): Promise<string> {
             stub.calls.push(args);
-            if (args[0] === 'has-session' && !stub.present) throw new Error('missing');
+            if (args[0] === 'has-session' && !sessions.has(args[2])) throw new Error('missing');
             if (args[0] === 'new-session') {
                 if (stub.startsFail) throw new Error('start failed');
-                stub.present = true;
+                sessions.add(args[3]);
                 stub.screen = '> ';
                 stub.dead = false;
                 stub.deadFlag = false;
             }
-            if (args[0] === 'kill-session') stub.present = false;
+            if (args[0] === 'kill-session') sessions.delete(args[2]);
             if (args[0] === 'display-message') return stub.deadFlag ? '1' : '0';
             if (args[0] === 'capture-pane')
                 return stub.dead ? 'Pane is dead (status 1)' : stub.screen;
@@ -94,6 +103,8 @@ function tmux(present = false) {
                 stub.screen = stub.afterKeys;
             }
             if (args[0] === 'send-keys' && args.at(-1) === 'Enter' && stub.updates) fetched(at + 1);
+            // Escape closes the sheet and the prompt is back.
+            if (args[0] === 'send-keys' && args.at(-1) === 'Escape') stub.screen = '> ';
             return '';
         }
     };
@@ -154,7 +165,8 @@ describe('hidden Claude usage refresher', () => {
             ['capture-pane', '-p', '-t', NAME],
             ['send-keys', '-t', NAME, '-l', '--', '/usage'],
             ['send-keys', '-t', NAME, '--', 'Enter'],
-            ['send-keys', '-t', NAME, '--', 'Escape']
+            ['send-keys', '-t', NAME, '--', 'Escape'],
+            ['capture-pane', '-p', '-t', NAME]
         ]);
         expect(refresh.state(account)).toEqual({
             state: 'running',
@@ -186,8 +198,10 @@ describe('hidden Claude usage refresher', () => {
         await refresh.ready;
         expect(pauses).toEqual([USAGE_POLL_MS, USAGE_POLL_MS]);
         expect(refresh.state(account).state).toBe('running');
-        // One capture for the prompt wait before the keys, then one per poll for the sheet words.
+        // One capture for the prompt wait before the keys, one per poll for the sheet words, and
+        // one for the prompt after Escape.
         expect(stub.calls.filter((args) => args[0] === 'capture-pane')).toEqual([
+            ['capture-pane', '-p', '-t', NAME],
             ['capture-pane', '-p', '-t', NAME],
             ['capture-pane', '-p', '-t', NAME],
             ['capture-pane', '-p', '-t', NAME]
@@ -234,10 +248,70 @@ describe('hidden Claude usage refresher', () => {
             state: 'running',
             lastRefresh: new Date(NOW).toISOString()
         });
-        expect(stub.calls.slice(-2)).toEqual([
+        expect(stub.calls.slice(-3)).toEqual([
             ['capture-pane', '-p', '-t', NAME],
-            ['send-keys', '-t', NAME, '--', 'Escape']
+            ['send-keys', '-t', NAME, '--', 'Escape'],
+            ['capture-pane', '-p', '-t', NAME]
         ]);
+    });
+
+    it('replaces a session whose prompt does not return after Escape', async () => {
+        const stub = tmux();
+        const original = stub.run;
+        stub.run = async (args: string[]) => {
+            const out = await original(args);
+            if (args[0] === 'send-keys' && args.at(-1) === 'Escape') stub.screen = '';
+            return out;
+        };
+        const refresh = watcher(stub, { run: stub.run });
+        await refresh.ready;
+        expect(refresh.state(account)).toMatchObject({ state: 'down', reason: 'prompt_missing' });
+        expect(stub.present).toBe(false);
+    });
+
+    it('keeps one hidden session per Claude account and none for a Codex account', async () => {
+        const stub = tmux();
+        stub.afterKeys = 'Current week (Fable)\n1% used';
+        const work = { tool: 'claude', dir: join(root, 'b', '.claude'), label: 'Work' } as const;
+        const codex = { tool: 'codex', dir: join(root, '.codex'), label: 'Codex' } as const;
+        write(claudeAccountFile(work.dir), { cachedUsageUtilization: { fetchedAtMs: NOW - 1 } });
+        const refresh = watcher(stub, { accounts: [account, work, codex] });
+        await refresh.ready;
+        expect(
+            stub.calls.filter((args) => args[0] === 'new-session').map((args) => args[3])
+        ).toEqual([NAME, 'oculus-usage-work']);
+        expect([...stub.sessions]).toEqual([NAME, 'oculus-usage-work']);
+        expect(refresh.state(work).state).toBe('running');
+        expect(refresh.state(codex)).toMatchObject({ state: 'down', reason: 'start_failed' });
+    });
+
+    it('publishes every state change through onChange', async () => {
+        const stub = tmux();
+        const seen: string[] = [];
+        const refresh: UsageRefreshWatcher = watcher(stub, {
+            onChange: () => seen.push(refresh.state(account).state)
+        });
+        await refresh.ready;
+        expect(seen).toEqual(['restarting', 'running']);
+    });
+
+    it.each([
+        ['Please log in to continue', 'login_required'],
+        ['Usage limit reached until 3pm', 'usage_limit']
+    ])('recovers from %s on the next scheduled tick', async (screen, reason) => {
+        vi.useFakeTimers();
+        const stub = tmux();
+        stub.updates = false;
+        stub.afterKeys = screen;
+        const refresh = watcher(stub);
+        await refresh.ready;
+        expect(refresh.state(account)).toMatchObject({ state: 'down', reason });
+        expect(stub.present).toBe(false);
+        stub.afterKeys = 'Current week (Fable)\n1% used';
+        at += 600_000;
+        await vi.advanceTimersByTimeAsync(600_000);
+        expect(refresh.state(account).state).toBe('running');
+        expect(stub.calls.filter((args) => args[0] === 'new-session')).toHaveLength(2);
     });
 
     it('caps an unchanged file at 15 seconds when neither the sheet nor a newer file appears', async () => {

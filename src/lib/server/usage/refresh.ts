@@ -284,6 +284,14 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
                 publish(account, 'down', paneReason(lastScreen), true);
                 return;
             }
+            // Escape closes the sheet; a prompt that does not come back is a session to replace.
+            const back = await promptShown(account);
+            if (back === null) return;
+            if (!back) {
+                await stop(account);
+                publish(account, 'down', paneReason(lastScreen), true);
+                return;
+            }
             publish(account, 'running', '', false, iso(now));
         } catch {
             await stop(account);

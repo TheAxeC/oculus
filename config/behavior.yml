@@ -47,24 +47,24 @@ stale_lag_days: 1
 # default (litwatch 14 | inbox 10 | scout 7). Set high (e.g. 999) to effectively silence one.
 # (No audit key: the audit is deterministic and regenerates every build, so it is never "stale".)
 refresh_stale_days:
-  litwatch: 14   # 🔭 /research-cockpit litwatch  (meta.last_run in literature-radar.yml)
-  inbox: 2      # 📨 /research-cockpit inbox      (`meta.run` in inbox.yml)
-  scout: 7       # 🎓 /research-cockpit scout      (newest meta.log date in position-leads.yml)
+  litwatch: 14  # /research-cockpit litwatch (meta.last_run in literature-radar.yml)
+  inbox: 2  # /research-cockpit inbox (`meta.run` in inbox.yml)
+  scout: 7  # /research-cockpit scout (newest meta.log date in position-leads.yml)
 
 
 # "This week" Deadlines look-ahead windows - how far out each kind of date appears on the Focus strip.
 # Slower, high-value dates get a long planning horizon; fast-moving job leads get a tight one. All optional;
 # omit a key to use the default shown.
-deadline_horizon_days: 90    # 📄 your project-manifest `deadline:` + 🎤 talks / 🏫 teaching (default 90)
+deadline_horizon_days: 90  # your project-manifest `deadline:` + talks / teaching (default 90)
 
-leads_horizon_days: 21       # ⏰ academic-position-lead deadlines from position-leads.yml (default 21)
+leads_horizon_days: 21  # academic-position-lead deadlines from position-leads.yml (default 21)
 
-conf_horizon_months: 1       # 🎤 venues.yml conference deadlines, in whole months ahead (default 1 = this/next)
+conf_horizon_months: 1  # venues.yml conference deadlines, in whole months ahead (default 1 = this/next)
 
 leads_badge_days: 14         # amber count badge on Position Leads, leads due within N days (default 14)
 
 
-venue_conc_warn: 4           # ⚠ "venue load" Focus nudge when >= N in-flight papers target one venue
+venue_conc_warn: 4  # "venue load" Focus nudge when >= N in-flight papers target one venue
 
 linkedin_cadence_days: 30   # nudge/red badge when it's been longer than this since the last post
 
