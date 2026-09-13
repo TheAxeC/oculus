@@ -62,7 +62,7 @@ dispatch:
 
 - D19c fix, one-shot sessions: every `usage_refresh_min` minutes and on Refresh, a Claude Code session is started, sent `/usage`, read and killed; nothing resident between ticks (the two hidden sessions idle at 137 MB and 177 MB; Axel 2026-09-14 00:00 "wtf 150MB"). Built on main right after R3 lands.
 - D19c fix, the card tells the truth: after a Refresh that produced no newer figures, the refresher line names the fetch time and that Claude Code renews the figures after five minutes; only then. Built with the item above.
-- R6's plan line names the account file's fetch time as the refresher's success signal; Claude Code rewrites that file only after 5 minutes, so the line's premise is wrong. Axel's ruling needed before R6 is dispatched: the landed rule (the sheet's words or a newer file) or a change of his choosing.
+- R10, history out of code comments (462 lines in 94 files under src, tests and bin name a package id, a session or a date; the rule is in the hub CLAUDE.md, the spec and the skill): booked in plan.md after R8, not started.
 - Audit of every "sharp edges, unresolved" list in the landing notes below (42 packages, O1 to O25e) against the tree: each still-open edge becomes a booked plan line or a fix. Scheduled 2026-09-14 while R7's worker runs; not started.
 
 ## Verification, every package
@@ -205,6 +205,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 No night log is running. Nothing has been left for Axel to read here.
 
 ## Rulings in full (the plan.md lines before the trim of 2026-09-13, kept whole)
+
+- R6 before 2026-09-14 00:50: R6 simplicity: the card cursor becomes pane state the views render, not a DOM attribute the shell sets; the usage refresher's success is read from the account file's fetch time, not from words on a tmux screen (Axel 2026-09-13 22:30; brief at dispatch).
 
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's `.claude/settings.local.json` and, Axel said the same day, in cathedra's and game-engine's local settings too, written by Axel: `curl -s -m 1 -X POST http://127.0.0.1:8790/api/hook -d @- || true`, timeout 5, verified by parsing the file. Project scope, so they fire only for sessions started in the research hub; sessions in other repositories show registry state, not hook state, until the same block is in `~/.claude/settings.json`. Whether to move it there is Axel's call. O16 itself now needs only the endpoint and the `osascript` push; nothing blocks it after O13.
 - Agents may run on Codex for the O26 trial (Axel, 2026-09-11), an exception to the rule that agents are Opus 5 or lower: the same brief, spec, worktree, checks and diff read apply, and the agent still runs no git command; whether the exception widens to other packages is decided from the O26 usage row. Packages that install dependencies stay on Opus until Codex's sandbox and network settings are settled.

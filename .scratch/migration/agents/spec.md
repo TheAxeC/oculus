@@ -8,7 +8,7 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 2. The files the brief lists, and only those; where the brief gives a line range, read the range. Read them in one turn, not one per turn: every turn carries the whole context again, so the number of turns is what a package costs.
 3. Do not read the hub's instruction file (`CLAUDE.md`, also reachable as `AGENTS.md`); the rules that bind you are the ones below.
 
-## The working rules that bind every package (from the hub's CLAUDE.md, 2026-09-10)
+## The working rules that bind every package (from the hub's CLAUDE.md)
 
 - A report states the end state: what is NOT done first, then a DONE / NOT DONE ledger naming the command that proves each row. No narration of wrong turns taken and backed out. Never present partial work as complete; never state a measurement not taken.
 - Every claim about behaviour, cost or timing names the command that produced it, or says "not verified".
@@ -35,6 +35,8 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 
 ## What every package obeys
 
+- No history in code or comments: a comment says what the code does and why, never which package, session, date, earlier bug or reverted attempt it came from. A comment naming a package id (O17, Q14, D19c) or a date is a defect.
+
 - One source file under 1000 lines. A file approaching it is split by concern.
 - Four-space indentation everywhere. Prettier is pinned in `.prettierrc`; run `npm run format` on what you wrote and `npm run format:check` before you report. Never hand-format to satisfy the check.
 - ASCII only in every file you author. Glyphs come from `config/glyphs.yml`; every user-facing string from `config/text.yml` or `config/text-oculus.yml` through `t("group.key")`, in a component and in a state module alike; colours from `themes/tokens.css`. A literal string, a raw hex or a literal glyph anywhere a reader sees it is a defect. A catalog group lives in exactly one of the two files: a new key joins its group where that group already is, and a group is never declared in both.
@@ -45,7 +47,7 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 - The layer boundaries in `DESIGN.md`: `ui/` imports no state and no view; `shell/` imports no view by name; `views/` imports no shell and no other view; nothing client-side imports `lib/server/`. `tests/boundaries.test.ts` enforces them and must pass.
 - One line per paragraph or bullet in any Markdown or YAML you edit. No hard wrapping.
 - No dependency the brief did not name. `npm install` of something new is a report, not an action.
-- The browser suite (`tests/browser/*.spec.ts`, with its helpers `rail.ts`, `hub.ts`, `words.ts`, `serve.ts`) is run by the orchestrator after you report, and its selectors are load-bearing: a `data-view`, `data-group`, `data-entry`, `data-lead`, `data-reveal` or class it selects on, and a control name it clicks, is part of the tree's contract. Before you change the rail, a card's markup, a tab or a control's name, read `grep -rn 'data-\|locator(\|getByRole' tests/browser` and keep every selector resolving, or change the spec with the markup and say so in the report (amendment of 2026-09-12, after O25c and Q4a each broke the suite without knowing).
+- The browser suite (`tests/browser/*.spec.ts`, with its helpers `rail.ts`, `hub.ts`, `words.ts`, `serve.ts`) is run by the orchestrator after you report, and its selectors are load-bearing: a `data-view`, `data-group`, `data-entry`, `data-lead`, `data-reveal` or class it selects on, and a control name it clicks, is part of the tree's contract. Before you change the rail, a card's markup, a tab or a control's name, read `grep -rn 'data-\|locator(\|getByRole' tests/browser` and keep every selector resolving, or change the spec with the markup and say so in the report.
 - A test never asserts a known defect. A threshold is never loosened to make a check pass; a check that only passes after loosening is a finding to report.
 - The cockpit under `tools/cockpit` is a cautionary reference for what its code got wrong, never a justification. Port its facts (the transcript format, the registry, the grouping clamp, the four git commands), not its structure.
 
@@ -57,13 +59,13 @@ Run every command the brief lists, from `tools/oculus` in the worktree, and fix 
 
 First line: anything NOT done, or "Everything in the brief is done". Then a DONE / NOT DONE table, one row per deliverable in the brief, each naming the command that proves it and its output. Then: files changed with line counts; every judgment call the brief did not cover, as a decision the orchestrator may reverse; anything in the brief or the design that turned out wrong or impossible, said plainly; every limitation, sharp edge or compromise you know of, however small. Never present partial work as complete; never state a measurement you did not take.
 
-## Amendment of 2026-09-13 22:30 (Axel): the principles every package is judged on
+## The principles every package is judged on
 
 - No globals. No `globalThis`, no module-level mutable state shared across module graphs, no process-wide bridge; a dependency is passed in (a context object, a constructor argument, a function parameter) and a route reaches the server's objects through the request's locals, never through a global. Package R3 removes the six bridges that exist; a package that adds one is not landed.
 - SOLID, DRY, KISS, YAGNI, separation of concerns, high cohesion and low coupling: a module has one reason to change; a new view, channel or key extends by registration, never by editing consumers; a parser, a fold or a rule exists once and is reused; nothing is built for a need the plan does not name; a file stays under 1000 lines and a component under about 600, split by responsibility before it grows past that; a reader-visible behaviour is state, not a DOM side effect; a check reads a fact (a file, a field, a version) rather than scraping a screen.
 - Every config file and catalog is oculus's own, laid out for oculus: no cockpit-only key, group or comment; every catalog key has a reader in the tree (a test fails on an orphan key).
 
-## Amendment of 2026-09-14 00:05 (Axel): nothing left undone, no yes for a fix, reported means booked
+## Nothing left undone, no yes for a fix, reported means booked
 
 - Nothing inside a brief is left undone. A miss the read, the reviewer or the checks find is repaired by the worker or fixed by the orchestrator at landing; a package is not ticked while any acceptance item, test or convention of its brief is short. A landing report never lists a miss inside the brief as a gap or a sharp edge, unless it is a stop (the skill's Stops section), and then it is booked.
 - A fix of a defect in delivered work needs no yes from Axel, whatever the fix makes visible. Only a real user-visible shape he has not asked for, a premise found wrong or a clash between two rules goes to him.
