@@ -16,6 +16,9 @@ import { run, type KeyChunk, type TmuxOptions } from './tmux.ts';
 /** Every tmux session oculus owns carries this prefix and nothing else does. */
 export const PREFIX = 'oculus-';
 
+/** Hidden Claude usage sessions begin with this full tmux session-name prefix. */
+export const USAGE_PREFIX = `${PREFIX}usage-`;
+
 /** The three things a terminal runs (DESIGN.md, decision of 2026-09-10). */
 export const KINDS: TerminalKind[] = ['claude', 'codex', 'shell'];
 
@@ -207,6 +210,7 @@ export function listArgs(): string[] {
 export function parseTerminal(line: string): Terminal | null {
     const fields = line.split('\t');
     if (fields.length < 6) return null;
+    if (fields[0].startsWith(USAGE_PREFIX)) return null;
     const id = terminalId(fields[0]);
     if (id === null || id === '') return null;
     const created = Number(fields[1]);

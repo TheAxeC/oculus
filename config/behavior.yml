@@ -25,6 +25,10 @@ usage_tiers:
   default_claude_pro: "Pro"
   prolite: "Plus"
 
+# Hidden Claude Code sessions refresh every account's cached usage figures on this cadence and model.
+usage_refresh_min: 10
+usage_refresh_model: "haiku"
+
 # domains for which a project is EXPECTED to have a dataset (the audit flags a missing Data section); the
 # theory/method/meta lines legitimately have none. Author-specific, so it lives here (config default is empty).
 data_domains: [heart, liver, liverfl, liversurv, immune, brain, brainbci]

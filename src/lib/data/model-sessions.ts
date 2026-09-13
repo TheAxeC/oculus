@@ -376,6 +376,12 @@ export type UsageLiveSession = {
     updatedAt: string;
     cwd: string;
 };
+export type UsageRefresher = {
+    state: 'running' | 'restarting' | 'down';
+    since: string;
+    reason: string;
+    lastRefresh: string;
+};
 export type UsageAccount = {
     tool: UsageTool;
     label: string;
@@ -388,6 +394,7 @@ export type UsageAccount = {
     fetchedAt?: string;
     windows: UsageWindow[];
     live: UsageLiveSession[];
+    refresher?: UsageRefresher;
 };
 export type UsageDay = {
     tool: UsageTool;

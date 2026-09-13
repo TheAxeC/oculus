@@ -7,9 +7,11 @@
     import Meter from '$lib/ui/Meter.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Table, { type Column } from '$lib/ui/Table.svelte';
+    import ToolButton from '$lib/ui/ToolButton.svelte';
     import { usage } from '$lib/state/entities.svelte';
-    import { basename } from '$lib/state/format';
+    import { basename, clock } from '$lib/state/format';
     import { t } from '$lib/state/text';
+    import { refreshRefusal, refreshUsageAccount } from '$lib/state/usage-refresh.svelte';
     import type { UsageAccount, UsageDay, UsageWindow } from '$lib/state/usage';
     import type { ViewProps } from './registry';
 
@@ -96,6 +98,34 @@
     function hasStatus(account: UsageAccount): boolean {
         return account.windows.length > 0 || account.live.length > 0;
     }
+
+    function refresherReason(reason: string): string {
+        if (reason === 'login_required') return t('usage.refresher_login_required');
+        if (reason === 'usage_limit') return t('usage.refresher_usage_limit');
+        if (reason === 'offline') return t('usage.refresher_offline');
+        if (reason === 'prompt_missing') return t('usage.refresher_prompt_missing');
+        if (reason === 'start_failed') return t('usage.refresher_start_failed');
+        return t('usage.refresher_refresh_failed');
+    }
+
+    function refresherText(account: UsageAccount): string {
+        const refusal = refreshRefusal(account.label);
+        if (refusal !== '') return refusal;
+        const refresher = account.refresher;
+        if (refresher === undefined) return '';
+        if (refresher.state === 'down') {
+            return t(
+                'usage.refresher',
+                t('usage.refresher_down', clock(refresher.since), refresherReason(refresher.reason))
+            );
+        }
+        return t(
+            'usage.refresher',
+            refresher.state === 'running'
+                ? t('usage.refresher_running')
+                : t('usage.refresher_restarting')
+        );
+    }
 </script>
 
 <Pane title={t('views.usage')}>
@@ -118,6 +148,13 @@
                             {/if}
                             {#if account.billing}
                                 <Chip label={account.billing} />
+                            {/if}
+                            {#if account.tool === 'claude'}
+                                <ToolButton
+                                    label={t('usage.refresh')}
+                                    glyph="refresh"
+                                    onclick={() => refreshUsageAccount(account.label)}
+                                />
                             {/if}
                         {/snippet}
                         {#if hasStatus(account)}
@@ -174,6 +211,9 @@
                         {:else}
                             <Empty message={t('usage.no_data')} glyph="circle_empty" />
                         {/if}
+                        {#if account.tool === 'claude' && (account.refresher !== undefined || refreshRefusal(account.label) !== '')}
+                            <p class="refresher">{refresherText(account)}</p>
+                        {/if}
                     </Card>
                 {/each}
             </div>
@@ -222,6 +262,12 @@
     .window-name,
     .live-row {
         font-size: var(--fs-sm);
+    }
+
+    .refresher {
+        margin: 6px 0 0;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-xs);
     }
 
     .live {

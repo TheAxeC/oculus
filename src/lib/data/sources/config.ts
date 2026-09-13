@@ -83,8 +83,14 @@ function accountDir(value: string, base: string): string {
     return isAbsolute(value) ? value : resolve(base, value);
 }
 
+/** The label fragment shared by config validation and hidden usage session names. */
+export function usageAccountLabel(label: string): string {
+    return label.toLowerCase().replace(/[^a-z0-9-]+/g, '-');
+}
+
 function usageAccounts(value: unknown, file: string, base: string): UsageAccountConfig[] {
     if (!Array.isArray(value)) throw new Error(`${file}: accounts must be a list`);
+    const claudeLabels = new Set<string>();
     return value.map((item, index) => {
         if (typeof item !== 'object' || item === null || Array.isArray(item)) {
             throw new Error(`${file}: accounts[${index}] must be a map`);
@@ -99,6 +105,15 @@ function usageAccounts(value: unknown, file: string, base: string): UsageAccount
         }
         if (typeof row.label !== 'string' || row.label.length === 0) {
             throw new Error(`${file}: accounts[${index}].label must be words`);
+        }
+        if (tool === 'claude') {
+            const reduced = usageAccountLabel(row.label);
+            if (claudeLabels.has(reduced)) {
+                throw new Error(
+                    `${file}: accounts[${index}].label duplicates a Claude label or reduced label: ${reduced}`
+                );
+            }
+            claudeLabels.add(reduced);
         }
         return { tool: tool as UsageTool, dir: accountDir(row.dir, base), label: row.label };
     });

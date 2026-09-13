@@ -3,7 +3,7 @@
 
 import { mkdirSync, watch } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import type { UsageAccountConfig, UsagePayload } from '../../data/model.ts';
+import type { UsageAccountConfig, UsagePayload, UsageRefresher } from '../../data/model.ts';
 import type { Hub } from '../channels.ts';
 import { onSessionsChange } from '../watch/sessions.ts';
 import { claudeAccountFile, defaultUsageRoot, usageAccounts, type UsageTiers } from './accounts.ts';
@@ -20,6 +20,8 @@ export type UsageWatchOptions = {
     debounce?: number;
     now?: () => number;
     fold?: UsageTranscriptFold;
+    /** The hidden Claude session state attached to each Claude account in the payload. */
+    refresherFor?: (account: UsageAccountConfig) => UsageRefresher;
     /** Milliseconds between clock-driven rebuilds; the debounce coalesces one with a file event. */
     interval?: number;
     /** Folder watcher override for tests; production uses node:fs watch. */
@@ -55,7 +57,13 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
         const at = now();
         const daily = await fold.fold(options.accounts, at);
         const payload: UsagePayload = {
-            accounts: usageAccounts(options.accounts, options.tiers, usageRoot, at),
+            accounts: usageAccounts(
+                options.accounts,
+                options.tiers,
+                usageRoot,
+                at,
+                options.refresherFor
+            ),
             days: daily.rows,
             builtAt: new Date(at).toISOString()
         };

@@ -6,6 +6,7 @@ import {
     mkdtempSync,
     readFileSync,
     readdirSync,
+    rmSync,
     writeFileSync
 } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
@@ -157,6 +158,50 @@ describe('loadLocal', () => {
         expect(() => loadLocal(dir)).toThrow(/tool must be claude or codex/);
     });
 
+    it.each([
+        ['Work', 'Work'],
+        ['University Lab', 'UNIVERSITY@Lab']
+    ])('refuses colliding Claude labels %s and %s', (first, second) => {
+        const dir = scratch();
+        try {
+            writeLocal(
+                dir,
+                JSON.stringify({
+                    accounts: [
+                        { tool: 'claude', dir: 'a/.claude', label: first },
+                        { tool: 'claude', dir: 'b/.claude', label: second }
+                    ]
+                })
+            );
+            expect(() => loadLocal(dir)).toThrow(/duplicates a Claude label or reduced label/);
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
+    it('accepts distinct Claude labels on equal folder basenames and a matching Codex label', () => {
+        const dir = scratch();
+        try {
+            writeLocal(
+                dir,
+                JSON.stringify({
+                    accounts: [
+                        { tool: 'claude', dir: 'a/.claude', label: 'Work' },
+                        { tool: 'claude', dir: 'b/.claude', label: 'Personal' },
+                        { tool: 'codex', dir: 'codex', label: 'Work' }
+                    ]
+                })
+            );
+            expect(loadLocal(dir).accounts.map((account) => account.label)).toEqual([
+                'Work',
+                'Personal',
+                'Work'
+            ]);
+        } finally {
+            rmSync(dir, { recursive: true, force: true });
+        }
+    });
+
     describe('OCULUS_LOCAL', () => {
         afterEach(() => {
             delete process.env.OCULUS_LOCAL;
@@ -284,6 +329,8 @@ describe("oculus's own config directory", () => {
             'stale_days',
             'context_window',
             'usage_tiers',
+            'usage_refresh_min',
+            'usage_refresh_model',
             'data_domains',
             'stale_lag_days',
             'refresh_stale_days',
@@ -388,6 +435,8 @@ describe("oculus's own config directory", () => {
             default_claude_pro: 'Pro',
             prolite: 'Plus'
         });
+        expect(config.usage_refresh_min).toBe(10);
+        expect(config.usage_refresh_model).toBe('haiku');
     });
 
     it('configures the editable source extensions and their viewable superset', () => {

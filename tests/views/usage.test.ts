@@ -1,8 +1,9 @@
 // Layer 4, view test. The Usage view renders account cards, meters, live rows, history totals and both empty states.
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
 import Usage from '../../src/lib/views/Usage.svelte';
+import ToolButton from '../../src/lib/ui/ToolButton.svelte';
 import {
     engineDir,
     glyphCatalog,
@@ -12,6 +13,18 @@ import {
 import type { UsagePayload } from '../../src/lib/data/model.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
+import { setToken } from '../../src/lib/state/writes.svelte.ts';
+
+// Record the actual control callback while retaining the real primitive's server rendering.
+vi.mock('../../src/lib/ui/ToolButton.svelte', async (importOriginal) => {
+    const original = await importOriginal<typeof import('../../src/lib/ui/ToolButton.svelte')>();
+    return { ...original, default: vi.fn(original.default) };
+});
+
+afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.mocked(ToolButton).mockClear();
+});
 
 const config = loadConfig(engineDir()).config;
 setCatalog(textCatalog(config));
@@ -25,7 +38,78 @@ function draw(payload: UsagePayload): string {
     return render(Usage, { props: { instance } }).body;
 }
 
+function refreshPayload(state: 'running' | 'restarting' = 'running'): UsagePayload {
+    return {
+        accounts: [
+            {
+                tool: 'claude',
+                label: 'University',
+                dir: '/tmp/unused-usage-view',
+                email: '',
+                organisation: '',
+                tier: '',
+                tierLabel: '',
+                billing: '',
+                windows: [],
+                live: [],
+                refresher: { state, since: '2026-09-13T12:00:00Z', reason: '', lastRefresh: '' }
+            }
+        ],
+        days: [],
+        builtAt: '2026-09-13T12:00:00Z'
+    };
+}
+
 describe('Usage', () => {
+    it.each(['running', 'restarting'] as const)('renders the %s refresher state', (state) => {
+        expect(draw(refreshPayload(state))).toContain(`refresher: ${state}`);
+    });
+
+    it('sends the card account and token, shows refusal until the next usage payload', async () => {
+        const fetch = vi.fn(
+            async () => new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 })
+        );
+        vi.stubGlobal('fetch', fetch);
+        setToken('usage-test-token');
+        draw(refreshPayload());
+        const control = vi
+            .mocked(ToolButton)
+            .mock.calls.find((call) => call[1].label === 'Refresh now');
+        expect(control).toBeDefined();
+        await control![1].onclick({} as MouseEvent);
+        expect(fetch).toHaveBeenCalledWith('/api/usage/refresh', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'x-oculus-token': 'usage-test-token' },
+            body: JSON.stringify({ account: 'University' })
+        });
+        expect(render(Usage, { props: { instance } }).body).toContain(
+            'refresh refused: the write token was refused'
+        );
+        const next = draw(refreshPayload('restarting'));
+        expect(next).not.toContain('refresh refused:');
+        expect(next).toContain('refresher: restarting');
+    });
+
+    it('shows network failures and non-JSON refusals as the failed request', async () => {
+        const fetch = vi
+            .fn()
+            .mockRejectedValueOnce(new Error('Network unavailable'))
+            .mockResolvedValueOnce(new Response('Unavailable', { status: 503 }));
+        vi.stubGlobal('fetch', fetch);
+        draw(refreshPayload());
+        const control = vi
+            .mocked(ToolButton)
+            .mock.calls.find((call) => call[1].label === 'Refresh now');
+        await control![1].onclick({} as MouseEvent);
+        expect(render(Usage, { props: { instance } }).body).toContain(
+            'refresh refused: the server did not answer'
+        );
+        await control![1].onclick({} as MouseEvent);
+        expect(render(Usage, { props: { instance } }).body).toContain(
+            'refresh refused: the server did not answer'
+        );
+    });
+
     it('draws account details, window meters, live sessions and the seven-day total', () => {
         const html = draw({
             accounts: [
@@ -196,5 +280,34 @@ describe('Usage', () => {
             builtAt: '2026-09-13T12:00:00.000Z'
         });
         expect(html).toContain('Install bin/claude-usage.sh');
+    });
+
+    it('draws each Claude account refresh control and its refresher state', () => {
+        const html = draw({
+            accounts: [
+                {
+                    tool: 'claude',
+                    label: 'University',
+                    dir: '/tmp/.claude-work',
+                    email: '',
+                    organisation: '',
+                    tier: '',
+                    tierLabel: '',
+                    billing: '',
+                    windows: [],
+                    live: [],
+                    refresher: {
+                        state: 'down',
+                        since: '2026-09-13T12:34:00.000Z',
+                        reason: 'usage_limit',
+                        lastRefresh: '2026-09-13T12:30:00.000Z'
+                    }
+                }
+            ],
+            days: [],
+            builtAt: '2026-09-13T12:35:00.000Z'
+        });
+        expect(html).toMatch(/<button[^>]*>[\s\S]*Refresh now[\s\S]*<\/button>/);
+        expect(html).toContain('refresher: down since 14:34: the account usage limit was reached');
     });
 });

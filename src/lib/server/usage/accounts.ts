@@ -16,10 +16,12 @@ import type {
     UsageAccount,
     UsageAccountConfig,
     UsageLiveSession,
+    UsageRefresher,
     UsageWindow
 } from '../../data/model.ts';
 import { isMap } from '../../data/guards.ts';
 import { rollouts } from '../sessions/codex.ts';
+import { USAGE_PREFIX } from '../pty/sessions.ts';
 
 export type UsageTiers = Record<string, string>;
 export type ClaudeUsageCache = { fetchedAt: string; windows: UsageWindow[] };
@@ -59,15 +61,18 @@ function tierLabel(tier: string, tiers: UsageTiers): string {
 }
 
 /** The account file is beside ~/.claude, and inside every other Claude config folder. */
-export function claudeAccountFile(dir: string): string {
+/** Whether a folder is Claude Code's default one, whose account file sits beside it in the home folder. */
+export function isDefaultClaudeDir(dir: string): boolean {
     try {
-        if (realpathSync(dir) === realpathSync(join(homedir(), '.claude'))) {
-            return join(homedir(), '.claude.json');
-        }
+        return realpathSync(dir) === realpathSync(join(homedir(), '.claude'));
     } catch {
         // An unresolved folder has no established home-folder identity.
+        return false;
     }
-    return join(dir, '.claude.json');
+}
+
+export function claudeAccountFile(dir: string): string {
+    return isDefaultClaudeDir(dir) ? join(homedir(), '.claude.json') : join(dir, '.claude.json');
 }
 
 /** Read only oauthAccount's five approved identity and subscription fields. */
@@ -81,6 +86,14 @@ export function claudeAccount(dir: string): Record<string, string> {
         billing: text(oauth.billingType),
         subscriptionCreatedAt: text(oauth.subscriptionCreatedAt)
     };
+}
+
+/** Read only the fetch timestamp for the refresher's account-file polling. */
+export function claudeUsageFetchedAt(dir: string): number | null {
+    const root = json(claudeAccountFile(dir));
+    const cache =
+        root !== null && isMap(root.cachedUsageUtilization) ? root.cachedUsageUtilization : {};
+    return number(cache.fetchedAtMs);
 }
 
 /** Read Claude Code's cached utilization observation without exposing other account-file data. */
@@ -228,6 +241,7 @@ function statusFiles(dir: string): { path: string; mtimeMs: number }[] {
 function liveClaude(path: string, mtimeMs: number): UsageLiveSession | null {
     const data = json(path);
     if (data === null) return null;
+    if (text(data.session_name).startsWith(USAGE_PREFIX)) return null;
     const model = isMap(data.model) ? data.model : {};
     const context = isMap(data.context_window) ? data.context_window : {};
     const cost = isMap(data.cost) ? data.cost : {};
@@ -245,7 +259,8 @@ function claudeUsage(
     account: UsageAccountConfig,
     tiers: UsageTiers,
     usageRoot: string,
-    now: number
+    now: number,
+    refresherFor?: (account: UsageAccountConfig) => UsageRefresher
 ): UsageAccount {
     const identity = claudeAccount(account.dir);
     const cached = claudeCachedUsage(account.dir);
@@ -254,6 +269,7 @@ function claudeUsage(
         .filter((file) => now - file.mtimeMs <= 60 * 60 * 1000)
         .map((file) => liveClaude(file.path, file.mtimeMs))
         .filter((row): row is UsageLiveSession => row !== null);
+    const refresher = refresherFor?.(account);
     return {
         tool: account.tool,
         label: account.label,
@@ -273,7 +289,8 @@ function claudeUsage(
                 }))
             )
         ),
-        live
+        live,
+        ...(refresher === undefined ? {} : { refresher })
     };
 }
 
@@ -369,11 +386,12 @@ export function usageAccounts(
     accounts: UsageAccountConfig[],
     tiers: UsageTiers,
     usageRoot: string = defaultUsageRoot(),
-    now: number = Date.now()
+    now: number = Date.now(),
+    refresherFor?: (account: UsageAccountConfig) => UsageRefresher
 ): UsageAccount[] {
     return accounts.map((account) =>
         account.tool === 'claude'
-            ? claudeUsage(account, tiers, usageRoot, now)
+            ? claudeUsage(account, tiers, usageRoot, now, refresherFor)
             : codexUsage(account, tiers)
     );
 }

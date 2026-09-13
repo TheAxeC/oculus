@@ -195,3 +195,17 @@ it('reads @oculus_resumes back out of a list line, and nothing out of a bad one'
     fields[7] = 'claude:not-a-uuid';
     expect(parseTerminal(fields.join('\t'))?.resumes).toBe(null);
 });
+
+it('leaves hidden usage refresher sessions out of the terminal list', () => {
+    const fields = [
+        'oculus-usage-.claude-work',
+        '1757500000',
+        '0',
+        'claude',
+        '4242',
+        '/ws',
+        '',
+        ''
+    ];
+    expect(parseTerminal(fields.join('\t'))).toBe(null);
+});

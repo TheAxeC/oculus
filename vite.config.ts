@@ -15,6 +15,7 @@ import { bindGitWatcher, watchGit } from './src/lib/server/watch/git.ts';
 import { watchPortfolio } from './src/lib/server/watch/portfolio.ts';
 import { watchSessions } from './src/lib/server/watch/sessions.ts';
 import { bindHpcWatcher, watchHpc } from './src/lib/server/hpc/poll.ts';
+import { bindUsageRefresh, watchUsageRefresh } from './src/lib/server/usage/refresh.ts';
 import { watchUsage } from './src/lib/server/usage/watch.ts';
 
 // The socket and the watcher in development. They are the same three lines as src/server.ts, on
@@ -32,17 +33,17 @@ function oculusSocket(): Plugin {
             if (!(http instanceof Server)) return;
             const engine = engineDir();
             const local = loadLocal(engine);
-            const slurm = (loadConfig(engine).config.slurm ?? {}) as {
+            const behavior = loadConfig(engine).config;
+            const slurm = (behavior.slurm ?? {}) as {
                 host: string;
                 days: number;
                 poll_min: number;
                 quota_min: number;
                 prewarm: boolean;
             };
-            const usageTiers = (loadConfig(engine).config.usage_tiers ?? {}) as Record<
-                string,
-                string
-            >;
+            const usageTiers = (behavior.usage_tiers ?? {}) as Record<string, string>;
+            const usageRefreshMin = behavior.usage_refresh_min as number;
+            const usageRefreshModel = behavior.usage_refresh_model as string;
             const hub = new Hub();
             // O17's terminals, the same three lines as in src/server.ts.
             const terminals = new Terminals(hub);
@@ -64,7 +65,23 @@ function oculusSocket(): Plugin {
                 projectFolders: folders,
                 terminals
             });
-            const usage = watchUsage(hub, { accounts: local.accounts, tiers: usageTiers });
+            const usageRefresh = watchUsageRefresh({
+                accounts: local.accounts,
+                hub: local.hub,
+                claudeBin: local.claudeBin,
+                model: usageRefreshModel,
+                refreshMin: usageRefreshMin,
+                onChange: refreshUsagePayload
+            });
+            const usage = watchUsage(hub, {
+                accounts: local.accounts,
+                tiers: usageTiers,
+                refresherFor: usageRefresh.state
+            });
+            bindUsageRefresh(usageRefresh);
+            function refreshUsagePayload(): void {
+                void usage.refresh();
+            }
             // After the sessions watcher, so its subscription is answered with the first scan.
             const git = watchGit(hub);
             bindGitWatcher(git);
@@ -77,6 +94,8 @@ function oculusSocket(): Plugin {
             });
             bindHpcWatcher(hpc);
             http.on('close', () => {
+                bindUsageRefresh(null);
+                usageRefresh.close();
                 bindHpcWatcher(null);
                 hpc.close();
                 bindGitWatcher(null);

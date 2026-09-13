@@ -243,6 +243,7 @@ export type {
     UsageDay,
     UsageLiveSession,
     UsagePayload,
+    UsageRefresher,
     UsageTool,
     UsageWindow,
     LiveEntry,
