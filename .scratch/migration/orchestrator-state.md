@@ -34,8 +34,13 @@ dispatch:
   pid: 34465
   session_id: 01a09cfe-224a-7bf2-abba-6a524b0ce797
   landing: not-started
-  round: 0
-  notes: the catalog per owner under config/text/, the orphan-key test, views registering themselves; after it R4, R5, R6, R8, R9, R10; no dispatch after 06:00, nothing in flight at 07:05.
+  round: 1
+  repair_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R7/repair-prompt.md
+  repair_events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R7/repair-events.jsonl
+  repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R7/repair-report.md
+  repair_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R7/repair-exit.txt
+  review_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R7/review-report.md
+  notes: the worker finished at 01:39 (154 files, +3064 -3082, the seven checks green in the worktree from the orchestrator's shell, 2020 of 2021 with the git-watcher flake); the first review is in agents/reviews/R7.md; the repair round (icons as glyph names instead of bare letters, the theme marks and three glyph-bearing strings as tokens, the lookup gate hole, the loader at any depth, the Venues intro to its owner, two stale file names, two hardcoded defaults, the retired file names in the chat prompt, seven tests) runs on the worker's thread since 01:50; the catalog per owner under config/text/, the orphan-key test, views registering themselves; after it R4, R5, R6, R8, R9, R10; no dispatch after 06:00, nothing in flight at 07:05.
 ```
 
 ## The standing demands (from Axel, in force)
