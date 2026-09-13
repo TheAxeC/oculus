@@ -35,7 +35,9 @@ dispatch:
   session_id: 01a09c94-f6c9-7202-a944-8a9f9c43ab25
   landing: not-started
   round: 0
-  notes: no globals, the brief of 2026-09-13 22:10 with its premises checked at 23:05; after it R7, R4, R5, R6, R8, then R9; no dispatch after 06:00 on 2026-09-14, nothing in flight at 07:05.
+  wip: e15ea86e
+  review_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R3/review-report.md
+  notes: the worker finished at 23:44 (exit 0, all eight items done, dev through a per-request scope in the Vite plugin since Kit's dev server does not populate event.platform); the seven checks pass in the worktree from the orchestrator's shell (129 files, 2004 tests); the reviewer runs since 23:52; no globals, the brief of 2026-09-13 22:10 with its premises checked at 23:05; after it R7, R4, R5, R6, R8, then R9; no dispatch after 06:00 on 2026-09-14, nothing in flight at 07:05.
 ```
 
 ## The standing demands (from Axel, in force)
