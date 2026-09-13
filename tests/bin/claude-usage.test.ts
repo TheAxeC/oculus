@@ -19,30 +19,35 @@ afterEach(() => {
 });
 
 describe('claude-usage.sh', () => {
-    it('preserves an existing target on malformed stdin and replaces it on valid stdin', () => {
-        const home = scratch();
-        const config = join(home, '.claude');
-        const run = (input: string) =>
-            spawnSync('sh', ['bin/claude-usage.sh'], {
-                cwd: process.cwd(),
-                env: { ...process.env, HOME: home, CLAUDE_CONFIG_DIR: config },
-                input,
-                encoding: 'utf8'
-            });
-        const fixture = '{"session_id":"existing","model":{"display_name":"Opus"}}\n';
-        const folder = join(home, '.oculus', 'usage', 'claude', '.claude');
-        const target = join(folder, 'existing.json');
-        expect(run(fixture).status).toBe(0);
-        const malformed = run('{"session_id":"existing",');
-        expect(malformed.status).not.toBe(0);
-        expect(malformed.stdout).toBe('');
-        expect(readFileSync(target, 'utf8')).toBe(fixture);
-        expect(readdirSync(folder)).toEqual(['existing.json']);
-        const replacement = '{"session_id":"existing","model":{"display_name":"Sonnet"}}\n';
-        expect(run(replacement).status).toBe(0);
-        expect(readFileSync(target, 'utf8')).toBe(replacement);
-        expect(readdirSync(folder)).toEqual(['existing.json']);
-    });
+    // Three sh + python3 spawns; under a loaded full run they pass 5 s, so the case gets 20 s.
+    it(
+        'preserves an existing target on malformed stdin and replaces it on valid stdin',
+        { timeout: 20000 },
+        () => {
+            const home = scratch();
+            const config = join(home, '.claude');
+            const run = (input: string) =>
+                spawnSync('sh', ['bin/claude-usage.sh'], {
+                    cwd: process.cwd(),
+                    env: { ...process.env, HOME: home, CLAUDE_CONFIG_DIR: config },
+                    input,
+                    encoding: 'utf8'
+                });
+            const fixture = '{"session_id":"existing","model":{"display_name":"Opus"}}\n';
+            const folder = join(home, '.oculus', 'usage', 'claude', '.claude');
+            const target = join(folder, 'existing.json');
+            expect(run(fixture).status).toBe(0);
+            const malformed = run('{"session_id":"existing",');
+            expect(malformed.status).not.toBe(0);
+            expect(malformed.stdout).toBe('');
+            expect(readFileSync(target, 'utf8')).toBe(fixture);
+            expect(readdirSync(folder)).toEqual(['existing.json']);
+            const replacement = '{"session_id":"existing","model":{"display_name":"Sonnet"}}\n';
+            expect(run(replacement).status).toBe(0);
+            expect(readFileSync(target, 'utf8')).toBe(replacement);
+            expect(readdirSync(folder)).toEqual(['existing.json']);
+        }
+    );
 
     it('writes the input unchanged under the account and prints the complete status', () => {
         const home = scratch();

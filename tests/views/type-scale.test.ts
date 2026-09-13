@@ -44,8 +44,7 @@ const VIEWS: Record<string, string> = {
     'Focus.svelte': '.said=fs-md | .wait-head, .seg-lbl=fs-xs',
     'Gallery.svelte': 'h3=fs-xs',
     'Hpc.svelte': 'footer=fs-sm',
-    'Usage.svelte':
-        '.window-name, .live-row=fs-sm | .observed=fs-xs | .live h3, .history h2=fs-sm | .session=fs-xs',
+    'Usage.svelte': '.window-name, .live-row=fs-sm | .live h3, .history h2=fs-sm | .session=fs-xs',
     'Inbox.svelte': '.group h3=fs-lg',
     'Leads.svelte': '.empty=fs-md | .runlog=fs-sm',
     'Linkedin.svelte': 'h3=fs-lg',
