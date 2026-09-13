@@ -56,3 +56,9 @@ Run every command the brief lists, from `tools/oculus` in the worktree, and fix 
 ## Report
 
 First line: anything NOT done, or "Everything in the brief is done". Then a DONE / NOT DONE table, one row per deliverable in the brief, each naming the command that proves it and its output. Then: files changed with line counts; every judgment call the brief did not cover, as a decision the orchestrator may reverse; anything in the brief or the design that turned out wrong or impossible, said plainly; every limitation, sharp edge or compromise you know of, however small. Never present partial work as complete; never state a measurement you did not take.
+
+## Amendment of 2026-09-13 22:30 (Axel): the principles every package is judged on
+
+- No globals. No `globalThis`, no module-level mutable state shared across module graphs, no process-wide bridge; a dependency is passed in (a context object, a constructor argument, a function parameter) and a route reaches the server's objects through the request's locals, never through a global. Package R3 removes the six bridges that exist; a package that adds one is not landed.
+- SOLID, DRY, KISS, YAGNI, separation of concerns, high cohesion and low coupling: a module has one reason to change; a new view, channel or key extends by registration, never by editing consumers; a parser, a fold or a rule exists once and is reused; nothing is built for a need the plan does not name; a file stays under 1000 lines and a component under about 600, split by responsibility before it grows past that; a reader-visible behaviour is state, not a DOM side effect; a check reads a fact (a file, a field, a version) rather than scraping a screen.
+- Every config file and catalog is oculus's own, laid out for oculus: no cockpit-only key, group or comment; every catalog key has a reader in the tree (a test fails on an orphan key).
