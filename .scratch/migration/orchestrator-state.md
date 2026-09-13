@@ -56,7 +56,8 @@ dispatch:
 
 - Whether "no globals" reaches the browser's state modules (`src/lib/state/*.svelte.ts` hold their runes at module level by the state layer's design, one module graph; 12 module-level collections there: `inflight`, `versions`, `listeners`, `marks`, `registry` and the like): Axel's ruling needed; the boundaries test's module-state rule covers the server side only until then.
 - R10, history out of code comments (462 lines in 94 files under src, tests and bin name a package id, a session or a date; the rule is in the hub CLAUDE.md, the spec and the skill): booked in plan.md after R8, not started.
-- Audit of every "sharp edges, unresolved" list in the landing notes below (42 packages, O1 to O25e) against the tree: each still-open edge becomes a booked plan line or a fix. Scheduled 2026-09-14 while R7's worker runs; not started.
+- Rulings Axel owes from the sharp-edge audit (2026-09-14 01:15): (a) HTML from hub files and feeds rendered through `{@html}` unsanitised (`inlineMarkdown`, the README in the project tab, the collection intro, feed titles from the scout): sanitise with a sanitiser dependency, or accept as the owner's own files; (b) the Claude Code hooks fire only for sessions started in the hub (`.claude/settings.local.json`); moving the block to `~/.claude/settings.json` reports every session; (c) the rail's CRT, wallpaper and unicode toggle glyphs (Q4a's choices); (d) `col.ds_intro`'s sentence about the recovery script running on the login node while the Recover control runs it here; (e) the position-leads feed file's schema carries no `label` values, so the add form shows `inst` and `typ` (a feed-file edit for him or the scout).
+- The sharp-edge audit of the 42 landing notes is done (2026-09-14 01:15): the still-open edges are booked as R11, R12 and R13 in plan.md with the list under "R12, the edges" below; the five that need Axel's word are the item above; the rest were closed by later packages or are design decisions recorded in their notes.
 
 ## Verification, every package
 
@@ -193,6 +194,41 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - O1 brief written (`agents/briefs/O1.md`, not yet committed) while S1 runs. O1 bakes three user-visible decisions, put to Axel before dispatch and recorded in `DESIGN.md`: `local.yml` keys `hub` and `port` with default port 8790; verification commands `npm test`, `npm run check`, `npm run build`; the text catalog reaching the browser as page data.
 - The three O1 decisions were agreed by Axel on 2026-09-10; decision 3 reworded: page data at load, socket push afterwards from O6, the server reads the catalog per request until then.
 - O16's hooks are on disk since 2026-09-10 in the hub's `.claude/settings.local.json` (project scope, port 8790, `-m 1`, `|| true`, timeout 5; verified by parsing all four settings files). Open on Axel's side: whether to move the block to `~/.claude/settings.json` so sessions in other repositories report hook state too.
+
+## R12, the edges (from the audit of 2026-09-14; each a fix unless it names a package that owns it)
+
+- O4: `validate` does not check a project naming itself in `related` nor two manifests sharing a folder basename (both become findings).
+- O5: `config/meta.yml` still says `title: Research Cockpit` (R7 lands every config file oculus's own; checked at its landing).
+- O6: `src/server.ts` handles no signal (SIGINT and SIGTERM close the context and the socket); an unrelated `.yml` beside a registry triggers a rebuild.
+- O13: `fs.watch` can miss an event right after a watch opens; a periodic full rescan of the session stores (a slow clock, minutes) covers it; the git watcher prints two stderr lines at every start for a workspace that no longer exists.
+- O14b: `renderDoc` runs `readManifests` over the whole hub per request (read the one manifest); `Tooltip` puts `aria-describedby` on its wrapper span rather than the control.
+- O14c: a document tab's label is the view's name, so two open manuals both read "Document" (the label from the instance state, as Q5 did for pinned tabs).
+- O14d: the status facet offers nothing when one value occurs; a field whose value is a map draws nothing; `collab` and `code` glyphs appear twice in the rail.
+- O15: the pin Select offers only folders a session has touched (the snapshot's project folders are the full list); the overrides watch logs ENOENT when `~/.oculus` does not exist yet; the card row and the facet count dismissed sessions.
+- O17: `list-sessions` runs every five seconds when no control client is open (a longer interval when nothing is attached); an `oculus-` session made by hand with another id shape is listed but cannot be stopped or resized.
+- O18: `@xterm/xterm/css/xterm.css` is in every route's stylesheet (load it with the Terminal view); a stop control stays armed until another control is used.
+- O19: `Terminal.resumes` is carried but no view draws which session a terminal continues.
+- O19b: no cap on the turns a first transcript read sends; `forget` is called by nothing (release on tab close).
+- O20: `refreshGit(root)` re-reads only a root the watcher already watches (a write to the hub when the hub is not a session workspace shows late); the push control reads "no upstream" until the branch listing answers.
+- O21: `switchBranch` copies a branch's files over `code/` and deletes nothing a branch removed; `snapshot` leaves a repository whose default branch is `master` with that default; `gh` is never run by a test (a recorded-`gh` test over the create, push and About paths).
+- O22: the Focus board's clock is read when the view opens (a page left open across midnight counts the day it opened on); a `waiting-on` value that is no collaborator key shows as written (a validate finding).
+- O10e: the rename box does not take focus on appearing; a tab cannot be moved between pages.
+- P1: an entry field write is not checked against the file's schema; two entries with one identity value resolve to the first, unchecked (a finding).
+- P2: `reopen` never shows on a done subtask; a conference call line carries no snooze (the venue registry has no status field: a decision for the brief).
+- P3: the strip's blocked count is over the board's own projects while the cockpit's is over every tier; `state/files.svelte.ts` keys its listing on the portfolio version, so a file written without a snapshot change shows on the next reload; `disseminated()` reads events and education but not applications.
+- P4: a drag while entries are pinned writes the pinned-first order into the file; no keyboard path to reorder; an empty control cannot set a text field to the empty string; the Code view's coverage counts every non-idea project where the cockpit leaves out the dead archive types; the cross-links are one level where the cockpit nests them.
+- Q2: nothing checks `build/` is current before the browser layer serves it; `tests/browser/.hub` and the temporary hub copy are never removed.
+- O26: no Playwright spec over a stubbed `hpc` channel; the log search runs a 55-second remote command on a cold path; `src/routes/api/hpc/post.ts` is the one route written as an indirection.
+- O24a: a ribbon chip of a venue without a `short` name is clipped by its month column; `Entry.id` prefers a field named `id` over `key` for every collection.
+- O24b: the Map's toggles live in component state rather than the instance state, so they reset when the tab is reopened; the Pillars intro row clips its "+ add" control at 1000 px.
+- O25a: the raw recipe editor cannot edit the nested `retrieval:` blocks; a long Size or HPC chip is cut at the card's edge; the write layer accepts any shape for any field.
+- O25b: a cross-link button with a long project title is cut at the card's edge.
+- O25c: the run log draws six of its lines and offers no way to the rest.
+- O25e: the "edit" words open a read-only view.
+- O25g: the words beside an attention line's count are not clickable.
+- Q3: the legend chip lands alone on the line under the theme facets when they fill the row.
+- Q5: the pin toggle is a text button among glyph buttons on the Terminal toolbar; a pinned session's title change is not followed by the tab label until the pin is redone.
+- Closed by later packages, for the record: O1 (Node 24), O7 and O8 (Q12's tab controls), O10 (Q8's cards, the shared card folder), O10b and O10c (O10d, R5), O11's `NOT_IN_MODEL` rows (P1's writes), O12's fold fields (O14), O14's overrides watch and cache share (O15, `cacheShare`), O14's nav key (layout.yml), O14b's duplicated card (Q1's `views/shared/`), O16's bridge (R3), O24b's `parked` tone (Q13), O25b's `text.yml` size (R7), O25e's LinkedIn folder watch (F1), Q4b's pillar colours and `--card` (Q13), P1's `writes.ts` split (Q1), P3's own card copy and `Files (N)` badge (Q8).
 
 ## Journal
 
