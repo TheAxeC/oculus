@@ -81,7 +81,7 @@ slurm:
   prewarm: true
 
 chat:
-  model: ""
+  model: "opus"
 
 
 # === Hook push notifications ================================================
