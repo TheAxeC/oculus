@@ -112,7 +112,8 @@
     let scroll = $state<TabScrollState>({ overflowing: false, atStart: true, atEnd: true });
 
     function measureScroll(): void {
-        if (scroller === undefined || strip === undefined) return;
+        // A measure queued before the strip unmounts finds the bindings null, not undefined.
+        if (!scroller || !strip) return;
         const widthWithoutControls = strip.clientWidth - (opener?.offsetWidth ?? 0);
         scroll = tabScrollState(
             scroller.scrollWidth,

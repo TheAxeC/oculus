@@ -90,6 +90,30 @@ function claudeWindows(data: Record<string, unknown>): UsageWindow[] {
     return rows;
 }
 
+/**
+ * Each status file carries the windows as they stood at that session's last response, so the file
+ * written last is not the freshest observation: an idle session rewrites its stale snapshot when
+ * the settings change. Within one window (the same resets_at) usage only rises, so the highest
+ * percentage is the latest observation; a later resets_at is a newer window altogether.
+ */
+export function latestWindows(snapshots: (Record<string, unknown> | null)[]): UsageWindow[] {
+    const best = new Map<UsageWindow['name'], UsageWindow>();
+    for (const snapshot of snapshots) {
+        if (snapshot === null) continue;
+        for (const window of claudeWindows(snapshot)) {
+            const held = best.get(window.name);
+            if (
+                held === undefined ||
+                window.resetsAt > held.resetsAt ||
+                (window.resetsAt === held.resetsAt && window.usedPercent > held.usedPercent)
+            ) {
+                best.set(window.name, window);
+            }
+        }
+    }
+    return [...best.values()];
+}
+
 function statusFiles(dir: string): { path: string; mtimeMs: number }[] {
     try {
         return readdirSync(dir)
@@ -132,7 +156,6 @@ function claudeUsage(
 ): UsageAccount {
     const identity = claudeAccount(account.dir);
     const files = statusFiles(join(usageRoot, basename(account.dir)));
-    const newest = files.length > 0 ? json(files[0].path) : null;
     const live = files
         .filter((file) => now - file.mtimeMs <= 60 * 60 * 1000)
         .map((file) => liveClaude(file.path, file.mtimeMs))
@@ -146,7 +169,7 @@ function claudeUsage(
         tier: identity.tier,
         tierLabel: tierLabel(identity.tier, tiers),
         billing: identity.billing,
-        windows: newest === null ? [] : claudeWindows(newest),
+        windows: latestWindows(files.map((file) => json(file.path))),
         live
     };
 }

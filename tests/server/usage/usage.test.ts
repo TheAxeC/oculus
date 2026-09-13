@@ -8,6 +8,7 @@ import type { UsageAccountConfig, UsagePayload } from '../../../src/lib/data/mod
 import { Hub } from '../../../src/lib/server/channels.ts';
 import {
     claudeAccount,
+    latestWindows,
     newestCodexLimits,
     usageAccounts
 } from '../../../src/lib/server/usage/accounts.ts';
@@ -399,6 +400,21 @@ describe('usage watcher', () => {
             watcher.close();
         }
         expect(off).toHaveBeenCalledOnce();
+    });
+
+    it('takes each window from its freshest observation across every status file', () => {
+        const older = {
+            rate_limits: {
+                five_hour: { used_percentage: 60, resets_at: 100 },
+                seven_day: { used_percentage: 47, resets_at: 5000 }
+            }
+        };
+        const fresher = { rate_limits: { seven_day: { used_percentage: 91, resets_at: 5000 } } };
+        const nextWindow = { rate_limits: { five_hour: { used_percentage: 2, resets_at: 200 } } };
+        expect(latestWindows([older, fresher, nextWindow, null])).toEqual([
+            { name: 'five_hour', usedPercent: 2, resetsAt: 200, windowMinutes: 300 },
+            { name: 'seven_day', usedPercent: 91, resetsAt: 5000, windowMinutes: 10080 }
+        ]);
     });
 
     it('rebuilds on its clock when nothing changes on disk', async () => {
