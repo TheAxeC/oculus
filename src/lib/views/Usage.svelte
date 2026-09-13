@@ -50,7 +50,7 @@
     function windowText(window: UsageWindow, builtAt: string): string {
         return t(
             'usage.window_text',
-            window.usedPercent,
+            Math.round(window.usedPercent),
             t('usage.resets_in', duration(window.resetsAt, builtAt))
         );
     }
@@ -127,7 +127,7 @@
                                                 <span
                                                     >{t(
                                                         'usage.context',
-                                                        session.contextPercent
+                                                        Math.round(session.contextPercent)
                                                     )}</span
                                                 >
                                             {/if}

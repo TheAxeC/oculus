@@ -41,7 +41,7 @@ describe('Usage', () => {
                     windows: [
                         {
                             name: 'five_hour',
-                            usedPercent: 25,
+                            usedPercent: 28.999999999999996,
                             resetsAt: Date.parse('2026-09-13T14:00:00Z') / 1000,
                             windowMinutes: 300
                         }
@@ -50,7 +50,7 @@ describe('Usage', () => {
                         {
                             sessionId: 'abcdefgh-rest',
                             model: 'Opus',
-                            contextPercent: 12,
+                            contextPercent: 12.4,
                             costUsd: 1.25,
                             updatedAt: '2026-09-13T12:00:00Z',
                             cwd: '/tmp/project'
