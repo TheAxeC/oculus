@@ -1,17 +1,28 @@
-// What POST /api/terminal answers for the resume action: DESIGN.md's one explicit migration of an
-// observed session into a terminal oculus holds.
+// Layer 2, server tests. POST /api/terminal resume, recovery, update-task and interactive chat
+// cases. Chat checks cover argv, absolute prompt paths, numbering and private index lifecycle.
 //
 // Nothing here runs tmux, `claude` or `codex`. handleTerminal is called with an options bag holding
 // a `run` that records the argv and answers the list itself, and a `recordFor` the test owns instead
-// of the bridge to the last published payload, so no session store, no registry and no hub is read.
+// of the bridge to the last published payload, so only the synthetic hub and state folder are read.
 // The only real path any case touches is the temporary directory: to have statSync say it is there,
 // and, for the task cases, to hold a local.yml the route reads and that afterAll removes.
 
-import { existsSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import {
+    existsSync,
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    readdirSync,
+    rmSync,
+    statSync,
+    writeFileSync
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { handleTerminal, type TerminalOptions } from '../../src/lib/server/pty/routes.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
+import { chatIndexPath } from '../../src/lib/server/pty/chat.ts';
 import { record } from '../sessions-fixture.ts';
 import type { SessionRecord } from '../../src/lib/data/model.ts';
 
@@ -38,6 +49,23 @@ writeFileSync(TASK_LOCAL, `hub: ${HERE}\nclaude_bin: /opt/Claude CLI/claude\n`);
 const TASK_DEFAULT_LOCAL = join(TASK_CONFIG, 'default.yml');
 writeFileSync(TASK_DEFAULT_LOCAL, `hub: ${HERE}\n`);
 
+const CHAT_HUB = join(TASK_CONFIG, 'hub');
+const CHAT_STATE = join(TASK_CONFIG, 'state');
+const CHAT_PROJECT = join(CHAT_HUB, 'projects', 'active', 'alpha');
+mkdirSync(join(CHAT_STATE, 'chat'), { recursive: true });
+mkdirSync(CHAT_PROJECT, { recursive: true });
+mkdirSync(join(CHAT_HUB, 'registries'), { recursive: true });
+writeFileSync(join(CHAT_PROJECT, 'project.yml'), 'id: alpha\ntitle: Alpha Study\n');
+writeFileSync(join(CHAT_HUB, 'registries', 'venues.yml'), 'entries: []\n');
+const CHAT_LOCAL = join(TASK_CONFIG, 'chat.yml');
+writeFileSync(
+    CHAT_LOCAL,
+    `hub: ${CHAT_HUB}\nclaude_bin: /opt/Claude CLI/claude\nsessions_overrides: ${join(CHAT_STATE, 'sessions.json')}\n`
+);
+const BASE_CHAT_CONFIG = loadConfig(engineDir()).config;
+const CHAT_CONFIG = { ...BASE_CHAT_CONFIG, chat: { model: 'claude-opus-4-1' } };
+const CHAT_CATALOG = textCatalog(CHAT_CONFIG);
+
 afterAll(() => {
     delete process.env.OCULUS_LOCAL;
     rmSync(TASK_CONFIG, { recursive: true, force: true });
@@ -47,7 +75,10 @@ afterAll(() => {
  * A tmux that runs nothing: it keeps every argv, remembers what set-option was told, and answers
  * list-sessions with the one line the session it was asked to create would have produced.
  */
-function tmux(): { run: NonNullable<TerminalOptions['run']>; calls: string[][] } {
+function tmux(existingNames: string[] = []): {
+    run: NonNullable<TerminalOptions['run']>;
+    calls: string[][];
+} {
     const calls: string[][] = [];
     let name = '';
     const options: Record<string, string> = {};
@@ -74,7 +105,19 @@ function tmux(): { run: NonNullable<TerminalOptions['run']>; calls: string[][] }
                     options['@oculus_name'] ?? '',
                     options['@oculus_resumes'] ?? ''
                 ];
-                return Promise.resolve(`${fields.join('\t')}\n`);
+                const existing = existingNames.map((label) =>
+                    [
+                        'oculus-aabbcc-claude',
+                        '1757500000',
+                        '0',
+                        'claude',
+                        '4241',
+                        HERE,
+                        label,
+                        ''
+                    ].join('\t')
+                );
+                return Promise.resolve([...existing, fields.join('\t')].join('\n') + '\n');
             }
             return Promise.resolve('');
         }
@@ -100,6 +143,15 @@ function request(body: unknown, token: string = TOKEN): Request {
         },
         body: JSON.stringify(body)
     });
+}
+
+/** Quote an expected CLI argument independently of the server's command builder. */
+function shellWord(value: string): string {
+    return `'${value.replaceAll("'", `'"'"'`)}'`;
+}
+
+function command(argv: string[]): string {
+    return argv.map(shellWord).join(' ');
 }
 
 async function answer(response: Response): Promise<Record<string, unknown>> {
@@ -320,5 +372,176 @@ describe('POST /api/terminal, the task action', () => {
         expect(response.status).toBe(200);
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
         expect(started[started.length - 1]).toMatch(/^'claude' '-p'/);
+    });
+});
+
+describe('POST /api/terminal, the chat action', () => {
+    function chatOptions(driver: ReturnType<typeof tmux>): TerminalOptions {
+        return {
+            run: driver.run,
+            projectFor: (id) =>
+                id === 'alpha' ? { title: 'Alpha Study', folder: 'projects/active/alpha' } : null,
+            configFor: () => CHAT_CONFIG
+        };
+    }
+
+    it('starts a focused interactive Claude terminal and writes its private index first', async () => {
+        process.env.OCULUS_LOCAL = CHAT_LOCAL;
+        const driver = tmux();
+        const routed = chatOptions(driver);
+        const run = routed.run;
+        let indexAtStart = false;
+        routed.run = async (args, options) => {
+            if (args[0] === 'new-session') {
+                const id = (args[3] ?? '').replace(/^oculus-/, '');
+                indexAtStart = existsSync(chatIndexPath(join(CHAT_STATE, 'sessions.json'), id));
+            }
+            return run === undefined ? '' : run(args, options);
+        };
+        const response = await handleTerminal(
+            request({ action: 'chat', id: 'alpha', cols: 101, rows: 31 }),
+            TOKEN,
+            routed
+        );
+        expect(response.status).toBe(200);
+        const terminal = (await answer(response)).terminal as { id: string; name: string };
+        expect(terminal.name).toBe(
+            CHAT_CATALOG['js.leads.chat_name_focus'].replace('{0}', 'Alpha Study')
+        );
+
+        const index = chatIndexPath(join(CHAT_STATE, 'sessions.json'), terminal.id);
+        expect(index.startsWith(CHAT_STATE + sep)).toBe(true);
+        expect(readFileSync(index, 'utf8')).toContain('## projects/active/alpha');
+        expect(statSync(index).mode & 0o777).toBe(0o600);
+        const system = [
+            CHAT_CATALOG['js.leads.chat_instruction']
+                .replace('{0}', CHAT_HUB)
+                .replace('{1}', CHAT_PROJECT),
+            CHAT_CATALOG['js.leads.chat_focus_note']
+                .replace('{0}', 'alpha')
+                .replace('{1}', 'Alpha Study')
+                .replace('{2}', CHAT_PROJECT),
+            CHAT_CATALOG['js.leads.chat_index_note'].replace('{0}', index)
+        ].join('\n\n');
+        expect(system).toContain(`The hub root is \`${CHAT_HUB}\``);
+        expect(system).toContain(`Your working directory is \`${CHAT_PROJECT}\``);
+        expect(system).not.toMatch(/\{[012]\}|CONTEXT\.md|NEXT\.md|METHOD_NOTES|RELATED_WORK/);
+        const expected = command([
+            '/opt/Claude CLI/claude',
+            '--append-system-prompt',
+            system,
+            '--disallowedTools',
+            'Bash,Edit,Write,WebFetch,WebSearch',
+            '--model',
+            'claude-opus-4-1',
+            CHAT_CATALOG['js.leads.seed_focus'].replace('{0}', 'Alpha Study')
+        ]);
+        const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
+        expect(started[started.indexOf('-c') + 1]).toBe(CHAT_PROJECT);
+        expect(started[started.indexOf('-x') + 1]).toBe('101');
+        expect(started[started.indexOf('-y') + 1]).toBe('31');
+        expect(started[started.length - 1]).toBe(expected);
+        expect(started[started.length - 1]).not.toContain("'-p'");
+        expect(indexAtStart).toBe(true);
+    });
+
+    it('starts a numbered portfolio chat in the hub with no model argument when none is set', async () => {
+        process.env.OCULUS_LOCAL = CHAT_LOCAL;
+        const driver = tmux();
+        const config = { ...BASE_CHAT_CONFIG, chat: { model: '' } };
+        const response = await handleTerminal(
+            request({ action: 'chat', id: null, cols: 90, rows: 26 }),
+            TOKEN,
+            { ...chatOptions(driver), configFor: () => config }
+        );
+        expect(response.status).toBe(200);
+        const terminal = (await answer(response)).terminal as { id: string; name: string };
+        const catalog = textCatalog(config);
+        expect(terminal.name).toBe(catalog['js.leads.chat_name'].replace('{0}', '1'));
+        const index = chatIndexPath(join(CHAT_STATE, 'sessions.json'), terminal.id);
+        const system = [
+            catalog['js.leads.chat_instruction'].replace('{0}', CHAT_HUB).replace('{1}', CHAT_HUB),
+            catalog['js.leads.chat_index_note'].replace('{0}', index)
+        ].join('\n\n');
+        const expected = command([
+            '/opt/Claude CLI/claude',
+            '--append-system-prompt',
+            system,
+            '--disallowedTools',
+            'Bash,Edit,Write,WebFetch,WebSearch',
+            catalog['js.leads.seed_portfolio']
+        ]);
+        const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
+        expect(started[started.indexOf('-c') + 1]).toBe(CHAT_HUB);
+        expect(started[started.length - 1]).toBe(expected);
+        expect(started[started.length - 1]).not.toContain("'--model'");
+    });
+
+    it('numbers a portfolio chat past an existing Chat 1', async () => {
+        process.env.OCULUS_LOCAL = CHAT_LOCAL;
+        const driver = tmux([CHAT_CATALOG['js.leads.chat_name'].replace('{0}', '1')]);
+        const response = await handleTerminal(
+            request({ action: 'chat', cols: 80, rows: 24 }),
+            TOKEN,
+            chatOptions(driver)
+        );
+        expect(response.status).toBe(200);
+        const terminal = (await answer(response)).terminal as { name: string };
+        expect(terminal.name).toBe(CHAT_CATALOG['js.leads.chat_name'].replace('{0}', '2'));
+    });
+
+    it('leaves no index when zero columns are refused', async () => {
+        process.env.OCULUS_LOCAL = CHAT_LOCAL;
+        const driver = tmux();
+        const before = readdirSync(join(CHAT_STATE, 'chat')).sort();
+        const response = await handleTerminal(
+            request({ action: 'chat', id: 'alpha', cols: 0, rows: 24 }),
+            TOKEN,
+            chatOptions(driver)
+        );
+        expect(response.status).toBe(400);
+        expect((await answer(response)).error).toContain('cols must be a whole number');
+        expect(readdirSync(join(CHAT_STATE, 'chat')).sort()).toEqual(before);
+        expect(driver.calls).toEqual([]);
+    });
+
+    it('removes the index when the terminal runner fails to start', async () => {
+        process.env.OCULUS_LOCAL = CHAT_LOCAL;
+        const driver = tmux();
+        const routed = chatOptions(driver);
+        let index = '';
+        routed.run = async (args) => {
+            if (args[0] === 'new-session') {
+                index = chatIndexPath(
+                    join(CHAT_STATE, 'sessions.json'),
+                    args[3].replace(/^oculus-/, '')
+                );
+                expect(existsSync(index)).toBe(true);
+                throw new Error('stub runner refused startup');
+            }
+            return driver.run(args);
+        };
+        const response = await handleTerminal(
+            request({ action: 'chat', id: 'alpha', cols: 80, rows: 24 }),
+            TOKEN,
+            routed
+        );
+        expect(response.status).toBe(400);
+        expect((await answer(response)).error).toBe('stub runner refused startup');
+        expect(index.startsWith(CHAT_STATE + sep)).toBe(true);
+        expect(existsSync(index)).toBe(false);
+    });
+
+    it('refuses an unknown project before writing an index or starting a terminal', async () => {
+        process.env.OCULUS_LOCAL = CHAT_LOCAL;
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({ action: 'chat', id: 'unknown', cols: 80, rows: 24 }),
+            TOKEN,
+            chatOptions(driver)
+        );
+        expect(response.status).toBe(400);
+        expect((await answer(response)).error).toBe('id is not a project in the current portfolio');
+        expect(driver.calls).toEqual([]);
     });
 });

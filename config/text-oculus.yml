@@ -11,6 +11,7 @@
 text:
   app:                         # oculus's own group: the strings the cockpit has no place for, the document title among them.
     title: "oculus"
+    chat: "Chat"
     socket: "Socket: {0}"
     socket_connecting: "connecting"
     socket_open: "open"

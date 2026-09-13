@@ -65,6 +65,8 @@ export const LIST_FORMAT = [
 ].join('\t');
 
 export type StartRequest = {
+    /** A preallocated id when a caller must prepare a resource named after the terminal. */
+    id?: string;
     kind: TerminalKind;
     cwd: string;
     cols: number;
@@ -277,7 +279,10 @@ export async function startTerminal(
     if (resume !== undefined && resume.tool !== kind) {
         throw new Error(`kind must be the tool being resumed: ${resume.tool}`);
     }
-    const id = newId(kind);
+    const id = request.id ?? newId(kind);
+    if (!isTerminalId(id) || !id.endsWith(`-${kind}`)) {
+        throw new Error(`id must be a terminal id for ${kind}`);
+    }
     const name = label(request.name, id);
     // The argv is joined into the one shell-command new-session takes. Both words of it are fixed
     // and the third is a UUID, so there is nothing here for a shell to read as anything else.

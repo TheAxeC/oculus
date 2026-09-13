@@ -37,8 +37,8 @@ export function writeJsonAtomic(path: string, payload: unknown): void {
     writeTextAtomic(path, JSON.stringify(payload));
 }
 
-/** Write one text file whole through a temporary neighbour and an atomic rename. */
-export function writeTextAtomic(path: string, content: string): void {
+/** Write text atomically, preserving an existing mode or using newMode for a new file. */
+export function writeTextAtomic(path: string, content: string, newMode?: number): void {
     const folder = dirname(path) || '.';
     mkdirSync(folder, { recursive: true });
     counter += 1;
@@ -49,7 +49,7 @@ export function writeTextAtomic(path: string, content: string): void {
     try {
         mode = statSync(path).mode & 0o777;
     } catch {
-        mode = undefined;
+        mode = newMode;
     }
     try {
         const handle =

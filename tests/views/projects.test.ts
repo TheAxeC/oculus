@@ -557,6 +557,11 @@ describe('the card controls', () => {
         expect(body).toContain(catalog['helpers.folder']);
     });
 
+    it('offers Ask on a project with a manifest', () => {
+        expect(html('projects')).toContain(`aria-label="${catalog['helpers.ask']}"`);
+        expect(html('projects')).toContain(catalog['helpers.ask_tip']);
+    });
+
     it('labels document controls and marks only PRESENT public', () => {
         const body = withProjects(
             {
@@ -614,6 +619,8 @@ describe('the card controls', () => {
         expect(body).toContain('No manifest yet');
         expect(body).not.toContain(catalog['cards.pin_to_top']);
         expect(body).not.toContain(catalog['cards.edit_manifest']);
+        expect(body).not.toContain(catalog['helpers.ask_tip']);
+        expect(body).not.toContain(`aria-label="${catalog['helpers.ask']}"`);
         expect(body).toContain(catalog['helpers.copy_context']);
         expect(body).toContain(catalog['helpers.folder']);
     });

@@ -411,7 +411,18 @@ describe("oculus's own config directory", () => {
         expect(ported.filter((group) => own.includes(group))).toEqual([]);
         expect(own).toContain('ui');
         expect(ported).toContain('js');
+        expect(own).not.toContain('js.leads');
         const { config } = loadConfig(engineDir());
+        const text = config.text as {
+            js: { leads: Record<string, string> };
+            app: Record<string, string>;
+        };
+        expect(text.js.leads.chat_instruction).toContain('The hub root is `{0}`');
+        expect(text.js.leads.chat_focus_note).toContain('`{2}` (absolute)');
+        expect(text.js.leads.chat_index_note).toBe(
+            'The portfolio index is the file {0}; read it first.'
+        );
+        expect(text.app.chat).toBe('Chat');
         const merged = Object.keys(config.text as Record<string, unknown>);
         expect(merged.sort()).toEqual([...ported, ...own].sort());
     });

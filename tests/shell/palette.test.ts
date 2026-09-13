@@ -7,12 +7,13 @@ import Palette from '../../src/lib/shell/Palette.svelte';
 import UpdateTray from '../../src/lib/shell/UpdateTray.svelte';
 import Status from '../../src/lib/views/Status.svelte';
 import {
+    asciiCatalog,
     engineDir,
     glyphCatalog,
     loadConfig,
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
+import { setAscii, setCatalog, setGlyphMode, setGlyphs } from '../../src/lib/state/text.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { registerView } from '../../src/lib/views/registry.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
@@ -81,7 +82,7 @@ describe('Palette', () => {
 });
 
 describe('UpdateTray', () => {
-    it('draws the four tasks, their last runs and the inbox note', () => {
+    it('draws the four tasks, the portfolio Chat row, their last runs and the inbox note', () => {
         const body = render(UpdateTray, {
             props: { open: true, onclose: () => {} }
         }).body;
@@ -92,6 +93,23 @@ describe('UpdateTray', () => {
             expect(body).toContain(date);
         }
         expect(body).toContain(catalog['js.tasks.inbox_note']);
+        expect(body).toContain('data-task="chat"');
+        expect(body).toContain(`>${catalog['app.chat']}</span>`);
+    });
+
+    it('renders the Chat glyph through ASCII mode', () => {
+        const ascii = asciiCatalog(config);
+        setAscii(ascii);
+        setGlyphMode('ascii');
+        try {
+            const body = render(UpdateTray, { props: { open: true, onclose: () => {} } }).body;
+            const row = body.slice(body.indexOf('data-task="chat"'));
+            expect(row).toContain(`>${ascii[glyphCatalog(config).chat]}</span>`);
+            expect(row).not.toContain(glyphCatalog(config).chat);
+            expect(row).toContain(`>${catalog['app.chat']}</span>`);
+        } finally {
+            setGlyphMode('unicode');
+        }
     });
 
     it('opens on a full-window ground with a dialog inside it', () => {

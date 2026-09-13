@@ -1,5 +1,5 @@
 // Layer 2, client state. The page's end of DESIGN.md's "PTY": the terminals the sessions payload
-// carries, the three actions of /api/terminal, and the two messages a page writes on a `pty:`
+// carries, the actions of /api/terminal, and the two messages a page writes on a `pty:`
 // channel.
 //
 // The bytes of a pane are not state. entities.receive keeps one message per channel, the latest,
@@ -160,6 +160,15 @@ export async function startTask(
     rows: number = ROWS
 ): Promise<TerminalAnswer> {
     return post({ action: 'task', kind, cols, rows });
+}
+
+/** Start a project-focused or portfolio-wide Claude chat; the server supplies argv and directory. */
+export async function startChat(
+    id: string | null,
+    cols: number = COLS,
+    rows: number = ROWS
+): Promise<TerminalAnswer> {
+    return post({ action: 'chat', id, cols, rows });
 }
 
 /**

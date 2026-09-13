@@ -34,6 +34,7 @@
     import { openView, workbench } from '$lib/state/layout.svelte';
     import { findView } from '$lib/state/layout';
     import { select } from '$lib/state/selection.svelte';
+    import { startChat } from '$lib/state/terminals.svelte';
     import {
         disseminatedFor,
         folderOf,
@@ -307,6 +308,20 @@
         if (!answer.ok) onsaid(t('editor.failed', answer.error ?? ''));
     }
 
+    /** Start a Claude terminal in this project's folder and show it in the main workbench. */
+    async function ask(): Promise<void> {
+        const answer = await startChat(item.id);
+        if (!answer.ok) {
+            onsaid(t('editor.failed', answer.error));
+            return;
+        }
+        select(answer.id);
+        const trees = [workbench().main, workbench().panel];
+        if (!trees.some((tree) => findView(tree, 'terminal', null) !== null)) {
+            openView('terminal', 'main');
+        }
+    }
+
     /** The tooltip a marked document carries, and none for an unmarked one. */
     function docTip(doc: { human: boolean; public: boolean }): string | undefined {
         if (doc.human) return t('helpers.doc_human_tip');
@@ -491,6 +506,15 @@
                 compact
                 onclick={copyContext}
             />
+            {#if !item.project.ghost}
+                <ToolButton
+                    label={t('helpers.ask')}
+                    title={t('helpers.ask_tip')}
+                    glyph="chat"
+                    compact
+                    onclick={ask}
+                />
+            {/if}
             <ToolButton
                 label={t('helpers.folder')}
                 title={t('helpers.folder_tip')}

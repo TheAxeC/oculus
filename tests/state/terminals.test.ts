@@ -21,6 +21,7 @@ import {
     resizeTerminal,
     sendInput,
     sendResize,
+    startChat,
     startTask,
     startTerminal,
     stopTerminal,
@@ -240,6 +241,18 @@ describe('the four actions of /api/terminal', () => {
         expect(lastBody()).toEqual({
             action: 'task',
             kind: 'litwatch',
+            cols: 96,
+            rows: 28
+        });
+    });
+
+    it('starts a focused chat without sending a command or directory from the page', async () => {
+        serving(200, { ok: true, terminal: terminal({ id: 'ffee00-claude' }) });
+        const answer = await startChat('alpha', 96, 28);
+        expect(answer).toEqual({ ok: true, id: 'ffee00-claude', error: '' });
+        expect(lastBody()).toEqual({
+            action: 'chat',
+            id: 'alpha',
             cols: 96,
             rows: 28
         });

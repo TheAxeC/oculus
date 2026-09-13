@@ -8,7 +8,7 @@
     import { openView, workbench } from '$lib/state/layout.svelte';
     import { paletteSource } from '$lib/state/palette-source.svelte';
     import { select } from '$lib/state/selection.svelte';
-    import { startTask, type TaskKind } from '$lib/state/terminals.svelte';
+    import { startChat, startTask, type TaskKind } from '$lib/state/terminals.svelte';
     import { t } from '$lib/state/text';
 
     type Props = {
@@ -18,6 +18,7 @@
 
     let { open, onclose }: Props = $props();
     let running: TaskKind | null = $state(null);
+    let chatting = $state(false);
     let said = $state('');
     const current = $derived(paletteSource());
     const summary = $derived(current.snapshot?.entities.feeds);
@@ -67,6 +68,20 @@
         if (!terminalOpen()) openView('terminal', 'main');
         onclose();
     }
+
+    async function chat(): Promise<void> {
+        chatting = true;
+        said = '';
+        const answer = await startChat(null);
+        chatting = false;
+        if (!answer.ok) {
+            said = t('editor.failed', answer.error);
+            return;
+        }
+        select(answer.id);
+        if (!terminalOpen()) openView('terminal', 'main');
+        onclose();
+    }
 </script>
 
 {#if open}
@@ -89,7 +104,7 @@
                             label={task.label}
                             title={task.note}
                             active={running === task.kind}
-                            disabled={running !== null}
+                            disabled={running !== null || chatting}
                             onclick={() => start(task.kind)}
                         />
                         <span class="last">{task.last ?? t('app.palette_unavailable')}</span>
@@ -98,6 +113,16 @@
                         {/if}
                     </div>
                 {/each}
+                <div class="task" data-task="chat">
+                    <ToolButton
+                        label={t('app.chat')}
+                        glyph="chat"
+                        title={t('js.leads.seed_portfolio')}
+                        active={chatting}
+                        disabled={running !== null || chatting}
+                        onclick={chat}
+                    />
+                </div>
             </div>
             {#if said !== ''}
                 <p class="said">{said}</p>

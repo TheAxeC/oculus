@@ -14,6 +14,7 @@
 import type {
     GitPayload,
     HookEvent,
+    Project,
     SessionRecord,
     SessionsPayload,
     Snapshot,
@@ -159,6 +160,19 @@ export function bridgedProjectIds(): string[] {
     const entities = (payload as Snapshot).entities;
     if (typeof entities !== 'object' || entities === null) return [];
     return Object.keys(entities.projects ?? {});
+}
+
+/** One project in the last published portfolio payload, for a server action scoped by project id. */
+export function bridgedProject(id: string): Project | null {
+    const { hub } = bridge();
+    if (hub === null) return null;
+    const message = hub.latest('portfolio');
+    if (message === undefined) return null;
+    const payload = message.payload;
+    if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return null;
+    const entities = (payload as Snapshot).entities;
+    if (typeof entities !== 'object' || entities === null) return null;
+    return entities.projects?.[id] ?? null;
 }
 
 /** Dataset keys in the last portfolio payload, for recovery requests to address by snapshot only. */

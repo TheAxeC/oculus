@@ -19,6 +19,7 @@ import { hasToken, sameOrigin } from '../auth.ts';
 import { engineDir, loadLocal } from '../../data/sources/config.ts';
 import { bridgedDatasetIds, bridgedRecord } from '../sessions/hooks.ts';
 import { refreshTerminals } from './channel.ts';
+import { startChat, type ChatOptions } from './chat.ts';
 import {
     KINDS,
     RESUME_TOOLS,
@@ -43,17 +44,18 @@ const NAME_MAX = 80;
 const TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
 type TaskKind = (typeof TASKS)[number];
 
-export type TerminalOptions = StartOptions & {
-    /**
-     * The session record a resume is about, from the last published `sessions` payload. Defaulted
-     * to bridgedRecord; tests/routes/terminal.test.ts passes a source the test owns.
-     */
-    recordFor?: (id: string) => SessionRecord | null;
-    /** Dataset keys in the server's latest portfolio payload. */
-    datasetIdsFor?: () => string[];
-    /** The hub root in which a recovery shell starts. */
-    hubFor?: () => string;
-};
+export type TerminalOptions = StartOptions &
+    ChatOptions & {
+        /**
+         * The session record a resume is about, from the last published `sessions` payload. Defaulted
+         * to bridgedRecord; tests/routes/terminal.test.ts passes a source the test owns.
+         */
+        recordFor?: (id: string) => SessionRecord | null;
+        /** Dataset keys in the server's latest portfolio payload. */
+        datasetIdsFor?: () => string[];
+        /** The hub root in which a recovery shell starts. */
+        hubFor?: () => string;
+    };
 
 function json(status: number, body: unknown): Response {
     return new Response(JSON.stringify(body), {
@@ -233,6 +235,11 @@ export async function handleTerminal(
         if (message.action === 'task') {
             return await startTask(message.kind, message.cols, message.rows, options);
         }
+        if (message.action === 'chat') {
+            const terminal = await startChat(message.id, message.cols, message.rows, options);
+            refreshTerminals();
+            return json(200, { ok: true, terminal });
+        }
         if (message.action === 'stop') {
             if (!isTerminalId(message.id)) return json(400, { error: 'id is not a terminal id' });
             await stopTerminal(message.id, options);
@@ -265,5 +272,7 @@ export async function handleTerminal(
     } catch (error) {
         return json(400, { error: reason(error) });
     }
-    return json(400, { error: 'action must be start, stop, resize, resume, recover or task' });
+    return json(400, {
+        error: 'action must be start, stop, resize, resume, recover, task or chat'
+    });
 }
