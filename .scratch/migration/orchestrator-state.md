@@ -34,7 +34,15 @@ dispatch:
   pid: 2690
   session_id: 01a09a93-ffbf-7312-9abd-c3e0540e97e7
   landing: not-started
-  notes: Axel lifted the pause on 2026-09-13 at 13:55 for Q13 and Q14 ("Please continue with Q13 and Q14, then report back"); after Q14 lands the orchestrator reports and pauses again; D19 then Q16 then Q17 follow in that order once he lifts it
+  round: 1
+  repair_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q13/repair-prompt.md
+  repair_events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q13/repair-events.jsonl
+  repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q13/repair-report.md
+  repair_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q13/repair-exit.txt
+  repair_pid: 71670
+  repair_launched: 2026-09-13T14:12:05+02:00
+  review_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q13/review-report.md
+  notes: the worker's report is read (everything done except the two schema edits under registries/ and feeds/, which its sandbox could not write and the orchestrator made in the worktree), its diff saved as /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q13/diff.patch, the seven checks green in the worktree from the orchestrator's shell (1880 tests); the first review is in agents/reviews/Q13.md (no acceptance item missing; one defect: an off-palette hex colour gave a grey pillar card; tests to add); the repair round is running on the worker's thread; next: the second review over diff-2.patch (made with git diff HEAD so the Composer deletion shows), wip, cherry-pick, verify on main, the Chrome check on TEST, the booking, then Q14. Axel lifted the pause on 2026-09-13 at 13:55 for Q13 and Q14 ("Please continue with Q13 and Q14, then report back"); after Q14 lands the orchestrator reports and pauses again; D19 then Q16 then Q17 follow in that order once he lifts it
 ```
 
 ## The standing demands (from Axel, in force)
