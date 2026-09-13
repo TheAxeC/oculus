@@ -34,7 +34,13 @@ dispatch:
   pid: 83876
   session_id: 01a09c39-dbcd-7c90-8427-40453a675834
   landing: not-started
-  notes: Axel's decision of 21:25 (every 10 minutes, yes to the hidden sessions, restart on any failure) after the orchestrator's test at 21:18 that /usage in a tmux session refreshes the account file; main's working tree carries an uncommitted per-bar as-of edit to views/Usage.svelte and text-oculus.yml awaiting his revert or keep, to be resolved before the cherry-pick; at landing the sessions are started for real on his machine, the card checked on his dev server on 8790 (restarted), then the PAUSE
+  round: 1
+  repair_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19c/repair-prompt.md
+  repair_events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19c/repair-events.jsonl
+  repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19c/repair-report.md
+  repair_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19c/repair-exit.txt
+  review_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19c/review-report.md
+  notes: the first review is in agents/reviews/D19c.md; the repair round (unique session names by label, dead-pane restart, the last-line prompt check, a stable down-since, success from the account file's fetch time instead of screen words, the live-list rule, the control's refusal line) is running on the worker's thread; next: the second review, wip, cherry-pick (Usage.svelte and the type-scale test conflict with the as-of removal on main), verify, the sessions started for real, the card on 8790, the booking, the PAUSE. Axel's decision of 21:25 (every 10 minutes, yes to the hidden sessions, restart on any failure) after the orchestrator's test at 21:18 that /usage in a tmux session refreshes the account file; main's working tree carries an uncommitted per-bar as-of edit to views/Usage.svelte and text-oculus.yml awaiting his revert or keep, to be resolved before the cherry-pick; at landing the sessions are started for real on his machine, the card checked on his dev server on 8790 (restarted), then the PAUSE
 ```
 
 ## The standing demands (from Axel, in force)
