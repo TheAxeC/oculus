@@ -354,3 +354,44 @@ export type HpcPayload = {
     pollMin: number;
     host: string;
 };
+
+// ------------------------------------------------------------------ usage
+export type UsageTool = 'claude' | 'codex';
+export type UsageAccountConfig = { tool: UsageTool; dir: string; label: string };
+export type UsageWindow = {
+    name: 'five_hour' | 'seven_day' | 'primary' | 'secondary';
+    usedPercent: number;
+    resetsAt: number;
+    windowMinutes: number;
+};
+export type UsageLiveSession = {
+    sessionId: string;
+    model: string;
+    contextPercent: number | null;
+    costUsd: number | null;
+    updatedAt: string;
+    cwd: string;
+};
+export type UsageAccount = {
+    tool: UsageTool;
+    label: string;
+    dir: string;
+    email: string;
+    organisation: string;
+    tier: string;
+    tierLabel: string;
+    billing: string;
+    windows: UsageWindow[];
+    live: UsageLiveSession[];
+};
+export type UsageDay = {
+    tool: UsageTool;
+    account: string;
+    day: string;
+    model: string;
+    input: number;
+    output: number;
+    cacheRead: number;
+    cacheCreation: number;
+};
+export type UsagePayload = { accounts: UsageAccount[]; days: UsageDay[]; builtAt: string };

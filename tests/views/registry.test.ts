@@ -84,6 +84,7 @@ describe('the real registrations', () => {
             'inbox',
             'linkedin',
             'hpc',
+            'usage',
             'status',
             'findings',
             'gallery',

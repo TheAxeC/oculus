@@ -37,6 +37,14 @@ export const LIVENESS = 15000;
 export const WINDOW_DAYS = 2;
 export const MAX_SESSIONS = 40;
 
+const changeListeners = new Set<() => void>();
+
+/** Subscribe to completed session rescans, including rescans caused by transcript writes. */
+export function onSessionsChange(listener: () => void): () => void {
+    changeListeners.add(listener);
+    return () => changeListeners.delete(listener);
+}
+
 /** What the watcher needs of server/pty/channel.ts's Terminals: the list, and when it changed. */
 export type TerminalSource = {
     list(): Terminal[];
@@ -131,6 +139,7 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Wat
     const rescan = (): void => {
         try {
             publish(read());
+            for (const listener of changeListeners) listener();
         } catch (error) {
             console.error(`sessions watch: rescan failed: ${reason(error)}`);
         }

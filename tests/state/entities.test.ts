@@ -1,7 +1,7 @@
 // The client's store of what the socket delivered: one message per channel, the latest.
 
 import { describe, expect, it } from 'vitest';
-import { config, message, portfolio, receive } from '../../src/lib/state/entities.svelte.ts';
+import { config, message, portfolio, receive, usage } from '../../src/lib/state/entities.svelte.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
 
 /** A snapshot with the one field this test reads; the shape itself is data/normalise's business. */
@@ -62,5 +62,14 @@ describe('the two typed channels', () => {
 
         receive({ channel: 'portfolio', version: 2, payload: snapshot(2, ['loewner', 'engram']) });
         expect(portfolio()?.version).toBe(2);
+    });
+
+    it('hands back the latest usage payload', () => {
+        receive({
+            channel: 'usage',
+            version: 1,
+            payload: { accounts: [], days: [], builtAt: '2026-09-13T12:00:00.000Z' }
+        });
+        expect(usage()?.builtAt).toBe('2026-09-13T12:00:00.000Z');
     });
 });

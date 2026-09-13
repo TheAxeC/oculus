@@ -8,7 +8,7 @@ import {
     readdirSync,
     writeFileSync
 } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -37,6 +37,11 @@ function writeLocal(dir: string, body: string): void {
     writeFileSync(file, body);
 }
 
+const DEFAULT_ACCOUNTS = [
+    { tool: 'claude', dir: join(homedir(), '.claude'), label: 'claude' },
+    { tool: 'codex', dir: join(homedir(), '.codex'), label: 'codex' }
+];
+
 /** Write one file into <engine>/config, creating the directory the first time. */
 function writeConfig(engine: string, name: string, body: string): string {
     const dir = join(engine, 'config');
@@ -63,7 +68,8 @@ describe('loadLocal', () => {
         expect(loadLocal(dir)).toEqual({
             hub: resolve(dir, '..', '..'),
             port: DEFAULT_PORT,
-            claudeBin: 'claude'
+            claudeBin: 'claude',
+            accounts: DEFAULT_ACCOUNTS
         });
         expect(warn).not.toHaveBeenCalled();
     });
@@ -74,7 +80,8 @@ describe('loadLocal', () => {
         expect(loadLocal(dir)).toEqual({
             hub: '/srv/research-hub',
             port: 8791,
-            claudeBin: 'claude'
+            claudeBin: 'claude',
+            accounts: DEFAULT_ACCOUNTS
         });
     });
 
@@ -84,7 +91,8 @@ describe('loadLocal', () => {
         expect(loadLocal(dir)).toEqual({
             hub: '/srv/research-hub',
             port: DEFAULT_PORT,
-            claudeBin: 'claude'
+            claudeBin: 'claude',
+            accounts: DEFAULT_ACCOUNTS
         });
         expect(warn).toHaveBeenCalledTimes(1);
         expect(String(warn.mock.calls[0][0])).toContain('colour');
@@ -106,6 +114,7 @@ describe('loadLocal', () => {
             hub: '/srv/research-hub',
             port: DEFAULT_PORT,
             claudeBin: 'claude',
+            accounts: DEFAULT_ACCOUNTS,
             sessionsCache: '/srv/state/cache.json',
             sessionsOverrides: join(dir, 'state', 'sessions.json')
         });
@@ -118,7 +127,8 @@ describe('loadLocal', () => {
         expect(loadLocal(dir)).toEqual({
             hub: resolve(dir, '..', '..'),
             port: DEFAULT_PORT,
-            claudeBin: '/opt/Claude CLI/claude'
+            claudeBin: '/opt/Claude CLI/claude',
+            accounts: DEFAULT_ACCOUNTS
         });
         expect(warn).not.toHaveBeenCalled();
     });
@@ -127,6 +137,24 @@ describe('loadLocal', () => {
         const dir = scratch();
         writeLocal(dir, 'sessions_cache: 17\n');
         expect(() => loadLocal(dir)).toThrow(/sessions_cache must be a path/);
+    });
+
+    it('takes usage accounts and expands home-relative config folders', () => {
+        const dir = scratch();
+        writeLocal(
+            dir,
+            'accounts:\n  - { tool: claude, dir: ~/.claude-work, label: Work }\n  - { tool: codex, dir: state/codex, label: Codex }\n'
+        );
+        expect(loadLocal(dir).accounts).toEqual([
+            { tool: 'claude', dir: join(homedir(), '.claude-work'), label: 'Work' },
+            { tool: 'codex', dir: join(dir, 'state', 'codex'), label: 'Codex' }
+        ]);
+    });
+
+    it('refuses an account with an unknown tool', () => {
+        const dir = scratch();
+        writeLocal(dir, 'accounts:\n  - { tool: api, dir: ~/.api, label: API }\n');
+        expect(() => loadLocal(dir)).toThrow(/tool must be claude or codex/);
     });
 
     describe('OCULUS_LOCAL', () => {
@@ -145,7 +173,8 @@ describe('loadLocal', () => {
             expect(loadLocal(dir)).toEqual({
                 hub: '/srv/from-the-override',
                 port: 8792,
-                claudeBin: 'claude'
+                claudeBin: 'claude',
+                accounts: DEFAULT_ACCOUNTS
             });
         });
 
@@ -254,6 +283,7 @@ describe("oculus's own config directory", () => {
             'read_limits',
             'stale_days',
             'context_window',
+            'usage_tiers',
             'data_domains',
             'stale_lag_days',
             'refresh_stale_days',
@@ -352,6 +382,12 @@ describe("oculus's own config directory", () => {
             teaching: 'teal'
         });
         expect(typeof config.stale_lag_days).toBe('number');
+        expect(config.usage_tiers).toEqual({
+            default_claude_max_20x: 'Max 20x',
+            default_claude_max_5x: 'Max 5x',
+            default_claude_pro: 'Pro',
+            prolite: 'Plus'
+        });
     });
 
     it('configures the editable source extensions and their viewable superset', () => {

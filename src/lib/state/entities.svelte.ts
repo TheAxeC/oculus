@@ -13,7 +13,8 @@ import type {
     HpcPayload,
     Message,
     SessionsPayload,
-    Snapshot
+    Snapshot,
+    UsagePayload
 } from '../data/model.ts';
 
 const messages: Record<string, Message> = $state({});
@@ -64,4 +65,10 @@ export function git(): GitPayload | null {
 export function hpc(): HpcPayload | null {
     const held = messages.hpc;
     return held === undefined ? null : (held.payload as HpcPayload);
+}
+
+/** The Claude and Codex subscription windows and seven-day token totals. */
+export function usage(): UsagePayload | null {
+    const held = messages.usage;
+    return held === undefined ? null : (held.payload as UsagePayload);
 }

@@ -15,6 +15,7 @@ import { bindGitWatcher, watchGit } from './src/lib/server/watch/git.ts';
 import { watchPortfolio } from './src/lib/server/watch/portfolio.ts';
 import { watchSessions } from './src/lib/server/watch/sessions.ts';
 import { bindHpcWatcher, watchHpc } from './src/lib/server/hpc/poll.ts';
+import { watchUsage } from './src/lib/server/usage/watch.ts';
 
 // The socket and the watcher in development. They are the same three lines as src/server.ts, on
 // Vite's own http server, so `npm run dev` pushes data exactly as the built server does and all
@@ -38,6 +39,10 @@ function oculusSocket(): Plugin {
                 quota_min: number;
                 prewarm: boolean;
             };
+            const usageTiers = (loadConfig(engine).config.usage_tiers ?? {}) as Record<
+                string,
+                string
+            >;
             const hub = new Hub();
             // O17's terminals, the same three lines as in src/server.ts.
             const terminals = new Terminals(hub);
@@ -59,6 +64,7 @@ function oculusSocket(): Plugin {
                 projectFolders: folders,
                 terminals
             });
+            const usage = watchUsage(hub, { accounts: local.accounts, tiers: usageTiers });
             // After the sessions watcher, so its subscription is answered with the first scan.
             const git = watchGit(hub);
             bindGitWatcher(git);
@@ -75,6 +81,7 @@ function oculusSocket(): Plugin {
                 hpc.close();
                 bindGitWatcher(null);
                 git.close();
+                usage.close();
                 sessions.close();
                 watcher.close();
                 socket.close();

@@ -16,6 +16,7 @@ import { bindGitWatcher, watchGit } from './lib/server/watch/git.ts';
 import { watchPortfolio } from './lib/server/watch/portfolio.ts';
 import { watchSessions } from './lib/server/watch/sessions.ts';
 import { bindHpcWatcher, watchHpc } from './lib/server/hpc/poll.ts';
+import { watchUsage } from './lib/server/usage/watch.ts';
 
 type Handler = (req: IncomingMessage, res: ServerResponse) => void;
 
@@ -28,6 +29,7 @@ const slurm = (loadConfig(engine).config.slurm ?? {}) as {
     quota_min: number;
     prewarm: boolean;
 };
+const usageTiers = (loadConfig(engine).config.usage_tiers ?? {}) as Record<string, string>;
 
 // The specifier is built at run time because build/handler.js exists only after `npm run build`.
 const built = new URL('../build/handler.js', import.meta.url).href;
@@ -62,6 +64,7 @@ const sessions = watchSessions(hub, {
     projectFolders: folders,
     terminals
 });
+const usage = watchUsage(hub, { accounts: local.accounts, tiers: usageTiers });
 // Started after the sessions watcher, so its subscription is answered with the first scan at once.
 const git = watchGit(hub);
 // The git endpoint is in the built app's module graph, so the bridge is what lets a write re-read
@@ -81,6 +84,7 @@ server.on('close', () => {
     hpc.close();
     bindGitWatcher(null);
     git.close();
+    usage.close();
     sessions.close();
     portfolio.close();
     bindTerminals(null);

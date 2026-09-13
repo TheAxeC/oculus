@@ -16,6 +16,7 @@ import Findings from '$lib/views/Findings.svelte';
 import Focus from '$lib/views/Focus.svelte';
 import Gallery from '$lib/views/Gallery.svelte';
 import Hpc from '$lib/views/Hpc.svelte';
+import Usage from '$lib/views/Usage.svelte';
 import Inbox from '$lib/views/Inbox.svelte';
 import Leads from '$lib/views/Leads.svelte';
 import Linkedin from '$lib/views/Linkedin.svelte';
@@ -96,6 +97,13 @@ registerView({
     badgeCells: queueCells,
     // The rail's compact "running pending" text; on a pane tab the two cells carry those numbers.
     badgeTabText: () => ''
+});
+
+registerView({
+    id: 'usage',
+    label: 'views.usage',
+    glyph: 'views.usage_glyph',
+    component: Usage
 });
 
 registerView({

@@ -7,9 +7,10 @@
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
-import type { Finding } from '../model.ts';
+import type { Finding, UsageAccountConfig, UsageTool } from '../model.ts';
 import { REGISTRY_KEYS } from '../normalise.ts';
 
 export type LocalConfig = {
@@ -31,6 +32,8 @@ export type LocalConfig = {
     sessionsOverrides?: string;
     /** Absolute or PATH-resolved Claude CLI used by unattended update-task terminals. */
     claudeBin: string;
+    /** Claude and Codex config folders shown by the Usage view. */
+    accounts: UsageAccountConfig[];
 };
 
 /** 8787 belongs to the cockpit and is never used. */
@@ -42,7 +45,8 @@ const LOCAL_KEYS = [
     'hpc_host',
     'sessions_cache',
     'sessions_overrides',
-    'claude_bin'
+    'claude_bin',
+    'accounts'
 ];
 
 /**
@@ -62,7 +66,42 @@ export function engineDir(from: string = fileURLToPath(import.meta.url)): string
 
 /** The defaults: the hub is two directories above tools/oculus, the port is 8790, and Claude is resolved on PATH. */
 export function localDefaults(engine: string): LocalConfig {
-    return { hub: resolve(engine, '..', '..'), port: DEFAULT_PORT, claudeBin: 'claude' };
+    return {
+        hub: resolve(engine, '..', '..'),
+        port: DEFAULT_PORT,
+        claudeBin: 'claude',
+        accounts: [
+            { tool: 'claude', dir: join(homedir(), '.claude'), label: 'claude' },
+            { tool: 'codex', dir: join(homedir(), '.codex'), label: 'codex' }
+        ]
+    };
+}
+
+function accountDir(value: string, base: string): string {
+    if (value === '~') return homedir();
+    if (value.startsWith('~/')) return join(homedir(), value.slice(2));
+    return isAbsolute(value) ? value : resolve(base, value);
+}
+
+function usageAccounts(value: unknown, file: string, base: string): UsageAccountConfig[] {
+    if (!Array.isArray(value)) throw new Error(`${file}: accounts must be a list`);
+    return value.map((item, index) => {
+        if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+            throw new Error(`${file}: accounts[${index}] must be a map`);
+        }
+        const row = item as Record<string, unknown>;
+        const tool = row.tool;
+        if (tool !== 'claude' && tool !== 'codex') {
+            throw new Error(`${file}: accounts[${index}].tool must be claude or codex`);
+        }
+        if (typeof row.dir !== 'string' || row.dir.length === 0) {
+            throw new Error(`${file}: accounts[${index}].dir must be a path`);
+        }
+        if (typeof row.label !== 'string' || row.label.length === 0) {
+            throw new Error(`${file}: accounts[${index}].label must be words`);
+        }
+        return { tool: tool as UsageTool, dir: accountDir(row.dir, base), label: row.label };
+    });
 }
 
 /**
@@ -130,6 +169,7 @@ export function loadLocal(engine: string): LocalConfig {
         }
         config.claudeBin = record.claude_bin;
     }
+    if (record.accounts !== undefined) config.accounts = usageAccounts(record.accounts, file, base);
     // The two session paths are absent unless the machine names them, so a config that says
     // nothing about sessions leaves the defaults to the module that owns them.
     for (const [key, field] of [

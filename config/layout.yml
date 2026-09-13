@@ -21,7 +21,7 @@ nav_groups:
     - { label: "Feeds",         glyph: scout, keys: [radar, leads, inbox, linkedin] }
   more:
     - { label: "Personal",      keys: [approach, agent-approach, memories] }
-    - { label: "System",        keys: [status, findings, gallery, hpc, help, audit, config] }
+    - { label: "System",        keys: [status, findings, gallery, hpc, usage, help, audit, config] }
 
 
 # Saved arrangements: a whole workbench written by hand, applied by a control in the rail's panel menu.

@@ -18,6 +18,13 @@ stale_days: { litwatch: 14, inbox: 10, scout: 7, audit: 7 }
 # A transcript that states its own window (Codex does, Claude does not) is measured against that instead.
 context_window: 1000000
 
+# Labels for the subscription tier identifiers reported by Claude and Codex.
+usage_tiers:
+  default_claude_max_20x: "Max 20x"
+  default_claude_max_5x: "Max 5x"
+  default_claude_pro: "Pro"
+  prolite: "Plus"
+
 # domains for which a project is EXPECTED to have a dataset (the audit flags a missing Data section); the
 # theory/method/meta lines legitimately have none. Author-specific, so it lives here (config default is empty).
 data_domains: [heart, liver, liverfl, liversurv, immune, brain, brainbci]
