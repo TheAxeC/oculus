@@ -26,13 +26,13 @@ dispatch:
   worker: codex:gpt-5.6-sol
   worktree: .agents/worktrees/q14
   base: 28f1dd2ccfa0d4c293ca4af4f953cdbdc61cd0f0
-  launched: 2026-09-13T14:44:13+02:00
+  launched: 2026-09-13T14:44:57+02:00
   prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q14/prompt.md
   events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q14/events.jsonl
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q14/report.md
   exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q14/exit.txt
-  pid: 0
-  session_id: pending
+  pid: 71724
+  session_id: 01a09acc-a51c-7861-8928-bc7f16fef167
   landing: not-started
   notes: the second of the two packages Axel asked for at 13:35 ("Please continue with Q13 and Q14, then report back"); after Q14 lands the orchestrator reports and pauses; the report also carries Q13's landing; D19, Q16, Q17 follow once he lifts the pause
 ```
