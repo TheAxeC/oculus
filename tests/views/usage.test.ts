@@ -173,7 +173,7 @@ describe('Usage', () => {
         expect(html).toContain('no window open');
         expect(html).toContain('--tone: var(--c-red)');
         expect(html).toContain('--tone: var(--c-amber)');
-        expect(html).toContain('as of 14:30');
+        expect(html).not.toContain('as of');
     });
 
     it('names the status-line install when a Claude account has no snapshot', () => {

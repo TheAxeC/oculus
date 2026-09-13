@@ -8,7 +8,7 @@
     import Pane from '$lib/ui/Pane.svelte';
     import Table, { type Column } from '$lib/ui/Table.svelte';
     import { usage } from '$lib/state/entities.svelte';
-    import { basename, clock } from '$lib/state/format';
+    import { basename } from '$lib/state/format';
     import { t } from '$lib/state/text';
     import type { UsageAccount, UsageDay, UsageWindow } from '$lib/state/usage';
     import type { ViewProps } from './registry';
@@ -73,15 +73,6 @@
         return [...windows].sort((left, right) => order[left.name] - order[right.name]);
     }
 
-    function newestObservation(windows: UsageWindow[]): string {
-        return windows.reduce((newest, window) => {
-            if (window.observedAt === '') return newest;
-            return newest === '' || Date.parse(window.observedAt) > Date.parse(newest)
-                ? window.observedAt
-                : newest;
-        }, '');
-    }
-
     function historyRows(rows: UsageDay[]): Record<string, unknown>[] {
         const shown: Record<string, unknown>[] = rows.map((row) => ({
             ...row,
@@ -113,7 +104,6 @@
             <div class="accounts">
                 {#each data.accounts as account (`${account.tool}:${account.label}`)}
                     {@const windows = orderedWindows(account.windows)}
-                    {@const observedAt = newestObservation(windows)}
                     <Card title={account.label} level={3}>
                         {#snippet meta()}
                             <Chip label={account.tool} />
@@ -145,9 +135,6 @@
                                         </div>
                                     {/each}
                                 </div>
-                                {#if account.tool === 'claude' && observedAt !== ''}
-                                    <p class="observed">{t('usage.observed', clock(observedAt))}</p>
-                                {/if}
                             {/if}
                             {#if account.live.length}
                                 <section class="live">
@@ -235,12 +222,6 @@
     .window-name,
     .live-row {
         font-size: var(--fs-sm);
-    }
-
-    .observed {
-        margin: 6px 0 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
     }
 
     .live {
