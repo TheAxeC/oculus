@@ -31,8 +31,8 @@ dispatch:
   events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R3/events.jsonl
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R3/report.md
   exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R3/exit.txt
-  pid: pending
-  session_id: pending
+  pid: 77650
+  session_id: 01a09c94-f6c9-7202-a944-8a9f9c43ab25
   landing: not-started
   round: 0
   notes: no globals, the brief of 2026-09-13 22:10 with its premises checked at 23:05; after it R7, R4, R5, R6, R8, then R9; no dispatch after 06:00 on 2026-09-14, nothing in flight at 07:05.
