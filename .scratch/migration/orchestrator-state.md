@@ -34,7 +34,15 @@ dispatch:
   pid: 26903
   session_id: 01a09b09-e523-7c63-8147-13e2372e52cd
   landing: not-started
-  notes: Axel lifted the pause at 16:00 for D19 alone ("Continue with D19, then pause again"); this session now runs on his second account (CLAUDE_CONFIG_DIR=~/.claude-work, the university Max 5x login; the note is in tools/oculus/README.md and the memory); at landing the orchestrator installs the status-line command in ~/.claude/settings.json (shared by both accounts through the symlink) with Axel's yes carried by the package, checks the view on TEST, books, reports and pauses
+  round: 1
+  repair_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19/repair-prompt.md
+  repair_events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19/repair-events.jsonl
+  repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19/repair-report.md
+  repair_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19/repair-exit.txt
+  repair_pid: 79104
+  repair_launched: 2026-09-13T16:21:36+02:00
+  review_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19/review-report.md
+  notes: the worker's report is read and its diff saved as /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19/diff.patch, the seven checks green in the worktree from the orchestrator's shell (1955 tests, the git-watcher flake green on rerun); the first review is in agents/reviews/D19.md (Codex daily totals summed the per-request count instead of the cumulative counter's deltas, the account file rule special-cased every folder named .claude, the Codex day folders were watched only if present at start, the newest rollout read whole each rebuild); the repair round is running on the worker's thread; next: the second review over diff-2.patch, wip, cherry-pick, verify on main, the status-line install in ~/.claude/settings.json, the Chrome check on TEST with /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19/local.yml (three accounts), the booking, the report and the PAUSE. Axel lifted the pause at 15:45 for D19 alone ("Continue with D19, then pause again"); this session now runs on his second account (CLAUDE_CONFIG_DIR=~/.claude-work, the university Max 5x login; the note is in tools/oculus/README.md and the memory); at landing the orchestrator installs the status-line command in ~/.claude/settings.json (shared by both accounts through the symlink) with Axel's yes carried by the package, checks the view on TEST, books, reports and pauses
 ```
 
 ## The standing demands (from Axel, in force)
