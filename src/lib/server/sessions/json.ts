@@ -4,6 +4,7 @@
 // Both files are written whole and atomically: a half-written overrides file would lose the user's
 // pins, and a half-written cache would be discarded on the next read anyway.
 
+import { randomBytes } from 'node:crypto';
 import {
     closeSync,
     fchmodSync,
@@ -26,11 +27,9 @@ export function readJson(path: string): unknown {
     }
 }
 
-let counter = 0;
-
 /**
  * Write one JSON file whole: a temporary file in the same directory, then a rename, which is
- * atomic on the same filesystem. The temporary name carries the pid and a counter so two writers
+ * atomic on the same filesystem. The temporary name carries the pid and random bytes so two writers
  * in one process cannot collide. Throws only when the directory cannot be written.
  */
 export function writeJsonAtomic(path: string, payload: unknown): void {
@@ -41,8 +40,10 @@ export function writeJsonAtomic(path: string, payload: unknown): void {
 export function writeTextAtomic(path: string, content: string, newMode?: number): void {
     const folder = dirname(path) || '.';
     mkdirSync(folder, { recursive: true });
-    counter += 1;
-    const temporary = join(folder, `.oculus-write-${process.pid}-${Date.now()}-${counter}`);
+    const temporary = join(
+        folder,
+        `.oculus-write-${process.pid}-${randomBytes(6).toString('hex')}`
+    );
     // An existing file keeps its mode: the replacement is created with it before the rename, so a
     // private file (0600) does not come back world-readable through the process's umask.
     let mode: number | undefined;

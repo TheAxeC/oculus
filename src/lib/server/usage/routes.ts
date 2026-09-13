@@ -1,8 +1,7 @@
 // Layer 2, server. The usage refresh POST accepts one Claude account label only after the same
-// origin and process-token checks as the HPC refresh route, then calls the bound hidden refresher.
+// origin and ServerContext token checks as the HPC refresh route, then calls that context's refresher.
 
-import { hasToken, processToken, sameOrigin } from '../auth.ts';
-import { refreshUsage } from './refresh.ts';
+import { hasToken, sameOrigin } from '../auth.ts';
 
 export type UsageRefreshTarget = {
     token: string;
@@ -35,8 +34,4 @@ export async function handleUsageRefresh(
     if (typeof label !== 'string' || label === '') return json(400, { error: 'bad account' });
     if (!(await target.refresh(label))) return json(404, { error: 'account not found' });
     return json(200, { status: 'ok' });
-}
-
-export function usageRefreshTarget(): UsageRefreshTarget {
-    return { token: processToken(), refresh: refreshUsage };
 }

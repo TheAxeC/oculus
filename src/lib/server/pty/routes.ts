@@ -17,8 +17,6 @@
 
 import { hasToken, sameOrigin } from '../auth.ts';
 import { engineDir, loadLocal } from '../../data/sources/config.ts';
-import { bridgedDatasetIds, bridgedRecord } from '../sessions/hooks.ts';
-import { refreshTerminals } from './channel.ts';
 import { startChat, type ChatOptions } from './chat.ts';
 import {
     KINDS,
@@ -48,13 +46,15 @@ export type TerminalOptions = StartOptions &
     ChatOptions & {
         /**
          * The session record a resume is about, from the last published `sessions` payload. Defaulted
-         * to bridgedRecord; tests/routes/terminal.test.ts passes a source the test owns.
+         * Tests and the route pass the source they own.
          */
         recordFor?: (id: string) => SessionRecord | null;
         /** Dataset keys in the server's latest portfolio payload. */
         datasetIdsFor?: () => string[];
         /** The hub root in which a recovery shell starts. */
         hubFor?: () => string;
+        /** Re-read the terminal manager after a write. */
+        refresh?: () => void;
     };
 
 function json(status: number, body: unknown): Response {
@@ -91,7 +91,7 @@ async function resumeSession(
     rows: unknown,
     options: TerminalOptions
 ): Promise<Response> {
-    const record = (options.recordFor ?? bridgedRecord)(resume.id);
+    const record = (options.recordFor ?? (() => null))(resume.id);
     if (record === null) return json(400, { error: UNKNOWN });
     if (record.live) return json(400, { error: LIVE });
     const title = record.title === '' ? record.id : record.title;
@@ -106,7 +106,7 @@ async function resumeSession(
         },
         options
     );
-    refreshTerminals();
+    options.refresh?.();
     return json(200, { ok: true, terminal });
 }
 
@@ -127,7 +127,7 @@ async function recoverDataset(
     if (typeof key !== 'string' || key === '' || key.startsWith('-')) {
         return json(400, { error: 'key is not a valid dataset key' });
     }
-    const known = options.datasetIdsFor?.() ?? bridgedDatasetIds();
+    const known = options.datasetIdsFor?.() ?? [];
     if (!known.includes(key)) {
         return json(400, { error: 'key is not a dataset in the current portfolio' });
     }
@@ -142,7 +142,7 @@ async function recoverDataset(
         },
         { ...options, command: `python3 tools/data/redownload.py ${shellWord(key)}` }
     );
-    refreshTerminals();
+    options.refresh?.();
     return json(200, { ok: true, terminal });
 }
 
@@ -172,7 +172,7 @@ async function startTask(
     if (typeof kind !== 'string' || !TASKS.includes(kind as TaskKind)) {
         return json(400, { error: `kind must be one of ${TASKS.join(', ')}` });
     }
-    const local = loadLocal(engineDir());
+    const local = options.localFor?.() ?? loadLocal(engineDir());
     const terminal = await startTerminal(
         {
             kind: 'claude',
@@ -183,7 +183,7 @@ async function startTask(
         },
         { ...options, command: taskCommand(local.claudeBin, kind as TaskKind) }
     );
-    refreshTerminals();
+    options.refresh?.();
     return json(200, { ok: true, terminal });
 }
 
@@ -226,7 +226,7 @@ export async function handleTerminal(
                 },
                 options
             );
-            refreshTerminals();
+            options.refresh?.();
             return json(200, { ok: true, terminal });
         }
         if (message.action === 'recover') {
@@ -237,13 +237,13 @@ export async function handleTerminal(
         }
         if (message.action === 'chat') {
             const terminal = await startChat(message.id, message.cols, message.rows, options);
-            refreshTerminals();
+            options.refresh?.();
             return json(200, { ok: true, terminal });
         }
         if (message.action === 'stop') {
             if (!isTerminalId(message.id)) return json(400, { error: 'id is not a terminal id' });
             await stopTerminal(message.id, options);
-            refreshTerminals();
+            options.refresh?.();
             return json(200, { ok: true, id: message.id });
         }
         if (message.action === 'resume') {

@@ -10,6 +10,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 const LIB = resolve(fileURLToPath(import.meta.url), '..', '..', 'src', 'lib');
+const SRC = resolve(LIB, '..');
 
 const LAYERS = ['data', 'server', 'state', 'ui', 'shell', 'views', 'themes'];
 
@@ -124,9 +125,60 @@ export function findViolations(libRoot: string): string[] {
     return violations.sort();
 }
 
+/** Process-wide state is forbidden under src; app.d.ts alone declares Kit's App namespace. */
+export function findGlobalState(sourceRoot: string): string[] {
+    const violations: string[] = [];
+    for (const fileRel of sourceFiles(sourceRoot)) {
+        const text = readFileSync(join(sourceRoot, fileRel), 'utf8');
+        if (/\bglobalThis\b/.test(text)) violations.push(`${fileRel} uses globalThis`);
+        if (fileRel !== 'app.d.ts' && /\bdeclare\s+global\b/.test(text)) {
+            violations.push(`${fileRel} declares global state`);
+        }
+        // The server runs as two module graphs (the built handler and the Node entry), so a
+        // module-level collection there is shared state nothing owns; the client's state modules
+        // hold their runes at module level by the state layer's design and are one graph.
+        if (!fileRel.startsWith('lib/server/') && !fileRel.startsWith('routes/')) continue;
+        for (const line of text.split('\n')) {
+            const held =
+                /^(?:export )?const (\w+)(?::[^=]+)? = (?:new (?:Map|Set)\b|\{\}|\[\])/.exec(
+                    line
+                ) ?? /^(?:export )?let (\w+)\b/.exec(line);
+            if (held !== null && !FROZEN.includes(`${fileRel}:${held[1]}`)) {
+                violations.push(`${fileRel} holds module-level state in ${held[1]}`);
+            }
+        }
+    }
+    return violations.sort();
+}
+
+/** Module-level collections that are never written after load: lookup tables, listed by name. */
+const FROZEN = ['lib/server/pty/channel.ts:CHANGE_EVENTS', 'lib/server/pty/tmux.ts:SINGLES'];
+
 describe('layer boundaries', () => {
     it('holds across src/lib', () => {
         expect(findViolations(LIB)).toEqual([]);
+    });
+
+    it('holds no process-wide state under src', () => {
+        expect(findGlobalState(SRC)).toEqual([]);
+    });
+
+    it('catches process-wide state outside app.d.ts', () => {
+        const dir = mkdtempSync(join(tmpdir(), 'oculus-global-state-'));
+        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        mkdirSync(join(dir, 'lib', 'server'), { recursive: true });
+        writeFileSync(join(dir, 'bad.ts'), 'declare global {}\nconst held = globalThis.value;\n');
+        writeFileSync(
+            join(dir, 'lib', 'server', 'held.ts'),
+            'const cache = new Map<string, string>();\nlet recorder = null;\n'
+        );
+        writeFileSync(join(dir, 'app.d.ts'), 'declare global { namespace App {} }\n');
+        expect(findGlobalState(dir)).toEqual([
+            'bad.ts declares global state',
+            'bad.ts uses globalThis',
+            'lib/server/held.ts holds module-level state in cache',
+            'lib/server/held.ts holds module-level state in recorder'
+        ]);
     });
 
     it('catches a violation of every row it can be shown one of', () => {

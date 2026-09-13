@@ -70,14 +70,6 @@ export const SUBCOMMANDS = [
     'symbolic-ref'
 ];
 
-/** See git.ts's recorder: a test's window onto the argument vectors, which it cannot change. */
-let recorder: ((args: string[]) => void) | null = null;
-
-/** Watch every argument vector this module runs, or pass null to stop watching. */
-export function record(sink: ((args: string[]) => void) | null): void {
-    recorder = sink;
-}
-
 function failed(error: string): Outcome {
     return { ok: false, output: '', error };
 }
@@ -105,7 +97,6 @@ function run(at: Where, args: string[], timeout: number = TIMEOUT_MS): Promise<O
         return Promise.resolve(failed('that directory is not a deposit mirror'));
     }
     const argv = ['-C', at.dir, ...args];
-    if (recorder !== null) recorder(argv);
     return execute(GIT, argv, timeout);
 }
 
@@ -115,7 +106,6 @@ function run(at: Where, args: string[], timeout: number = TIMEOUT_MS): Promise<O
  * call here needs a working directory of its own.
  */
 export function gh(args: string[], timeout: number = NETWORK_TIMEOUT_MS): Promise<Outcome> {
-    if (recorder !== null) recorder([GH, ...args]);
     return execute(GH, args, timeout);
 }
 

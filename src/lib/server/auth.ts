@@ -58,39 +58,3 @@ export function hasToken(request: Request, token: string): boolean {
     if (token === '') return false;
     return request.headers.get(TOKEN_HEADER) === token;
 }
-
-// ------------------------------------------------------------------ the process-wide token
-// The socket cannot import the token. hooks.server.ts mints it inside Kit's own module graph (the
-// built build/ bundle, or Vite's SSR graph in dev), and src/server.ts imports socket.ts as plain
-// TypeScript, so the same `import ... from './auth.ts'` is two module instances in one process.
-// sessions/hooks.ts met this wall for the Hub and crossed it on globalThis; the token crosses the
-// same way. A process where nothing published a token accepts no terminal input, which is what an
-// empty string here means.
-
-type TokenBridge = { token: string };
-
-declare global {
-    // eslint-disable-next-line no-var
-    var __oculusTokenBridge: TokenBridge | undefined;
-}
-
-function bridge(): TokenBridge {
-    globalThis.__oculusTokenBridge ??= { token: '' };
-    return globalThis.__oculusTokenBridge;
-}
-
-/** Called once by hooks.server.ts with the token it minted. */
-export function publishToken(token: string): void {
-    bridge().token = typeof token === 'string' ? token : '';
-}
-
-/** The token this process minted, or an empty string when nothing published one. */
-export function processToken(): string {
-    return bridge().token;
-}
-
-/** Whether a value is this process's token. An empty token is never accepted, as with hasToken. */
-export function isProcessToken(token: unknown): boolean {
-    const held = processToken();
-    return held !== '' && typeof token === 'string' && token === held;
-}

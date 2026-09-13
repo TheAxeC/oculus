@@ -12,7 +12,13 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { DEFAULT_DIR, choose, images, serve } from '../../src/lib/server/wallpaper.ts';
+import {
+    DEFAULT_DIR,
+    choose,
+    images,
+    serve,
+    wallpaperMemory
+} from '../../src/lib/server/wallpaper.ts';
 
 /** A directory holding the named files, each one byte, inside the system temporary directory. */
 function folder(names: string[]): string {
@@ -34,6 +40,8 @@ function local(): Headers {
 
 const PICTURES = ['a-first.jpg', 'b-second.png', 'c-third.webp', 'notes.txt', '.hidden.jpg'];
 
+const memory = wallpaperMemory();
+
 describe('the images of a folder', () => {
     it('keeps the four picture extensions, by name, and drops everything else', () => {
         expect(images(folder(PICTURES))).toEqual(['a-first.jpg', 'b-second.png', 'c-third.webp']);
@@ -47,38 +55,40 @@ describe('the images of a folder', () => {
 
 describe('choosing the image', () => {
     it('takes the first by name when nothing names one', () => {
-        expect(choose({ dir: folder(PICTURES) })).toBe('a-first.jpg');
+        expect(choose({ dir: folder(PICTURES) }, memory)).toBe('a-first.jpg');
     });
 
     it('takes the file whose name holds the fragment', () => {
-        expect(choose({ dir: folder(PICTURES), file: 'second' })).toBe('b-second.png');
+        expect(choose({ dir: folder(PICTURES), file: 'second' }, memory)).toBe('b-second.png');
     });
 
     it('falls back to the first for a fragment no name holds', () => {
-        expect(choose({ dir: folder(PICTURES), file: 'nothing-like-it' })).toBe('a-first.jpg');
+        expect(choose({ dir: folder(PICTURES), file: 'nothing-like-it' }, memory)).toBe(
+            'a-first.jpg'
+        );
     });
 
     it('refuses a file that names a path rather than a name', () => {
         const dir = folder(PICTURES);
-        expect(choose({ dir, file: '../a-first.jpg' })).toBe(null);
-        expect(choose({ dir, file: '/etc/hosts' })).toBe(null);
+        expect(choose({ dir, file: '../a-first.jpg' }, memory)).toBe(null);
+        expect(choose({ dir, file: '/etc/hosts' }, memory)).toBe(null);
     });
 
     it('keeps one random image for the life of the process', () => {
         const dir = folder(PICTURES);
-        const first = choose({ dir, pick: 'random' });
+        const first = choose({ dir, pick: 'random' }, memory);
         expect(first).not.toBe(null);
-        for (let i = 0; i < 20; i += 1) expect(choose({ dir, pick: 'random' })).toBe(first);
+        for (let i = 0; i < 20; i += 1) expect(choose({ dir, pick: 'random' }, memory)).toBe(first);
     });
 
     it('has nothing to choose in an empty folder', () => {
-        expect(choose({ dir: folder([]) })).toBe(null);
+        expect(choose({ dir: folder([]) }, memory)).toBe(null);
     });
 });
 
 describe('the response', () => {
     it('serves the chosen image with its own type and a private cache header', async () => {
-        const response = serve({ dir: folder(PICTURES) }, local());
+        const response = serve({ dir: folder(PICTURES) }, local(), memory);
         expect(response.status).toBe(200);
         expect(response.headers.get('content-type')).toBe('image/jpeg');
         expect(response.headers.get('cache-control')).toBe('private, max-age=3600');
@@ -88,30 +98,34 @@ describe('the response', () => {
     it('names the type by the extension', () => {
         const dir = folder(PICTURES);
         const type = (file: string): string | null =>
-            serve({ dir, file }, local()).headers.get('content-type');
+            serve({ dir, file }, local(), memory).headers.get('content-type');
         expect(type('b-second')).toBe('image/png');
         expect(type('c-third')).toBe('image/webp');
     });
 
     it('answers 404 with no image, no folder and no configuration', () => {
-        expect(serve({ dir: folder(['notes.txt']) }, local()).status).toBe(404);
-        expect(serve({ dir: join(folder([]), 'nothing') }, local()).status).toBe(404);
-        expect(serve(null, local()).status).toBe(404);
+        expect(serve({ dir: folder(['notes.txt']) }, local(), memory).status).toBe(404);
+        expect(serve({ dir: join(folder([]), 'nothing') }, local(), memory).status).toBe(404);
+        expect(serve(null, local(), memory).status).toBe(404);
     });
 
     it('answers 404 to a file that would leave the folder', () => {
-        expect(serve({ dir: folder(PICTURES), file: '../a-first.jpg' }, local()).status).toBe(404);
+        expect(
+            serve({ dir: folder(PICTURES), file: '../a-first.jpg' }, local(), memory).status
+        ).toBe(404);
     });
 
     it('answers 403 to another origin, and to a cross-site fetch that names none', () => {
         const dir = folder(PICTURES);
         const foreign = new Headers({ origin: 'http://evil.invalid' });
-        expect(serve({ dir }, foreign).status).toBe(403);
-        expect(serve({ dir }, new Headers({ 'sec-fetch-site': 'cross-site' })).status).toBe(403);
+        expect(serve({ dir }, foreign, memory).status).toBe(403);
+        expect(serve({ dir }, new Headers({ 'sec-fetch-site': 'cross-site' }), memory).status).toBe(
+            403
+        );
     });
 
     it('answers the command line, which sends neither header', () => {
-        expect(serve({ dir: folder(PICTURES) }, new Headers()).status).toBe(200);
+        expect(serve({ dir: folder(PICTURES) }, new Headers(), memory).status).toBe(200);
     });
 });
 

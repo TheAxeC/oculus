@@ -1,13 +1,17 @@
 // The Live HPC POST route is tested at its origin and token gates and across each of its three injected actions.
 import { describe, expect, it, vi } from 'vitest';
 import { handleHpc, type HpcTarget } from '../../src/lib/server/hpc/routes.ts';
-const target = (): HpcTarget => ({
-    host: 'fixture',
-    token: 'token',
-    refresh: vi.fn(async () => {}),
-    cancel: vi.fn(async () => ({ status: 'ok' })),
-    log: vi.fn(async () => ({ status: 'ok', log: 'x', path: '/x' }))
-});
+import { contextFixture } from '../server/context-fixture.ts';
+const target = (): HpcTarget => {
+    const server = contextFixture({ token: 'token' });
+    return {
+        host: 'fixture',
+        token: server.token,
+        refresh: vi.fn(() => server.hpc.refresh()),
+        cancel: vi.fn(async () => ({ status: 'ok' })),
+        log: vi.fn(async () => ({ status: 'ok', log: 'x', path: '/x' }))
+    };
+};
 const request = (body: unknown, origin = 'http://127.0.0.1:8791') =>
     new Request('http://127.0.0.1:8791/api/hpc', {
         method: 'POST',

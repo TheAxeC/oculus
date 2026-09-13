@@ -130,18 +130,3 @@ export function watchHpc(hub: Hub, options: HpcOptions): HpcWatcher {
         }
     };
 }
-
-type Bridge = { watcher: HpcWatcher | null };
-declare global {
-    var __oculusHpcBridge: Bridge | undefined;
-}
-function bridge(): Bridge {
-    globalThis.__oculusHpcBridge ??= { watcher: null };
-    return globalThis.__oculusHpcBridge;
-}
-export function bindHpcWatcher(watcher: HpcWatcher | null): void {
-    bridge().watcher = watcher;
-}
-export function refreshHpc(): Promise<void> {
-    return bridge().watcher?.refresh() ?? Promise.resolve();
-}

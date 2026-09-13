@@ -10,6 +10,8 @@ import { describe, expect, it } from 'vitest';
 import { handleTranscript } from '../../src/lib/server/transcript-routes.ts';
 import { record } from '../sessions-fixture.ts';
 import type { SessionRecord } from '../../src/lib/data/model.ts';
+import { sessionRecord } from '../../src/lib/server/sessions/hooks.ts';
+import { contextFixture } from '../server/context-fixture.ts';
 
 const HOST = '127.0.0.1:8791';
 const SESSION = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
@@ -39,7 +41,9 @@ function transcript(): string {
 /** The payload's records, as the endpoint reads them: one session and nothing else. */
 function recordFor(path: string): (id: string) => SessionRecord | null {
     const held = record(SESSION, { path, tool: 'claude' });
-    return (id) => (id === SESSION ? held : null);
+    const server = contextFixture();
+    server.hub.publish('sessions', { records: [held], workspaces: [], terminals: [] });
+    return (id) => sessionRecord(server.hub, id);
 }
 
 function request(query: string): Request {

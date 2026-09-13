@@ -30,9 +30,8 @@ function pushKey(event: HookEvent): string {
 }
 
 /**
- * The latest hook per session, with a 24 hour expiry. One process holds one store; sharedStore()
- * below is how the route and the watcher, which load this module as two separate copies once the
- * app is built, end up reading and writing the same instance.
+ * The latest hook per session, with a 24 hour expiry. ServerContext owns the process's one store
+ * and passes it to both the route and the watcher.
  */
 export class HookStore {
     #events = new Map<string, HookEvent>();
@@ -121,9 +120,7 @@ function patchRecord<T extends SessionRecord>(record: T, event: HookEvent): T {
 }
 
 /** The record of one session in the last published payload, for the notification's subtitle. */
-export function bridgedRecord(session: string): SessionRecord | null {
-    const { hub } = bridge();
-    if (hub === null) return null;
+export function sessionRecord(hub: HubLike, session: string): SessionRecord | null {
     const message = hub.latest('sessions');
     if (message === undefined) return null;
     const payload = message.payload as SessionsPayload;
@@ -135,9 +132,7 @@ export function bridgedRecord(session: string): SessionRecord | null {
  * server/git-write.ts refuses any other root, so the panel can only ever act on a checkout the
  * sessions views are already showing. An empty list is a process that has published nothing yet.
  */
-export function bridgedGitRoots(): string[] {
-    const { hub } = bridge();
-    if (hub === null) return [];
+export function gitRoots(hub: HubLike): string[] {
     const message = hub.latest('git');
     if (message === undefined) return [];
     const payload = message.payload;
@@ -150,9 +145,7 @@ export function bridgedGitRoots(): string[] {
  * half of what a deposit may address, the hub's own manifests being the other; a process that has
  * published nothing yet names none, and the manifests answer alone.
  */
-export function bridgedProjectIds(): string[] {
-    const { hub } = bridge();
-    if (hub === null) return [];
+export function projectIds(hub: HubLike): string[] {
     const message = hub.latest('portfolio');
     if (message === undefined) return [];
     const payload = message.payload;
@@ -163,9 +156,7 @@ export function bridgedProjectIds(): string[] {
 }
 
 /** One project in the last published portfolio payload, for a server action scoped by project id. */
-export function bridgedProject(id: string): Project | null {
-    const { hub } = bridge();
-    if (hub === null) return null;
+export function project(hub: HubLike, id: string): Project | null {
     const message = hub.latest('portfolio');
     if (message === undefined) return null;
     const payload = message.payload;
@@ -176,9 +167,7 @@ export function bridgedProject(id: string): Project | null {
 }
 
 /** Dataset keys in the last portfolio payload, for recovery requests to address by snapshot only. */
-export function bridgedDatasetIds(): string[] {
-    const { hub } = bridge();
-    if (hub === null) return [];
+export function datasetIds(hub: HubLike): string[] {
     const message = hub.latest('portfolio');
     if (message === undefined) return [];
     const payload = message.payload;
@@ -193,51 +182,3 @@ export type HubLike = {
     latest(channel: string): { payload: unknown } | undefined;
     publish(channel: string, payload: unknown): number;
 };
-
-type Bridge = { store: HookStore; hub: HubLike | null };
-
-declare global {
-    // eslint-disable-next-line no-var
-    var __oculusHookBridge: Bridge | undefined;
-}
-
-/**
- * The one HookStore this process holds, reached the same way by every copy of this module. Node's
- * built server bundles routes into build/ separately from the plain TypeScript src/server.ts (and
- * Vite's dev SSR graph) imports for the watcher, so two `import ... from './hooks.ts'` sites can be
- * two different module instances even in one process; globalThis is the one object guaranteed to be
- * the same object regardless, which is why the store and the hub reference both live on it rather
- * than as ordinary module-level state.
- */
-function bridge(): Bridge {
-    globalThis.__oculusHookBridge ??= { store: new HookStore(), hub: null };
-    return globalThis.__oculusHookBridge;
-}
-
-/** The shared store: what a hook is recorded into, and what a rescan's merge reads from. */
-export function sharedHookStore(): HookStore {
-    return bridge().store;
-}
-
-/**
- * Called once by src/server.ts and vite.config.ts's dev plugin, right after the real Hub is built,
- * so a hook that arrives while the page is open republishes at once. Before this is called (a
- * process that never started a watcher, or a route test that supplies its own hub instead), a hook
- * is still recorded and still merged in at the next rescan; only the immediate push is unavailable.
- */
-export function bindHookHub(hub: HubLike): void {
-    bridge().hub = hub;
-}
-
-/**
- * Patch the event into the last published `sessions` payload and republish it on the bound Hub. A
- * no-op when nothing is bound yet or nothing has been published on the channel yet; the merge at the
- * next rescan is what carries the event from there.
- */
-export function republishHook(event: HookEvent): void {
-    const { hub } = bridge();
-    if (hub === null) return;
-    const message = hub.latest('sessions');
-    if (message === undefined) return;
-    hub.publish('sessions', patchPayload(message.payload as SessionsPayload, event));
-}

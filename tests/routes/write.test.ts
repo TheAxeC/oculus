@@ -1,5 +1,5 @@
 // What the /api/write route answers. The route itself is a single line handing the request to
-// lib/server/writes.ts with the token hooks.server.ts minted, which is what this calls: handleWrite
+// lib/server/writes.ts with the token ServerContext minted, which is what this calls: handleWrite
 // takes a Request, the token and the hub to write in, so every case here is one Request object.
 //
 // The hub is synthetic, under the system temporary directory, and every path written is asserted to

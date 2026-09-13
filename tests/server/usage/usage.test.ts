@@ -16,7 +16,6 @@ import {
 } from '../../../src/lib/server/usage/accounts.ts';
 import { UsageTranscriptFold } from '../../../src/lib/server/usage/transcripts.ts';
 import { watchUsage } from '../../../src/lib/server/usage/watch.ts';
-import * as sessionChanges from '../../../src/lib/server/watch/sessions.ts';
 
 const NOW = Date.parse('2026-09-13T12:00:00.000Z');
 const made: string[] = [];
@@ -501,10 +500,6 @@ describe('usage watcher', () => {
         vi.useFakeTimers();
         let changed = (): void => {};
         const off = vi.fn();
-        vi.spyOn(sessionChanges, 'onSessionsChange').mockImplementation((listener) => {
-            changed = listener;
-            return off;
-        });
         const dir = scratch();
         const hub = new Hub();
         const watcher = watchUsage(hub, {
@@ -512,7 +507,11 @@ describe('usage watcher', () => {
             tiers: {},
             usageRoot: join(dir, 'usage'),
             debounce: 1,
-            now: () => NOW
+            now: () => NOW,
+            onSessionsChange: (listener) => {
+                changed = listener;
+                return off;
+            }
         });
         try {
             await watcher.refresh();

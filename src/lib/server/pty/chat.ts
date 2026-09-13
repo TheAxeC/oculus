@@ -4,9 +4,14 @@
 
 import { rmSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
-import { engineDir, loadConfig, loadLocal, textCatalog } from '../../data/sources/config.ts';
+import {
+    engineDir,
+    loadConfig,
+    loadLocal,
+    textCatalog,
+    type LocalConfig
+} from '../../data/sources/config.ts';
 import type { Project } from '../../data/model.ts';
-import { bridgedProject } from '../sessions/hooks.ts';
 import { defaultOverridesPath } from '../sessions/overrides.ts';
 import { writeTextAtomic } from '../sessions/json.ts';
 import { portfolioContext } from './context.ts';
@@ -19,6 +24,8 @@ export type ChatOptions = StartOptions & {
     projectFor?: (id: string) => ChatProject | null;
     /** The merged engine config. Tests provide a fixture without changing the checked-in catalog. */
     configFor?: () => Record<string, unknown>;
+    /** Machine-local paths carried by ServerContext. */
+    localFor?: () => LocalConfig;
 };
 
 /** Quote one word for the shell command tmux starts. */
@@ -101,10 +108,10 @@ export async function startChat(
         throw new Error('id must be a project id or null');
     }
     const engine = engineDir();
-    const local = loadLocal(engine);
+    const local = options.localFor?.() ?? loadLocal(engine);
     const config = options.configFor?.() ?? loadConfig(engine).config;
     const catalog = textCatalog(config);
-    const project = typeof id === 'string' ? (options.projectFor ?? bridgedProject)(id) : null;
+    const project = typeof id === 'string' ? (options.projectFor ?? (() => null))(id) : null;
     if (typeof id === 'string' && project === null) {
         throw new Error('id is not a project in the current portfolio');
     }

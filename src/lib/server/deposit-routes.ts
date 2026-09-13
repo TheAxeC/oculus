@@ -27,10 +27,10 @@ import {
     switchBranch,
     sync,
     type MirrorState,
-    type Plan
+    type Plan,
+    type DepositOptions as ServerDepositOptions
 } from './deposit.ts';
 import type { Branch, Outcome } from './deposit-git.ts';
-import { bridgedProjectIds } from './sessions/hooks.ts';
 
 /** Every action POST /api/deposit knows. */
 export const ACTIONS = [
@@ -60,10 +60,12 @@ export type DepositRun = (
 export type DepositOptions = {
     /** What an action does; the real server/deposit.ts operations when absent. */
     run?: DepositRun;
-    /** Which project ids a request may name; the hub's and the bridge's when absent. */
+    /** Which project ids a request may name. */
     idsFor?: () => string[];
     /** What a GET answers; the real mirror state when absent. */
     stateFor?: (id: string) => Promise<MirrorState | null>;
+    /** What the real operations run with: the context's plan memory, the mirrors folder, the hub. */
+    deposit?: ServerDepositOptions;
 };
 
 function json(status: number, body: unknown): Response {
@@ -78,36 +80,45 @@ function text(value: unknown): string {
 }
 
 /** The real operations, one per action. */
-const OPERATIONS: Record<string, DepositRun> = {
-    adopt: (_action, id) => adopt(id),
-    plan: (_action, id) => sync(id),
-    commit: (_action, id, fields) => commit(id, text(fields.message)),
-    push: (_action, id) => push(id),
-    snapshot: (_action, id, fields) => snapshot(id, text(fields.message)),
-    branches: (_action, id) => branches(id),
-    createBranch: (_action, id, fields) => createBranch(id, text(fields.name)),
-    switchBranch: (_action, id, fields) => switchBranch(id, text(fields.name))
+const OPERATIONS: Record<
+    string,
+    (
+        id: string,
+        fields: Record<string, unknown>,
+        with_: ServerDepositOptions
+    ) => Promise<DepositAnswer>
+> = {
+    adopt: (id, _fields, with_) => adopt(id, with_),
+    plan: (id, _fields, with_) => sync(id, with_),
+    commit: (id, fields, with_) => commit(id, text(fields.message), with_),
+    push: (id, _fields, with_) => push(id, with_),
+    snapshot: (id, fields, with_) => snapshot(id, text(fields.message), with_),
+    branches: (id, _fields, with_) => branches(id, with_),
+    createBranch: (id, fields, with_) => createBranch(id, text(fields.name), with_),
+    switchBranch: (id, fields, with_) => switchBranch(id, text(fields.name), with_)
 };
 
-async function operate(
-    action: string,
-    id: string,
-    fields: Record<string, unknown>
-): Promise<DepositAnswer> {
-    const operation = OPERATIONS[action];
-    if (operation === undefined) {
-        return { ok: false, output: '', error: `no deposit action named ${action}` };
-    }
-    return operation(action, id, fields);
+function operate(with_: ServerDepositOptions): DepositRun {
+    return (action, id, fields) => {
+        const operation = OPERATIONS[action];
+        if (operation === undefined) {
+            return Promise.resolve({
+                ok: false,
+                output: '',
+                error: `no deposit action named ${action}`
+            });
+        }
+        return operation(id, fields, with_);
+    };
 }
 
 /** The hub's own project ids, and the ones the last published portfolio payload named. */
-export function knownIds(): string[] {
-    const ids = new Set<string>(bridgedProjectIds());
+export function knownIds(published: string[] = []): string[] {
+    const ids = new Set<string>(published);
     try {
         for (const id of projectIds()) ids.add(id);
     } catch {
-        // A machine whose local.yml cannot be read still answers for what the bridge published.
+        // A machine whose local.yml cannot be read still answers for what the caller supplied.
     }
     return [...ids];
 }
@@ -127,7 +138,7 @@ export async function handleDepositState(
     if (!(options.idsFor ?? knownIds)().includes(id)) {
         return json(404, { error: 'the portfolio holds no project with that id' });
     }
-    const answer = await (options.stateFor ?? state)(id);
+    const answer = await (options.stateFor ?? ((held) => state(held, options.deposit)))(id);
     if (answer === null) return json(404, { error: 'the portfolio holds no project with that id' });
     return json(200, { ok: true, state: answer });
 }
@@ -170,7 +181,7 @@ export async function handleDeposit(
         return json(400, { error: 'this action needs the page to confirm it' });
     }
 
-    const outcome = await (options.run ?? operate)(action, id, fields);
+    const outcome = await (options.run ?? operate(options.deposit ?? {}))(action, id, fields);
     if (!outcome.ok) {
         return json(400, { error: outcome.error, plan: outcome.plan ?? null });
     }

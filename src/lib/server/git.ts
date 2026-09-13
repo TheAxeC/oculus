@@ -13,7 +13,7 @@
 //
 // Nothing here may ever change a repository. Every writing subcommand belongs to Axel alone, and a
 // dashboard watcher must never be the thing that runs one. tests/server/git.test.ts holds two gates
-// over that: the source names no writing subcommand, and the recorder below shows that the whole
+// over that: the source names no writing subcommand, and the suite records every argument vector the process runs and asserts the whole
 // suite ran only those four.
 //
 // A repository on a slow mount must not stall a watcher, so the one call site takes a list argument
@@ -43,19 +43,6 @@ type Counts = Map<string, [number | null, number | null]>;
 type Row = [string, string, string];
 
 type Outcome = { ok: boolean; text: string };
-
-/**
- * Set while a test watches what ran. It is told the argument vector of every command after the
- * command has been decided, and it can neither change that vector nor add one, so the module runs
- * exactly what it would run with no recorder at all. It exists because the gate that asserts only
- * the four read-only commands ever run has no other way to see them.
- */
-let recorder: ((args: string[]) => void) | null = null;
-
-/** Watch every argument vector this module runs, or pass null to stop watching. */
-export function record(sink: ((args: string[]) => void) | null): void {
-    recorder = sink;
-}
 
 /** The shape every caller can count on, with nothing in it. */
 export function empty(error: string | null = null): GitState {
@@ -214,7 +201,6 @@ function numstat(root: string, timeout: number): Counts {
  */
 function run(root: string, args: string[], timeout: number): Outcome {
     const argv = ['-C', root, ...args];
-    if (recorder !== null) recorder(argv);
     // A list, never a shell, and a timeout: a hung git must not hang a watcher.
     const done = spawnSync(GIT, argv, { encoding: 'utf8', timeout });
     if (done.error !== undefined && done.error !== null) {

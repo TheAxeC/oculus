@@ -23,7 +23,7 @@ import {
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import {
     adopt,
     branches,
@@ -40,7 +40,6 @@ import {
 import {
     SUBCOMMANDS,
     lsFiles,
-    record,
     type GhRun,
     type Outcome
 } from '../../src/lib/server/deposit-git.ts';
@@ -59,8 +58,23 @@ const MODULE = resolve(
 );
 
 /** Every argument vector the suite ran, git's through the recorder and `gh`'s through the stub. */
-const ran: string[][] = [];
-record((args) => ran.push(args));
+const ran = vi.hoisted(() => [] as string[][]);
+vi.mock('node:child_process', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('node:child_process')>();
+    // Only what a module under src/lib/server runs is recorded; a test's own setup command is not.
+    const fromServer = (): boolean => (new Error().stack ?? '').includes('/src/lib/server/');
+    return {
+        ...actual,
+        spawnSync: ((file: string, args: string[], options: unknown) => {
+            if (fromServer()) ran.push(file === 'git' ? args : [file, ...args]);
+            return (actual.spawnSync as (...held: unknown[]) => unknown)(file, args, options);
+        }) as typeof actual.spawnSync,
+        execFile: ((file: string, args: string[], ...rest: unknown[]) => {
+            if (fromServer()) ran.push(file === 'git' ? args : [file, ...args]);
+            return (actual.execFile as (...held: unknown[]) => unknown)(file, args, ...rest);
+        }) as typeof actual.execFile
+    };
+});
 
 /** The `gh repo edit` vectors, so a case can read what the About was set to. */
 const edits: string[][] = [];
@@ -218,7 +232,6 @@ beforeAll(() => {
 });
 
 afterAll(() => {
-    record(null);
     if (dir !== '') rmSync(dir, { recursive: true, force: true });
 });
 

@@ -31,8 +31,7 @@ import {
     unstage,
     type Outcome
 } from './git-write.ts';
-import { messageModel, suggestMessage } from './git-message.ts';
-import { refreshGit } from './watch/git.ts';
+import { messageModel, suggestMessage, type MessageOptions } from './git-message.ts';
 
 /** The catalog key holding the instruction the suggested message is written to. */
 export const PROMPT_KEY = 'git.message_prompt';
@@ -56,7 +55,8 @@ export const CONFIRMED = ['commit', 'push', 'discard', 'createBranch', 'switchBr
 export type GitRun = (
     action: string,
     root: string,
-    fields: Record<string, unknown>
+    fields: Record<string, unknown>,
+    roots: string[]
 ) => Promise<Outcome>;
 
 export type GitOptions = {
@@ -65,7 +65,11 @@ export type GitOptions = {
     /** Which roots a request may name; the published workspaces and the hub when absent. */
     rootsFor?: () => string[];
     /** How a message is suggested; the real `claude -p` when absent. */
-    suggest?: (root: string) => Promise<Outcome>;
+    suggest?: (root: string, roots: string[]) => Promise<Outcome>;
+    /** Overrides for the default diff reader and message subprocess. */
+    message?: MessageOptions;
+    /** Re-read a root after a successful write. */
+    refresh?: (root: string) => void;
 };
 
 function json(status: number, body: unknown): Response {
@@ -80,33 +84,38 @@ function text(value: unknown): string {
 }
 
 /** The real suggestion: the instruction from the catalog, the model from config/behavior.yml. */
-async function suggestFor(root: string): Promise<Outcome> {
+async function suggestFor(
+    root: string,
+    roots: string[],
+    options: MessageOptions = {}
+): Promise<Outcome> {
     const { config } = loadConfig(engineDir());
     const prompt = textCatalog(config)[PROMPT_KEY] ?? '';
-    return suggestMessage(root, prompt, { model: messageModel(config) });
+    return suggestMessage(root, prompt, { ...options, model: messageModel(config) }, roots);
 }
 
 /** The real operations, one per action. `suggest` is answered before this is reached. */
 const OPERATIONS: Record<string, GitRun> = {
-    stage: (_action, root, fields) => stage(root, strings(fields.paths)),
-    unstage: (_action, root, fields) => unstage(root, strings(fields.paths)),
-    discard: (_action, root, fields) => discard(root, strings(fields.paths)),
-    commit: (_action, root, fields) => commit(root, text(fields.message)),
-    push: (_action, root) => push(root),
-    createBranch: (_action, root, fields) => createBranch(root, text(fields.name)),
-    switchBranch: (_action, root, fields) => switchBranch(root, text(fields.name))
+    stage: (_action, root, fields, roots) => stage(root, strings(fields.paths), roots),
+    unstage: (_action, root, fields, roots) => unstage(root, strings(fields.paths), roots),
+    discard: (_action, root, fields, roots) => discard(root, strings(fields.paths), roots),
+    commit: (_action, root, fields, roots) => commit(root, text(fields.message), roots),
+    push: (_action, root, _fields, roots) => push(root, roots),
+    createBranch: (_action, root, fields, roots) => createBranch(root, text(fields.name), roots),
+    switchBranch: (_action, root, fields, roots) => switchBranch(root, text(fields.name), roots)
 };
 
 async function operate(
     action: string,
     root: string,
-    fields: Record<string, unknown>
+    fields: Record<string, unknown>,
+    roots: string[]
 ): Promise<Outcome> {
     const operation = OPERATIONS[action];
     if (operation === undefined) {
         return { ok: false, output: '', error: `no git action named ${action}` };
     }
-    return operation(action, root, fields);
+    return operation(action, root, fields, roots);
 }
 
 /**
@@ -125,7 +134,7 @@ export async function handleGitBranches(
     if (!inside(root, roots)) {
         return json(400, { error: 'that directory is not a workspace oculus knows' });
     }
-    const outcome = await branches(root);
+    const outcome = await branches(root, roots);
     if (!outcome.ok) return json(400, { error: outcome.error });
     return json(200, { ok: true, branches: parseBranches(outcome.output) });
 }
@@ -161,7 +170,8 @@ export async function handleGit(
         return json(400, { error: 'the body is not a git action' });
     }
     const root = text(fields.root);
-    if (!inside(root, (options.rootsFor ?? allowedRoots)())) {
+    const roots = (options.rootsFor ?? allowedRoots)();
+    if (!inside(root, roots)) {
         return json(400, { error: 'that directory is not a workspace oculus knows' });
     }
     if (CONFIRMED.includes(action) && fields.confirm !== true) {
@@ -169,16 +179,19 @@ export async function handleGit(
     }
 
     if (action === 'suggest') {
-        const answer = await (options.suggest ?? suggestFor)(root);
+        const answer = await (
+            options.suggest ??
+            ((selected, allowed) => suggestFor(selected, allowed, options.message))
+        )(root, roots);
         if (!answer.ok) return json(400, { error: answer.error });
         return json(200, { ok: true, output: answer.output });
     }
 
-    const outcome = await (options.run ?? operate)(action, root, fields);
+    const outcome = await (options.run ?? operate)(action, root, fields, roots);
     if (!outcome.ok) return json(400, { error: outcome.error });
     // The watcher would find this at its next event, up to two seconds later and only if the write
     // touched a path it watches; re-reading here is what makes the panel answer the click.
-    refreshGit(root);
+    options.refresh?.(root);
     return json(200, { ok: true, output: outcome.output });
 }
 

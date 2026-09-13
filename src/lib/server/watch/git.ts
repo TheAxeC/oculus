@@ -227,30 +227,3 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         }
     };
 }
-
-// The git endpoint runs inside Kit's own module graph and this watcher lives in src/server.ts's, the
-// same wall sessions/hooks.ts crossed for the Hub and pty/channel.ts for the terminals. A write
-// nudges its own root through this bridge, so the panel shows the new status the moment the click is
-// answered rather than at the watcher's next event.
-
-type GitBridge = { watcher: GitWatcher | null };
-
-declare global {
-    // eslint-disable-next-line no-var
-    var __oculusGitBridge: GitBridge | undefined;
-}
-
-function bridge(): GitBridge {
-    globalThis.__oculusGitBridge ??= { watcher: null };
-    return globalThis.__oculusGitBridge;
-}
-
-/** Called once by src/server.ts and by vite.config.ts's dev plugin. */
-export function bindGitWatcher(watcher: GitWatcher | null): void {
-    bridge().watcher = watcher;
-}
-
-/** Re-read one root now. A no-op in a process that bound nothing, or for a root nothing watches. */
-export function refreshGit(root: string): void {
-    bridge().watcher?.refresh(root);
-}

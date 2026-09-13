@@ -24,7 +24,7 @@ import type { Subscription } from '../data/model.ts';
 
 /** What the socket needs of the terminals; server/pty/channel.ts's Terminals is the one there is. */
 export type TerminalSink = {
-    subscribed(sink: Sink, channels: string[], token: unknown): void;
+    subscribed(sink: Sink, channels: string[], token: unknown, expectedToken: string): void;
     inbound(sink: Sink, data: string): boolean;
     remove(sink: Sink): void;
 };
@@ -32,6 +32,8 @@ export type TerminalSink = {
 export type SocketOptions = {
     /** The path the upgrade must be on. An upgrade on any other path is left to its own handler. */
     path: string;
+    /** The write token minted with the rest of this server context. */
+    token: string;
     /** The terminals, when this process has any. Without it a `pty:` channel carries nothing. */
     terminals?: TerminalSink;
 };
@@ -103,7 +105,12 @@ export function attachSocket(server: Server, hub: Hub, options: SocketOptions): 
                     (channel) => !channel.startsWith(CHANNEL_PREFIX)
                 );
                 if (plain.length > 0) hub.subscribe(sink, plain);
-                options.terminals?.subscribed(sink, subscription.channels, subscription.token);
+                options.terminals?.subscribed(
+                    sink,
+                    subscription.channels,
+                    subscription.token,
+                    options.token
+                );
                 return;
             }
             options.terminals?.inbound(sink, text);

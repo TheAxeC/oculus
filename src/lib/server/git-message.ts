@@ -11,7 +11,7 @@
 // tests/server/git-write.test.ts exercise this without a `claude` on the machine ever being run.
 
 import { execFile } from 'node:child_process';
-import { MAX_OUTPUT, stagedDiff, type Outcome } from './git-write.ts';
+import { allowedRoots, MAX_OUTPUT, stagedDiff, type Outcome } from './git-write.ts';
 
 /** The CLI this asks. */
 export const CLAUDE = 'claude';
@@ -24,7 +24,7 @@ export type Ask = (prompt: string, model: string, input: string) => Promise<Outc
 
 export type MessageOptions = {
     /** What is staged; server/git-write.ts's own reader when absent. */
-    diff?: (root: string) => Promise<Outcome>;
+    diff?: (root: string, roots: string[]) => Promise<Outcome>;
     /** How the CLI is asked; the real subprocess when absent. */
     ask?: Ask;
     /** The model to pass, or the empty string for the CLI's default. */
@@ -49,11 +49,12 @@ export function messageModel(config: Record<string, unknown>): string {
 export async function suggestMessage(
     root: string,
     prompt: string,
-    options: MessageOptions = {}
+    options: MessageOptions = {},
+    roots: string[] = allowedRoots()
 ): Promise<Outcome> {
     const read = options.diff ?? stagedDiff;
     const asked = options.ask ?? run;
-    const diff = await read(root);
+    const diff = await read(root, roots);
     if (!diff.ok) return diff;
     if (diff.output.trim() === '') {
         return {

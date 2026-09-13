@@ -24,6 +24,7 @@ import {
 import { claudeAccountFile, usageAccounts } from '../../../src/lib/server/usage/accounts.ts';
 import { watchUsage } from '../../../src/lib/server/usage/watch.ts';
 import { Hub } from '../../../src/lib/server/channels.ts';
+import { contextFixture } from '../context-fixture.ts';
 
 const NOW = Date.parse('2026-09-13T12:00:00Z');
 const BIN = '/opt/Claude Code/claude';
@@ -493,8 +494,9 @@ function request(body: unknown, token = 'write-token', origin = 'http://127.0.0.
 describe('usage refresh route', () => {
     it('refreshes exactly the requested account behind the write token', async () => {
         const labels: string[] = [];
+        const server = contextFixture({ token: 'write-token' });
         const target: UsageRefreshTarget = {
-            token: 'write-token',
+            token: server.token,
             refresh: async (label) => {
                 labels.push(label);
                 return label === 'University';
@@ -515,9 +517,10 @@ describe('usage refresh route', () => {
 
     it('rejects a cross-origin request before dispatch even with the correct token', async () => {
         const refresh = vi.fn(async () => true);
+        const server = contextFixture({ token: 'write-token' });
         const response = await handleUsageRefresh(
             request({ account: 'University' }, 'write-token', 'https://example.com'),
-            { token: 'write-token', refresh }
+            { token: server.token, refresh }
         );
         expect(response.status).toBe(403);
         expect(refresh).not.toHaveBeenCalled();

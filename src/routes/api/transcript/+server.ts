@@ -3,6 +3,8 @@
 // session it reads comes from the last published payload, not from a hub scan.
 
 import { handleTranscript } from '$lib/server/transcript-routes';
+import { sessionRecord } from '$lib/server/sessions/hooks';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = ({ request }) => handleTranscript(request);
+export const GET: RequestHandler = ({ request, locals }) =>
+    handleTranscript(request, { recordFor: (id) => sessionRecord(locals.server.hub, id) });

@@ -20,14 +20,20 @@ import {
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
-import { handleTerminal, type TerminalOptions } from '../../src/lib/server/pty/routes.ts';
+import {
+    handleTerminal,
+    handleTerminalList,
+    type TerminalOptions
+} from '../../src/lib/server/pty/routes.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { chatIndexPath } from '../../src/lib/server/pty/chat.ts';
 import { record } from '../sessions-fixture.ts';
 import type { SessionRecord } from '../../src/lib/data/model.ts';
+import { contextFixture } from '../server/context-fixture.ts';
 
 const HOST = '127.0.0.1:8791';
-const TOKEN = 'the-write-token-of-this-test';
+const SERVER = contextFixture({ token: 'the-write-token-of-this-test' });
+const TOKEN = SERVER.token;
 
 /** A session id of the shape both tools write. */
 const SESSION = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
@@ -67,6 +73,7 @@ const CHAT_CONFIG = { ...BASE_CHAT_CONFIG, chat: { model: 'claude-opus-4-1' } };
 const CHAT_CATALOG = textCatalog(CHAT_CONFIG);
 
 afterAll(() => {
+    SERVER.close();
     delete process.env.OCULUS_LOCAL;
     rmSync(TASK_CONFIG, { recursive: true, force: true });
 });
@@ -157,6 +164,31 @@ function command(argv: string[]): string {
 async function answer(response: Response): Promise<Record<string, unknown>> {
     return (await response.json()) as Record<string, unknown>;
 }
+
+describe('GET /api/terminal after a write', () => {
+    it('lists a terminal immediately after POST starts it', async () => {
+        const driver = tmux();
+        const started = await handleTerminal(
+            request({ action: 'start', kind: 'claude', cwd: HERE, cols: 80, rows: 24 }),
+            TOKEN,
+            { run: driver.run }
+        );
+        expect(started.status).toBe(200);
+        const terminal = (await answer(started)).terminal as { id: string };
+
+        const listed = await handleTerminalList(
+            new Request(`http://${HOST}/api/terminal`, {
+                headers: { host: HOST, 'sec-fetch-site': 'same-origin' }
+            }),
+            { run: driver.run }
+        );
+
+        expect(listed.status).toBe(200);
+        expect((await answer(listed)).terminals).toEqual([
+            expect.objectContaining({ id: terminal.id })
+        ]);
+    });
+});
 
 describe('POST /api/terminal, the resume action', () => {
     it('refuses an id that is not the shape both tools write', async () => {

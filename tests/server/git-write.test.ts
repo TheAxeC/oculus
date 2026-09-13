@@ -1,8 +1,8 @@
 // What server/git-write.ts runs, and what it refuses to run.
 //
 // Every repository here is made under the system temporary directory with the real git, and the
-// allowed roots come from a fake hub bound onto the hook bridge exactly as src/server.ts binds the
-// real one, so nothing reaches the hub's own checkout. The last describe is the module's gate, the
+// allowed root comes from local.yml inside that directory, so nothing reaches the hub's own
+// checkout. The last describe is the module's gate, the
 // mirror image of the one over git.ts: git.ts may name no writing subcommand at all, and this may
 // name only the enumerated ones, each at one call site, and `--force` nowhere.
 //
@@ -14,7 +14,7 @@ import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
 import { defaultMirrorsDir } from '../../src/lib/server/deposit-git.ts';
 import {
     allowedRoots,
@@ -25,14 +25,12 @@ import {
     parseBranches,
     permitted,
     push,
-    record,
     stage,
     stagedDiff,
     switchBranch,
     unstage
 } from '../../src/lib/server/git-write.ts';
 import { suggestMessage } from '../../src/lib/server/git-message.ts';
-import { bindHookHub } from '../../src/lib/server/sessions/hooks.ts';
 
 const MODULE = resolve(
     dirname(fileURLToPath(import.meta.url)),
@@ -59,8 +57,23 @@ const ALLOWED = [
 ];
 
 /** Every argument vector the module ran, over the whole file. Asserted by the last gate. */
-const ran: string[][] = [];
-record((args) => ran.push(args));
+const ran = vi.hoisted(() => [] as string[][]);
+vi.mock('node:child_process', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('node:child_process')>();
+    // Only what a module under src/lib/server runs is recorded; a test's own setup command is not.
+    const fromServer = (): boolean => (new Error().stack ?? '').includes('/src/lib/server/');
+    return {
+        ...actual,
+        spawnSync: ((file: string, args: string[], options: unknown) => {
+            if (fromServer()) ran.push(file === 'git' ? args : [file, ...args]);
+            return (actual.spawnSync as (...held: unknown[]) => unknown)(file, args, options);
+        }) as typeof actual.spawnSync,
+        execFile: ((file: string, args: string[], ...rest: unknown[]) => {
+            if (fromServer()) ran.push(file === 'git' ? args : [file, ...args]);
+            return (actual.execFile as (...held: unknown[]) => unknown)(file, args, ...rest);
+        }) as typeof actual.execFile
+    };
+});
 
 let dir = '';
 let repo = '';
@@ -96,17 +109,13 @@ beforeAll(() => {
     git(repo, 'add', 'kept.txt');
     git(repo, 'commit', '-q', '-m', 'First');
 
-    // The allowed roots are the keys of the last published `git` payload, which src/server.ts feeds
-    // from the real watcher. Binding a hub of the test's own is what keeps every write in this file
-    // inside the temporary directory: no other root is permitted.
-    bindHookHub({
-        latest: (channel: string) => (channel === 'git' ? { payload: { [repo]: {} } } : undefined),
-        publish: () => 0
-    });
+    const local = join(dir, 'local.yml');
+    writeFileSync(local, `hub: ${repo}\n`);
+    process.env.OCULUS_LOCAL = local;
 });
 
 afterAll(() => {
-    record(null);
+    delete process.env.OCULUS_LOCAL;
     if (dir !== '') rmSync(dir, { recursive: true, force: true });
 });
 

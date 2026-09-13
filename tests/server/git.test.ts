@@ -14,8 +14,8 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { afterAll, beforeEach, describe, expect, it } from 'vitest';
-import { MAX_ENTRIES, empty, record, statusFor } from '../../src/lib/server/git.ts';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
+import { MAX_ENTRIES, empty, statusFor } from '../../src/lib/server/git.ts';
 import type { GitEntry, GitState } from '../../src/lib/data/model.ts';
 
 const MODULE = resolve(
@@ -59,9 +59,23 @@ const FORBIDDEN = [
 ];
 
 /** Every argument vector the module ran, over the whole file. Asserted by the last gate. */
-const ran: string[][] = [];
-record((args) => ran.push(args));
-afterAll(() => record(null));
+const ran = vi.hoisted(() => [] as string[][]);
+vi.mock('node:child_process', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('node:child_process')>();
+    // Only what a module under src/lib/server runs is recorded; a test's own setup command is not.
+    const fromServer = (): boolean => (new Error().stack ?? '').includes('/src/lib/server/');
+    return {
+        ...actual,
+        spawnSync: ((file: string, args: string[], options: unknown) => {
+            if (fromServer()) ran.push(file === 'git' ? args : [file, ...args]);
+            return (actual.spawnSync as (...held: unknown[]) => unknown)(file, args, options);
+        }) as typeof actual.spawnSync,
+        execFile: ((file: string, args: string[], ...rest: unknown[]) => {
+            if (fromServer()) ran.push(file === 'git' ? args : [file, ...args]);
+            return (actual.execFile as (...held: unknown[]) => unknown)(file, args, ...rest);
+        }) as typeof actual.execFile
+    };
+});
 
 let dir = '';
 let repo = '';

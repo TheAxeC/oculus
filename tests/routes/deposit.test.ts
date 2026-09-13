@@ -1,5 +1,5 @@
 // What the /api/deposit route answers. The route itself is two lines handing the request to
-// lib/server/deposit-routes.ts with the token hooks.server.ts minted, which is what this calls.
+// lib/server/deposit-routes.ts with the token ServerContext minted, which is what this calls.
 //
 // Nothing here runs git or `gh`: the handler takes the operations and the known ids as options, and
 // every case hands it a stub the test owns, so no repository is opened and no file is written
@@ -12,8 +12,10 @@ import { describe, expect, it } from 'vitest';
 import { handleDeposit, handleDepositState } from '../../src/lib/server/deposit-routes.ts';
 import type { DepositOptions } from '../../src/lib/server/deposit-routes.ts';
 import { mintToken } from '../../src/lib/server/auth.ts';
+import { contextFixture } from '../server/context-fixture.ts';
 
-const TOKEN = mintToken();
+const SERVER = contextFixture({ token: mintToken() });
+const TOKEN = SERVER.token;
 const HOST = '127.0.0.1:8791';
 const URL_ = `http://${HOST}/api/deposit`;
 

@@ -1,5 +1,5 @@
 // What the /api/git route answers. The route itself is two lines handing the request to
-// lib/server/git-routes.ts with the token hooks.server.ts minted, which is what this calls.
+// lib/server/git-routes.ts with the token ServerContext minted, which is what this calls.
 //
 // Nothing here runs git: the handler takes the operations as options, and every case hands it a
 // stub the test owns, so the roots are names rather than repositories and no file is written
@@ -12,8 +12,10 @@ import { describe, expect, it } from 'vitest';
 import { handleGit, handleGitBranches } from '../../src/lib/server/git-routes.ts';
 import { mintToken } from '../../src/lib/server/auth.ts';
 import type { GitOptions } from '../../src/lib/server/git-routes.ts';
+import { contextFixture } from '../server/context-fixture.ts';
 
-const TOKEN = mintToken();
+const SERVER = contextFixture({ token: mintToken() });
+const TOKEN = SERVER.token;
 const HOST = '127.0.0.1:8791';
 const URL_ = `http://${HOST}/api/git`;
 
@@ -32,6 +34,7 @@ function options(extra: GitOptions = {}): GitOptions {
             return Promise.resolve({ ok: true, output: 'done', error: '' });
         },
         suggest: () => Promise.resolve({ ok: true, output: 'Add a thing', error: '' }),
+        refresh: (root) => SERVER.git.refresh(root),
         ...extra
     };
 }
@@ -142,6 +145,37 @@ describe('the git endpoint', () => {
         const response = await handleGit(request({ action: 'suggest', root: ROOT }), TOKEN, into);
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({ ok: true, output: 'Add a thing' });
+        expect(ran).toEqual([]);
+    });
+
+    it('suggests from a published workspace outside the hub', async () => {
+        const published = '/published/workspace';
+        const response = await handleGit(
+            request({ action: 'suggest', root: published }),
+            TOKEN,
+            options({
+                rootsFor: () => [published],
+                suggest: undefined,
+                message: {
+                    diff: async (root, roots) => {
+                        expect(root).toBe(published);
+                        expect(roots).toEqual([published]);
+                        return { ok: true, output: 'diff --git a/a.txt b/a.txt', error: '' };
+                    },
+                    ask: async () => ({
+                        ok: true,
+                        output: 'Describe the published change',
+                        error: ''
+                    })
+                }
+            })
+        );
+
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            ok: true,
+            output: 'Describe the published change'
+        });
         expect(ran).toEqual([]);
     });
 

@@ -7,14 +7,13 @@
 // already see and for nothing else. A read, so it is same-origin and carries no write token.
 
 import { sameOrigin } from './auth.ts';
-import { bridgedRecord } from './sessions/hooks.ts';
 import { readTurns } from './sessions/turns.ts';
 import type { SessionRecord } from '../data/model.ts';
 
 export type TranscriptOptions = {
     /**
      * The session record a read is about, from the last published `sessions` payload. Defaulted to
-     * bridgedRecord; tests/routes/transcript.test.ts passes a source the test owns.
+     * Tests and the route pass the source they own.
      */
     recordFor?: (id: string) => SessionRecord | null;
 };
@@ -38,7 +37,7 @@ export function handleTranscript(request: Request, options: TranscriptOptions = 
         return json(400, { error: `not a byte offset: ${asked}` });
     }
     const id = url.searchParams.get('id') ?? '';
-    const record = (options.recordFor ?? bridgedRecord)(id);
+    const record = (options.recordFor ?? (() => null))(id);
     if (record === null) return json(404, { error: `no session with the id ${id}` });
     return json(200, readTurns(record.path, record.tool, from));
 }

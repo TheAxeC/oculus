@@ -12,7 +12,7 @@ import WebSocket from 'ws';
 import { Hub } from '../../src/lib/server/channels.ts';
 import { allowedOrigin } from '../../src/lib/server/auth.ts';
 import { attachSocket, subscriptionChannels } from '../../src/lib/server/socket.ts';
-import type { Attached } from '../../src/lib/server/socket.ts';
+import type { Attached, TerminalSink } from '../../src/lib/server/socket.ts';
 import type { Message } from '../../src/lib/data/model.ts';
 
 type Running = {
@@ -24,10 +24,14 @@ type Running = {
 
 const running: Running[] = [];
 
-async function start(): Promise<Running> {
+async function start(terminals?: TerminalSink): Promise<Running> {
     const hub = new Hub();
     const server = createServer((_request, response) => response.end('oculus'));
-    const attached = attachSocket(server, hub, { path: '/ws' });
+    const attached = attachSocket(server, hub, {
+        path: '/ws',
+        token: 'socket-token',
+        terminals
+    });
     await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
     const port = (server.address() as AddressInfo).port;
     const started = { hub, port, server, attached };
@@ -139,6 +143,42 @@ describe('attachSocket', () => {
                 payload: { radar: { entries: [{ title: 'Second' }] } }
             }
         ]);
+        ws.close();
+    });
+
+    it('passes the subscription token and context token to the terminal sink', async () => {
+        let record = (_value: { channels: string[]; token: unknown; expected: string }): void => {};
+        const received = new Promise<{ channels: string[]; token: unknown; expected: string }>(
+            (resolve) => {
+                record = resolve;
+            }
+        );
+        const terminals: TerminalSink = {
+            subscribed: (_sink, channels, token, expected) => {
+                record({ channels, token, expected });
+            },
+            inbound: () => false,
+            remove: () => {}
+        };
+        const started = await start(terminals);
+        const ws = new WebSocket(`ws://127.0.0.1:${started.port}/ws`, {
+            headers: { Origin: `http://127.0.0.1:${started.port}` }
+        });
+        expect(await once(ws, 'open')).toBe(null);
+
+        ws.send(
+            JSON.stringify({
+                type: 'subscribe',
+                channels: ['pty:terminal-one'],
+                token: 'subscription-token'
+            })
+        );
+
+        expect(await received).toEqual({
+            channels: ['pty:terminal-one'],
+            token: 'subscription-token',
+            expected: 'socket-token'
+        });
         ws.close();
     });
 

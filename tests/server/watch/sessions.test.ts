@@ -11,7 +11,11 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import type { Sink } from '../../../src/lib/server/channels.ts';
-import { liveSignature, watchSessions } from '../../../src/lib/server/watch/sessions.ts';
+import {
+    liveSignature,
+    watchSessions,
+    type SessionsWatcher
+} from '../../../src/lib/server/watch/sessions.ts';
 import type { Watcher } from '../../../src/lib/server/watch/portfolio.ts';
 import type { Message, SessionsPayload } from '../../../src/lib/data/model.ts';
 import type { Probe } from '../../../src/lib/server/sessions/registry.ts';
@@ -148,10 +152,7 @@ class Fixture {
     }
 }
 
-type Started = {
-    fixture: Fixture;
-    got: Message[];
-};
+type Started = { fixture: Fixture; got: Message[]; watcher: SessionsWatcher };
 
 function payloads(got: Message[]): SessionsPayload[] {
     return got
@@ -230,22 +231,21 @@ function start(fixture: Fixture, liveness = 0): Started {
     const hub = new Hub();
     const client = recording();
     hub.subscribe(client.sink, ['sessions']);
-    watchers.push(
-        watchSessions(hub, {
-            store: fixture.store,
-            codexStore: fixture.codexStore,
-            registry: fixture.registry,
-            cache: fixture.cache,
-            overrides: fixture.overrides,
-            roots: [fixture.root],
-            projectFolders: () => [],
-            debounce: 100,
-            liveness,
-            probe: fixture.probe(),
-            codexProbe: fixture.codexProbe()
-        })
-    );
-    return { fixture, got: client.got };
+    const watcher = watchSessions(hub, {
+        store: fixture.store,
+        codexStore: fixture.codexStore,
+        registry: fixture.registry,
+        cache: fixture.cache,
+        overrides: fixture.overrides,
+        roots: [fixture.root],
+        projectFolders: () => [],
+        debounce: 100,
+        liveness,
+        probe: fixture.probe(),
+        codexProbe: fixture.codexProbe()
+    });
+    watchers.push(watcher);
+    return { fixture, got: client.got, watcher };
 }
 
 describe('liveSignature', () => {
@@ -291,6 +291,26 @@ describe('watchSessions', () => {
         const payload = latest(started.got);
         expect(payload.records[0].prompts).toBe(2);
         expect(payload.records[0].messages).toBe(3);
+    });
+
+    it('tells only its own onChange listeners about a rescan, never those of another watcher', async () => {
+        const first = start(new Fixture());
+        const second = start(new Fixture());
+        first.fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+        await until(() => first.got.length >= 1 && second.got.length >= 1, WAIT);
+        await armed(join(first.fixture.store, SLUG), 'not-a-transcript.txt', first.got);
+        const heard = [0, 0];
+        const off = first.watcher.onChange(() => (heard[0] += 1));
+        second.watcher.onChange(() => (heard[1] += 1));
+
+        first.fixture.append([answer('2026-09-10T10:00:05.000Z', 'an answer')]);
+        await until(() => heard[0] >= 1, WAIT);
+        expect(heard[1]).toBe(0);
+
+        off();
+        first.fixture.append([prompt('2026-09-10T10:00:09.000Z', 'second question')]);
+        await until(() => latest(first.got).records[0].prompts === 2, WAIT);
+        expect(heard).toEqual([1, 0]);
     });
 
     it('makes the record live when a registry file appears', async () => {

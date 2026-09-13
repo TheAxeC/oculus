@@ -1,27 +1,15 @@
 import { engineDir, loadConfig, textCatalog } from '$lib/data/sources/config';
-import { mintToken, publishToken } from '$lib/server/auth';
+import { serverContext } from '$lib/server/context';
 import type { Handle } from '@sveltejs/kit';
-
-// The write token of DESIGN.md's "Auth", minted once when this module loads and handed to every
-// request. It lives here because Kit's server graph is where both its producer (the page load that
-// ships it) and its consumer (the write route that checks it) run; src/server.ts and the socket are
-// a separate module graph and need no token of their own. A restarted dev server mints a new one,
-// which the page notices as a 403 and answers by reloading its data.
-const token = mintToken();
-// The socket is a separate module graph and cannot import this one, so the token is put on the
-// process-wide bridge server/auth.ts holds. It is what says a subscribe message came from this
-// page, and therefore what lets that socket send terminal input (O17).
-publishToken(token);
 
 // The route renders in the browser, so the served HTML is a shell. The document title is the one
 // string that has to be in it before the app starts, and it comes from the catalog like every other
 // string: app.html carries the placeholder, this replaces it per request.
 //
-// The config is read per request, so editing a config file and reloading the browser shows the edit.
-// O6's watcher takes that over and carries a finding on the socket; until then a finding goes to
-// stderr, once per request, rather than being swallowed.
 export const handle: Handle = ({ event, resolve }) => {
-    event.locals.token = token;
+    const context = serverContext(event.platform);
+    event.locals.server = context;
+    event.locals.token = context.token;
     const { config, findings } = loadConfig(engineDir());
     for (const finding of findings) {
         console.error(`config: ${finding.file} [${finding.key}] ${finding.message}`);

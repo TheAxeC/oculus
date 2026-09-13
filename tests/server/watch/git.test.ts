@@ -5,7 +5,7 @@
 // asserts its path is inside first, and no git command anywhere here names a path outside it: the
 // hub's own repository is never read or written. Every watcher a test opens is closed when it ends.
 //
-// What was run is read from the recorder in server/git.ts, which is how "only the root that
+// What was run is read by recording the process module's calls, which is how "only the root that
 // changed is re-read" is checked by the thing that would fail if it were false.
 
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
@@ -15,7 +15,6 @@ import { spawnSync } from 'node:child_process';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import type { Sink } from '../../../src/lib/server/channels.ts';
-import { record } from '../../../src/lib/server/git.ts';
 import { IGNORED, relevant, rootsOf, watchGit } from '../../../src/lib/server/watch/git.ts';
 import type { Watcher } from '../../../src/lib/server/watch/portfolio.ts';
 import type { GitPayload, Message, SessionsPayload } from '../../../src/lib/data/model.ts';
@@ -33,18 +32,28 @@ const ARM = 'arming.txt';
 const watchers: Watcher[] = [];
 
 let dir = '';
-let ran: string[][] = [];
+const ran = vi.hoisted(() => [] as string[][]);
+vi.mock('node:child_process', async (importOriginal) => {
+    const actual = await importOriginal<typeof import('node:child_process')>();
+    // Only what a module under src/lib/server runs is recorded; a test's own setup command is not.
+    const fromServer = (): boolean => (new Error().stack ?? '').includes('/src/lib/server/');
+    return {
+        ...actual,
+        spawnSync: ((file: string, args: string[], options: unknown) => {
+            if (fromServer()) ran.push(file === 'git' ? args : [file, ...args]);
+            return (actual.spawnSync as (...held: unknown[]) => unknown)(file, args, options);
+        }) as typeof actual.spawnSync
+    };
+});
 
 beforeEach(() => {
     dir = mkdtempSync(join(tmpdir(), 'oculus-watch-git-'));
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    ran = [];
-    record((args) => ran.push(args));
+    ran.length = 0;
 });
 
 afterEach(() => {
     while (watchers.length > 0) watchers.pop()?.close();
-    record(null);
 });
 
 /** A git command inside the throwaway directory, and nowhere else. */

@@ -1,6 +1,6 @@
 // What POST /api/hook answers. The route itself is one line handing the request to
-// handleHookRequest with the target hookTarget() builds, which is what this calls with a synthetic
-// target instead: every case here is one Request object and a HookTarget the test owns, so nothing
+// handleHookRequest with the request context's HookTarget, which is what this calls with a fixture:
+// every case here is one Request object and a HookTarget the test owns, so nothing
 // posts to a real server and no notification fires (the target's exec is a recording stub).
 
 import { describe, expect, it } from 'vitest';
@@ -11,6 +11,7 @@ import {
     type HookTarget
 } from '../../src/lib/server/hooks.ts';
 import { HookStore } from '../../src/lib/server/sessions/hooks.ts';
+import { contextFixture } from '../server/context-fixture.ts';
 
 const HOST = '127.0.0.1:8791';
 
@@ -19,15 +20,12 @@ function noopExec(): ExecFile {
 }
 
 function target(over: Partial<HookTarget> = {}): HookTarget {
+    const server = contextFixture();
     return {
+        ...server.hooks,
         store: new HookStore(),
         hub: null,
         limiter: new RateLimiter(),
-        config: {
-            enabled: true,
-            events: ['permission_prompt', 'idle_prompt', 'stop'],
-            quietSeconds: 3
-        },
         exec: noopExec(),
         ...over
     };

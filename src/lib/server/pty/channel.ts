@@ -19,7 +19,6 @@ import type {
     TerminalInput,
     TerminalResize
 } from '../../data/model.ts';
-import { isProcessToken } from '../auth.ts';
 import type { Hub, Sink } from '../channels.ts';
 import {
     captureArgs,
@@ -310,8 +309,8 @@ export class Terminals {
      * this socket write. A socket that never carried the token can read every channel and write to
      * none, so a page of another origin that got past the handshake still types nothing.
      */
-    subscribed(sink: Sink, channels: string[], token: unknown): void {
-        if (isProcessToken(token)) this.#writable.add(sink);
+    subscribed(sink: Sink, channels: string[], token: unknown, expectedToken: string): void {
+        if (expectedToken !== '' && token === expectedToken) this.#writable.add(sink);
         for (const channel of channels) {
             const id = channelTerminal(channel);
             if (id !== null) void this.#attach(sink, id);
@@ -453,30 +452,4 @@ export class Terminals {
 
 function reason(error: unknown): string {
     return error instanceof Error ? error.message : String(error);
-}
-
-// The terminal endpoint runs inside Kit's own module graph and the Terminals object lives in
-// src/server.ts's, the same wall sessions/hooks.ts crossed for the Hub. A start or a stop nudges the
-// list through this bridge, so the page sees a terminal appear at once rather than at the next poll.
-
-type TerminalBridge = { terminals: Terminals | null };
-
-declare global {
-    // eslint-disable-next-line no-var
-    var __oculusTerminalBridge: TerminalBridge | undefined;
-}
-
-function bridge(): TerminalBridge {
-    globalThis.__oculusTerminalBridge ??= { terminals: null };
-    return globalThis.__oculusTerminalBridge;
-}
-
-/** Called once by src/server.ts and by vite.config.ts's dev plugin. */
-export function bindTerminals(terminals: Terminals | null): void {
-    bridge().terminals = terminals;
-}
-
-/** Re-read the terminal list now. A no-op in a process that bound nothing. */
-export function refreshTerminals(): void {
-    bridge().terminals?.refresh();
 }

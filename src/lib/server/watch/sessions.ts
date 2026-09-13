@@ -28,6 +28,7 @@ import { defaultCodexStore, type CodexProbe } from '../sessions/codex.ts';
 import { defaultRegistry, type Probe } from '../sessions/registry.ts';
 import { defaultOverridesPath } from '../sessions/overrides.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
+import type { HookStore } from '../sessions/hooks.ts';
 import type { Watcher } from './portfolio.ts';
 
 /** Milliseconds of quiet after the last file event before one rescan runs. */
@@ -36,14 +37,6 @@ export const DEBOUNCE = 500;
 export const LIVENESS = 15000;
 export const WINDOW_DAYS = 2;
 export const MAX_SESSIONS = 40;
-
-const changeListeners = new Set<() => void>();
-
-/** Subscribe to completed session rescans, including rescans caused by transcript writes. */
-export function onSessionsChange(listener: () => void): () => void {
-    changeListeners.add(listener);
-    return () => changeListeners.delete(listener);
-}
 
 /** What the watcher needs of server/pty/channel.ts's Terminals: the list, and when it changed. */
 export type TerminalSource = {
@@ -81,10 +74,17 @@ export type SessionsWatchOptions = {
      * the page asking. Absent in a process that has no terminals, where the payload carries none.
      */
     terminals?: TerminalSource;
+    /** The request hook store owned by ServerContext. */
+    hooks?: HookStore;
     /** What the Claude liveness check asks of the system; stubbed by every test. */
     probe?: Probe;
     /** What the Codex liveness check asks of the system; stubbed by every test. */
     codexProbe?: CodexProbe;
+};
+
+export type SessionsWatcher = Watcher & {
+    /** Subscribe to completed rescans owned by this watcher. */
+    onChange(listener: () => void): () => void;
 };
 
 /** What the liveness re-check compares: every live session's id and the state it is in. */
@@ -106,10 +106,11 @@ function reason(error: unknown): string {
  * throws is written to stderr and the previous payload stands. A store that cannot be watched (it
  * does not exist on this machine, say) is said once on stderr and the others are watched anyway.
  */
-export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Watcher {
+export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): SessionsWatcher {
     const debounce = options.debounce ?? DEBOUNCE;
     const liveness = options.liveness ?? LIVENESS;
     const handles: FSWatcher[] = [];
+    const changeListeners = new Set<() => void>();
     let timer: ReturnType<typeof setTimeout> | null = null;
     let ticker: ReturnType<typeof setInterval> | null = null;
     let signature: string | null = null;
@@ -128,6 +129,7 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Wat
             maxSessions: options.maxSessions ?? MAX_SESSIONS,
             probe: options.probe,
             codexProbe: options.codexProbe,
+            hooks: options.hooks,
             terminals: options.terminals?.list() ?? []
         });
 
@@ -213,6 +215,10 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Wat
     }
 
     return {
+        onChange(listener: () => void): () => void {
+            changeListeners.add(listener);
+            return () => changeListeners.delete(listener);
+        },
         close(): void {
             closed = true;
             if (offTerminals !== null) offTerminals();
@@ -222,6 +228,7 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Wat
             ticker = null;
             for (const handle of handles) handle.close();
             handles.length = 0;
+            changeListeners.clear();
         }
     };
 }

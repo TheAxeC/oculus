@@ -1,11 +1,10 @@
 // Layer 2, server. Watch usage snapshots and session changes, debounce one rebuild, and publish the complete usage channel.
-// Claude status folders are watched here. Codex rollout changes, including new day folders, reach this watcher through the sessions watcher's onSessionsChange signal.
+// Claude status folders are watched here. The owning context injects its session watcher signal for Codex rollout changes.
 
 import { mkdirSync, watch } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
 import type { UsageAccountConfig, UsagePayload, UsageRefresher } from '../../data/model.ts';
 import type { Hub } from '../channels.ts';
-import { onSessionsChange } from '../watch/sessions.ts';
 import { claudeAccountFile, defaultUsageRoot, usageAccounts, type UsageTiers } from './accounts.ts';
 import { UsageTranscriptFold } from './transcripts.ts';
 
@@ -29,6 +28,8 @@ export type UsageWatchOptions = {
         folder: string,
         changed: (filename: string | Buffer | null) => void
     ) => { close(): void };
+    /** Subscribe to rescans from the sessions watcher owned by this context. */
+    onSessionsChange?: (listener: () => void) => () => void;
 };
 export type UsageWatcher = { refresh(): Promise<void>; close(): void };
 
@@ -113,7 +114,7 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
         }
     }
 
-    const offSessions = onSessionsChange(queue);
+    const offSessions = options.onSessionsChange?.(queue) ?? (() => {});
     const clock = setInterval(queue, interval);
     clock.unref();
     void refresh();

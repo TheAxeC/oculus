@@ -268,6 +268,7 @@ function target(over: Partial<HookTarget> = {}): HookTarget {
         store: new HookStore(),
         hub: null,
         limiter: new RateLimiter(),
+        logged: new Set<string>(),
         config: {
             enabled: true,
             events: ['permission_prompt', 'idle_prompt', 'stop'],

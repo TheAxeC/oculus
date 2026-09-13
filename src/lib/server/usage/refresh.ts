@@ -345,25 +345,3 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
         }
     };
 }
-
-// The route is bundled separately from src/server.ts and the Vite plugin. The active refresher
-// crosses those module graphs through one process-wide bridge, as the existing watcher bridges do.
-type RefreshBridge = { watcher: UsageRefreshWatcher | null };
-
-declare global {
-    var __oculusUsageRefreshBridge: RefreshBridge | undefined;
-}
-
-function bridge(): RefreshBridge {
-    globalThis.__oculusUsageRefreshBridge ??= { watcher: null };
-    return globalThis.__oculusUsageRefreshBridge;
-}
-
-export function bindUsageRefresh(watcher: UsageRefreshWatcher | null): void {
-    bridge().watcher = watcher;
-}
-
-export async function refreshUsage(label: string): Promise<boolean> {
-    const watcher = bridge().watcher;
-    return watcher === null ? false : watcher.refresh(label);
-}

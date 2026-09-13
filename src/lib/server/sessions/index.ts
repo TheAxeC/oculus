@@ -4,7 +4,7 @@
 import { join } from 'node:path';
 import type { Project, SessionsPayload, Snapshot, Terminal } from '../../data/model.ts';
 import { group, type ProjectFolder } from './group.ts';
-import { HookStore, mergeHooks, sharedHookStore } from './hooks.ts';
+import { HookStore, mergeHooks } from './hooks.ts';
 import { defaultOverridesPath } from './overrides.ts';
 import { scan, type ScanOptions } from './transcripts.ts';
 
@@ -18,7 +18,7 @@ export type SessionsOptions = ScanOptions & {
     roots?: string[];
     /** The sessions oculus drives itself, rather than only reading their transcripts. */
     attachedIds?: string[];
-    /** hooks.ts's HookStore to merge each record's `hook` field from; O12's shared one when absent. */
+    /** hooks.ts's HookStore to merge each record's `hook` field from. */
     hooks?: HookStore;
     /** The tmux terminals of O17, which the payload carries so the page sees one the moment it exists. */
     terminals?: Terminal[];
@@ -40,7 +40,7 @@ export function projectFolders(hub: string, snapshot: Snapshot): ProjectFolder[]
 
 /** The records, newest first, and the tree they group into. */
 export function sessions(options: SessionsOptions = {}): SessionsPayload {
-    const records = mergeHooks(scan(options), options.hooks ?? sharedHookStore(), Date.now());
+    const records = mergeHooks(scan(options), options.hooks ?? new HookStore(), Date.now());
     const folders =
         options.projectFolders ??
         (options.snapshot !== undefined && options.hub !== undefined

@@ -128,6 +128,8 @@ export type DepositOptions = {
     into?: WriteTarget;
     /** How `gh` is run; the real one when absent. */
     gh?: GhRun;
+    /** The last plan per project, kept by the owning server context for the GET. */
+    plans?: Map<string, Plan>;
 };
 
 /** The repository's GitHub About, as the manifest configures it. */
@@ -144,9 +146,6 @@ type Deposit = {
     about: About;
     visibility: string;
 };
-
-/** The last plan per project, for the GET. It is this process's memory and nothing more. */
-const plans = new Map<string, Plan>();
 
 function failed(error: string): Outcome {
     return { ok: false, output: '', error };
@@ -284,7 +283,7 @@ export async function sync(id: string, options: DepositOptions = {}): Promise<Pl
         changes: changesIn(state.output),
         findings: scan(deposit.at.dir, files)
     };
-    plans.set(id, plan);
+    options.plans?.set(id, plan);
     return { ok: true, output: '', error: '', plan };
 }
 
@@ -458,7 +457,7 @@ export async function switchBranch(
 export async function state(id: string, options: DepositOptions = {}): Promise<MirrorState | null> {
     const deposit = depositFor(id, options);
     if (deposit === null) return null;
-    const plan = plans.get(id) ?? null;
+    const plan = options.plans?.get(id) ?? null;
     if (!made(deposit.at)) {
         return {
             id,

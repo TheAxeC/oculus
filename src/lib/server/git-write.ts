@@ -35,7 +35,6 @@ import { tmpdir } from 'node:os';
 import { isAbsolute, join, resolve, sep } from 'node:path';
 import { defaultMirrorsDir } from './deposit-git.ts';
 import { GIT } from './git.ts';
-import { bridgedGitRoots } from './sessions/hooks.ts';
 import { target } from './writes.ts';
 
 /** Milliseconds one git command is given, for everything that stays on this machine. */
@@ -53,14 +52,6 @@ export type Outcome = { ok: boolean; output: string; error: string };
 /** One row of `git branch --format`, as the branch menu draws it. */
 export type Branch = { name: string; upstream: string; current: boolean };
 
-/** See git.ts's recorder: a test's window onto the argument vectors, which it cannot change. */
-let recorder: ((args: string[]) => void) | null = null;
-
-/** Watch every argument vector this module runs, or pass null to stop watching. */
-export function record(sink: ((args: string[]) => void) | null): void {
-    recorder = sink;
-}
-
 function failed(error: string): Outcome {
     return { ok: false, output: '', error };
 }
@@ -71,7 +62,6 @@ function failed(error: string): Outcome {
  */
 function run(root: string, args: string[], timeout: number): Promise<Outcome> {
     const argv = ['-C', root, ...args];
-    if (recorder !== null) recorder(argv);
     return new Promise((settle) => {
         // A list, never a shell. A path or a branch name from the page is an argument and can
         // therefore never be read as syntax.
@@ -103,12 +93,15 @@ function run(root: string, args: string[], timeout: number): Promise<Outcome> {
  * asks this module for a message over the mirror's staged diff; every other write on a mirror goes
  * through server/deposit.ts, whose own gate is the enumerated subcommands of deposit-git.ts.
  */
-export function allowedRoots(): string[] {
-    const roots = new Set(bridgedGitRoots());
-    try {
-        roots.add(target().hub);
-    } catch {
-        // A machine whose local.yml cannot be read still writes to the workspaces it published.
+export function allowedRoots(workspaces: string[] = [], hub?: string): string[] {
+    const roots = new Set(workspaces);
+    if (hub !== undefined) roots.add(hub);
+    else {
+        try {
+            roots.add(target().hub);
+        } catch {
+            // A machine whose local.yml cannot be read still permits the roots the caller supplied.
+        }
     }
     roots.add(defaultMirrorsDir());
     return [...roots].filter((root) => root !== '');
@@ -136,8 +129,8 @@ export function insideRepo(root: string, path: string): boolean {
     return full === base || full.startsWith(base + sep);
 }
 
-function checkPaths(root: string, paths: string[]): string {
-    if (!permitted(root)) return 'that directory is not a workspace oculus knows';
+function checkPaths(root: string, paths: string[], roots: string[]): string {
+    if (!permitted(root, roots)) return 'that directory is not a workspace oculus knows';
     if (!Array.isArray(paths) || paths.length === 0) return 'no path was given';
     for (const path of paths) {
         if (!insideRepo(root, path)) return `the path ${String(path)} is not inside the workspace`;
@@ -148,15 +141,23 @@ function checkPaths(root: string, paths: string[]): string {
 // ---------------------------------------------------------------- the operations
 
 /** Stage the given paths. */
-export async function stage(root: string, paths: string[]): Promise<Outcome> {
-    const wrong = checkPaths(root, paths);
+export async function stage(
+    root: string,
+    paths: string[],
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    const wrong = checkPaths(root, paths, roots);
     if (wrong !== '') return failed(wrong);
     return run(root, ['add', '--', ...paths], TIMEOUT_MS);
 }
 
 /** Take the given paths back out of the index, leaving the worktree as it is. */
-export async function unstage(root: string, paths: string[]): Promise<Outcome> {
-    const wrong = checkPaths(root, paths);
+export async function unstage(
+    root: string,
+    paths: string[],
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    const wrong = checkPaths(root, paths, roots);
     if (wrong !== '') return failed(wrong);
     return restore(root, paths, true);
 }
@@ -166,8 +167,12 @@ export async function unstage(root: string, paths: string[]): Promise<Outcome> {
  * command that would remove one is `clean`, and a dashboard that can delete a file git never saw is
  * a dashboard that can lose work nobody can get back.
  */
-export async function discard(root: string, paths: string[]): Promise<Outcome> {
-    const wrong = checkPaths(root, paths);
+export async function discard(
+    root: string,
+    paths: string[],
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    const wrong = checkPaths(root, paths, roots);
     if (wrong !== '') return failed(wrong);
     const state = await porcelain(root);
     if (!state.ok) return state;
@@ -183,8 +188,12 @@ export async function discard(root: string, paths: string[]): Promise<Outcome> {
  * Commit what is staged. The message goes through a file rather than an argument: it is several
  * lines with quotes and backticks in it, and `-F` is the one form no quoting can break.
  */
-export async function commit(root: string, message: string): Promise<Outcome> {
-    if (!permitted(root)) return failed('that directory is not a workspace oculus knows');
+export async function commit(
+    root: string,
+    message: string,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
     if (typeof message !== 'string' || message.trim() === '') {
         return failed('a commit needs a message');
     }
@@ -204,16 +213,16 @@ export async function commit(root: string, message: string): Promise<Outcome> {
  * is Axel's at a terminal rather than a side effect of a button. Nothing is ever forced: the gate in
  * tests/server/git-write.test.ts asserts that the option does not appear in this file at all.
  */
-export async function push(root: string): Promise<Outcome> {
-    if (!permitted(root)) return failed('that directory is not a workspace oculus knows');
+export async function push(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
+    if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
     const up = await upstream(root);
     if (!up.ok) return failed('this branch has no upstream, so there is nowhere to push it');
     return run(root, ['push'], PUSH_TIMEOUT_MS);
 }
 
 /** Every branch, with its upstream and which one is checked out. A read, and the only one here. */
-export async function branches(root: string): Promise<Outcome> {
-    if (!permitted(root)) return failed('that directory is not a workspace oculus knows');
+export async function branches(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
+    if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
     return run(
         root,
         ['branch', '--format=%(refname:short)%09%(upstream:short)%09%(HEAD)'],
@@ -234,8 +243,12 @@ export function parseBranches(output: string): Branch[] {
 }
 
 /** Make a branch and check it out. The name is git's own to judge, so git judges it first. */
-export async function createBranch(root: string, name: string): Promise<Outcome> {
-    const wrong = await checkName(root, name);
+export async function createBranch(
+    root: string,
+    name: string,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    const wrong = await checkName(root, name, roots);
     if (wrong !== '') return failed(wrong);
     return switchTo(root, ['-c', name]);
 }
@@ -244,8 +257,12 @@ export async function createBranch(root: string, name: string): Promise<Outcome>
  * Check a branch out. A dirty tree is refused: git carries uncommitted changes across a switch, and
  * a change carried onto another branch by a click is the way this panel would lose work.
  */
-export async function switchBranch(root: string, name: string): Promise<Outcome> {
-    const wrong = await checkName(root, name);
+export async function switchBranch(
+    root: string,
+    name: string,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    const wrong = await checkName(root, name, roots);
     if (wrong !== '') return failed(wrong);
     const state = await porcelain(root);
     if (!state.ok) return state;
@@ -256,8 +273,8 @@ export async function switchBranch(root: string, name: string): Promise<Outcome>
 }
 
 /** What is staged right now, which is what the suggested message is written from. */
-export async function stagedDiff(root: string): Promise<Outcome> {
-    if (!permitted(root)) return failed('that directory is not a workspace oculus knows');
+export async function stagedDiff(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
+    if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
     return run(root, ['diff', '--cached'], TIMEOUT_MS);
 }
 
@@ -285,8 +302,8 @@ function upstream(root: string): Promise<Outcome> {
 }
 
 /** The one `check-ref-format` call site: git's own answer on whether a name is a branch name. */
-async function checkName(root: string, name: string): Promise<string> {
-    if (!permitted(root)) return 'that directory is not a workspace oculus knows';
+async function checkName(root: string, name: string, roots: string[]): Promise<string> {
+    if (!permitted(root, roots)) return 'that directory is not a workspace oculus knows';
     if (typeof name !== 'string' || name.trim() === '') return 'a branch needs a name';
     if (name.startsWith('-')) return `${name} is not a branch name git accepts`;
     const judged = await run(root, ['check-ref-format', '--branch', name], TIMEOUT_MS);

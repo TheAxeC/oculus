@@ -5,7 +5,6 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import type { Sink } from '../../../src/lib/server/channels.ts';
-import { publishToken } from '../../../src/lib/server/auth.ts';
 import {
     Terminals,
     channelTerminal,
@@ -83,7 +82,6 @@ const open: Terminals[] = [];
 
 afterEach(() => {
     while (open.length > 0) open.pop()?.close();
-    publishToken('');
 });
 
 function terminals(record = driver()): { held: Terminals; hub: Hub; driver: typeof record } {
@@ -134,7 +132,7 @@ describe('a page attached to a terminal', () => {
     it('is sent the scrollback first, then one message per chunk', async () => {
         const { held, driver: record } = terminals();
         const page = recorder();
-        held.subscribed(page.sink, [CHANNEL], TOKEN);
+        held.subscribed(page.sink, [CHANNEL], TOKEN, TOKEN);
         await settle();
         expect(page.messages).toHaveLength(1);
         expect(page.messages[0].channel).toBe(CHANNEL);
@@ -162,10 +160,10 @@ describe('a page attached to a terminal', () => {
     it('resends scrollback on the same sink without duplicating later chunks', async () => {
         const { held, driver: record } = terminals();
         const page = recorder();
-        held.subscribed(page.sink, [CHANNEL], TOKEN);
+        held.subscribed(page.sink, [CHANNEL], TOKEN, TOKEN);
         await settle();
         record.screen('the pane after the view switch\n');
-        held.subscribed(page.sink, [CHANNEL], TOKEN);
+        held.subscribed(page.sink, [CHANNEL], TOKEN, TOKEN);
         await settle();
 
         expect(page.messages.map((message) => message.version)).toEqual([0, 0]);
@@ -184,7 +182,7 @@ describe('a page attached to a terminal', () => {
     it('sends no chunk to a page that never attached to that terminal', async () => {
         const { held, driver: record } = terminals();
         const page = recorder();
-        held.subscribed(page.sink, ['pty:ffffff-claude'], TOKEN);
+        held.subscribed(page.sink, ['pty:ffffff-claude'], TOKEN, TOKEN);
         await settle();
         record.emit(ID, Buffer.from('one'));
         await settle();
@@ -194,10 +192,9 @@ describe('a page attached to a terminal', () => {
 
 describe('what the page may send back', () => {
     it('turns input from a socket that carried the token into send-keys', async () => {
-        publishToken(TOKEN);
         const { held, driver: record } = terminals();
         const page = recorder();
-        held.subscribed(page.sink, [CHANNEL], TOKEN);
+        held.subscribed(page.sink, [CHANNEL], TOKEN, TOKEN);
         await settle();
         record.calls.length = 0;
         held.inbound(
@@ -212,10 +209,9 @@ describe('what the page may send back', () => {
     });
 
     it('refuses input from a socket that carried no token', async () => {
-        publishToken(TOKEN);
         const { held, driver: record } = terminals();
         const page = recorder();
-        held.subscribed(page.sink, [CHANNEL], undefined);
+        held.subscribed(page.sink, [CHANNEL], undefined, TOKEN);
         await settle();
         record.calls.length = 0;
         held.inbound(
@@ -226,10 +222,10 @@ describe('what the page may send back', () => {
         expect(record.calls).toEqual([]);
     });
 
-    it('refuses input in a process where nothing published a token', async () => {
+    it('refuses input when the server context carries no token', async () => {
         const { held, driver: record } = terminals();
         const page = recorder();
-        held.subscribed(page.sink, [CHANNEL], TOKEN);
+        held.subscribed(page.sink, [CHANNEL], TOKEN, '');
         await settle();
         record.calls.length = 0;
         held.inbound(
@@ -241,10 +237,9 @@ describe('what the page may send back', () => {
     });
 
     it('forwards a resize to the tmux window', async () => {
-        publishToken(TOKEN);
         const { held, driver: record } = terminals();
         const page = recorder();
-        held.subscribed(page.sink, [CHANNEL], TOKEN);
+        held.subscribed(page.sink, [CHANNEL], TOKEN, TOKEN);
         await settle();
         record.calls.length = 0;
         held.inbound(
@@ -270,7 +265,7 @@ describe('a page that falls behind', () => {
             },
             close: () => {}
         };
-        held.subscribed(sink, [CHANNEL], TOKEN);
+        held.subscribed(sink, [CHANNEL], TOKEN, TOKEN);
         await settle();
         expect(messages).toHaveLength(1);
 
@@ -292,7 +287,7 @@ describe('a socket that closed', () => {
     it('stops the delivery and leaves the tmux session alone', async () => {
         const { held, hub, driver: record } = terminals();
         const page = recorder();
-        held.subscribed(page.sink, [CHANNEL], TOKEN);
+        held.subscribed(page.sink, [CHANNEL], TOKEN, TOKEN);
         await settle();
         const before = page.messages.length;
 

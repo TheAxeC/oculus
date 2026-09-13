@@ -415,3 +415,55 @@ function stringMap(raw: unknown): Record<string, string> {
     }
     return map;
 }
+
+/** The Live HPC settings of config/behavior.yml, every key required. */
+export type SlurmSettings = {
+    host: string;
+    days: number;
+    pollMin: number;
+    quotaMin: number;
+    prewarm: boolean;
+};
+
+/** Read `slurm:` with its five keys, or throw naming the key that is missing or mistyped. */
+export function slurmSettings(config: Record<string, unknown>): SlurmSettings {
+    const held = config.slurm;
+    if (typeof held !== 'object' || held === null || Array.isArray(held)) {
+        throw new Error('config/behavior.yml: slurm must be a map');
+    }
+    const slurm = held as Record<string, unknown>;
+    const number = (key: string): number => {
+        const value = slurm[key];
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+            throw new Error(`config/behavior.yml: slurm.${key} must be a number`);
+        }
+        return value;
+    };
+    if (typeof slurm.host !== 'string' || slurm.host === '') {
+        throw new Error('config/behavior.yml: slurm.host must be a non-empty string');
+    }
+    if (typeof slurm.prewarm !== 'boolean') {
+        throw new Error('config/behavior.yml: slurm.prewarm must be true or false');
+    }
+    return {
+        host: slurm.host,
+        days: number('days'),
+        pollMin: number('poll_min'),
+        quotaMin: number('quota_min'),
+        prewarm: slurm.prewarm
+    };
+}
+
+/** Read `usage_tiers:`, a map of plan id to label, or throw. */
+export function usageTiers(config: Record<string, unknown>): Record<string, string> {
+    const held = config.usage_tiers;
+    if (typeof held !== 'object' || held === null || Array.isArray(held)) {
+        throw new Error('config/behavior.yml: usage_tiers must be a map');
+    }
+    for (const [key, value] of Object.entries(held)) {
+        if (typeof value !== 'string') {
+            throw new Error(`config/behavior.yml: usage_tiers.${key} must be a string`);
+        }
+    }
+    return held as Record<string, string>;
+}

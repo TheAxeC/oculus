@@ -2,9 +2,16 @@
 // lib/server/hooks.ts and this is the one line that joins them. POST only: a hook never reads
 // anything back beyond the { ok: true } every answer carries.
 
-import { handleHookRequest, hookTarget } from '$lib/server/hooks';
-import { engineDir, loadConfig } from '$lib/data/sources/config';
+import { handleHookRequest } from '$lib/server/hooks';
+import { engineDir, loadConfig, textCatalog } from '$lib/data/sources/config';
+import { notifyConfig } from '$lib/server/hooks';
 import type { RequestHandler } from './$types';
 
-export const POST: RequestHandler = ({ request }) =>
-    handleHookRequest(request, hookTarget(loadConfig(engineDir()).config));
+export const POST: RequestHandler = ({ request, locals }) => {
+    const config = loadConfig(engineDir()).config;
+    return handleHookRequest(request, {
+        ...locals.server.hooks,
+        config: notifyConfig(config),
+        stopMessage: textCatalog(config)['notify.stop']
+    });
+};

@@ -60,8 +60,12 @@ function inside(path: string, dir: string): boolean {
     return full === root || full.startsWith(root + sep);
 }
 
-/** One image chosen per server process, so `pick: random` does not change under a reload. */
-const chosen: Record<string, string> = {};
+/** What the owning server context remembers: the random pick per directory, and the directories refused once. */
+export type WallpaperMemory = { chosen: Record<string, string>; refused: Set<string> };
+
+export function wallpaperMemory(): WallpaperMemory {
+    return { chosen: {}, refused: new Set() };
+}
 
 /**
  * The file name the settings name, or null when the directory holds no image. `file` matches a full
@@ -69,7 +73,7 @@ const chosen: Record<string, string> = {};
  * carrying a path separator or `..` names no file here and is refused rather than falling back: it
  * is an attempt to leave the directory, not a fragment that failed to match.
  */
-export function choose(settings: Wallpaper): string | null {
+export function choose(settings: Wallpaper, memory: WallpaperMemory): string | null {
     const found = images(settings.dir);
     if (found.length === 0) return null;
     const want = (settings.file ?? '').trim();
@@ -83,11 +87,11 @@ export function choose(settings: Wallpaper): string | null {
     }
     if ((settings.pick ?? 'first').toLowerCase() === 'random') {
         const key = resolve(settings.dir);
-        const held = chosen[key];
+        const held = memory.chosen[key];
         if (held === undefined || !found.includes(held)) {
-            chosen[key] = found[Math.floor(Math.random() * found.length)];
+            memory.chosen[key] = found[Math.floor(Math.random() * found.length)];
         }
-        return chosen[key];
+        return memory.chosen[key];
     }
     return found[0];
 }
@@ -106,10 +110,14 @@ export function sameOrigin(headers: Headers): boolean {
  * image to send: no directory, no image in it, a name that leaves the directory, a file that has
  * gone since the listing. 403 covers a request from another origin.
  */
-export function serve(settings: Wallpaper | null, headers: Headers): Response {
+export function serve(
+    settings: Wallpaper | null,
+    headers: Headers,
+    memory: WallpaperMemory
+): Response {
     if (!sameOrigin(headers)) return new Response(null, { status: 403 });
     if (settings === null) return new Response(null, { status: 404 });
-    const name = choose(settings);
+    const name = choose(settings, memory);
     if (name === null) return new Response(null, { status: 404 });
     const path = join(settings.dir, name);
     if (!inside(path, settings.dir)) return new Response(null, { status: 404 });
@@ -129,15 +137,12 @@ export function serve(settings: Wallpaper | null, headers: Headers): Response {
     });
 }
 
-/** Directories already refused, so the reason is said once rather than once per request. */
-const refused = new Set<string>();
-
 /**
  * The configured wallpaper, or null when there is nothing to serve. The config is read per request
  * as everything else in this release is, so an edit shows on a reload; O6's watcher takes it over.
  * A `dir` that resolves outside the hub is refused with a line on stderr and serves nothing.
  */
-export function settings(): Wallpaper | null {
+export function settings(memory: WallpaperMemory): Wallpaper | null {
     const engine = engineDir();
     const { config } = loadConfig(engine);
     const raw = config.wallpaper;
@@ -147,8 +152,8 @@ export function settings(): Wallpaper | null {
     const named = typeof held.dir === 'string' && held.dir !== '' ? held.dir : DEFAULT_DIR;
     const dir = resolve(hub, named);
     if (!inside(dir, hub)) {
-        if (!refused.has(dir)) {
-            refused.add(dir);
+        if (!memory.refused.has(dir)) {
+            memory.refused.add(dir);
             console.error(`wallpaper: ${dir} is outside the hub ${hub}; serving no image`);
         }
         return null;

@@ -14,17 +14,9 @@
 
 import { execFile as execFileCb } from 'node:child_process';
 import { basename } from 'node:path';
-import { textCatalog } from '../data/sources/config.ts';
 import type { HookEvent, SessionRecord, SessionsPayload } from '../data/model.ts';
 import { allowedOrigin } from './auth.ts';
-import {
-    HookStore,
-    bridgedRecord,
-    patchPayload,
-    republishHook,
-    sharedHookStore,
-    type HubLike
-} from './sessions/hooks.ts';
+import { HookStore, patchPayload, type HubLike } from './sessions/hooks.ts';
 
 export const MAX_BODY_BYTES = 64 * 1024;
 export const RATE_LIMIT_PER_SEC = 20;
@@ -86,12 +78,15 @@ export function handleHook(body: unknown, now: number): HookEvent | null {
  */
 export class RateLimiter {
     #stamps: number[] = [];
-    constructor(private readonly limit: number = RATE_LIMIT_PER_SEC) {}
+    readonly #limit: number;
+    constructor(limit: number = RATE_LIMIT_PER_SEC) {
+        this.#limit = limit;
+    }
 
     allow(now: number): boolean {
         const floor = now - 1000;
         this.#stamps = this.#stamps.filter((stamp) => stamp > floor);
-        if (this.#stamps.length >= this.limit) return false;
+        if (this.#stamps.length >= this.#limit) return false;
         this.#stamps.push(now);
         return true;
     }
@@ -168,11 +163,8 @@ export function notify(
     });
 }
 
-/** Which event names this route has already logged, so the stderr line prints once per process. */
-const logged = new Set<string>();
-
 /** The first body of each hook_event_name, once, so the real shape is on record after it fires. */
-function logFirstPayload(name: string, body: unknown): void {
+function logFirstPayload(logged: Set<string>, name: string, body: unknown): void {
     if (logged.has(name)) return;
     logged.add(name);
     console.error(`hooks: first ${name} payload: ${JSON.stringify(body)}`);
@@ -183,6 +175,8 @@ export type HookTarget = {
     store: HookStore;
     hub: HubLike | null;
     limiter: RateLimiter;
+    /** Hook names already logged by this server context. */
+    logged: Set<string>;
     config: NotifyConfig;
     /** The catalog's notify.stop; notify()'s own fallback is used when this is absent. */
     stopMessage?: string;
@@ -228,7 +222,7 @@ export async function handleHookRequest(request: Request, into: HookTarget): Pro
     }
     if (typeof body === 'object' && body !== null && !Array.isArray(body)) {
         const name = (body as Record<string, unknown>).hook_event_name;
-        if (typeof name === 'string' && name !== '') logFirstPayload(name, body);
+        if (typeof name === 'string' && name !== '') logFirstPayload(into.logged, name, body);
     }
     const event = handleHook(body, now);
     if (event === null) return json(200, { ok: true });
@@ -246,11 +240,8 @@ export async function handleHookRequest(request: Request, into: HookTarget): Pro
 }
 
 /**
- * Republish through into.hub when the route was given one directly (every test does this); the
- * production route has no such reference, since the built app bundles routes separately from
- * src/server.ts's plain import of the Hub class, so the two would not even agree on its identity,
- * and falls back to the process-wide bridge (sessions/hooks.ts's republishHook), which is a no-op
- * until src/server.ts binds the real Hub to it.
+ * Republish through the Hub carried by the request's ServerContext. A context fixture may use null
+ * when a test only needs to inspect the store.
  */
 function republishHookOn(into: HookTarget, event: HookEvent): void {
     if (into.hub !== null) {
@@ -258,27 +249,5 @@ function republishHookOn(into: HookTarget, event: HookEvent): void {
         if (message !== undefined) {
             into.hub.publish('sessions', patchPayload(message.payload as SessionsPayload, event));
         }
-        return;
     }
-    republishHook(event);
-}
-
-const limiter = new RateLimiter();
-
-/**
- * Real wiring for the route: the shared store and bridge, the machine's config, the catalog's
- * notify.stop, no fake clock. The limiter is module-level (one per process, like the store) rather
- * than built per call, since a rate limit that resets every request would never limit anything.
- */
-export function hookTarget(config: Record<string, unknown>): HookTarget {
-    return {
-        store: sharedHookStore(),
-        hub: null,
-        limiter,
-        config: notifyConfig(config),
-        stopMessage: textCatalog(config)['notify.stop'],
-        // The session's title for the subtitle, from the payload the watcher last published: no
-        // scan of the stores per hook, and null before the first publish, which is the cwd fallback.
-        recordFor: bridgedRecord
-    };
 }

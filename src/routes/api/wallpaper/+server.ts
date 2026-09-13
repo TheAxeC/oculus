@@ -4,4 +4,5 @@
 import { serve, settings } from '$lib/server/wallpaper';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = ({ request }) => serve(settings(), request.headers);
+export const GET: RequestHandler = ({ request, locals }) =>
+    serve(settings(locals.server.wallpaper), request.headers, locals.server.wallpaper);
