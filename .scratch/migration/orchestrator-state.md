@@ -21,7 +21,20 @@ reviewer: codex:gpt-5.6-sol  # the reviewer stage, tried from O24a on (Axel, 202
 ```
 
 ```yaml
-dispatch: none
+dispatch:
+  package: D19b
+  worker: codex:gpt-5.6-sol
+  worktree: .agents/worktrees/d19b
+  base: a0323c549daaaac4f8334a5c7ab851fabbc81f1a
+  launched: pending
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19b/prompt.md
+  events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19b/events.jsonl
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19b/report.md
+  exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D19b/exit.txt
+  pid: pending
+  session_id: pending
+  landing: not-started
+  notes: Axel asked for the Fable and 5-hour percentages at 17:45, after D19 landed and after he found the D19 report false about his own oculus (local.yml never written, fixed at 17:1x, and the window rule fixed at 17:36 as f35361f0); the source is Claude Code's cachedUsageUtilization in each account file; at landing the view is checked in Playwright's Chrome on the built server and on his dev server on 8790 after a restart, then the PAUSE
 ```
 
 ## The standing demands (from Axel, in force)
