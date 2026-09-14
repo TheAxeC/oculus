@@ -151,6 +151,8 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - O30 native window (I): Electron, Tauri or pywebview, chosen after O19 from how much the browser gets in the way with a terminal in it (1 commit)
 
 ## Could run in parallel
+
+- The feature stretch after R17, three at a time (Axel 2026-09-14 17:50), each set checked for disjoint paths at its dispatch: Q15 + Q16 + H1; Q17 + P1 + O27a; P2 + O27b + O28a; O28b + D1 + D2; D3 + D6 + D4; D5 + D7 + D10; D8 + D12 + D9; D16 + D11 + D13; D14 + D15 + D17; D18 + D20 + O31. Alone by nature: Q18, R10, R13a, R13b, R17 before it; R2, O29, O30, X2 after it.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
@@ -165,6 +167,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - 2026-09-13 17:50, Axel: of the Agency ideas, the worktrees go into D4, the agent on a task is D20, the counts line into D18; the Tauri shell, PATH detection and a wiki are not taken.
 - 2026-09-13 21:25, Axel: the usage figures must be fresh: D19c, a hidden session per account running `/usage` every 10 minutes, restarted on any failure; no Keychain reading by oculus.
 - 2026-09-13 22:30, Axel: no globals; SOLID, DRY, KISS, YAGNI, separation of concerns, cohesion and low coupling bind the remaining work; the debt found that evening is R3 to R7, run right after D19c; the config and catalog files are oculus's own, an order of 2026-09-10 the text catalog had escaped.
+- 2026-09-14 17:50, Axel: three workers at once for the feature stretch after R17, after a vitest worker cap (an inline change of the orchestrator's at Q18's landing) and after the four alone packages; the sets are in the parallel list.
 - 2026-09-14 17:39, Axel: the Command Center keeps every dated line; the undated follow-ups, subtasks and tasks.yml entries move to a Tasks section of the Focus board under it (Q18), a difference from the cockpit by his own proposal.
 - 2026-09-14 17:28, Axel: R12c's edge 8 (an identity-first entry id) closed as a wrong premise, no change.
 - 2026-09-14 17:20, Axel: `waiting-on` accepts a collaborator key or a project id, never a free name, a finding otherwise (R12f); the bt-operator-theory manifest's value becomes `btfno`; a `tmux_socket` local key for the browser suite's private tmux, under R2.
