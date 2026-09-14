@@ -21,7 +21,21 @@ reviewer: codex:gpt-5.6-sol  # the reviewer stage, tried from O24a on (Axel, 202
 ```
 
 ```yaml
-dispatch: none
+dispatch:
+  package: R6
+  worker: codex:gpt-5.6-sol
+  worktree: .agents/worktrees/r6
+  base: 257be52ea95b1ea2785e2d7d2373ec144b278391
+  launched: 2026-09-14T04:52:00+02:00
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/prompt.md
+  events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/events.jsonl
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/report.md
+  exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/exit.txt
+  pid: pending
+  session_id: pending
+  landing: not-started
+  round: 0
+  notes: R6, the card cursor as pane instance state (Card gains an id prop for data-card and a cursor prop; key-dom finds the cursor card by id; the spec's selector stays); brief re-read on the tree at 04:50; after it R8 only if dispatched before 06:00, then R9, R10; nothing in flight at 07:05.
 ```
 
 ## The standing demands (from Axel, in force)
