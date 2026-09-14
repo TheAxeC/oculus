@@ -316,14 +316,23 @@ describe('read only', () => {
         expect([...new Set(calls.map((call) => call[1]))].sort()).toEqual(ALLOWED);
     });
 
+    it('ran every command without optional locks, so a read writes no index lock', () => {
+        expect(ran.length).toBeGreaterThan(0);
+        for (const args of ran) {
+            expect(args, args.join(' ')).toContain('--no-optional-locks');
+        }
+    });
+
     it('ran nothing but those four commands over this whole file', () => {
         expect(ran.length).toBeGreaterThan(0);
         const used = new Set<string>();
         for (const args of ran) {
-            // Every vector is `-C <root> <subcommand> ...`, and no root leaves the temporary tree.
+            // Every vector is `-C <root> --no-optional-locks <subcommand> ...`, and no root leaves
+            // the temporary tree.
             expect(args[0]).toBe('-C');
             expect(resolve(args[1]).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-            used.add(args[2]);
+            expect(args[2]).toBe('--no-optional-locks');
+            used.add(args[3]);
         }
         expect([...used].sort()).toEqual(ALLOWED);
     });

@@ -40,11 +40,10 @@ export type GitWatchOptions = {
  * Whether an event is one of ours: outside .git/objects, outside every ignored folder, and not a
  * lock file inside .git.
  *
- * The lock is the one that matters. `git status` takes .git/index.lock every single time it runs,
- * and renames it away again, whether or not it changed anything. Without this line the watcher feeds
- * itself: a read makes a lock, the lock is an event, the event schedules a read, and every workspace
- * runs two git processes every two seconds for as long as the server is up. A real index change
- * announces itself with an event on .git/index, which is not filtered.
+ * The lock is the one that matters. The module's own reads run without optional locks and write
+ * none, but another git process in the same repository (the owner's commit, an editor) takes
+ * .git/index.lock and renames it away again, and without this line each of those would schedule a
+ * read. A real index change announces itself with an event on .git/index, which is not filtered.
  */
 export function relevant(filename: string | null): boolean {
     if (filename === null || filename === '') return false;

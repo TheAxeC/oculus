@@ -200,7 +200,9 @@ function numstat(root: string, timeout: number): Counts {
  * slow to answer all come back as not ok with a short reason. This is the module's one call site.
  */
 function run(root: string, args: string[], timeout: number): Outcome {
-    const argv = ['-C', root, ...args];
+    // Every read runs without optional locks, so a status refresh never writes .git/index.lock and
+    // never collides with a commit the owner is making in the same repository.
+    const argv = ['-C', root, '--no-optional-locks', ...args];
     // A list, never a shell, and a timeout: a hung git must not hang a watcher.
     const done = spawnSync(GIT, argv, { encoding: 'utf8', timeout });
     if (done.error !== undefined && done.error !== null) {
