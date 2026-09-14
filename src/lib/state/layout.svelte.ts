@@ -306,7 +306,7 @@ export function closePage(id: string): void {
 }
 
 /**
- * Show the page at `index`, counting from 1, which is what Ctrl+1 to Ctrl+9 do. It answers whether
+ * Show the page at `index`, counting from 1, which is what the digits 1 to 9 do. It answers whether
  * there was one, so the handler swallows the key only when the shortcut did something.
  */
 export function pageShortcut(index: number): boolean {

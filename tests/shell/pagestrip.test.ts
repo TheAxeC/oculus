@@ -67,8 +67,8 @@ describe('the page strip', () => {
     });
 
     it('names the shortcut that reaches each page', () => {
-        expect(body).toContain('Reading - Ctrl+1');
-        expect(body).toContain('Runs - Ctrl+2');
+        expect(body).toContain('Reading - press 1');
+        expect(body).toContain('Runs - press 2');
     });
 
     it('puts the page menu at the right of the strip', () => {

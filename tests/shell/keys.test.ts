@@ -18,7 +18,11 @@ import {
 const order: RailOrder = {
     direct: ['focus', 'projects', 'archive'],
     all: ['focus', 'projects', 'funding', 'events', 'archive'],
-    chords: { c: ['funding', 'events'], m: ['sessions', 'terminal'] }
+    chords: {
+        v: ['focus', 'projects', 'archive'],
+        c: ['funding', 'events'],
+        m: ['sessions', 'terminal']
+    }
 };
 
 const context: KeyContext = {
@@ -42,10 +46,40 @@ function press(
 }
 
 describe('digit and chord navigation', () => {
-    it('opens direct rail buttons by their one-based display position', () => {
-        expect(press('1').action).toEqual({ kind: 'open', view: 'focus', target: 'main' });
-        expect(press('3').action).toEqual({ kind: 'open', view: 'archive', target: 'main' });
-        expect(press('4').action).toBe(null);
+    it('asks for the page of a bare digit, whatever the rail holds', () => {
+        expect(press('1').action).toEqual({ kind: 'page', index: 1 });
+        expect(press('4').action).toEqual({ kind: 'page', index: 4 });
+        expect(press('9').action).toEqual({ kind: 'page', index: 9 });
+    });
+
+    it('opens the rail view at the digit after the direct chord, and nothing past its end', () => {
+        const started = press('v', initialKeyState(), 2000);
+        expect(started.action).toBe(null);
+        expect(press('1', started.state, 2000 + CHORD_MS - 1).action).toEqual({
+            kind: 'open',
+            view: 'focus',
+            target: 'main'
+        });
+        const again = press('v', initialKeyState(), 2000);
+        expect(press('4', again.state, 2100).action).toBe(null);
+    });
+
+    it('switches the focused pane tab on Ctrl and a digit, in a field or out of one', () => {
+        expect(press('2', initialKeyState(), 1000, {}, { ctrlKey: true }).action).toEqual({
+            kind: 'tab',
+            index: 2
+        });
+        expect(
+            press('2', initialKeyState(), 1000, { typing: true }, { ctrlKey: true }).action
+        ).toEqual({ kind: 'tab', index: 2 });
+    });
+
+    it('leaves Cmd and a digit to the browser, and says nothing for a digit in a field', () => {
+        expect(press('2', initialKeyState(), 1000, {}, { metaKey: true }).action).toBe(null);
+        expect(
+            press('2', initialKeyState(), 1000, {}, { ctrlKey: true, metaKey: true }).action
+        ).toBe(null);
+        expect(press('2', initialKeyState(), 1000, { typing: true }).action).toBe(null);
     });
 
     it('opens the numbered entry of a configured chord', () => {
@@ -58,12 +92,11 @@ describe('digit and chord navigation', () => {
         });
     });
 
-    it('lets a chord lapse and treats its digit as direct navigation', () => {
+    it('lets a chord lapse and treats its digit as a page', () => {
         const started = press('m', initialKeyState(), 2000);
         expect(press('2', started.state, 2000 + CHORD_MS).action).toEqual({
-            kind: 'open',
-            view: 'projects',
-            target: 'main'
+            kind: 'page',
+            index: 2
         });
     });
 
@@ -71,12 +104,7 @@ describe('digit and chord navigation', () => {
         expect(press('x').state.chord).toBe('');
     });
 
-    it('opens digits and chords in main even when the panel is focused', () => {
-        expect(press('2', initialKeyState(), 1000, { target: 'panel' }).action).toEqual({
-            kind: 'open',
-            view: 'projects',
-            target: 'main'
-        });
+    it('opens a chord in main even when the panel is focused', () => {
         const started = press('c', initialKeyState(), 1000, { target: 'panel' });
         expect(press('2', started.state, 1100, { target: 'panel' }).action).toEqual({
             kind: 'open',

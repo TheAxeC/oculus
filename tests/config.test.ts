@@ -369,6 +369,7 @@ describe("oculus's own config directory", () => {
         'glyphs.yml': ['glyphs', 'ascii'],
         'layout.yml': [
             'nav_groups',
+            'direct_chord',
             'arrangements',
             'board',
             'tab_split',

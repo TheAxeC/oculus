@@ -49,6 +49,16 @@
     const groups = $derived<NavGroup[]>(readGroups(config()?.config.nav_groups));
 
     /**
+     * The `direct_chord` of config/layout.yml: the one letter a digit after it counts into the
+     * rail's directly drawn views. Anything but a single lowercase letter leaves the chord unset.
+     */
+    const directChord = $derived(readChord(config()?.config.direct_chord));
+
+    function readChord(raw: unknown): string | undefined {
+        return typeof raw === 'string' && /^[a-z]$/.test(raw) ? raw : undefined;
+    }
+
+    /**
      * The `bookmarks` list of config/layout.yml, in order. Each entry is a local file under one of
      * the `roots:` of config/sources.yml; the rail draws one button per entry and the `document`
      * view opens it. An entry that is not three strings is dropped rather than drawn half-formed.
@@ -112,4 +122,4 @@
     });
 </script>
 
-<Workbench {groups} {bookmarks} {arrangements} waiting={waitingCount()} />
+<Workbench {groups} {bookmarks} {arrangements} {directChord} waiting={waitingCount()} />

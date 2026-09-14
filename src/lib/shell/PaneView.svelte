@@ -209,6 +209,7 @@
     class="pane"
     data-pane
     data-pane-target={target}
+    data-pane-path={path.join('.')}
     data-pane-active={active}
     data-pane-view={shown?.view}
 >

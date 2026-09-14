@@ -61,6 +61,8 @@
         bookmarks?: Bookmark[];
         /** The `arrangements:` of the merged config, for the page strip's menu. */
         arrangements?: Arrangement[];
+        /** The `direct_chord` of the merged config: the letter a digit after it counts into the rail. */
+        directChord?: string;
         /**
          * How many sessions wait on a permission, for the document title. The page reads it from
          * the sessions channel and hands it on, since the shell may not read entities itself.
@@ -68,7 +70,13 @@
         waiting?: number;
     };
 
-    let { groups = [], bookmarks = [], arrangements = [], waiting = 0 }: Props = $props();
+    let {
+        groups = [],
+        bookmarks = [],
+        arrangements = [],
+        directChord,
+        waiting = 0
+    }: Props = $props();
 
     let area: HTMLDivElement | undefined = $state();
     let paletteOpen = $state(false);
@@ -92,7 +100,8 @@
     const navigation = $derived(
         railOrder(
             views().filter((view) => view.listed !== false),
-            groups
+            groups,
+            directChord
         )
     );
     const keyboard = createWorkbenchKeys({

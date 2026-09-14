@@ -1,6 +1,7 @@
-// The keyboard bindings of shell/keys.ts in a real page: a digit opens a rail view, Tab cycles to
-// the next one, `?` opens and closes the sheet, `/` focuses the board's search, the card cursor
-// moves with j and k and Enter opens the card, and `g g` and `G` scroll the pane.
+// The keyboard bindings of shell/keys.ts in a real page: `v` and a digit open a rail view, Ctrl and
+// a digit activate a tab of the focused pane, Tab cycles to the next view, `?` opens and closes the
+// sheet, `/` focuses the board's search, the card cursor moves with j and k and Enter opens the
+// card, and `g g` and `G` scroll the pane.
 //
 // Nothing here writes to the hub. The layout lives in the browser's own storage.
 
@@ -14,9 +15,10 @@ async function press(page: Page, key: string): Promise<void> {
     await page.keyboard.press(key);
 }
 
-test('digits and Tab open rail views, ? toggles the sheet', async ({ page }) => {
+test('the direct chord and Tab open rail views, ? toggles the sheet', async ({ page }) => {
     await boot(page);
-    await press(page, '2');
+    await press(page, 'v');
+    await page.keyboard.press('2');
     await expect(page.getByRole('tab', { name: t('views.projects') })).toBeVisible();
 
     await press(page, 'Tab');
@@ -93,4 +95,37 @@ test('a pointer press keeps the cursor in one pane and clears it on a pane chang
 
     await other.dispatchEvent('pointerdown');
     await expect(pane.locator('[data-card][data-cursor]')).toHaveCount(0);
+});
+
+test('Ctrl and a digit activate the numbered tab of the focused pane', async ({ page }) => {
+    await boot(page);
+    await openView(page, 'projects', t('views.projects'));
+    const pane = page.locator('[data-pane]', {
+        has: page.getByRole('tab', { name: t('views.projects') })
+    });
+    const status = pane.getByRole('tab', { name: t('views.status') });
+    const projects = pane.getByRole('tab', { name: t('views.projects') });
+    await expect(projects).toHaveAttribute('aria-selected', 'true');
+    const opened = await pane.getAttribute('data-pane-active');
+    expect(opened).not.toBeNull();
+
+    await page.keyboard.press('Control+1');
+    await expect(status).toHaveAttribute('aria-selected', 'true');
+    await expect(projects).toHaveAttribute('aria-selected', 'false');
+
+    await page.keyboard.press('Control+2');
+    await expect(projects).toHaveAttribute('aria-selected', 'true');
+    await expect(pane).toHaveAttribute('data-pane-active', String(opened));
+
+    // A digit past the pane's last tab leaves the tab it has.
+    await page.keyboard.press('Control+9');
+    await expect(projects).toHaveAttribute('aria-selected', 'true');
+    await expect(pane).toHaveAttribute('data-pane-active', String(opened));
+
+    await press(page, 'v');
+    await page.keyboard.press('1');
+    await expect(pane.getByRole('tab', { name: t('views.focus') })).toHaveAttribute(
+        'aria-selected',
+        'true'
+    );
 });

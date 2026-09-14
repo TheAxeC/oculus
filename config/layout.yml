@@ -18,6 +18,10 @@ nav_groups:
   system: { label: "System" }
 
 
+# The one-letter prefix that reaches the rail's directly drawn views by number: the letter, then a digit for the view's place in the rail. The groups above name their own prefixes; a value that is not one lowercase letter means no such prefix, and the rail is reached by its buttons alone.
+direct_chord: v
+
+
 # Saved arrangements: a whole workbench written by hand, applied by a control in the rail's panel menu.
 # A node is `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view
 # id or a list of them (the tabs of that pane); `dock` and `panel_size` are the panel's, and default to

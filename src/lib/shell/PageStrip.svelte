@@ -36,7 +36,7 @@
 
     let { arrangements = [] }: Props = $props();
 
-    /** How many pages a shortcut reaches: Ctrl+1 to Ctrl+9, handled in Workbench.svelte. */
+    /** How many pages a shortcut reaches: the bare digits 1 to 9, resolved in shell/keys.ts. */
     const SHORTCUTS = 9;
 
     /** The two items the menu always carries, told apart from an arrangement by its prefix. */

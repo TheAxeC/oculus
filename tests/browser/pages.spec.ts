@@ -1,4 +1,4 @@
-// The page strip of shell/PageStrip.svelte: its menu makes a page and renames one, Ctrl+1 to Ctrl+9
+// The page strip of shell/PageStrip.svelte: its menu makes a page and renames one, the digits 1 to 9
 // reach the first nine, and closing a page that holds more than one tab asks first.
 //
 // Nothing here writes to the hub. The layout lives in the browser's own storage, and Playwright gives
@@ -29,7 +29,7 @@ test('the menu adds a page and renames it', async ({ page }) => {
     await expect(strip.getByRole('tab', { name: t('ui.page_default', 2) })).toHaveCount(0);
 });
 
-test('Ctrl+2 shows the second page and Ctrl+1 the first', async ({ page }) => {
+test('2 shows the second page and 1 the first', async ({ page }) => {
     await page.goto('/');
     const strip = page.getByRole('region', { name: t('ui.pages') });
     await strip.getByRole('button', { name: t('ui.page_menu') }).click();
@@ -39,11 +39,13 @@ test('Ctrl+2 shows the second page and Ctrl+1 the first', async ({ page }) => {
     const second = strip.getByRole('tab', { name: t('ui.page_default', 2) });
     await expect(second).toHaveAttribute('aria-selected', 'true');
 
-    await page.keyboard.press('Control+1');
+    // The digits act on the strip's own tab as much as anywhere else, as long as no box is typed in.
+    await second.click();
+    await page.keyboard.press('1');
     await expect(first).toHaveAttribute('aria-selected', 'true');
     await expect(second).toHaveAttribute('aria-selected', 'false');
 
-    await page.keyboard.press('Control+2');
+    await page.keyboard.press('2');
     await expect(second).toHaveAttribute('aria-selected', 'true');
     await expect(first).toHaveAttribute('aria-selected', 'false');
 });

@@ -152,6 +152,11 @@ describe('the workbench', () => {
         expect([...docked.matchAll(/role="tab"/g)]).toHaveLength(4);
     });
 
+    it('carries every pane path on its own element, which is how a key reaches its tabs', () => {
+        const paths = [...docked.matchAll(/data-pane-path="([^"]*)"/g)].map((match) => match[1]);
+        expect(paths).toEqual(['0', '1', '']);
+    });
+
     it('draws the page strip above the area, and the current page in it', () => {
         expect(docked.indexOf('aria-label="Pages"')).toBeLessThan(docked.indexOf('class="area'));
         expect(docked).toContain('Page 1');

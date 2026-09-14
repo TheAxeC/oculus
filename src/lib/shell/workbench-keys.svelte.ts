@@ -3,14 +3,16 @@
 
 import { dragging } from '$lib/state/drag.svelte';
 import {
+    activateInstance,
     instanceLayoutState,
+    layout,
     openView,
     pageShortcut,
     restateInstance,
     restorePanes
 } from '$lib/state/layout.svelte';
 import type { Focus, Instance } from '$lib/state/layout';
-import { cardCursor, reconcileCardCursor, withCardCursor } from '$lib/state/layout';
+import { cardCursor, paneAt, reconcileCardCursor, withCardCursor } from '$lib/state/layout';
 import { requestCardMove } from '$lib/state/ui.svelte';
 import { activateCursor, focusSearch, scrollContainer, scrollRegion } from './key-dom';
 import {
@@ -53,10 +55,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     let observedPane: HTMLElement | null = null;
     let cardObserver: MutationObserver | null = null;
 
-    /**
-     * Dispatch one key. Escape closes overlays or restores panes unless a drag owns it;
-     * Ctrl+digit changes pages, while Cmd+digit remains available to the browser.
-     */
+    /** Dispatch one key. Escape closes overlays or restores panes unless a drag owns it. */
     function keys(event: KeyboardEvent): void {
         if (
             options.sheetOpen() &&
@@ -103,10 +102,6 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             options.openPalette(':');
             return;
         }
-        if (event.ctrlKey && !event.metaKey && /^[1-9]$/.test(event.key)) {
-            if (pageShortcut(Number(event.key))) event.preventDefault();
-            return;
-        }
         const pane = focusedPaneElement();
         const result = resolveKey(
             event,
@@ -149,12 +144,35 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             return focusSearch(pane);
         } else if (action.kind === 'scroll') {
             return scrollRegion(scrollContainer(pane), action.edge);
+        } else if (action.kind === 'page') {
+            return pageShortcut(action.index);
+        } else if (action.kind === 'tab') {
+            return activateTab(pane, action.index);
         } else if (action.kind === 'sheet') {
             clearCursor();
             options.setSheetOpen(!options.sheetOpen());
         } else {
             clearCursor();
         }
+        return true;
+    }
+
+    /**
+     * Activate the numbered tab of the focused pane. The element carries the tree and the path, so
+     * the pane under the keyboard is the pane in the store; a pane holding fewer tabs than the
+     * digit counts to keeps the tab it has and leaves the key to whatever else wants it.
+     */
+    function activateTab(pane: HTMLElement | null, index: number): boolean {
+        const raw = pane?.dataset.panePath;
+        if (raw === undefined) return false;
+        const path = raw === '' ? [] : raw.split('.').map(Number);
+        if (path.some((step) => !Number.isInteger(step))) return false;
+        const target = pane?.dataset.paneTarget === 'panel' ? 'panel' : 'main';
+        const node = paneAt(layout(target), path) ?? undefined;
+        const tab = node?.tabs.at(index - 1);
+        if (tab === undefined) return false;
+        clearCursor();
+        activateInstance(target, tab.id);
         return true;
     }
 

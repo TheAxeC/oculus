@@ -129,6 +129,25 @@ describe('arrange', () => {
             chords: { c: ['c', 'd', 'e', 'f', 'g'] }
         });
     });
+
+    it('puts the direct views under the configured letter, which a group of its own keeps', () => {
+        const registrations = [
+            probe('a', 'direct', 0),
+            ...['c', 'd', 'e', 'f', 'g'].map((id, order) => probe(id, 'flyout', order))
+        ];
+        const groups = [
+            { id: 'direct', label: 'Direct' },
+            { id: 'flyout', label: 'Flyout', chord: 'c' }
+        ];
+        expect(railOrder(registrations, groups, 'v').chords).toEqual({
+            v: ['a'],
+            c: ['c', 'd', 'e', 'f', 'g']
+        });
+        expect(railOrder(registrations, groups, 'c').chords).toEqual({
+            c: ['c', 'd', 'e', 'f', 'g']
+        });
+        expect(railOrder([], groups, 'v').chords).toEqual({});
+    });
 });
 
 describe('the rail, drawn', () => {

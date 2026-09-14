@@ -74,14 +74,24 @@ export function arrange(registrations: Registration[], groups: NavGroup[]): Sect
     return sections;
 }
 
-/** Direct digits, every view in display order, and the configured entries behind flyout chords. */
-export function railOrder(registrations: Registration[], groups: NavGroup[]): RailOrder {
+/**
+ * The rail's directly drawn views in their numbered order, every view in display order, and the
+ * lists a one-letter chord counts into. `directChord` is the letter the directly drawn views are
+ * reached under; a group that names the same letter takes it, since a group's own configuration is
+ * the more specific one.
+ */
+export function railOrder(
+    registrations: Registration[],
+    groups: NavGroup[],
+    directChord?: string
+): RailOrder {
     const sections = arrange(registrations, groups);
     const direct = sections
         .filter((section) => section.label === null || section.items.length <= GROUP_MAX)
         .flatMap((section) => section.items.map((view) => view.id));
     const all = sections.flatMap((section) => section.items.map((view) => view.id));
     const chords: Record<string, string[]> = {};
+    if (directChord !== undefined && direct.length > 0) chords[directChord] = direct;
     for (const section of sections) {
         if (section.items.length <= GROUP_MAX || section.chord === undefined) continue;
         chords[section.chord] = section.items.map((view) => view.id);

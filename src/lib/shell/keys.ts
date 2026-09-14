@@ -34,6 +34,8 @@ export type KeyState = {
 
 export type KeyAction =
     | { kind: 'open'; view: string; target: 'main' | 'panel' }
+    | { kind: 'page'; index: number }
+    | { kind: 'tab'; index: number }
     | { kind: 'cursor'; direction: 'left' | 'right' | 'up' | 'down' }
     | { kind: 'move'; direction: 'left' | 'right' }
     | { kind: 'activate' }
@@ -87,6 +89,11 @@ export function resolveKey(
     state: KeyState,
     now: number
 ): KeyResult {
+    // A modifier chord is not typing, so the tab keys answer with a field focused and under an
+    // overlay; Cmd plus a digit is left to the browser, which has its own use for it.
+    if (event.ctrlKey === true && event.metaKey !== true && /^[1-9]$/.test(event.key)) {
+        return { action: { kind: 'tab', index: Number(event.key) }, state };
+    }
     if (
         context.typing ||
         context.paletteOpen ||
@@ -125,14 +132,18 @@ export function resolveKey(
         return { action: null, state: { ...state, chord: event.key, chordAt: now } };
     }
     if (/^[1-9]$/.test(event.key)) {
-        const digit = Number(event.key) - 1;
-        const chorded =
-            now - state.chordAt < CHORD_MS ? order.chords[state.chord]?.at(digit) : undefined;
-        const view = chorded ?? order.direct.at(digit);
-        return {
-            action: view === undefined ? null : { kind: 'open', view, target: 'main' },
-            state: { ...state, chord: '' }
-        };
+        const cleared = { ...state, chord: '' };
+        // A live chord names the list the digit counts into, and a digit past that list opens
+        // nothing rather than falling through to a page, which would be a different surface.
+        const chorded = now - state.chordAt < CHORD_MS ? order.chords[state.chord] : undefined;
+        if (chorded !== undefined) {
+            const view = chorded.at(Number(event.key) - 1);
+            return {
+                action: view === undefined ? null : { kind: 'open', view, target: 'main' },
+                state: cleared
+            };
+        }
+        return { action: { kind: 'page', index: Number(event.key) }, state: cleared };
     }
 
     const cleared = { ...state, chord: '' };

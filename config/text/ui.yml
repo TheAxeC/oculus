@@ -28,7 +28,7 @@ text:
         page_rename: Rename this page
         page_rename_label: Page name
         page_sessions: Sessions
-        page_shortcut: '{0} - Ctrl+{1}'
+        page_shortcut: '{0} - press {1}'
         pages: Pages
         pane_close: Close pane
         pane_close_confirm: Close this pane and the {0} tabs in it?
