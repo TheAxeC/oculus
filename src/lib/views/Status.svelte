@@ -17,6 +17,7 @@
 
     import { git, portfolio, sessions } from '$lib/state/entities.svelte';
     import { status } from '$lib/state/socket.svelte';
+    import Pane from '$lib/ui/Pane.svelte';
     import { t } from '$lib/state/text';
     import Hooks from './status/Hooks.svelte';
     import type { ViewProps } from './registry';
@@ -57,26 +58,29 @@
     }
 </script>
 
-<div class="view" data-instance={instance.id}>
-    <p class="socket">{t('app.socket', socketLabel())}</p>
-    {#if snapshot === null}
-        <p>{t('app.waiting')}</p>
-    {:else}
-        <p>{t('app.version', snapshot.version)}</p>
-        <ul>
-            <li>{t('app.projects', count('projects'))}</li>
-            <li>{t('app.venues', count('venues'))}</li>
-            <li>{t('app.datasets', count('datasets'))}</li>
-            <li>{t('app.programs', count('programs'))}</li>
-            <li>{t('app.domains', count('domains'))}</li>
-            <li>{t('app.funding', count('funding'))}</li>
-            <li>{t('app.collections', count('collections'))}</li>
-        </ul>
-    {/if}
-    <p>{t('app.sessions', records.length, live)}</p>
-    <p>{t('app.git', workspaces)}</p>
-    <Hooks origin={servedOrigin()} />
-</div>
+<!-- The box every view has; this one draws its lines straight into it, so it asks for the tint. -->
+<Pane title={t('views.status')} tinted>
+    <div class="view" data-instance={instance.id}>
+        <p class="socket">{t('app.socket', socketLabel())}</p>
+        {#if snapshot === null}
+            <p>{t('app.waiting')}</p>
+        {:else}
+            <p>{t('app.version', snapshot.version)}</p>
+            <ul>
+                <li>{t('app.projects', count('projects'))}</li>
+                <li>{t('app.venues', count('venues'))}</li>
+                <li>{t('app.datasets', count('datasets'))}</li>
+                <li>{t('app.programs', count('programs'))}</li>
+                <li>{t('app.domains', count('domains'))}</li>
+                <li>{t('app.funding', count('funding'))}</li>
+                <li>{t('app.collections', count('collections'))}</li>
+            </ul>
+        {/if}
+        <p>{t('app.sessions', records.length, live)}</p>
+        <p>{t('app.git', workspaces)}</p>
+        <Hooks origin={servedOrigin()} />
+    </div>
+</Pane>
 
 <style>
     .view {
