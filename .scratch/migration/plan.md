@@ -127,7 +127,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - R15 global hooks snippet: oculus prints the `hooks` block for `~/.claude/settings.json` (Notification and Stop posting to `/api/hook` with a one-second timeout, so a stopped oculus costs a session nothing) as a snippet Axel installs; the hub's `.claude/settings.local.json` block is the shape (ruling (b); Axel 2026-09-14 08:30; after R14; brief at dispatch).
 - ✅ R16 feed labels (inline): the position-leads feed's `schema:` block, with its `label` values, put into the scout's template in the research-cockpit skill so a rewrite keeps them; the feed file carries them already (ruling (e); Axel 2026-09-14 08:30; landed 2026-09-14 09:10 by the orchestrator, a skill edit).
 - R10 no history in code: the 462 comment lines in 94 files that name a package id, a session or a date say what and why only, or go (Axel 2026-09-14 01:05; after R8; brief at dispatch).
-- R9 two workers at a time on packages that touch different views, once R7 and R8 have landed; the one-agent rule of this plan amended for that case, the orchestrator still one (Axel 2026-09-13 22:45, a second orchestrator refused).
+- ✅ R9 two workers at a time (inline): `workers_at_once: 2` in the state file's block; the rule in the skill ("Two packages in flight": disjoint paths and views, own worktrees, landings one at a time), its state template, the hub `CLAUDE.md` and the spec's amendment; the orchestrator still one (Axel 2026-09-13 22:45, a second orchestrator refused; landed 2026-09-14 09:25).
 - R2 release readiness: a README quickstart, a demo hub as the cockpit's `dummy/` twin, the browser suite over it, a first-run check (Axel 2026-09-11; brief at dispatch).
 - O29 retire (step 8): launcher repointed, `tools/cockpit` archived, the `research-cockpit` skill and the hub docs updated, this folder deleted (multiple commits)
 - ✅ X1 execution exercise of the plan-orchestration skill (landed)
@@ -138,7 +138,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - O30 native window (I): Electron, Tauri or pywebview, chosen after O19 from how much the browser gets in the way with a terminal in it (1 commit)
 
 ## Could run in parallel
-Independent of each other; the standing rule of one agent at a time still serialises them.
+Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
 - O9 with O7 and O8.
