@@ -66,7 +66,7 @@ dispatch:                                  # workers_at_once: 2; R12e and R12f i
 
 ## Open items (repeated in every report until closed; Axel, 2026-09-14 00:05: a reported gap is booked here the same moment, never mentioned once and dropped)
 - R12c edge 2, the `waiting-on` finding: closed 2026-09-14 17:20, Axel ruled: a collaborator key or a project id, never a free name, a finding otherwise; the manifest's `BTFNO` is `btfno`; booked as R12f beside R12e.
-- R12c edge 8, `Entry.id` identity-first: closed 2026-09-14 17:36, Axel agreed: a wrong premise, no change; the entry id stays the `id:` line, then `key:`, then the schema's identity field.
+- R12c edge 8, `Entry.id` identity-first: closed 2026-09-14 17:28, Axel agreed: a wrong premise, no change; the entry id stays the `id:` line, then `key:`, then the schema's identity field.
 - R12d edge 7, the terminal rename case: closed 2026-09-14 17:20, Axel chose (a): a `tmux_socket` local key, booked under R2 with the case.
 
 - R12b, the files listing's version: closed 2026-09-14 16:13, Axel chose (a): a `files` channel published by the roots watcher with its own version, booked as R12e after R12d.

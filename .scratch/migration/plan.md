@@ -164,7 +164,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - 2026-09-13 17:50, Axel: of the Agency ideas, the worktrees go into D4, the agent on a task is D20, the counts line into D18; the Tauri shell, PATH detection and a wiki are not taken.
 - 2026-09-13 21:25, Axel: the usage figures must be fresh: D19c, a hidden session per account running `/usage` every 10 minutes, restarted on any failure; no Keychain reading by oculus.
 - 2026-09-13 22:30, Axel: no globals; SOLID, DRY, KISS, YAGNI, separation of concerns, cohesion and low coupling bind the remaining work; the debt found that evening is R3 to R7, run right after D19c; the config and catalog files are oculus's own, an order of 2026-09-10 the text catalog had escaped.
-- 2026-09-14 17:36, Axel: R12c's edge 8 (an identity-first entry id) closed as a wrong premise, no change.
+- 2026-09-14 17:28, Axel: R12c's edge 8 (an identity-first entry id) closed as a wrong premise, no change.
 - 2026-09-14 17:20, Axel: `waiting-on` accepts a collaborator key or a project id, never a free name, a finding otherwise (R12f); the bt-operator-theory manifest's value becomes `btfno`; a `tmux_socket` local key for the browser suite's private tmux, under R2.
 - 2026-09-14 16:13, Axel: a `files` channel published by the roots watcher with its own version (R12e); the three doubled rail glyphs (`now`, `edit`, `hpc`) get distinct glyphs with ASCII stand-ins, chosen by the orchestrator, as a fix at R12d's landing.
 - 2026-09-14 11:25, Axel: W1's tint layer, the third option: a tinted surface for the bare views alone, the card views as built (W3).
