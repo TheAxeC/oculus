@@ -29,6 +29,8 @@
     import CommandCenter from './focus/CommandCenter.svelte';
     import Lanes from './focus/Lanes.svelte';
     import QuickAdd from './focus/QuickAdd.svelte';
+    import { minuteNow, startMinuteClock } from '$lib/state/clock.svelte';
+    import { cardCursor } from '$lib/state/instance';
     import { labelOf, lanes, waiting, type Id, type Project } from '$lib/state/focus';
     import { configMap } from '$lib/state/selectors.svelte';
     import { portfolio } from '$lib/state/entities.svelte';
@@ -39,10 +41,14 @@
     let { instance }: ViewProps = $props();
 
     /**
-     * Today, for every countdown on the board. It is read when the board is opened and not again,
-     * so a page left open across midnight counts the day it was opened on until it is reloaded.
+     * Today, for every countdown on the board, from the minute clock: a page left open across
+     * midnight moves on to the new day rather than counting the one it was opened on.
      */
-    const now = Date.now();
+    const now = $derived(minuteNow());
+
+    $effect(startMinuteClock);
+
+    const cursor = $derived(cardCursor(instance.state));
 
     const config = $derived(configMap());
     const snapshot = $derived(portfolio());
@@ -153,7 +159,7 @@
             <Empty message={t('focus.none')} glyph={t('focus.empty_glyph')} />
         {/if}
 
-        <Lanes {now} onproject={openProject} onsaid={(text) => (said = text)} />
+        <Lanes {now} {cursor} onproject={openProject} onsaid={(text) => (said = text)} />
 
         <Band {now} />
 

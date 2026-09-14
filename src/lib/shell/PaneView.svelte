@@ -1,3 +1,38 @@
+<script module lang="ts">
+    // Layer 3, shell. The pane menu's move-to-page items, apart from the component so the numbering
+    // they draw can be read by a test.
+
+    import type { MenuItem as Item } from '$lib/ui/Menu.svelte';
+    import type { Page } from '$lib/state/layout';
+
+    /** What tells a move-to-page item from the menu's fixed items. */
+    export const PAGE = 'page:';
+
+    /**
+     * Every page but the one on screen, as the item that moves the active tab onto it. A page with
+     * no name of its own is numbered by its place in the whole strip, which is the number the page
+     * strip draws for it, so the item names the page the reader sees rather than its place among
+     * the others.
+     */
+    export function pageMoveItems(
+        pages: readonly Page[],
+        current: string,
+        t: (key: string, ...args: (string | number)[]) => string
+    ): Item[] {
+        return pages
+            .map((page, at) => ({
+                id: `${PAGE}${page.id}`,
+                page: page.id,
+                label: t(
+                    'ui.move_to_page',
+                    page.label === '' ? t('ui.page_default', at + 1) : page.label
+                )
+            }))
+            .filter((item) => item.page !== current)
+            .map(({ id, label }) => ({ id, label }));
+    }
+</script>
+
 <script lang="ts">
     // Layer 3, shell. One pane of a tree: the tab strip over its instances, the pane menu at the
     // right of that strip, and the active instance's view mounted below it. It reaches a view only
@@ -21,9 +56,12 @@
         activateInstance,
         closeInstanceIn,
         closePaneIn,
+        currentPage,
         focused,
         layout,
         maximisePane,
+        moveInstanceToPage,
+        pages,
         restorePanes,
         splitInstance,
         transferInstance
@@ -111,12 +149,16 @@
     /** Whether the pane menu's close is waiting on the dialog. */
     let closing = $state(false);
 
+    /** Every page but the one on screen, as the item that moves the active tab onto it. */
+    const elsewhere = $derived<MenuItem[]>(pageMoveItems(pages(), currentPage().id, t));
+
     const items = $derived<MenuItem[]>([
         { id: 'close', label: t('ui.pane_close') },
         maximised
             ? { id: 'restore', label: t('ui.pane_restore') }
             : { id: 'maximise', label: t('ui.pane_maximise') },
         { id: 'move', label: target === 'main' ? t('ui.move_to_panel') : t('ui.move_to_main') },
+        ...elsewhere,
         { id: 'split_right', label: t('ui.split_right') },
         { id: 'split_down', label: t('ui.split_down') }
     ]);
@@ -183,6 +225,10 @@
             return;
         }
         if (active === '') return;
+        if (id.startsWith(PAGE)) {
+            moveInstanceToPage(active, id.slice(PAGE.length));
+            return;
+        }
         // The other tree's first pane is where a moved tab lands: its root is a split as often as
         // not, and a path naming a split names no pane at all.
         if (id === 'move') transferInstance(active, other, firstPane(other), AT_END);

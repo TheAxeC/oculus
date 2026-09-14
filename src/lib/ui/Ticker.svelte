@@ -69,14 +69,27 @@
                     onclick={() => onpick(row.id)}
                 >
                     {row.label}
+                    {#if row.tail !== undefined && row.tail !== ''}
+                        <span
+                            class="tail"
+                            class:toned={row.tone !== undefined}
+                            style={toneStyle(row.tone)}
+                        >
+                            {row.tail}
+                        </span>
+                    {/if}
                 </button>
             {:else}
                 <span class="name plain">{row.label}</span>
-            {/if}
-            {#if row.tail !== undefined && row.tail !== ''}
-                <span class="tail" class:toned={row.tone !== undefined} style={toneStyle(row.tone)}>
-                    {row.tail}
-                </span>
+                {#if row.tail !== undefined && row.tail !== ''}
+                    <span
+                        class="tail"
+                        class:toned={row.tone !== undefined}
+                        style={toneStyle(row.tone)}
+                    >
+                        {row.tail}
+                    </span>
+                {/if}
             {/if}
             {#if onaction !== undefined && row.actions !== undefined}
                 {#each row.actions as action (action.id)}
@@ -121,6 +134,12 @@
         font: inherit;
         font-weight: 600;
         color: var(--ink-txt, var(--ink));
+    }
+
+    /* The words that date a row belong to the row's own control, so the whole line opens what the
+       count names rather than only the count. */
+    button.name .tail {
+        font-weight: 400;
     }
 
     button.name {

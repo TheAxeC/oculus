@@ -293,6 +293,35 @@ export function knownAreas(workspace: string): Area[] {
     return (found?.areas ?? []).filter((area) => area.known);
 }
 
+/**
+ * The areas a session in one workspace may be pinned to by hand: the known areas of the grouping,
+ * plus every project folder of the snapshot that no session has touched yet, which is why a folder
+ * with no session of its own is still offered. The snapshot's folders join only for the workspace
+ * that is the hub itself, since a folder outside it is no project of the portfolio.
+ */
+export function pinnableAreas(workspace: string): Area[] {
+    const known = knownAreas(workspace);
+    if (workspace === '' || workspace !== hubRoot()) return known;
+    const held = new Set(known.map((area) => area.key));
+    const snapshot = portfolio();
+    const extra: Area[] = [];
+    for (const project of Object.values(snapshot?.entities.projects ?? {})) {
+        const key = folderOf(project);
+        if (key === '' || held.has(key)) continue;
+        held.add(key);
+        extra.push({
+            key,
+            short: project.folder,
+            full: project.title === '' ? project.folder : project.title,
+            known: true,
+            lastActivity: null,
+            sessions: []
+        });
+    }
+    extra.sort((one, two) => one.full.localeCompare(two.full));
+    return [...known, ...extra];
+}
+
 /** The git state of one workspace root, or null when the payload carries none for it. */
 export function gitFor(workspace: string): GitState | null {
     if (workspace === '') return null;
@@ -321,12 +350,14 @@ function inside(path: string | null, folder: string): boolean {
 
 /**
  * The sessions working in one project's absolute folder, whether they were filed there or are only
- * sitting in it: the area the grouping chose, or the working directory itself. O15 puts them on the
- * project's card, which is this join read from the other end.
+ * sitting in it: the area the grouping chose, or the working directory itself. A session the reader
+ * dismissed is not one of them, so the card's row and the sessions facet count what the sessions
+ * list shows.
  */
 export function sessionsForProject(folder: string): GroupedSession[] {
     if (folder === '') return [];
     return grouped().filter(
-        (session) => inside(session.area, folder) || inside(session.cwd, folder)
+        (session) =>
+            !session.hidden && (inside(session.area, folder) || inside(session.cwd, folder))
     );
 }

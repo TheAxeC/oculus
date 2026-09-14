@@ -22,13 +22,21 @@
     import { buildGraph, layoutKey } from '$lib/state/graph';
     import { configMap } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
+    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
+    import { parseMapState, type MapState } from '$lib/state/graph';
     import type { ViewProps } from './registry';
 
     let { instance }: ViewProps = $props();
-    let collaborators = $state(false);
-    let enabled = $state<string[]>([]);
-    let linkMode = $state(false);
+    const held = $derived(parseMapState(instanceState(instance.id)));
+    const collaborators = $derived(held.collaborators);
+    const enabled = $derived(held.enabled);
+    const linkMode = $derived(held.linkMode);
     let generation = $state(0);
+
+    /** Keep the view's own toggles with the instance, so a tab reopened is the tab as it was. */
+    function write(next: Partial<MapState>): void {
+        setInstanceState(instance.id, { ...held, ...next });
+    }
     const snapshot = $derived(portfolio());
     const statuses = $derived.by(() => {
         const found = new Set<string>();
@@ -63,7 +71,9 @@
     );
 
     function toggleArchive(status: string, checked: boolean): void {
-        enabled = checked ? [...enabled, status] : enabled.filter((item) => item !== status);
+        write({
+            enabled: checked ? [...enabled, status] : enabled.filter((item) => item !== status)
+        });
     }
 
     function retune(): void {
@@ -86,9 +96,9 @@
             {collaborators}
             {statuses}
             {enabled}
-            onlink={() => (linkMode = !linkMode)}
+            onlink={() => write({ linkMode: !linkMode })}
             onretune={retune}
-            oncollaborators={(checked) => (collaborators = checked)}
+            oncollaborators={(checked) => write({ collaborators: checked })}
             onarchive={toggleArchive}
         />
         {#if !hasRelationships}

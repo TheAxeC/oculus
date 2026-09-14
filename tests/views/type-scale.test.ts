@@ -61,7 +61,7 @@ const VIEWS: Record<string, string> = {
     'collection/Coverage.svelte': '.label=fs-xxs',
     'collection/EntryCard.svelte':
         '.grip=fs-lg | .sub=fs-md | .body=fs-md | .meta=fs-sm | .stmt=fs-md | .label=fs-xxs | .value=fs-md',
-    'data/DatasetCard.svelte': 'h3=fs-xl | .description, .note=fs-md | .links a=fs-sm',
+    'data/DatasetCard.svelte': '.description, .note=fs-md | .links a=fs-sm',
     'data/Facets.svelte': '.label=fs-xxs',
     'domains/DomainCard.svelte': '',
     'focus/Band.svelte':
@@ -128,7 +128,7 @@ const VIEWS: Record<string, string> = {
     'venues/Facets.svelte': '.label=fs-xxs',
     'venues/Ribbon.svelte':
         '.next=fs-sm | .legend=fs-xs | .spark=fs-xs | .spark pre=fs-xl | .spark-label=fs-xxs | .spark-months=fs-3xs | .monthname=fs-xxs',
-    'venues/VenueCard.svelte': 'h3=fs-xl | .meta, .users=fs-sm | .wants=fs-md'
+    'venues/VenueCard.svelte': '.meta, .users=fs-sm | .wants=fs-md'
 };
 
 const PASS_THROUGH: Record<string, string> = {

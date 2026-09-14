@@ -10,6 +10,7 @@ import {
     isExpired,
     leadsSearch,
     leadId,
+    leadIdents,
     localDate,
     parseLeadsState,
     splitLeads,
@@ -64,7 +65,7 @@ describe('position lead selectors', () => {
         ]);
     });
 
-    it('searches all seven fields and parses the three instance-state fields', () => {
+    it('searches all seven fields and parses the instance-state fields', () => {
         const entries = [
             {
                 title: 'Postdoc AI',
@@ -92,6 +93,7 @@ describe('position lead selectors', () => {
             search: 'ai',
             expiredOpen: true,
             runlogOpen: true,
+            logAll: false,
             adding: true,
             showDismissed: true
         });
@@ -99,6 +101,7 @@ describe('position lead selectors', () => {
             search: '',
             expiredOpen: false,
             runlogOpen: false,
+            logAll: false,
             adding: false,
             showDismissed: false
         });
@@ -115,5 +118,29 @@ describe('position lead selectors', () => {
             entries[1]
         ]);
         expect(visibleLeads(entries, ['https-example-org-jobs-first'], true)).toEqual(entries);
+    });
+});
+
+describe('the id one lead card carries', () => {
+    it('keeps the slug of its own fields where that is unique', () => {
+        const entries = [
+            { title: 'Postdoc AI', inst: 'One' },
+            { title: 'Lecturer', inst: 'Two' }
+        ];
+        const identOf = leadIdents(entries);
+        expect(identOf(entries[0])).toBe(leadId(entries[0]));
+        expect(identOf(entries[1])).toBe(leadId(entries[1]));
+    });
+
+    it('tells two leads that slug the same apart, and gives an empty one an id', () => {
+        const entries = [
+            { title: 'Postdoc AI', inst: 'One' },
+            { title: 'Postdoc AI', inst: 'One' },
+            { title: '', inst: '', url: '' }
+        ];
+        const identOf = leadIdents(entries);
+        expect(identOf(entries[0])).not.toBe(identOf(entries[1]));
+        expect(identOf(entries[2])).not.toBe('');
+        expect(new Set(entries.map(identOf)).size).toBe(3);
     });
 });

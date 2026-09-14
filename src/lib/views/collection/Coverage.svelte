@@ -12,11 +12,15 @@
     import { openView } from '$lib/state/layout.svelte';
     import { t } from '$lib/state/text';
 
-    type Props = { projects: Project[] };
+    type Props = {
+        projects: Project[];
+        /** The archive types the configuration calls dead; their projects are left out entirely. */
+        dead: string[];
+    };
 
-    let { projects }: Props = $props();
+    let { projects, dead }: Props = $props();
 
-    const groups = $derived(coverage(projects));
+    const groups = $derived(coverage(projects, dead));
 
     /** Which group is open. Only one is, since three open groups are the whole portfolio at once. */
     let shown = $state('');

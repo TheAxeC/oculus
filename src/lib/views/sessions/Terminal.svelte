@@ -30,7 +30,12 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import { terminalFontPx } from '$lib/state/appearance';
-    import { instanceLayoutState, pinInstance, unpinInstance } from '$lib/state/layout.svelte';
+    import {
+        instanceLayoutState,
+        pinInstance,
+        restateInstance,
+        unpinInstance
+    } from '$lib/state/layout.svelte';
     import { hubRoot, sessionsByWorkspace } from '$lib/state/selectors.svelte';
     import { pinnedTerminal, select, selectedTerminal } from '$lib/state/selection.svelte';
     import {
@@ -96,6 +101,24 @@
     const terminal = $derived(terminalById(id));
     const roots = $derived(sessionsByWorkspace(true).map((one) => one.key));
     const hub = $derived(hubRoot());
+
+    /**
+     * A pinned tab carries the session's name, and a terminal is renamed while it runs; the label
+     * follows the name rather than staying at what it was when the pin was made.
+     */
+    $effect(() => {
+        const held = pinned;
+        if (held === null) return;
+        const live = terminalById(held);
+        if (live === null || live.name === '') return;
+        const state = instanceLayoutState(instance.id);
+        const label =
+            typeof state === 'object' && state !== null && !Array.isArray(state)
+                ? (state as Record<string, unknown>).label
+                : undefined;
+        if (label === live.name) return;
+        restateInstance(instance.id, { session: held, label: live.name });
+    });
 
     /** Where the next terminal starts: what was picked, and the hub until something is. */
     const chosen = $derived(where === '' ? hub : where);
@@ -286,6 +309,8 @@
             <ToolButton
                 label={pinned === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
                 title={pinned === null ? t('sessions.pin_pane') : t('sessions.unpin_pane')}
+                glyph={t('sessions.pin_glyph')}
+                compact
                 pressed={pinned !== null}
                 onclick={togglePanePin}
             />

@@ -1,7 +1,22 @@
-<script lang="ts">
-    // Layer 3, shared view partial. Project cross-links grouped as work, published and ideas, with
-    // each member retaining its project-type chip and opening the existing project tab.
+<script module lang="ts">
+    // Layer 3, shared view partial. Project cross-links grouped as work, published and ideas, each
+    // group nesting its members under their own project type, and each member opening its tab.
 
+    import type { CrossGroup as Group } from '$lib/state/collection';
+
+    /** One group's members by their own project type, in the order the members are in. */
+    export function byType(group: Group): { type: string; members: Group['members'] }[] {
+        const held = new Map<string, Group['members']>();
+        for (const member of group.members) {
+            const found = held.get(member.type);
+            if (found === undefined) held.set(member.type, [member]);
+            else found.push(member);
+        }
+        return [...held].map(([type, members]) => ({ type, members }));
+    }
+</script>
+
+<script lang="ts">
     import Chip from '$lib/ui/Chip.svelte';
     import Disclosure from '$lib/ui/Disclosure.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
@@ -65,18 +80,23 @@
             </span>
             {#if isOpen(group.type)}
                 <div class="members">
-                    {#each group.members as member (member.id)}
-                        <span class="member">
-                            <Chip label={member.type} />
-                            <ToolButton
-                                label={member.label}
-                                onclick={() =>
-                                    openView('project', 'main', {
-                                        id: member.id,
-                                        label: member.label
-                                    })}
-                            />
-                        </span>
+                    {#each byType(group) as kind (kind.type)}
+                        <div class="kind" data-project-kind={kind.type}>
+                            <Chip label={kind.type} />
+                            {#each kind.members as member (member.id)}
+                                <span class="member">
+                                    <ToolButton
+                                        label={member.label}
+                                        title={member.label}
+                                        onclick={() =>
+                                            openView('project', 'main', {
+                                                id: member.id,
+                                                label: member.label
+                                            })}
+                                    />
+                                </span>
+                            {/each}
+                        </div>
                     {/each}
                 </div>
             {/if}
@@ -88,6 +108,7 @@
     .groups,
     .group,
     .members,
+    .kind,
     .group-head,
     .member {
         display: flex;
@@ -98,6 +119,25 @@
 
     .groups {
         margin-top: 8px;
+    }
+
+    /* Every type of one group on its own line, the way the cockpit's cross-links nested them. */
+    .kind {
+        flex-basis: 100%;
+    }
+
+    /* A long project title ends in an ellipsis inside the card rather than running past its edge;
+       the control's tooltip carries the whole title. */
+    .member {
+        min-width: 0;
+        max-width: 100%;
+    }
+
+    .member :global(.label) {
+        min-width: 0;
+        max-width: 100%;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .warn {

@@ -21,12 +21,14 @@ import {
 import {
     LAYOUT_KEY,
     PREVIOUS_KEY,
+    closeInstancesOfView,
     closePage,
     currentPage,
     dock,
     dockedAt,
     layout,
     loadLayout,
+    moveInstanceToPage,
     openPage,
     pageShortcut,
     pages,
@@ -318,5 +320,68 @@ describe('movePage', () => {
         const moved = movePage(value, value.current, 0);
         expect(moved.current).toBe(value.current);
         expect(labels(moved)).toEqual(['Two', 'One', 'Three']);
+    });
+});
+
+describe('the store: a tab that moves between pages', () => {
+    /** A store loaded with one page carrying the viewer's own workbench. */
+    function loaded() {
+        const storage = fakeStorage(saveBench(own()));
+        loadLayout(storage);
+        return storage;
+    }
+
+    it('takes the tab off the page it was on and puts it on the page named', () => {
+        const storage = loaded();
+        const from = currentPage().id;
+        openPage('Page 2');
+        const to = currentPage().id;
+        switchPage(from);
+        moveInstanceToPage('a', to);
+        expect(viewsOf(layout('main'))).toEqual(['projects', 'projects']);
+        switchPage(to);
+        expect(viewsOf(layout('main'))).toEqual(['status', 'projects']);
+        expect(saved(storage)?.pages).toHaveLength(2);
+    });
+
+    it('changes nothing for a page that is not there, or for the page it is already on', () => {
+        loaded();
+        const here = currentPage().id;
+        const before = viewsOf(layout('main'));
+        moveInstanceToPage('a', 'gone');
+        moveInstanceToPage('a', here);
+        expect(viewsOf(layout('main'))).toEqual(before);
+    });
+
+    it('changes nothing for an instance no page holds', () => {
+        loaded();
+        openPage('Page 2');
+        const to = currentPage().id;
+        const before = viewsOf(layout('main'));
+        moveInstanceToPage('nothing', to);
+        expect(viewsOf(layout('main'))).toEqual(before);
+    });
+});
+
+describe('the store: a view leaving the registry', () => {
+    it('closes every tab open on it, on the page on screen and on the others', () => {
+        const storage = fakeStorage(saveBench(own()));
+        loadLayout(storage);
+        openPage('Page 2');
+        switchPage(pages()[0].id);
+        expect(viewsOf(layout('main'))).toEqual(['projects', 'projects', 'projects']);
+        closeInstancesOfView('projects');
+        expect(viewsOf(layout('main'))).toEqual([]);
+        switchPage(pages()[1].id);
+        expect(viewsOf(layout('main'))).toEqual(['status']);
+        expect(saved(storage)?.pages).toHaveLength(2);
+    });
+
+    it('leaves a tab whose view the registry still holds', () => {
+        const storage = fakeStorage(saveBench(own()));
+        loadLayout(storage);
+        closeInstancesOfView('sessions');
+        expect(viewsOf(layout('main'))).toEqual(['projects', 'projects', 'projects']);
+        expect(saved(storage)?.pages).toHaveLength(1);
     });
 });

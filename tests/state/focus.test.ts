@@ -348,6 +348,52 @@ describe('waiting', () => {
         expect(strip.blocked).toBe(1);
     });
 
+    it('counts a blocked project of every tier, not only the ones on the board', () => {
+        const wider = snapshot();
+        wider.entities.projects['blocked-archive'] = project('blocked-archive', 'archive', {
+            chips: ['blocked']
+        });
+        wider.entities.projects['blocked-coauthor'] = project('blocked-coauthor', 'coauthor', {
+            chips: ['blocked']
+        });
+        expect(waiting(wider, config, {}).blocked).toBe(strip.blocked + 2);
+    });
+
+    it('counts a blocked project once even when it is waiting on somebody as well', () => {
+        const wider = snapshot();
+        wider.entities.projects['blocked-waiting'] = project('blocked-waiting', 'archive', {
+            chips: ['blocked'],
+            waitingOn: ['someone']
+        });
+        wider.entities.projects['blocked-live-waiting'] = project(
+            'blocked-live-waiting',
+            'active',
+            {
+                chips: ['blocked'],
+                waitingOn: ['someone']
+            }
+        );
+        wider.entities.projects['blocked-submitted'] = project('blocked-submitted', 'archive', {
+            chips: ['blocked', 'submitted']
+        });
+        expect(waiting(wider, config, {}).blocked).toBe(strip.blocked + 3);
+    });
+
+    it('leaves the people and venue tallies over the live tiers alone', () => {
+        const wider = snapshot();
+        wider.entities.projects['archive-waiting'] = project('archive-waiting', 'archive', {
+            waitingOn: ['someone']
+        });
+        wider.entities.projects['archive-submitted'] = project('archive-submitted', 'archive', {
+            chips: ['submitted'],
+            venueId: 'jbi'
+        });
+        const wide = waiting(wider, config, { someone: 'Some One' });
+        expect(wide.people).toEqual(strip.people);
+        expect(wide.venues).toEqual(strip.venues);
+        expect(wide.blocked).toBe(strip.blocked);
+    });
+
     it('names the grants whose date is met, the applications out, and the hosts emailed', () => {
         expect(strip.grants).toEqual(['A grant sent']);
         expect(strip.applications).toEqual(['One out for an answer']);

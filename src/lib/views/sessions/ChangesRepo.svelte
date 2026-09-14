@@ -58,6 +58,16 @@
         oncommit
     }: Props = $props();
 
+    /**
+     * The git state says whether the branch tracks anything before the branch listing names the
+     * upstream: `upstream === false` is a branch with none, and anything else with no error is a
+     * state git has not answered for yet. The push control says "no upstream" only for the first;
+     * until the listing answers for the rest it says the upstream is being looked up, and it is
+     * disabled either way.
+     */
+    const noUpstream = $derived(state.upstream === false);
+    const pending = $derived(upstream === '' && !noUpstream && state.error === null);
+
     const LETTERS: Record<string, string> = {
         M: 'amber',
         A: 'green',
@@ -146,14 +156,18 @@
         <span class="mt">{branchState(state)}</span>
         <ToolButton
             label={t('git.push')}
-            title={upstream === ''
-                ? t('git.push_none')
-                : t('git.push_title', state.ahead, upstream)}
+            title={upstream !== ''
+                ? t('git.push_title', state.ahead, upstream)
+                : pending
+                  ? t('git.push_pending')
+                  : t('git.push_none')}
             disabled={upstream === '' || busy}
             onclick={onpush}
         />
     </div>
-    {#if upstream === ''}
+    {#if pending}
+        <p class="none">{t('git.push_pending')}</p>
+    {:else if upstream === ''}
         <p class="none">{t('git.push_none')}</p>
     {/if}
     <div class="newbranch">

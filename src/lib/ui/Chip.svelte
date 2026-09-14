@@ -9,6 +9,7 @@
     // measures under every theme.
 
     import Glyph from './Glyph.svelte';
+    import { glyph as glyphOf } from '$lib/state/text';
 
     type Props = {
         /** The chip's words, already translated by the view. */
@@ -28,9 +29,20 @@
             ? undefined
             : `--tone: var(--c-${tone}); --tone-txt: var(--c-${tone}-txt); --on-tone: var(--on-c-${tone})`
     );
+
+    /**
+     * Whether the glyph in force already reads as a bracketed tag, which the ASCII stand-ins of a
+     * terminal theme do. The chip's own brackets are left off such a chip so the reader is given
+     * one pair rather than two.
+     */
+    const bracketed = $derived.by(() => {
+        if (glyph === undefined || glyph === '') return false;
+        const drawn = glyphOf(glyph);
+        return drawn.startsWith('[') && drawn.endsWith(']');
+    });
 </script>
 
-<span class="chip" class:toned={tone !== undefined} class:filled {style}>
+<span class="chip" class:toned={tone !== undefined} class:filled class:bracketed {style}>
     {#if glyph !== undefined && glyph !== ''}
         <Glyph name={glyph} />
     {/if}
@@ -42,6 +54,8 @@
         display: inline-flex;
         align-items: center;
         gap: 4px;
+        max-width: 100%;
+        min-width: 0;
         padding: 1px 8px;
         border: 1px solid var(--line);
         border-radius: var(--radius-pill);
@@ -49,6 +63,14 @@
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-sm);
         white-space: nowrap;
+    }
+
+    /* A long value is cut at the chip's own edge rather than at the card's, so a column of chips
+       keeps its column and the caller's tooltip carries the whole value. */
+    .chip .label {
+        min-width: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
     }
 
     .chip.toned {
@@ -80,12 +102,14 @@
         color: var(--tone-txt, var(--muted-txt));
     }
 
-    :global(body.rice) .chip::before {
+    /* The terminal stand-in of a glyph carries its own brackets, so the chip draws none of its
+       own around it and the reader is not given two pairs. */
+    :global(body.rice) .chip:not(.bracketed)::before {
         content: '[';
         opacity: 0.5;
     }
 
-    :global(body.rice) .chip::after {
+    :global(body.rice) .chip:not(.bracketed)::after {
         content: ']';
         opacity: 0.5;
     }

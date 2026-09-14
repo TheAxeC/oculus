@@ -23,6 +23,7 @@ text:
         push_confirm: Push {0} to {1}?
         push_detail: '{0} commits go to the upstream. Nothing is forced.'
         push_none: This branch has no upstream, so there is nowhere to push it.
+        push_pending: The upstream is still being looked up.
         push_title: Push {0} to {1}
         stage: stage
         stage_title: Stage this path
@@ -52,5 +53,5 @@ text:
         ch_touched: Touched by this session
         ch_touched_empty: No file touched yet.
         ch_untracked: Untracked
-        changes_glyph: code
+        changes_glyph: changes
         view_changes: Changes

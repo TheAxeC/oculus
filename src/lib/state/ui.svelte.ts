@@ -69,6 +69,15 @@ const store: { current: Ui } = $state({ current: defaultUi() });
 /** A transient signal from a view to the shell that owns the Update tray. */
 const updateTray = $state({ requested: 0 });
 
+/**
+ * One reorder the keyboard asked a view for: which instance was focused, which card its cursor
+ * held, which way it goes, and a sequence number so a view performs one request once. The shell
+ * knows nothing of what a card is ordered by, so it asks and the view writes.
+ */
+export type CardMove = { instance: string; card: string; step: -1 | 1; seq: number };
+
+const cardMove = $state<{ held: CardMove | null }>({ held: null });
+
 /** Where save() writes, once loadUi has named it. Nothing is saved before that. */
 let backing: Storable | null = null;
 
@@ -127,6 +136,18 @@ export function requestUpdateTray(): void {
 /** The request value the workbench observes without putting shell state in a view. */
 export function updateTrayRequested(): number {
     return updateTray.requested;
+}
+
+/** Ask the view that holds one card to move it one place, in its own order. */
+export function requestCardMove(instance: string, card: string, step: -1 | 1): void {
+    const seq = (cardMove.held?.seq ?? 0) + 1;
+    cardMove.held = { instance, card, step, seq };
+}
+
+/** The reorder asked of one instance, or null when the last request was for another. */
+export function cardMoveRequested(instance: string): CardMove | null {
+    const held = cardMove.held;
+    return held !== null && held.instance === instance ? held : null;
 }
 
 /** A theme name config/appearance.yml lists, and the default for one it does not. */

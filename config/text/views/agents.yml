@@ -9,5 +9,5 @@ text:
         ag_running: running
         ag_secs: '{0} s'
         ag_type: agent
-        agents_glyph: collab
+        agents_glyph: agents
         view_agents: Agents

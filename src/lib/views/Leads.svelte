@@ -31,7 +31,7 @@
     import { feed } from '$lib/state/feeds.svelte';
     import {
         leadsSearch,
-        leadId,
+        leadIdents,
         localDate,
         parseLeadsState,
         splitLeads,
@@ -40,7 +40,7 @@
     } from '$lib/state/leads';
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
-    import { feedIdentity } from '$lib/state/palette';
+    import { feedIdents } from '$lib/state/palette';
     import {
         instanceState,
         leadsDismissed,
@@ -58,6 +58,8 @@
     const cursor = $derived(cardCursor(instance.state));
     const vocab = $derived(config()?.config ?? {});
     const entries = $derived(data?.entries ?? []);
+    const identOf = $derived(feedIdents('leads', entries));
+    const leadOf = $derived(leadIdents(entries));
     const dismissed = $derived(leadsDismissed());
     const dismissedCount = $derived(dismissed.length);
     const allSplit = $derived(splitLeads(entries, today));
@@ -69,6 +71,9 @@
     );
     const live = $derived(leadsSearch(split.live, held.search));
     const expired = $derived(leadsSearch(split.expired, held.search));
+    /** How many run-log lines the section shows before the reader asks for the rest. */
+    const LOG_LINES = 6;
+
     const log = $derived(
         Array.isArray(data?.meta.log)
             ? data.meta.log
@@ -76,10 +81,10 @@
                       (line): line is string | number =>
                           typeof line === 'string' || typeof line === 'number'
                   )
-                  .slice(0, 6)
                   .map(String)
             : []
     );
+    const shownLog = $derived(held.logAll ? log : log.slice(0, LOG_LINES));
     let said = $state('');
 
     function write(next: Partial<LeadsState>): void {
@@ -148,19 +153,19 @@
                 <div class="cards">
                     {#each live as entry, at (`${String(entry.title ?? '')}:${at}`)}
                         <Reveal
-                            id={feedIdentity('leads', entry)}
+                            id={identOf(entry)}
                             wanted={held.reveal}
                             onrevealed={() => write({ reveal: '' })}
                         >
                             <LeadCard
                                 {entry}
                                 {vocab}
-                                cursor={cursor === leadId(entry)}
-                                dismissed={dismissed.includes(leadId(entry))}
+                                cursor={cursor === leadOf(entry)}
+                                dismissed={dismissed.includes(leadOf(entry))}
                                 ondismiss={() =>
                                     setLeadDismissed(
-                                        leadId(entry),
-                                        !dismissed.includes(leadId(entry))
+                                        leadOf(entry),
+                                        !dismissed.includes(leadOf(entry))
                                     )}
                                 onsaid={(words) => (said = words)}
                             />
@@ -184,20 +189,20 @@
                         <div class="cards">
                             {#each expired as entry, at (`${String(entry.title ?? '')}:${at}`)}
                                 <Reveal
-                                    id={feedIdentity('leads', entry)}
+                                    id={identOf(entry)}
                                     wanted={held.reveal}
                                     onrevealed={() => write({ reveal: '' })}
                                 >
                                     <LeadCard
                                         {entry}
                                         {vocab}
-                                        cursor={cursor === leadId(entry)}
+                                        cursor={cursor === leadOf(entry)}
                                         expired
-                                        dismissed={dismissed.includes(leadId(entry))}
+                                        dismissed={dismissed.includes(leadOf(entry))}
                                         ondismiss={() =>
                                             setLeadDismissed(
-                                                leadId(entry),
-                                                !dismissed.includes(leadId(entry))
+                                                leadOf(entry),
+                                                !dismissed.includes(leadOf(entry))
                                             )}
                                         onsaid={(words) => (said = words)}
                                     />
@@ -219,10 +224,19 @@
                     />
                     {#if held.runlogOpen}
                         <ul class="runlog">
-                            {#each log as line, at (`${at}:${line}`)}
+                            {#each shownLog as line, at (`${at}:${line}`)}
                                 <li>{@html inlineMarkdown(line)}</li>
                             {/each}
                         </ul>
+                        {#if log.length > LOG_LINES}
+                            <ToolButton
+                                label={held.logAll
+                                    ? t('leads.log_fewer')
+                                    : t('leads.log_all', log.length)}
+                                active={held.logAll}
+                                onclick={() => write({ logAll: !held.logAll })}
+                            />
+                        {/if}
                     {/if}
                 </section>
             {/if}

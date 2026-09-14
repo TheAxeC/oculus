@@ -9,6 +9,7 @@
 
 import type { Component } from 'svelte';
 import type { Instance, ViewId } from '$lib/state/layout';
+import { closeInstancesOfView } from '$lib/state/layout.svelte';
 import { lookup, t } from '$lib/state/text';
 
 /** A split cell carries a theme hue, its count and its configured label. */
@@ -99,9 +100,13 @@ export function registerComponent(
     for (const registration of registrations) registerView({ ...registration, component });
 }
 
-/** Drop a view's registration; an id the registry does not hold is left alone. */
+/**
+ * Drop a view's registration and close the tabs open on it; an id the registry does not hold is
+ * left alone. A tab whose view has gone has no body the shell can draw, so it goes with the key.
+ */
 export function unregisterView(id: ViewId): void {
-    registry.delete(id);
+    if (!registry.delete(id)) return;
+    closeInstancesOfView(id);
 }
 
 /** The registration of a view, or undefined when the id names none. */

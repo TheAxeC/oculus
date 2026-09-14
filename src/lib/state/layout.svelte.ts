@@ -21,6 +21,7 @@ import {
     findInstance,
     findView,
     focusedPane,
+    panes as panesIn,
     isInstanceOf,
     maximise,
     movePage as movePageIn,
@@ -356,6 +357,86 @@ export function resizePanel(fraction: number): void {
 export function activateInstance(target: Target, id: string): void {
     active()[target] = id;
     change(target, (tree) => activate(tree, id));
+}
+
+/**
+ * Close every open instance of a view, in both trees of every page. It is what a view leaving the
+ * registry means for the arrangement: the tab goes with the key rather than staying as a tab whose
+ * body the shell cannot draw.
+ */
+export function closeInstancesOfView(view: ViewId): void {
+    for (const page of store.current.pages) {
+        for (const target of ['main', 'panel'] as const) {
+            const tree = page.workbench[target];
+            for (const { pane } of panesIn(tree)) {
+                for (const tab of pane.tabs) {
+                    if (tab.view !== view) continue;
+                    closeInstanceAnywhere(tab.id);
+                }
+            }
+        }
+    }
+}
+
+/** Close one instance wherever it is, on the current page or on another. */
+function closeInstanceAnywhere(id: string): void {
+    const held = active();
+    for (const target of ['main', 'panel'] as const) {
+        if (held[target] === id) held[target] = null;
+    }
+    savePages({
+        ...store.current,
+        pages: store.current.pages.map((page) => ({
+            ...page,
+            workbench: settleFocus({
+                ...page.workbench,
+                main: closeInstance(page.workbench.main, id),
+                panel: closeInstance(page.workbench.panel, id)
+            })
+        }))
+    });
+    clearInstanceState(id);
+}
+
+/**
+ * Move one instance to another page, taking it out of the page it is on and putting it at the end
+ * of the first pane of that page's main tree.
+ */
+export function moveInstanceToPage(id: string, page: string): void {
+    const from = store.current.pages.find((one) => one.id === currentPage().id);
+    const to = store.current.pages.find((one) => one.id === page);
+    if (from === undefined || to === undefined || from.id === to.id) return;
+    const found = findInstance(from.workbench.main, id) ?? findInstance(from.workbench.panel, id);
+    if (found === null) return;
+    const moved = found.instance;
+    const held = active();
+    for (const target of ['main', 'panel'] as const) {
+        if (held[target] === id) held[target] = null;
+    }
+    const landing = panesIn(to.workbench.main)[0]?.path ?? [];
+    savePages({
+        ...store.current,
+        pages: store.current.pages.map((one) => {
+            if (one.id === from.id) {
+                return {
+                    ...one,
+                    workbench: settleFocus({
+                        ...one.workbench,
+                        main: closeInstance(one.workbench.main, id),
+                        panel: closeInstance(one.workbench.panel, id)
+                    })
+                };
+            }
+            if (one.id !== to.id) return one;
+            return {
+                ...one,
+                workbench: {
+                    ...one.workbench,
+                    main: openInstance(one.workbench.main, landing, moved)
+                }
+            };
+        })
+    });
 }
 
 /** Close an instance, and forget it if it was the tree's active one. */

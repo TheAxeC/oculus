@@ -8,6 +8,9 @@
     // The drag is the card's own HTML5 events. state/drag.svelte.ts is the shell's pane drag and a
     // view has no business in it. The move menu stays beside the drag because it provides the
     // keyboard path.
+    //
+    // It carries `data-card` and `data-cursor` all the same, which is what the workbench's keyboard
+    // cursor moves over, so a lane card is reachable by key like every card the primitive draws.
 
     import Chip from '$lib/ui/Chip.svelte';
     import Empty from '$lib/ui/Empty.svelte';
@@ -39,11 +42,13 @@
 
     type Props = {
         now: number;
+        /** The card id the instance's keyboard cursor holds, or null when it holds none. */
+        cursor: string | null;
         onproject: (id: Id) => void;
         onsaid: (said: string) => void;
     };
 
-    let { now, onproject, onsaid }: Props = $props();
+    let { now, cursor, onproject, onsaid }: Props = $props();
 
     /** How much of `next` a card shows. */
     const CARD_NEXT = 130;
@@ -212,6 +217,8 @@
     <div
         class="card"
         role="listitem"
+        data-card={project.id}
+        data-cursor={cursor === project.id || undefined}
         draggable={!project.ghost}
         title={project.title}
         ondragstart={(event) => started(project, event)}

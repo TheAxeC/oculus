@@ -22,6 +22,8 @@ text:
         no_deadline: no deadline
         no_file: No position-leads file configured.
         posting: posting
+        log_all: show all {0} lines
+        log_fewer: show fewer lines
         runlog: Run log
         search: Search leads | institution | focus ...
         show_dismissed: Show dismissed ({0})

@@ -225,8 +225,9 @@ export function venueLabel(venue: Venue | undefined): string {
 }
 
 /**
- * The awaiting-a-response strip. The precedence is one per project: the people named in
- * `waiting-on:` first, then the venue holding it when it is `submitted`, then a bare `blocked`.
+ * The awaiting-a-response strip. The people and venue tallies are one per live project, the people
+ * named in `waiting-on:` first, then the venue holding it when it is `submitted`; the blocked tally
+ * is over every project of every tier on its own, whatever else the project is waiting for.
  * A person is a collaborations key resolved to that entry's name, or a free name as written.
  */
 export function waiting(
@@ -239,6 +240,10 @@ export function waiting(
     const held: Record<string, number> = {};
     let blocked = 0;
     for (const project of Object.values(snapshot.entities.projects)) {
+        // The blocked tally is over every tier and over every project, where the people and venue
+        // tallies are over the live ones: a blocked archive or coauthor paper is still blocked, and
+        // a blocked project also waiting on somebody is blocked as well as waited on.
+        if (project.chips.includes('blocked')) blocked += 1;
         if (!live(project)) continue;
         if (project.waitingOn.length > 0) {
             for (const key of project.waitingOn) {
@@ -251,9 +256,7 @@ export function waiting(
             const venue = project.venueId === undefined ? undefined : venues[project.venueId];
             const name = venueLabel(venue);
             held[name] = (held[name] ?? 0) + 1;
-            continue;
         }
-        if (project.chips.includes('blocked')) blocked += 1;
     }
     const grants = Object.values(snapshot.entities.funding)
         .filter((scheme) => deadlineMet(config, scheme.status ?? ''))

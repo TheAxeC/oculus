@@ -109,6 +109,7 @@ export function git(over: Partial<GitState> = {}): GitState {
         staged: [],
         unstaged: [],
         untracked: [],
+        upstream: false,
         error: null,
         ...over
     };

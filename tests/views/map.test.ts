@@ -4,7 +4,7 @@ import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import MapView from '../../src/lib/views/Map.svelte';
 import Graph, { writeRelated } from '../../src/lib/views/map/Graph.svelte';
-import { buildGraph } from '../../src/lib/state/graph.ts';
+import { buildGraph, parseMapState } from '../../src/lib/state/graph.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
@@ -127,5 +127,44 @@ describe('the Map view', () => {
         expect(hidden).not.toContain('data-node="collaborator::person"');
         expect(shown).toContain('data-node="collaborator::person"');
         expect(shown).toContain('data-edge="collaborator::alpha::person"');
+    });
+});
+
+describe('the Map instance state', () => {
+    it('reads the three toggles back, so a reopened tab is the tab as it was left', () => {
+        expect(
+            parseMapState({ collaborators: true, enabled: ['published'], linkMode: true })
+        ).toEqual({ collaborators: true, enabled: ['published'], linkMode: true });
+    });
+
+    it('gives a state that carries nothing the toggles off', () => {
+        expect(parseMapState(null)).toEqual({
+            collaborators: false,
+            enabled: [],
+            linkMode: false
+        });
+        expect(parseMapState({ enabled: 'published' })).toEqual({
+            collaborators: false,
+            enabled: [],
+            linkMode: false
+        });
+        expect(parseMapState({ enabled: ['published', 7] })).toEqual({
+            collaborators: false,
+            enabled: ['published'],
+            linkMode: false
+        });
+    });
+
+    it('draws the collaborators toggle from the instance state, so a reopened tab keeps it', () => {
+        const snapshot = fixture();
+        install(snapshot, 2406);
+        const instance: Instance = { id: INSTANCE, view: 'map', state: {} };
+        setInstanceState(INSTANCE, { collaborators: false, enabled: [], linkMode: false });
+        const off = render(MapView, { props: { instance } }).body;
+        setInstanceState(INSTANCE, { collaborators: true, enabled: [], linkMode: false });
+        const on = render(MapView, { props: { instance } }).body;
+        const box = /<input[^>]*type="checkbox"[^>]*>/;
+        expect(box.exec(off)?.[0]).not.toContain('checked');
+        expect(box.exec(on)?.[0]).toContain('checked');
     });
 });

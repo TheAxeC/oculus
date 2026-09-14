@@ -17,6 +17,8 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { registerView, viewFor, views, type ViewProps } from '../../src/lib/views/registry.ts';
 import { railOrder } from '../../src/lib/shell/ActivityRail.svelte';
+import { apply, layout } from '../../src/lib/state/layout.svelte.ts';
+import { defaultWorkbench, type Instance } from '../../src/lib/state/layout/index.ts';
 import type { Component } from 'svelte';
 // Importing the route loader registers real views; collections use the keys of sources.yml.
 import { registerCollections, registerModules } from '../../src/routes/views.ts';
@@ -357,5 +359,27 @@ describe('the real registrations', () => {
         registerCollections(COLLECTIONS);
         expect(COLLECTIONS.filter((key) => viewFor(key) === undefined)).toEqual([]);
         expect(COLLECTIONS.filter((key) => !railIds().includes(key))).toEqual([]);
+    });
+
+    it('gives the Agents and Changes views a glyph of their own in the rail', () => {
+        const of = (key: string): string => glyphs[catalog[key]];
+        expect(of('sessions.agents_glyph')).toBeDefined();
+        expect(of('sessions.changes_glyph')).toBeDefined();
+        expect(of('sessions.agents_glyph')).not.toBe(of('views.collaborations_glyph'));
+        expect(of('sessions.changes_glyph')).not.toBe(of('views.code_glyph'));
+    });
+
+    it('closes the tabs open on a collection it drops, so no tab is left with no body', () => {
+        const [kept, dropped] = COLLECTIONS;
+        const held: Instance = { id: 'dropped-tab', view: dropped, state: {} };
+        const other: Instance = { id: 'kept-tab', view: kept, state: {} };
+        const base = defaultWorkbench();
+        apply({ ...base, main: { kind: 'pane', tabs: [other, held], active: held.id } });
+
+        registerCollections([kept]);
+        const tabs = layout('main');
+        expect(tabs.kind === 'pane' ? tabs.tabs.map((tab) => tab.view) : []).toEqual([kept]);
+
+        registerCollections(COLLECTIONS);
     });
 });

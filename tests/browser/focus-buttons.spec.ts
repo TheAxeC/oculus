@@ -47,7 +47,8 @@ test('a lead line opens and reveals its card in the Leads view', async ({ page }
     await boot(page);
     await openView(page, 'focus', t('views.focus'));
 
-    await page.getByRole('button', { name: LEAD, exact: true }).click();
+    // The whole line is the control, so its accessible name is the lead's title and its tail words.
+    await page.getByRole('button', { name: LEAD }).click();
     await expect(page.getByRole('tab', { name: t('views.leads') })).toBeVisible();
     const revealed = page.locator(`[data-reveal="${LEAD}"]`);
     await expect(revealed.locator(`[data-lead="${LEAD}"]`)).toBeVisible();

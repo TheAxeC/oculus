@@ -37,6 +37,8 @@ import {
     textScale,
     terminalFont,
     unicode,
+    cardMoveRequested,
+    requestCardMove,
     updateTrayRequested,
     wallpaper
 } from '../../src/lib/state/ui.svelte.ts';
@@ -376,5 +378,25 @@ describe('the Update tray request', () => {
         requestUpdateTray();
         requestUpdateTray();
         expect(updateTrayRequested()).toBe(before + 2);
+    });
+});
+
+describe('the keyboard reorder request', () => {
+    it('reaches the instance the cursor was in, and no other', () => {
+        requestCardMove('collection-one', 'alpha', 1);
+        expect(cardMoveRequested('collection-one')).toMatchObject({
+            instance: 'collection-one',
+            card: 'alpha',
+            step: 1
+        });
+        expect(cardMoveRequested('collection-two')).toBe(null);
+    });
+
+    it('carries a new sequence number per request, so one press moves one card once', () => {
+        requestCardMove('collection-one', 'alpha', -1);
+        const first = cardMoveRequested('collection-one')?.seq ?? 0;
+        requestCardMove('collection-one', 'alpha', -1);
+        const second = cardMoveRequested('collection-one')?.seq ?? 0;
+        expect(second).toBe(first + 1);
     });
 });

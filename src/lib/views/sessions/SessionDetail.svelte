@@ -39,7 +39,7 @@
     import { pinnedSession, select } from '$lib/state/selection.svelte';
     import {
         contextWindow,
-        knownAreas,
+        pinnableAreas,
         sessionFor,
         type GroupedSession
     } from '$lib/state/selectors.svelte';
@@ -131,8 +131,8 @@
         return `${word} ${when}`.trim();
     }
 
-    /** The areas this session may be pinned to: the known project folders of its own workspace. */
-    const areas = $derived(record === null ? [] : knownAreas(record.workspace));
+    /** The areas this session may be pinned to: every project folder, touched by a session or not. */
+    const areas = $derived(record === null ? [] : pinnableAreas(record.workspace));
 
     const choices = $derived(
         areas.map((area) => ({ id: area.key, label: area.short === '' ? area.key : area.full }))

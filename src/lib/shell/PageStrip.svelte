@@ -190,6 +190,13 @@
 
     $effect(() => () => listen(false));
 
+    /** Give the box the caret as it appears, so the name is typed without reaching for the pointer. */
+    function takesFocus(node: HTMLElement): void {
+        const box = node.querySelector('input');
+        box?.focus();
+        box?.select();
+    }
+
     /** Enter takes the name that was typed, Escape drops it; every other key is the box's own. */
     function keys(event: KeyboardEvent): void {
         if (event.key === 'Enter' && draft !== null) {
@@ -241,7 +248,7 @@
         <!-- svelte-ignore a11y_no_static_element_interactions the wrapper exists to read Enter and
              Escape out of the box inside it, which has no keys of its own to report; the box is the
              control and it is the one thing here that takes focus. -->
-        <span class="rename" onkeydown={keys}>
+        <span class="rename" use:takesFocus onkeydown={keys}>
             <TextInput
                 value={draft}
                 label={t('ui.page_rename_label')}

@@ -223,3 +223,31 @@ describe('the Data view', () => {
         expect(html).not.toContain('data-dataset=');
     });
 });
+
+describe('the dataset card as a card primitive', () => {
+    it('gives every card the dataset id the keyboard cursor moves over', () => {
+        receive({ channel: 'portfolio', version: 29, payload: snapshot(DATASETS) });
+        const html = render(Data, { props: { instance: instance() } }).body;
+        for (const item of DATASETS) expect(html).toContain(`data-card="${item.id}"`);
+        expect(html).not.toContain('data-cursor');
+    });
+
+    it('marks the card the instance cursor holds and no other', () => {
+        receive({ channel: 'portfolio', version: 30, payload: snapshot(DATASETS) });
+        const held: Instance = { id: INSTANCE, view: 'data', state: { cursor: 'private' } };
+        const html = render(Data, { props: { instance: held } }).body;
+        expect(html).toMatch(/data-card="private"[^>]*data-cursor="true"/);
+        expect(html.match(/data-cursor="true"/g)).toHaveLength(1);
+    });
+
+    it('carries the whole value of a size, HPC or fetch chip in a tooltip beside it', () => {
+        receive({ channel: 'portfolio', version: 31, payload: snapshot(DATASETS) });
+        const html = render(Data, { props: { instance: instance() } }).body;
+        for (const words of ['Size 2 GB', 'HPC ~/data/open', 'Fetch wget']) {
+            const bubble = new RegExp(
+                `role="tooltip"[^>]*>${words.replace(/[.*+?^$()|[\]\\]/g, '\\$&')}<`
+            );
+            expect(html).toMatch(bubble);
+        }
+    });
+});

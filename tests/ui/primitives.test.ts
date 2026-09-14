@@ -7,6 +7,7 @@
 // exported order() and the interactions are checked in a browser. The colours are covered by
 // tests/ui/colours.test.ts and tests/contrast.test.ts, which read the style rather than the markup.
 
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import { createRawSnippet } from 'svelte';
@@ -28,18 +29,20 @@ import ToolButton from '../../src/lib/ui/ToolButton.svelte';
 import Tooltip from '../../src/lib/ui/Tooltip.svelte';
 import Gallery from '../../src/lib/views/Gallery.svelte';
 import {
+    asciiCatalog,
     engineDir,
     glyphCatalog,
     loadConfig,
     textCatalog,
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
+import { glyph, setAscii, setCatalog, setGlyphMode, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));
 setGlyphs(glyphCatalog(config));
+setAscii(asciiCatalog(config));
 setVocab(vocabCatalog(config));
 
 /**
@@ -170,6 +173,34 @@ describe('Chip', () => {
 
     it('draws no glyph for the empty name an unlisted status chip carries', () => {
         expect(html(Chip, { label: 'a', glyph: '' })).not.toContain('class="glyph');
+    });
+
+    // The cut itself is a layout effect no server render measures; what is read here is the rule
+    // that makes a long value end in an ellipsis inside the chip rather than at the card's edge.
+    it('cuts a long label at its own edge', () => {
+        const source = readFileSync('src/lib/ui/Chip.svelte', 'utf8');
+        const label = source.slice(source.indexOf('.chip .label {'));
+        const rule = label.slice(0, label.indexOf('}'));
+        expect(rule).toContain('overflow: hidden');
+        expect(rule).toContain('text-overflow: ellipsis');
+        expect(source).toContain('max-width: 100%');
+    });
+
+    it('marks a chip whose stand-in already reads as a bracketed tag, so it draws no second pair', () => {
+        setGlyphMode('ascii');
+        try {
+            expect(glyph('code').startsWith('[')).toBe(true);
+            expect(html(Chip, { label: 'a', glyph: 'code' })).toContain('bracketed');
+            expect(glyph('live').startsWith('[')).toBe(false);
+            expect(html(Chip, { label: 'a', glyph: 'live' })).not.toContain('bracketed');
+        } finally {
+            setGlyphMode('unicode');
+        }
+    });
+
+    it('leaves the mark off under a theme that draws the glyph itself', () => {
+        expect(html(Chip, { label: 'a', glyph: 'code' })).not.toContain('bracketed');
+        expect(html(Chip, { label: 'a' })).not.toContain('bracketed');
     });
 });
 
@@ -453,6 +484,15 @@ describe('Tooltip', () => {
     it('puts only a focusable wrapper in the tab order', () => {
         expect(tip({ focusable: true })).toContain('tabindex="0"');
         expect(tip({})).not.toContain('tabindex=');
+    });
+
+    // There is no DOM in this suite, so the listener is read off the source rather than fired: an
+    // overlay taking focus while the pointer rests on a control is a browser-suite check.
+    it('puts an open bubble away when focus lands outside its own wrapper', () => {
+        const source = readFileSync('src/lib/ui/Tooltip.svelte', 'utf8');
+        expect(source).toContain("document.addEventListener('focusin', elsewhere)");
+        expect(source).toContain("document.removeEventListener('focusin', elsewhere)");
+        expect(source).toContain('if (target instanceof Node && box.contains(target)) return;');
     });
 });
 

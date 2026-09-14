@@ -222,3 +222,41 @@ describe('shortcut guards', () => {
         );
     });
 });
+
+describe('carrying the card under the cursor', () => {
+    it('asks for a move left on J and right on K while a cursor is held', () => {
+        expect(press('J', initialKeyState(), 1000, { cursorActive: true }).action).toEqual({
+            kind: 'move',
+            direction: 'left'
+        });
+        expect(press('K', initialKeyState(), 1000, { cursorActive: true }).action).toEqual({
+            kind: 'move',
+            direction: 'right'
+        });
+    });
+
+    it('asks for nothing while no cursor is held, so a stray shift moves no entry', () => {
+        expect(press('J').action).toBe(null);
+        expect(press('K').action).toBe(null);
+    });
+
+    it('leaves the unshifted keys as cursor moves', () => {
+        expect(press('j', initialKeyState(), 1000, { cursorActive: true }).action).toEqual({
+            kind: 'cursor',
+            direction: 'left'
+        });
+        expect(press('k', initialKeyState(), 1000, { cursorActive: true }).action).toEqual({
+            kind: 'cursor',
+            direction: 'right'
+        });
+    });
+
+    it('says nothing while a field is being typed in or an overlay is open', () => {
+        expect(
+            press('J', initialKeyState(), 1000, { cursorActive: true, typing: true }).action
+        ).toBe(null);
+        expect(
+            press('K', initialKeyState(), 1000, { cursorActive: true, paletteOpen: true }).action
+        ).toBe(null);
+    });
+});

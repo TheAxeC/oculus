@@ -173,6 +173,22 @@ describe('sessionsForProject', () => {
         expect(sessionsForProject(`${HUB}/projects/manuscripts/alph`)).toEqual([]);
         expect(sessionsForProject('')).toEqual([]);
     });
+
+    it('leaves out a session the reader dismissed, so the card row counts what the list shows', () => {
+        const gone = record('dismissed-one', {
+            workspace: HUB,
+            area: ALPHA,
+            cwd: ALPHA,
+            hidden: true
+        });
+        receive({
+            channel: 'sessions',
+            version: 6,
+            payload: payload([workspace(HUB, [area(ALPHA, [live, gone])])])
+        });
+        expect(sessionsForProject(ALPHA).map((one) => one.id)).toEqual(['live-one']);
+        receive({ channel: 'sessions', version: 7, payload: payload(tree) });
+    });
 });
 
 describe('sessionFor and the context window', () => {

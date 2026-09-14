@@ -108,6 +108,24 @@
         if (event.key === 'Escape') hide();
     }
 
+    /**
+     * A bubble is shown while the pointer rests on its control, and an overlay opened by a keyboard
+     * shortcut takes focus without moving the pointer; the bubble would then paint over it. Focus
+     * landing anywhere outside this wrapper puts the bubble away, whatever opened it.
+     */
+    function elsewhere(event: FocusEvent): void {
+        const target = event.target;
+        if (box === undefined) return;
+        if (target instanceof Node && box.contains(target)) return;
+        hide();
+    }
+
+    $effect(() => {
+        if (!open || typeof document === 'undefined') return;
+        document.addEventListener('focusin', elsewhere);
+        return () => document.removeEventListener('focusin', elsewhere);
+    });
+
     /** Move the bubble out of the wrapper's ancestors and onto the body, and take it away with it. */
     function onBody(node: HTMLElement): { destroy: () => void } {
         document.body.append(node);

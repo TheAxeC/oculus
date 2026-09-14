@@ -35,6 +35,7 @@ export type KeyState = {
 export type KeyAction =
     | { kind: 'open'; view: string; target: 'main' | 'panel' }
     | { kind: 'cursor'; direction: 'left' | 'right' | 'up' | 'down' }
+    | { kind: 'move'; direction: 'left' | 'right' }
     | { kind: 'activate' }
     | { kind: 'search' }
     | { kind: 'scroll'; edge: 'top' | 'bottom' }
@@ -135,6 +136,14 @@ export function resolveKey(
     }
 
     const cleared = { ...state, chord: '' };
+    // The shifted cursor keys carry the card under the cursor rather than the cursor, which is the
+    // keyboard path to the reorder the pointer does by dragging a card onto its neighbour.
+    if (context.cursorActive && (event.key === 'J' || event.key === 'K')) {
+        return {
+            action: { kind: 'move', direction: event.key === 'J' ? 'left' : 'right' },
+            state: cleared
+        };
+    }
     if (event.key === 'j' || event.key === 'ArrowLeft') {
         return { action: { kind: 'cursor', direction: 'left' }, state: cleared };
     }

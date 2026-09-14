@@ -87,8 +87,9 @@ function orderValues(facet: string, counts: Map<string, number>, preset: BoardPr
 }
 
 /**
- * Every facet the board can be split on, with its counts. A facet with fewer than two values is
- * not offered: one value splits nothing, and a menu that cannot change what is shown is noise.
+ * Every facet the board can be split on, with its counts. A facet with one value is offered as
+ * that one value: a filter that selects everything is still the board saying what its one value
+ * is, and the reader can read it.
  */
 export function facets(items: BoardItem[], preset: BoardPreset): Facet[] {
     const found: Facet[] = [];
@@ -99,7 +100,7 @@ export function facets(items: BoardItem[], preset: BoardPreset): Facet[] {
             label: facetLabel(facet, value, preset),
             count: counts.get(value) ?? 0
         }));
-        if (values.length >= 2) found.push({ key: facet, values });
+        if (values.length > 0) found.push({ key: facet, values });
     }
     return found;
 }

@@ -35,10 +35,13 @@
     import TextInput from '$lib/ui/TextInput.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import {
+        clearedValue,
+        extraRawFields,
         formFields,
         identityField,
         parseRawField,
         rawFieldText,
+        refusedField,
         type Entry,
         type SchemaField
     } from '$lib/state/collection';
@@ -64,7 +67,7 @@
     type MetaRow = { label: string; value: string };
     type Draft = string | boolean | MetaRow[];
 
-    const fields = $derived(formFields(schema, configMap()));
+    const fields = $derived([...formFields(schema, configMap()), ...extraRawFields(entry, schema)]);
 
     /** One field of the entry as the control for it holds it: a list is a line of commas. */
     function held(field: string, kind: string): Draft {
@@ -128,7 +131,11 @@
         edits[field] = metaRows(field).filter((_, index) => index !== at);
     }
 
-    /** The value one control saves as: an empty control clears the field rather than writing ''. */
+    /**
+     * The value one control saves as. A control the reader emptied writes the empty string, which is
+     * the reader saying the field has no words; a control nobody touched clears the field instead,
+     * so adding an entry writes no key for what was never filled in.
+     */
     function saveable(field: string, kind: string): unknown {
         const value = valueOf(field);
         if (kind === 'checkbox') return value === true ? true : null;
@@ -147,7 +154,8 @@
                 .filter((one) => one !== '');
             return words.length === 0 ? null : words;
         }
-        return text === '' ? null : text;
+        if (text !== '') return text;
+        return clearedValue(field in edits, entry !== null);
     }
 
     function said(answer: WriteAnswer): void {
@@ -183,8 +191,13 @@
             }
             wanted[field.field] = parsed.value;
         }
-        if (wanted[ident] === null || wanted[ident] === undefined) {
+        if (wanted[ident] === null || wanted[ident] === undefined || wanted[ident] === '') {
             asked = t('collection.form_needs', ident);
+            return;
+        }
+        const refused = refusedField(fields, (field) => wanted[field]);
+        if (refused !== null) {
+            asked = t('collection.form_bad_value', refused);
             return;
         }
         asked = '';

@@ -245,6 +245,7 @@ describe('the Position Leads view', () => {
         expect(body).toContain('log <strong>1</strong>');
         expect(body).toContain('log <strong>6</strong>');
         expect(body).not.toContain('log <strong>7</strong>');
+        expect(body).toContain('show all 7 lines');
         expect(body).toContain('expired');
     });
 

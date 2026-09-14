@@ -9,6 +9,7 @@
 // seven hub files agree on the names (`status`, `tags`, `meta`, `note`) and use only six types.
 
 import type { Entry, Project, SchemaField, Subtask } from '../data/model.ts';
+import { realProjects } from './venues.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
 // names reach it from here, beside the functions that return them.
@@ -21,12 +22,13 @@ export const TITLE_FIELD = 'title';
 export const STATUS_FIELD = 'status';
 
 /** What a card does with one field. The view has one piece of markup per kind and no more. */
-export type FieldKind = 'sub' | 'status' | 'chips' | 'meta' | 'body' | 'link' | 'text';
+export type FieldKind = 'sub' | 'status' | 'chips' | 'meta' | 'body' | 'link' | 'pairs' | 'text';
 
 /**
  * One field of one entry, ready to draw: the kind decides the markup, `values` carries the words.
- * A `text`, `sub`, `status`, `body` or `link` field has exactly one value; `chips` has one per tag
- * and `meta` one per label-value pair, already joined, since a Chip takes a label and nothing else.
+ * A `text`, `sub`, `status`, `body` or `link` field has exactly one value; `chips` has one per tag,
+ * `meta` one per label-value pair and `pairs` one per key of a map, each already joined, since a
+ * Chip takes a label and nothing else.
  */
 export type Drawn = {
     field: string;
@@ -123,6 +125,22 @@ function textOf(value: unknown): string | undefined {
     return undefined;
 }
 
+/** Whether a value is a map: the one shape textOf has no line for. */
+function isFieldMap(value: unknown): value is Record<string, unknown> {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+/** One chip per key of a map, the key and its line joined; a key with no line is no chip. */
+function mapPairs(value: unknown): string[] {
+    if (!isFieldMap(value)) return [];
+    const chips: string[] = [];
+    for (const [key, held] of Object.entries(value)) {
+        const words = textOf(held);
+        if (words !== undefined && words !== '') chips.push(`${key}${PAIR}${words}`);
+    }
+    return chips;
+}
+
 /** The words of a list value; a lone string is one word and a map is none. */
 function wordsOf(value: unknown): string[] {
     const items = Array.isArray(value) ? value : [value];
@@ -170,16 +188,33 @@ export function drawnFields(entry: Entry, schema: SchemaField[] | undefined): Dr
     for (const field of schema ?? []) {
         named.add(field.field);
         if (field.field === TITLE_FIELD) continue;
+        const held = entry.fields[field.field];
         const kind = kindOf(field.field, field.type);
-        const values = valuesOf(kind, entry.fields[field.field]);
-        if (values.length === 0) continue;
-        drawn.push({ field: field.field, label: field.label ?? field.field, kind, values });
+        const values = valuesOf(kind, held);
+        if (values.length > 0) {
+            drawn.push({ field: field.field, label: field.label ?? field.field, kind, values });
+            continue;
+        }
+        // A map has no line of its own, so it draws its keys and their values rather than nothing.
+        const pairs = mapPairs(held);
+        if (pairs.length === 0) continue;
+        drawn.push({
+            field: field.field,
+            label: field.label ?? field.field,
+            kind: 'pairs',
+            values: pairs
+        });
     }
     for (const [field, value] of Object.entries(entry.fields)) {
         if (named.has(field)) continue;
         const values = valuesOf('text', value);
-        if (values.length === 0) continue;
-        drawn.push({ field, label: field, kind: 'text', values });
+        if (values.length > 0) {
+            drawn.push({ field, label: field, kind: 'text', values });
+            continue;
+        }
+        const pairs = mapPairs(value);
+        if (pairs.length === 0) continue;
+        drawn.push({ field, label: field, kind: 'pairs', values: pairs });
     }
     return drawn;
 }
@@ -296,6 +331,20 @@ export function isPinned(entry: Entry): boolean {
 /** The entries a card list draws: the pinned ones first, everything in file order inside that. */
 export function pinnedFirst(entries: Entry[]): Entry[] {
     return [...entries.filter(isPinned), ...entries.filter((entry) => !isPinned(entry))];
+}
+
+/**
+ * One identity taken out of an order and put back at another place, or null when either place is
+ * not in it. The order handed in is the file's own, never the pinned-first one the cards are drawn
+ * in, so a move made while an entry is pinned writes the file's order with one entry moved and
+ * leaves the pinned entry where the file has it.
+ */
+export function movedOrder(order: readonly string[], at: number, to: number): string[] | null {
+    if (at < 0 || to < 0 || at >= order.length || to >= order.length || at === to) return null;
+    const moved = [...order];
+    const [held] = moved.splice(at, 1);
+    moved.splice(to, 0, held);
+    return moved;
 }
 
 /** One toggle of the facet bar: the status, how many entries carry it. */
@@ -478,16 +527,83 @@ export function formFields(
     }));
 }
 
-export type RawFieldAnswer =
-    { ok: true; value: Record<string, string | number | boolean | null> | null } | { ok: false };
+/**
+ * The map-valued fields one entry carries that its schema does not name. They are offered as raw
+ * controls, so a nested block such as a dataset's `retrieval:` is edited rather than left unedited
+ * because the file's schema never listed it.
+ */
+export function extraRawFields(
+    entry: Entry | null,
+    schema: SchemaField[] | undefined
+): FormField[] {
+    if (entry === null) return [];
+    const named = new Set((schema ?? []).map((field) => field.field));
+    const found: FormField[] = [];
+    for (const [field, value] of Object.entries(entry.fields)) {
+        if (named.has(field) || field === TITLE_FIELD) continue;
+        if (!isFieldMap(value)) continue;
+        found.push({ field, label: field, kind: 'raw', options: [], required: false });
+    }
+    return found;
+}
 
-/** A raw map as the one-line JSON text the textarea edits. */
+/**
+ * What an emptied control saves as. A control the reader cleared on an entry that exists writes the
+ * empty string, which is the reader saying the field has no words; a control nobody touched, and
+ * every control of a form that adds an entry, writes nothing, so a new entry carries no key for
+ * what was never filled in.
+ */
+export function clearedValue(touched: boolean, editing: boolean): string | null {
+    return touched && editing ? '' : null;
+}
+
+/**
+ * The first control whose value does not fit the kind the schema gave its field, or null when
+ * every value fits. A select writes one of its own options and a date writes an ISO day; the form
+ * refuses anything else before it is sent rather than leaving the file to take it.
+ */
+export function refusedField(
+    fields: FormField[],
+    valueOf: (field: string) => unknown
+): string | null {
+    for (const field of fields) {
+        const value = valueOf(field.field);
+        const text = typeof value === 'string' ? value.trim() : '';
+        if (text === '') continue;
+        if (field.kind === 'select' && !field.options.includes(text)) return field.field;
+        if (field.kind === 'date' && !/^\d{4}-\d{2}-\d{2}$/.test(text)) return field.field;
+    }
+    return null;
+}
+
+/** Anything YAML writes under a raw block: a scalar, a list of them, or a map of them. */
+export type RawFieldValue =
+    string | number | boolean | null | RawFieldValue[] | { [key: string]: RawFieldValue };
+
+export type RawFieldAnswer =
+    { ok: true; value: Record<string, RawFieldValue> | null } | { ok: false };
+
+/** A raw block as the one-line JSON text the textarea edits, nested lists and maps included. */
 export function rawFieldText(value: unknown): string {
     if (typeof value !== 'object' || value === null || Array.isArray(value)) return '';
     return JSON.stringify(value);
 }
 
-/** Parse raw JSON only when it is a map whose values YAML can write as scalar values. */
+/** Whether a parsed JSON value is one YAML can write: a scalar, or a list or map of such. */
+function isRawValue(value: unknown): value is RawFieldValue {
+    if (value === null) return true;
+    const kind = typeof value;
+    if (kind === 'string' || kind === 'number' || kind === 'boolean') return true;
+    if (Array.isArray(value)) return value.every(isRawValue);
+    if (kind !== 'object') return false;
+    return Object.values(value as Record<string, unknown>).every(isRawValue);
+}
+
+/**
+ * Parse raw JSON only when it is a map. A value inside it may be a scalar, a list or a nested map,
+ * which is what a real block holds: a dataset's `retrieval:` carries a `priority_first:` list, and
+ * a parser that took scalars alone left the whole block uneditable.
+ */
 export function parseRawField(text: string): RawFieldAnswer {
     if (text.trim() === '') return { ok: true, value: null };
     let parsed: unknown;
@@ -498,22 +614,8 @@ export function parseRawField(text: string): RawFieldAnswer {
     }
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed))
         return { ok: false };
-    const values = Object.values(parsed as Record<string, unknown>);
-    if (
-        values.some(
-            (value) =>
-                value !== null &&
-                typeof value !== 'string' &&
-                typeof value !== 'number' &&
-                typeof value !== 'boolean'
-        )
-    ) {
-        return { ok: false };
-    }
-    return {
-        ok: true,
-        value: parsed as Record<string, string | number | boolean | null>
-    };
+    if (!isRawValue(parsed)) return { ok: false };
+    return { ok: true, value: parsed as Record<string, RawFieldValue> };
 }
 
 /** Select choices read from one merged-config value: strings, or assignable keyed rows. */
@@ -563,13 +665,13 @@ export type CoverageGroup = {
  * and `none` for both the ones that say so and the ones that say nothing, which is the gap the
  * section is drawn to show. An idea has no code to deposit and is not counted.
  */
-export function coverage(projects: Project[]): CoverageGroup[] {
+export function coverage(projects: Project[], dead: string[] = []): CoverageGroup[] {
     const groups: CoverageGroup[] = COVERAGE_GROUPS.map((group) => ({
         group,
         count: 0,
         members: []
     }));
-    for (const project of projects) {
+    for (const project of realProjects(projects, dead)) {
         if (project.type === 'idea') continue;
         const status = project.codeAvailability?.status ?? '';
         const held = groups.find((group) => group.group === status) ?? groups[2];

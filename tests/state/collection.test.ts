@@ -5,7 +5,9 @@
 import { describe, expect, it } from 'vitest';
 import {
     applyCollectionFilters,
+    clearedValue,
     coverage,
+    extraRawFields,
     crossLinks,
     drawnFields,
     emptyCollectionState,
@@ -21,9 +23,11 @@ import {
     kindOf,
     noFunding,
     parseCollectionState,
+    movedOrder,
     pinnedFirst,
     parseRawField,
     rawFieldText,
+    refusedField,
     statusFacets,
     statusValues,
     type Entry,
@@ -82,11 +86,23 @@ describe('raw form fields', () => {
         });
     });
 
-    it('refuses malformed JSON, lists, and maps with nested values', () => {
+    it('refuses malformed JSON and anything that is not a map', () => {
         expect(parseRawField('{method}')).toEqual({ ok: false });
         expect(parseRawField('["wget"]')).toEqual({ ok: false });
-        expect(parseRawField('{"files":["one"]}')).toEqual({ ok: false });
-        expect(parseRawField('{"nested":{"one":1}}')).toEqual({ ok: false });
+        expect(parseRawField('"wget"')).toEqual({ ok: false });
+        expect(parseRawField('7')).toEqual({ ok: false });
+    });
+
+    it('takes a block with a list and a nested map, which is what a real one holds', () => {
+        const block = {
+            method: 'wget',
+            priority_first: ['one', 'two'],
+            auth: { kind: 'token', required: true, note: null },
+            mirrors: [{ host: 'a', port: 21 }]
+        };
+        const text = rawFieldText(block);
+        expect(text).toBe(JSON.stringify(block));
+        expect(parseRawField(text)).toEqual({ ok: true, value: block });
     });
 });
 
@@ -148,9 +164,11 @@ describe('drawnFields', () => {
         expect(new Set(found.map((drawn) => drawn.kind))).toEqual(new Set(['text']));
     });
 
-    it('draws nothing for a field whose value is a map, having no words for it', () => {
-        const odd = entry(1, { title: 'Odd', kind: { nested: 'map' } });
-        expect(drawnFields(odd, SCHEMA)).toEqual([]);
+    it('draws a map field as one chip per key, since a map has no line of its own', () => {
+        const odd = entry(1, { title: 'Odd', kind: { nested: 'map', empty: {} } });
+        expect(drawnFields(odd, SCHEMA)).toEqual([
+            { field: 'kind', label: 'kind', kind: 'pairs', values: ['nested: map'] }
+        ]);
     });
 });
 
@@ -290,6 +308,30 @@ describe('pinnedFirst', () => {
         ]);
         expect(isPinned(entries[1])).toBe(true);
         expect(isPinned(entries[0])).toBe(false);
+    });
+
+    it('reorders over the file order, so a move made while an entry is pinned keeps the file', () => {
+        const order = entries.map((held) => held.title);
+        const drawn = pinnedFirst(entries).map((held) => held.title);
+        expect(order).not.toEqual(drawn);
+        expect(movedOrder(order, order.indexOf('Three'), order.indexOf('One'))).toEqual([
+            'Three',
+            'One',
+            'Two',
+            'Four'
+        ]);
+    });
+
+    it('carries one entry one place, which is what the keyboard reorder asks for', () => {
+        expect(movedOrder(['a', 'b', 'c'], 1, 0)).toEqual(['b', 'a', 'c']);
+        expect(movedOrder(['a', 'b', 'c'], 1, 2)).toEqual(['a', 'c', 'b']);
+    });
+
+    it('moves nothing off either end, and nothing onto its own place', () => {
+        expect(movedOrder(['a', 'b', 'c'], 0, -1)).toBe(null);
+        expect(movedOrder(['a', 'b', 'c'], 2, 3)).toBe(null);
+        expect(movedOrder(['a', 'b', 'c'], 1, 1)).toBe(null);
+        expect(movedOrder(['a', 'b', 'c'], -1, 1)).toBe(null);
     });
 });
 
@@ -564,5 +606,84 @@ describe('noFunding and coverage', () => {
             ['none', 2]
         ]);
         expect(coverage(held)[0].members).toEqual([{ id: 'one', label: 'one' }]);
+    });
+
+    it('leaves an archived project of a dead type out of the coverage entirely', () => {
+        const held = [
+            project('one', { type: 'active', codeAvailability: { status: 'deposited' } }),
+            project('dead', { tier: 'archive', type: 'no-go' }),
+            project('kept', { tier: 'archive', type: 'published' })
+        ];
+        expect(coverage(held, ['no-go']).map((group) => [group.group, group.count])).toEqual([
+            ['deposited', 1],
+            ['review-anon', 0],
+            ['none', 1]
+        ]);
+        expect(coverage(held, []).map((group) => group.count)).toEqual([1, 0, 2]);
+    });
+});
+
+describe('the fields a form offers and what it refuses', () => {
+    const schema: SchemaField[] = [
+        { field: 'title', type: 'text' },
+        { field: 'status', type: 'select', options: ['open', 'done'] },
+        { field: 'date', type: 'date' }
+    ];
+
+    it('offers a map field the schema does not name as a raw block, so a nested one is editable', () => {
+        const held = entry(1, {
+            title: 'Set',
+            retrieval: { method: 'wget', notes: 'a note' },
+            size: '2 GB'
+        });
+        expect(extraRawFields(held, schema).map((field) => [field.field, field.kind])).toEqual([
+            ['retrieval', 'raw']
+        ]);
+    });
+
+    it('offers nothing for a form that adds an entry, there being no nested block yet', () => {
+        expect(extraRawFields(null, schema)).toEqual([]);
+    });
+
+    it('writes the empty string for a control the reader cleared, and nothing for an untouched one', () => {
+        expect(clearedValue(true, true)).toBe('');
+        expect(clearedValue(false, true)).toBe(null);
+        expect(clearedValue(true, false)).toBe(null);
+        expect(clearedValue(false, false)).toBe(null);
+    });
+
+    it('names the first control whose value does not fit its own kind', () => {
+        const fields = formFields(schema);
+        expect(refusedField(fields, () => '')).toBe(null);
+        expect(refusedField(fields, (field) => (field === 'status' ? 'open' : '2026-09-14'))).toBe(
+            null
+        );
+        expect(refusedField(fields, (field) => (field === 'status' ? 'invented' : ''))).toBe(
+            'status'
+        );
+        expect(refusedField(fields, (field) => (field === 'date' ? 'last week' : ''))).toBe('date');
+    });
+
+    /**
+     * One line per kind, on whether the control can hand the form a value that does not fit it.
+     * `text` and `textarea`: any string fits, so nothing is refusable. `select`: the control offers
+     * the schema's options, but a file whose options list changed under a saved draft can still
+     * carry a word that is not one, so a word off the list is refused. `date`: the box takes typed
+     * text on a browser with no date picker, so anything that is not an ISO day is refused.
+     * `checkbox`: the form writes `true` or nothing for it (EntryForm's saveable), so a value that
+     * is not a boolean cannot arise and there is nothing to refuse. `tags`, `metalist` and `raw`
+     * are not single-value controls: the form builds their shape itself, and `raw` has its own
+     * refusal in parseRawField.
+     */
+    it('refuses nothing for a kind whose control cannot produce a value that does not fit', () => {
+        const kinds: SchemaField[] = [
+            { field: 'title', type: 'text' },
+            { field: 'note', type: 'textarea' },
+            { field: 'done', type: 'checkbox' }
+        ];
+        const fields = formFields(kinds);
+        expect(refusedField(fields, () => 'anything at all')).toBe(null);
+        expect(refusedField(fields, (field) => (field === 'done' ? true : ''))).toBe(null);
+        expect(refusedField(fields, (field) => (field === 'done' ? null : ''))).toBe(null);
     });
 });

@@ -13,6 +13,7 @@ import { render } from 'svelte/server';
 import ActivityRail, {
     GROUP_MAX,
     arrange,
+    documentState,
     railOrder,
     type NavGroup
 } from '../../src/lib/shell/ActivityRail.svelte';
@@ -473,5 +474,25 @@ describe('the groups of the real config', () => {
         ]);
         expect(section('Pillars').map((view) => view.id)).toEqual(['programs', 'domains', 'map']);
         expect(realGroups().find((group) => group.label === 'Pillars')?.glyph).toBe('program');
+    });
+});
+
+describe('a bookmark opened as a document tab', () => {
+    it('carries the bookmark label in the instance state, which is what the tab strip draws', () => {
+        const state = documentState({ label: 'cathedra manual', root: 'cathedra', path: 'a.html' });
+        expect(state).toEqual({
+            id: 'cathedra/a.html',
+            root: 'cathedra',
+            path: 'a.html',
+            label: 'cathedra manual'
+        });
+    });
+
+    it('gives two manuals two identities, so each opens as its own tab', () => {
+        const one = documentState({ label: 'One', root: 'cathedra', path: 'a.html' });
+        const two = documentState({ label: 'Two', root: 'cathedra', path: 'b.html' });
+        expect(one.id).not.toBe(two.id);
+        expect(one.label).toBe('One');
+        expect(two.label).toBe('Two');
     });
 });

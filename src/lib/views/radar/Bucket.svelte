@@ -5,7 +5,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import RadarCard from './RadarCard.svelte';
     import Reveal from '../shared/Reveal.svelte';
-    import { feedIdentity } from '$lib/state/palette';
+    import type { FeedIdent } from '$lib/state/palette';
     import { sortBucket, type Project, type RadarBucket, type RadarEntry } from '$lib/state/radar';
     import { t } from '$lib/state/text';
     import { toneOf } from '$lib/state/tones';
@@ -16,6 +16,8 @@
         lastRun: unknown;
         projects: Record<string, Project>;
         cursor: string | null;
+        /** The identity of one entry over the whole feed, so two equal titles stay apart. */
+        identOf: FeedIdent;
         onsaid: (words: string) => void;
         reveal?: string;
         onrevealed: () => void;
@@ -27,6 +29,7 @@
         lastRun,
         projects,
         cursor,
+        identOf,
         onsaid,
         reveal = '',
         onrevealed
@@ -45,11 +48,12 @@
     {#if open}
         <div class="cards">
             {#each ordered as entry, at (`${String(entry.title ?? '')}:${at}`)}
-                <Reveal id={feedIdentity('radar', entry)} wanted={reveal} {onrevealed}>
+                {@const ident = identOf(entry)}
+                <Reveal id={ident} wanted={reveal} {onrevealed}>
                     <RadarCard
                         {entry}
-                        id={feedIdentity('radar', entry)}
-                        cursor={cursor === feedIdentity('radar', entry)}
+                        id={ident}
+                        cursor={cursor === ident}
                         {lastRun}
                         {projects}
                         {onsaid}

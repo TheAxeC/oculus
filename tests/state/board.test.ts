@@ -501,18 +501,20 @@ describe('facets', () => {
         ]);
     });
 
-    it('does not offer a facet with fewer than two values', () => {
-        expect(facet(PROJECTS, ITEMS, 'dataset')).toBe(null);
+    it('offers a facet that holds one value, as that one value', () => {
+        expect(facet(PROJECTS, ITEMS, 'dataset')).toEqual(['mimic:1']);
         expect(facets(ITEMS, PROJECTS).map((one) => one.key)).toEqual([
             'category',
             'year',
             'domain',
             'program',
             'funding',
+            'dataset',
             'status',
             'compute',
             'reproduced',
-            'code'
+            'code',
+            'sessions'
         ]);
     });
 
@@ -918,6 +920,30 @@ describe('disseminated', () => {
 
     it('finds the events and education entries that name the project', () => {
         expect(disseminated(activity(), 'alpha').map((one) => one.id)).toEqual(['esann', 'course']);
+    });
+
+    it('counts an application that names the project, which is the work going out as well', () => {
+        const snap = activity();
+        snap.entities.collections.applications = {
+            id: 'applications',
+            title: 'Applications',
+            file: '/hub/career/applications.yml',
+            entries: [
+                {
+                    id: 'fellowship',
+                    title: 'A fellowship',
+                    fields: { related: ['alpha'] },
+                    file: '/hub/career/applications.yml',
+                    index: 0
+                }
+            ]
+        };
+        expect(disseminated(snap, 'alpha').map((one) => one.id)).toEqual([
+            'esann',
+            'course',
+            'fellowship'
+        ]);
+        expect(disseminated(snap, 'alpha').map((one) => one.collection)).toContain('applications');
     });
 
     it('leaves out an events entry the reader only attended', () => {

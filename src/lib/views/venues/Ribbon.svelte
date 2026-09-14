@@ -164,7 +164,10 @@
         margin-bottom: 12px;
     }
 
+    /* The column may shrink under its content, so a chip of a venue with no short name is cut at
+       the column's own edge with an ellipsis rather than pushed over its neighbour. */
     .month {
+        min-width: 0;
         min-height: 54px;
         padding: 4px;
         border: 1px solid var(--line);
@@ -191,6 +194,7 @@
     .timed {
         display: flex;
         align-items: center;
+        min-width: 0;
         margin-top: 3px;
     }
 

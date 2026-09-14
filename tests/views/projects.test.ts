@@ -428,8 +428,8 @@ describe('the facets', () => {
         expect(body).toContain(`Filter by ${catalog['board.facet_compute']}`);
     });
 
-    it('offers no menu for a facet with fewer than two values', () => {
-        expect(body).not.toContain(`Filter by ${catalog['board.facet_dataset']}`);
+    it('offers a menu for a facet that holds one value', () => {
+        expect(body).toContain(`Filter by ${catalog['board.facet_dataset']}`);
     });
 
     it('offers the sessions facet, and narrows the board to the project being worked on', () => {
@@ -656,6 +656,22 @@ describe('the subtasks block', () => {
             'project.action.add_subtask'
         ]) {
             expect(body).toContain(catalog[key]);
+        }
+    });
+
+    it('offers reopen on the done line itself, and done only on the open one', () => {
+        const lines = body.split('<div class="line').slice(1);
+        const done = lines.filter((line) => line.slice(0, line.indexOf('>')).includes('done'));
+        const open = lines.filter((line) => !line.slice(0, line.indexOf('>')).includes('done'));
+        expect(done).not.toHaveLength(0);
+        expect(open).not.toHaveLength(0);
+        for (const line of done) {
+            expect(line).toContain(catalog['project.action.reopen']);
+            expect(line).not.toContain(catalog['project.action.mark_done']);
+        }
+        for (const line of open) {
+            expect(line).toContain(catalog['project.action.mark_done']);
+            expect(line).not.toContain(catalog['project.action.reopen']);
         }
     });
 });

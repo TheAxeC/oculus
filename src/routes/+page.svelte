@@ -39,7 +39,9 @@
     $effect(() => {
         configGeneration();
         const pushed = config()?.config;
-        if (pushed === undefined) return;
+        // A push whose `collections:` is missing or malformed names no keys, and registering none
+        // would close every collection tab on every page; the registry follows a real list only.
+        if (pushed === undefined || !Array.isArray(pushed.collections)) return;
         registerCollections(collectionKeys(pushed));
     });
 

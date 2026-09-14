@@ -24,6 +24,10 @@ const FILTERED = ['sanitise(', 'inlineMarkdown('];
 
 /** The sites that draw neither, each with why its HTML cannot carry anything but its own markup. */
 const ALLOWED: Record<string, string> = {
+    'views/shared/Intro.svelte:drawn(html)':
+        'drawn() sanitises unless the caller marked the content trusted, and the trusted Intro sites are checked one by one below: each must hand over a catalog line with literal arguments, so a hub value never reaches this site unfiltered.',
+    'views/shared/Intro.svelte:drawn(line)':
+        'drawn() sanitises unless the caller marked the content trusted, and the trusted Intro sites are checked one by one below: each must hand over a catalog line with literal arguments, so a hub value never reaches this site unfiltered.',
     'views/source/Editor.svelte:painted':
         'state/highlight.ts escapes every & < > of the file text before it emits its own fixed span classes, so the mirror holds no markup the file could put there.'
 };
@@ -138,6 +142,89 @@ export function unfilteredSites(root: string): string[] {
     return loose.sort();
 }
 
+/**
+ * Every `<Intro ... >` element of one file, as the text between the tag's name and the `>` that
+ * closes it, with the braces of its attribute expressions balanced so a `>` inside one is not the
+ * end of the tag.
+ */
+export function introTags(source: string): string[] {
+    const tags: string[] = [];
+    for (const match of source.matchAll(/<Intro(?=[\s/>])/g)) {
+        let at = match.index + match[0].length;
+        const from = at;
+        let depth = 0;
+        let quote = '';
+        while (at < source.length) {
+            const character = source[at];
+            if (quote !== '') {
+                if (character === quote) quote = '';
+            } else if (character === '"' || character === "'" || character === '`') {
+                quote = character;
+            } else if ('([{'.includes(character)) depth += 1;
+            else if (')]}'.includes(character)) depth -= 1;
+            else if (character === '>' && depth === 0) break;
+            at += 1;
+        }
+        tags.push(source.slice(from, at));
+    }
+    return tags;
+}
+
+/**
+ * Whether the tag carries the `trusted` prop in any form: the bare attribute, or set to any
+ * expression at all, since a prop set to a variable is a site that may be trusted at run time and
+ * is judged by its words like the rest.
+ */
+export function isTrusted(tag: string): boolean {
+    return /(^|\s)trusted(\s|$|=)/.test(tag);
+}
+
+/** The expression one attribute of a tag is given, with its braces balanced, or null for none. */
+export function attributeOf(tag: string, name: string): string | null {
+    const opener = new RegExp(`(?:^|\\s)${name}=\\{`);
+    const found = opener.exec(tag);
+    if (found === null) return null;
+    let at = found.index + found[0].length;
+    const from = at;
+    let depth = 1;
+    while (at < tag.length && depth > 0) {
+        if (tag[at] === '{') depth += 1;
+        if (tag[at] === '}') depth -= 1;
+        at += 1;
+    }
+    return tag.slice(from, at - 1).trim();
+}
+
+/**
+ * Whether one expression handed to a trusted Intro is the catalog's own words and nothing else:
+ * `t('key')` with literal arguments, or that call through inlineMarkdown. Anything interpolating a
+ * value is not, whatever the value is, because nothing here can tell a count from a hub string.
+ */
+export function isTrustedArgument(argument: string): boolean {
+    const held = argument.trim();
+    if (isCall(held, 'inlineMarkdown(')) {
+        const inner = argumentsOf(held, 'inlineMarkdown(');
+        return inner.length === 1 && isCatalogLine(inner[0]);
+    }
+    return isCatalogLine(held);
+}
+
+/** Every trusted Intro site under one folder whose words are not a catalog line, by file. */
+export function looseTrustedIntros(root: string): string[] {
+    const loose: string[] = [];
+    for (const file of svelteFiles(root)) {
+        for (const tag of introTags(readFileSync(join(root, file), 'utf8'))) {
+            if (!isTrusted(tag)) continue;
+            const given = [attributeOf(tag, 'html'), attributeOf(tag, 'lines')].filter(
+                (words): words is string => words !== null
+            );
+            if (given.length > 0 && given.every(isTrustedArgument)) continue;
+            loose.push(`${file}: ${given.join(' | ') || tag.trim()}`);
+        }
+    }
+    return loose.sort();
+}
+
 describe('every {@html} site', () => {
     it('draws the sanitiser, inline Markdown, the catalog, or a named exception', () => {
         expect(unfilteredSites(LIB)).toEqual([]);
@@ -147,7 +234,37 @@ describe('every {@html} site', () => {
         const counted = svelteFiles(LIB).flatMap((file) =>
             htmlSites(readFileSync(join(LIB, file), 'utf8'))
         );
-        expect(counted.length).toBeGreaterThanOrEqual(36);
+        expect(counted.length).toBeGreaterThanOrEqual(34);
+    });
+
+    it('marks as catalog text only an Intro whose words are a catalog line', () => {
+        expect(looseTrustedIntros(LIB)).toEqual([]);
+    });
+
+    it('finds the trusted Intro sites there are, so the check above is not vacuous', () => {
+        const trusted = svelteFiles(LIB).flatMap((file) =>
+            introTags(readFileSync(join(LIB, file), 'utf8')).filter(isTrusted)
+        );
+        expect(trusted.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it('refuses an Intro marked trusted over words that interpolate a value', () => {
+        expect(isTrustedArgument("t('venues.intro')")).toBe(true);
+        expect(isTrustedArgument("inlineMarkdown(t('domains.intro'))")).toBe(true);
+        expect(isTrustedArgument("t('leads.intro', 'one', 'two')")).toBe(true);
+        expect(isTrustedArgument("t('leads.intro', live.length, '')")).toBe(false);
+        expect(isTrustedArgument("`${t('radar.intro_head')} ${t('radar.intro_tail', run)}`")).toBe(
+            false
+        );
+        expect(isTrustedArgument('data.intro')).toBe(false);
+    });
+
+    it('judges a trusted prop set to an expression by its words rather than skipping the site', () => {
+        expect(isTrusted("trusted html={t('a')}")).toBe(true);
+        expect(isTrusted("trusted={true} html={t('a')}")).toBe(true);
+        expect(isTrusted("trusted={hidden} html={t('a')}")).toBe(true);
+        expect(isTrusted("html={t('a')}")).toBe(false);
+        expect(isTrusted("untrusted html={t('a')}")).toBe(false);
     });
 
     it('carries a reason with every exception', () => {

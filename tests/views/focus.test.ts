@@ -10,10 +10,11 @@
 // The countdowns are the real clock's, so the dates below are far enough from any run date that
 // which side of today they fall on is not in question.
 
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Focus from '../../src/lib/views/Focus.svelte';
+import { startMinuteClock } from '../../src/lib/state/clock.svelte.ts';
 import Band from '../../src/lib/views/focus/Band.svelte';
 import {
     engineDir,
@@ -461,7 +462,12 @@ describe('the command center', () => {
     it('draws lead, attention and refresh lines as controls', () => {
         const buttons = body.match(/<button[\s\S]*?<\/button>/g) ?? [];
         expect(buttons.some((button) => button.includes('A lead'))).toBe(true);
-        expect(buttons.some((button) => button.includes('>3<'))).toBe(true);
+        // The count and the words beside it are one control, so the whole line opens the view.
+        const emails = buttons.find((button) =>
+            button.includes('data-ticker-id="attention:inbox"')
+        );
+        expect(emails).toContain('3');
+        expect(emails).toContain(catalog['focus.command.emails']);
         expect(buttons.some((button) => button.includes('/research-cockpit litwatch'))).toBe(true);
         const venue = buttons.find((button) =>
             button.includes('data-ticker-id="attention:venue:jbi"')
@@ -567,3 +573,61 @@ describe('an empty portfolio', () => {
         expect(empty).toContain(catalog['focus.career_empty']);
     });
 });
+
+describe('a lane card under the keyboard cursor', () => {
+    it('carries the project id the workbench cursor moves over', () => {
+        receive({ channel: 'portfolio', version: 4, payload: snapshot() });
+        const drawn = html();
+        for (const id of ['alpha', 'bravo', 'charlie']) {
+            expect(drawn).toContain(`data-card="${id}"`);
+        }
+        expect(drawn).not.toContain('data-cursor');
+    });
+
+    it('marks the lane card the instance cursor holds and no other', () => {
+        receive({ channel: 'portfolio', version: 5, payload: snapshot() });
+        const held: Instance = { id: INSTANCE, view: 'focus', state: { cursor: 'bravo' } };
+        const drawn = render(Focus, { props: { instance: held } }).body;
+        expect(drawn).toMatch(/data-card="bravo"[^>]*data-cursor="true"/);
+        expect(drawn.match(/data-cursor="true"/g)).toHaveLength(1);
+    });
+});
+
+describe('the board day', () => {
+    // The board is drawn three times at one system clock: once with the minute clock at the day it
+    // was started on, once after the system clock has moved two days without the minute ticking,
+    // and once after it ticks. The middle reading is what fails if the board goes back to reading
+    // Date.now() at mount, and the last is what shows the drawn text depends on the day at all.
+    it('counts the day the minute clock is on, not the day the board was opened on', () => {
+        const day = Date.parse('2026-09-14T09:00:00Z');
+        const snap = snapshot();
+        snap.entities.projects.alpha.deadline = '2026-09-20';
+        vi.useFakeTimers();
+        let stop = (): void => {};
+        try {
+            vi.setSystemTime(day);
+            stop = startMinuteClock();
+            receive({ channel: 'portfolio', version: 6, payload: snap });
+            const opened = due(html());
+            vi.setSystemTime(day + 2 * 24 * 60 * 60 * 1000);
+            const later = due(html());
+            vi.advanceTimersByTime(60000);
+            const ticked = due(html());
+            expect(opened).toEqual(['6d']);
+            expect(later).toEqual(opened);
+            expect(ticked).toEqual(['4d']);
+        } finally {
+            stop();
+            vi.useRealTimers();
+        }
+    });
+});
+
+/** The day countdowns drawn on one card, as the chip labels themselves. */
+function due(body: string, card = 'alpha'): string[] {
+    const from = body.indexOf(`data-card="${card}"`);
+    const rest = body.slice(from);
+    const next = rest.indexOf('data-card="', 1);
+    const held = next < 0 ? rest : rest.slice(0, next);
+    return [...held.matchAll(/<span class="label[^"]*">(\d+d)<\/span>/g)].map((one) => one[1]);
+}

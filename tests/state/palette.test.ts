@@ -3,7 +3,15 @@
 
 import { describe, expect, it } from 'vitest';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
-import { buildIndex, commands, match, parseCommand } from '../../src/lib/state/palette.ts';
+import {
+    buildIndex,
+    commands,
+    feedIdents,
+    feedIdentity,
+    match,
+    parseCommand,
+    uniqueIdents
+} from '../../src/lib/state/palette.ts';
 import { paletteSource } from '../../src/lib/state/palette-source.svelte.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
 
@@ -181,5 +189,41 @@ describe('commands', () => {
         }
         expect(names(':zz')).toEqual([]);
         expect(names(':')).toEqual(list.map((command) => command.name));
+    });
+});
+
+describe('a feed entry identity over the whole feed', () => {
+    it('keeps the entry own id where it is unique and not empty', () => {
+        const entries = [{ title: 'One' }, { title: 'Two' }];
+        const identOf = feedIdents('radar', entries);
+        expect(identOf(entries[0])).toBe('One');
+        expect(identOf(entries[1])).toBe('Two');
+    });
+
+    it('tells two entries with one title apart by their place in the feed', () => {
+        const entries = [{ title: 'Same' }, { title: 'Same' }];
+        const identOf = feedIdents('radar', entries);
+        expect(feedIdentity('radar', entries[0])).toBe(feedIdentity('radar', entries[1]));
+        expect(identOf(entries[0])).toBe('Same#0');
+        expect(identOf(entries[1])).toBe('Same#1');
+        expect(identOf(entries[0])).not.toBe(identOf(entries[1]));
+    });
+
+    it('gives an entry whose every field is empty an id the cursor can hold', () => {
+        const entries = [{ title: '', inst: '', url: '' }, { title: 'Real' }];
+        const identOf = feedIdents('radar', entries);
+        expect(identOf(entries[0])).toBe('radar#0');
+        expect(identOf(entries[0])).not.toBe('');
+        expect(identOf(entries[1])).toBe('Real');
+    });
+
+    it('numbers by the list it was built over, whatever the base gives', () => {
+        const entries = [{ id: 'a' }, { id: 'a' }, { id: 'b' }];
+        const identOf = uniqueIdents(entries, (entry) => entry.id, 'lead');
+        expect([identOf(entries[0]), identOf(entries[1]), identOf(entries[2])]).toEqual([
+            'a#0',
+            'a#1',
+            'b'
+        ]);
     });
 });

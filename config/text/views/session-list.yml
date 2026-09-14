@@ -22,6 +22,7 @@ text:
         n_thousands: '{0}k'
         open_pinned: Open in its own pane
         open_pinned_tip: keep it in a pane of its own
+        pin_glyph: pin
         pin_pane: Pin this pane
         rail_glyph: list
         rail_title: Sessions

@@ -31,6 +31,7 @@
         type DataState
     } from '$lib/state/datasets';
     import { inlineMarkdown } from '$lib/ui/html';
+    import { cardCursor } from '$lib/state/instance';
     import { collectionOf, datasets, projects } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
@@ -42,6 +43,7 @@
     const allDatasets = $derived(datasets());
     const allProjects = $derived(projects());
     const held = $derived(parseDataState(instanceState(instance.id)));
+    const cursor = $derived(cardCursor(instance.state));
     const facets = $derived(themeFacets(allDatasets, collection?.themeLabels));
     const shown = $derived(applyThemeFacets(datasetSearch(allDatasets, held.search), held.off));
 
@@ -125,6 +127,7 @@
                     >
                         <DatasetCard
                             {dataset}
+                            cursor={cursor === dataset.id}
                             projects={users(dataset.projectIds)}
                             entry={entryFor(dataset.id)}
                             schema={collection?.schema}

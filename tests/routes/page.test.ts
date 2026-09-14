@@ -70,6 +70,11 @@ describe('the page effect that follows a config push', () => {
         expect(wired[0]).toContain('config()');
     });
 
+    it('follows a push only when it carries a real collections list, so a malformed one closes no tab', () => {
+        const wired = effects(source).filter((body) => body.includes('registerCollections('));
+        expect(wired[0]).toContain('!Array.isArray(pushed.collections)) return;');
+    });
+
     it('leaves the first frame to the untracked call in the script body', () => {
         expect(source).toContain('untrack(() => registerCollections(data.collections));');
     });

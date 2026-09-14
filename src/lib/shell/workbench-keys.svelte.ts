@@ -11,6 +11,7 @@ import {
 } from '$lib/state/layout.svelte';
 import type { Focus, Instance } from '$lib/state/layout';
 import { cardCursor, reconcileCardCursor, withCardCursor } from '$lib/state/layout';
+import { requestCardMove } from '$lib/state/ui.svelte';
 import { activateCursor, focusSearch, scrollContainer, scrollRegion } from './key-dom';
 import {
     horizontalCursor,
@@ -140,6 +141,8 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             openView(action.view, action.target);
         } else if (action.kind === 'cursor') {
             return moveCursor(pane, action.direction);
+        } else if (action.kind === 'move') {
+            return moveCard(pane, action.direction);
         } else if (action.kind === 'activate') {
             return activateCursor(pane, cursorIn(pane));
         } else if (action.kind === 'search') {
@@ -206,6 +209,18 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
                       direction === 'up' ? -1 : 1
                   );
         return selectCard(pane, next);
+    }
+
+    /**
+     * Ask the view showing this pane to carry the card under the cursor one place. The shell holds
+     * no order of its own: what a list is ordered by is the view's, so it is asked rather than told.
+     */
+    function moveCard(pane: HTMLElement | null, direction: 'left' | 'right'): boolean {
+        const id = instanceIn(pane);
+        const cursor = cursorIn(pane);
+        if (id === null || cursor === null) return false;
+        requestCardMove(id, cursor, direction === 'left' ? -1 : 1);
+        return true;
     }
 
     /** The active instance id carried by a rendered pane. */

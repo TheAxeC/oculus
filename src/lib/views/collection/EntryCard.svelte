@@ -201,6 +201,13 @@
                             <span class="meta">{one}</span>
                         {/each}
                     </div>
+                {:else if drawn.kind === 'pairs'}
+                    <div class="row">
+                        <span class="label">{drawn.label}</span>
+                        {#each drawn.values as one, at (`${at}:${one}`)}
+                            <Chip label={one} />
+                        {/each}
+                    </div>
                 {:else if drawn.kind === 'chips'}
                     <div class="row">
                         {#each drawn.values as one, at (`${at}:${one}`)}

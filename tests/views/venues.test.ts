@@ -196,9 +196,7 @@ function html(items: Venue[] = VENUES): string {
 }
 
 function venueCard(body: string, id: string): string {
-    const found = body.match(
-        new RegExp(`<article[^>]*data-venue="${id}"[^>]*>[\\s\\S]*?</article>`)
-    );
+    const found = body.match(new RegExp(`<div[^>]*data-venue="${id}"[^>]*>[\\s\\S]*?</article>`));
     expect(found).not.toBeNull();
     return found?.[0] ?? '';
 }
@@ -229,7 +227,7 @@ describe('the journal section and venue card', () => {
         expect(body).toContain('href="https://example.org/journal"');
         expect(body).toContain('Clinical <strong>methods</strong>.');
         const journal = venueCard(body, 'journal');
-        expect(journal).toMatch(/class="card [^"]*concentrated"/);
+        expect(journal).toMatch(/class="slot [^"]*concentrated"/);
         expect(journal).toMatch(/class="chip [^"]*toned"/);
         expect(journal).toContain('--tone: var(--c-violet)');
         expect(journal).toContain('--tone: var(--c-green)');
@@ -281,6 +279,34 @@ describe('the conference section and ribbon', () => {
         expect(body).toContain('href="mailto:chair@example.org"');
         expect(body).toContain(catalog['venues.call']);
         expect(body).toContain(catalog['venues.contact']);
+    });
+});
+
+describe('the venue card as a card primitive', () => {
+    it('gives every card the venue id the keyboard cursor moves over', () => {
+        const body = html();
+        for (const id of ['journal', 'timed', 'untimed', 'biennial']) {
+            expect(body).toContain(`data-card="${id}"`);
+        }
+        expect(body).not.toContain('data-cursor');
+    });
+
+    it('marks the card the instance cursor holds and no other', () => {
+        html();
+        const held: Instance = { id: INSTANCE, view: 'venues', state: { cursor: 'journal' } };
+        const body = render(Venues, { props: { instance: held } }).body;
+        expect(body).toMatch(/data-card="journal"[^>]*data-cursor="true"/);
+        expect(body.match(/data-cursor="true"/g)).toHaveLength(1);
+    });
+});
+
+describe('the concentration legend chip', () => {
+    it('sits inside the theme facet row, so it wraps with the toggles and never lands alone', () => {
+        const body = html();
+        const row = /<div class="facets[^"]*"[\s\S]*?<\/div>/.exec(body)?.[0] ?? '';
+        expect(row).toContain(catalog['venues.themes_facet']);
+        expect(row).toContain(catalog['venues.conc']);
+        expect(body).not.toContain('class="facet-row"');
     });
 });
 

@@ -37,7 +37,7 @@
     } from '$lib/state/radar';
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
-    import { feedIdentity } from '$lib/state/palette';
+    import { feedIdents } from '$lib/state/palette';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import { HUB_ROOT } from '$lib/state/collection';
     import type { ViewProps } from './registry';
@@ -58,6 +58,7 @@
         bucketsOf(searchedLive, buckets).filter((group) => group.entries.length > 0)
     );
     const lastRun = $derived(data?.meta.last_run ?? '');
+    const identOf = $derived(feedIdents('radar', data?.entries ?? []));
     let said = $state('');
 
     function write(next: Partial<RadarState>): void {
@@ -106,6 +107,7 @@
                     {lastRun}
                     {projects}
                     {cursor}
+                    {identOf}
                     reveal={held.reveal}
                     onrevealed={() => write({ reveal: '' })}
                     onsaid={(words) => (said = words)}
@@ -123,15 +125,16 @@
                     {#if held.dismissedOpen}
                         <div class="cards">
                             {#each searchedDismissed as entry, at (`${String(entry.title ?? '')}:${at}`)}
+                                {@const ident = identOf(entry)}
                                 <Reveal
-                                    id={feedIdentity('radar', entry)}
+                                    id={ident}
                                     wanted={held.reveal}
                                     onrevealed={() => write({ reveal: '' })}
                                 >
                                     <RadarCard
                                         {entry}
-                                        id={feedIdentity('radar', entry)}
-                                        cursor={cursor === feedIdentity('radar', entry)}
+                                        id={ident}
+                                        cursor={cursor === ident}
                                         {lastRun}
                                         {projects}
                                         dismissed

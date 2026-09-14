@@ -8,6 +8,7 @@
 // is clicked, no dismissal is sent and the timeline's scrolling never runs; the selection a click
 // would write is written here through select() instead.
 
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Agents from '../../src/lib/views/sessions/Agents.svelte';
@@ -37,6 +38,8 @@ import { setVocab } from '../../src/lib/state/tones.ts';
 import { forget, hold, type Turn } from '../../src/lib/state/transcript.svelte.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import { area, git, payload, record, terminal, workspace } from '../sessions-fixture.ts';
+import { NO_FEEDS } from '../entities-fixture.ts';
+import type { Project, Snapshot } from '../../src/lib/data/model.ts';
 import type { Component } from 'svelte';
 import { defaultWorkbench, type Instance } from '../../src/lib/state/layout/index.ts';
 import type { ViewProps } from '../../src/lib/views/registry.ts';
@@ -44,7 +47,8 @@ import type { ViewProps } from '../../src/lib/views/registry.ts';
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
 setCatalog(catalog);
-setGlyphs(glyphCatalog(config));
+const glyphs = glyphCatalog(config);
+setGlyphs(glyphs);
 setVocab(vocabCatalog(config));
 
 const HUB = '/hub';
@@ -167,27 +171,30 @@ const tree = [
 ];
 
 receive({ channel: 'sessions', version: 1, payload: payload(tree) });
+/** The hub's git state as the tests read it: one staged, two changed, one untracked file. */
+const HUB_GIT = git({
+    branch: 'main',
+    ahead: 1,
+    staged: [{ path: 'a/one.ts', status: 'M', added: 4, deleted: 2 }],
+    unstaged: [
+        { path: 'a/two.png', status: 'M', added: null, deleted: null },
+        // The same file the other live session is holding open, as git sees it: relative to
+        // the workspace root, which is what the "also open" mark has to match across.
+        {
+            path: 'projects/manuscripts/alpha/manuscript/main.tex',
+            status: 'M',
+            added: 1,
+            deleted: 0
+        }
+    ],
+    untracked: [{ path: 'a/three.ts', status: '?', added: 0, deleted: 0 }]
+});
+
 receive({
     channel: 'git',
     version: 1,
     payload: {
-        [HUB]: git({
-            branch: 'main',
-            ahead: 1,
-            staged: [{ path: 'a/one.ts', status: 'M', added: 4, deleted: 2 }],
-            unstaged: [
-                { path: 'a/two.png', status: 'M', added: null, deleted: null },
-                // The same file the other live session is holding open, as git sees it: relative to
-                // the workspace root, which is what the "also open" mark has to match across.
-                {
-                    path: 'projects/manuscripts/alpha/manuscript/main.tex',
-                    status: 'M',
-                    added: 1,
-                    deleted: 0
-                }
-            ],
-            untracked: [{ path: 'a/three.ts', status: '?', added: 0, deleted: 0 }]
-        }),
+        [HUB]: HUB_GIT,
         '/other': git({ error: 'not a git repository' })
     }
 });
@@ -561,7 +568,23 @@ describe('the changes view', () => {
         const body = html(Changes);
         expect(body).toContain(catalog['git.push']);
         expect(body).toContain(catalog['git.push_none']);
+        expect(body).not.toContain(catalog['git.push_pending']);
         expect(body).toContain('disabled');
+    });
+
+    it('says the upstream is being looked up, not that there is none, before git has answered', () => {
+        const other = git({ error: 'not a git repository' });
+        receive({
+            channel: 'git',
+            version: 3,
+            payload: { [HUB]: { ...HUB_GIT, upstream: null }, '/other': other }
+        });
+        select('live-one');
+        const body = html(Changes);
+        expect(body).toContain(catalog['git.push_pending']);
+        expect(body).not.toContain(catalog['git.push_none']);
+        expect(body).toContain('disabled');
+        receive({ channel: 'git', version: 4, payload: { [HUB]: HUB_GIT, '/other': other } });
     });
 
     it('draws the commit box with its suggest and commit controls', () => {
@@ -628,6 +651,31 @@ describe('the terminal view with nothing selected', () => {
         expect(body).toContain(catalog['sessions.terminal_larger']);
         expect(body).toContain(catalog['sessions.terminal_reset']);
         expect(body.match(/class="tool[^"]*compact/g)).toHaveLength(3);
+    });
+});
+
+describe('the terminal toolbar pin', () => {
+    // The label follows the pinned terminal's name through an $effect, which no server render runs;
+    // the write it makes is read off the source and the browser suite presses the rename itself.
+    it('is a glyph button among the glyph buttons, not a word among them', () => {
+        select(null);
+        const body = html(Terminal, { session: 'abc123-shell' });
+        const pin = /<button[^>]*aria-label="[^"]*"[^>]*>(?:(?!<\/button>)[\s\S])*?<\/button>/g;
+        const found = (body.match(pin) ?? []).filter((one) =>
+            one.includes(catalog['sessions.unpin_pane'])
+        );
+        expect(found).toHaveLength(1);
+        expect(found[0]).toContain('compact');
+        expect(found[0]).toContain(glyphs[catalog['sessions.pin_glyph']]);
+        expect(found[0]).not.toContain('<span class="label">');
+    });
+
+    it('renames the pinned tab to the terminal own name rather than to the name at the pin', () => {
+        const source = readFileSync('src/lib/views/sessions/Terminal.svelte', 'utf8');
+        expect(source).toContain(
+            'restateInstance(instance.id, { session: held, label: live.name })'
+        );
+        expect(source).toContain('if (label === live.name) return;');
     });
 });
 
@@ -810,5 +858,69 @@ describe('resuming a session into a terminal', () => {
         const liveOnly = html(SessionList);
         expect(liveOnly).toContain('The live one');
         expect(liveOnly).toContain(`aria-label="${catalog['ui.row_menu']}"`);
+    });
+});
+
+describe('the pin control over the portfolio', () => {
+    /** A hub whose two projects are the folders a session may be pinned to. */
+    function portfolio(): Snapshot {
+        const project = (id: string, folder: string): Project => ({
+            id,
+            tier: 'manuscripts',
+            ghost: false,
+            title: id,
+            chips: [],
+            results: [],
+            ideas: [],
+            waitingOn: [],
+            followups: [],
+            subtasks: [],
+            relatedIds: [],
+            fundingIds: [],
+            datasetIds: [],
+            programIds: [],
+            domainIds: [],
+            collaborators: [],
+            docs: [],
+            folder,
+            file: `${HUB}/${folder}/project.yml`
+        });
+        return {
+            version: 9,
+            entities: {
+                projects: {
+                    alpha: project('alpha', 'projects/manuscripts/alpha'),
+                    quiet: project('quiet', 'projects/active/quiet')
+                },
+                venues: {},
+                datasets: {},
+                programs: {},
+                domains: {},
+                funding: {},
+                collections: {},
+                feeds: NO_FEEDS,
+                career: null
+            },
+            relations: {
+                projectVenue: [],
+                projectFunding: [],
+                projectDataset: [],
+                projectProgram: [],
+                projectDomain: [],
+                projectRelated: [],
+                fundingProgram: []
+            },
+            findings: []
+        };
+    }
+
+    it('offers a project folder no session has ever touched, beside the ones sessions filed', () => {
+        receive({ channel: 'portfolio', version: 9, payload: portfolio() });
+        select('live-one');
+        const body = html(SessionDetail);
+        expect(body).toContain(`<option value="${ALPHA}"`);
+        expect(body).toContain(`<option value="${HUB}/projects/active/quiet"`);
+        expect(body).not.toContain(`<option value="${UNKNOWN}"`);
+        expect(body).not.toContain('<option value="/other"');
     });
 });

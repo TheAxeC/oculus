@@ -17,6 +17,7 @@ text:
         docs: Docs
         drag_hint: Moving {0}
         move_to_main: Move tab to the main area
+        move_to_page: 'Move tab to {0}'
         move_to_panel: Move tab to the panel
         page_close_confirm: Close the page {0} and the {1} tabs on it?
         page_default: Page {0}

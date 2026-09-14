@@ -133,12 +133,12 @@ export function humanSize(bytes: number): string {
 /** One entry of a collection that names a project: which collection it is in, and its words. */
 export type Dissemination = { collection: string; id: Id; title: string };
 
-/** The collections whose entries say a project was presented or taught. */
-const ACTIVITY = ['events', 'education'];
+/** The collections whose entries say a project was presented, taught or applied with. */
+const ACTIVITY = ['events', 'education', 'applications'];
 
 /**
- * The events and education entries whose `related:` names one project, which is where the work was
- * disseminated. An events entry the reader only attended is not one: its `role` says `attend`, and
+ * The events, education and applications entries whose `related:` names one project, which is where
+ * the work was disseminated. An events entry the reader only attended is not one: its `role` says `attend`, and
  * attending somebody else's conference is not this project appearing anywhere.
  */
 export function disseminated(snapshot: Snapshot, id: Id): Dissemination[] {

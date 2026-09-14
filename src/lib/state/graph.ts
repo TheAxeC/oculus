@@ -471,3 +471,28 @@ export function optimize(
     }
     return { params: bestParams, ...best };
 }
+
+/** What one Map instance holds of its own: which nodes it shows and whether links are being drawn. */
+export type MapState = {
+    /** Whether collaboration nodes join the graph. */
+    collaborators: boolean;
+    /** The archive types whose projects are shown, by their own status word. */
+    enabled: string[];
+    /** Whether a click starts a link rather than selecting. */
+    linkMode: boolean;
+};
+
+/** The saved state of one Map instance, with anything that is not the shape above replaced by it. */
+export function parseMapState(raw: unknown): MapState {
+    const held =
+        typeof raw === 'object' && raw !== null && !Array.isArray(raw)
+            ? (raw as Record<string, unknown>)
+            : {};
+    return {
+        collaborators: held.collaborators === true,
+        enabled: Array.isArray(held.enabled)
+            ? held.enabled.filter((one): one is string => typeof one === 'string')
+            : [],
+        linkMode: held.linkMode === true
+    };
+}

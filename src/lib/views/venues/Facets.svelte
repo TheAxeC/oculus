@@ -2,6 +2,7 @@
     // Layer 3, Venues view partial. The theme toggle row, with counts from the pure venue state.
     // It owns no selection: the view passes what is off and receives each toggle.
 
+    import type { Snippet } from 'svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { t } from '$lib/state/text';
     import type { ThemeFacet } from '$lib/state/venues';
@@ -10,12 +11,14 @@
         facets: ThemeFacet[];
         off: string[];
         ontoggle: (theme: string) => void;
+        /** What the view draws at the end of the same wrapping row, so it never lands alone. */
+        children?: Snippet;
     };
 
-    let { facets, off, ontoggle }: Props = $props();
+    let { facets, off, ontoggle, children }: Props = $props();
 </script>
 
-{#if facets.length > 0}
+{#if facets.length > 0 || children !== undefined}
     <div class="facets" role="group" aria-label={t('venues.themes_facet')}>
         <span class="label">{t('venues.themes_facet')}</span>
         {#each facets as facet (facet.theme)}
@@ -25,6 +28,9 @@
                 onclick={() => ontoggle(facet.theme)}
             />
         {/each}
+        {#if children}
+            {@render children()}
+        {/if}
     </div>
 {/if}
 

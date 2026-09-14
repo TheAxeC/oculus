@@ -67,6 +67,7 @@
         NO_FUNDING,
         applyCollectionFilters,
         identityValue,
+        movedOrder,
         noFunding,
         parseCollectionState,
         pinnedFirst,
@@ -75,10 +76,10 @@
     } from '$lib/state/collection';
     import { openView } from '$lib/state/layout.svelte';
     import { cardCursor } from '$lib/state/instance';
-    import { collectionOf, projects } from '$lib/state/selectors.svelte';
+    import { archiveDead, collectionOf, projects } from '$lib/state/selectors.svelte';
     import { lookup, t } from '$lib/state/text';
     import { statusTone } from '$lib/state/tones';
-    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
+    import { cardMoveRequested, instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import { reorderEntries } from '$lib/state/writes.svelte';
     import type { ViewProps } from './registry';
 
@@ -133,23 +134,52 @@
     /**
      * The drop: the dragged entry moves to the place of the card it was dropped on, and the file is
      * written in the whole new order. The order is taken over every entry, not over the ones the
-     * filter leaves, so a drag while a search is typed cannot drop the entries it is hiding.
+     * filter leaves, so a drag while a search is typed cannot drop the entries it is hiding, and it
+     * is the file's own order rather than the pinned-first one the cards are drawn in, so a drag
+     * while an entry is pinned does not write the pinned-first order into the file.
      */
     async function drop(onto: string): Promise<void> {
         const from = dragged;
         dragged = '';
         if (from === '' || from === onto) return;
-        const order = entries.map((entry) => identityValue(entry, schema));
-        const at = order.indexOf(from);
-        const to = order.indexOf(onto);
-        if (at < 0 || to < 0) return;
-        order.splice(at, 1);
-        order.splice(to, 0, from);
-        const answer = await reorderEntries(key, order);
+        const order = fileOrder();
+        await writeOrder(order, order.indexOf(from), order.indexOf(onto));
+    }
+
+    /**
+     * The keyboard reorder: the card under the pane's cursor changes places with its neighbour in
+     * the file's order. It is the drag's other path, so a list is reorderable without a pointer.
+     */
+    async function carry(value: string, step: -1 | 1): Promise<void> {
+        const order = fileOrder();
+        const at = order.indexOf(value);
+        await writeOrder(order, at, at + step);
+    }
+
+    /** The identity of every entry the file holds, in the order the file holds them. */
+    function fileOrder(): string[] {
+        return (collection?.entries ?? []).map((entry) => identityValue(entry, schema));
+    }
+
+    /** Move one place of the order to another and write the whole new order to the file. */
+    async function writeOrder(order: string[], at: number, to: number): Promise<void> {
+        const moved = movedOrder(order, at, to);
+        if (moved === null) return;
+        const answer = await reorderEntries(key, moved);
         said = answer.ok
             ? t('editor.saved', answer.changed.join(', '))
             : t('editor.failed', answer.error ?? '');
     }
+
+    /** The sequence number of the last keyboard reorder performed, so one request moves one card. */
+    let carried = 0;
+
+    $effect(() => {
+        const asked = cardMoveRequested(instance.id);
+        if (asked === null || asked.seq === carried) return;
+        carried = asked.seq;
+        void carry(asked.card, asked.step);
+    });
 
     /** The pane's words: the file's own title, and the view's registered name before it arrives. */
     function title(): string {
@@ -221,7 +251,7 @@
         {/if}
 
         {#if key === 'code'}
-            <Coverage projects={all} />
+            <Coverage projects={all} dead={archiveDead()} />
         {/if}
 
         {#if shown.length === 0 && unfunded.length === 0}

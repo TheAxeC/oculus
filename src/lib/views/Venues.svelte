@@ -35,6 +35,7 @@
         venueUsers,
         type VenuesState
     } from '$lib/state/venues';
+    import { cardCursor } from '$lib/state/instance';
     import { archiveDead, collectionOf, projects, venues } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
@@ -46,6 +47,7 @@
     const allVenues = $derived(venues());
     const allProjects = $derived(realProjects(projects(), archiveDead()));
     const held = $derived(parseVenuesState(instanceState(instance.id)));
+    const cursor = $derived(cardCursor(instance.state));
     const facets = $derived(themeFacets(allVenues));
     const shown = $derived(applyThemeFacets(venueSearch(allVenues, held.search), held.off));
     const journals = $derived(shown.filter((venue) => venue.category === 'journal'));
@@ -93,7 +95,7 @@
 
 <Pane title={t('views.venues')} toolbar={tools}>
     <div class="venues" data-instance={instance.id}>
-        <Intro html={t('venues.intro')} />
+        <Intro html={t('venues.intro')} trusted />
         {#if adding && collection?.schema !== undefined}
             <EntryForm
                 collection="venues"
@@ -108,12 +110,11 @@
             <p class="said">{said}</p>
         {/if}
 
-        <div class="facet-row">
-            <Facets {facets} off={held.off} ontoggle={toggleTheme} />
+        <Facets {facets} off={held.off} ontoggle={toggleTheme}>
             <Tooltip text={t('venues.conc_tip')} focusable>
                 <Chip label={t('venues.conc')} tone="violet" />
             </Tooltip>
-        </div>
+        </Facets>
 
         {#if allVenues.length === 0}
             <p class="empty">{@html t('venues.empty')}</p>
@@ -137,6 +138,7 @@
                                 >
                                     <VenueCard
                                         {venue}
+                                        cursor={cursor === venue.id}
                                         projects={use.projects}
                                         concentrated={use.concentrated}
                                         entry={entryFor(venue.id)}
@@ -175,6 +177,7 @@
                                 >
                                     <VenueCard
                                         {venue}
+                                        cursor={cursor === venue.id}
                                         projects={use.projects}
                                         concentrated={use.concentrated}
                                         entry={entryFor(venue.id)}
@@ -203,13 +206,6 @@
         margin: 8px 0;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-md);
-    }
-
-    .facet-row {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: flex-start;
-        gap: 6px;
     }
 
     .empty {

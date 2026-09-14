@@ -37,13 +37,14 @@
     } from '$lib/state/inbox';
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
-    import { feedIdentity } from '$lib/state/palette';
+    import { feedIdents } from '$lib/state/palette';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
 
     let { instance }: ViewProps = $props();
 
     const data = $derived(feed('inbox'));
+    const identOf = $derived(feedIdents('inbox', data?.entries ?? []));
     const held = $derived(parseInboxState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
     const split = $derived(splitInbox(data?.entries ?? []));
@@ -77,14 +78,14 @@
             <div class="cards">
                 {#each entries as entry, at (`${String(entry.id ?? '')}:${at}`)}
                     <Reveal
-                        id={feedIdentity('inbox', entry)}
+                        id={identOf(entry)}
                         wanted={held.reveal}
                         onrevealed={() => write({ reveal: '' })}
                     >
                         <InboxCard
                             {entry}
-                            id={feedIdentity('inbox', entry)}
-                            cursor={cursor === feedIdentity('inbox', entry)}
+                            id={identOf(entry)}
+                            cursor={cursor === identOf(entry)}
                             onsaid={(words) => (said = words)}
                         />
                     </Reveal>
@@ -141,14 +142,14 @@
                         <div class="cards">
                             {#each triaged as entry, at (`${String(entry.id ?? '')}:${at}`)}
                                 <Reveal
-                                    id={feedIdentity('inbox', entry)}
+                                    id={identOf(entry)}
                                     wanted={held.reveal}
                                     onrevealed={() => write({ reveal: '' })}
                                 >
                                     <InboxCard
                                         {entry}
-                                        id={feedIdentity('inbox', entry)}
-                                        cursor={cursor === feedIdentity('inbox', entry)}
+                                        id={identOf(entry)}
+                                        cursor={cursor === identOf(entry)}
                                         triaged
                                         onsaid={(words) => (said = words)}
                                     />

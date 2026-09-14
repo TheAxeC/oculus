@@ -1,12 +1,16 @@
 // Layer 2, client state. Pure Position Leads status, deadline, fit, ordering, search, and saved
 // view state. The view receives ready-to-draw live and expired lists and owns no feed rules.
 
+import { uniqueIdents } from './palette.ts';
+
 export type LeadEntry = Record<string, unknown>;
 export type FitKey = 'strong' | 'moderate' | 'reach';
 export type LeadsState = {
     search: string;
     expiredOpen: boolean;
     runlogOpen: boolean;
+    /** Whether the run log shows every line rather than its first few. */
+    logAll: boolean;
     /** Whether the add form is open, kept with the instance so a re-render does not close it. */
     adding: boolean;
     /** Whether cards dismissed in this browser are shown for possible restoration. */
@@ -43,6 +47,15 @@ export function leadId(entry: LeadEntry): string {
         .replace(/[^a-z0-9]+/g, '-')
         .replace(/-{2,}/g, '-')
         .replace(/^-|-$/g, '');
+}
+
+/**
+ * One distinct non-empty id per lead of the feed. A lead whose title, institution and url are all
+ * empty, and each of two leads whose fields slug to the same id, carries its position in the feed,
+ * so no card is left with an id the cursor skips.
+ */
+export function leadIdents(entries: readonly LeadEntry[]): (entry: LeadEntry) => string {
+    return uniqueIdents(entries, leadId, 'lead');
 }
 
 /** Hide dismissed entries, or return every entry while the restoration toggle is on. */
@@ -139,6 +152,7 @@ export function parseLeadsState(raw: unknown): LeadsState {
         search: typeof held?.search === 'string' ? held.search : '',
         expiredOpen: held?.expiredOpen === true,
         runlogOpen: held?.runlogOpen === true,
+        logAll: held?.logAll === true,
         adding: held?.adding === true,
         showDismissed: held?.showDismissed === true
     };

@@ -110,7 +110,7 @@
 
 <Pane title={t('views.programs')}>
     <div class="programs-view" data-instance={instance.id}>
-        <Intro html={inlineMarkdown(t('programs.intro'))} actions={introActions} />
+        <Intro html={inlineMarkdown(t('programs.intro'))} trusted actions={introActions} />
         {#if adding && collection?.schema !== undefined}
             <EntryForm
                 collection="programs"

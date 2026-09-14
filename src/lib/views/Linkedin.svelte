@@ -41,7 +41,7 @@
     } from '$lib/state/linkedin';
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
-    import { feedIdentity } from '$lib/state/palette';
+    import { feedIdents } from '$lib/state/palette';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import { addLinkedinIdea, type WriteAnswer } from '$lib/state/writes.svelte';
     import type { ViewProps } from './registry';
@@ -50,6 +50,7 @@
 
     const today = localDate(Date.now());
     const data = $derived(feed('linkedin'));
+    const identOf = $derived(feedIdents('linkedin', data?.entries ?? []));
     const held = $derived(parseLinkedinState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
     const split = $derived(splitPosts(data?.entries ?? []));
@@ -164,7 +165,7 @@
                     <div class="cards" data-linkedin-section="ideas">
                         {#each ideas as entry (entry.file)}
                             <Reveal
-                                id={feedIdentity('linkedin', entry)}
+                                id={identOf(entry)}
                                 wanted={held.reveal}
                                 onrevealed={() => write({ reveal: '' })}
                             >
@@ -192,7 +193,7 @@
                     <div class="cards" data-linkedin-section="posted">
                         {#each posts as entry (entry.file)}
                             <Reveal
-                                id={feedIdentity('linkedin', entry)}
+                                id={identOf(entry)}
                                 wanted={held.reveal}
                                 onrevealed={() => write({ reveal: '' })}
                             >

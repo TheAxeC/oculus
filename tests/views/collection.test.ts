@@ -8,6 +8,7 @@
 // state a click would write is written through setInstanceState instead, and the pure rules behind
 // it are tests/state/collection.test.ts.
 
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
@@ -557,5 +558,48 @@ describe('the entry form', () => {
         }).body;
         expect(body).toContain('<textarea');
         expect(body).toContain('{"method":"wget","verified":true}');
+    });
+});
+
+describe('a field whose value is a map', () => {
+    it('draws one chip per key, the key and its line joined, rather than nothing', () => {
+        const snap = snapshot();
+        snap.version = 9;
+        snap.entities.collections.events.entries = [
+            entry(0, 'A nested talk', {
+                retrieval: { method: 'wget', notes: 'from the source', empty: {} }
+            })
+        ];
+        receive({ channel: 'portfolio', version: 9, payload: snap });
+        const card = cards(html())[0];
+        expect(card).toContain('>retrieval</span>');
+        expect(card).toContain('method: wget');
+        expect(card).toContain('notes: from the source');
+        expect(card).not.toContain('empty:');
+        receive({ channel: 'portfolio', version: 10, payload: snapshot() });
+    });
+});
+
+describe('what a reorder and a cleared control send', () => {
+    // The drop and the save are DOM events no server render fires, so the two rules are read off
+    // the source: the order the drag writes, and the value an emptied control saves as. The pure
+    // halves, movedOrder and clearedValue, are tested in tests/state/collection.test.ts.
+    it('writes the file own order, never the pinned-first order the cards are drawn in', () => {
+        const source = readFileSync('src/lib/views/Collection.svelte', 'utf8');
+        const order = source.slice(source.indexOf('function fileOrder()'));
+        const body = order.slice(0, order.indexOf('\n    }'));
+        expect(body).toContain('(collection?.entries ?? [])');
+        expect(body).not.toContain('pinnedFirst');
+        expect(body).not.toContain('entries.map');
+        expect(body).not.toContain('shown');
+        // Both callers take their order from that one reader and from nothing else.
+        expect(source).toContain('const order = fileOrder();');
+        expect(source.match(/fileOrder\(\)/g)).toHaveLength(3);
+    });
+
+    it('sends the empty string for a control the reader cleared on an entry that exists', () => {
+        const source = readFileSync('src/lib/views/shared/EntryForm.svelte', 'utf8');
+        expect(source).toContain('return clearedValue(field in edits, entry !== null);');
+        expect(source).toContain("if (text !== '') return text;");
     });
 });

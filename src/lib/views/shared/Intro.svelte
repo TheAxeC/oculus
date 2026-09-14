@@ -7,21 +7,32 @@
     type Props = {
         html?: string;
         lines?: string[];
+        /**
+         * Whether the lines and the html are catalog text: the tree's own words, from
+         * config/text*.yml through t(), which are drawn as written. A caller that leaves it off
+         * is handing over a hub value and its markup is sanitised first.
+         */
+        trusted?: boolean;
         actions?: Snippet;
         children?: Snippet;
     };
 
-    let { html, lines, actions, children }: Props = $props();
+    let { html, lines, trusted = false, actions, children }: Props = $props();
+
+    /** One line as it is drawn: catalog words as written, a hub value with its markup cut down. */
+    function drawn(line: string): string {
+        return trusted ? line : sanitise(line);
+    }
 </script>
 
 <div class="intro">
     <div class="content">
         {#if lines !== undefined}
             {#each lines as line, index (`${index}:${line}`)}
-                <p>{@html sanitise(line)}</p>
+                <p>{@html drawn(line)}</p>
             {/each}
         {:else if html !== undefined}
-            {@html sanitise(html)}
+            {@html drawn(html)}
         {:else if children}
             {@render children()}
         {/if}
@@ -34,6 +45,7 @@
 <style>
     .intro {
         display: flex;
+        flex-wrap: wrap;
         align-items: flex-start;
         gap: 12px;
         margin: 0 0 10px;
@@ -67,5 +79,13 @@
     .actions {
         flex: 0 0 auto;
         margin-left: auto;
+    }
+
+    /* A narrow pane stacks the words over the controls rather than pushing the controls past the
+       block's own edge. */
+    @media (max-width: 640px) {
+        .actions {
+            margin-left: 0;
+        }
     }
 </style>
