@@ -31,8 +31,8 @@ dispatch:
   events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/events.jsonl
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/report.md
   exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/exit.txt
-  pid: pending
-  session_id: pending
+  pid: 11328
+  session_id: 01a09dd1-d762-77c0-8a67-c8508656fb4f
   landing: not-started
   round: 0
   notes: R6, the card cursor as pane instance state (Card gains an id prop for data-card and a cursor prop; key-dom finds the cursor card by id; the spec's selector stays); brief re-read on the tree at 04:50; after it R8 only if dispatched before 06:00, then R9, R10; nothing in flight at 07:05.
