@@ -11,7 +11,6 @@ import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 import type { Finding, UsageAccountConfig, UsageTool } from '../model.ts';
-import { REGISTRY_KEYS } from '../normalise.ts';
 
 export type LocalConfig = {
     /** Absolute path of the research hub whose YAML the portfolio is built from. */
