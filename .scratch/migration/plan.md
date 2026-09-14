@@ -84,6 +84,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ Q13 the decided small fixes of 2026-09-13 00:30: pillar colours, toggle glyphs, flyout headings, `--card`, the leads schema labels, the palette's unknown line, the window title, the composer removed, Cancel to Revert, the lead hide words, the map's refused edge, the HPC Disk columns and Recent summary (Axel 2026-09-13 00:30, 01:50, 13:10; landed the same day).
 - ✅ Q14 the keyboard chords: every cockpit key binding (the digit keys for the first nine tabs, c1 to c9 and m1 to m9 for the two menus, from 02-views.js and 05-leads.js) listed against oculus's keys in Workbench.svelte and the missing ones ported (Axel 2026-09-13 00:30; brief at dispatch)
 - Q15 Live HPC stopping (Axel 2026-09-13 12:00: "live hpc seems to sometimes just stop working"): first the diagnosis (the server log, the poller's error and timeout path, a hung ssh reproduced with a stub), then the fix of what it finds, and the header's "as of" made visibly stale when a poll is late (brief at dispatch)
+- Q15b the log-path prewarm ported from the cockpit (`slurm_prewarm_logs`, `hpc.py` 422): the finished jobs' stdout paths resolved in the background under `slurm.prewarm` so a log opens at once; after Q15, the live check when Axel is on the UT network (Axel 2026-09-15 00:47; brief at dispatch).
 - Q16 the lighter project card: one labelled line per kind (funding, programs, datasets, collaborators), three entries shown and a `+N` control past that, cross-links kept, the open body unchanged (Axel 2026-09-13 13:00 and 13:30; brief at dispatch).
 - Q17 the look: chips only for the status words, everything else plain text with its glyph; one monochrome icon set in place of the emoji glyphs, mapped from `glyphs.yml` in config, the ASCII mode kept; the radius and the single accent not allowed (Axel 2026-09-13 13:45; brief at dispatch).
 - H1 funding keys complete (inline, hub data): 8 of 11 funding.yml entries lack a `key:`; every awarded or contributing entry gets `key:` and `statement:`, plus one finding rule in oculus flagging one without (from tasks.yml; Axel 2026-09-13 00:30).
@@ -155,7 +156,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 
 ## Could run in parallel
 
-- The feature stretch after R17, three at a time (Axel 2026-09-14 17:50), each set checked for disjoint paths at its dispatch: Q15 + Q16 + H1; Q17 + P1 + O27a; P2 + O27b + O28a; O28b + D1 + D2; D3 + D6 + D4; D5 + D7 + D10; D8 + D12 + D9; D16 + D11 + D13; D14 + D15 + D17; D18 + D20 + O31. Alone by nature: Q18, R10, R13a, R13b, K1, R17, L1, L2 before it; R2, O29, O30, X2 after it.
+- The feature stretch after R17, three at a time (Axel 2026-09-14 17:50), each set checked for disjoint paths at its dispatch: Q15 + Q16 + H1, Q15b with the next set; Q17 + P1 + O27a; P2 + O27b + O28a; O28b + D1 + D2; D3 + D6 + D4; D5 + D7 + D10; D8 + D12 + D9; D16 + D11 + D13; D14 + D15 + D17; D18 + D20 + O31. Alone by nature: Q18, R10, R13a, R13b, K1, R17, L1, L2 before it; R2, O29, O30, X2 after it.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
@@ -164,6 +165,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - O22 to O28 with each other once O10 has landed.
 
 ## Rulings (2026-09-10)
+- 2026-09-15 00:47, Axel: L1's openBeside stands; the log-path prewarm is ported as Q15b after Q15, its live check once he is on the UT network; Q15 keeps the last good rows under the stale mark; Q17's icons are Lucide; H1's FWO-PhD statement text given.
 - 2026-09-14 20:29, Axel: pages and panels become one model, booked as L1 and L2 after R17; a nested page is the same page, never a copy; the keys are his option (d), booked as K1; a pause once R13b lands (20:27).
 - 2026-09-13 12:05, Axel: the Processes view is D18; Live HPC stopping is Q15; the chat's default model is to be set in behavior.yml once its id is confirmed (he named Opus 4.6).
 - 2026-09-13 13:00, Axel: the rail at 98 px is fine; a lighter card allowed (Q16); the HPC Disk bar and Recent summary too large (Q13).
