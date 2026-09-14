@@ -35,6 +35,10 @@ dispatch:
   exit: none
   pid: none
   session_id: a983058680d116cba            # the Agent tool's id; its transcript is the runner's task output for that id
+  round: 1                                 # the repair round, sent 2026-09-14T09:48:00+02:00 to the same agent
+  repair_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/W1/repair-prompt.md
+  repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/W1/repair-report.md
+  review_report: agents/reviews/W1.md
   landing: not-started
 ```
 
