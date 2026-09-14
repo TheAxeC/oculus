@@ -12,6 +12,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
+import { byKey } from '../../../src/lib/data/guards.ts';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import type { Sink } from '../../../src/lib/server/channels.ts';
@@ -401,7 +402,7 @@ describe('watchGit', () => {
         announce(hub, [root]);
         const watcher = watchGit(hub);
         watchers.push(watcher);
-        await until(() => latest(client.got)[root] !== undefined, WAIT);
+        await until(() => byKey(latest(client.got), root) !== undefined, WAIT);
 
         const before = client.got.length;
         watcher.refresh(root);
@@ -517,7 +518,7 @@ describe('watchGit', () => {
         announce(hub, []);
         watchers.push(watchGit(hub, { always, throttle: 300 }));
 
-        await until(() => latest(client.got)[always] !== undefined, WAIT);
+        await until(() => byKey(latest(client.got), always) !== undefined, WAIT);
         expect(latest(client.got)[always].branch).toBe('work');
 
         const before = latest(client.got)[always].untracked.length;

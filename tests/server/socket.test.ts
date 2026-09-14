@@ -15,6 +15,7 @@ import { attachSocket, subscriptionChannels } from '../../src/lib/server/socket.
 import type { Attached, TerminalSink } from '../../src/lib/server/socket.ts';
 import type { Message } from '../../src/lib/data/model.ts';
 import { noop } from '../doubles.ts';
+import { present } from '../present.ts';
 
 type Running = {
     hub: Hub;
@@ -61,7 +62,7 @@ function collect(ws: WebSocket, count: number): Promise<Message[]> {
 
 afterEach(async () => {
     while (running.length > 0) {
-        const started = running.pop()!;
+        const started = present(running.pop(), 'running server to close');
         started.attached.close();
         await new Promise<void>((resolve) => started.server.close(() => resolve()));
     }

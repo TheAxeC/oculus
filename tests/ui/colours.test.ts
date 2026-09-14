@@ -39,6 +39,7 @@ import { describe, expect, it } from 'vitest';
 import { deriveTokens, ratio } from '../../src/lib/themes/derive.ts';
 import { parseBlocks, resolveTheme } from '../../src/lib/themes/parse.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
+import { byKey } from '../../src/lib/data/guards.ts';
 import { setAppearance, themeClass, themes } from '../../src/lib/state/appearance.ts';
 
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src');
@@ -302,7 +303,7 @@ export function assignments(source: string): Record<string, string[]> {
 function variable(value: string): { name: string; fallback: string | null } | null {
     const match = /^var\(\s*(--[a-z0-9-]+)\s*(?:,([\s\S]*))?\)$/i.exec(value.trim());
     if (match === null) return null;
-    const fallback = match[2] === undefined ? null : match[2].trim();
+    const fallback = match.at(2)?.trim() ?? null;
     return { name: match[1].toLowerCase(), fallback };
 }
 
@@ -353,7 +354,7 @@ function allowedColour(value: string, set: Record<string, string[]>): boolean {
     if (text === 'inherit' || text === 'currentcolor' || NEUTRAL.includes(text)) return true;
     const found = variable(value);
     if (found === null) return false;
-    const own = set[found.name];
+    const own = byKey(set, found.name);
     if (own !== undefined) return own.every((assigned) => allowedColour(assigned, set));
     if (!textToken(found.name)) return false;
     if (found.fallback === null) return true;
@@ -370,7 +371,7 @@ function allowedFill(value: string, set: Record<string, string[]>): boolean {
     if (NEUTRAL.includes(text) || text === 'inherit') return true;
     const found = variable(value);
     if (found === null) return false;
-    const own = set[found.name];
+    const own = byKey(set, found.name);
     if (own !== undefined) return own.every((assigned) => allowedFill(assigned, set));
     if (!fillToken(found.name)) return false;
     return found.fallback === null || allowedFill(found.fallback, set);
@@ -468,7 +469,7 @@ describe('the surfaces a component may fill and paint on', () => {
             const all: Record<string, string> = { ...theme, ...deriveTokens(theme) };
             for (const surface of SURFACES) {
                 const on = `--on-${surface.slice(2)}`;
-                if (all[on] === undefined || all[surface] === undefined) continue;
+                if (byKey(all, on) === undefined || byKey(all, surface) === undefined) continue;
                 measured += 1;
                 const found = ratio(all[on], all[surface]);
                 if (found < 4.5) {
@@ -483,8 +484,8 @@ describe('the surfaces a component may fill and paint on', () => {
     it('defines the card surface in the root and every theme block', () => {
         expect(
             Object.entries(blocks)
-                .filter(([, tokens]) => tokens['--panel'] !== undefined)
-                .filter(([, tokens]) => tokens['--card'] === undefined)
+                .filter(([, tokens]) => byKey(tokens, '--panel') !== undefined)
+                .filter(([, tokens]) => byKey(tokens, '--card') === undefined)
                 .map(([name]) => name)
         ).toEqual([]);
     });

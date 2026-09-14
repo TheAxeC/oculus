@@ -70,7 +70,7 @@ describe('a config push', () => {
         expect([t('app.title'), defaultTheme()]).toEqual(['third', 'amber']);
     });
 
-    it('raises nothing for a payload that is not an object', () => {
+    it('raises nothing when there is no payload', () => {
         const before = configGeneration();
         installConfig(null);
         expect(configGeneration()).toBe(before);
@@ -97,7 +97,7 @@ function functions(): Fn[] {
             found.push({
                 file,
                 name: match[2],
-                exported: match[1] !== undefined,
+                exported: match.at(1) !== undefined,
                 body: match[3]
             });
         }

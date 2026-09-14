@@ -14,7 +14,7 @@
     // from state/hpc.svelte.ts, drawn only while the cluster answers and the queue is not empty,
     // and a click on it opens the Live HPC view.
 
-    import type { TickerRow } from '$lib/ui/Ticker.svelte';
+    import type { TickerRow } from '$lib/ui/ticker-rows';
     import { CATEGORIES, type Ticker as FocusTicker, type TickerItem } from '$lib/state/ticker';
     import { attention, refresh } from '$lib/state/feeds';
     import { configMap } from '$lib/state/selectors.svelte';
@@ -134,7 +134,7 @@
 
     /** The "needs attention" rows: a count, its words, and the view each line opens. */
     const attentionView = $derived.by(() => {
-        const index: Record<string, (typeof needs)[number]> = {};
+        const index: Record<string, (typeof needs)[number] | undefined> = {};
         const rows = needs.map((one, at): TickerRow => {
             const id =
                 one.kind === 'venue' ? `attention:venue:${one.id ?? at}` : `attention:${one.kind}`;
@@ -169,7 +169,7 @@
 
     /** The "refresh live data" rows: what is stale, how stale, and the command that refreshes it. */
     const refreshView = $derived.by(() => {
-        const index: Record<string, (typeof nudges)[number]> = {};
+        const index: Record<string, (typeof nudges)[number] | undefined> = {};
         const rows = nudges.map((one, at): TickerRow => {
             const id = `refresh:${one.feed}:${at}`;
             index[id] = one;

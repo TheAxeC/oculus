@@ -4,6 +4,7 @@
 
 import { rmSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { byKey } from '../../data/guards.ts';
 import {
     engineDir,
     loadConfig,
@@ -35,7 +36,7 @@ function shellWord(value: string): string {
 
 /** Fill positional placeholders in one flattened catalog entry. */
 function words(catalog: Record<string, string>, key: string, ...args: (string | number)[]): string {
-    const template = catalog[key];
+    const template = byKey(catalog, key);
     if (template === undefined) throw new Error(`text key not in config: ${key}`);
     let filled = template;
     for (const [at, value] of args.entries()) {

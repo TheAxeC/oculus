@@ -17,7 +17,7 @@
 
     import Confirm from '$lib/ui/Confirm.svelte';
     import Empty from '$lib/ui/Empty.svelte';
-    import type { MenuItem } from '$lib/ui/Menu.svelte';
+    import type { MenuItem } from '$lib/ui/menu-items';
     import Pane from '$lib/ui/Pane.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
@@ -219,11 +219,11 @@
                     onswitch={switchTo}
                     onpush={pushIt}
                     onbranch={createBranch}
-                    onbranchname={(next) => (branchName = next)}
+                    onbranchname={(next: string) => (branchName = next)}
                     onstage={stagePath}
                     onunstage={unstagePath}
                     ondiscard={discardPath}
-                    onmessage={(next) => (message = next)}
+                    onmessage={(next: string) => (message = next)}
                     onsuggest={suggest}
                     oncommit={commitIt}
                 />

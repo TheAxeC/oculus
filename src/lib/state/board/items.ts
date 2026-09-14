@@ -1,6 +1,7 @@
 // Layer 2, client state. Board item construction and sorting live here because project joins change
 // independently of filters, facets and statistics.
 
+import { byKey } from '../../data/guards.ts';
 import { domainLabel, domainTone, typeTone } from '../tones.ts';
 import type { Id, Project, Snapshot } from '../../data/model.ts';
 import {
@@ -16,7 +17,7 @@ import {
 
 function collaboratorNames(snapshot: Snapshot): Record<Id, string> {
     const names: Record<Id, string> = {};
-    const collection = snapshot.entities.collections.collaborations;
+    const collection = byKey(snapshot.entities.collections, 'collaborations');
     if (collection === undefined) return names;
     for (const entry of collection.entries) names[entry.id] = entry.title;
     return names;
@@ -50,8 +51,9 @@ function itemOf(
     sessionsOf: SessionsOf
 ): BoardItem {
     const entities = snapshot.entities;
-    const domainId = project.domainIds[0];
-    const venue = project.venueId === undefined ? undefined : entities.venues[project.venueId];
+    const domainId = project.domainIds.at(0);
+    const venue =
+        project.venueId === undefined ? undefined : byKey(entities.venues, project.venueId);
     const tag = (id: Id, label: string): BoardTag => ({ id, label });
 
     const item: Omit<BoardItem, 'haystack'> = {
@@ -71,7 +73,9 @@ function itemOf(
                       short:
                           venue.short !== undefined && venue.short !== '' ? venue.short : venue.name
                   },
-        programs: project.programIds.map((id) => tag(id, entities.programs[id]?.title ?? id)),
+        programs: project.programIds.map((id) =>
+            tag(id, byKey(entities.programs, id)?.title ?? id)
+        ),
         funding: project.fundingIds.map((id) => tag(id, id)),
         datasets: project.datasetIds.map((id) => tag(id, id)),
         collaborators: project.collaborators.map((id) => tag(id, names[id] ?? id)),

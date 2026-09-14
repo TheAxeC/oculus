@@ -15,6 +15,7 @@
 // A refusal the page has words for travels as the catalog key of those words, so the endpoint holds
 // no English the page would have to show raw. The page maps the two keys back through t().
 
+import { scalar } from '../../data/guards.ts';
 import { hasToken, sameOrigin } from '../auth.ts';
 import { engineDir, loadLocal } from '../../data/sources/config.ts';
 import { startChat, type ChatOptions } from './chat.ts';
@@ -226,7 +227,7 @@ export async function handleTerminal(
             const terminal = await startTerminal(
                 {
                     kind,
-                    cwd: String(message.cwd ?? ''),
+                    cwd: scalar(message.cwd),
                     cols: message.cols as number,
                     rows: message.rows as number,
                     name: typeof message.name === 'string' ? message.name : undefined

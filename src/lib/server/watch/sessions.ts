@@ -55,7 +55,7 @@ export const MAX_SESSIONS = 40;
 /** What the watcher needs of server/pty/channel.ts's Terminals: the list, and when it changed. */
 export type TerminalSource = {
     list(): Terminal[];
-    onChange(listener: () => void): () => void;
+    onChange: (listener: () => void) => () => void;
 };
 
 export type SessionsWatchOptions = {
@@ -100,7 +100,7 @@ export type SessionsWatchOptions = {
 
 export type SessionsWatcher = Watcher & {
     /** Subscribe to completed rescans owned by this watcher. */
-    onChange(listener: () => void): () => void;
+    onChange: (listener: () => void) => () => void;
 };
 
 /** What the liveness re-check compares: every live session's id and the state it is in. */

@@ -1,36 +1,3 @@
-<script module lang="ts">
-    /**
-     * One row: the glyph it is drawn with, the words that name it, the words that date it, and the
-     * hue the tail is drawn in. A row with an `id` is one the caller can be told about; a row
-     * without one is read and not clicked.
-     */
-    export type TickerRow = {
-        id: string;
-        glyph: string;
-        label: string;
-        tail?: string;
-        tone?: string;
-        /**
-         * Small buttons after the tail. Each is an id the caller knows and words it translated;
-         * what pressing one does is the caller's and nothing here knows what an action is.
-         */
-        actions?: TickerAction[];
-        /**
-         * Draw the name as text even in a list that can be picked. A row needs an id to be told
-         * apart when one of its buttons is pressed, and not every such row names something the
-         * caller can open; this says so, rather than leaving a button that does nothing.
-         */
-        plain?: boolean;
-    };
-
-    /** One button on a row: what it is called back with, its words, and its hover title. */
-    export type TickerAction = {
-        id: string;
-        label: string;
-        title?: string;
-    };
-</script>
-
 <script lang="ts">
     // Layer 3, primitive. A dense list of dated lines: a glyph, a name, and what the date says about
     // it. It knows no domain, so what a row means and what picking one does are the caller's; the
@@ -40,6 +7,7 @@
     // The tail's hue is a tone name, turned into `--c-<tone>-txt` on a custom property here, so the
     // only colours in the rules below are tokens.
 
+    import type { TickerRow } from '$lib/ui/ticker-rows';
     import Glyph from './Glyph.svelte';
 
     type Props = {

@@ -15,6 +15,7 @@
 import { execFile as execFileCb } from 'node:child_process';
 import { basename } from 'node:path';
 import type { HookEvent, SessionRecord, SessionsPayload } from '../data/model.ts';
+import { byKey } from '../data/guards.ts';
 import { allowedOrigin } from './auth.ts';
 import { HookStore, patchPayload, type HubLike } from './sessions/hooks.ts';
 
@@ -55,7 +56,7 @@ export function handleHook(body: unknown, now: number): HookEvent | null {
     if (typeof body !== 'object' || body === null || Array.isArray(body)) return null;
     const record = body as Record<string, unknown>;
     const name = typeof record.hook_event_name === 'string' ? record.hook_event_name : '';
-    const kind = EVENT_NAMES[name];
+    const kind = byKey(EVENT_NAMES, name);
     if (kind === undefined) return null;
     const session = str(record, 'session_id');
     if (session === undefined) return null;

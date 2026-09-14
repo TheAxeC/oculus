@@ -11,6 +11,7 @@ import {
     renderScalar
 } from '../yaml-edit.ts';
 import type { EditResult, FieldValue } from '../yaml-edit.ts';
+import { scalar } from '../../data/guards.ts';
 
 /** The collection list key whose entries the writers locate and edit. */
 export const LIST = 'entries';
@@ -151,7 +152,10 @@ export function splice(text: string, from: number, to: number, insert: string): 
  */
 export function flowScalar(value: FieldValue): string {
     if (value === null) return 'null';
-    if (typeof value !== 'string') return String(value);
+    if (typeof value === 'number' || typeof value === 'boolean') return String(value);
+    // A list or a map inside a flow map is written as JSON, which is YAML flow with every
+    // separator quoted, so a comma or a brace inside it cannot end the value.
+    if (typeof value !== 'string') return JSON.stringify(value);
     if (value === '' || /[,{}[\]:#]|^\s|\s$/.test(value)) return JSON.stringify(value);
     return renderScalar(value);
 }
@@ -200,7 +204,7 @@ export function linesOf(source: string, node: YAMLMap): LineRange | null {
 }
 
 /** The entry whose `ident` field holds `value`, or null when the file has no such entry. */
-export function locate(source: string, ident: string, value: string): Located | null {
+export function locate(source: string, ident: string, value: unknown): Located | null {
     const doc = document(source);
     if (doc === null) return null;
     const list = listOf(doc.contents as YAMLMap);
@@ -210,8 +214,7 @@ export function locate(source: string, ident: string, value: string): Located | 
         if (!isMap(node)) continue;
         const pair = pairOf(node, ident);
         if (pair?.value == null || !isScalar(pair.value)) continue;
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the value reaches locate from the route's request body, where nothing has made it a string yet
-        if (String(pair.value.value) !== String(value)) continue;
+        if (scalar(pair.value.value) !== scalar(value)) continue;
         const range = linesOf(source, node);
         if (range === null) continue;
         return { list: list.key, index: at, node, range };

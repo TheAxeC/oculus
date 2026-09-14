@@ -17,7 +17,7 @@ import type {
     UsagePayload
 } from '../data/model.ts';
 
-const messages: Record<string, Message> = $state({});
+const messages: Record<string, Message | undefined> = $state({});
 
 /** Store a message unless the channel already holds a newer one. */
 export function receive(message: Message): void {

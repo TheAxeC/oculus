@@ -63,7 +63,7 @@ export function ratio(a: string, b: string): number {
  * higher ratio. A brightness cutoff mis-picks every mid-dark colour, so both are measured.
  */
 export function contrastOn(hex: string): string {
-    if (!HEX.test(hex ?? '')) return LIGHT_INK;
+    if (!HEX.test(hex)) return LIGHT_INK;
     return ratio(hex, DARK_INK) >= ratio(hex, LIGHT_INK) ? DARK_INK : LIGHT_INK;
 }
 
@@ -119,7 +119,7 @@ function hex(r: number, g: number, b: number): string {
  * point: swapping in black or white would throw the palette away.
  */
 export function readable(fg: string, bg: string, minimum = 4.5): string {
-    if (!(HEX.test(fg ?? '') && HEX.test(bg ?? ''))) return fg;
+    if (!(HEX.test(fg) && HEX.test(bg))) return fg;
     if (ratio(fg, bg) >= minimum) return fg;
 
     const [r, g, b] = channels(fg).map((v) => v / 255);

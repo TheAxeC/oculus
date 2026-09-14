@@ -91,7 +91,7 @@
         <Search
             value={held.search}
             placeholder={t('linkedin.search')}
-            oninput={(search) => write({ search })}
+            oninput={(search: string) => write({ search })}
         />
         <ToolButton
             label={t('linkedin.addidea')}
@@ -153,7 +153,7 @@
                     entry={null}
                     onadd={add}
                     onclose={() => write({ adding: false })}
-                    onsaid={(words) => (said = words)}
+                    onsaid={(words: string) => (said = words)}
                 />
             {/if}
 
@@ -175,7 +175,7 @@
                                     id={entry.file}
                                     cursor={cursor === entry.file}
                                     folder={data.file}
-                                    onsaid={(words) => (said = words)}
+                                    onsaid={(words: string) => (said = words)}
                                 />
                             </Reveal>
                         {/each}
@@ -204,7 +204,7 @@
                                     cursor={cursor === entry.file}
                                     folder={data.file}
                                     posted
-                                    onsaid={(words) => (said = words)}
+                                    onsaid={(words: string) => (said = words)}
                                 />
                             </Reveal>
                         {/each}

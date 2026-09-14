@@ -1,8 +1,3 @@
-<script module lang="ts">
-    /** One named arrangement of config/layout.yml: its key, the words a page of it carries, and its tree. */
-    export type Arrangement = { name: string; label: string; node: unknown };
-</script>
-
 <script lang="ts">
     // Layer 3, shell. The strip of pages across the top of the main area and the panel together. A
     // page is a whole workbench of its own, which is DESIGN.md's decision on pages, so the
@@ -13,9 +8,12 @@
     // one is renamed, and the page drag with its insertion point. Everything else is the layout
     // store's.
 
+    import { type Arrangement } from '$lib/shell/page-strip';
     import Confirm from '$lib/ui/Confirm.svelte';
-    import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
-    import Tabs, { type Tab } from '$lib/ui/Tabs.svelte';
+    import Menu from '$lib/ui/Menu.svelte';
+    import type { MenuItem } from '$lib/ui/menu-items';
+    import Tabs from '$lib/ui/Tabs.svelte';
+    import type { Tab } from '$lib/ui/tab-strip';
     import TextInput from '$lib/ui/TextInput.svelte';
     import {
         closePage,
@@ -254,7 +252,7 @@
             <TextInput
                 value={draft}
                 label={t('ui.page_rename_label')}
-                oninput={(value) => (draft = value)}
+                oninput={(value: string) => (draft = value)}
             />
         </span>
     {/if}

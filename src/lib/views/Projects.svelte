@@ -36,10 +36,12 @@
     // views/shared/ProjectCard.svelte, since views/Project.svelte draws the same one.
 
     import Empty from '$lib/ui/Empty.svelte';
-    import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
+    import Menu from '$lib/ui/Menu.svelte';
+    import type { MenuItem } from '$lib/ui/menu-items';
     import Pane from '$lib/ui/Pane.svelte';
     import Search from '$lib/ui/Search.svelte';
-    import Segment, { type SegmentItem } from '$lib/ui/Segment.svelte';
+    import Segment from '$lib/ui/Segment.svelte';
+    import type { SegmentItem } from '$lib/ui/segment-items';
     import Table from '$lib/ui/Table.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
@@ -264,7 +266,7 @@
         <Search
             value={held.search}
             placeholder={preset.search === '' ? t('board.search_default') : preset.search}
-            oninput={(value) => write({ search: value })}
+            oninput={(value: string) => write({ search: value })}
         />
         <ToolButton
             label={t('board.new_idea')}
@@ -330,13 +332,16 @@
                 <Menu
                     label={t('board.filter_by', heading(group.key))}
                     items={menuItems(group.key, group.values)}
-                    onpick={(value) => toggleFilter(group.key, value)}
+                    onpick={(value: string) => toggleFilter(group.key, value)}
                     placement="down"
                 />
             {/each}
         </div>
         {#if adding}
-            <NewIdea onclose={() => (adding = false)} onsaid={(answer) => (said = answer)} />
+            <NewIdea
+                onclose={() => (adding = false)}
+                onsaid={(answer: string) => (said = answer)}
+            />
         {/if}
         {#if preset.id === STATS_BOARD}
             <Stats stats={strip} />
@@ -360,7 +365,7 @@
                         tab={tabLabel(item)}
                         staleLag={lag}
                         ontoggle={() => toggleCard(item.id)}
-                        onsaid={(answer) => (said = answer)}
+                        onsaid={(answer: string) => (said = answer)}
                     />
                 {/each}
             </div>

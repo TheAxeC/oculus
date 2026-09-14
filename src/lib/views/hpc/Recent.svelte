@@ -1,7 +1,8 @@
 <script lang="ts">
     // Layer 3, view partial. Finished jobs stay collapsed and show memory and CPU efficiency tones with an on-demand log action.
     import Chip from '$lib/ui/Chip.svelte';
-    import Table, { type Column } from '$lib/ui/Table.svelte';
+    import Table from '$lib/ui/Table.svelte';
+    import { type Column, cellText } from '$lib/ui/table-rows';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { efficiencyTone, type HpcRecent } from '$lib/state/hpc';
     import { t } from '$lib/state/text';
@@ -56,9 +57,9 @@
             tone={efficiencyTone(row.cpuPct as number | null)}
         />
     {:else if column.key === 'actions'}
-        <ToolButton label={t('hpc.log')} onclick={() => onlog(String(row.id))} />
+        <ToolButton label={t('hpc.log')} onclick={() => onlog(cellText(row.id))} />
     {:else}
-        {String(row[column.key] ?? '')}
+        {cellText(row[column.key])}
     {/if}
 {/snippet}
 {#if rows.length}

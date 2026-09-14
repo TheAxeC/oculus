@@ -12,12 +12,14 @@ import { readFileSync } from 'node:fs';
 import { beforeAll, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import DropLayer from '../../src/lib/shell/DropLayer.svelte';
-import Workbench, { activeLabel, windowTitle } from '../../src/lib/shell/Workbench.svelte';
-import Tabs, {
+import Workbench from '../../src/lib/shell/Workbench.svelte';
+import { activeLabel, windowTitle } from '../../src/lib/shell/workbench-title.ts';
+import Tabs from '../../src/lib/ui/Tabs.svelte';
+import {
     horizontalWheelDelta,
     insertionIndex,
     tabScrollState
-} from '../../src/lib/ui/Tabs.svelte';
+} from '../../src/lib/ui/tab-strip.ts';
 import {
     THRESHOLD,
     cancel,
@@ -49,6 +51,7 @@ import {
 } from '../../src/lib/state/layout.svelte.ts';
 import type { Dock, Layout, Workbench as Bench } from '../../src/lib/state/layout/index.ts';
 import { noop } from '../doubles.ts';
+import { present } from '../present.ts';
 
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));
@@ -464,7 +467,7 @@ describe('the views the application registers', () => {
             .map(([button]) => button)
             .find((button) => button.includes(`>${label}</span>`));
         expect(found).toBeDefined();
-        return found!;
+        return present(found, `tab ${label}`);
     }
 
     it.each([false, true])(

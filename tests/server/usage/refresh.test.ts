@@ -83,7 +83,7 @@ function tmux(present = false) {
         screen: '> ',
         /** The screen once /usage has been typed; undefined leaves `screen` as it is. */
         afterKeys: undefined as string | undefined,
-        run(args: string[]): Promise<string> {
+        run: (args: string[]): Promise<string> => {
             stub.calls.push(args);
             if (args[0] === 'new-session') {
                 if (stub.startsFail) throw new Error('start failed');

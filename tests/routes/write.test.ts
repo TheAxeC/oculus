@@ -16,6 +16,7 @@ import { localDate } from '../../src/lib/data/dates.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { WriteTarget } from '../../src/lib/server/writes.ts';
+import { present } from '../present.ts';
 
 const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
@@ -87,7 +88,7 @@ function target(): WriteTarget {
 
 /** What the overrides file holds, or null when nothing has written it yet. */
 function overridesOf(into: WriteTarget): unknown {
-    const path = into.overrides!;
+    const path = present(into.overrides, 'overrides file for the target');
     if (!existsSync(path)) return null;
     return JSON.parse(readFileSync(path, 'utf8'));
 }

@@ -6,6 +6,7 @@
 // ellipsis of an elided path are strings a reader sees, so they are keys rather than literals. What
 // is left in a function is arithmetic and slicing.
 
+import { scalar } from '../data/guards.ts';
 import { t } from './text.ts';
 
 /** Characters a path gets in a row before it loses its head. */
@@ -92,25 +93,21 @@ export function span(total: number): string {
 }
 
 /** `claude-opus-5` reads as `opus-5`, which is what a narrow rail has room for. */
-export function modelShort(name: string | null | undefined): string {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the name is folded from a session record's JSON, which may hold any scalar under that key
-    return String(name ?? '').replace(/^claude-/, '');
+export function modelShort(name: unknown): string {
+    return scalar(name).replace(/^claude-/, '');
 }
 
 /** The last segment of a path, which is what a row shows of a touched file. */
-export function basename(path: string | null | undefined): string {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the path is folded from a session record's JSON, which may hold any scalar under that key
-    const text = String(path ?? '');
+export function basename(path: unknown): string {
+    const text = scalar(path);
     const at = text.lastIndexOf('/');
     return at < 0 ? text : text.slice(at + 1);
 }
 
 /** A path inside a workspace, written relative to it; anything else is left as it is. */
-export function relativeTo(path: string | null | undefined, workspace: string | null | undefined) {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the path is folded from a session record's JSON, which may hold any scalar under that key
-    const text = String(path ?? '');
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the workspace is folded from a session record's JSON, which may hold any scalar under that key
-    const root = String(workspace ?? '');
+export function relativeTo(path: unknown, workspace: unknown) {
+    const text = scalar(path);
+    const root = scalar(workspace);
     return root !== '' && text.startsWith(`${root}/`) ? text.slice(root.length + 1) : text;
 }
 
@@ -118,9 +115,8 @@ export function relativeTo(path: string | null | undefined, workspace: string | 
  * A long path with its head taken off and never its basename: what is kept is at least the name of
  * the file, however deep it sits, so two rows are never both an ellipsis and a directory.
  */
-export function elide(path: string | null | undefined, max: number = PATH_MAX): string {
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the path is folded from a session record's JSON, which may hold any scalar under that key
-    const text = String(path ?? '');
+export function elide(path: unknown, max: number = PATH_MAX): string {
+    const text = scalar(path);
     if (text.length <= max) return text;
     const keep = Math.max(max - 3, basename(text).length);
     return t('sessions.ch_elide', text.slice(text.length - keep));

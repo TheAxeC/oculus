@@ -57,32 +57,32 @@
         value={id}
         label={t('board.new_idea_id')}
         placeholder={t('board.new_idea_id')}
-        oninput={(next) => (id = next)}
+        oninput={(next: string) => (id = next)}
     />
     <TextInput
         value={title}
         label={t('board.new_idea_title')}
         placeholder={t('board.new_idea_title')}
-        oninput={(next) => (title = next)}
+        oninput={(next: string) => (title = next)}
     />
     <TextInput
         value={short}
         label={t('board.new_idea_short')}
         placeholder={t('board.new_idea_short')}
-        oninput={(next) => (short = next)}
+        oninput={(next: string) => (short = next)}
     />
     <Select
         value={domain}
         label={t('board.new_idea_domain')}
         empty={t('board.new_idea_domain')}
         {choices}
-        onchange={(next) => (domain = next)}
+        onchange={(next: string) => (domain = next)}
     />
     <TextInput
         value={eli5}
         label={t('board.new_idea_eli5')}
         placeholder={t('board.new_idea_eli5')}
-        oninput={(next) => (eli5 = next)}
+        oninput={(next: string) => (eli5 = next)}
     />
     <ToolButton label={t('board.new_idea_save')} onclick={save} />
     <ToolButton label={t('board.new_idea_cancel')} onclick={onclose} />

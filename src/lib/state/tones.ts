@@ -10,6 +10,7 @@
 // generation, state/generation.svelte.ts, so a component calling one during its first render gets
 // the page's data and draws again when a push replaces it.
 
+import { scalar } from '../data/guards.ts';
 import { configGeneration } from './generation.svelte.ts';
 import { glyph } from './text.ts';
 
@@ -23,13 +24,13 @@ const TONE = /^[a-z][a-z0-9-]*$/;
 type Legend = { key: string; icon: string; label: string };
 
 /** The palette hex is written in either case in the config, and matched in lower case here. */
-let palette: Record<string, string> = {};
-let statusPalette: Record<string, string> = {};
-let typeColor: Record<string, string> = {};
-let legend: Record<string, Legend> = {};
-let domainColor: Record<string, string> = {};
-let domainText: Record<string, string> = {};
-let dataAccess: Record<string, string> = {};
+let palette: Record<string, string | undefined> = {};
+let statusPalette: Record<string, string | undefined> = {};
+let typeColor: Record<string, string | undefined> = {};
+let legend: Record<string, Legend | undefined> = {};
+let domainColor: Record<string, string | undefined> = {};
+let domainText: Record<string, string | undefined> = {};
+let dataAccess: Record<string, string | undefined> = {};
 
 function isRecord(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -97,44 +98,39 @@ export function toneOf(hex: string): string {
 }
 
 /** A palette hue, or undefined when the value has no usable palette token. */
-export function paletteTone(hex: string): string | undefined {
+export function paletteTone(hex: unknown): string | undefined {
     configGeneration();
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the hex is a colour field of the config or a registry entry, which YAML may parse as a number
-    const token = palette[String(hex).trim().toLowerCase()];
+    const token = palette[scalar(hex).trim().toLowerCase()];
     if (!token?.startsWith('c-')) return undefined;
     const tone = token.slice('c-'.length);
     return TONE.test(tone) ? tone : undefined;
 }
 
 /** The dataset access colour from `data_access`, with an unknown value kept neutral. */
-export function dataAccessTone(access: string): string {
+export function dataAccessTone(access: unknown): string {
     configGeneration();
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the access is a dataset registry field, which YAML may parse as a number
-    const hex = dataAccess[String(access).toLowerCase()];
+    const hex = dataAccess[scalar(access).toLowerCase()];
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
 /** The tone of a collection entry's status, through `status_palette`. */
-export function statusTone(status: string): string {
+export function statusTone(status: unknown): string {
     configGeneration();
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the status is a collection entry field, which YAML may parse as a number
-    const hex = statusPalette[String(status).toLowerCase()];
+    const hex = statusPalette[scalar(status).toLowerCase()];
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
 /** The tone of a project type, through `type_color`. */
-export function typeTone(type: string): string {
+export function typeTone(type: unknown): string {
     configGeneration();
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the type is a manifest field, which YAML may parse as a number
-    const hex = typeColor[String(type).toLowerCase()];
+    const hex = typeColor[scalar(type).toLowerCase()];
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
 /** The tone of a research domain, through `domains`. */
-export function domainTone(domain: string): string {
+export function domainTone(domain: unknown): string {
     configGeneration();
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the domain is a manifest field, which YAML may parse as a number
-    const hex = domainColor[String(domain).toLowerCase()];
+    const hex = domainColor[scalar(domain).toLowerCase()];
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
@@ -143,10 +139,10 @@ export function domainTone(domain: string): string {
  * domain's own key for one the config does not list. This is the label a project card carries; a UI
  * theme's name in the picker is themeLabel() of state/appearance.ts, which is another thing.
  */
-export function domainLabel(domain: string): string {
+export function domainLabel(domain: unknown): string {
     configGeneration();
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the domain is a manifest field, which YAML may parse as a number
-    return domainText[String(domain).toLowerCase()] ?? domain;
+    const text = scalar(domain);
+    return domainText[text.toLowerCase()] ?? text;
 }
 
 /** The glyph name a status chip carries, and nothing for a chip the legend does not list. */

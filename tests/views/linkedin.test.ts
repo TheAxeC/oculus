@@ -1,12 +1,13 @@
 // The LinkedIn view rendered over received folder feeds covering cadence, controls, and card scope.
 
 import { render } from 'svelte/server';
+import { scalar } from '../../src/lib/data/guards.ts';
 import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import Linkedin from '../../src/lib/views/Linkedin.svelte';
-import { openLinkedinSource } from '../../src/lib/views/linkedin/PostCard.svelte';
+import { openLinkedinSource } from '../../src/lib/views/linkedin/post-card.ts';
 import { findInstance } from '../../src/lib/state/instance.ts';
 import { layout, loadLayout } from '../../src/lib/state/layout.svelte.ts';
-import { addFromForm } from '../../src/lib/views/shared/EntryForm.svelte';
+import { addFromForm } from '../../src/lib/views/shared/entry-form.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -157,6 +158,26 @@ describe('the LinkedIn view', () => {
         expect(body).toContain(catalog['linkedin.form_category_help']);
     });
 
+    it('draws neither a category chip nor a date on a post whose front matter names neither', () => {
+        const bare = [
+            {
+                file: '03-bare.md',
+                title: 'Bare post',
+                date: '',
+                category: '',
+                body: 'A body and nothing else.',
+                idea: false
+            }
+        ];
+        const drawn = card(draw('linkedin-bare', bare), '03-bare.md');
+        expect(drawn).toContain('Bare post');
+        expect(drawn).not.toContain('class="date"');
+        // The number chip is the only one left; a card with a category draws a second one.
+        expect(drawn.match(/class="chip/g)?.length ?? 0).toBe(1);
+        const withCategory = card(draw('linkedin-category-chip', entries), 'xx-alpha.md');
+        expect(withCategory.match(/class="chip/g)?.length ?? 0).toBe(2);
+    });
+
     it('searches title, category, and body without drawing an unrelated card', () => {
         const category = draw('linkedin-category', entries, 'mentorship');
         expect(category).toContain('Alpha idea');
@@ -233,7 +254,7 @@ describe('the LinkedIn view', () => {
     it('sends the two LinkedIn write bodies through the state helpers', async () => {
         const requests: Record<string, unknown>[] = [];
         vi.stubGlobal('fetch', (_url: string, init: RequestInit) => {
-            requests.push(JSON.parse(String(init.body)) as Record<string, unknown>);
+            requests.push(JSON.parse(scalar(init.body)) as Record<string, unknown>);
             return Promise.resolve(
                 new Response(JSON.stringify({ ok: true, changed: ['file'], refused: [] }))
             );

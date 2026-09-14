@@ -18,7 +18,8 @@
     import Empty from '$lib/ui/Empty.svelte';
     import Meter from '$lib/ui/Meter.svelte';
     import Pane from '$lib/ui/Pane.svelte';
-    import Table, { type Column } from '$lib/ui/Table.svelte';
+    import Table from '$lib/ui/Table.svelte';
+    import type { Column } from '$lib/ui/table-rows';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { usage } from '$lib/state/entities.svelte';
     import { basename, clock } from '$lib/state/format';

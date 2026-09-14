@@ -30,10 +30,10 @@ const PENDING: DocState = { html: '', frontmatter: null, error: '', loading: tru
 /** What no pair at all reads as: an empty id or name asks nothing and waits for nothing. */
 const NOTHING: DocState = { html: '', frontmatter: null, error: '', loading: false };
 
-const held: Record<string, DocState> = $state({});
+const held: Record<string, DocState | undefined> = $state({});
 
 /** The portfolio version each held pair was fetched at. Not reactive: only requests read it. */
-const versions: Record<string, number> = {};
+const versions: Record<string, number | undefined> = {};
 
 /** The pairs with a request in flight, so a second render does not send a second request. */
 const inflight = new Set<string>();

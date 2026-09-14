@@ -30,7 +30,8 @@
     import Chip from '$lib/ui/Chip.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
-    import Segment, { type SegmentItem } from '$lib/ui/Segment.svelte';
+    import Segment from '$lib/ui/Segment.svelte';
+    import type { SegmentItem } from '$lib/ui/segment-items';
     import { sanitise } from '$lib/ui/html';
     import ProjectCard from './shared/ProjectCard.svelte';
     import type { BoardItem } from '$lib/state/board';
@@ -167,7 +168,7 @@
                 label={item.project.title}
                 tab={item.project.title}
                 staleLag={lag}
-                onsaid={(answer) => (said = answer)}
+                onsaid={(answer: string) => (said = answer)}
             />
 
             <section class="block">
@@ -179,7 +180,7 @@
                         label={t('project.documents')}
                         items={documents}
                         value={chosen}
-                        onchange={(name) => choose(name)}
+                        onchange={(name: string) => choose(name)}
                     />
                     {#if shown.error !== ''}
                         <p class="failed">{t('project.doc_failed', shown.error)}</p>

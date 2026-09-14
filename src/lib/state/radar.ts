@@ -2,6 +2,7 @@
 // The view receives ready-to-draw groups and seeds while this module names no component.
 
 import type { Project } from '../data/model.ts';
+import { byKey } from '../data/guards.ts';
 
 export type { Project };
 
@@ -107,7 +108,10 @@ function slugOf(source: string): string {
 /** Existing project records named by project and maps_to, in that order without duplicates. */
 export function crossLinksOf(entry: RadarEntry, projects: Record<string, Project>): Project[] {
     const ids = [word(entry, 'project'), word(entry, 'maps_to')].filter(Boolean);
-    return [...new Set(ids)].flatMap((id) => (projects[id] === undefined ? [] : [projects[id]]));
+    return [...new Set(ids)].flatMap((id) => {
+        const found = byKey(projects, id);
+        return found === undefined ? [] : [found];
+    });
 }
 
 export function parseRadarState(raw: unknown): RadarState {

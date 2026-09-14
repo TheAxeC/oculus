@@ -99,7 +99,7 @@
             {enabled}
             onlink={() => write({ linkMode: !linkMode })}
             onretune={retune}
-            oncollaborators={(checked) => write({ collaborators: checked })}
+            oncollaborators={(checked: boolean) => write({ collaborators: checked })}
             onarchive={toggleArchive}
         />
         {#if !hasRelationships}

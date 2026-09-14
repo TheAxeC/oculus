@@ -3,6 +3,7 @@
 // on every surface.
 
 import type { Id, Project } from '../data/model.ts';
+import { byKey } from '../data/guards.ts';
 
 /**
  * A key of the collaborations collection is drawn as that entry's name, another project's id as
@@ -14,9 +15,9 @@ export function waitingLabel(
     collaborators: Record<Id, string>,
     projects: Record<Id, Project>
 ): string {
-    const person = collaborators[key];
+    const person = byKey(collaborators, key);
     if (person !== undefined) return person;
-    const project = projects[key];
+    const project = byKey(projects, key);
     if (project === undefined) return key;
     const short = project.short ?? '';
     const label = short === '' ? project.title : short;

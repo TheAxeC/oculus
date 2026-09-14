@@ -33,7 +33,7 @@ export function projectFolders(hub: string, snapshot: Snapshot): ProjectFolder[]
     const folders: ProjectFolder[] = [];
     for (const project of Object.values(snapshot.entities.projects)) {
         if (typeof project.folder !== 'string' || !project.folder) continue;
-        folders.push([join(hub, project.folder), project.title ?? '']);
+        folders.push([join(hub, project.folder), project.title]);
     }
     return folders;
 }

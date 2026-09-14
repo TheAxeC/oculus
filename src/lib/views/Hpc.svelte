@@ -25,8 +25,7 @@
     import Log from './hpc/Log.svelte';
     import Quota from './hpc/Quota.svelte';
     import Recent from './hpc/Recent.svelte';
-    import { queue } from '$lib/state/hpc.svelte';
-    import { writeToken } from '$lib/state/writes.svelte';
+    import { command, jobLog, queue } from '$lib/state/hpc.svelte';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
     let { instance }: ViewProps = $props();
@@ -34,26 +33,18 @@
     let logId = $state('');
     let logStatus = $state('');
     let logOutput = $state('');
-    async function action(body: Record<string, string>): Promise<Record<string, unknown>> {
-        const response = await fetch('/api/hpc', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json', 'x-oculus-token': writeToken() },
-            body: JSON.stringify(body)
-        });
-        return response.json();
-    }
     async function refresh(): Promise<void> {
-        await action({ action: 'refresh' });
+        await command({ action: 'refresh' });
     }
     async function cancel(id: string): Promise<void> {
-        await action({ action: 'cancel', id });
+        await command({ action: 'cancel', id });
     }
     async function showLog(id: string): Promise<void> {
         logId = id;
         logStatus = 'loading';
-        const answer = await action({ action: 'log', id });
-        logStatus = String(answer.status ?? 'error');
-        logOutput = String(answer.log ?? '');
+        const answer = await jobLog(id);
+        logStatus = answer.status;
+        logOutput = answer.output;
     }
 </script>
 

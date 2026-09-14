@@ -75,7 +75,7 @@
                 text={draft.text}
                 editable={access === 'editable'}
                 message={draft.message}
-                oninput={(value) => editSourceDraft(instance.id, value)}
+                oninput={(value: string) => editSourceDraft(instance.id, value)}
                 onsave={save}
                 onrevert={() => revertSourceDraft(instance.id)}
             />

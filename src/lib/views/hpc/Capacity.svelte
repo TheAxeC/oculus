@@ -1,7 +1,8 @@
 <script lang="ts">
     // Layer 3, view partial. Partition rows aggregate sinfo into idle, mixed, and allocated segments while retaining the full source table.
     import Chip from '$lib/ui/Chip.svelte';
-    import Table, { type Column } from '$lib/ui/Table.svelte';
+    import Table from '$lib/ui/Table.svelte';
+    import type { Column } from '$lib/ui/table-rows';
     import { partitionMeters, type HpcPartition } from '$lib/state/hpc';
     import { t } from '$lib/state/text';
     let { rows }: { rows: HpcPartition[] } = $props();

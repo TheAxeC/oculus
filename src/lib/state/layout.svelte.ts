@@ -10,6 +10,7 @@
 // neither an arrangement nor a page is changed without being written down.
 // Unpinning keeps the instance in place, so two unpinned instances of one view may coexist.
 
+import { item } from '../data/guards.ts';
 import { clearInstanceState } from './ui.svelte.ts';
 import {
     activePath,
@@ -309,7 +310,7 @@ export function closePage(id: string): void {
  * there was one, so the handler swallows the key only when the shortcut did something.
  */
 export function pageShortcut(index: number): boolean {
-    const page = store.current.pages[index - 1];
+    const page = item(store.current.pages, index - 1);
     if (index < 1 || page === undefined) return false;
     switchPage(page.id);
     return true;

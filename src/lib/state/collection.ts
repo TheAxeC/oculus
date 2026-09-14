@@ -308,7 +308,7 @@ export const COLLABORATIONS = 'collaborations';
 
 /** The field an entry is addressed by: the file's own schema's first field, `title` without one. */
 export function identityField(schema: SchemaField[] | undefined): string {
-    const first = (schema ?? [])[0];
+    const first = (schema ?? []).at(0);
     return first === undefined ? TITLE_FIELD : first.field;
 }
 

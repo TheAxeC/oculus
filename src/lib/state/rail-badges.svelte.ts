@@ -1,6 +1,7 @@
 // Layer 2, client state. Reactive rail badges over the latest portfolio and socket feed payload.
 // The snapshot summary remains the starting and read-error fallback until a usable feed arrives.
 
+import { scalar } from '../data/guards.ts';
 import { portfolio } from './entities.svelte.ts';
 import { feed } from './feeds.svelte.ts';
 import { counts as hpcCounts } from './hpc.svelte.ts';
@@ -95,12 +96,8 @@ export function linkedinBadge(): string {
 export function applicationsBadge(): string {
     const entries = collectionOf('applications')?.entries ?? [];
     return countText(
-        entries.filter(
-            (entry) =>
-                String(entry.fields.status ?? '')
-                    .trim()
-                    .toLowerCase() === 'active'
-        ).length
+        entries.filter((entry) => scalar(entry.fields.status).trim().toLowerCase() === 'active')
+            .length
     );
 }
 

@@ -1,6 +1,7 @@
 // Layer 2, server. Collection entry field edits, insertion, reordering and deletion live here
 // because entry-list changes do not affect subtask or host-status edits.
 
+import { scalar } from '../../data/guards.ts';
 import { isMap, isScalar, isSeq } from 'yaml';
 import type { Node, YAMLMap } from 'yaml';
 import { NOT_A_FIELD_VALUE, asFieldValue, deepEqual, isBlockMap, sameValue } from '../yaml-edit.ts';
@@ -81,7 +82,7 @@ export function setEntryFields(
             value: wanted,
             remove: wanted === null
         });
-        if (field === ident) ident_value = String(wanted);
+        if (field === ident) ident_value = scalar(wanted);
     }
 
     if (changed.length === 0) return { text: source, changed, refused };
@@ -209,7 +210,7 @@ export function reorderEntries(source: string, ident: string, order: string[]): 
     if (!isRecord(before) || !isRecord(after) || !Array.isArray(had) || !Array.isArray(has)) {
         return refuseAll(source, [placed.list], 'the edit did not verify; nothing was written');
     }
-    const wanted = order.map((value) => had[values.indexOf(value)]);
+    const wanted = order.map((value): unknown => had[values.indexOf(value)]);
     const rest = { ...before, [placed.list]: null };
     const restAfter = { ...after, [placed.list]: null };
     if (!deepEqual(has, wanted) || !deepEqual(rest, restAfter)) {

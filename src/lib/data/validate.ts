@@ -8,7 +8,7 @@
 // this module never opens a file, so it cannot know those on its own.
 
 import type { Finding, RawManifest, RawPortfolio, ValidationRules, Vocabulary } from './model.ts';
-import { isMap } from './guards.ts';
+import { isMap, byKey } from './guards.ts';
 import { collectionSchema } from './normalise.ts';
 
 /** Keys the reader itself adds to every manifest record; no schema names them. */
@@ -274,7 +274,7 @@ function checkFolderNames(raw: RawPortfolio, findings: Finding[]): void {
  */
 function collaboratorKeys(raw: RawPortfolio): Set<string> {
     const keys = new Set<string>();
-    const collection = raw.collections[COLLABORATIONS];
+    const collection = byKey(raw.collections, COLLABORATIONS);
     if (collection === undefined) return keys;
     for (const entry of collection.entries) {
         if (typeof entry.key === 'string' && entry.key.length > 0) keys.add(entry.key);

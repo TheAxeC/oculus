@@ -13,6 +13,7 @@ import { homedir, tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import type { MockInstance } from 'vitest';
 import {
     DEFAULT_PORT,
     asciiCatalog,
@@ -56,7 +57,7 @@ function writeConfig(engine: string, name: string, body: string): string {
 }
 
 describe('loadLocal', () => {
-    let warn: ReturnType<typeof vi.spyOn>;
+    let warn: MockInstance<typeof console.warn>;
 
     beforeEach(() => {
         warn = vi.spyOn(console, 'warn').mockImplementation(noop);

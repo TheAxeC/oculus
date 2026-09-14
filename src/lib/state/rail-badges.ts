@@ -1,6 +1,7 @@
 // Layer 2, client state. Pure rail-badge counts over collection and feed records. The reactive
 // adapter beside it supplies the snapshot, socket feeds, config and current time.
 
+import { scalar } from '../data/guards.ts';
 import { daysUntil } from './board/index.ts';
 import { deadlineOf, isClosed } from './leads.ts';
 import { daysSince } from './feeds.ts';
@@ -46,13 +47,8 @@ export function liveEntries(
 ): number {
     if (rule === null) return 0;
     const matched = new Set(rule.match);
-    return entries.filter((entry) =>
-        matched.has(
-            String(entry.fields.status ?? '')
-                .trim()
-                .toLowerCase()
-        )
-    ).length;
+    return entries.filter((entry) => matched.has(scalar(entry.fields.status).trim().toLowerCase()))
+        .length;
 }
 
 /** Count fetched Inbox records awaiting a reply or action and not yet triaged. */
@@ -60,11 +56,7 @@ export function actionableEntries(entries: Record<string, unknown>[]): number {
     return entries.filter(
         (entry) =>
             entry.triaged !== true &&
-            ['reply', 'action'].includes(
-                String(entry.kind ?? '')
-                    .trim()
-                    .toLowerCase()
-            )
+            ['reply', 'action'].includes(scalar(entry.kind).trim().toLowerCase())
     ).length;
 }
 

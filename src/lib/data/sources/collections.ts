@@ -10,6 +10,7 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { byKey } from '../guards.ts';
 import { parse } from 'yaml';
 import type { CollectionFile, Finding, RawCollection, RawEntry } from '../model.ts';
 
@@ -99,7 +100,7 @@ export function readCollections(
     const findings: Finding[] = [];
     const collections: Record<string, RawCollection> = {};
     for (const asked of files) {
-        const seen = collections[asked.key];
+        const seen = byKey(collections, asked.key);
         if (seen !== undefined) {
             findings.push({
                 file: join(hub, asked.file),

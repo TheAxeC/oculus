@@ -154,6 +154,12 @@ describe('the roots a write may name', () => {
         expect(answer.ok).toBe(false);
         expect(answer.error).toContain('not inside the workspace');
     });
+
+    it('refuses a path element that is not a string', async () => {
+        const answer = await stage(repo, [{ path: 'kept.txt' } as unknown as string]);
+        expect(answer.ok).toBe(false);
+        expect(answer.error).toBe('the path  is not inside the workspace');
+    });
 });
 
 describe('staging', () => {

@@ -1,30 +1,3 @@
-<script module lang="ts">
-    // Layer 3, shell. The pure document-title builder keeps its DOM-free string contract testable.
-
-    import { t as catalogText } from '$lib/state/text';
-    import { registrationLabel, viewFor } from '$lib/views/registry';
-    import type { Instance } from '$lib/state/layout';
-
-    /** The words on the active main tab, including the per-instance label when it has one. */
-    export function activeLabel(instance: Instance | null): string {
-        if (instance === null) return catalogText('app.title');
-        if (typeof instance.state === 'object' && instance.state !== null) {
-            const held = (instance.state as Record<string, unknown>).label;
-            if (typeof held === 'string' && held !== '') return held;
-        }
-        const registered = viewFor(instance.view);
-        return registered === undefined
-            ? catalogText('ui.unknown_view', instance.view)
-            : registrationLabel(registered);
-    }
-
-    /** The active main tab title, with a waiting count in front when a session needs attention. */
-    export function windowTitle(waiting: number, label: string): string {
-        const active = catalogText('app.nav.title_fmt', catalogText('app.nav.host'), label);
-        return waiting > 0 ? catalogText('app.title_waiting', waiting, active) : active;
-    }
-</script>
-
 <script lang="ts">
     // Layer 3, shell. The page: the rail, the main tree, and the panel beside or below it. It reads
     // the arrangement from the store and every change goes back through the store, so the whole of
@@ -38,16 +11,20 @@
     // its derived tokens, the wallpaper's layer and the properties its translucent surfaces read,
     // and which of the two glyph vocabularies renders.
 
-    import ActivityRail, { railOrder, type Bookmark, type NavGroup } from './ActivityRail.svelte';
+    import { activeLabel, windowTitle } from '$lib/shell/workbench-title';
+    import ActivityRail from './ActivityRail.svelte';
+    import { railOrder, type Bookmark, type NavGroup } from './rail';
     import DropLayer from './DropLayer.svelte';
     import { createWorkbenchKeys } from './workbench-keys.svelte';
-    import PageStrip, { type Arrangement } from './PageStrip.svelte';
+    import PageStrip from './PageStrip.svelte';
+    import type { Arrangement } from './page-strip';
     import Palette from './Palette.svelte';
     import PaneView from './PaneView.svelte';
     import SplitView from './SplitView.svelte';
     import UpdateTray from './UpdateTray.svelte';
     import KeySheet from '$lib/ui/KeySheet.svelte';
-    import Sash, { SASH_PX } from '$lib/ui/Sash.svelte';
+    import Sash from '$lib/ui/Sash.svelte';
+    import { SASH_PX } from '$lib/ui/sash-size';
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
     import {
         change,
@@ -239,7 +216,7 @@
                         <SplitView
                             layout={layout('main')}
                             pane={mainPane}
-                            onresize={(path, sizes) =>
+                            onresize={(path: number[], sizes: number[]) =>
                                 change('main', (tree) => resize(tree, path, sizes))}
                         />
                     </div>
@@ -258,7 +235,7 @@
                             <SplitView
                                 layout={layout('panel')}
                                 pane={panelPane}
-                                onresize={(path, sizes) =>
+                                onresize={(path: number[], sizes: number[]) =>
                                     change('panel', (tree) => resize(tree, path, sizes))}
                             />
                         </section>

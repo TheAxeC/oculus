@@ -10,13 +10,14 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
-import ActivityRail, {
+import ActivityRail from '../../src/lib/shell/ActivityRail.svelte';
+import {
     GROUP_MAX,
     arrange,
     documentState,
     railOrder,
     type NavGroup
-} from '../../src/lib/shell/ActivityRail.svelte';
+} from '../../src/lib/shell/rail.ts';
 import {
     collectionKeys,
     asciiCatalog,
@@ -43,6 +44,7 @@ import type { Component } from 'svelte';
 // Importing the route loader registers the application's views. Collections use sources.yml keys.
 import { registerCollections } from '../../src/routes/views.ts';
 import { noop } from '../doubles.ts';
+import { present } from '../present.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -259,7 +261,9 @@ describe('the app text controls', () => {
             for (const [index, key] of keys.entries()) {
                 const button = buttonWith(body, `aria-label="${catalog[key]}"`);
                 expect(button).toBeDefined();
-                expect(/\sdisabled(?:[\s=>])/.test(button!)).toBe(disabled[index]);
+                expect(/\sdisabled(?:[\s=>])/.test(present(button, `control ${key}`))).toBe(
+                    disabled[index]
+                );
             }
         } finally {
             setTextScale(null);
@@ -321,7 +325,12 @@ describe('a rail badge', () => {
         });
         const registered = viewFor('hpc');
         expect(registered).toBeDefined();
-        registerView({ ...registered!, id: 'probe-hpc', group: 'hpc-only', order: 0 });
+        registerView({
+            ...present(registered, 'hpc registration'),
+            id: 'probe-hpc',
+            group: 'hpc-only',
+            order: 0
+        });
         const hpc = render(ActivityRail, {
             props: { groups: [{ id: 'hpc-only', label: 'HPC' }] }
         }).body;

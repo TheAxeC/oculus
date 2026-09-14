@@ -81,7 +81,7 @@
                 schema={collection.schema}
                 entry={null}
                 onclose={() => (adding = false)}
-                onsaid={(words) => (said = words)}
+                onsaid={(words: string) => (said = words)}
             />
         {/if}
         {#if said !== ''}
@@ -106,7 +106,7 @@
                             editing={editing === item.domain.id}
                             onedit={() =>
                                 (editing = editing === item.domain.id ? null : item.domain.id)}
-                            onsaid={(words) => (said = words)}
+                            onsaid={(words: string) => (said = words)}
                         />
                     </Reveal>
                 {/each}

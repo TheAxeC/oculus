@@ -8,7 +8,7 @@ import {
     focusSearch,
     scrollContainer,
     scrollRegion
-} from '../../src/lib/shell/key-dom';
+} from '../../src/lib/shell/key-dom.ts';
 
 /** A queryable element with named matches and descendants supplied in document order. */
 function element(

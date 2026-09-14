@@ -88,7 +88,7 @@
         <Search
             value={held.search}
             placeholder={t('collection.search', t('views.venues'))}
-            oninput={(search) => write({ search })}
+            oninput={(search: string) => write({ search })}
         />
     </Toolbar>
 {/snippet}
@@ -102,7 +102,7 @@
                 schema={collection.schema}
                 entry={null}
                 onclose={() => (adding = false)}
-                onsaid={(words) => (said = words)}
+                onsaid={(words: string) => (said = words)}
             />
         {/if}
 
@@ -147,7 +147,7 @@
                                         editing={editing === venue.id}
                                         onedit={() =>
                                             (editing = editing === venue.id ? null : venue.id)}
-                                        onsaid={(words) => (said = words)}
+                                        onsaid={(words: string) => (said = words)}
                                     />
                                 </Reveal>
                             {/each}
@@ -186,7 +186,7 @@
                                         editing={editing === venue.id}
                                         onedit={() =>
                                             (editing = editing === venue.id ? null : venue.id)}
-                                        onsaid={(words) => (said = words)}
+                                        onsaid={(words: string) => (said = words)}
                                     />
                                 </Reveal>
                             {/each}

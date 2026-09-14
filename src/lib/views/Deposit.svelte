@@ -33,7 +33,8 @@
 
     import Confirm from '$lib/ui/Confirm.svelte';
     import Empty from '$lib/ui/Empty.svelte';
-    import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
+    import Menu from '$lib/ui/Menu.svelte';
+    import type { MenuItem } from '$lib/ui/menu-items';
     import Pane from '$lib/ui/Pane.svelte';
     import TextArea from '$lib/ui/TextArea.svelte';
     import TextInput from '$lib/ui/TextInput.svelte';
@@ -292,14 +293,19 @@
 {#snippet branchBox(one: MirrorState)}
     <div class="line">
         <span class="lb">{t('deposit.branch')}</span>
-        <Menu label={one.branch} {items} placement="down" onpick={(name) => switchTo(name)} />
+        <Menu
+            label={one.branch}
+            {items}
+            placement="down"
+            onpick={(name: string) => switchTo(name)}
+        />
     </div>
     <div class="line">
         <span class="lb">{t('deposit.branch_new')}</span>
         <TextInput
             value={branchName}
             label={t('deposit.branch_new_label')}
-            oninput={(next) => (branchName = next)}
+            oninput={(next: string) => (branchName = next)}
         />
         <ToolButton
             label={t('deposit.branch_new_create')}
@@ -315,7 +321,7 @@
             value={message}
             label={t('deposit.commit_label')}
             rows={ROWS}
-            oninput={(next) => (message = next)}
+            oninput={(next: string) => (message = next)}
         />
         <div class="acts">
             <ToolButton

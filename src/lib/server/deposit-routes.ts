@@ -15,6 +15,7 @@
 // endpoint without running git or `gh` at all.
 
 import { hasToken, sameOrigin } from './auth.ts';
+import { byKey } from '../data/guards.ts';
 import {
     adopt,
     branches,
@@ -100,7 +101,7 @@ const OPERATIONS: Record<
 
 function operate(with_: ServerDepositOptions): DepositRun {
     return (action, id, fields) => {
-        const operation = OPERATIONS[action];
+        const operation = byKey(OPERATIONS, action);
         if (operation === undefined) {
             return Promise.resolve({
                 ok: false,

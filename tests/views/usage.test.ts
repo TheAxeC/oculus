@@ -24,6 +24,21 @@ vi.mock('../../src/lib/ui/ToolButton.svelte', async (importOriginal) => {
 /** The control's handler reads nothing off the event, so the cases hand it an empty stand-in. */
 const CLICK = {} as MouseEvent;
 
+/** What a case reads off a drawn control: the handler pressing it runs. */
+type Drawn = { onclick: (event: MouseEvent) => unknown };
+
+/** The props the control carrying these words was drawn with, or nothing when none was drawn. */
+function drawnWith(label: string): Drawn | undefined {
+    return vi.mocked(ToolButton).mock.calls.find((call) => call[1].label === label)?.[1];
+}
+
+/** Press the control carrying these words, refusing a case that drew none. */
+async function press(label: string): Promise<void> {
+    const control = drawnWith(label);
+    if (control === undefined) throw new Error(`no control was drawn with the words ${label}`);
+    await control.onclick(CLICK);
+}
+
 afterEach(() => {
     vi.unstubAllGlobals();
     vi.mocked(ToolButton).mockClear();
@@ -94,11 +109,8 @@ describe('Usage', () => {
         vi.stubGlobal('fetch', fetch);
         setToken('usage-test-token');
         draw(refreshPayload());
-        const control = vi
-            .mocked(ToolButton)
-            .mock.calls.find((call) => call[1].label === 'Refresh now');
-        expect(control).toBeDefined();
-        await control![1].onclick(CLICK);
+        expect(drawnWith('Refresh now')).toBeDefined();
+        await press('Refresh now');
         expect(fetch).toHaveBeenCalledWith('/api/usage/refresh', {
             method: 'POST',
             headers: { 'content-type': 'application/json', 'x-oculus-token': 'usage-test-token' },
@@ -119,14 +131,11 @@ describe('Usage', () => {
             .mockResolvedValueOnce(new Response('Unavailable', { status: 503 }));
         vi.stubGlobal('fetch', fetch);
         draw(refreshPayload());
-        const control = vi
-            .mocked(ToolButton)
-            .mock.calls.find((call) => call[1].label === 'Refresh now');
-        await control![1].onclick(CLICK);
+        await press('Refresh now');
         expect(render(Usage, { props: { instance } }).body).toContain(
             'refresh refused: the server did not answer'
         );
-        await control![1].onclick(CLICK);
+        await press('Refresh now');
         expect(render(Usage, { props: { instance } }).body).toContain(
             'refresh refused: the server did not answer'
         );

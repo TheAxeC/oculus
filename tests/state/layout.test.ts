@@ -59,6 +59,7 @@ import {
 } from '../../src/lib/state/layout.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
+import { fields } from '../../src/lib/data/guards.ts';
 import {
     bench,
     envelope,
@@ -627,9 +628,9 @@ describe('serialiseLayout and parseLayout', () => {
 
     it('drops a focus that names no pane rather than refusing the arrangement', () => {
         const zoomed = maximise(bench(three(), pane(['p'])), 'main', [1, 1]);
-        const saved = JSON.parse(saveBench(zoomed));
+        const saved = fields(JSON.parse(saveBench(zoomed)));
         // The pane it named is closed by a later release, or by a hand edit of the saved value.
-        saved.workbench.main = closePane(zoomed.main, [1, 1]);
+        fields(saved.workbench).main = closePane(zoomed.main, [1, 1]);
         const read = parseWorkbench(saved);
         expect(read?.focus).toBe(undefined);
         expect(read?.main).toEqual(closePane(zoomed.main, [1, 1]));
@@ -716,7 +717,7 @@ describe('the store', () => {
         const saved = bench(three(), pane(['p']));
         apply(saved);
         expect(workbench()).toEqual(saved);
-        expect(JSON.parse(storage.held[LAYOUT_KEY]).version).toBe(LAYOUT_VERSION);
+        expect(fields(JSON.parse(storage.held[LAYOUT_KEY])).version).toBe(LAYOUT_VERSION);
         expect(savedBench(storage)).toEqual(saved);
     });
 

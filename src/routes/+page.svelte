@@ -6,8 +6,8 @@
 
     import { onMount, untrack } from 'svelte';
     import Workbench from '$lib/shell/Workbench.svelte';
-    import type { Bookmark, NavGroup } from '$lib/shell/ActivityRail.svelte';
-    import type { Arrangement } from '$lib/shell/PageStrip.svelte';
+    import type { Bookmark, NavGroup } from '$lib/shell/rail';
+    import type { Arrangement } from '$lib/shell/page-strip';
     import { config } from '$lib/state/entities.svelte';
     import { configGeneration } from '$lib/state/generation.svelte';
     import { collectionKeys } from '$lib/data/normalise';

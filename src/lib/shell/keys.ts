@@ -4,7 +4,7 @@
 export type RailOrder = {
     direct: string[];
     all: string[];
-    chords: Record<string, string[]>;
+    chords: Record<string, string[] | undefined>;
 };
 
 export type KeyContext = {
@@ -127,8 +127,8 @@ export function resolveKey(
     if (/^[1-9]$/.test(event.key)) {
         const digit = Number(event.key) - 1;
         const chorded =
-            now - state.chordAt < CHORD_MS ? order.chords[state.chord]?.[digit] : undefined;
-        const view = chorded ?? order.direct[digit];
+            now - state.chordAt < CHORD_MS ? order.chords[state.chord]?.at(digit) : undefined;
+        const view = chorded ?? order.direct.at(digit);
         return {
             action: view === undefined ? null : { kind: 'open', view, target: 'main' },
             state: { ...state, chord: '' }

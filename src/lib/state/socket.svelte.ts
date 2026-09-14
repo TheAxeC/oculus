@@ -8,6 +8,7 @@
 // catalog the server shipped as page data, and every later edit of config/text.yml comes this way.
 // Raising the configuration's generation once the push is installed is what draws the page again.
 
+import { isMap } from '../data/guards.ts';
 import { receive } from './entities.svelte.ts';
 import { configInstalled } from './generation.svelte.ts';
 import { setAscii, setCatalog, setGlyphs } from './text.ts';
@@ -172,18 +173,17 @@ function strings(raw: unknown): Record<string, string> | null {
  *
  * The configuration's generation is raised once at the end, after every store took its part, so a
  * component that draws again sees the new strings and the new tones together and never half of each.
- * A payload that is not an object installs nothing and raises nothing.
+ * No payload at all installs nothing and raises nothing; the frame check in handle() is what keeps a
+ * payload that is not a map from reaching here.
  */
 export function installConfig(payload: ConfigPayload | null): void {
-    if (payload === null || typeof payload !== 'object') return;
-    if (payload.text) setCatalog(payload.text);
-    if (payload.config) {
-        setVocab(payload.config);
-        setAppearance(payload.config);
-    }
-    const glyphs = strings(payload.config?.glyphs);
+    if (payload === null) return;
+    setCatalog(payload.text);
+    setVocab(payload.config);
+    setAppearance(payload.config);
+    const glyphs = strings(payload.config.glyphs);
     if (glyphs !== null) setGlyphs(glyphs);
-    const ascii = strings(payload.config?.ascii);
+    const ascii = strings(payload.config.ascii);
     if (ascii !== null) setAscii(ascii);
     configInstalled();
 }
@@ -198,11 +198,14 @@ function handle(data: string): void {
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return;
     const message = parsed as Message;
     if (typeof message.channel !== 'string' || typeof message.version !== 'number') return;
+    // Every channel carries a map, so a frame whose payload is anything else is dropped here and
+    // each channel's reader may take its own payload type as read.
+    if (!isMap(message.payload)) return;
     const heard = listeners.get(message.channel);
     if (heard !== undefined && heard.size > 0) {
         for (const fn of [...heard]) fn(message);
         return;
     }
     receive(message);
-    if (message.channel === 'config') installConfig(message.payload as ConfigPayload | null);
+    if (message.channel === 'config') installConfig(message.payload as ConfigPayload);
 }

@@ -8,6 +8,7 @@
     import { clock, modelShort, stamp } from '$lib/state/format';
     import { select, selected } from '$lib/state/selection.svelte';
     import type { Area, GroupedSession, Workspace } from '$lib/state/selectors.svelte';
+    import { asText } from '$lib/state/schema';
     import { t } from '$lib/state/text';
     import { sessionRowItems } from './session-list';
 
@@ -68,8 +69,7 @@
                 String(Math.round((Number(event.text) || 0) / 1000))
             );
         }
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the event text is folded from a session record's JSON, which may hold any scalar under that key
-        const text = String(event.text ?? '');
+        const text = asText(event.text);
         const at = text.lastIndexOf('/');
         return at < 0 ? text : text.slice(at + 1);
     }

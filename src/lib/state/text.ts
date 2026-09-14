@@ -11,9 +11,9 @@ import { glyphMode } from './glyphmode.svelte.ts';
 
 export { setGlyphMode, type GlyphMode } from './glyphmode.svelte.ts';
 
-let catalog: Record<string, string> = {};
-let glyphs: Record<string, string> = {};
-let ascii: Record<string, string> = {};
+let catalog: Record<string, string | undefined> = {};
+let glyphs: Record<string, string | undefined> = {};
+let ascii: Record<string, string | undefined> = {};
 
 /** Install the catalog the page was given. Called once per load, again on every push. */
 export function setCatalog(next: Record<string, string>): void {
@@ -67,7 +67,7 @@ export function resolveGlyphTokens(value: string): string {
 export function t(key: string, ...args: (string | number)[]): string {
     const template = catalogEntry(key);
     return template.replace(/\{(\d+)\}/g, (placeholder, index: string) => {
-        const arg = args[Number(index)];
+        const arg = args.at(Number(index));
         return arg === undefined ? placeholder : String(arg);
     });
 }

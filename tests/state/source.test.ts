@@ -18,6 +18,7 @@ import { loadUi } from '../../src/lib/state/ui.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
 import { noop } from '../doubles.ts';
+import { fields, scalar } from '../../src/lib/data/guards.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -75,7 +76,9 @@ describe('source tab state', () => {
         const saving = saveSourceDraft('one', 'hub', 'notes.md');
         editSourceDraft('one', 'typed while saving');
         expect(sourceDraft('one').saved).toBe('on disk');
-        expect(JSON.parse(String(fetcher.mock.calls[1][1]?.body)).content).toBe('sent copy');
+        expect(fields(JSON.parse(scalar(fetcher.mock.calls[1][1]?.body))).content).toBe(
+            'sent copy'
+        );
         post.resolve(new Response(JSON.stringify({ ok: true })));
         await saving;
         expect(sourceDraft('one')).toMatchObject({
@@ -145,7 +148,7 @@ describe('source tab state', () => {
             'content-type': 'application/json',
             'x-oculus-token': 'source-token'
         });
-        expect(JSON.parse(String(requests[0].init.body))).toEqual({
+        expect(JSON.parse(scalar(requests[0].init.body))).toEqual({
             root: 'hub',
             path: 'notes/a.md',
             content: 'replacement\n'

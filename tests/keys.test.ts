@@ -23,8 +23,9 @@ const CALL = /(?<![\w$.])(t|lookup|catalogText)\(/g;
 /** Server interpolation takes the catalog before its key. */
 const WORDS = /(?<![\w$.])words\(\s*catalog\s*,/g;
 
-/** Direct server indexing of the flat catalog. */
-const INDEX = /textCatalog\([^)]*\)\s*\[\s*(['"])([^'"\\]+)\1\s*\]/g;
+/** Direct server indexing of the flat catalog, by subscript or through the guarded record reader. */
+const INDEX =
+    /textCatalog\([^)]*\)\s*\[\s*(['"])([^'"\\]+)\1\s*\]|byKey\(\s*textCatalog\([^)]*\)\s*,\s*(['"])([^'"\\]+)\3\s*\)/g;
 
 /** The first argument when it is a plain string literal, and nothing when it is not. */
 const LITERAL = /^\s*(?:'([^'\\]*)'|"([^"\\]*)")\s*[,)]/;
@@ -81,7 +82,7 @@ export function calls(root: string): Call[] {
             found.push({
                 file: file.slice(root.length + 1),
                 reader: match[1],
-                key: literal ? (literal[1] ?? literal[2]) : null,
+                key: literal ? (literal.at(1) ?? literal.at(2) ?? null) : null,
                 text: source.slice(match.index, at + 80).split('\n')[0]
             });
         }
@@ -91,7 +92,7 @@ export function calls(root: string): Call[] {
             found.push({
                 file: file.slice(root.length + 1),
                 reader: 'words',
-                key: literal ? (literal[1] ?? literal[2]) : null,
+                key: literal ? (literal.at(1) ?? literal.at(2) ?? null) : null,
                 text: source.slice(match.index, at + 80).split('\n')[0]
             });
         }
@@ -99,7 +100,7 @@ export function calls(root: string): Call[] {
             found.push({
                 file: file.slice(root.length + 1),
                 reader: 'index',
-                key: match[2],
+                key: match.at(2) ?? match.at(4) ?? null,
                 text: match[0]
             });
         }
@@ -179,6 +180,13 @@ describe('text keys', () => {
         );
         write('Prose.ts', '// a comment about t(whatever) is not a call\nconst d = 1;\n');
         write('Define.ts', 'export function t(key: string): string {\n    return key;\n}\n');
+        // The server reads the flat catalog by subscript or through the guarded record reader, and
+        // the gate counts both as one read of the key each names.
+        write(
+            'Server.ts',
+            "const e = textCatalog(config)['app.nav.host'];\n" +
+                "const f = byKey(textCatalog(config), 'app.search');\n"
+        );
         expect(calls(dir)).toEqual([
             { file: 'Computed.ts', reader: 't', key: null, text: 't(key);' },
             { file: 'Computed.ts', reader: 'lookup', key: null, text: 'lookup(key);' },
@@ -188,6 +196,18 @@ describe('text keys', () => {
                 reader: 'lookup',
                 key: 'views.status',
                 text: 'lookup("views.status");'
+            },
+            {
+                file: 'Server.ts',
+                reader: 'index',
+                key: 'app.nav.host',
+                text: "textCatalog(config)['app.nav.host']"
+            },
+            {
+                file: 'Server.ts',
+                reader: 'index',
+                key: 'app.search',
+                text: "byKey(textCatalog(config), 'app.search')"
             }
         ]);
         expect(unapproved(calls(dir)).map((call) => call.text)).toEqual([

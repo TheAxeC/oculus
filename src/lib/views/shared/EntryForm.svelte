@@ -1,19 +1,3 @@
-<script module lang="ts">
-    // Layer 3, shared view partial. The add-write choice is exported so server-rendered form tests
-    // exercise the same branch the save control uses without needing a browser DOM.
-
-    import { newEntry, type WriteAnswer as AddWriteAnswer } from '$lib/state/writes.svelte';
-
-    /** Use a file-specific add write when supplied, and the collection write otherwise. */
-    export function addFromForm(
-        collection: string,
-        fields: Record<string, unknown>,
-        onadd?: (fields: Record<string, unknown>) => Promise<AddWriteAnswer>
-    ): Promise<AddWriteAnswer> {
-        return onadd === undefined ? newEntry(collection, fields) : onadd(fields);
-    }
-</script>
-
 <script lang="ts">
     // Layer 3, shared view partial. The add and edit form of one collection,
     // drawn from that file's own `schema:` and from nothing this module knows: the controls are the
@@ -26,6 +10,7 @@
     // A `metalist` is kept as rows apart from the scalar controls because each row writes two
     // values and is saved as one flat map.
 
+    import { addFromForm } from './entry-form';
     import Checkbox from '$lib/ui/Checkbox.svelte';
     import Confirm from '$lib/ui/Confirm.svelte';
     import DateInput from '$lib/ui/DateInput.svelte';
@@ -231,7 +216,7 @@
                 <TextArea
                     value={line(field.field)}
                     label={field.label}
-                    oninput={(next) => (edits[field.field] = next)}
+                    oninput={(next: string) => (edits[field.field] = next)}
                 />
             {:else if field.kind === 'select'}
                 <Select
@@ -239,26 +224,26 @@
                     label={field.label}
                     empty={t('collection.form_none')}
                     choices={field.options.map((one) => ({ id: one, label: one }))}
-                    onchange={(next) => (edits[field.field] = next)}
+                    onchange={(next: string) => (edits[field.field] = next)}
                 />
             {:else if field.kind === 'date'}
                 <DateInput
                     value={line(field.field)}
                     label={field.label}
-                    oninput={(next) => (edits[field.field] = next)}
+                    oninput={(next: string) => (edits[field.field] = next)}
                 />
             {:else if field.kind === 'checkbox'}
                 <Checkbox
                     checked={valueOf(field.field) === true}
                     label={field.label}
-                    onchange={(next) => (edits[field.field] = next)}
+                    onchange={(next: boolean) => (edits[field.field] = next)}
                 />
             {:else if field.kind === 'tags'}
                 <TextInput
                     value={line(field.field)}
                     label={field.label}
                     placeholder={t('collection.tags_hint')}
-                    oninput={(next) => (edits[field.field] = next)}
+                    oninput={(next: string) => (edits[field.field] = next)}
                 />
             {:else if field.kind === 'metalist'}
                 <div class="metalist" data-metalist={field.field}>
@@ -268,13 +253,13 @@
                                 value={row.label}
                                 label={t('collection.meta_label')}
                                 placeholder={t('collection.meta_label')}
-                                oninput={(next) => setMeta(field.field, at, 'label', next)}
+                                oninput={(next: string) => setMeta(field.field, at, 'label', next)}
                             />
                             <TextInput
                                 value={row.value}
                                 label={t('collection.meta_value')}
                                 placeholder={t('collection.meta_value')}
-                                oninput={(next) => setMeta(field.field, at, 'value', next)}
+                                oninput={(next: string) => setMeta(field.field, at, 'value', next)}
                             />
                             <ToolButton
                                 label={t('collection.meta_remove')}
@@ -292,7 +277,7 @@
                 <TextInput
                     value={line(field.field)}
                     label={field.label}
-                    oninput={(next) => (edits[field.field] = next)}
+                    oninput={(next: string) => (edits[field.field] = next)}
                 />
             {/if}
         </Field>

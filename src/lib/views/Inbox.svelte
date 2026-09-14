@@ -35,6 +35,7 @@
         type InboxEntry,
         type InboxState
     } from '$lib/state/inbox';
+    import { asText } from '$lib/state/schema';
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
     import { feedIdents } from '$lib/state/palette';
@@ -52,7 +53,7 @@
     const actions = $derived(inboxSearch(split.actions, held.search));
     const info = $derived(inboxSearch(split.info, held.search));
     const triaged = $derived(inboxSearch(split.triaged, held.search));
-    const run = $derived(String(data?.meta.run ?? ''));
+    const run = $derived(asText(data?.meta.run));
     const liveCount = $derived(split.replies.length + split.actions.length + split.info.length);
     let said = $state('');
 
@@ -66,7 +67,7 @@
         <Search
             value={held.search}
             placeholder={t('inbox.search')}
-            oninput={(search) => write({ search })}
+            oninput={(search: string) => write({ search })}
         />
     </Toolbar>
 {/snippet}
@@ -76,7 +77,7 @@
         <section class="group">
             <h3>{label} ({entries.length})</h3>
             <div class="cards">
-                {#each entries as entry, at (`${String(entry.id ?? '')}:${at}`)}
+                {#each entries as entry, at (`${asText(entry.id)}:${at}`)}
                     <Reveal
                         id={identOf(entry)}
                         wanted={held.reveal}
@@ -86,7 +87,7 @@
                             {entry}
                             id={identOf(entry)}
                             cursor={cursor === identOf(entry)}
-                            onsaid={(words) => (said = words)}
+                            onsaid={(words: string) => (said = words)}
                         />
                     </Reveal>
                 {/each}
@@ -145,7 +146,7 @@
                     />
                     {#if held.triagedOpen && triaged.length > 0}
                         <div class="cards">
-                            {#each triaged as entry, at (`${String(entry.id ?? '')}:${at}`)}
+                            {#each triaged as entry, at (`${asText(entry.id)}:${at}`)}
                                 <Reveal
                                     id={identOf(entry)}
                                     wanted={held.reveal}
@@ -156,7 +157,7 @@
                                         id={identOf(entry)}
                                         cursor={cursor === identOf(entry)}
                                         triaged
-                                        onsaid={(words) => (said = words)}
+                                        onsaid={(words: string) => (said = words)}
                                     />
                                 </Reveal>
                             {/each}

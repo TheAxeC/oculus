@@ -13,6 +13,7 @@ import {
     writeFileSync
 } from 'node:fs';
 import { tmpdir } from 'node:os';
+import { byKey } from '../src/lib/data/guards.ts';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
@@ -135,7 +136,7 @@ export function unfilteredSites(root: string): string[] {
         for (const site of htmlSites(readFileSync(join(root, file), 'utf8'))) {
             if (isCatalogLine(site)) continue;
             if (FILTERED.some((call) => isCall(site, call))) continue;
-            if (ALLOWED[`${file}:${site}`] !== undefined) continue;
+            if (byKey(ALLOWED, `${file}:${site}`) !== undefined) continue;
             loose.push(`${file}: ${site}`);
         }
     }

@@ -2,7 +2,6 @@
     // Layer 3, view registration. Session-list registration stays on the component because the
     // registry discovers this file directly.
     import type { ViewRegistration } from '$lib/views/registry';
-    export { sessionRowItems, terminalRowItems } from './session-list';
 
     export const registration: ViewRegistration = {
         id: 'session-list',

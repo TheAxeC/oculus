@@ -18,6 +18,7 @@ import {
 } from '../../src/lib/state/schema.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { Id, Project, Snapshot } from '../../src/lib/data/model.ts';
+import { present } from '../present.ts';
 
 const { config } = loadConfig(engineDir());
 const fields = formFields(config);
@@ -182,7 +183,7 @@ describe('where the choices come from', () => {
     const choicesOf = (name: string) => {
         const field = fields.find((one) => one.field === name);
         expect(field).toBeDefined();
-        return choicesFor(field!, held, config);
+        return choicesFor(present(field, `field ${name}`), held, config);
     };
 
     it('resolves each registry to its own entities', () => {
@@ -214,7 +215,7 @@ describe('where the choices come from', () => {
 
     it('has no choices before the snapshot arrives, rather than an error', () => {
         const field = fields.find((one) => one.field === 'venue_id');
-        expect(choicesFor(field!, null, config)).toEqual([]);
+        expect(choicesFor(present(field, 'field venue_id'), null, config)).toEqual([]);
     });
 });
 

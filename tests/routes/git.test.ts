@@ -125,7 +125,8 @@ describe('the git endpoint', () => {
         );
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({ ok: true, output: 'done' });
-        expect(ran).toEqual([{ action: 'stage', root: ROOT, fields: expect.anything() }]);
+        const anything: unknown = expect.anything();
+        expect(ran).toEqual([{ action: 'stage', root: ROOT, fields: anything }]);
     });
 
     it('refuses a root it was not given', async () => {

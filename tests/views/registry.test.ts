@@ -16,7 +16,7 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { registerView, viewFor, views, type ViewProps } from '../../src/lib/views/registry.ts';
-import { railOrder } from '../../src/lib/shell/ActivityRail.svelte';
+import { railOrder } from '../../src/lib/shell/rail.ts';
 import { apply, layout } from '../../src/lib/state/layout.svelte.ts';
 import { defaultWorkbench, type Instance } from '../../src/lib/state/layout/index.ts';
 import type { Component } from 'svelte';

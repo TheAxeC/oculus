@@ -38,6 +38,7 @@
         visibleLeads,
         type LeadsState
     } from '$lib/state/leads';
+    import { asText } from '$lib/state/schema';
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
     import { feedIdents } from '$lib/state/palette';
@@ -97,7 +98,7 @@
         <Search
             value={held.search}
             placeholder={t('leads.search')}
-            oninput={(search) => write({ search })}
+            oninput={(search: string) => write({ search })}
         />
         <ToolButton
             label={t('leads.add')}
@@ -145,13 +146,13 @@
                     entry={null}
                     onadd={addLead}
                     onclose={() => write({ adding: false })}
-                    onsaid={(words) => (said = words)}
+                    onsaid={(words: string) => (said = words)}
                 />
             {/if}
 
             {#if allSplit.live.length > 0}
                 <div class="cards">
-                    {#each live as entry, at (`${String(entry.title ?? '')}:${at}`)}
+                    {#each live as entry, at (`${asText(entry.title)}:${at}`)}
                         <Reveal
                             id={identOf(entry)}
                             wanted={held.reveal}
@@ -167,7 +168,7 @@
                                         leadOf(entry),
                                         !dismissed.includes(leadOf(entry))
                                     )}
-                                onsaid={(words) => (said = words)}
+                                onsaid={(words: string) => (said = words)}
                             />
                         </Reveal>
                     {/each}
@@ -188,7 +189,7 @@
                     />
                     {#if held.expiredOpen}
                         <div class="cards">
-                            {#each expired as entry, at (`${String(entry.title ?? '')}:${at}`)}
+                            {#each expired as entry, at (`${asText(entry.title)}:${at}`)}
                                 <Reveal
                                     id={identOf(entry)}
                                     wanted={held.reveal}
@@ -205,7 +206,7 @@
                                                 leadOf(entry),
                                                 !dismissed.includes(leadOf(entry))
                                             )}
-                                        onsaid={(words) => (said = words)}
+                                        onsaid={(words: string) => (said = words)}
                                     />
                                 </Reveal>
                             {/each}

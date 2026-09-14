@@ -14,10 +14,8 @@ import { render } from 'svelte/server';
 import Agents from '../../src/lib/views/sessions/Agents.svelte';
 import Changes from '../../src/lib/views/sessions/Changes.svelte';
 import SessionDetail from '../../src/lib/views/sessions/SessionDetail.svelte';
-import SessionList, {
-    sessionRowItems,
-    terminalRowItems
-} from '../../src/lib/views/sessions/SessionList.svelte';
+import SessionList from '../../src/lib/views/sessions/SessionList.svelte';
+import { sessionRowItems, terminalRowItems } from '../../src/lib/views/sessions/session-list.ts';
 import Terminal from '../../src/lib/views/sessions/Terminal.svelte';
 import Timeline from '../../src/lib/views/sessions/Timeline.svelte';
 import Transcript from '../../src/lib/views/sessions/Transcript.svelte';

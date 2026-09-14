@@ -1,22 +1,8 @@
-<script module lang="ts">
-    // Layer 3, primitive. The keyboard reference turns one catalog string into labelled rows, so
-    // the shell owns only whether the modal is present and the catalog remains the source of words.
-
-    export type KeySheetRow = { key: string; meaning: string };
-
-    /** Split the catalog's `key | meaning;;key | meaning` shape into rows, trimming its separators. */
-    export function sheetRows(value: string): KeySheetRow[] {
-        return value.split(';;').map((row) => {
-            const [key = '', meaning = ''] = row.split('|');
-            return { key: key.trim(), meaning: meaning.trim() };
-        });
-    }
-</script>
-
 <script lang="ts">
     // Layer 3, primitive. A modal reference sheet. Its words arrive translated and its only event
     // closes it, whether the reader presses the ground or anywhere in the compact reference panel.
 
+    import { sheetRows } from '$lib/ui/key-rows';
     type Props = {
         title: string;
         hint: string;

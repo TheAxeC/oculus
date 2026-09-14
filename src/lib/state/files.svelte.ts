@@ -36,10 +36,10 @@ const PENDING: FilesState = { rows: [], truncated: false, folder: '', error: '',
 /** What no id at all reads as: an empty id asks nothing and waits for nothing. */
 const NOTHING: FilesState = { rows: [], truncated: false, folder: '', error: '', loading: false };
 
-const held: Record<string, FilesState> = $state({});
+const held: Record<string, FilesState | undefined> = $state({});
 
 /** The `files` version each held id was fetched at. Not reactive: only requests read it. */
-const versions: Record<string, number> = {};
+const versions: Record<string, number | undefined> = {};
 
 /** The ids with a request in flight, so a second render does not send a second request. */
 const inflight = new Set<string>();

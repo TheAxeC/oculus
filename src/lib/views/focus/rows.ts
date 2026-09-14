@@ -6,7 +6,7 @@
 // its own numbered index of the lines it drew, because two lines of one group can name the same
 // project and a button has to reach the one it sits on.
 
-import type { TickerAction, TickerRow } from '$lib/ui/Ticker.svelte';
+import type { TickerAction, TickerRow } from '$lib/ui/ticker-rows';
 import { daysTone, type TickerItem, type TickerTarget } from '$lib/state/ticker';
 import { openView } from '$lib/state/layout.svelte';
 import { t } from '$lib/state/text';
@@ -18,7 +18,7 @@ import {
 } from '$lib/state/writes.svelte';
 
 /** The lines one partial drew, by the row id each was given. */
-export type RowIndex = Record<string, TickerItem>;
+export type RowIndex = Record<string, TickerItem | undefined>;
 
 /** A numbered index of the lines a partial draws, and the row builder that fills it. */
 export type Rows = {

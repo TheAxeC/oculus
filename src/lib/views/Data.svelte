@@ -87,7 +87,7 @@
             <Search
                 value={held.search}
                 placeholder={t('data.search')}
-                oninput={(search) => write({ search })}
+                oninput={(search: string) => write({ search })}
             />
             {#if collection?.schema !== undefined}
                 <ToolButton
@@ -105,7 +105,7 @@
                 schema={collection.schema}
                 entry={null}
                 onclose={() => (adding = false)}
-                onsaid={(words) => (said = words)}
+                onsaid={(words: string) => (said = words)}
             />
         {/if}
 
@@ -133,7 +133,7 @@
                             schema={collection?.schema}
                             editing={editing === dataset.id}
                             onedit={() => (editing = editing === dataset.id ? null : dataset.id)}
-                            onsaid={(words) => (said = words)}
+                            onsaid={(words: string) => (said = words)}
                         />
                     </Reveal>
                 {/each}

@@ -7,6 +7,7 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { readManifests } from '../../src/lib/data/sources/manifests.ts';
 import type { RawManifest, ScanRule } from '../../src/lib/data/model.ts';
+import { present } from '../present.ts';
 
 const SCAN: ScanRule[] = [
     { dir: 'projects/ideas', type: 'idea' },
@@ -98,7 +99,7 @@ function buildHub(): string {
 function byId(manifests: RawManifest[], id: string): RawManifest {
     const found = manifests.find((m) => m.id === id);
     expect(found, `no manifest with id ${id}`).toBeDefined();
-    return found!;
+    return present(found, `manifest ${id}`);
 }
 
 describe('readManifests', () => {

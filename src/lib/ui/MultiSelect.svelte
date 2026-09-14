@@ -87,7 +87,7 @@
         }
         if (event.key === 'Enter') {
             event.preventDefault();
-            const choice = shown[at];
+            const choice = shown.at(at);
             if (choice !== undefined) add(choice.id);
             else if (free) add(typed.trim());
             return;

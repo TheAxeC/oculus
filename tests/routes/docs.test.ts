@@ -19,6 +19,7 @@ import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { DocTarget } from '../../src/lib/server/docs.ts';
 import type { Project } from '../../src/lib/data/model.ts';
+import { fields } from '../../src/lib/data/guards.ts';
 
 /** The one field of a project the document reader asks for, on an otherwise empty record. */
 function project(folder: string): Project {
@@ -90,13 +91,13 @@ describe('the document endpoint', () => {
         const into = target({ 'code/README.md': '# Deposit\n' });
         const response = handleDocs(request('project=alpha&name=code%2FREADME.md'), into);
         expect(response.status).toBe(200);
-        expect((await response.json()).html).toContain('<h1>Deposit</h1>');
+        expect(fields(await response.json()).html).toContain('<h1>Deposit</h1>');
     });
 
     it('answers 404 for an id the reader does not know', async () => {
         const response = handleDocs(request('project=beta&name=README.md'), target());
         expect(response.status).toBe(404);
-        expect((await response.json()).error).toBe('no project with the id beta');
+        expect(fields(await response.json()).error).toBe('no project with the id beta');
     });
 
     it('answers 404 for a name outside the list, a path of its own included', async () => {
@@ -107,7 +108,9 @@ describe('the document endpoint', () => {
                 into
             );
             expect(response.status).toBe(404);
-            expect((await response.json()).error).toBe(`not a document this route serves: ${name}`);
+            expect(fields(await response.json()).error).toBe(
+                `not a document this route serves: ${name}`
+            );
         }
     });
 
@@ -115,7 +118,7 @@ describe('the document endpoint', () => {
         const into = target({ 'code/README.md': README });
         const response = handleDocs(request('project=alpha&name=README.md'), into);
         expect(response.status).toBe(404);
-        expect((await response.json()).error).toBe('document does not exist');
+        expect(fields(await response.json()).error).toBe('document does not exist');
     });
 
     it('reads the folder from the portfolio the request carries, and no manifest at all', async () => {
@@ -129,7 +132,7 @@ describe('the document endpoint', () => {
         };
         const response = handleDocs(request('project=alpha&name=README.md'), held);
         expect(response.status).toBe(200);
-        expect((await response.json()).html).toContain('<h1>Alpha</h1>');
+        expect(fields(await response.json()).html).toContain('<h1>Alpha</h1>');
     });
 
     it('finds the folder under a nested scan rule when no portfolio was published', async () => {
@@ -147,7 +150,7 @@ describe('the document endpoint', () => {
         };
         const response = handleDocs(request('project=alpha&name=README.md'), into);
         expect(response.status).toBe(200);
-        expect((await response.json()).html).toContain('<h1>Alpha</h1>');
+        expect(fields(await response.json()).html).toContain('<h1>Alpha</h1>');
     });
 
     it('answers 404 for an id that is a path rather than a folder name', async () => {
@@ -156,7 +159,7 @@ describe('the document endpoint', () => {
             target()
         );
         expect(response.status).toBe(404);
-        expect((await response.json()).error).toBe('no project with the id ../alpha');
+        expect(fields(await response.json()).error).toBe('no project with the id ../alpha');
     });
 
     it('refuses a request from another origin', async () => {
@@ -168,6 +171,6 @@ describe('the document endpoint', () => {
             target()
         );
         expect(response.status).toBe(403);
-        expect((await response.json()).error).toBe('the request did not come from this page');
+        expect(fields(await response.json()).error).toBe('the request did not come from this page');
     });
 });

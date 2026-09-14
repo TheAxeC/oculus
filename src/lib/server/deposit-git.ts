@@ -22,6 +22,7 @@
 // a watcher, a timer or the socket: the one caller is server/deposit.ts, itself reached only from
 // POST /api/deposit with the write token and the page's confirm.
 
+import { scalar } from '../data/guards.ts';
 import { execFile } from 'node:child_process';
 import { homedir } from 'node:os';
 import { isAbsolute, join, resolve, sep } from 'node:path';
@@ -246,9 +247,14 @@ export function parseBranches(output: string): Branch[] {
     const rows: Branch[] = [];
     for (const line of output.split('\n')) {
         if (line.trim() === '') continue;
-        const [name, up, head] = line.split('\t');
+        const parts = line.split('\t');
+        const name = parts.at(0);
         if (name === undefined || name === '') continue;
-        rows.push({ name, upstream: up ?? '', current: (head ?? '').trim() === '*' });
+        rows.push({
+            name,
+            upstream: parts.at(1) ?? '',
+            current: (parts.at(2) ?? '').trim() === '*'
+        });
     }
     return rows;
 }
@@ -306,7 +312,7 @@ export function slugOf(url: string): string {
 }
 
 function short(value: unknown): string {
-    const text = value instanceof Error ? value.message : String(value ?? '');
+    const text = value instanceof Error ? value.message : scalar(value);
     const lines = text.trim().split('\n');
     let line = lines.length > 0 ? lines[0].trim() : '';
     if (line.toLowerCase().startsWith('fatal: ')) line = line.slice(7);

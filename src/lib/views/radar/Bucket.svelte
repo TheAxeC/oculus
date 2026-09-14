@@ -7,6 +7,7 @@
     import Reveal from '../shared/Reveal.svelte';
     import type { FeedIdent } from '$lib/state/palette';
     import { sortBucket, type Project, type RadarBucket, type RadarEntry } from '$lib/state/radar';
+    import { asText } from '$lib/state/schema';
     import { t } from '$lib/state/text';
     import { toneOf } from '$lib/state/tones';
 
@@ -47,7 +48,7 @@
     />
     {#if open}
         <div class="cards">
-            {#each ordered as entry, at (`${String(entry.title ?? '')}:${at}`)}
+            {#each ordered as entry, at (`${asText(entry.title)}:${at}`)}
                 {@const ident = identOf(entry)}
                 <Reveal id={ident} wanted={reveal} {onrevealed}>
                     <RadarCard

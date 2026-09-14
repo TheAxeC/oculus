@@ -9,7 +9,7 @@
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
     import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
-    import { type Entry, type SchemaField } from '$lib/state/collection';
+    import type { Entry, SchemaField } from '$lib/state/collection';
     import {
         inFlight,
         isDormant,

@@ -1,6 +1,7 @@
 // Layer 2, client state. Instance identities and tree lookups, independent of tree mutations and storage.
 
 import type { Instance, Layout, Pane, ViewId } from './layout/index.ts';
+import { item } from '../data/guards.ts';
 
 /** The card id held by an instance, or null when keyboard navigation has selected none. */
 export function cardCursor(state: unknown): string | null {
@@ -119,7 +120,7 @@ export function findInstance(
 ): { instance: Instance; path: number[]; index: number } | null {
     for (const { path, pane } of panes(layout)) {
         const index = pane.tabs.findIndex((tab) => tab.id === id);
-        const instance = pane.tabs[index];
+        const instance = item(pane.tabs, index);
         if (instance !== undefined) return { instance, path, index };
     }
     return null;

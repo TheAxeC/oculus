@@ -19,7 +19,7 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
-import { isMap } from '../../data/guards.ts';
+import { isMap, byKey, scalar } from '../../data/guards.ts';
 import { collectionSchema } from '../../data/normalise.ts';
 import { fieldNames } from '../../data/validate.ts';
 import {
@@ -260,14 +260,14 @@ export function writeEntry(
     if (value === null) return { found: false, changed: [], refused: [] };
     const typed = typeRefusals(held.schema, fields);
     const wanted = fitting(fields, typed);
-    const registryField = REGISTRY_IDENTITY_FIELDS[collection];
+    const registryField = byKey(REGISTRY_IDENTITY_FIELDS, collection);
     if (registryField !== undefined && registryField in wanted) {
         // The registry keys its entities by this field, so an edit may neither clear it nor move
         // the entry onto another entry's value: normalise would then keep one of the two.
-        const own = held.items.find((one) => String(one[held.ident] ?? '') === value);
+        const own = held.items.find((one) => scalar(one[held.ident]) === value);
         const raw = wanted[registryField];
         const next = typeof raw === 'string' ? raw.trim() : '';
-        const current = String(own?.[registryField] ?? '').trim();
+        const current = scalar(own?.[registryField]).trim();
         if (next === '') {
             return {
                 found: true,
@@ -280,7 +280,7 @@ export function writeEntry(
         }
         if (
             next !== current &&
-            held.items.some((one) => String(one[registryField] ?? '').trim() === next)
+            held.items.some((one) => scalar(one[registryField]).trim() === next)
         ) {
             return {
                 found: true,
@@ -349,7 +349,7 @@ export function createEntry(
     if (shared !== null) return shared;
     const typed = typeRefusals(held.schema, fields);
     const wanted = fitting(fields, typed);
-    const registryField = REGISTRY_IDENTITY_FIELDS[collection];
+    const registryField = byKey(REGISTRY_IDENTITY_FIELDS, collection);
     const registryRaw = registryField === undefined ? undefined : wanted[registryField];
     const registryValue = typeof registryRaw === 'string' ? registryRaw.trim() : '';
     if (registryField !== undefined && registryValue === '') {
@@ -367,7 +367,7 @@ export function createEntry(
     }
     if (
         registryField !== undefined &&
-        held.items.some((one) => String(one[registryField] ?? '').trim() === registryValue)
+        held.items.some((one) => scalar(one[registryField]).trim() === registryValue)
     ) {
         return {
             found: true,
@@ -391,7 +391,7 @@ export function createEntry(
             refused: [...typed, { field: ident, reason: `a new entry needs a ${ident}` }]
         };
     }
-    if (held.items.some((one) => String(one[ident] ?? '') === value)) {
+    if (held.items.some((one) => scalar(one[ident]) === value)) {
         return {
             found: true,
             changed: [],

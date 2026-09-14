@@ -1,7 +1,7 @@
 // Layer 2, client state. Board filters and saved state live here because they change which items a
 // board shows and what its controls remember.
 
-import { isMap, strings } from '../../data/guards.ts';
+import { isMap, byKey, strings } from '../../data/guards.ts';
 import { facetValues } from './facets.ts';
 import {
     FACETS,
@@ -36,7 +36,7 @@ export function applyFilters(
         if (quick.stale === true && !isStale(item, lag)) return false;
         if (quick.dated === true && (item.project.deadline ?? '') === '') return false;
         for (const facet of FACETS) {
-            const selected = filters[facet];
+            const selected = byKey(filters, facet);
             if (selected === undefined || selected.length === 0) continue;
             const values = facetValues(item, facet);
             if (!selected.some((value) => values.includes(value))) return false;

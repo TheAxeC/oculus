@@ -8,6 +8,7 @@
 // Playwright spec runs under plain Node with no Svelte plugin.
 
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
+import { byKey } from '../../src/lib/data/guards.ts';
 
 const merged = loadConfig(engineDir()).config;
 const catalog = textCatalog(merged);
@@ -28,10 +29,10 @@ export function vocabulary(key: string): { key: string; label: string }[] {
 
 /** The words for a dotted key, with {0} and {1} replaced. A key that is not in the catalog throws. */
 export function t(key: string, ...args: (string | number)[]): string {
-    const template = catalog[key];
+    const template = byKey(catalog, key);
     if (template === undefined) throw new Error(`text key not in the catalog: ${key}`);
-    return template.replace(/\{(\d+)\}/g, (placeholder, index: string) => {
-        const arg = args[Number(index)];
+    return template.replace(/\{(\d+)\}/g, (placeholder: string, index: string) => {
+        const arg = args.at(Number(index));
         return arg === undefined ? placeholder : String(arg);
     });
 }

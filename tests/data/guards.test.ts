@@ -1,13 +1,24 @@
-// The four type guards of data/guards.ts, over the values a parsed YAML or JSON file actually
-// hands them: a map, a list, null, a number, a boolean and the empty string.
+// The type guards of data/guards.ts, over the values a parsed YAML or JSON file actually hands
+// them: a map, a list, null, a number, a boolean and the empty string.
 //
 // The contracts matter more than the code, because fifteen modules read their config through them:
 // `str` does not trim and does not accept a number, so a field written as `2026` is not a title and
 // a title of spaces is a title of spaces; `text` is `str` with a fallback; `strings` keeps the
-// string items of a list and has none of anything that is not a list.
+// string items of a list and has none of anything that is not a list; `fields` is a map or an empty
+// one; `scalar` writes a number or a boolean out and refuses everything that is not a scalar;
+// `byKey` and `item` answer with nothing for a key or a position the value does not hold.
 
 import { describe, expect, it } from 'vitest';
-import { isMap, str, strings, text } from '../../src/lib/data/guards.ts';
+import {
+    byKey,
+    fields,
+    isMap,
+    item,
+    scalar,
+    str,
+    strings,
+    text
+} from '../../src/lib/data/guards.ts';
 
 describe('isMap', () => {
     it('holds for a map, empty or not', () => {
@@ -77,5 +88,70 @@ describe('strings', () => {
         expect(strings('a')).toEqual([]);
         expect(strings(2026)).toEqual([]);
         expect(strings({ 0: 'a' })).toEqual([]);
+    });
+});
+
+describe('fields', () => {
+    it('is the map itself, so a write through it reaches the value the caller holds', () => {
+        const held = { a: 1 };
+        expect(fields(held)).toBe(held);
+        expect(fields({})).toEqual({});
+    });
+
+    it('is an empty map for null, a list, a string and everything else', () => {
+        expect(fields(null)).toEqual({});
+        expect(fields(undefined)).toEqual({});
+        expect(fields(['a'])).toEqual({});
+        expect(fields('a')).toEqual({});
+        expect(fields(2026)).toEqual({});
+    });
+});
+
+describe('scalar', () => {
+    it('is the string, and writes a number or a boolean out', () => {
+        expect(scalar('a')).toBe('a');
+        expect(scalar('')).toBe('');
+        expect(scalar(2026)).toBe('2026');
+        expect(scalar(0)).toBe('0');
+        expect(scalar(true)).toBe('true');
+        expect(scalar(false)).toBe('false');
+    });
+
+    it('is the fallback for null, undefined, a map and a list', () => {
+        expect(scalar(null)).toBe('');
+        expect(scalar(undefined)).toBe('');
+        expect(scalar({ a: 1 })).toBe('');
+        expect(scalar(['a', 'b'])).toBe('');
+        expect(scalar(null, 'none')).toBe('none');
+        expect(scalar({ a: 1 }, 'none')).toBe('none');
+        expect(scalar(['a', 'b'], 'none')).toBe('none');
+        // A scalar is the value however a fallback was named for the rest.
+        expect(scalar(0, 'none')).toBe('0');
+        expect(scalar('', 'none')).toBe('');
+    });
+});
+
+describe('byKey', () => {
+    it('is the value under a key the record holds', () => {
+        expect(byKey({ a: 1, b: 2 }, 'a')).toBe(1);
+        expect(byKey<number | undefined>({ a: undefined }, 'a')).toBeUndefined();
+    });
+
+    it('is undefined for a key the record does not hold, inherited names included', () => {
+        expect(byKey<number>({ a: 1 }, 'b')).toBeUndefined();
+        expect(byKey<number>({}, 'toString')).toBeUndefined();
+    });
+});
+
+describe('item', () => {
+    it('is the item at a position the list holds', () => {
+        expect(item(['a', 'b'], 0)).toBe('a');
+        expect(item(['a', 'b'], 1)).toBe('b');
+    });
+
+    it('is undefined past the end and for a negative position, which is no item from the end', () => {
+        expect(item(['a', 'b'], 2)).toBeUndefined();
+        expect(item(['a', 'b'], -1)).toBeUndefined();
+        expect(item<string>([], 0)).toBeUndefined();
     });
 });

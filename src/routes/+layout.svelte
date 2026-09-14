@@ -1,9 +1,11 @@
 <script lang="ts">
+    import type { Snippet } from 'svelte';
+
     import '$lib/themes/tokens.css';
     import '$lib/themes/themes.css';
     import favicon from '$lib/assets/favicon.svg';
 
-    let { children } = $props();
+    let { children }: { children: Snippet } = $props();
 </script>
 
 <svelte:head>

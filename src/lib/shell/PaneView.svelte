@@ -1,38 +1,3 @@
-<script module lang="ts">
-    // Layer 3, shell. The pane menu's move-to-page items, apart from the component so the numbering
-    // they draw can be read by a test.
-
-    import type { MenuItem as Item } from '$lib/ui/Menu.svelte';
-    import type { Page } from '$lib/state/layout';
-
-    /** What tells a move-to-page item from the menu's fixed items. */
-    export const PAGE = 'page:';
-
-    /**
-     * Every page but the one on screen, as the item that moves the active tab onto it. A page with
-     * no name of its own is numbered by its place in the whole strip, which is the number the page
-     * strip draws for it, so the item names the page the reader sees rather than its place among
-     * the others.
-     */
-    export function pageMoveItems(
-        pages: readonly Page[],
-        current: string,
-        t: (key: string, ...args: (string | number)[]) => string
-    ): Item[] {
-        return pages
-            .map((page, at) => ({
-                id: `${PAGE}${page.id}`,
-                page: page.id,
-                label: t(
-                    'ui.move_to_page',
-                    page.label === '' ? t('ui.page_default', at + 1) : page.label
-                )
-            }))
-            .filter((item) => item.page !== current)
-            .map(({ id, label }) => ({ id, label }));
-    }
-</script>
-
 <script lang="ts">
     // Layer 3, shell. One pane of a tree: the tab strip over its instances, the pane menu at the
     // right of that strip, and the active instance's view mounted below it. It reaches a view only
@@ -49,9 +14,12 @@
     // makes the menu the keyboard path: the opener takes focus and Menu already handles arrows and
     // Escape.
 
+    import { PAGE, pageMoveItems } from '$lib/shell/pane-view';
     import Confirm from '$lib/ui/Confirm.svelte';
-    import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
-    import Tabs, { type Tab } from '$lib/ui/Tabs.svelte';
+    import Menu from '$lib/ui/Menu.svelte';
+    import type { MenuItem } from '$lib/ui/menu-items';
+    import Tabs from '$lib/ui/Tabs.svelte';
+    import type { Tab } from '$lib/ui/tab-strip';
     import {
         activateInstance,
         closeInstanceIn,
@@ -248,8 +216,8 @@
         {tabs}
         {active}
         {dropIndex}
-        onselect={(id) => activateInstance(target, id)}
-        onclose={(id) => closeInstanceIn(target, id)}
+        onselect={(id: string) => activateInstance(target, id)}
+        onclose={(id: string) => closeInstanceIn(target, id)}
         onpointerdown={press}
         onhoverindex={held === null ? undefined : stripHover}
         menu={paneMenu}

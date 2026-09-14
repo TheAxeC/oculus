@@ -16,17 +16,20 @@ import Card from '../../src/lib/ui/Card.svelte';
 import Chip from '../../src/lib/ui/Chip.svelte';
 import Confirm from '../../src/lib/ui/Confirm.svelte';
 import Empty from '../../src/lib/ui/Empty.svelte';
-import KeySheet, { sheetRows } from '../../src/lib/ui/KeySheet.svelte';
+import KeySheet from '../../src/lib/ui/KeySheet.svelte';
+import { sheetRows } from '../../src/lib/ui/key-rows.ts';
 import Meter from '../../src/lib/ui/Meter.svelte';
-import { menuPlacement } from '../../src/lib/ui/Menu.svelte';
+import { menuPlacement } from '../../src/lib/ui/menu-items.ts';
 import Pane from '../../src/lib/ui/Pane.svelte';
 import Search from '../../src/lib/ui/Search.svelte';
 import Segment from '../../src/lib/ui/Segment.svelte';
-import Table, { order, type Column } from '../../src/lib/ui/Table.svelte';
+import Table from '../../src/lib/ui/Table.svelte';
+import { order, type Column } from '../../src/lib/ui/table-rows.ts';
 import Ticker from '../../src/lib/ui/Ticker.svelte';
 import Toolbar from '../../src/lib/ui/Toolbar.svelte';
 import ToolButton from '../../src/lib/ui/ToolButton.svelte';
-import Tooltip, { describedBy, describedControl } from '../../src/lib/ui/Tooltip.svelte';
+import Tooltip from '../../src/lib/ui/Tooltip.svelte';
+import { describedBy, describedControl } from '../../src/lib/ui/tooltip-target.ts';
 import Gallery from '../../src/lib/views/Gallery.svelte';
 import {
     asciiCatalog,
@@ -248,6 +251,20 @@ describe('Table', () => {
         const body = html(Table, { columns, rows, rowKey: 'name' });
         expect([...body.matchAll(/<tr/g)]).toHaveLength(3);
         expect([...body.matchAll(/<td/g)]).toHaveLength(4);
+    });
+
+    it('draws an empty cell for a value that is no scalar, rather than its stringification', () => {
+        const held = [
+            { name: 'alpha', count: { high: 1 } },
+            { name: 'beta', count: [1, 2] }
+        ];
+        const body = html(Table, { columns: columns, rows: held, rowKey: 'name' });
+        expect(body).toContain('alpha');
+        expect(body).toContain('beta');
+        expect(body).not.toContain('object Object');
+        expect(body).not.toContain('1,2');
+        // The cell is drawn and holds no text: what is between its tags is svelte's own markers.
+        expect([...body.matchAll(/<td[^>]*>(?:<!--[^>]*-->)*<\/td>/g)]).toHaveLength(2);
     });
 
     it('marks the numeric column in the head and in every cell', () => {

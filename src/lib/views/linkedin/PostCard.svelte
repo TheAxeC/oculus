@@ -1,28 +1,12 @@
-<script module lang="ts">
+<script lang="ts">
     // Layer 3, view partial of views/Linkedin.svelte. One idea or numbered post with its metadata,
     // snippet, promotion write, and source action. Folder and cadence rules stay outside this card.
 
-    import { HUB_ROOT } from '$lib/state/collection';
-    import { openView } from '$lib/state/layout.svelte';
-    import { sourceTabState } from '$lib/state/source.svelte';
-
-    export function linkedinSourcePath(folder: string, file: string): string {
-        return `${folder.replace(/\/$/, '')}/${file}`;
-    }
-
-    export function openLinkedinSource(folder: string, file: string): string {
-        return openView(
-            'source',
-            'main',
-            sourceTabState(HUB_ROOT, linkedinSourcePath(folder, file))
-        );
-    }
-</script>
-
-<script lang="ts">
+    import { linkedinSourcePath, openLinkedinSource } from './post-card';
     import Card from '$lib/ui/Card.svelte';
     import Chip from '$lib/ui/Chip.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import { HUB_ROOT } from '$lib/state/collection';
     import { snippet, type LinkedinEntry } from '$lib/state/linkedin';
     import { t } from '$lib/state/text';
     import { markPosted, type WriteAnswer } from '$lib/state/writes.svelte';

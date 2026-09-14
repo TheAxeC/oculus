@@ -110,10 +110,10 @@
         } else if (event.key === 'Enter') {
             event.preventDefault();
             if (parsed === null) {
-                const item = matches[selected];
+                const item = matches.at(selected);
                 if (item !== undefined) choose(item);
             } else {
-                const command = commandList[selected];
+                const command = commandList.at(selected);
                 if (command !== undefined) run(command);
             }
         }
@@ -134,7 +134,7 @@
             <Search
                 value={query}
                 placeholder={t('app.palette.cmdk_placeholder')}
-                oninput={(value) => {
+                oninput={(value: string) => {
                     query = value;
                     selected = 0;
                 }}

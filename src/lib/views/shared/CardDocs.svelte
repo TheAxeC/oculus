@@ -74,7 +74,7 @@
         <Search
             value={filter}
             placeholder={t('project.card.files_ph')}
-            oninput={(value) => (filter = value)}
+            oninput={(value: string) => (filter = value)}
         />
         {#if held.truncated}
             <p class="capped">{t('project.card.files_capped', held.rows.length)}</p>

@@ -11,6 +11,7 @@
 // which side of today they fall on is not in question.
 
 import { describe, expect, it, vi } from 'vitest';
+import { scalar } from '../../src/lib/data/guards.ts';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Focus from '../../src/lib/views/Focus.svelte';
@@ -107,8 +108,8 @@ function collection(
         title: id,
         file,
         entries: rows.map((fields, index) => ({
-            id: String(fields.key ?? fields.title ?? index),
-            title: String(fields.title ?? ''),
+            id: scalar(fields.key ?? fields.title, String(index)),
+            title: scalar(fields.title),
             fields,
             file,
             index

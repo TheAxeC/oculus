@@ -54,7 +54,7 @@
     /** The words and tone of one host's own status, and nothing for a status the config omits. */
     function statusOf(host: Host): { label: string; glyph: string; tone: string } | null {
         const held = statuses.find((one) => one.key === host.status);
-        return held === null || held === undefined
+        return held === undefined
             ? null
             : { label: held.label, glyph: held.glyph, tone: held.tone };
     }

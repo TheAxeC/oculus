@@ -1,7 +1,7 @@
 // Layer 3, view support. Session-list menu builders live here because row actions change
 // independently of the parent view and are unit-tested without a DOM.
 
-import type { MenuItem } from '$lib/ui/Menu.svelte';
+import type { MenuItem } from '$lib/ui/menu-items';
 import { t } from '$lib/state/text';
 
 export type SessionRow = { id: string; live: boolean; cwd: string | null };

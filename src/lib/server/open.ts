@@ -1,6 +1,7 @@
 // Layer 2, server. The authenticated open-folder action. A requested directory is resolved through
 // the same hub and configured roots as the file endpoint before the operating system sees it.
 
+import { scalar } from '../data/guards.ts';
 import { execFile } from 'node:child_process';
 import { realpathSync, statSync } from 'node:fs';
 import { isAbsolute, resolve, sep } from 'node:path';
@@ -48,7 +49,7 @@ export function macOpen(path: string): Promise<void> {
     return new Promise((resolveOpen, reject) => {
         execFile('open', [path], (error) => {
             if (error === null) resolveOpen();
-            else reject(error instanceof Error ? error : new Error(String(error)));
+            else reject(error instanceof Error ? error : new Error(scalar(error, 'open refused')));
         });
     });
 }

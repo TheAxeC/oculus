@@ -184,7 +184,7 @@
             value={asText(valueOf(field.field))}
             label={field.label}
             rows={ROWS}
-            oninput={(value) =>
+            oninput={(value: string) =>
                 edit(field.field, field.type === 'lines' ? value.split('\n') : value)}
         />
     {:else if field.type === 'date'}

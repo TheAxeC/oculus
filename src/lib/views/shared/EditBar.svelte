@@ -1,24 +1,10 @@
-<script module lang="ts">
+<script lang="ts">
     // Layer 3, shared view partial. One compact source strip over the files a feed view owns. Each
     // control opens the source tab for the hub root and path it names.
 
-    import { openView } from '$lib/state/layout.svelte';
-    import { sourceTabState } from '$lib/state/source.svelte';
-
-    export type EditSource = { root: string; path: string; label?: string };
-
-    export function openSourceFile(file: EditSource): string {
-        const state = sourceTabState(file.root, file.path);
-        return openView(
-            'source',
-            'main',
-            file.label === undefined ? state : { ...state, label: file.label }
-        );
-    }
-</script>
-
-<script lang="ts">
+    import { type EditSource, openSourceFile } from './edit-bar';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import { sourceTabState } from '$lib/state/source.svelte';
     import { t } from '$lib/state/text';
 
     let { files }: { files: EditSource[] } = $props();

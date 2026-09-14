@@ -8,7 +8,8 @@
     // draws nothing, and a section with no group at all draws nothing either.
 
     import Glyph from '$lib/ui/Glyph.svelte';
-    import Ticker, { type TickerRow } from '$lib/ui/Ticker.svelte';
+    import Ticker from '$lib/ui/Ticker.svelte';
+    import type { TickerRow } from '$lib/ui/ticker-rows';
     import type { Ticker as FocusTicker, TickerItem } from '$lib/state/ticker';
     import { t } from '$lib/state/text';
     import { act, openLine, rowMaker } from './rows';

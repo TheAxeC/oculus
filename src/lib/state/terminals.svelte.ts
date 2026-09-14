@@ -73,7 +73,7 @@ export function terminals(): Terminal[] {
     const held = message('sessions');
     if (held === null) return [];
     const payload = held.payload as SessionsPayload;
-    return Array.isArray(payload?.terminals) ? payload.terminals : [];
+    return Array.isArray(payload.terminals) ? payload.terminals : [];
 }
 
 /** One terminal by id, or null when the payload does not hold it. */

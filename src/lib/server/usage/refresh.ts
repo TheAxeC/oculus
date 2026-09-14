@@ -41,7 +41,7 @@ export type UsageRefreshWatcher = {
     ready: Promise<void>;
     refresh(label: string): Promise<boolean>;
     refreshAll(): Promise<void>;
-    state(account: UsageAccountConfig): UsageRefresher;
+    state: (account: UsageAccountConfig) => UsageRefresher;
     close(): void;
 };
 
@@ -167,8 +167,8 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
         renewed?: boolean
     ): void => {
         const previous = held.get(account.dir);
-        const changed = previous?.state !== state || previous.reason !== reason;
-        let since = changed || previous === undefined ? iso(now) : previous.since;
+        let since =
+            previous?.state === state && previous.reason === reason ? previous.since : iso(now);
         if (state === 'down') {
             const outage = down.get(account.dir);
             if (outage?.reason === reason) since = outage.since;
@@ -252,6 +252,7 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
             await exec(sendKeysArgs(id, { key: 'Enter' }));
             const fresh = await refreshed(account, sent);
             await stop(account);
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- close() sets the flag from another closure, which the checker's flow analysis of this one does not see
             if (closed) return;
             if (!fresh) {
                 publish(account, 'down', paneReason(lastScreen));
@@ -265,6 +266,7 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
             };
             let renewed = moved();
             const grace = now() + USAGE_RENEW_WAIT_MS;
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- close() sets the flag from another closure, which the checker's flow analysis of this one does not see
             while (!renewed && !closed && now() < grace) {
                 await pause(Math.min(USAGE_POLL_MS, grace - now()));
                 renewed = moved();

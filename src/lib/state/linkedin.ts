@@ -1,6 +1,8 @@
 // Layer 2, client state. Pure LinkedIn cadence, ordering, snippets, search, and saved view state.
 // The view receives ready-to-draw ideas and posts and owns no folder or calendar rules.
 
+import { scalar } from '../data/guards.ts';
+
 export { localDate } from '../data/dates.ts';
 export type { SchemaField } from '../data/model.ts';
 
@@ -39,7 +41,7 @@ function text(entry: Record<string, unknown>, field: string): string {
 
 /** One strict ISO calendar date as a UTC timestamp, or null when it is not a real date. */
 function dateValue(value: unknown): number | null {
-    const matched = DATE.exec(String(value ?? ''));
+    const matched = DATE.exec(scalar(value));
     if (matched === null) return null;
     const year = Number(matched[1]);
     const month = Number(matched[2]);
@@ -86,9 +88,7 @@ export function pickIdea(ideas: LinkedinEntry[], today: string): LinkedinEntry |
 
 /** Collapse body whitespace and keep its first 160 characters with an ASCII ellipsis. */
 export function snippet(body: unknown): string {
-    const collapsed = String(body ?? '')
-        .replace(/\s+/g, ' ')
-        .trim();
+    const collapsed = scalar(body).replace(/\s+/g, ' ').trim();
     return `${Array.from(collapsed).slice(0, 160).join('')}...`;
 }
 

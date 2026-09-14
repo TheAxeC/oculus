@@ -2,10 +2,10 @@
 // here because they describe board content rather than its saved controls.
 
 import type { Id, Project, Snapshot, Venue } from '../../data/model.ts';
-import { strings, text as str } from '../../data/guards.ts';
+import { byKey, strings, text as str } from '../../data/guards.ts';
 import { t } from '../text.ts';
 import { waitingLabel } from '../waiting.ts';
-import { type BoardItem, type BoardStats, type TypeCount, type VenueCount } from './presets.ts';
+import type { BoardItem, BoardStats, TypeCount, VenueCount } from './presets.ts';
 
 /** The status chip the stats strip counts as ready to go out. */
 const SUBMIT_READY = 'submit-ready';
@@ -88,7 +88,7 @@ export function stats(
         if (id !== undefined) counts.set(id, (counts.get(id) ?? 0) + 1);
     }
     const rows: VenueCount[] = [...counts.entries()].map(([id, count]) => {
-        const venue = venues[id];
+        const venue = byKey(venues, id);
         const name = venue?.name ?? id;
         return {
             id,
@@ -150,7 +150,7 @@ const ACTIVITY = ['events', 'education', 'applications'];
 export function disseminated(snapshot: Snapshot, id: Id): Dissemination[] {
     const found: Dissemination[] = [];
     for (const collection of ACTIVITY) {
-        const entries = snapshot.entities.collections[collection]?.entries ?? [];
+        const entries = byKey(snapshot.entities.collections, collection)?.entries ?? [];
         for (const entry of entries) {
             const role = str(entry.fields.role);
             if (collection === 'events' && role === 'attend') continue;

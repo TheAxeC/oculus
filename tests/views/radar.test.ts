@@ -3,7 +3,7 @@
 import { render } from 'svelte/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import Radar from '../../src/lib/views/Radar.svelte';
-import { openSourceFile } from '../../src/lib/views/shared/EditBar.svelte';
+import { openSourceFile } from '../../src/lib/views/shared/edit-bar.ts';
 import { findInstance } from '../../src/lib/state/instance.ts';
 import { layout, loadLayout } from '../../src/lib/state/layout.svelte.ts';
 import {

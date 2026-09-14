@@ -1,5 +1,5 @@
 <script module lang="ts">
-    // Layer 3, view registration and URL helper. Documents open from bookmarks and are not listed.
+    // Layer 3, view registration. Documents open from bookmarks and are not listed.
     import type { ViewRegistration } from './registry';
 
     export const registration: ViewRegistration = {
@@ -10,19 +10,6 @@
         order: 0,
         listed: false
     };
-
-    /**
-     * The address api/file answers for a file under a root. Each segment is escaped on its own, so a
-     * space or a hash in a name survives and the separators stay separators. It is exported because
-     * the rail names the same document by root and path and the test reads the address it produces.
-     */
-    export function fileUrl(root: string, path: string): string {
-        const parts = path
-            .split('/')
-            .filter((one) => one !== '')
-            .map((one) => encodeURIComponent(one));
-        return `/api/file/${encodeURIComponent(root)}/${parts.join('/')}`;
-    }
 </script>
 
 <script lang="ts">
@@ -43,6 +30,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import { t } from '$lib/state/text';
+    import { fileUrl } from './document/file-url';
     import type { ViewProps } from './registry';
 
     let { instance }: ViewProps = $props();

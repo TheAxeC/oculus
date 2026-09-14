@@ -13,6 +13,7 @@
 import { createReadStream, readdirSync, statSync } from 'node:fs';
 import { extname, join, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
+import { byKey } from '../data/guards.ts';
 import { engineDir, loadConfig, loadLocal } from '../data/sources/config.ts';
 import { allowedOrigin } from './auth.ts';
 
@@ -84,7 +85,7 @@ export function choose(settings: Wallpaper, memory: WallpaperMemory): string | n
     }
     if (settings.pick === 'random') {
         const key = resolve(settings.dir);
-        const held = memory.chosen[key];
+        const held = byKey(memory.chosen, key);
         if (held === undefined || !found.includes(held)) {
             memory.chosen[key] = found[Math.floor(Math.random() * found.length)];
         }

@@ -3,7 +3,8 @@
 import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import MapView from '../../src/lib/views/Map.svelte';
-import Graph, { writeRelated } from '../../src/lib/views/map/Graph.svelte';
+import Graph from '../../src/lib/views/map/Graph.svelte';
+import { writeRelated } from '../../src/lib/views/map/edge-write.ts';
 import { buildGraph, parseMapState } from '../../src/lib/state/graph.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';

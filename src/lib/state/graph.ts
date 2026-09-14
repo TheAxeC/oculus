@@ -2,6 +2,7 @@
 // and placement rule is independent of the DOM so it can be checked without a browser.
 
 import type { Project, Snapshot } from '../data/model.ts';
+import { byKey } from '../data/guards.ts';
 
 export type GraphKind = 'project' | 'line' | 'collaborator';
 export type EdgeKind = 'membership' | 'collaborator' | 'related';
@@ -64,7 +65,7 @@ function archived(project: Project): string | undefined {
 }
 
 function collaborationNames(snapshot: Snapshot): Map<string, string> {
-    const collection = snapshot.entities.collections.collaborations;
+    const collection = byKey(snapshot.entities.collections, 'collaborations');
     return new Map((collection?.entries ?? []).map((entry) => [entry.id, entry.title || entry.id]));
 }
 
@@ -136,6 +137,9 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Grap
         const pair = [source, target].sort().join('\0');
         if (pairs.has(pair)) continue;
         pairs.add(pair);
+        const from = all.get(source);
+        const to = all.get(target);
+        if (from === undefined || to === undefined) continue;
         const mutual = directed.has(`${target}\0${source}`);
         edges.push({
             id: `related::${pair.replace('\0', '::')}`,
@@ -143,13 +147,12 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Grap
             target: `project::${target}`,
             kind: 'related',
             direction: mutual ? 'mutual' : 'one',
-            archived:
-                archived(all.get(source)!) !== undefined || archived(all.get(target)!) !== undefined
+            archived: archived(from) !== undefined || archived(to) !== undefined
         });
     }
 
     for (const id of lineIds) {
-        const line = snapshot.entities.programs[id];
+        const line = byKey(snapshot.entities.programs, id);
         nodes.push({
             id: `line::${id}`,
             entityId: id,

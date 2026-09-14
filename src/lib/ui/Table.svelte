@@ -1,41 +1,3 @@
-<script module lang="ts">
-    /** One column: the key it reads from a row, its heading, and how its cells are drawn. */
-    export type Column = {
-        key: string;
-        /** The heading's words, already translated by the view. */
-        label: string;
-        align?: 'left' | 'right';
-        /** A CSS width, for a column that should not share the table's free space. */
-        width?: string;
-        /** Counts, dates and ids: drawn in the numeric font and right-aligned. */
-        numeric?: boolean;
-    };
-
-    /** Which column the rows are ordered by, and which way. */
-    type Sort = { key: string; direction: 'asc' | 'desc' };
-
-    /**
-     * Rows ordered by one column. Numbers compare by value and everything else by locale, so a
-     * column of counts does not sort 10 before 9 and a column of words sorts the way a reader
-     * expects. A value the row does not hold sorts last whichever way the column is turned.
-     */
-    export function order(
-        rows: Record<string, unknown>[],
-        sort: Sort | null
-    ): Record<string, unknown>[] {
-        if (sort === null) return rows;
-        const sign = sort.direction === 'asc' ? 1 : -1;
-        return [...rows].sort((left, right) => {
-            const a = left[sort.key];
-            const b = right[sort.key];
-            if (a === undefined || a === null) return b === undefined || b === null ? 0 : 1;
-            if (b === undefined || b === null) return -1;
-            if (typeof a === 'number' && typeof b === 'number') return sign * (a - b);
-            return sign * String(a).localeCompare(String(b));
-        });
-    }
-</script>
-
 <script lang="ts">
     // Layer 3, primitive. A table of rows the caller has already joined and filtered. It holds one
     // thing of its own, which column it is sorted by: the order is a property of this table on this
@@ -44,6 +6,7 @@
     // A cell is the value as text unless the caller passes the `cell` snippet, which is how a column
     // of chips or of links is drawn without this component learning what either is.
 
+    import { type Column, type Sort, cellText, order } from '$lib/ui/table-rows';
     import type { Snippet } from 'svelte';
 
     type Props = {
@@ -76,10 +39,6 @@
         if (!sortable || sort?.key !== key) return 'none';
         return sort.direction === 'asc' ? 'ascending' : 'descending';
     }
-
-    function text(value: unknown): string {
-        return value === undefined || value === null ? '' : String(value);
-    }
 </script>
 
 <table>
@@ -105,7 +64,7 @@
         </tr>
     </thead>
     <tbody>
-        {#each shown as row (text(row[rowKey]))}
+        {#each shown as row (cellText(row[rowKey]))}
             <tr>
                 {#each columns as column (column.key)}
                     <td
@@ -115,7 +74,7 @@
                         {#if cell}
                             {@render cell(row, column)}
                         {:else}
-                            {text(row[column.key])}
+                            {cellText(row[column.key])}
                         {/if}
                     </td>
                 {/each}

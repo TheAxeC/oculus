@@ -9,7 +9,7 @@
 import type { Collection, Entry, Id, Project, Snapshot, Venue } from '../data/model.ts';
 // `str` here is the shared `text`: a config or entry value of the wrong type reads as the empty
 // string. The alias also keeps the name off the several `const text` locals in this file.
-import { isMap, text as str } from '../data/guards.ts';
+import { isMap, byKey, text as str } from '../data/guards.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the three model types
 // the Focus view names reach it from here, beside the functions that take and return them.
@@ -184,10 +184,11 @@ export function laneItems(projects: Project[], all: Lane[]): Record<string, Proj
     for (const project of projects) {
         if (!live(project)) continue;
         const key = project.focus ?? '';
-        if (out[key] === undefined) continue;
-        out[key].push(project);
+        const lane = byKey(out, key);
+        if (lane === undefined) continue;
+        lane.push(project);
     }
-    for (const key of Object.keys(out)) out[key].sort(laneOrder);
+    for (const lane of Object.values(out)) lane.sort(laneOrder);
     return out;
 }
 
@@ -276,7 +277,7 @@ export function waiting(
 
 /** The entries of one collection of the snapshot, and none when it holds no such file. */
 export function entriesOf(collections: Record<Id, Collection>, key: string): Entry[] {
-    return collections[key]?.entries ?? [];
+    return byKey(collections, key)?.entries ?? [];
 }
 
 /** The label a card and a ticker line carry: the short handle whenever the manifest has one. */

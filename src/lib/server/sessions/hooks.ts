@@ -16,9 +16,9 @@ import type {
     Project,
     SessionRecord,
     SessionsPayload,
-    Snapshot,
     Workspace
 } from '../../data/model.ts';
+import { isMap } from '../../data/guards.ts';
 
 /** How long a hook keeps showing on its session before it is treated as if it never arrived. */
 export const HOOK_EXPIRY_MS = 24 * 60 * 60 * 1000;
@@ -89,13 +89,10 @@ export function mergeHooks(
  * payload untouched, since there is no record to attach it to until the next rescan finds one.
  */
 export function patchPayload(payload: SessionsPayload, event: HookEvent): SessionsPayload {
-    let touched = false;
-    const records = payload.records.map((record) => {
-        if (record.id !== event.session) return record;
-        touched = true;
-        return patchRecord(record, event);
-    });
-    if (!touched) return payload;
+    if (!payload.records.some((record) => record.id === event.session)) return payload;
+    const records = payload.records.map((record) =>
+        record.id === event.session ? patchRecord(record, event) : record
+    );
     const workspaces: Workspace[] = payload.workspaces.map((workspace) => ({
         ...workspace,
         areas: workspace.areas.map((area) => ({
@@ -139,41 +136,37 @@ export function gitRoots(hub: HubLike): string[] {
     return Object.keys(payload);
 }
 
+/** One entity map of the last published `portfolio` payload, and nothing when it holds no such map. */
+function entityMap(hub: HubLike, kind: string): Record<string, unknown> | null {
+    const message = hub.latest('portfolio');
+    if (message === undefined) return null;
+    const entities = isMap(message.payload) ? message.payload.entities : undefined;
+    const held = isMap(entities) ? entities[kind] : undefined;
+    return isMap(held) ? held : null;
+}
+
 /**
  * The project ids the last published `portfolio` payload names. POST /api/deposit takes them as one
  * half of what a deposit may address, the hub's own manifests being the other; a process that has
  * published nothing yet names none, and the manifests answer alone.
  */
 export function projectIds(hub: HubLike): string[] {
-    const message = hub.latest('portfolio');
-    if (message === undefined) return [];
-    const payload = message.payload;
-    if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return [];
-    const entities = (payload as Snapshot).entities;
-    if (typeof entities !== 'object' || entities === null) return [];
-    return Object.keys(entities.projects ?? {});
+    const projects = entityMap(hub, 'projects');
+    return projects === null ? [] : Object.keys(projects);
 }
 
 /** One project in the last published portfolio payload, for a server action scoped by project id. */
 export function project(hub: HubLike, id: string): Project | null {
-    const message = hub.latest('portfolio');
-    if (message === undefined) return null;
-    const payload = message.payload;
-    if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return null;
-    const entities = (payload as Snapshot).entities;
-    if (typeof entities !== 'object' || entities === null) return null;
-    return entities.projects?.[id] ?? null;
+    const projects = entityMap(hub, 'projects');
+    const found = projects === null ? undefined : projects[id];
+    // The payload is the server's own snapshot, so what sits under a project id is a project.
+    return isMap(found) ? (found as Project) : null;
 }
 
 /** Dataset keys in the last portfolio payload, for recovery requests to address by snapshot only. */
 export function datasetIds(hub: HubLike): string[] {
-    const message = hub.latest('portfolio');
-    if (message === undefined) return [];
-    const payload = message.payload;
-    if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return [];
-    const entities = (payload as Snapshot).entities;
-    if (typeof entities !== 'object' || entities === null) return [];
-    return Object.keys(entities.datasets ?? {});
+    const datasets = entityMap(hub, 'datasets');
+    return datasets === null ? [] : Object.keys(datasets);
 }
 
 /** What routes/api/hook/+server.ts needs of the real Hub, without importing its class identity. */

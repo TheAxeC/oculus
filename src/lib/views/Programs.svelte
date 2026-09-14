@@ -40,6 +40,7 @@
         projects,
         venues
     } from '$lib/state/selectors.svelte';
+    import { asText } from '$lib/state/schema';
     import { t } from '$lib/state/text';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
@@ -78,7 +79,7 @@
             )
             .map((row) => ({
                 key: typeof row.key === 'string' ? row.key : '',
-                label: typeof row.label === 'string' ? row.label : String(row.key ?? ''),
+                label: typeof row.label === 'string' ? row.label : asText(row.key),
                 ...(typeof row.color === 'string' ? { color: row.color } : {})
             }))
             .filter((row) => row.key !== '');
@@ -117,7 +118,7 @@
                 schema={collection.schema}
                 entry={null}
                 onclose={() => (adding = false)}
-                onsaid={(words) => (said = words)}
+                onsaid={(words: string) => (said = words)}
             />
         {/if}
         {#if said !== ''}
@@ -137,7 +138,7 @@
                         schema={collection?.schema}
                         editing={editing === line.id}
                         onedit={() => (editing = editing === line.id ? null : line.id)}
-                        onsaid={(words) => (said = words)}
+                        onsaid={(words: string) => (said = words)}
                     />
                 </Reveal>
             {/each}
@@ -166,7 +167,7 @@
                                 schema={collection?.schema}
                                 editing={editing === line.id}
                                 onedit={() => (editing = editing === line.id ? null : line.id)}
-                                onsaid={(words) => (said = words)}
+                                onsaid={(words: string) => (said = words)}
                             />
                         </Reveal>
                     {/each}
@@ -197,7 +198,7 @@
                                 muted
                                 editing={editing === line.id}
                                 onedit={() => (editing = editing === line.id ? null : line.id)}
-                                onsaid={(words) => (said = words)}
+                                onsaid={(words: string) => (said = words)}
                             />
                         </Reveal>
                     {/each}

@@ -2,6 +2,7 @@
 // arrives. A newer payload clears the visible refusal in every Usage view without an effect.
 
 import type { UsagePayload } from '../data/model.ts';
+import { byKey } from '../data/guards.ts';
 import { usage } from './entities.svelte.ts';
 import { t } from './text.ts';
 import { writeToken } from './writes.svelte.ts';
@@ -9,7 +10,7 @@ import { writeToken } from './writes.svelte.ts';
 let refusals = $state.raw<Record<string, { payload: UsagePayload | null; reason: string }>>({});
 
 export function refreshRefusal(label: string): string {
-    const held = refusals[label];
+    const held = byKey(refusals, label);
     return held?.payload === usage() ? t('usage.refresh_refused', held.reason) : '';
 }
 

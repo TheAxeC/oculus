@@ -1,20 +1,10 @@
-<script module lang="ts">
-    /**
-     * The handle's thickness in pixels. SplitView subtracts it from the container before it turns a
-     * drag into a fraction, so the two agree by importing one number rather than by matching two.
-     */
-    export const SASH_PX = 6;
-
-    /** How far one arrow key moves the handle, in pixels. */
-    const STEP = 16;
-</script>
-
 <script lang="ts">
     // Layer 3, primitive. The handle between two children of a split. It holds no layout and no
     // sizes: it reports how far the pointer moved since the last report and the caller decides what
     // that means. The pointer is captured on the way down, so a fast drag that leaves the handle
     // keeps resizing, which is the whole reason this is not a mousemove listener on the window.
 
+    import { SASH_PX, STEP } from '$lib/ui/sash-size';
     import { t } from '$lib/state/text';
 
     type Props = {

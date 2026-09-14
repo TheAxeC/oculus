@@ -12,6 +12,7 @@ import { describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { attention, refresh, staleAfter } from '../../src/lib/state/feeds.ts';
 import { engineDir, loadConfig, vocabCatalog } from '../../src/lib/data/sources/config.ts';
+import { scalar } from '../../src/lib/data/guards.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import {
     backlog,
@@ -100,8 +101,8 @@ function collection(
 ): Collection {
     const file = `/hub/${id}.yml`;
     const entries: Entry[] = rows.map((fields, index) => ({
-        id: String(fields.key ?? fields.title ?? index),
-        title: String(fields.title ?? ''),
+        id: scalar(fields.key ?? fields.title, String(index)),
+        title: scalar(fields.title),
         fields,
         file,
         index

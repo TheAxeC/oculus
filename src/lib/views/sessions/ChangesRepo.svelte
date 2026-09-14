@@ -2,7 +2,8 @@
     // Layer 3, sessions view partial. Repository rows, branch controls and the commit box live here
     // because git presentation changes independently of the selected session's own file activity.
 
-    import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
+    import Menu from '$lib/ui/Menu.svelte';
+    import type { MenuItem } from '$lib/ui/menu-items';
     import TextArea from '$lib/ui/TextArea.svelte';
     import TextInput from '$lib/ui/TextInput.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';

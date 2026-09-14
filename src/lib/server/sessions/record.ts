@@ -8,6 +8,7 @@
 // The caps below are what stops a long session growing without bound: they are applied when the
 // accumulator is pruned, so the cache entry stays small, and again when the record is finished.
 
+import { byKey } from '../../data/guards.ts';
 import type {
     SessionAgent,
     SessionCache,
@@ -149,7 +150,7 @@ export function countFile(acc: Acc, path: string, tool: string, stamp: string | 
 
 /** Open, or update, one subagent entry. Keyed by tool-use id (Claude) or agent path (Codex). */
 export function agentEntry(acc: Acc, id: string, stamp: string | null): SessionAgent {
-    const existing = acc.agents[id];
+    const existing = byKey(acc.agents, id);
     if (existing !== undefined) return existing;
     const agent: SessionAgent = {
         id,

@@ -1,4 +1,5 @@
 import { engineDir, loadConfig, textCatalog } from '$lib/data/sources/config';
+import { byKey } from '$lib/data/guards';
 import { serverContext } from '$lib/server/context';
 import type { Handle } from '@sveltejs/kit';
 
@@ -19,7 +20,7 @@ export const handle: Handle = ({ event, resolve }) => {
     // The lookup t() gives a component, in the one place that runs before the catalog reaches the
     // page. The key stays a literal so tests/keys.test.ts checks it like every other.
     const t = (key: string): string => {
-        const value = catalog[key];
+        const value = byKey(catalog, key);
         if (value === undefined) {
             throw new Error(`text key not in the text catalog (config/text/): ${key}`);
         }

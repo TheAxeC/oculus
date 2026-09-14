@@ -20,6 +20,7 @@ import {
     stats
 } from './board/index.ts';
 import { config, git, portfolio, sessions } from './entities.svelte.ts';
+import { byKey } from '../data/guards.ts';
 import { instanceLayoutState } from './layout.svelte.ts';
 import { choicesFor, formFields, formSections } from './schema.ts';
 import { pinnedSession, selected } from './selection.svelte.ts';
@@ -155,7 +156,7 @@ export function collectionOf(key: string): Collection | null {
 export function boardItemOf(id: Id): BoardItem | null {
     const snapshot = portfolio();
     if (snapshot === null) return null;
-    const project = snapshot.entities.projects[id];
+    const project = byKey(snapshot.entities.projects, id);
     if (project === undefined) return null;
     const merged = configMap();
     const view = BOARDS.find((name) => presetFor(name, merged).tiers.includes(project.tier));

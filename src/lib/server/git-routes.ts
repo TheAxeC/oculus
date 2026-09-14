@@ -15,7 +15,7 @@
 // endpoint without running git at all.
 
 import { engineDir, loadConfig, textCatalog } from '../data/sources/config.ts';
-import { strings } from '../data/guards.ts';
+import { byKey, strings } from '../data/guards.ts';
 import { hasToken, sameOrigin } from './auth.ts';
 import {
     allowedRoots,
@@ -82,7 +82,7 @@ function text(value: unknown): string {
 
 /** The required catalog instruction used to suggest a commit message. */
 export function messagePrompt(config: Record<string, unknown>): string {
-    const prompt = textCatalog(config)['git.message_prompt'];
+    const prompt = byKey(textCatalog(config), 'git.message_prompt');
     if (prompt === undefined) {
         throw new Error('text key not in the text catalog (config/text/): git.message_prompt');
     }
@@ -121,7 +121,7 @@ async function operate(
     fields: Record<string, unknown>,
     roots: string[]
 ): Promise<Outcome> {
-    const operation = OPERATIONS[action];
+    const operation = byKey(OPERATIONS, action);
     if (operation === undefined) {
         return { ok: false, output: '', error: `no git action named ${action}` };
     }

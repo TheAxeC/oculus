@@ -18,6 +18,7 @@ import {
 import { UsageTranscriptFold } from '../../../src/lib/server/usage/transcripts.ts';
 import { watchUsage } from '../../../src/lib/server/usage/watch.ts';
 import { noop } from '../../doubles.ts';
+import { present } from '../../present.ts';
 
 const NOW = Date.parse('2026-09-13T12:00:00.000Z');
 const made: string[] = [];
@@ -67,7 +68,7 @@ afterEach(() => {
 
 describe('usage readers', () => {
     it('uses the adjacent account file only for the real home Claude folder and its aliases', () => {
-        const home = process.env.HOME!;
+        const home = present(process.env.HOME, 'HOME in the environment');
         const own = join(home, '.claude');
         const team = join(home, 'team', '.claude');
         const alias = join(home, 'alias');

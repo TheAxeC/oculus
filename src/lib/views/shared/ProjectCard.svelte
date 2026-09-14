@@ -14,6 +14,7 @@
     import { portfolio } from '$lib/state/entities.svelte';
     import { openView, workbench } from '$lib/state/layout.svelte';
     import { findView } from '$lib/state/layout';
+    import { collectionOf } from '$lib/state/selectors.svelte';
     import { select } from '$lib/state/selection.svelte';
     import { startChat } from '$lib/state/terminals.svelte';
     import { t } from '$lib/state/text';
@@ -143,7 +144,7 @@
     /** Resolve collaboration ids to the names used by the waiting line. */
     function collaboratorNames(): Record<string, string> {
         const names: Record<string, string> = {};
-        for (const entry of snapshot?.entities.collections.collaborations?.entries ?? []) {
+        for (const entry of collectionOf('collaborations')?.entries ?? []) {
             names[entry.id] = entry.title;
         }
         return names;
@@ -184,11 +185,7 @@
     }
     /** Copy the project's generated context to the clipboard and expose failures. */
     async function copyContext(): Promise<void> {
-        if (
-            snapshot === null ||
-            typeof navigator === 'undefined' ||
-            navigator.clipboard === undefined
-        ) {
+        if (snapshot === null || typeof navigator === 'undefined' || !('clipboard' in navigator)) {
             onsaid(t('project.card.clipboard_blocked'));
             return;
         }

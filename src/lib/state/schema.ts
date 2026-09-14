@@ -12,7 +12,7 @@
 // empty; the write itself handles them like any other, since it reads the manifest from disk.
 
 import type { Id, Project, Snapshot } from '../data/model.ts';
-import { isMap } from '../data/guards.ts';
+import { isMap, byKey, scalar } from '../data/guards.ts';
 
 /** One field of the form, in the order config/manifest-schema.yml lists it. */
 export type FormField = {
@@ -148,7 +148,9 @@ export function choicesFor(
     if (from === 'funding') return entityChoices(entities?.funding, ['title']);
     if (from === 'projects') return entityChoices(entities?.projects, ['short', 'title']);
     if (from === 'collaborations') {
-        const entries = entities?.collections?.collaborations?.entries ?? [];
+        const collections = entities?.collections;
+        const entries =
+            collections === undefined ? [] : (byKey(collections, 'collaborations')?.entries ?? []);
         return entries.map((entry) => ({ id: entry.id, label: entry.title }));
     }
     return vocabChoices(config[from]);
@@ -209,6 +211,6 @@ export function asList(value: unknown): string[] {
 /** One value as the text a control shows. A list is one item per line, which `lines` writes back. */
 export function asText(value: unknown): string {
     if (value === undefined || value === null) return '';
-    if (Array.isArray(value)) return value.map((one) => String(one)).join('\n');
-    return String(value);
+    if (Array.isArray(value)) return value.map((one) => scalar(one)).join('\n');
+    return scalar(value);
 }

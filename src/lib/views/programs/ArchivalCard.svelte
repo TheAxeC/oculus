@@ -7,7 +7,7 @@
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { openView } from '$lib/state/layout.svelte';
-    import { type ArchiveGroup, type Project } from '$lib/state/lines';
+    import type { ArchiveGroup, Project } from '$lib/state/lines';
     import { inlineMarkdown } from '$lib/ui/html';
     import { t } from '$lib/state/text';
 

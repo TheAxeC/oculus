@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { normalise } from '../../src/lib/data/normalise.ts';
+import { fields } from '../../src/lib/data/guards.ts';
 import type {
     DocPresence,
     RawCollection,
@@ -476,7 +477,7 @@ describe("normalise, a collection's schema", () => {
 
     it('survives the JSON round trip like the rest of the snapshot', () => {
         const found = events([{ field: 'title', type: 'text' }]);
-        expect(JSON.parse(JSON.stringify(found)).schema).toEqual([
+        expect(fields(JSON.parse(JSON.stringify(found))).schema).toEqual([
             { field: 'title', type: 'text' }
         ]);
     });

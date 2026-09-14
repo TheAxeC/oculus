@@ -1,6 +1,7 @@
 // Layer 2, client state. Pure operations over one Layout tree live here because tree rewrites
 // change independently of workbench focus, docks and persistence.
 
+import { item } from '../../data/guards.ts';
 import { findInstance } from '../instance.ts';
 import {
     MAX_CHILDREN,
@@ -25,7 +26,7 @@ export function nodeAt(layout: Layout, path: number[]): Layout | null {
     let node: Layout = layout;
     for (const index of path) {
         if (node.kind !== 'split') return null;
-        const child = node.children[index];
+        const child = item(node.children, index);
         if (child === undefined) return null;
         node = child;
     }
@@ -54,7 +55,7 @@ export function rewrite(
     if (path.length === 0) return edit(node);
     if (node.kind !== 'split') return node;
     const head = path[0];
-    const child = node.children[head];
+    const child = item(node.children, head);
     if (child === undefined) return node;
     const next = rewrite(child, path.slice(1), edit);
     if (next === child) return node;
@@ -75,7 +76,7 @@ function replaceItem<T>(items: T[], at: number, item: T): T[] {
 function withoutChild(split: Split, at: number): Layout {
     const children = split.children.filter((_, index) => index !== at);
     const sizes = split.sizes.filter((_, index) => index !== at);
-    const only = children[0];
+    const only = children.at(0);
     if (only === undefined) return emptyPane();
     if (children.length === 1) return only;
     return { kind: 'split', dir: split.dir, sizes: normaliseSizes(sizes), children };
@@ -91,7 +92,7 @@ function removePane(layout: Layout, path: number[]): Layout {
 export function removeTab(layout: Layout, path: number[], index: number): Layout {
     const pane = paneAt(layout, path);
     if (pane === null) return layout;
-    const removed = pane.tabs[index];
+    const removed = item(pane.tabs, index);
     if (removed === undefined) return layout;
     const tabs = pane.tabs.filter((_, at) => at !== index);
     if (tabs.length === 0) return removePane(layout, path);

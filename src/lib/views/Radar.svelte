@@ -35,6 +35,7 @@
         sortBucket,
         type RadarState
     } from '$lib/state/radar';
+    import { asText } from '$lib/state/schema';
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
     import { feedIdents } from '$lib/state/palette';
@@ -71,7 +72,7 @@
         <Search
             value={held.search}
             placeholder={t('radar.search')}
-            oninput={(search) => write({ search })}
+            oninput={(search: string) => write({ search })}
         />
     </Toolbar>
 {/snippet}
@@ -92,7 +93,7 @@
                 html={`${t('radar.intro_head')} ${t(
                     'radar.intro_tail',
                     live.length,
-                    String(lastRun || t('radar.no_date'))
+                    asText(lastRun) || t('radar.no_date')
                 )}`}
             />
 
@@ -110,7 +111,7 @@
                     {identOf}
                     reveal={held.reveal}
                     onrevealed={() => write({ reveal: '' })}
-                    onsaid={(words) => (said = words)}
+                    onsaid={(words: string) => (said = words)}
                 />
             {/each}
 
@@ -124,7 +125,7 @@
                     />
                     {#if held.dismissedOpen}
                         <div class="cards">
-                            {#each searchedDismissed as entry, at (`${String(entry.title ?? '')}:${at}`)}
+                            {#each searchedDismissed as entry, at (`${asText(entry.title)}:${at}`)}
                                 {@const ident = identOf(entry)}
                                 <Reveal
                                     id={ident}
@@ -138,7 +139,7 @@
                                         {lastRun}
                                         {projects}
                                         dismissed
-                                        onsaid={(words) => (said = words)}
+                                        onsaid={(words: string) => (said = words)}
                                     />
                                 </Reveal>
                             {/each}

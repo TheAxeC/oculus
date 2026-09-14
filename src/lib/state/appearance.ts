@@ -43,7 +43,7 @@ const RICE = 'rice';
 const FALLBACK_THEME = 'light';
 
 let list: Theme[] = [];
-let byName: Record<string, Theme> = {};
+let byName: Record<string, Theme | undefined> = {};
 let paper: Wallpaper | null = null;
 let crt = false;
 let terminalFont: number | null = null;

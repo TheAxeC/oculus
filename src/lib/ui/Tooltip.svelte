@@ -1,42 +1,3 @@
-<script module lang="ts">
-    let counter = 0;
-
-    /** One id per tooltip on the page, so aria-describedby names this bubble and no other. */
-    function nextId(): string {
-        counter += 1;
-        return `tip-${counter}`;
-    }
-
-    /** What the description is put on: the element's own attributes, and what it holds. */
-    type Described = {
-        querySelector(selectors: string): Element | null;
-        setAttribute(name: string, value: string): void;
-        removeAttribute(name: string): void;
-    };
-
-    /** What takes focus inside a wrapper, in the order the browser reaches them. */
-    const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
-
-    /**
-     * The element the words describe: the control the wrapper holds, since a screen reader reads a
-     * description off the control it is on and the wrapper is not the thing being used. A wrapper
-     * around content that is no control is itself in the tab order, and then carries it instead.
-     */
-    export function describedControl(box: Described, focusable: boolean): Described | null {
-        const found = box.querySelector(FOCUSABLE);
-        if (found !== null) return found;
-        return focusable ? box : null;
-    }
-
-    /**
-     * The id the control is described by, or the empty string for a wrapper that describes nothing:
-     * one given no words, and a presentational one, whose tooltip only repeats the control's name.
-     */
-    export function describedBy(id: string, text: string, presentational: boolean): string {
-        return presentational || text === '' ? '' : id;
-    }
-</script>
-
 <script lang="ts">
     // Layer 3, primitive. The words a control shows after the pointer rests on it, or as soon as it
     // takes focus. It wraps whatever it is given and knows nothing about it: the caller passes the
@@ -53,6 +14,7 @@
     // block of a fixed element inside it, which reads those window coordinates from its own corner
     // and cuts the bubble at its edge, and on the body there is no such ancestor.
 
+    import { describedBy, describedControl, nextId } from '$lib/ui/tooltip-target';
     import type { Snippet } from 'svelte';
 
     type Props = {

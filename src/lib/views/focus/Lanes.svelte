@@ -16,7 +16,8 @@
     import { waitingLabel } from '$lib/state/waiting';
     import Empty from '$lib/ui/Empty.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
-    import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
+    import Menu from '$lib/ui/Menu.svelte';
+    import type { MenuItem } from '$lib/ui/menu-items';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { DEADLINE_SOON, daysUntil, firstSentence } from '$lib/state/board';
     import {
@@ -34,7 +35,7 @@
         type Project,
         type Venue
     } from '$lib/state/focus';
-    import { configMap } from '$lib/state/selectors.svelte';
+    import { collectionOf, configMap } from '$lib/state/selectors.svelte';
     import { portfolio } from '$lib/state/entities.svelte';
     import { t } from '$lib/state/text';
     import { chipGlyph, chipLabel } from '$lib/state/tones';
@@ -75,7 +76,7 @@
     /** The collaborations file's own names, by the key a manifest waits on them with. */
     function collaboratorNames(): Record<Id, string> {
         const names: Record<Id, string> = {};
-        for (const entry of snapshot?.entities.collections.collaborations?.entries ?? []) {
+        for (const entry of collectionOf('collaborations')?.entries ?? []) {
             names[entry.id] = entry.title;
         }
         return names;
@@ -264,7 +265,7 @@
                     label={t('focus.move_to')}
                     items={menuFor(project)}
                     placement="down"
-                    onpick={(id) => choose(project, id)}
+                    onpick={(id: string) => choose(project, id)}
                 />
             {/if}
         </div>

@@ -208,6 +208,7 @@
     $effect(() => {
         const at = body;
         const wanted = id;
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- bind:this fills body, which the checker does not see, so it reads the declaration's null here
         if (at === null || wanted === null) return;
         let alive = true;
         let close: (() => void) | null = null;
@@ -217,6 +218,7 @@
                 import('@xterm/addon-fit'),
                 import('@xterm/xterm/css/xterm.css')
             ]);
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the teardown below sets the flag after this closure was written, which the checker does not see
             if (!alive) return;
             const fit = new addon.FitAddon();
             const size = fontSize(untrack(terminalFont), untrack(textScale) ?? 1);
@@ -266,6 +268,7 @@
                 measure = null;
                 refit = null;
             };
+            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition -- the teardown below sets the flag after this closure was written, which the checker does not see
             if (!alive) close();
         })();
         return () => {
@@ -354,7 +357,7 @@
                     label={t('sessions.cwd')}
                     empty={t('sessions.cwd_empty')}
                     choices={places}
-                    onchange={(picked) => (where = picked)}
+                    onchange={(picked: string) => (where = picked)}
                 />
                 <ToolButton label={t('sessions.start_terminal')} onclick={() => void start()} />
                 {#if failure !== ''}

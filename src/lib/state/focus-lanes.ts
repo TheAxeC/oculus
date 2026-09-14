@@ -1,7 +1,7 @@
 // Layer 2, client state. Collection cards and the manifest-lag attention line for Focus. All values are derived from the supplied snapshot and config; the view resolves configured colours through toneOf.
 
 import type { Entry, Id, Project, Snapshot } from '../data/model.ts';
-import { isMap, text as str } from '../data/guards.ts';
+import { isMap, byKey, text as str } from '../data/guards.ts';
 import { numericSetting } from './rail-badges.ts';
 
 /** The manifest-lag attention line, with the four project links it draws and the remainder count. */
@@ -118,7 +118,7 @@ function bandItem(entry: Entry, key: string): BandItem {
  */
 export function collectionLanes(snapshot: Snapshot, config: Record<string, unknown>): Band {
     const collections = snapshot.entities.collections;
-    const grants = collections.funding?.entries ?? [];
+    const grants = byKey(collections, 'funding')?.entries ?? [];
     const funding: BandStage[] = [];
     for (const stage of fundStages(config)) {
         const items = grants
@@ -129,11 +129,11 @@ export function collectionLanes(snapshot: Snapshot, config: Record<string, unkno
             .sort(bandOrder);
         if (items.length > 0) funding.push({ label: stage.label, color: stage.color, items });
     }
-    const applications = (collections.applications?.entries ?? [])
+    const applications = (byKey(collections, 'applications')?.entries ?? [])
         .filter((entry) => str(entry.fields.status).trim().toLowerCase() === 'active')
         .map((entry) => bandItem(entry, 'applications'))
         .sort(bandOrder);
-    const education = (collections.education?.entries ?? [])
+    const education = (byKey(collections, 'education')?.entries ?? [])
         .filter((entry) => str(entry.fields.status).trim().toLowerCase() === 'ongoing')
         .map((entry) => bandItem(entry, 'education'))
         .sort(bandOrder);

@@ -15,6 +15,7 @@
 
 import { isMap, isScalar, isSeq, parseDocument, stringify } from 'yaml';
 import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
+import { byKey } from '../data/guards.ts';
 
 /** One row of a metalist: a flat map whose keys and values are strings. */
 export type FlatStringMap = Record<string, string>;
@@ -569,7 +570,7 @@ function applyOne(text: string, path: string[], value: FieldValue): Written {
     }
 
     // A scalar where a map is asked for: the dual shape of `followup`, expanded so its note is kept.
-    const shorthand = SHORTHAND[parent];
+    const shorthand = byKey(SHORTHAND, parent);
     if (!isScalar(holder) || shorthand === undefined) return fail(`${parent} is not a map`);
     if (value === null) return fail('the key is not there');
     const rendered = renderOneLine(value);
@@ -607,7 +608,7 @@ function expect(data: Parsed, path: string[], value: FieldValue): void {
         held[child] = value;
         return;
     }
-    const shorthand = SHORTHAND[parent];
+    const shorthand = byKey(SHORTHAND, parent);
     const kept =
         typeof held === 'string' && shorthand !== undefined && shorthand !== child
             ? { [shorthand]: held }

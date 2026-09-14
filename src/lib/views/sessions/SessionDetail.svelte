@@ -138,6 +138,12 @@
         areas.map((area) => ({ id: area.key, label: area.short === '' ? area.key : area.full }))
     );
 
+    /** Open one pinned area of the session on screen, for a session the pane still holds. */
+    function pin(area: string): void {
+        if (record === null) return;
+        openPinnedView(area, record.id, record.title);
+    }
+
     /** What the pin control shows: the area a pin chose, and nothing when the score chose it. */
     const pinned = $derived(record?.pinned ? record.area : '');
 
@@ -241,30 +247,22 @@
             <ToolButton
                 label={t('sessions.view_transcript')}
                 glyph={t('sessions.transcript_glyph')}
-                onclick={() => {
-                    if (record !== null) openPinnedView('transcript', record.id, record.title);
-                }}
+                onclick={() => pin('transcript')}
             />
             <ToolButton
                 label={t('sessions.view_timeline')}
                 glyph={t('sessions.timeline_glyph')}
-                onclick={() => {
-                    if (record !== null) openPinnedView('timeline', record.id, record.title);
-                }}
+                onclick={() => pin('timeline')}
             />
             <ToolButton
                 label={t('sessions.view_changes')}
                 glyph={t('sessions.changes_glyph')}
-                onclick={() => {
-                    if (record !== null) openPinnedView('changes', record.id, record.title);
-                }}
+                onclick={() => pin('changes')}
             />
             <ToolButton
                 label={t('sessions.view_agents')}
                 glyph={t('sessions.agents_glyph')}
-                onclick={() => {
-                    if (record !== null) openPinnedView('agents', record.id, record.title);
-                }}
+                onclick={() => pin('agents')}
             />
         {/if}
     </Toolbar>
@@ -329,7 +327,7 @@
                         label={t('sessions.pin_tip')}
                         empty={t('sessions.pin_scored')}
                         {choices}
-                        onchange={(area) => write({ area })}
+                        onchange={(area: string) => write({ area })}
                     />
                 </div>
                 <div class="ctl">

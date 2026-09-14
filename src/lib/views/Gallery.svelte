@@ -27,7 +27,8 @@
     import Pane from '$lib/ui/Pane.svelte';
     import Search from '$lib/ui/Search.svelte';
     import Segment from '$lib/ui/Segment.svelte';
-    import Table, { type Column } from '$lib/ui/Table.svelte';
+    import Table from '$lib/ui/Table.svelte';
+    import { type Column, cellText } from '$lib/ui/table-rows';
     import Ticker from '$lib/ui/Ticker.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
@@ -129,13 +130,13 @@
         <Search
             value={query}
             placeholder={t('gallery.search')}
-            oninput={(next) => (query = next)}
+            oninput={(next: string) => (query = next)}
         />
         <Segment
             label={t('gallery.form')}
             items={forms}
             value={form}
-            onchange={(id) => (form = id)}
+            onchange={(id: string) => (form = id)}
         />
         <ToolButton label={t('gallery.reset')} glyph={t('gallery.reset_glyph')} onclick={reset} />
     </Toolbar>
@@ -143,9 +144,9 @@
 
 {#snippet cell(row: Record<string, unknown>, column: Column)}
     {#if column.key === 'chip'}
-        <Chip label={String(row.chip)} tone={String(row.tone)} />
+        <Chip label={cellText(row.chip)} tone={cellText(row.tone)} />
     {:else}
-        {String(row[column.key] ?? '')}
+        {cellText(row[column.key])}
     {/if}
 {/snippet}
 

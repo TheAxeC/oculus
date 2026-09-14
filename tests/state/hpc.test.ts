@@ -1,5 +1,9 @@
-// Pure Live HPC client state coverage checks walltime, tones, start labels, and the three partition segments.
-import { describe, expect, it } from 'vitest';
+// Pure Live HPC client state coverage checks walltime, tones, start labels, the three partition
+// segments, and the one command the view sends to the endpoint with the answer it folds out.
+//
+// Nothing opens a socket: `fetch` is a stub that records the request and hands back the answer the
+// case wants, and nothing reads or writes outside it.
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     efficiencyTone,
     partitionMeters,
@@ -7,6 +11,27 @@ import {
     stateTone,
     walltimeFraction
 } from '../../src/lib/state/hpc.ts';
+import { scalar } from '../../src/lib/data/guards.ts';
+import { command, jobLog } from '../../src/lib/state/hpc.svelte.ts';
+import { setToken } from '../../src/lib/state/writes.svelte.ts';
+
+/** The requests the stub fetch was given, newest last. */
+let asked: { url: string; init: RequestInit }[] = [];
+
+function answering(body: unknown, status = 200): void {
+    asked = [];
+    vi.stubGlobal('fetch', (url: string, init: RequestInit) => {
+        asked.push({ url, init });
+        return Promise.resolve(
+            new Response(JSON.stringify(body), {
+                status,
+                headers: { 'content-type': 'application/json' }
+            })
+        );
+    });
+}
+
+afterEach(() => vi.unstubAllGlobals());
 describe('HPC state', () => {
     it('derives queue presentation', () => {
         const job = {
@@ -37,4 +62,33 @@ describe('HPC state', () => {
                 { partition: 'gpu', avail: 'up', nodes: 3, state: 'alloc', gres: '' }
             ])[0]
         ).toMatchObject({ idle: 2, mixed: 1, allocated: 3, total: 6, gpu: true }));
+
+    it('posts one command as JSON with the write token, and reads its answer as a map', async () => {
+        setToken('hpc-test-token');
+        answering({ status: 'ok', queued: 3 });
+        const answer = await command({ action: 'refresh' });
+        expect(asked).toHaveLength(1);
+        expect(asked[0].url).toBe('/api/hpc');
+        expect(asked[0].init.method).toBe('POST');
+        expect(asked[0].init.headers).toEqual({
+            'content-type': 'application/json',
+            'x-oculus-token': 'hpc-test-token'
+        });
+        expect(JSON.parse(scalar(asked[0].init.body))).toEqual({ action: 'refresh' });
+        expect(answer).toEqual({ status: 'ok', queued: 3 });
+    });
+
+    it('reads an answer that is no map as no fields at all', async () => {
+        answering('not a map');
+        expect(await command({ action: 'refresh' })).toEqual({});
+    });
+
+    it('folds a log answer into its status and text, and an answer with neither into error', async () => {
+        answering({ status: 'ok', log: 'the tail of the file' });
+        expect(await jobLog('4711')).toEqual({ status: 'ok', output: 'the tail of the file' });
+        expect(JSON.parse(scalar(asked[0].init.body))).toEqual({ action: 'log', id: '4711' });
+
+        answering({});
+        expect(await jobLog('4711')).toEqual({ status: 'error', output: '' });
+    });
 });

@@ -54,7 +54,7 @@ const PENDING: Held = { state: null, error: '', loading: true };
 /** What no project at all reads as: an empty id asks nothing and waits for nothing. */
 const NOTHING: Held = { state: null, error: '', loading: false };
 
-const held: Record<string, Held> = $state({});
+const held: Record<string, Held | undefined> = $state({});
 
 /** The projects with a request in flight, so a second render does not send a second request. */
 const inflight = new Set<string>();

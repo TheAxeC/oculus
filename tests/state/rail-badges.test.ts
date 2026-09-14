@@ -32,6 +32,7 @@ import { setVocab } from '../../src/lib/state/tones.ts';
 import { badgeOf, viewFor } from '../../src/lib/views/registry.ts';
 import { installBadges } from './rail-badges-fixture.ts';
 import { registerCollections } from '../../src/routes/views.ts';
+import { present } from '../present.ts';
 
 const now = new Date(2026, 8, 12, 12).getTime();
 const { config } = loadConfig(engineDir());
@@ -91,7 +92,7 @@ describe('rail badge counts', () => {
             version: 7000,
             payload: { status: 'ok', total: 3, running: 2, pending: 1 }
         });
-        const badge = badgeOf(viewFor('hpc')!);
+        const badge = badgeOf(present(viewFor('hpc'), 'hpc view'));
         expect(badge).toEqual({
             text: '2 1',
             tabText: '',
@@ -343,7 +344,7 @@ describe('registered board badge descriptors', () => {
         'assembles %s from the real registration hooks',
         (id) => {
             installBadges(config);
-            expect(badgeOf(viewFor(id)!)).toEqual({
+            expect(badgeOf(present(viewFor(id), `${id} view`))).toEqual({
                 ...expected[id],
                 tabText: expected[id].text,
                 tone: undefined
@@ -355,7 +356,7 @@ describe('registered board badge descriptors', () => {
         'keeps %s total and every split cell at zero',
         (id) => {
             installBadges(config, true);
-            const badge = badgeOf(viewFor(id)!);
+            const badge = badgeOf(present(viewFor(id), `${id} view`));
             expect(badge.text).toBe('0');
             expect(badge.cells).toEqual(expected[id].cells.map((cell) => ({ ...cell, count: 0 })));
         }
@@ -366,22 +367,20 @@ describe('registered board badge descriptors', () => {
             ...config,
             tab_split: { active: 'blue', manuscript: 'cyan', idea: 'pink' }
         });
-        expect(badgeOf(viewFor('projects')!).cells?.map((cell) => cell.color)).toEqual([
-            'blue',
-            'cyan',
-            'pink'
-        ]);
+        expect(
+            badgeOf(present(viewFor('projects'), 'projects view')).cells?.map((cell) => cell.color)
+        ).toEqual(['blue', 'cyan', 'pink']);
     });
 
     it('uses the collection rule label and hides its count at zero', () => {
         registerCollections(['funding']);
         installBadges(config);
-        expect(badgeOf(viewFor('funding')!)).toMatchObject({
+        expect(badgeOf(present(viewFor('funding'), 'funding view'))).toMatchObject({
             text: '1',
             title: '1 undecided',
             tone: 'violet'
         });
         installBadges(config, true);
-        expect(badgeOf(viewFor('funding')!).text).toBe('');
+        expect(badgeOf(present(viewFor('funding'), 'funding view')).text).toBe('');
     });
 });

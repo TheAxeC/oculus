@@ -50,6 +50,7 @@ import type {
     Tier,
     Venue
 } from '../../src/lib/data/model.ts';
+import { present } from '../present.ts';
 
 const ENGINE_CONFIG = loadConfig(engineDir()).config;
 setCatalog(textCatalog(ENGINE_CONFIG));
@@ -320,7 +321,7 @@ function item(id: Id): BoardItem {
 /** One facet's values as `value:count`, or nothing when the board does not offer that facet. */
 function facet(preset: BoardPreset, items: BoardItem[], key: string): string[] | null {
     const found = facets(items, preset).find((one) => one.key === key);
-    return found === null || found === undefined
+    return found === undefined
         ? null
         : found.values.map((value) => `${value.value}:${value.count}`);
 }
@@ -834,7 +835,10 @@ describe('typeCounts', () => {
 describe('isStale', () => {
     it('is the lag against the threshold it is given', () => {
         const { items } = over({ alpha: { staleDays: 2 } });
-        const one = items.find((held) => held.id === 'alpha')!;
+        const one = present(
+            items.find((held) => held.id === 'alpha'),
+            'item alpha'
+        );
 
         expect(isStale(one, 1)).toBe(true);
         expect(isStale(one, 2)).toBe(true);

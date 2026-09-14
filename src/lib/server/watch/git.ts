@@ -26,6 +26,7 @@
 import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { join } from 'node:path';
+import { byKey } from '../../data/guards.ts';
 import type { FilesPayload, GitPayload, Message, SessionsPayload } from '../../data/model.ts';
 import type { Hub, Sink } from '../channels.ts';
 import { statusFor, TIMEOUT_MS } from '../git.ts';
@@ -91,9 +92,9 @@ export function relevant(filename: string | null): boolean {
 /** The workspace roots a sessions payload names, without the unknown workspace's empty key. */
 export function rootsOf(payload: SessionsPayload): string[] {
     const roots: string[] = [];
-    if (!Array.isArray(payload?.workspaces)) return roots;
+    if (!Array.isArray(payload.workspaces)) return roots;
     for (const workspace of payload.workspaces) {
-        const key = workspace?.key;
+        const key = workspace.key;
         if (typeof key === 'string' && key !== '' && !roots.includes(key)) roots.push(key);
     }
     return roots;
@@ -141,9 +142,9 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         if (closed || !handles.has(root)) return;
         hub.publish('files', { root } satisfies FilesPayload);
         try {
-            const next = statusFor([root], timeout)[root];
+            const next = byKey(statusFor([root], timeout), root);
             if (next === undefined) return;
-            const held = state[root];
+            const held = byKey(state, root);
             if (held !== undefined && JSON.stringify(held) === JSON.stringify(next)) return;
             state[root] = next;
             publish();
@@ -233,7 +234,8 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
             try {
                 const found = statusFor(fresh, timeout);
                 for (const root of fresh) {
-                    if (found[root] !== undefined) state[root] = found[root];
+                    const one = byKey(found, root);
+                    if (one !== undefined) state[root] = one;
                     last.set(root, Date.now());
                 }
                 changed = true;

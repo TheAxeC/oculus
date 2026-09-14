@@ -39,6 +39,7 @@ import {
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
 import { bench, fakeStorage, pane, saveBench, three, viewsOf } from './layout-fixture.ts';
+import { fields } from '../../src/lib/data/guards.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -109,7 +110,7 @@ describe('the version 3 envelope', () => {
         const made: Pages = { pages: [newPage('One', own()), newPage('Two')], current: '' };
         const held: Pages = { ...made, current: made.pages[1].id };
         expect(parseLayout(serialiseLayout(held), '')).toEqual(held);
-        expect(JSON.parse(serialiseLayout(held)).version).toBe(LAYOUT_VERSION);
+        expect(fields(JSON.parse(serialiseLayout(held))).version).toBe(LAYOUT_VERSION);
     });
 
     it('reads a version 2 envelope of one workbench as one page, carrying the label', () => {

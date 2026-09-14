@@ -20,6 +20,7 @@
 // (never a shell string), carries a timeout, and collapses any failure into the empty shape with a
 // short reason. Data only, no rendered strings: the wording comes from the text catalog.
 
+import { scalar } from '../data/guards.ts';
 import { spawnSync } from 'node:child_process';
 import { statSync } from 'node:fs';
 import type { GitEntry, GitState } from '../data/model.ts';
@@ -212,7 +213,7 @@ function run(root: string, args: string[], timeout: number): Outcome {
     const argv = ['-C', root, '--no-optional-locks', ...args];
     // A list, never a shell, and a timeout: a hung git must not hang a watcher.
     const done = spawnSync(GIT, argv, { encoding: 'utf8', timeout });
-    if (done.error !== undefined && done.error !== null) {
+    if (done.error !== undefined) {
         const failure = done.error as NodeJS.ErrnoException;
         return { ok: false, text: failure.code === 'ETIMEDOUT' ? 'git timed out' : short(failure) };
     }
@@ -248,7 +249,7 @@ function count(token: string): number | null {
 
 /** A one-line reason fit for a tooltip. git's own `fatal: ` prefix says nothing worth the width. */
 function short(value: unknown): string {
-    const text = value instanceof Error ? value.message : String(value ?? '');
+    const text = value instanceof Error ? value.message : scalar(value);
     const lines = text.trim().split('\n');
     let line = lines.length > 0 ? lines[0].trim() : '';
     if (line.toLowerCase().startsWith('fatal: ')) line = line.slice(7);

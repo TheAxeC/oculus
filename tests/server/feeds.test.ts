@@ -95,6 +95,17 @@ describe('feed files', () => {
         );
     });
 
+    it('carries an empty date and category for a post whose front matter names neither', () => {
+        const into = fixture();
+        const file = join(into.hub, FILES.linkedin, '03-bare.md');
+        expect(resolve(file).startsWith(resolve(into.hub) + sep)).toBe(true);
+        writeFileSync(file, '---\ntitle: Bare\n---\n\nA body and nothing else.\n');
+        const entry = buildFeeds(into.hub, into.config).linkedin.entries.find(
+            (one) => one.file === '03-bare.md'
+        );
+        expect(entry).toMatchObject({ title: 'Bare', date: '', category: '' });
+    });
+
     it('builds one payload with all four feeds', () => {
         const into = fixture();
         const payload = buildFeeds(into.hub, into.config);

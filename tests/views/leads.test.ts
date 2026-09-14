@@ -1,10 +1,11 @@
 // The Position Leads view rendered over a received feed with live, expired, undated, and run-log rows.
 
 import { readFileSync } from 'node:fs';
+import { scalar } from '../../src/lib/data/guards.ts';
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Leads from '../../src/lib/views/Leads.svelte';
-import { addFromForm } from '../../src/lib/views/shared/EntryForm.svelte';
+import { addFromForm } from '../../src/lib/views/shared/entry-form.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -323,7 +324,7 @@ describe('the Position Leads view', () => {
     it('uses the dedicated add callback for a new lead form', async () => {
         let request: Record<string, unknown> | null = null;
         vi.stubGlobal('fetch', (_url: string, init: RequestInit) => {
-            request = JSON.parse(String(init.body)) as Record<string, unknown>;
+            request = JSON.parse(scalar(init.body)) as Record<string, unknown>;
             return Promise.resolve(
                 new Response(JSON.stringify({ ok: true, changed: ['entries'], refused: [] }))
             );

@@ -17,7 +17,7 @@ export function instance(id: string, view = 'projects'): Instance {
 
 export function pane(ids: string[], active?: string): Layout {
     const tabs = ids.map((id) => instance(id));
-    return { kind: 'pane', tabs, active: active ?? tabs[0]?.id ?? '' };
+    return { kind: 'pane', tabs, active: active ?? tabs.at(0)?.id ?? '' };
 }
 
 export function split(dir: 'row' | 'col', sizes: number[], children: Layout[]): Layout {

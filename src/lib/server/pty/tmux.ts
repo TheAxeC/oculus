@@ -192,10 +192,10 @@ export function createParser(handlers: ParserHandlers): ControlParser {
 }
 
 export type ControlHandlers = {
-    output(pane: string, bytes: Buffer): void;
-    event(event: ControlEvent): void;
+    output: (pane: string, bytes: Buffer) => void;
+    event: (event: ControlEvent) => void;
     /** The child ended. The caller decides whether to open another one. */
-    exit(): void;
+    exit: () => void;
 };
 
 export type ControlClient = {

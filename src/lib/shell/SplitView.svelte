@@ -10,7 +10,8 @@
     // second copy of the number here.
 
     import type { Snippet } from 'svelte';
-    import Sash, { SASH_PX } from '$lib/ui/Sash.svelte';
+    import Sash from '$lib/ui/Sash.svelte';
+    import { SASH_PX } from '$lib/ui/sash-size';
     import { equalSizes, type Layout } from '$lib/state/layout';
     import SplitView from './SplitView.svelte';
 
@@ -64,7 +65,7 @@
                 <Sash
                     dir={layout.dir}
                     share={layout.sizes[index - 1]}
-                    onresize={(delta) => moved(index, delta)}
+                    onresize={(delta: number) => moved(index, delta)}
                     onreset={reset}
                 />
             {/if}

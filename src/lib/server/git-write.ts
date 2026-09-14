@@ -33,6 +33,7 @@ import { execFile } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { isAbsolute, join, resolve, sep } from 'node:path';
+import { scalar } from '../data/guards.ts';
 import { defaultMirrorsDir } from './deposit-git.ts';
 import { GIT } from './git.ts';
 import { target } from './writes.ts';
@@ -129,12 +130,14 @@ export function insideRepo(root: string, path: string): boolean {
     return full === base || full.startsWith(base + sep);
 }
 
-function checkPaths(root: string, paths: string[], roots: string[]): string {
+function checkPaths(root: string, paths: unknown[], roots: string[]): string {
     if (!permitted(root, roots)) return 'that directory is not a workspace oculus knows';
     if (!Array.isArray(paths) || paths.length === 0) return 'no path was given';
     for (const path of paths) {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the path is an element of a request body list, and Array.isArray(paths) above checks the list, not what is in it
-        if (!insideRepo(root, path)) return `the path ${String(path)} is not inside the workspace`;
+        const one = scalar(path);
+        if (one === '' || !insideRepo(root, one)) {
+            return `the path ${one} is not inside the workspace`;
+        }
     }
     return '';
 }
@@ -236,9 +239,14 @@ export function parseBranches(output: string): Branch[] {
     const rows: Branch[] = [];
     for (const line of output.split('\n')) {
         if (line.trim() === '') continue;
-        const [name, up, head] = line.split('\t');
+        const parts = line.split('\t');
+        const name = parts.at(0);
         if (name === undefined || name === '') continue;
-        rows.push({ name, upstream: up ?? '', current: (head ?? '').trim() === '*' });
+        rows.push({
+            name,
+            upstream: parts.at(1) ?? '',
+            current: (parts.at(2) ?? '').trim() === '*'
+        });
     }
     return rows;
 }
@@ -331,7 +339,7 @@ function untrackedIn(output: string): Set<string> {
 }
 
 function short(value: unknown): string {
-    const text = value instanceof Error ? value.message : String(value ?? '');
+    const text = value instanceof Error ? value.message : scalar(value);
     const lines = text.trim().split('\n');
     let line = lines.length > 0 ? lines[0].trim() : '';
     if (line.toLowerCase().startsWith('fatal: ')) line = line.slice(7);

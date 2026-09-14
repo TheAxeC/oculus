@@ -13,7 +13,7 @@ import {
 import { basename, join, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
 import { localDate } from '../data/dates.ts';
-import { isMap } from '../data/guards.ts';
+import { isMap, scalar } from '../data/guards.ts';
 import { collectionSchema } from '../data/normalise.ts';
 import { fieldNames } from '../data/validate.ts';
 import { appendEntry, deleteEntry, renderEntry, setEntryFields } from './entry-edit/index.ts';
@@ -108,8 +108,13 @@ export function buildFeeds(hub: string, config: PortfolioConfig): FeedsPayload {
     };
 }
 
-/** One small Markdown front matter block and the prose after its closing fence. */
-export function linkedinFrontMatter(source: string): Record<string, string> & { body: string } {
+/**
+ * One small Markdown front matter block and the prose after its closing fence. A key the block does
+ * not hold is not in the answer, so every reader of one falls back for itself.
+ */
+export function linkedinFrontMatter(
+    source: string
+): Record<string, string | undefined> & { body: string } {
     const matched = /^\s*---\s*\r?\n([\s\S]*?)\r?\n---(?:\r?\n)?/.exec(source);
     const fields: Record<string, string> = {};
     if (matched !== null) {
@@ -155,7 +160,7 @@ function readLinkedinFolder(folder: string, config: PortfolioConfig): FeedRead {
             const parsed = linkedinFrontMatter(readFileSync(join(folder, file), 'utf8'));
             return {
                 file,
-                title: parsed.title || file,
+                title: (parsed.title ?? '') || file,
                 date: parsed.date ?? '',
                 category: parsed.category ?? '',
                 body: parsed.body,
@@ -296,7 +301,7 @@ export function addLead(
             refused: [{ field: 'title', reason: 'a lead needs a title' }]
         };
     }
-    if (parsed.entries.some((entry) => String(entry.title ?? '').trim() === title)) {
+    if (parsed.entries.some((entry) => scalar(entry.title).trim() === title)) {
         return {
             found: true,
             changed: [],
@@ -348,7 +353,7 @@ export function writeFeedField(
     if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
     const source = readFileSync(full, 'utf8');
     const parsed = readFeedFile(hub, config, feed);
-    if (!parsed?.entries.some((entry) => String(entry[rule.identity] ?? '') === id)) {
+    if (!parsed?.entries.some((entry) => scalar(entry[rule.identity]) === id)) {
         return { found: false, changed: [], refused: [] };
     }
     return saved(full, source, setEntryFields(source, rule.identity, id, { [field]: value }));
@@ -373,7 +378,7 @@ export function deleteFeedEntry(
     if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
     const source = readFileSync(full, 'utf8');
     const parsed = readFeedFile(hub, config, feed);
-    if (!parsed?.entries.some((entry) => String(entry[rule.identity] ?? '') === id)) {
+    if (!parsed?.entries.some((entry) => scalar(entry[rule.identity]) === id)) {
         return { found: false, changed: [], refused: [] };
     }
     return saved(full, source, deleteEntry(source, rule.identity, id));

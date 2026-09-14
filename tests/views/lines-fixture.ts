@@ -1,6 +1,7 @@
 // Shared server-render fixture for the Programs, Domains and Map acceptance tests.
 
 import { NO_FEEDS } from '../entities-fixture.ts';
+import { scalar } from '../../src/lib/data/guards.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -61,7 +62,7 @@ function project(id: string, fields: Partial<Project> = {}): Project {
 }
 
 function entry(id: string, fields: Record<string, unknown>, file: string, index: number): Entry {
-    return { id, title: String(fields.title ?? id), fields: { key: id, ...fields }, file, index };
+    return { id, title: scalar(fields.title, id), fields: { key: id, ...fields }, file, index };
 }
 
 const programs: Program[] = [

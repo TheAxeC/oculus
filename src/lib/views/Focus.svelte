@@ -35,7 +35,7 @@
     import { cardCursor } from '$lib/state/instance';
     import { labelOf, lanes, waiting, type Id, type Project } from '$lib/state/focus';
     import { ticker } from '$lib/state/ticker';
-    import { configMap } from '$lib/state/selectors.svelte';
+    import { collectionOf, configMap } from '$lib/state/selectors.svelte';
     import { portfolio } from '$lib/state/entities.svelte';
     import { openView } from '$lib/state/layout.svelte';
     import { t } from '$lib/state/text';
@@ -79,7 +79,7 @@
     /** The collaborations file's own names, by the key a manifest waits on them with. */
     function collaboratorNames(): Record<Id, string> {
         const names: Record<Id, string> = {};
-        for (const entry of snapshot?.entities.collections.collaborations?.entries ?? []) {
+        for (const entry of collectionOf('collaborations')?.entries ?? []) {
             names[entry.id] = entry.title;
         }
         return names;
@@ -116,11 +116,16 @@
 
 <Pane title={t('views.focus')}>
     <div class="focus" data-instance={instance.id}>
-        <CommandCenter {week} {now} onproject={openProject} onsaid={(text) => (said = text)} />
+        <CommandCenter
+            {week}
+            {now}
+            onproject={openProject}
+            onsaid={(text: string) => (said = text)}
+        />
 
-        <Tasks {week} {now} onproject={openProject} onsaid={(text) => (said = text)} />
+        <Tasks {week} {now} onproject={openProject} onsaid={(text: string) => (said = text)} />
 
-        <QuickAdd projects={live} onsaid={(text) => (said = text)} />
+        <QuickAdd projects={live} onsaid={(text: string) => (said = text)} />
 
         {#if said !== ''}
             <p class="said">{said}</p>
@@ -173,11 +178,11 @@
             <Empty message={t('focus.none')} glyph={t('focus.empty_glyph')} />
         {/if}
 
-        <Lanes {now} {cursor} onproject={openProject} onsaid={(text) => (said = text)} />
+        <Lanes {now} {cursor} onproject={openProject} onsaid={(text: string) => (said = text)} />
 
         <Band {now} />
 
-        <CareerPanel onsaid={(text) => (said = text)} />
+        <CareerPanel onsaid={(text: string) => (said = text)} />
     </div>
 </Pane>
 

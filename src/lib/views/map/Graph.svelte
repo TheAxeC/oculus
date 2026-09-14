@@ -1,31 +1,9 @@
-<script module lang="ts">
-    // Layer 3, Map partial. The edge writer turns the endpoint answer into the map's status text.
-
-    import { t as catalogText } from '$lib/state/text';
-    import type { WriteAnswer } from '$lib/state/writes.svelte';
-
-    type ManifestWriter = (id: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
-
-    /** Write one related list and return no status on success or the catalogued refusal on failure. */
-    export async function writeRelated(
-        id: string,
-        related: string[],
-        write: ManifestWriter
-    ): Promise<string> {
-        const answer = await write(id, { related });
-        if (answer.ok && answer.refused.length === 0) return '';
-        const reason =
-            answer.error ??
-            answer.refused.map((item) => `${item.field}: ${item.reason}`).join('; ');
-        return catalogText('map.edge_failed', reason);
-    }
-</script>
-
 <script lang="ts">
     // Layer 3, Map partial. The hand-drawn SVG graph and its drag, pan, zoom, open and related-edge
     // interactions. Geometry comes from the pure seeded layout in state/graph.ts.
 
     import { onMount } from 'svelte';
+    import { writeRelated } from './edge-write';
     import {
         DEFAULT_PHYSICS,
         bestLayout,

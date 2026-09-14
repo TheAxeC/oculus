@@ -93,19 +93,19 @@
                 label={t('focus.qa_project')}
                 empty={t('focus.qa_project')}
                 {choices}
-                onchange={(next) => (project = next)}
+                onchange={(next: string) => (project = next)}
             />
             {#if field === 'deadline'}
                 <DateInput
                     {value}
                     label={t('focus.add_deadline')}
-                    oninput={(next) => (value = next)}
+                    oninput={(next: string) => (value = next)}
                 />
             {:else}
                 <TextInput
                     {value}
                     label={t('focus.add_followup')}
-                    oninput={(next) => (value = next)}
+                    oninput={(next: string) => (value = next)}
                 />
             {/if}
             <ToolButton label={t('focus.qa_save')} onclick={save} />

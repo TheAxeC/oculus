@@ -9,6 +9,7 @@
 // own handling of the two messages, which is tests/server/pty/channel.test.ts.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { scalar } from '../../src/lib/data/guards.ts';
 import { connect, disconnect } from '../../src/lib/state/socket.svelte.ts';
 import { message, receive } from '../../src/lib/state/entities.svelte.ts';
 import { setToken } from '../../src/lib/state/writes.svelte.ts';
@@ -115,7 +116,7 @@ function serving(status: number, body: unknown): void {
 /** The body of the last request, parsed. */
 function lastBody(): Record<string, unknown> {
     const init = asked[asked.length - 1].init;
-    return JSON.parse(String(init.body)) as Record<string, unknown>;
+    return JSON.parse(scalar(init.body)) as Record<string, unknown>;
 }
 
 function terminal(over: Partial<Terminal> = {}): Terminal {
@@ -352,5 +353,18 @@ describe('the title stripper', () => {
         expect(text(strip(bytes('ho\x1b\\after')))).toBe('after');
         expect(text(strip(bytes('tail\x1b')))).toBe('tail');
         expect(text(strip(bytes('[0mrest')))).toBe('\x1b[0mrest');
+    });
+});
+
+describe('the frame check', () => {
+    it('drops a frame whose payload is not a map, so every channel reads its own payload type', () => {
+        const socket = connected();
+        const held = message('sessions')?.version ?? 0;
+        socket.deliver('sessions', held + 1, null);
+        expect(message('sessions')?.version ?? 0).toBe(held);
+        socket.deliver('sessions', held + 2, 'not a payload');
+        expect(message('sessions')?.version ?? 0).toBe(held);
+        socket.deliver('sessions', held + 3, { records: [], workspaces: [], terminals: [] });
+        expect(message('sessions')?.version).toBe(held + 3);
     });
 });

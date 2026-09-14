@@ -9,6 +9,7 @@ import {
     renderScalar
 } from '../yaml-edit.ts';
 import type { FieldValue } from '../yaml-edit.ts';
+import { byKey } from '../../data/guards.ts';
 import { flowScalar, renderFlowList } from './lines.ts';
 
 export function renderFlowMap(record: Record<string, FieldValue>): string {
@@ -30,7 +31,7 @@ export function renderEntry(
     for (const name of Object.keys(fields)) if (!names.includes(name)) names.push(name);
     const lines: string[] = [];
     for (const name of names) {
-        const value = fields[name];
+        const value = byKey(fields, name);
         if (value === undefined || value === null || value === '') continue;
         if (Array.isArray(value) && value.length === 0) continue;
         if (isBlockMap(value)) {

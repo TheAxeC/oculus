@@ -3,7 +3,8 @@
     // grouping changes independently of ticker calculation and writes.
 
     import Glyph from '$lib/ui/Glyph.svelte';
-    import Ticker, { type TickerRow } from '$lib/ui/Ticker.svelte';
+    import Ticker from '$lib/ui/Ticker.svelte';
+    import type { TickerRow } from '$lib/ui/ticker-rows';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { openView } from '$lib/state/layout.svelte';
     import type { Ticker as FocusTicker } from '$lib/state/ticker';

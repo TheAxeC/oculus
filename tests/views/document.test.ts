@@ -8,7 +8,8 @@
 
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
-import Document, { fileUrl } from '../../src/lib/views/Document.svelte';
+import Document from '../../src/lib/views/Document.svelte';
+import { fileUrl } from '../../src/lib/views/document/file-url.ts';
 import {
     engineDir,
     glyphCatalog,

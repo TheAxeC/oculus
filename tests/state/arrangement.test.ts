@@ -27,6 +27,7 @@ import { parseArrangement } from '../../src/lib/state/arrangement.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
 import { bench, fakeStorage, pane, saveBench, three, viewsOf } from './layout-fixture.ts';
+import { present } from '../present.ts';
 
 // loadLayout names the page it makes, and a page is named from config/text.yml like everything
 // else on screen.
@@ -40,17 +41,18 @@ function real(): unknown {
 
 describe('parseArrangement', () => {
     it('turns the shipped sessions arrangement into a workbench that checks out', () => {
-        const made = parseArrangement(real());
-        expect(made).not.toBe(null);
-        expect(checkWorkbench(made!)).toEqual([]);
-        expect(made?.dock).toBe('right');
-        expect(viewsOf(made!.main)).toEqual(['session-list', 'terminal', 'transcript', 'timeline']);
-        expect(viewsOf(made!.panel)).toEqual(['session-detail', 'changes', 'agents']);
+        const parsed = parseArrangement(real());
+        expect(parsed).not.toBe(null);
+        const made = present(parsed, 'arrangement');
+        expect(checkWorkbench(made)).toEqual([]);
+        expect(made.dock).toBe('right');
+        expect(viewsOf(made.main)).toEqual(['session-list', 'terminal', 'transcript', 'timeline']);
+        expect(viewsOf(made.panel)).toEqual(['session-detail', 'changes', 'agents']);
     });
 
     it('mints a fresh instance id for every tab, so two applications never collide', () => {
-        const first = parseArrangement(real())!;
-        const second = parseArrangement(real())!;
+        const first = present(parseArrangement(real()), 'arrangement');
+        const second = present(parseArrangement(real()), 'arrangement');
         const ids = (made: Workbench): string[] =>
             [...panes(made.main), ...panes(made.panel)].flatMap(({ pane: node }) =>
                 node.tabs.map((tab) => tab.id)
@@ -60,10 +62,13 @@ describe('parseArrangement', () => {
     });
 
     it('takes a pane naming one view as well as a pane naming several', () => {
-        const made = parseArrangement({
-            main: { kind: 'pane', view: 'timeline' },
-            panel: { kind: 'pane', view: ['changes', 'agents'] }
-        })!;
+        const made = present(
+            parseArrangement({
+                main: { kind: 'pane', view: 'timeline' },
+                panel: { kind: 'pane', view: ['changes', 'agents'] }
+            }),
+            'arrangement'
+        );
         expect(viewsOf(made.main)).toEqual(['timeline']);
         expect(viewsOf(made.panel)).toEqual(['changes', 'agents']);
         expect(made.dock).toBe('right');
@@ -71,12 +76,15 @@ describe('parseArrangement', () => {
     });
 
     it('takes the dock and the panel share it is given, and holds the share in range', () => {
-        const made = parseArrangement({
-            main: { kind: 'pane', view: 'timeline' },
-            panel: { kind: 'pane', view: 'changes' },
-            dock: 'bottom',
-            panel_size: 0.9
-        })!;
+        const made = present(
+            parseArrangement({
+                main: { kind: 'pane', view: 'timeline' },
+                panel: { kind: 'pane', view: 'changes' },
+                dock: 'bottom',
+                panel_size: 0.9
+            }),
+            'arrangement'
+        );
         expect(made.dock).toBe('bottom');
         expect(made.panelSize).toBe(PANEL_MAX);
     });

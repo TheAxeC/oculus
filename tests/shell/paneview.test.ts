@@ -6,7 +6,7 @@
 // tests/state/pages.test.ts and the press is a browser check.
 
 import { describe, expect, it } from 'vitest';
-import { pageMoveItems, PAGE } from '../../src/lib/shell/PaneView.svelte';
+import { pageMoveItems, PAGE } from '../../src/lib/shell/pane-view.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, t } from '../../src/lib/state/text.ts';
 import { defaultWorkbench, type Page } from '../../src/lib/state/layout/index.ts';

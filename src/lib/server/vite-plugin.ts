@@ -20,8 +20,8 @@ export type ViteServerDependencies = {
 export type OculusViteServer = {
     adapter: ReturnType<typeof adapter>;
     plugin: Plugin & {
-        configureServer(server: ViteDevServer): void;
-        configurePreviewServer(server: PreviewServer): void;
+        configureServer: (server: ViteDevServer) => void;
+        configurePreviewServer: (server: PreviewServer) => void;
     };
 };
 

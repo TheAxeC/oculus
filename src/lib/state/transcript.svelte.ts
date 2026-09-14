@@ -33,10 +33,10 @@ const PENDING: TurnsState = { turns: [], offset: 0, pending: true, error: '' };
 /** What no session at all reads as: an empty id asks nothing and waits for nothing. */
 const NOTHING: TurnsState = { turns: [], offset: 0, pending: false, error: '' };
 
-const held: Record<string, TurnsState> = $state({});
+const held: Record<string, TurnsState | undefined> = $state({});
 
 /** The lastActivity each session was last asked at. Not reactive: only requests read it. */
-const marks: Record<string, string> = {};
+const marks: Record<string, string | undefined> = {};
 
 /** The sessions with a request in flight, so a second render does not send a second request. */
 const inflight = new Set<string>();
@@ -167,13 +167,13 @@ function merge(
     from: number,
     turns: Turn[],
     offset: number,
-    results: Record<string, boolean>
+    results: Record<string, boolean | undefined>
 ): void {
     const base = from === 0 ? [] : (held[id]?.turns ?? []);
     const whole = [...base, ...turns];
     for (const turn of whole) {
         const tool = turn.tool;
-        if (tool === null || tool === undefined || tool.id === '') continue;
+        if (tool === null || tool.id === '') continue;
         const ok = results[tool.id];
         if (ok !== undefined) tool.ok = ok;
     }

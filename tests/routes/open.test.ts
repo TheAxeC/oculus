@@ -5,6 +5,7 @@ import { mkdirSync, mkdtempSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { scalar } from '../../src/lib/data/guards.ts';
 import { invalidateAll } from '$app/navigation';
 import { openFolder, setToken } from '../../src/lib/state/writes.svelte.ts';
 import { mintToken } from '../../src/lib/server/auth.ts';
@@ -93,7 +94,7 @@ describe('the open client', () => {
         const opener = vi.fn();
         setToken(TOKEN);
         const fetcher = vi.fn(async (_url: string, init: RequestInit) =>
-            handleOpen(request(JSON.parse(String(init.body))), TOKEN, roots, opener)
+            handleOpen(request(JSON.parse(scalar(init.body))), TOKEN, roots, opener)
         );
         vi.stubGlobal('fetch', fetcher);
         const answer = await openFolder(outside);
@@ -116,7 +117,7 @@ describe('the open client', () => {
         const fetcher = vi.fn(async (_url: string, init: RequestInit) =>
             handleOpen(
                 request(
-                    JSON.parse(String(init.body)),
+                    JSON.parse(scalar(init.body)),
                     new Headers(init.headers).get('x-oculus-token') ?? ''
                 ),
                 TOKEN,

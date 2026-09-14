@@ -83,29 +83,7 @@ export default ts.config(
             '@typescript-eslint/no-unused-vars': [
                 'error',
                 { argsIgnorePattern: '^_', varsIgnorePattern: '^_' }
-            ],
-
-            // Off. Each line is a rule relaxed rather than satisfied, with why making it pass is not
-            // a no-behaviour-change edit.
-            //
-            // The reader types a parsed YAML file optimistically and then checks it anyway, which is
-            // the tree's whole defence against a hand-edited manifest; the checker calls every one
-            // of those checks unnecessary because the type says so.
-            '@typescript-eslint/no-unnecessary-condition': 'off',
-            // `any` reaches the tree from the untyped surfaces it does not own: the xterm and ws
-            // types, a DOM event payload, and JSON.parse.
-            '@typescript-eslint/no-unsafe-return': 'off',
-            '@typescript-eslint/no-unsafe-assignment': 'off',
-            '@typescript-eslint/no-unsafe-member-access': 'off',
-            '@typescript-eslint/no-unsafe-call': 'off',
-            '@typescript-eslint/no-unsafe-argument': 'off',
-            // All `value ?? ''` over a value the type says could be an object. The reader has
-            // already refused anything that is not a scalar by the time it reaches the template.
-            '@typescript-eslint/no-base-to-string': 'off',
-            // A non-null assertion in a test over a value the case has already established.
-            '@typescript-eslint/no-non-null-assertion': 'off',
-            // A method of the node child_process module passed by name.
-            '@typescript-eslint/unbound-method': 'off'
+            ]
         }
     },
     {

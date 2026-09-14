@@ -1,23 +1,8 @@
-<script module lang="ts">
+<script lang="ts">
     // Layer 3, shared view partial. Project cross-links grouped as work, published and ideas, each
     // group nesting its members under their own project type, and each member opening its tab.
 
-    import type { CrossGroup as Group } from '$lib/state/collection';
-
-    /** One group's members by their own project type, in the order the members are in. */
-    export function byType(group: Group): { type: string; members: Group['members'] }[] {
-        // eslint-disable-next-line svelte/prefer-svelte-reactivity -- the collection is local to the call and is read once, never mutated in place while the page holds it
-        const held = new Map<string, Group['members']>();
-        for (const member of group.members) {
-            const found = held.get(member.type);
-            if (found === undefined) held.set(member.type, [member]);
-            else found.push(member);
-        }
-        return [...held].map(([type, members]) => ({ type, members }));
-    }
-</script>
-
-<script lang="ts">
+    import { byType } from './cross-links';
     import Chip from '$lib/ui/Chip.svelte';
     import Disclosure from '$lib/ui/Disclosure.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';

@@ -3,7 +3,8 @@
 import { render } from 'svelte/server';
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import CrossLinks, { byType } from '../../src/lib/views/shared/CrossLinks.svelte';
+import CrossLinks from '../../src/lib/views/shared/CrossLinks.svelte';
+import { byType } from '../../src/lib/views/shared/cross-links.ts';
 import type { CrossGroup } from '../../src/lib/state/collection.ts';
 import {
     engineDir,

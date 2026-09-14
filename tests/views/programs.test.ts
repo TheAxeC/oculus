@@ -9,6 +9,7 @@ import type { Instance } from '../../src/lib/state/layout/index.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
 import { noop } from '../doubles.ts';
+import { present } from '../present.ts';
 
 const INSTANCE = 'programs-one';
 
@@ -127,7 +128,10 @@ describe('the Programs view', () => {
                 projects: [],
                 venues: [],
                 tiers: [],
-                entry: collection.entries.find((entry) => entry.id === 'pillar')!,
+                entry: present(
+                    collection.entries.find((entry) => entry.id === 'pillar'),
+                    'pillar entry'
+                ),
                 schema: collection.schema,
                 editing: true,
                 onedit: noop,

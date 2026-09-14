@@ -22,7 +22,7 @@
 
     /** Put the block on the clipboard, and say either way what happened. */
     async function copy(): Promise<void> {
-        if (typeof navigator === 'undefined' || navigator.clipboard === undefined) {
+        if (typeof navigator === 'undefined' || !('clipboard' in navigator)) {
             said = t('status.hooks_copy_blocked');
             return;
         }

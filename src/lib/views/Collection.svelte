@@ -192,7 +192,7 @@
         <Search
             value={held.search}
             placeholder={t('collection.search', title())}
-            oninput={(value) => write({ search: value })}
+            oninput={(value: string) => write({ search: value })}
         />
         {#if schema !== undefined}
             <ToolButton
@@ -242,7 +242,7 @@
                 {schema}
                 entry={null}
                 onclose={() => (adding = false)}
-                onsaid={(words) => (said = words)}
+                onsaid={(words: string) => (said = words)}
             />
         {/if}
 
@@ -273,9 +273,9 @@
                             statuses={lifecycle}
                             editing={editing === entry.id}
                             onedit={() => (editing = editing === entry.id ? null : entry.id)}
-                            ondragfrom={(value) => (dragged = value)}
+                            ondragfrom={(value: string) => (dragged = value)}
                             ondropon={drop}
-                            onsaid={(words) => (said = words)}
+                            onsaid={(words: string) => (said = words)}
                         />
                     </Reveal>
                 {/each}

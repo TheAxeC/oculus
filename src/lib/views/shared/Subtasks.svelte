@@ -96,12 +96,12 @@
                 value={text}
                 label={t('project.action.subtask_do')}
                 placeholder={t('project.action.subtask_do')}
-                oninput={(next) => (text = next)}
+                oninput={(next: string) => (text = next)}
             />
             <DateInput
                 value={due}
                 label={t('project.action.subtask_deadline')}
-                oninput={(n) => (due = n)}
+                oninput={(n: string) => (due = n)}
             />
             <ToolButton label={t('project.action.subtask_save')} onclick={add} />
             <ToolButton

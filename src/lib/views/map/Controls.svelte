@@ -69,7 +69,7 @@
                     <Checkbox
                         checked={enabled.includes(item.status)}
                         label={item.status}
-                        onchange={(checked) => onarchive(item.status, checked)}
+                        onchange={(checked: boolean) => onarchive(item.status, checked)}
                     />
                 </span>
             {/each}

@@ -29,6 +29,7 @@
     import { instanceLayoutState, pinInstance, unpinInstance } from '$lib/state/layout.svelte';
     import { pinnedSession } from '$lib/state/selection.svelte';
     import { sessionFor, type SessionEvent } from '$lib/state/selectors.svelte';
+    import { asText } from '$lib/state/schema';
     import { t } from '$lib/state/text';
     import type { ViewProps } from '$lib/views/registry';
 
@@ -83,8 +84,7 @@
 
     /** What the row reads: a turn as its length, a bust as its size, a path as its basename. */
     function text(event: SessionEvent): string {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the event text is folded from a session record's JSON, which may hold any scalar under that key
-        const held = String(event.text ?? '');
+        const held = asText(event.text);
         if (event.kind === 'turn') {
             return t('sessions.ev_turn', String(Math.round((Number(held) || 0) / 1000)));
         }
@@ -97,8 +97,7 @@
 
     /** The tooltip: the whole path, and nothing where the row already says everything it has. */
     function tip(event: SessionEvent): string | undefined {
-        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the event text is folded from a session record's JSON, which may hold any scalar under that key
-        const held = String(event.text ?? '');
+        const held = asText(event.text);
         if (event.kind === 'turn' || event.kind === 'bust') return undefined;
         if (event.kind === 'tool' || event.kind === 'edit') {
             return basename(held) === held ? undefined : held;

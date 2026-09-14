@@ -1,6 +1,7 @@
 // Layer 2, client state. Pure Position Leads status, deadline, fit, ordering, search, and saved
 // view state. The view receives ready-to-draw live and expired lists and owns no feed rules.
 
+import { scalar } from '../data/guards.ts';
 import { uniqueIdents } from './palette.ts';
 
 export type LeadEntry = Record<string, unknown>;
@@ -71,16 +72,12 @@ export function visibleLeads(
 
 /** Applied, declined, and closed statuses take a lead out of the live list. */
 export function isClosed(status: unknown): boolean {
-    return CLOSED.includes(
-        String(status ?? '')
-            .trim()
-            .toLowerCase()
-    );
+    return CLOSED.includes(scalar(status).trim().toLowerCase());
 }
 
 /** The first ISO date inside deadline prose, or null when it contains none. */
 export function deadlineOf(text: unknown): string | null {
-    const found = DATE.exec(String(text ?? ''));
+    const found = DATE.exec(scalar(text));
     return found === null ? null : found[0];
 }
 
@@ -92,7 +89,7 @@ export function isExpired(lead: LeadEntry, today: string): boolean {
 
 /** The first fit vocabulary word found in the prose, in vocabulary priority order. */
 export function fitKey(fit: unknown): FitKey | null {
-    const text = String(fit ?? '').toLowerCase();
+    const text = scalar(fit).toLowerCase();
     return FITS.find((key) => text.includes(key)) ?? null;
 }
 

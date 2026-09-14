@@ -23,6 +23,7 @@ import {
     deleteSubtask,
     entryRange,
     renderEntry,
+    renderFlowMap,
     reorderEntries,
     setEntryFields,
     setHostStatus,
@@ -763,5 +764,22 @@ describe.skipIf(!present)('every collection entry of the real hub, read only', (
         }
         if (apart.length > 0)
             console.log(`entry-edit: id apart from the identity field:\n${apart.join('\n')}`);
+    });
+});
+
+describe('renderFlowMap', () => {
+    it('writes a scalar as it reads, quoting one that would end the value', () => {
+        expect(renderFlowMap({ status: 'open', done: true, at: 3 })).toBe(
+            '{ status: open, done: true, at: 3 }'
+        );
+        expect(parse(renderFlowMap({ note: 'one, two' }))).toEqual({ note: 'one, two' });
+        expect(renderFlowMap({})).toBe('{}');
+    });
+
+    it('writes a list and a map as flow that parses back to the value it was given', () => {
+        const list = renderFlowMap({ tags: ['a', 'b, c'] });
+        expect(parse(list)).toEqual({ tags: ['a', 'b, c'] });
+        const map = renderFlowMap({ where: { host: 'utwente', note: 'a, b' } });
+        expect(parse(map)).toEqual({ where: { host: 'utwente', note: 'a, b' } });
     });
 });

@@ -161,7 +161,7 @@ export function createServerContext(
             usageRefresh.close();
             hpc.close();
             git.close();
-            usage?.close();
+            usage.close();
             sessions.close();
             portfolio.close();
             terminals.close();
