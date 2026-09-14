@@ -34,8 +34,14 @@ dispatch:
   pid: 95852
   session_id: 01a09d82-6f67-7d83-b530-d813e85b77e3
   landing: not-started
-  round: 0
-  notes: R5, single responsibility (entry-edit/, state/layout/, the card's three children, state/ticker.ts, state/board/, shell/workbench-keys.svelte.ts; behaviour unchanged, imports follow); brief checked on the tree at 03:22; after it R6, R8, R9, R10; no dispatch after 06:00, nothing in flight at 07:05.
+  round: 1
+  repair_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R5/repair-prompt.md
+  repair_events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R5/repair-events.jsonl
+  repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R5/repair-report.md
+  repair_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R5/repair-exit.txt
+  repair_pid: 85797
+  review_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R5/review-report.md
+  notes: R5, single responsibility; the worker finished at 03:47 (72 files, +4411 -3980; six of the seven checks green from the orchestrator's shell, tests/views/type-scale.test.ts red and unreported); the first review is in agents/reviews/R5.md; the repair round (the type-scale audit, the three components still over 600 lines including Changes.svelte which the report's head -3 hid, two style rules changed in the move, the dangling and dropped comments, the duplicated entriesOf, the facades' surface, layout/saved.ts and board/state.ts) runs on the worker's thread since 03:58; after it R6, R8, R9, R10; no dispatch after 06:00, nothing in flight at 07:05.
 ```
 
 ## The standing demands (from Axel, in force)
