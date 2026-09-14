@@ -72,3 +72,5 @@ First line: anything NOT done, or "Everything in the brief is done". Then a DONE
 - What goes to him is booked the moment it is raised (a `plan.md` line or the state file's open-items list) and repeated in every report until he has ruled. Memory does not count; the ledger does.
 
 Amendment 2026-09-14 (R9): two packages may be in flight at once when the state file's block sets `workers_at_once: 2` and their briefs name disjoint paths and different views; each runs in its own worktree under its own brief and knows nothing of the other; a brief that lists a path another in-flight brief lists is not dispatched. The orchestrator is one; the landings are one at a time.
+
+Amendment 2026-09-14 (the review, earned): the reviewer stage runs per package by the state file's `review: earned` rule, decided from the ledger's rows and the diff; the checks and the orchestrator's read of the whole diff run on every package regardless; a second review after a repair only when the repair went beyond the misses it was sent. The rows record which branch a package took.
