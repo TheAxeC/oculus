@@ -172,7 +172,7 @@
     function openMissing(project: Project): void {
         if (project.ghost) {
             if (project.docs.some((doc) => doc.name === 'README.md' && doc.present)) {
-                openView('document', 'main', {
+                openView('document', {
                     root: 'hub',
                     path: `${project.folder}/README.md`,
                     label: 'README.md'

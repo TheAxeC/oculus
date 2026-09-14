@@ -10,7 +10,7 @@ import { t } from './words.ts';
 
 test.use({ viewport: { width: 720, height: 640 } });
 
-/** The main area's tab strip: the tablist holding the Status tab, and the strip around it. */
+/** The tab strip of the page's one pane: the tablist holding the Status tab, and the strip round it. */
 function mainStrip(page: Page): { list: Locator; strip: Locator } {
     const list = page.locator('[role="tablist"]', {
         has: page.getByRole('tab', { name: t('views.status') })

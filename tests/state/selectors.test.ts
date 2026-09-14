@@ -4,7 +4,7 @@
 // over. Nothing here reads ~/.claude, ~/.codex or ~/.oculus, and nothing writes anywhere.
 
 import { beforeEach, describe, expect, it } from 'vitest';
-import { defaultWorkbench, type Instance } from '../../src/lib/state/layout/index.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { area, git, payload, record, workspace } from '../sessions-fixture.ts';
 import { createClientState, type ClientState } from '../client.ts';
@@ -216,11 +216,7 @@ describe('sessionFor and the context window', () => {
     /** Put one view instance with this state in the layout that sessionFor reads. */
     function holdInstance(id: string, state: unknown): void {
         const instance: Instance = { id, view: 'session-detail', state };
-        const base = defaultWorkbench();
-        apply({
-            ...base,
-            main: { kind: 'pane', tabs: [instance], active: id }
-        });
+        apply({ root: { kind: 'pane', tabs: [instance], active: id } });
     }
 
     it('follows the selection when the instance pins nothing', () => {

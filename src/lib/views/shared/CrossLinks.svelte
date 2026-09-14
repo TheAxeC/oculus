@@ -80,7 +80,7 @@
                                         label={member.label}
                                         title={member.label}
                                         onclick={() =>
-                                            openView('project', 'main', {
+                                            openView('project', {
                                                 id: member.id,
                                                 label: member.label
                                             })}

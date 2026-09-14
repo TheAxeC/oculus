@@ -38,10 +38,9 @@ function recorder(): DragSink & { calls: string[] } {
     const calls: string[] = [];
     return {
         calls,
-        transfer: (id, target, path, index) =>
-            calls.push(`transfer ${id} to ${target} [${path.join(',')}] at ${index}`),
-        split: (id, target, path, edge) =>
-            calls.push(`split ${id} to ${target} [${path.join(',')}] on ${edge}`)
+        transfer: (id, path, index) =>
+            calls.push(`transfer ${id} to [${path.join(',')}] at ${index}`),
+        split: (id, path, edge) => calls.push(`split ${id} to [${path.join(',')}] on ${edge}`)
     };
 }
 
@@ -55,20 +54,20 @@ beforeEach(() => {
 
 /** A drag that is past the threshold, which is what every drop test starts from. */
 function begin(id = 'a'): void {
-    start(id, 'main', 'Projects', { x: 100, y: 100 });
+    start(id, 'Projects', { x: 100, y: 100 });
     move({ x: 100 + THRESHOLD, y: 100 });
 }
 
 describe('the threshold', () => {
     it('draws nothing until the pointer has moved far enough', () => {
-        start('a', 'main', 'Projects', { x: 100, y: 100 });
+        start('a', 'Projects', { x: 100, y: 100 });
         expect(dragging()).toBe(null);
         move({ x: 103, y: 102 });
         expect(dragging()).toBe(null);
     });
 
     it('arms at the threshold and stays armed on the way back', () => {
-        start('a', 'main', 'Projects', { x: 100, y: 100 });
+        start('a', 'Projects', { x: 100, y: 100 });
         move({ x: 100, y: 100 + THRESHOLD });
         expect(dragging()).not.toBe(null);
         move({ x: 100, y: 100 });
@@ -76,8 +75,8 @@ describe('the threshold', () => {
     });
 
     it('performs nothing when a press that never moved is released over a drop', () => {
-        start('a', 'main', 'Projects', { x: 100, y: 100 });
-        hover({ kind: 'strip', target: 'panel', path: [], index: 0 });
+        start('a', 'Projects', { x: 100, y: 100 });
+        hover({ kind: 'strip', path: [], index: 0 });
         end();
         expect(sink.calls).toEqual([]);
         expect(dragging()).toBe(null);
@@ -88,7 +87,6 @@ describe('the threshold', () => {
         expect(dragging()).toEqual({
             id: 'tab-1',
             label: 'Projects',
-            target: 'main',
             point: { x: 106, y: 100 },
             drop: null,
             rect: null
@@ -99,38 +97,38 @@ describe('the threshold', () => {
 describe('performing a drop', () => {
     it('moves the tab into a strip at the index it was hovered at', () => {
         begin();
-        hover({ kind: 'strip', target: 'panel', path: [1, 0], index: 2 });
+        hover({ kind: 'strip', path: [1, 0], index: 2 });
         end();
-        expect(sink.calls).toEqual(['transfer a to panel [1,0] at 2']);
+        expect(sink.calls).toEqual(['transfer a to [1,0] at 2']);
     });
 
     it('moves the tab to the end of the strip for a drop in the middle of a body', () => {
         begin();
-        hover({ kind: 'centre', target: 'main', path: [0] }, { x: 0, y: 0, width: 10, height: 10 });
+        hover({ kind: 'centre', path: [0] }, { x: 0, y: 0, width: 10, height: 10 });
         end();
-        expect(sink.calls).toEqual([`transfer a to main [0] at ${AT_END}`]);
+        expect(sink.calls).toEqual([`transfer a to [0] at ${AT_END}`]);
     });
 
     it('splits the pane for a drop on an edge', () => {
         begin();
-        hover({ kind: 'edge', target: 'main', path: [], edge: 'bottom' });
+        hover({ kind: 'edge', path: [], edge: 'bottom' });
         end();
-        expect(sink.calls).toEqual(['split a to main [] on bottom']);
+        expect(sink.calls).toEqual(['split a to [] on bottom']);
     });
 
     it('performs one operation and only one, and forgets the drag', () => {
         begin();
-        hover({ kind: 'strip', target: 'main', path: [], index: 0 });
-        hover({ kind: 'edge', target: 'panel', path: [], edge: 'left' });
+        hover({ kind: 'strip', path: [], index: 0 });
+        hover({ kind: 'edge', path: [], edge: 'left' });
         end();
         end();
-        expect(sink.calls).toEqual(['split a to panel [] on left']);
+        expect(sink.calls).toEqual(['split a to [] on left']);
         expect(dragging()).toBe(null);
     });
 
     it('performs nothing when the pointer came up over nothing', () => {
         begin();
-        hover({ kind: 'strip', target: 'main', path: [], index: 1 });
+        hover({ kind: 'strip', path: [], index: 1 });
         hover(null);
         end();
         expect(sink.calls).toEqual([]);
@@ -138,7 +136,7 @@ describe('performing a drop', () => {
 
     it('performs nothing when the drag was called off', () => {
         begin();
-        hover({ kind: 'edge', target: 'main', path: [], edge: 'right' });
+        hover({ kind: 'edge', path: [], edge: 'right' });
         cancel();
         expect(dragging()).toBe(null);
         end();
@@ -148,12 +146,12 @@ describe('performing a drop', () => {
     it('holds the body a drop is over, for whatever draws the indicator', () => {
         begin();
         const rect = { x: 20, y: 30, width: 400, height: 200 };
-        hover({ kind: 'edge', target: 'main', path: [1], edge: 'top' }, rect);
+        hover({ kind: 'edge', path: [1], edge: 'top' }, rect);
         expect(dragging()?.rect).toEqual(rect);
     });
 
     it('ignores a hover and a move when no drag was started', () => {
-        hover({ kind: 'strip', target: 'main', path: [], index: 0 });
+        hover({ kind: 'strip', path: [], index: 0 });
         move({ x: 500, y: 500 });
         expect(dragging()).toBe(null);
         end();

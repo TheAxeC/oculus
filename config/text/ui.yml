@@ -10,15 +10,9 @@ text:
         confirm_stop: Confirm
         crt_on: crt
         crt_title: 'CRT overlay: scanlines + vignette. Cosmetic only.'
-        dock_bottom: Panel along the bottom
-        dock_glyph: cards
-        dock_hidden: Panel hidden
-        dock_right: Panel on the right
         docs: Docs
         drag_hint: Moving {0}
-        move_to_main: Move tab to the main area
         move_to_page: 'Move tab to {0}'
-        move_to_panel: Move tab to the panel
         page_close_confirm: Close the page {0} and the {1} tabs on it?
         page_default: Page {0}
         page_from: Open {0} as a page
@@ -32,11 +26,13 @@ text:
         pages: Pages
         pane_close: Close pane
         pane_close_confirm: Close this pane and the {0} tabs in it?
+        pane_expand: Expand pane
+        pane_expand_glyph: expand
+        pane_fold: Fold pane
         pane_maximise: Maximise pane
         pane_menu: Pane
         pane_menu_glyph: list
         pane_restore: Restore panes
-        panel: Panel
         rail: Views
         row_menu: Row actions
         sash: Resize

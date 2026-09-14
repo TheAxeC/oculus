@@ -103,7 +103,6 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             options.navigation(),
             {
                 currentView: pane?.dataset.paneView ?? null,
-                target: pane?.dataset.paneTarget === 'panel' ? 'panel' : 'main',
                 cursorActive: cursorIn(pane) !== null,
                 typing: typingIn(event.target),
                 paletteOpen: options.paletteOpen(),
@@ -128,7 +127,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     function perform(action: KeyAction, pane: HTMLElement | null): boolean {
         if (action.kind === 'open') {
             clearCursor();
-            options.layout.openView(action.view, action.target);
+            options.layout.openView(action.view);
         } else if (action.kind === 'cursor') {
             return moveCursor(pane, action.direction);
         } else if (action.kind === 'move') {
@@ -153,21 +152,20 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     }
 
     /**
-     * Activate the numbered tab of the focused pane. The element carries the tree and the path, so
-     * the pane under the keyboard is the pane in the store; a pane holding fewer tabs than the
-     * digit counts to keeps the tab it has and leaves the key to whatever else wants it.
+     * Activate the numbered tab of the focused pane. The element carries the path, so the pane
+     * under the keyboard is the pane in the store; a pane holding fewer tabs than the digit counts
+     * to keeps the tab it has and leaves the key to whatever else wants it.
      */
     function activateTab(pane: HTMLElement | null, index: number): boolean {
         const raw = pane?.dataset.panePath;
         if (raw === undefined) return false;
         const path = raw === '' ? [] : raw.split('.').map(Number);
         if (path.some((step) => !Number.isInteger(step))) return false;
-        const target = pane?.dataset.paneTarget === 'panel' ? 'panel' : 'main';
-        const node = paneAt(options.layout.layout(target), path) ?? undefined;
+        const node = paneAt(options.layout.layout(), path) ?? undefined;
         const tab = node?.tabs.at(index - 1);
         if (tab === undefined) return false;
         clearCursor();
-        options.layout.activateInstance(target, tab.id);
+        options.layout.activateInstance(tab.id);
         return true;
     }
 

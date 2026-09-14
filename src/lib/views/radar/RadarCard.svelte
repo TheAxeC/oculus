@@ -136,8 +136,7 @@
                 <ToolButton
                     label={project.title}
                     glyph="goto"
-                    onclick={() =>
-                        openView('project', 'main', { id: project.id, label: project.title })}
+                    onclick={() => openView('project', { id: project.id, label: project.title })}
                 />
             {/each}
             {#if text('maps_to') === 'new-idea-candidate'}

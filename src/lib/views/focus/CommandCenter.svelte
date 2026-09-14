@@ -197,7 +197,7 @@
 
     /** Put transient reveal state on the instance that was activated, never in layout identity. */
     function reveal(view: 'leads' | 'venues', item: string, expiredOpen = false): void {
-        const id = openView(view, 'main');
+        const id = openView(view);
         const current = instanceState(id);
         const held =
             typeof current === 'object' && current !== null && !Array.isArray(current)
@@ -222,8 +222,8 @@
     /** Open the view named by one attention line, revealing the exact venue when it names one. */
     function pickAttention(id: string): void {
         const line = attentionView.index[id];
-        if (line?.kind === 'inbox') openView('inbox', 'main');
-        else if (line?.kind === 'linkedin') openView('linkedin', 'main');
+        if (line?.kind === 'inbox') openView('inbox');
+        else if (line?.kind === 'linkedin') openView('linkedin');
         else if (line?.kind === 'venue' && line.id !== undefined) {
             reveal('venues', line.id);
         }

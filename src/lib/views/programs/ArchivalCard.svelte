@@ -50,7 +50,7 @@
                                 <ToolButton
                                     label={labelOf(project)}
                                     onclick={() =>
-                                        openView('project', 'main', {
+                                        openView('project', {
                                             id: project.id,
                                             label: labelOf(project)
                                         })}

@@ -103,8 +103,8 @@ test('closing a page asks first: cancel keeps it, confirm removes it', async ({ 
     await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
     await expect(strip.getByRole('tab')).toHaveCount(2);
 
-    // A new page holds one tab, the Status view, and its panel is empty; a second view opened into
-    // it makes two, so the close asks.
+    // A new page holds one tab, the Status view; a second view opened into it makes two, so the
+    // close asks.
     await openView(page, 'focus', t('views.focus'));
     await strip.getByRole('tab', { name: t('ui.page_default', 2) }).hover();
     await strip

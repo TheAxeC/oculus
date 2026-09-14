@@ -14,16 +14,16 @@
     // makes the menu the keyboard path: the opener takes focus and Menu already handles arrows and
     // Escape.
 
-    import { PAGE, pageMoveItems } from '$lib/shell/pane-view';
+    import { PAGE, foldable, pageMoveItems } from '$lib/shell/pane-view';
     import Confirm from '$lib/ui/Confirm.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu-items';
     import Tabs from '$lib/ui/Tabs.svelte';
     import type { Tab } from '$lib/ui/tab-strip';
-    import { AT_END, edgeAt, markAt, withoutOwn } from '$lib/state/drag.svelte';
+    import { edgeAt, markAt, withoutOwn } from '$lib/state/drag.svelte';
     import { t } from '$lib/state/text';
     import { badgeOf, registrationGlyph, registrationLabel } from '$lib/views/registry';
-    import { panes, type Instance, type Layout, type Target } from '$lib/state/layout';
+    import type { Instance, Layout } from '$lib/state/layout';
     import { useState } from '$lib/state/use';
 
     const client = useState();
@@ -31,17 +31,17 @@
     const {
         layout: {
             activateInstance,
-            closeInstanceIn,
-            closePaneIn,
+            closeInstance,
+            closePane,
             currentPage,
             focused,
+            foldPane,
             layout,
             maximisePane,
             moveInstanceToPage,
             pages,
             restorePanes,
-            splitInstance,
-            transferInstance
+            splitInstance
         },
         drag: { dragging, hover, start },
         registry: { viewFor }
@@ -50,13 +50,11 @@
     type Props = {
         /** The node SplitView handed the snippet. Only a pane is drawn; a split never reaches here. */
         node: Layout;
-        /** Which of the workbench's two trees this pane is in, so a close names the right one. */
-        target: Target;
-        /** This pane's path in that tree, which is what a drop and every menu item name it by. */
+        /** This pane's path in the page's tree, which is what a drop and every menu item name it by. */
         path?: number[];
     };
 
-    let { node, target, path = [] }: Props = $props();
+    let { node, path = [] }: Props = $props();
 
     let body: HTMLDivElement | undefined = $state();
 
@@ -64,7 +62,6 @@
     const active = $derived(node.kind === 'pane' ? node.active : '');
     const shown = $derived(instances.find((instance) => instance.id === active));
     const registration = $derived(shown === undefined ? undefined : viewFor(shown.view));
-    const other = $derived<Target>(target === 'main' ? 'panel' : 'main');
     const maximised = $derived(focused() !== null);
 
     /**
@@ -106,10 +103,7 @@
 
     /** The mark, when the drag is over this pane's strip: back in the indices the tabs are drawn in. */
     const dropIndex = $derived(
-        held !== null &&
-            held.drop?.kind === 'strip' &&
-            held.drop.target === target &&
-            here(held.drop.path)
+        held !== null && held.drop?.kind === 'strip' && here(held.drop.path)
             ? markAt(held.drop.index, own)
             : null
     );
@@ -125,13 +119,15 @@
         maximised
             ? { id: 'restore', label: t('ui.pane_restore') }
             : { id: 'maximise', label: t('ui.pane_maximise') },
-        { id: 'move', label: target === 'main' ? t('ui.move_to_panel') : t('ui.move_to_main') },
+        // The root pane is in no split, and the last open child of a split stays open, so the item
+        // is offered only where a fold would change the tree.
+        ...(foldable(layout(), path) ? [{ id: 'fold', label: t('ui.pane_fold') }] : []),
         ...elsewhere,
         { id: 'split_right', label: t('ui.split_right') },
         { id: 'split_down', label: t('ui.split_down') }
     ]);
 
-    /** Whether a drop's path is this pane's. A path is only ever compared inside one tree. */
+    /** Whether a drop's path is this pane's. */
     function here(candidate: number[]): boolean {
         return (
             candidate.length === path.length &&
@@ -142,7 +138,7 @@
     function press(id: string, point: { x: number; y: number }): void {
         const tab = tabs.find((one) => one.id === id);
         if (tab === undefined) return;
-        start(id, target, tab.label, point);
+        start(id, tab.label, point);
     }
 
     function stripHover(index: number | null): void {
@@ -151,7 +147,7 @@
             hover(null);
             return;
         }
-        hover({ kind: 'strip', target, path, index: withoutOwn(index, own) });
+        hover({ kind: 'strip', path, index: withoutOwn(index, own) });
     }
 
     /** The pointer over the body: an edge of it, or its middle, which is the end of the strip. */
@@ -160,19 +156,12 @@
         const rect = body.getBoundingClientRect();
         const point = { x: event.clientX, y: event.clientY };
         const edge = edgeAt(rect, point);
-        hover(
-            edge === null ? { kind: 'centre', target, path } : { kind: 'edge', target, path, edge },
-            rect
-        );
+        hover(edge === null ? { kind: 'centre', path } : { kind: 'edge', path, edge }, rect);
     }
 
     function bodyLeave(): void {
         if (dragging() === null) return;
         hover(null);
-    }
-
-    function firstPane(where: Target): number[] {
-        return panes(layout(where))[0]?.path ?? [];
     }
 
     function pick(id: string): void {
@@ -181,15 +170,19 @@
             // tab is the tab's own close control by another name, so it goes; more than one is asked
             // about first.
             if (tabs.length > 1) closing = true;
-            else closePaneIn(target, path);
+            else closePane(path);
             return;
         }
         if (id === 'maximise') {
-            maximisePane(target, path);
+            maximisePane(path);
             return;
         }
         if (id === 'restore') {
             restorePanes();
+            return;
+        }
+        if (id === 'fold') {
+            foldPane(path);
             return;
         }
         if (active === '') return;
@@ -197,18 +190,14 @@
             moveInstanceToPage(active, id.slice(PAGE.length));
             return;
         }
-        // The other tree's first pane is where a moved tab lands: its root is a split as often as
-        // not, and a path naming a split names no pane at all.
-        if (id === 'move') transferInstance(active, other, firstPane(other), AT_END);
-        else if (id === 'split_right') splitInstance(active, target, path, 'right');
-        else if (id === 'split_down') splitInstance(active, target, path, 'bottom');
+        if (id === 'split_right') splitInstance(active, path, 'right');
+        else if (id === 'split_down') splitInstance(active, path, 'bottom');
     }
 </script>
 
 <div
     class="pane"
     data-pane
-    data-pane-target={target}
     data-pane-path={path.join('.')}
     data-pane-active={active}
     data-pane-view={shown?.view}
@@ -217,8 +206,8 @@
         {tabs}
         {active}
         {dropIndex}
-        onselect={(id: string) => activateInstance(target, id)}
-        onclose={(id: string) => closeInstanceIn(target, id)}
+        onselect={(id: string) => activateInstance(id)}
+        onclose={(id: string) => closeInstance(id)}
         onpointerdown={press}
         onhoverindex={held === null ? undefined : stripHover}
         menu={paneMenu}
@@ -248,7 +237,7 @@
         cancel={t('ui.confirm_cancel')}
         onconfirm={() => {
             closing = false;
-            closePaneIn(target, path);
+            closePane(path);
         }}
         oncancel={() => (closing = false)}
     />

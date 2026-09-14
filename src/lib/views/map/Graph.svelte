@@ -207,11 +207,11 @@
 
     function open(node: PointNode): void {
         if (node.kind === 'project') {
-            openView('project', 'main', { id: node.entityId, label: node.label });
+            openView('project', { id: node.entityId, label: node.label });
         } else if (node.kind === 'line') {
-            openView('programs', 'main');
+            openView('programs');
         } else {
-            openView('collaborations', 'main');
+            openView('collaborations');
         }
     }
 

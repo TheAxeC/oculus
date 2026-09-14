@@ -3,13 +3,9 @@
 // module because it is its own concern and a hand-written shape read once.
 
 import {
-    DOCKS,
-    PANEL_DEFAULT,
     checkWorkbench,
-    clampPanel,
     isRecord,
     newInstance,
-    type Dock,
     type Instance,
     type Layout,
     type Workbench
@@ -17,24 +13,17 @@ import {
 
 /**
  * One arrangement of `arrangements:` in config/layout.yml as a workbench, with a fresh instance id
- * for every tab. It is the same tree as a saved envelope with the instances left out: a node is
- * `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view id or
- * a list of them, and the arrangement itself carries `main`, `panel` and optionally `dock` and
- * `panel_size`. Anything the shape or checkWorkbench refuses is null, so a hand edit that does not
- * add up leaves the workbench the user had rather than replacing it with a broken one.
+ * for every tab. It is the same tree as a saved envelope with the instances left out: the
+ * arrangement carries `root`, and a node is `{ kind: split, dir, sizes, children }` or
+ * `{ kind: pane, view }`, where `view` is one view id or a list of them. Anything the shape or
+ * checkWorkbench refuses is null, so a hand edit that does not add up leaves the workbench the user
+ * had rather than replacing it with a broken one.
  */
 export function parseArrangement(value: unknown): Workbench | null {
     if (!isRecord(value)) return null;
-    const main = readArrangement(value.main);
-    const panel = readArrangement(value.panel);
-    if (main === null || panel === null) return null;
-    const where = value.dock;
-    const dock: Dock =
-        typeof where === 'string' && DOCKS.includes(where as Dock) ? (where as Dock) : 'right';
-    const share = value.panel_size;
-    const panelSize =
-        typeof share === 'number' && Number.isFinite(share) ? clampPanel(share) : PANEL_DEFAULT;
-    const workbench: Workbench = { main, panel, dock, panelSize };
+    const root = readArrangement(value.root);
+    if (root === null) return null;
+    const workbench: Workbench = { root };
     return checkWorkbench(workbench).length === 0 ? workbench : null;
 }
 

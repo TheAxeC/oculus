@@ -299,7 +299,7 @@
                                     <ToolButton
                                         label={project.short ?? project.title}
                                         onclick={() =>
-                                            openView('project', 'main', {
+                                            openView('project', {
                                                 id: project.id,
                                                 label: project.short ?? project.title
                                             })}

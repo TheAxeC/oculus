@@ -37,13 +37,13 @@ export function urlOf(folder: string, path: string): string {
 /** Open a registered collection or registry view at one label, and nothing when none is registered. */
 export function goto(client: ClientState, view: string, label: string): void {
     if (client.registry.viewFor(view) !== undefined) {
-        client.layout.openView(view, 'main', { label });
+        client.layout.openView(view, { label });
     }
 }
 
 /** Open one of a project's fixed documents in a document tab under the hub root. */
 export function openDocument(client: ClientState, folder: string, path: string): void {
-    client.layout.openView('document', 'main', {
+    client.layout.openView('document', {
         root: 'hub',
         path: `${folder}/${path}`,
         label: path

@@ -12,30 +12,30 @@ export type ViewId = string;
 
 export type Instance = { id: string; view: ViewId; state: unknown };
 
-export type Split = { kind: 'split'; dir: 'row' | 'col'; sizes: number[]; children: Layout[] };
+/**
+ * A split and its children. `folded` holds the indexes of the children collapsed to the split's
+ * edge: a folded child keeps its share in `sizes`, so expanding it gives back the width it had, and
+ * one child of a split is always left open.
+ */
+export type Split = {
+    kind: 'split';
+    dir: 'row' | 'col';
+    sizes: number[];
+    children: Layout[];
+    folded?: number[];
+};
 export type Pane = { kind: 'pane'; tabs: Instance[]; active: string };
 export type Layout = Split | Pane;
 
-/** Where the panel sits beside the main area, or that it is not shown. */
-export type Dock = 'right' | 'bottom' | 'hidden';
-
-/** Which of the workbench's two trees an operation applies to. */
-export type Target = 'main' | 'panel';
-
 /** The one pane shown alone while the rest of the workbench is put away. */
-export type Focus = { target: Target; path: number[] };
+export type Focus = { path: number[] };
 
 /**
- * The whole arrangement, which is what is saved: two trees, where the second one sits, how much of
- * the window it takes, and the pane that is maximised if one is. The panel is a tree of its own
- * rather than a pane, so a panel can be split exactly as the main area can and every operation
- * applies to either of them.
+ * The whole arrangement, which is what is saved: one tree and the pane that is maximised if one is.
+ * A page is one tree, so every operation names a path in it and nothing else.
  */
 export type Workbench = {
-    main: Layout;
-    panel: Layout;
-    dock: Dock;
-    panelSize: number;
+    root: Layout;
     /** The maximised pane, or nothing when every pane is shown. */
     focus?: Focus;
 };
@@ -58,20 +58,21 @@ export const MIN_SIZE = 0.1;
 /** The most children a split can hold and still give each of them MIN_SIZE. */
 export const MAX_CHILDREN = Math.floor(1 / MIN_SIZE);
 
-/** The panel's share of the window: the least, the most, and what it starts at. */
-export const PANEL_MIN = 0.1;
-export const PANEL_MAX = 0.6;
-export const PANEL_DEFAULT = 0.3;
-
-/** The view the main area starts on. */
+/** The view a fresh page starts on. */
 export const MAIN_VIEW = 'status';
 
-/** The envelope version serialiseLayout writes and parseLayout demands: the list of pages. */
-export const LAYOUT_VERSION = 3;
+/** The envelope version serialiseLayout writes and parseLayout demands: the list of pages, one tree each. */
+export const LAYOUT_VERSION = 4;
 
 /**
- * The envelope version that held one workbench, before a page was a thing. It is still read, so a
- * browser that holds one opens it as a page instead of falling back to the default.
+ * The envelope version whose page held two trees and a docked panel. It is still read, and its
+ * pages are migrated to one tree each, so a browser holding one loses no tab.
+ */
+export const PAGES_VERSION = 3;
+
+/**
+ * The envelope version that held one two-tree workbench, before a page was a thing. It is still
+ * read and migrated the same way, so a browser that holds one opens it as a page.
  */
 export const WORKBENCH_VERSION = 2;
 
@@ -107,14 +108,9 @@ function paneOf(view: ViewId): Pane {
     return { kind: 'pane', tabs: [instance], active: instance.id };
 }
 
-/** The arrangement a browser that has never held one starts from. */
+/** The arrangement a browser that has never held one starts from: one pane on the first view. */
 export function defaultWorkbench(): Workbench {
-    return {
-        main: paneOf(MAIN_VIEW),
-        panel: emptyPane(),
-        dock: 'hidden',
-        panelSize: PANEL_DEFAULT
-    };
+    return { root: paneOf(MAIN_VIEW) };
 }
 
 /**
@@ -140,10 +136,4 @@ export function movePage(held: Pages, id: string, index: number): Pages {
     if (next === at) return held;
     pages.splice(next, 0, held.pages[at]);
     return { pages, current: held.current };
-}
-
-/** The panel's share, held between PANEL_MIN and PANEL_MAX; anything that is not a number is the default. */
-export function clampPanel(fraction: number): number {
-    if (!Number.isFinite(fraction)) return PANEL_DEFAULT;
-    return clamp(fraction, PANEL_MIN, PANEL_MAX);
 }

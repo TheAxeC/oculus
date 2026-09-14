@@ -53,7 +53,7 @@
 
     /** Open the collection and ask it to reveal the exact entry this card names. */
     function reveal(item: BandItem): void {
-        const instance = openView(item.entry, 'main');
+        const instance = openView(item.entry);
         const current = instanceState(instance);
         const held =
             typeof current === 'object' && current !== null && !Array.isArray(current)

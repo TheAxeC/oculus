@@ -3,16 +3,16 @@
 // a time on the page, so this is a module and not a component's state: the strip that started the
 // drag and the pane the pointer ended over never meet.
 //
-// Nothing here reads the layout tree. A Drop names a tree, a pane's path and how the instance lands
-// there; the operation that carries it out is state/layout.svelte.ts's, and it is reached through a
-// sink so that a test can watch what a drag performs without a store or a DOM.
+// Nothing here reads the layout tree. A Drop names a pane's path and how the instance lands there;
+// the operation that carries it out is state/layout.svelte.ts's, and it is reached through a sink so
+// that a test can watch what a drag performs without a store or a DOM.
 //
 // The document listeners exist only while a drag is in progress. They are installed by start() and
 // removed by end() and cancel(), so a page nobody is dragging on carries none, and a drag survives
 // the pointer leaving the strip it began in, which is the whole reason they are on the document.
 
 import type { LayoutStore } from './layout.svelte.ts';
-import type { Edge, Target } from './layout/index.ts';
+import type { Edge } from './layout/index.ts';
 
 /** A point in the viewport, which is what getBoundingClientRect is measured in. */
 export type Point = { x: number; y: number };
@@ -25,21 +25,20 @@ export type Rect = { x: number; y: number; width: number; height: number };
  * edge of a pane's body, or at the end of a pane's strip, which is what the middle of a body means.
  */
 export type Drop =
-    | { kind: 'strip'; target: Target; path: number[]; index: number }
-    | { kind: 'centre'; target: Target; path: number[] }
-    | { kind: 'edge'; target: Target; path: number[]; edge: Edge };
+    | { kind: 'strip'; path: number[]; index: number }
+    | { kind: 'centre'; path: number[] }
+    | { kind: 'edge'; path: number[]; edge: Edge };
 
 /** The operations a drop is performed through. The store's are the default; a test hands its own. */
 export type DragSink = {
-    transfer: (id: string, target: Target, path: number[], index: number) => void;
-    split: (id: string, target: Target, path: number[], edge: Edge) => void;
+    transfer: (id: string, path: number[], index: number) => void;
+    split: (id: string, path: number[], edge: Edge) => void;
 };
 
 /** The drag as anything drawing it sees it. */
 export type Dragging = {
     id: string;
     label: string;
-    target: Target;
     point: Point;
     drop: Drop | null;
     /** The body of the pane the hovered drop is over, when the drop is an edge or a centre. */
@@ -101,7 +100,7 @@ export function edgeAt(rect: Rect, point: Point): Edge | null {
 export type DragStore = {
     setDragSink: (next: DragSink | null) => void;
     dragging: () => Dragging | null;
-    start: (id: string, target: Target, label: string, point: Point) => void;
+    start: (id: string, label: string, point: Point) => void;
     move: (point: Point) => void;
     hover: (drop: Drop | null, rect?: Rect | null) => void;
     end: () => void;
@@ -112,8 +111,8 @@ export function createDrag(layout: LayoutStore): DragStore {
     const store: { current: Held | null } = $state({ current: null });
 
     const storeSink: DragSink = {
-        transfer: (id, target, path, index) => layout.transferInstance(id, target, path, index),
-        split: (id, target, path, edge) => layout.splitInstance(id, target, path, edge)
+        transfer: (id, path, index) => layout.transferInstance(id, path, index),
+        split: (id, path, edge) => layout.splitInstance(id, path, edge)
     };
 
     let sink: DragSink = storeSink;
@@ -127,19 +126,18 @@ export function createDrag(layout: LayoutStore): DragStore {
     function dragging(): Dragging | null {
         const held = store.current;
         if (!held?.armed) return null;
-        const { id, label, target, point, drop, rect } = held;
-        return { id, label, target, point, drop, rect };
+        const { id, label, point, drop, rect } = held;
+        return { id, label, point, drop, rect };
     }
 
     /**
      * A pointer went down on a tab. Nothing is drawn and nothing will be performed until the pointer has
      * moved THRESHOLD pixels, so the press that starts a drag is the same press that selects a tab.
      */
-    function start(id: string, target: Target, label: string, point: Point): void {
+    function start(id: string, label: string, point: Point): void {
         store.current = {
             id,
             label,
-            target,
             point,
             drop: null,
             rect: null,
@@ -175,9 +173,9 @@ export function createDrag(layout: LayoutStore): DragStore {
         if (!held?.armed) return;
         const drop = held.drop;
         if (drop === null) return;
-        if (drop.kind === 'strip') sink.transfer(held.id, drop.target, drop.path, drop.index);
-        else if (drop.kind === 'centre') sink.transfer(held.id, drop.target, drop.path, AT_END);
-        else sink.split(held.id, drop.target, drop.path, drop.edge);
+        if (drop.kind === 'strip') sink.transfer(held.id, drop.path, drop.index);
+        else if (drop.kind === 'centre') sink.transfer(held.id, drop.path, AT_END);
+        else sink.split(held.id, drop.path, drop.edge);
     }
 
     /** Escape, or anything else that calls the drag off. Nothing is performed. */

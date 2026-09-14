@@ -5,20 +5,18 @@ import { panes } from '../instance.ts';
 import {
     LAYOUT_VERSION,
     MIN_SIZE,
-    PANEL_MAX,
-    PANEL_MIN,
+    PAGES_VERSION,
     WORKBENCH_VERSION,
     isRecord,
     newPage,
     show,
-    type Dock,
-    type Focus,
     type Instance,
     type Layout,
     type Page,
     type Pages,
     type Workbench
 } from './model.ts';
+import { normaliseSizes } from './tree.ts';
 import { focusedPane, settleFocus } from './workbench.ts';
 
 const SUM_EPS = 1e-6;
@@ -96,7 +94,38 @@ function readSplit(
             problems.push(`${where}: child ${index} holds ${size}, under the minimum ${MIN_SIZE}`);
         }
     }
-    return { kind: 'split', dir, sizes, children };
+    const folded = readFolded(value.folded, children.length, problems, where);
+    const split: Layout = { kind: 'split', dir, sizes, children };
+    if (folded === null) return null;
+    if (folded.length > 0) split.folded = folded;
+    return split;
+}
+
+/** The collapsed children of a split: whole indexes inside its children, each once, and never all of them. */
+function readFolded(
+    value: unknown,
+    count: number,
+    problems: string[],
+    where: string
+): number[] | null {
+    if (value === undefined) return [];
+    if (!Array.isArray(value)) {
+        problems.push(`${where}: folded is not an array`);
+        return null;
+    }
+    const folded: number[] = [];
+    for (const index of value) {
+        if (typeof index !== 'number' || !Number.isInteger(index) || index < 0 || index >= count) {
+            problems.push(`${where}: folded names ${JSON.stringify(index)}, which is not a child`);
+            return null;
+        }
+        if (!folded.includes(index)) folded.push(index);
+    }
+    if (folded.length >= count) {
+        problems.push(`${where}: every child is folded, which leaves the split nothing to show`);
+        return null;
+    }
+    return folded;
 }
 
 /** Build and validate one pane node. */
@@ -141,24 +170,13 @@ function readPane(
     return { kind: 'pane', tabs, active };
 }
 
-/** Where the panel may sit in a saved workbench. */
-export const DOCKS: Dock[] = ['right', 'bottom', 'hidden'];
-
-/** Every violation in a whole workbench, including ids shared by its two trees. */
+/** Every violation in a whole workbench: its tree, and a focus that names no pane of it. */
 export function checkWorkbench(workbench: Workbench): string[] {
     const problems: string[] = [];
-    const ids = new Set<string>();
-    readTree(workbench.main, 'main', problems, ids);
-    readTree(workbench.panel, 'panel', problems, ids);
-    if (!DOCKS.includes(workbench.dock)) {
-        problems.push(`dock is ${JSON.stringify(workbench.dock)}, not right, bottom or hidden`);
-    }
-    if (workbench.panelSize < PANEL_MIN || workbench.panelSize > PANEL_MAX) {
-        problems.push(`panelSize is ${workbench.panelSize}, outside ${PANEL_MIN} to ${PANEL_MAX}`);
-    }
+    readTree(workbench.root, 'root', problems, new Set<string>());
     const focus = workbench.focus;
     if (focus !== undefined && focusedPane(workbench) === null) {
-        problems.push(`focus names ${focus.target} ${show(focus.path)}, which is not a pane`);
+        problems.push(`focus names ${show(focus.path)}, which is not a pane`);
     }
     return problems;
 }
@@ -175,7 +193,7 @@ export function checkPages(pages: Pages): string[] {
         for (const problem of checkWorkbench(page.workbench)) {
             problems.push(`page ${JSON.stringify(page.label)} ${problem}`);
         }
-        for (const { pane } of [...panes(page.workbench.main), ...panes(page.workbench.panel)]) {
+        for (const { pane } of panes(page.workbench.root)) {
             for (const tab of pane.tabs) {
                 if (instances.has(tab.id)) {
                     problems.push(`instance ${JSON.stringify(tab.id)} is on two pages`);
@@ -195,15 +213,19 @@ export function serialiseLayout(pages: Pages): string {
     return JSON.stringify({ version: LAYOUT_VERSION, pages: pages.pages, current: pages.current });
 }
 
-/** Read valid pages from the current envelope or the supported one-workbench envelope. */
+/**
+ * Read valid pages from the current envelope, or from either supported older one by migration: a
+ * page that held two trees and a docked panel becomes a page holding one tree.
+ */
 export function parseLayout(value: unknown, label: string): Pages | null {
     const envelope = asEnvelope(value);
     if (envelope === null) return null;
     if (envelope.version === WORKBENCH_VERSION) {
-        const only = readWorkbench(envelope.workbench);
+        const only = readDockedWorkbench(envelope.workbench);
         return only === null ? null : defaultPagesOf(newPage(label, only));
     }
-    if (envelope.version !== LAYOUT_VERSION) return null;
+    const version = envelope.version;
+    if (version !== LAYOUT_VERSION && version !== PAGES_VERSION) return null;
     const saved = envelope.pages;
     const current = envelope.current;
     if (!Array.isArray(saved) || typeof current !== 'string') return null;
@@ -211,7 +233,10 @@ export function parseLayout(value: unknown, label: string): Pages | null {
     for (const entry of saved) {
         if (!isRecord(entry)) return null;
         if (typeof entry.id !== 'string' || typeof entry.label !== 'string') return null;
-        const workbench = readWorkbench(entry.workbench);
+        const workbench =
+            version === LAYOUT_VERSION
+                ? readWorkbench(entry.workbench)
+                : readDockedWorkbench(entry.workbench);
         if (workbench === null) return null;
         pages.push({ id: entry.id, label: entry.label, workbench });
     }
@@ -237,42 +262,83 @@ function asEnvelope(value: unknown): Record<string, unknown> | null {
     return isRecord(envelope) ? envelope : null;
 }
 
-/** Read one valid workbench from its versioned envelope. */
+/** Read one workbench from the envelope a browser held before a page was one tree. */
 export function parseWorkbench(value: unknown): Workbench | null {
     const envelope = asEnvelope(value);
     if (envelope?.version !== WORKBENCH_VERSION) return null;
-    return readWorkbench(envelope.workbench);
+    return readDockedWorkbench(envelope.workbench);
 }
 
 /** Read one saved workbench after its envelope has been removed. */
 function readWorkbench(value: unknown): Workbench | null {
     if (!isRecord(value)) return null;
     const problems: string[] = [];
+    const root = readTree(value.root, 'root', problems, new Set<string>());
+    if (root === null || problems.length > 0) return null;
+    const workbench: Workbench = { root };
+    const focus = readPath(value.focus);
+    return focus === null ? workbench : settleFocus({ ...workbench, focus: { path: focus } });
+}
+
+/** The share of the window a saved panel took when its own share cannot be read. */
+const PANEL_SHARE = 0.3;
+
+/**
+ * One saved workbench of two trees as one tree. A panel holding no tab at all is dropped and the
+ * main area is the root; otherwise the root is a split of the two, a row for a panel on the right
+ * and a column for one along the bottom, at the shares the panel had. A hidden panel that still
+ * holds tabs is that same split with the panel child folded, so no tab is lost; a pane maximised
+ * inside that hidden panel is not carried, since a folded child cannot be the one shown alone.
+ */
+function readDockedWorkbench(value: unknown): Workbench | null {
+    if (!isRecord(value)) return null;
+    const problems: string[] = [];
     const ids = new Set<string>();
     const main = readTree(value.main, 'main', problems, ids);
     const panel = readTree(value.panel, 'panel', problems, ids);
     const dock = value.dock;
-    if (typeof dock !== 'string' || !DOCKS.includes(dock as Dock)) return null;
-    const panelSize = value.panelSize;
-    if (typeof panelSize !== 'number' || !Number.isFinite(panelSize)) return null;
-    if (panelSize < PANEL_MIN || panelSize > PANEL_MAX) return null;
+    if (dock !== 'right' && dock !== 'bottom' && dock !== 'hidden') return null;
     if (main === null || panel === null || problems.length > 0) return null;
-    const workbench: Workbench = { main, panel, dock: dock as Dock, panelSize };
-    const focus = readFocus(value.focus);
-    return focus === null ? workbench : settleFocus({ ...workbench, focus });
+    const held = panes(panel).some(({ pane }) => pane.tabs.length > 0);
+    const focus = readDockedFocus(value.focus);
+    if (!held) {
+        const only: Workbench = { root: main };
+        const inMain = focus !== null && focus.target === 'main';
+        return settleFocus(inMain ? { ...only, focus: { path: focus.path } } : only);
+    }
+    const share = value.panelSize;
+    const size = typeof share === 'number' && Number.isFinite(share) ? share : PANEL_SHARE;
+    const split: Layout = {
+        kind: 'split',
+        dir: dock === 'bottom' ? 'col' : 'row',
+        sizes: normaliseSizes([1 - size, size]),
+        children: [main, panel]
+    };
+    if (dock === 'hidden') split.folded = [1];
+    const workbench: Workbench = { root: split };
+    if (focus === null || (dock === 'hidden' && focus.target === 'panel')) return workbench;
+    const at = focus.target === 'main' ? 0 : 1;
+    return settleFocus({ ...workbench, focus: { path: [at, ...focus.path] } });
 }
 
-/** Read a saved focus when it names one tree and a non-negative integer path. */
-function readFocus(value: unknown): Focus | null {
+/** A saved focus of two trees: which tree it named and the path inside it. */
+function readDockedFocus(value: unknown): { target: 'main' | 'panel'; path: number[] } | null {
     if (!isRecord(value)) return null;
     const target = value.target;
     if (target !== 'main' && target !== 'panel') return null;
+    const path = readPath(value);
+    return path === null ? null : { target, path };
+}
+
+/** A saved focus path: a list of whole, non-negative steps. */
+function readPath(value: unknown): number[] | null {
+    if (!isRecord(value)) return null;
     const path = value.path;
     if (!Array.isArray(path)) return null;
     if (!path.every((step) => typeof step === 'number' && Number.isInteger(step) && step >= 0)) {
         return null;
     }
-    return { target, path: path as number[] };
+    return path as number[];
 }
 
 /** Read one saved tree and prefix its violations with the tree name. */

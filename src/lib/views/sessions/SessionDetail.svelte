@@ -36,14 +36,7 @@
     import { useState } from '$lib/state/use';
 
     const {
-        layout: {
-            instanceLayoutState,
-            openView,
-            openPinnedView,
-            pinInstance,
-            unpinInstance,
-            workbench
-        },
+        layout: { instanceLayoutState, layout, openView, pinInstance, unpinInstance },
         selection: { select },
         selectors: { contextWindow, pinnableAreas, sessionFor },
         terminals: { resumeTerminal },
@@ -143,7 +136,7 @@
     /** Open one pinned area of the session on screen, for a session the pane still holds. */
     function pin(area: string): void {
         if (record === null) return;
-        openPinnedView(area, record.id, record.title);
+        openView(area, { session: record.id, label: record.title });
     }
 
     /** What the pin control shows: the area a pin chose, and nothing when the score chose it. */
@@ -172,14 +165,9 @@
         await write({ title: text });
     }
 
-    /**
-     * Show the turns of the session. A transcript view already up in the panel is the one that is
-     * focused; otherwise openView activates the one in the main tree or opens it there, since the
-     * conversation is read beside the terminal rather than in the narrow panel.
-     */
+    /** Show the turns of the session, in the transcript view already up or in a new tab. */
     function openTranscript(): void {
-        const where = findView(workbench().panel, 'transcript') !== null ? 'panel' : 'main';
-        openView('transcript', where);
+        openView('transcript');
     }
 
     /** Pin this detail to what it shows, or return it to following the workbench selection. */
@@ -195,8 +183,7 @@
 
     /** Whether an unpinned terminal is already up and will follow a resumed terminal. */
     function terminalOpen(): boolean {
-        const trees = [workbench().main, workbench().panel];
-        return trees.some((tree) => findView(tree, 'terminal', null) !== null);
+        return findView(layout(), 'terminal', null) !== null;
     }
 
     /**
@@ -219,7 +206,7 @@
             return;
         }
         select(answer.id);
-        if (!terminalOpen()) openView('terminal', 'main');
+        if (!terminalOpen()) openView('terminal');
     }
 </script>
 

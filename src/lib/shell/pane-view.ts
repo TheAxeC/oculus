@@ -2,7 +2,7 @@
 // they draw can be read by a test.
 
 import type { MenuItem as Item } from '$lib/ui/menu-items';
-import type { Page } from '$lib/state/layout';
+import { fold, type Layout, type Page } from '$lib/state/layout';
 
 /** What tells a move-to-page item from the menu's fixed items. */
 export const PAGE = 'page:';
@@ -29,4 +29,9 @@ export function pageMoveItems(
         }))
         .filter((item) => item.page !== current)
         .map(({ id, label }) => ({ id, label }));
+}
+
+/** Whether the pane at `path` can be collapsed: the root cannot, nor the last open child of a split. */
+export function foldable(layout: Layout, path: number[]): boolean {
+    return path.length > 0 && fold(layout, path) !== layout;
 }

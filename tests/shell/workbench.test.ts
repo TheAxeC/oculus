@@ -1,7 +1,7 @@
-// The workbench rendered to HTML on the server: the rail, both trees, a tab strip over every pane,
-// the sashes, the view each pane is showing, and the one pane a maximised workbench draws instead
-// of all of them. Two views are registered here rather than the application's own, so what is
-// checked is the shell and not what a view happens to draw.
+// The workbench rendered to HTML on the server: the rail, the page's tree, a tab strip over every
+// pane, the sashes, the strip a collapsed child is drawn as, the view each pane is showing, and the
+// one pane a maximised workbench draws instead of all of them. Two views are registered here rather
+// than the application's own, so what is checked is the shell and not what a view happens to draw.
 //
 // What this does NOT cover: the theme effect, the menus opening, the drags. There is no DOM in this
 // suite, so an $effect never runs and a pointer is never pressed; applyTheme is covered on its own
@@ -32,7 +32,7 @@ import {
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { installBadges } from '../state/rail-badges-fixture.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
-import type { Dock, Layout, Workbench as Bench } from '../../src/lib/state/layout/index.ts';
+import type { Layout, Workbench as Bench } from '../../src/lib/state/layout/index.ts';
 import { noop } from '../doubles.ts';
 import { present } from '../present.ts';
 import { clientContext, createClientState, type ClientState } from '../client.ts';
@@ -89,29 +89,31 @@ function pane(id: string, view: string, state: unknown = {}): Layout {
     return { kind: 'pane', tabs: [{ id, view, state }], active: id };
 }
 
-/** Two panes side by side in the main area, one pane in the panel. */
-function bench(dock: Dock): Bench {
-    return {
-        main: {
-            kind: 'split',
-            dir: 'row',
-            sizes: [0.5, 0.5],
-            children: [pane('one', 'alpha'), pane('two', 'beta')]
-        },
-        panel: pane('three', 'beta'),
-        dock,
-        panelSize: 0.3
+/** Two panes side by side, and a third under the second of them: three panes in one tree. */
+function bench(folded?: number[]): Bench {
+    const inner: Layout = {
+        kind: 'split',
+        dir: 'col',
+        sizes: [0.7, 0.3],
+        children: [pane('two', 'beta'), pane('three', 'beta')]
     };
+    const root: Layout = {
+        kind: 'split',
+        dir: 'row',
+        sizes: [0.5, 0.5],
+        children: [pane('one', 'alpha'), inner]
+    };
+    return { root: folded === undefined ? root : { ...root, folded } };
 }
 
-function html(dock: Dock, groups: { id: string; label: string }[] = []): string {
-    apply(bench(dock));
+function html(folded?: number[], groups: { id: string; label: string }[] = []): string {
+    apply(bench(folded));
     return render(Workbench, { context: clientContext(client), props: { groups } }).body;
 }
 
-let docked: string;
+let whole: string;
 beforeEach(() => {
-    docked = html('right');
+    whole = html();
 });
 
 /** Milliseconds the one import of every view is given, which is not what a case is measured on. */
@@ -149,7 +151,7 @@ describe('the workbench', () => {
     });
 
     it('draws one rail button per registered view', () => {
-        const rail = [...docked.matchAll(/data-view="([^"]*)"/g)].map((match) => match[1]);
+        const rail = [...whole.matchAll(/data-view="([^"]*)"/g)].map((match) => match[1]);
         expect(rail).toEqual(['alpha', 'beta']);
     });
 
@@ -163,24 +165,24 @@ describe('the workbench', () => {
 
     // Four strips, not three: the page strip over the whole area is drawn with the same primitive,
     // and the one page it draws is one more tab.
-    it('draws a tab strip over every pane of both trees', () => {
-        expect([...docked.matchAll(/role="tablist"/g)]).toHaveLength(4);
-        expect([...docked.matchAll(/role="tab"/g)]).toHaveLength(4);
+    it('draws a tab strip over every pane of the tree', () => {
+        expect([...whole.matchAll(/role="tablist"/g)]).toHaveLength(4);
+        expect([...whole.matchAll(/role="tab"/g)]).toHaveLength(4);
     });
 
     it('carries every pane path on its own element, which is how a key reaches its tabs', () => {
-        const paths = [...docked.matchAll(/data-pane-path="([^"]*)"/g)].map((match) => match[1]);
-        expect(paths).toEqual(['0', '1', '']);
+        const paths = [...whole.matchAll(/data-pane-path="([^"]*)"/g)].map((match) => match[1]);
+        expect(paths).toEqual(['0', '1.0', '1.1']);
     });
 
     it('draws the page strip above the area, and the current page in it', () => {
-        expect(docked.indexOf('aria-label="Pages"')).toBeLessThan(docked.indexOf('class="area'));
-        expect(docked).toContain('Page 1');
+        expect(whole.indexOf('aria-label="Pages"')).toBeLessThan(whole.indexOf('class="area'));
+        expect(whole).toContain('Page 1');
     });
 
-    it('draws the trees of the page on screen and nothing of the page beside it', () => {
+    it('draws the tree of the page on screen and nothing of the page beside it', () => {
         const first = currentPage().id;
-        apply(bench('right'));
+        apply(bench());
         openPage('Page 2');
         expect(
             render(Workbench, { context: clientContext(client), props: { groups: [] } }).body
@@ -193,17 +195,12 @@ describe('the workbench', () => {
     });
 
     it('labels each tab from the registry', () => {
-        expect(docked).toContain('Status');
-        expect(docked).toContain('Findings');
+        expect(whole).toContain('Status');
+        expect(whole).toContain('Findings');
     });
 
     it('uses an instance label on the tab and keeps the view name in its tooltip', () => {
-        apply({
-            main: pane('pinned', 'alpha', { session: 'one', label: 'Pinned session' }),
-            panel: pane('panel', 'beta'),
-            dock: 'right',
-            panelSize: 0.3
-        });
+        apply({ root: pane('pinned', 'alpha', { session: 'one', label: 'Pinned session' }) });
         const body = render(Workbench, {
             context: clientContext(client),
             props: { groups: [] }
@@ -212,34 +209,45 @@ describe('the workbench', () => {
     });
 
     it('mounts the active instance of every pane', () => {
-        expect(docked).toContain('data-alpha="one"');
-        expect(docked).toContain('data-beta="two"');
-        expect(docked).toContain('data-beta="three"');
+        expect(whole).toContain('data-alpha="one"');
+        expect(whole).toContain('data-beta="two"');
+        expect(whole).toContain('data-beta="three"');
     });
 
-    it('puts a sash inside the split and one between the main area and the panel', () => {
-        expect([...docked.matchAll(/role="separator"/g)]).toHaveLength(2);
+    it('puts a sash between the children of every split', () => {
+        expect([...whole.matchAll(/role="separator"/g)]).toHaveLength(2);
     });
 
-    it('gives the panel its share of the window and the main area the rest', () => {
-        expect(docked).toContain('flex: 0.3 1 0');
-        expect(docked).toContain('flex: 0.7 1 0');
+    it('gives every child of a split its own share of the space', () => {
+        expect(whole).toContain('flex: 0.5 1 0');
+        expect(whole).toContain('flex: 0.7 1 0');
+        expect(whole).toContain('flex: 0.3 1 0');
     });
 
-    it('lays the panel out beside the main area, and below it when it is docked at the bottom', () => {
-        expect(docked).toMatch(/class="area row/);
-        expect(html('bottom')).toMatch(/class="area col/);
+    it('draws a folded pane as a strip with its expand control and the name of its tab', () => {
+        const collapsed = html([0]);
+        expect(collapsed).toContain('data-fold');
+        expect(collapsed).toMatch(/data-fold-label[^>]*>Status</);
+        expect(collapsed).toContain('aria-label="Expand pane"');
+        // The pane itself is not drawn, and neither is the sash that separated it.
+        expect(collapsed).not.toContain('data-alpha="one"');
+        expect(collapsed).toContain('data-beta="two"');
+        expect([...collapsed.matchAll(/role="separator"/g)]).toHaveLength(1);
+        expect([...collapsed.matchAll(/role="tablist"/g)]).toHaveLength(3);
     });
 
-    it('draws no panel and no second sash when the panel is hidden', () => {
-        const hidden = html('hidden');
-        expect(hidden).not.toContain('data-beta="three"');
-        expect([...hidden.matchAll(/role="separator"/g)]).toHaveLength(1);
-        expect([...hidden.matchAll(/role="tablist"/g)]).toHaveLength(3);
+    it('draws a folded split as the strip with its control alone: it has no one tab to name', () => {
+        const collapsed = html([1]);
+        expect(collapsed).toContain('aria-label="Expand pane"');
+        expect(collapsed).not.toContain('data-fold-label');
+        expect(collapsed).not.toContain('data-beta="two"');
+        expect(collapsed).not.toContain('data-beta="three"');
+        expect([...collapsed.matchAll(/role="separator"/g)]).toHaveLength(0);
+        expect([...collapsed.matchAll(/role="tablist"/g)]).toHaveLength(2);
     });
 
     it('groups a rail button under a group that names it, and leaves the rest ungrouped', () => {
-        const grouped = html('right', [{ id: 'probe', label: 'Portfolio' }]);
+        const grouped = html(undefined, [{ id: 'probe', label: 'Portfolio' }]);
         expect(grouped).toContain('Portfolio');
         expect([...grouped.matchAll(/data-view="([^"]*)"/g)].map((match) => match[1])).toEqual([
             'alpha',
@@ -248,29 +256,30 @@ describe('the workbench', () => {
     });
 
     it('draws no heading for a group no registered view belongs to', () => {
-        const grouped = html('right', [{ id: 'nothing', label: 'Nothing here' }]);
+        const grouped = html(undefined, [{ id: 'nothing', label: 'Nothing here' }]);
         expect(grouped).not.toContain('Nothing here');
     });
 
     // A Menu draws its opener and nothing else until it is opened, so the items behind it (close,
-    // maximise, the two moves and the two splits) are not in this HTML. They are checked in the
+    // maximise, the fold and the two splits) are not in this HTML. They are checked in the
     // browser, where the menu can be opened.
     it('puts a pane menu at the right of every tab strip', () => {
-        expect([...docked.matchAll(/aria-label="Pane"/g)]).toHaveLength(3);
-        expect([...docked.matchAll(/aria-haspopup="menu"/g)]).toHaveLength(6);
+        expect([...whole.matchAll(/aria-label="Pane"/g)]).toHaveLength(3);
+        // The three pane menus, the page strip's, and the theme menu at the foot of the rail.
+        expect([...whole.matchAll(/aria-haspopup="menu"/g)]).toHaveLength(5);
     });
 });
 
 describe('a maximised pane', () => {
-    /** The workbench of the tests above with one of the two main panes maximised. */
-    function zoomed(path: number[], target: 'main' | 'panel'): string {
-        apply({ ...bench('right'), focus: { target, path } });
+    /** The workbench of the tests above with one of its panes maximised. */
+    function zoomed(path: number[]): string {
+        apply({ ...bench(), focus: { path } });
         return render(Workbench, { context: clientContext(client), props: { groups: [] } }).body;
     }
 
     let one: string;
     beforeEach(() => {
-        one = zoomed([1], 'main');
+        one = zoomed([1, 0]);
     });
 
     it('draws the focused pane and no other', () => {
@@ -280,7 +289,7 @@ describe('a maximised pane', () => {
         expect([...one.matchAll(/role="tablist"/g)]).toHaveLength(2);
     });
 
-    it('draws neither sash: no split is shown and the panel is not beside it', () => {
+    it('draws no sash at all, since no split is shown', () => {
         expect([...one.matchAll(/role="separator"/g)]).toHaveLength(0);
     });
 
@@ -288,15 +297,15 @@ describe('a maximised pane', () => {
         expect([...one.matchAll(/aria-label="Pane"/g)]).toHaveLength(1);
     });
 
-    it('draws a maximised pane of the panel the same way', () => {
-        const panel = zoomed([], 'panel');
-        expect(panel).toContain('data-beta="three"');
-        expect(panel).not.toContain('data-alpha="one"');
+    it('draws a pane deeper in the tree the same way', () => {
+        const deeper = zoomed([1, 1]);
+        expect(deeper).toContain('data-beta="three"');
+        expect(deeper).not.toContain('data-alpha="one"');
     });
 
     it('draws the whole workbench again when the focus names no pane', () => {
         // [0, 0] is inside a pane, which is no node at all, and the arrangement is drawn whole.
-        const stale = zoomed([0, 0], 'main');
+        const stale = zoomed([0, 0]);
         expect([...stale.matchAll(/role="tablist"/g)]).toHaveLength(4);
     });
 });
@@ -309,7 +318,7 @@ describe('the drop layer', () => {
 
     function layer(drop: Drop | null): string {
         cancel();
-        start('one', 'main', 'Status', { x: 0, y: 0 });
+        start('one', 'Status', { x: 0, y: 0 });
         move({ x: THRESHOLD, y: 0 });
         if (drop !== null) hover(drop, body);
         const html = render(DropLayer, { context: clientContext(client), props: {} }).body;
@@ -327,7 +336,7 @@ describe('the drop layer', () => {
 
     it('covers the half of the body a new pane would take, on each edge', () => {
         const at = (edge: 'left' | 'right' | 'top' | 'bottom') =>
-            style(layer({ kind: 'edge', target: 'main', path: [], edge }));
+            style(layer({ kind: 'edge', path: [], edge }));
         expect(at('left')).toBe('left: 100px; top: 50px; width: 200px; height: 200px');
         expect(at('right')).toBe('left: 300px; top: 50px; width: 200px; height: 200px');
         expect(at('top')).toBe('left: 100px; top: 50px; width: 400px; height: 100px');
@@ -335,13 +344,13 @@ describe('the drop layer', () => {
     });
 
     it('covers the whole body for a drop in the middle of it', () => {
-        expect(style(layer({ kind: 'centre', target: 'main', path: [] }))).toBe(
+        expect(style(layer({ kind: 'centre', path: [] }))).toBe(
             'left: 100px; top: 50px; width: 400px; height: 200px'
         );
     });
 
     it('draws no rectangle for a drop on a strip, which draws its own mark', () => {
-        expect(style(layer({ kind: 'strip', target: 'main', path: [], index: 0 }))).toBe('');
+        expect(style(layer({ kind: 'strip', path: [], index: 0 }))).toBe('');
     });
 
     it('draws nothing at all when no drag is in progress', () => {
@@ -480,10 +489,12 @@ describe('the views the application registers', () => {
 
     it('mounts status and findings with nothing yet delivered on either channel', () => {
         apply({
-            main: pane('m', 'status'),
-            panel: pane('p', 'findings'),
-            dock: 'right',
-            panelSize: 0.3
+            root: {
+                kind: 'split',
+                dir: 'row',
+                sizes: [0.5, 0.5],
+                children: [pane('m', 'status'), pane('p', 'findings')]
+            }
         });
         const body = render(Workbench, {
             context: clientContext(client),
@@ -494,12 +505,7 @@ describe('the views the application registers', () => {
     });
 
     it('shows a saved view no registration knows as an unknown view, with an empty body', () => {
-        apply({
-            main: pane('m', 'from-2027'),
-            panel: pane('p', 'findings'),
-            dock: 'hidden',
-            panelSize: 0.3
-        });
+        apply({ root: pane('m', 'from-2027') });
         const body = render(Workbench, {
             context: clientContext(client),
             props: { groups: [] }
@@ -522,12 +528,7 @@ describe('the views the application registers', () => {
         (empty) => {
             installBadges(client, config, empty);
             setVocab(config);
-            apply({
-                main: pane('q6', 'projects'),
-                panel: pane('p', 'findings'),
-                dock: 'hidden',
-                panelSize: 0.3
-            });
+            apply({ root: pane('q6', 'projects') });
             const tab = tabOf(
                 render(Workbench, { context: clientContext(client), props: { groups: [] } }).body,
                 'Projects'
@@ -564,17 +565,14 @@ describe('the views the application registers', () => {
                 payload: { status: 'ok', total, running: total ? 2 : 0, pending: total ? 1 : 0 }
             });
             apply({
-                main: {
+                root: {
                     kind: 'pane',
                     tabs: [
                         { id: 'q6-hpc', view: 'hpc', state: {} },
                         { id: 'a', view: 'alpha', state: {} }
                     ],
                     active: 'a'
-                },
-                panel: pane('p', 'findings'),
-                dock: 'hidden',
-                panelSize: 0.3
+                }
             });
             const body = render(Workbench, {
                 context: clientContext(client),

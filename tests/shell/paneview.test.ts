@@ -6,7 +6,8 @@
 // tests/state/pages.test.ts and the press is a browser check.
 
 import { describe, expect, it } from 'vitest';
-import { pageMoveItems, PAGE } from '../../src/lib/shell/pane-view.ts';
+import { foldable, pageMoveItems, PAGE } from '../../src/lib/shell/pane-view.ts';
+import { pane, split } from '../state/layout-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, t } from '../../src/lib/state/text.ts';
 import { defaultWorkbench, type Page } from '../../src/lib/state/layout/index.ts';
@@ -48,5 +49,21 @@ describe('the pane menu move-to-page items', () => {
 
     it('offers nothing when the page on screen is the only one', () => {
         expect(pageMoveItems([page('one', '')], 'one', t)).toEqual([]);
+    });
+});
+
+describe('the fold item', () => {
+    it('is offered on a child of a split and not on the root pane', () => {
+        const root = split('row', [0.5, 0.5], [pane(['a']), pane(['b'])]);
+        expect(foldable(pane(['a']), [])).toBe(false);
+        expect(foldable(root, [])).toBe(false);
+        expect(foldable(root, [0])).toBe(true);
+        expect(foldable(root, [1])).toBe(true);
+    });
+
+    it('is not offered on the last open child of a split, which a fold would leave empty', () => {
+        const root = { ...split('row', [0.5, 0.5], [pane(['a']), pane(['b'])]), folded: [0] };
+        expect(foldable(root, [1])).toBe(false);
+        expect(foldable(root, [0])).toBe(false);
     });
 });

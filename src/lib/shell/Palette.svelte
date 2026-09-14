@@ -92,11 +92,11 @@
         } else if (command.name === 'crt') {
             setCrt(!crt());
         } else if (command.name === 'tab') {
-            if (knownViews.some((view) => view.id === argument)) openView(argument, 'main');
+            if (knownViews.some((view) => view.id === argument)) openView(argument);
         } else if (command.name === 'goto') {
             const project = current.snapshot?.entities.projects[argument];
             if (project !== undefined) {
-                openView('project', 'main', {
+                openView('project', {
                     id: project.id,
                     label: project.short ?? project.title
                 });

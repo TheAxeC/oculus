@@ -1,8 +1,8 @@
 <script lang="ts">
-    // Layer 3, shell. The strip of pages across the top of the main area and the panel together. A
-    // page is a whole workbench of its own, which is DESIGN.md's decision on pages, so the
-    // strip is drawn with the same tab primitive a pane's tabs are drawn with: a page looks like
-    // what it is, a tab of workbenches, and the rail is left as it was.
+    // Layer 3, shell. The strip of pages across the top of the area the page's tree fills. A page
+    // is a whole workbench of its own, which is DESIGN.md's decision on pages, so the strip is
+    // drawn with the same tab primitive a pane's tabs are drawn with: a page looks like what it
+    // is, a tab of workbenches, and the rail is left as it was.
     //
     // It holds only what is being asked: the page a close is waiting on, the name being typed while
     // one is renamed, and the page drag with its insertion point. Everything else is the layout
@@ -94,10 +94,9 @@
         return { id: page.id, label, hint: t('ui.page_shortcut', label, index + 1) };
     }
 
-    /** How many tabs a page holds, over both of its trees, which is what a close is asked about. */
+    /** How many tabs a page holds, which is what a close is asked about. */
     function held(page: Page): number {
-        const all = [...panes(page.workbench.main), ...panes(page.workbench.panel)];
-        return all.reduce((count, { pane }) => count + pane.tabs.length, 0);
+        return panes(page.workbench.root).reduce((count, { pane }) => count + pane.tabs.length, 0);
     }
 
     /** A page holding one tab goes at once; any other is asked about first. */

@@ -1,6 +1,6 @@
 // Opening the page, and opening a view from the rail. Every spec but boot.spec.ts starts with both.
 //
-// boot() waits for the socket line of views/Status.svelte, which is the default main tab: the rail
+// boot() waits for the socket line of views/Status.svelte, which is the default tab: the rail
 // is drawn from the config the socket carries, so the rail on the server's HTML is not the rail the
 // reader ends up with, and a locator counted before that line appears counts the wrong one.
 //
@@ -19,7 +19,7 @@ export async function boot(page: Page): Promise<void> {
     await expect(page.locator('nav button[data-view]').first()).toBeVisible();
 }
 
-/** Open a registered view in the main area, by its id and the words the rail calls it. */
+/** Open a registered view in the pane a view lands in, by its id and the words the rail calls it. */
 export async function openView(page: Page, view: string, label: string): Promise<void> {
     const direct = page.locator(`nav button[data-view="${view}"]`);
     if ((await direct.count()) > 0) {

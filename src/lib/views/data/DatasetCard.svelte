@@ -17,7 +17,7 @@
     import { useState } from '$lib/state/use';
 
     const {
-        layout: { openView, workbench },
+        layout: { layout, openView },
         selection: { select },
         terminals: { recoverDataset }
     } = useState();
@@ -47,9 +47,7 @@
     );
 
     function terminalOpen(): boolean {
-        return [workbench().main, workbench().panel].some(
-            (tree) => findView(tree, 'terminal', null) !== null
-        );
+        return findView(layout(), 'terminal', null) !== null;
     }
 
     async function recover(): Promise<void> {
@@ -61,7 +59,7 @@
             return;
         }
         select(answer.id);
-        if (!terminalOpen()) openView('terminal', 'main');
+        if (!terminalOpen()) openView('terminal');
     }
 </script>
 

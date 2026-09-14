@@ -21,16 +21,16 @@ import {
 import { LAYOUT_KEY, PREVIOUS_KEY } from '../../src/lib/state/layout.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
-import { bench, fakeStorage, pane, saveBench, three, viewsOf } from './layout-fixture.ts';
+import { bench, docked, fakeStorage, pane, saveBench, three, viewsOf } from './layout-fixture.ts';
 import { fields } from '../../src/lib/data/guards.ts';
+import { present } from '../present.ts';
 import { createClientState, type ClientState } from '../client.ts';
 
 let client: ClientState;
 let closeInstancesOfView: ClientState['layout']['closeInstancesOfView'];
 let closePage: ClientState['layout']['closePage'];
 let currentPage: ClientState['layout']['currentPage'];
-let dock: ClientState['layout']['dock'];
-let dockedAt: ClientState['layout']['dockedAt'];
+let foldPane: ClientState['layout']['foldPane'];
 let layout: ClientState['layout']['layout'];
 let loadLayout: ClientState['layout']['loadLayout'];
 let moveInstanceToPage: ClientState['layout']['moveInstanceToPage'];
@@ -47,8 +47,7 @@ beforeEach(() => {
         closeInstancesOfView,
         closePage,
         currentPage,
-        dock,
-        dockedAt,
+        foldPane,
         layout,
         loadLayout,
         moveInstanceToPage,
@@ -65,7 +64,12 @@ setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 /** A workbench of the viewer's own, told apart from the default by the views on it. */
 function own(): Workbench {
-    return bench(three(), pane(['p']), 'bottom', 0.4);
+    return bench(three());
+}
+
+/** The two-tree workbench a browser held before a page was one tree, which own() is read from. */
+function saveOwn(): string {
+    return saveBench(docked(three(), pane([]), 'hidden'));
 }
 
 /** The pages a storage holds, read back out of the one key everything is saved under. */
@@ -86,7 +90,7 @@ describe('newPage and defaultPages', () => {
         const made = defaultPages('Page 1');
         expect(made.pages).toHaveLength(1);
         expect(made.current).toBe(made.pages[0].id);
-        expect(viewsOf(made.pages[0].workbench.main)).toEqual(['status']);
+        expect(viewsOf(made.pages[0].workbench.root)).toEqual(['status']);
         expect(checkPages(made)).toEqual([]);
     });
 });
@@ -110,22 +114,22 @@ describe('checkPages', () => {
     });
 
     it('carries every problem of every page workbench, named by the page', () => {
-        const broken = newPage('Bad', { ...own(), dock: 'left' as Workbench['dock'] });
+        const broken = newPage('Bad', { root: { kind: 'pane', tabs: [], active: 'x' } });
         expect(checkPages({ pages: [broken], current: broken.id })).toEqual([
-            'page "Bad" dock is "left", not right, bottom or hidden'
+            'page "Bad" root node at []: an empty pane calls x active'
         ]);
     });
 
     it('refuses an instance id repeated across two pages, since a view is found by that id', () => {
-        const first = newPage('One', bench(pane(['a']), pane(['b'])));
-        const second = newPage('Two', bench(pane(['a']), pane(['c'])));
+        const first = newPage('One', bench(pane(['a'])));
+        const second = newPage('Two', bench(pane(['a'])));
         expect(checkPages({ pages: [first, second], current: first.id })).toEqual([
             'instance "a" is on two pages'
         ]);
     });
 });
 
-describe('the version 3 envelope', () => {
+describe('the version 4 envelope', () => {
     it('reads back every page and which one is current', () => {
         const made: Pages = { pages: [newPage('One', own()), newPage('Two')], current: '' };
         const held: Pages = { ...made, current: made.pages[1].id };
@@ -134,7 +138,7 @@ describe('the version 3 envelope', () => {
     });
 
     it('reads a version 2 envelope of one workbench as one page, carrying the label', () => {
-        const read = parseLayout(saveBench(own()), 'Page 1');
+        const read = parseLayout(saveOwn(), 'Page 1');
         expect(read?.pages).toHaveLength(1);
         expect(read?.pages[0].label).toBe('Page 1');
         expect(read?.pages[0].workbench).toEqual(own());
@@ -162,17 +166,17 @@ describe('the store: loading', () => {
         const storage = fakeStorage();
         expect(loadLayout(storage)).toBe(false);
         expect(pages().map((page) => page.label)).toEqual(['Page 1']);
-        expect(viewsOf(layout('main'))).toEqual(['status']);
+        expect(viewsOf(layout())).toEqual(['status']);
     });
 
     it('reads a version 2 envelope as page 1, so a browser holding one loses nothing', () => {
-        const storage = fakeStorage(saveBench(own()));
+        const storage = fakeStorage(saveOwn());
         expect(loadLayout(storage)).toBe(true);
         expect(pages().map((page) => page.label)).toEqual(['Page 1']);
         expect(workbench()).toEqual(own());
     });
 
-    it('reads every page of a version 3 envelope back', () => {
+    it('reads every page of a version 4 envelope back', () => {
         const held: Pages = { pages: [newPage('One', own()), newPage('Two')], current: '' };
         const storage = fakeStorage(serialiseLayout({ ...held, current: held.pages[1].id }));
         expect(loadLayout(storage)).toBe(true);
@@ -181,13 +185,13 @@ describe('the store: loading', () => {
     });
 
     it('makes the workbench the retired control held page 1, and the one on screen page 2', () => {
-        const storage = fakeStorage(saveBench(bench(pane(['s']), pane(['d']))));
-        storage.held[PREVIOUS_KEY] = saveBench(own());
+        const storage = fakeStorage(saveBench(docked(pane(['s']), pane([]), 'hidden')));
+        storage.held[PREVIOUS_KEY] = saveOwn();
         expect(loadLayout(storage)).toBe(true);
         expect(pages().map((page) => page.label)).toEqual(['Page 1', 'Sessions']);
         expect(pages()[0].workbench).toEqual(own());
         expect(currentPage().label).toBe('Sessions');
-        expect(viewsOf(layout('main'))).toEqual(['projects']);
+        expect(viewsOf(layout())).toEqual(['projects']);
         expect(storage.held[PREVIOUS_KEY]).toBe('');
         // Written at once, or a reload before the next change would lose the page just made.
         expect(saved(storage)?.pages.map((page) => page.label)).toEqual(['Page 1', 'Sessions']);
@@ -197,7 +201,7 @@ describe('the store: loading', () => {
 describe('the store: the page operations', () => {
     /** A store loaded with one page carrying the viewer's own workbench. */
     function loaded() {
-        const storage = fakeStorage(saveBench(own()));
+        const storage = fakeStorage(saveOwn());
         loadLayout(storage);
         return storage;
     }
@@ -207,7 +211,7 @@ describe('the store: the page operations', () => {
         openPage('Page 2');
         expect(pages().map((page) => page.label)).toEqual(['Page 1', 'Page 2']);
         expect(currentPage().label).toBe('Page 2');
-        expect(viewsOf(layout('main'))).toEqual(['status']);
+        expect(viewsOf(layout())).toEqual(['status']);
         expect(saved(storage)?.pages).toHaveLength(2);
     });
 
@@ -215,12 +219,10 @@ describe('the store: the page operations', () => {
         const storage = loaded();
         const first = currentPage().id;
         openPage('Page 2');
-        dock('hidden');
-        expect(dockedAt()).toBe('hidden');
+        foldPane([]);
         expect(pages()[0].workbench).toEqual(own());
         expect(saved(storage)?.pages[0].workbench).toEqual(own());
         switchPage(first);
-        expect(dockedAt()).toBe('bottom');
         expect(workbench()).toEqual(own());
     });
 
@@ -270,7 +272,7 @@ describe('the store: the page operations', () => {
         closePage(currentPage().id);
         expect(pages()).toHaveLength(1);
         expect(currentPage().label).toBe('Page 1');
-        expect(viewsOf(layout('main'))).toEqual(['status']);
+        expect(viewsOf(layout())).toEqual(['status']);
         expect(saved(storage)?.pages).toHaveLength(1);
     });
 
@@ -296,12 +298,11 @@ describe('the store: the page operations', () => {
         const storage = loaded();
         openPage('Page 2');
         renamePage(currentPage().id, 'Runs');
-        dock('hidden');
         expect(Object.keys(storage.held)).toEqual([LAYOUT_KEY]);
         const held = saved(storage);
         expect(held?.pages.map((page) => page.label)).toEqual(['Page 1', 'Runs']);
         expect(held?.current).toBe(currentPage().id);
-        expect(held?.pages[1].workbench.dock).toBe('hidden');
+        expect(viewsOf(present(held?.pages[1].workbench, 'page 2').root)).toEqual(['status']);
     });
 });
 
@@ -347,7 +348,7 @@ describe('movePage', () => {
 describe('the store: a tab that moves between pages', () => {
     /** A store loaded with one page carrying the viewer's own workbench. */
     function loaded() {
-        const storage = fakeStorage(saveBench(own()));
+        const storage = fakeStorage(saveOwn());
         loadLayout(storage);
         return storage;
     }
@@ -359,50 +360,50 @@ describe('the store: a tab that moves between pages', () => {
         const to = currentPage().id;
         switchPage(from);
         moveInstanceToPage('a', to);
-        expect(viewsOf(layout('main'))).toEqual(['projects', 'projects']);
+        expect(viewsOf(layout())).toEqual(['projects', 'projects']);
         switchPage(to);
-        expect(viewsOf(layout('main'))).toEqual(['status', 'projects']);
+        expect(viewsOf(layout())).toEqual(['status', 'projects']);
         expect(saved(storage)?.pages).toHaveLength(2);
     });
 
     it('changes nothing for a page that is not there, or for the page it is already on', () => {
         loaded();
         const here = currentPage().id;
-        const before = viewsOf(layout('main'));
+        const before = viewsOf(layout());
         moveInstanceToPage('a', 'gone');
         moveInstanceToPage('a', here);
-        expect(viewsOf(layout('main'))).toEqual(before);
+        expect(viewsOf(layout())).toEqual(before);
     });
 
     it('changes nothing for an instance no page holds', () => {
         loaded();
         openPage('Page 2');
         const to = currentPage().id;
-        const before = viewsOf(layout('main'));
+        const before = viewsOf(layout());
         moveInstanceToPage('nothing', to);
-        expect(viewsOf(layout('main'))).toEqual(before);
+        expect(viewsOf(layout())).toEqual(before);
     });
 });
 
 describe('the store: a view leaving the registry', () => {
     it('closes every tab open on it, on the page on screen and on the others', () => {
-        const storage = fakeStorage(saveBench(own()));
+        const storage = fakeStorage(saveOwn());
         loadLayout(storage);
         openPage('Page 2');
         switchPage(pages()[0].id);
-        expect(viewsOf(layout('main'))).toEqual(['projects', 'projects', 'projects']);
+        expect(viewsOf(layout())).toEqual(['projects', 'projects', 'projects']);
         closeInstancesOfView('projects');
-        expect(viewsOf(layout('main'))).toEqual([]);
+        expect(viewsOf(layout())).toEqual([]);
         switchPage(pages()[1].id);
-        expect(viewsOf(layout('main'))).toEqual(['status']);
+        expect(viewsOf(layout())).toEqual(['status']);
         expect(saved(storage)?.pages).toHaveLength(2);
     });
 
     it('leaves a tab whose view the registry still holds', () => {
-        const storage = fakeStorage(saveBench(own()));
+        const storage = fakeStorage(saveOwn());
         loadLayout(storage);
         closeInstancesOfView('sessions');
-        expect(viewsOf(layout('main'))).toEqual(['projects', 'projects', 'projects']);
+        expect(viewsOf(layout())).toEqual(['projects', 'projects', 'projects']);
         expect(saved(storage)?.pages).toHaveLength(1);
     });
 });

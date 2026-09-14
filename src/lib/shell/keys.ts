@@ -9,7 +9,6 @@ export type RailOrder = {
 
 export type KeyContext = {
     currentView: string | null;
-    target: 'main' | 'panel';
     cursorActive: boolean;
     typing: boolean;
     paletteOpen: boolean;
@@ -33,7 +32,7 @@ export type KeyState = {
 };
 
 export type KeyAction =
-    | { kind: 'open'; view: string; target: 'main' | 'panel' }
+    | { kind: 'open'; view: string }
     | { kind: 'page'; index: number }
     | { kind: 'tab'; index: number }
     | { kind: 'cursor'; direction: 'left' | 'right' | 'up' | 'down' }
@@ -123,7 +122,7 @@ export function resolveKey(
                     : 0
                 : (current + (event.shiftKey ? -1 : 1) + order.all.length) % order.all.length;
         return {
-            action: { kind: 'open', view: order.all[index], target: context.target },
+            action: { kind: 'open', view: order.all[index] },
             state: { ...state, chord: '' }
         };
     }
@@ -139,7 +138,7 @@ export function resolveKey(
         if (chorded !== undefined) {
             const view = chorded.at(Number(event.key) - 1);
             return {
-                action: view === undefined ? null : { kind: 'open', view, target: 'main' },
+                action: view === undefined ? null : { kind: 'open', view },
                 state: cleared
             };
         }

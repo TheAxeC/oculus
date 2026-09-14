@@ -20,7 +20,7 @@
 
     const {
         entities: { portfolio },
-        layout: { openView, workbench },
+        layout: { layout, openBeside, openView },
         selectors: { collectionOf },
         selection: { select },
         terminals: { startChat },
@@ -132,7 +132,7 @@
                 label: t('project.card.edit_manifest'),
                 glyph: t('project.card.edit_glyph'),
                 onclick: () => {
-                    openView('editor', 'panel', { id: item.id });
+                    openBeside('editor', { id: item.id });
                 }
             });
             if (deposit) {
@@ -140,7 +140,7 @@
                     label: t('project.card.deposit'),
                     glyph: t('project.card.deposit_glyph'),
                     onclick: () => {
-                        openView('deposit', 'panel', { id: item.id });
+                        openBeside('deposit', { id: item.id });
                     }
                 });
             }
@@ -180,7 +180,7 @@
             }
             return;
         }
-        openView('project', 'main', { id: item.id, label: tab });
+        openView('project', { id: item.id, label: tab });
     }
     /** The title opener, omitted only when a ghost has no readable README. */
     function titleOpener(): (() => void) | undefined {
@@ -217,10 +217,7 @@
             return;
         }
         select(answer.id);
-        const trees = [workbench().main, workbench().panel];
-        if (!trees.some((tree) => findView(tree, 'terminal', null) !== null)) {
-            openView('terminal', 'main');
-        }
+        if (findView(layout(), 'terminal', null) === null) openView('terminal');
     }
 </script>
 

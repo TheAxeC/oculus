@@ -35,7 +35,7 @@ import { area, git, payload, record, terminal, workspace } from '../sessions-fix
 import { NO_FEEDS } from '../entities-fixture.ts';
 import type { Project, Snapshot } from '../../src/lib/data/model.ts';
 import type { Component } from 'svelte';
-import { defaultWorkbench, type Instance } from '../../src/lib/state/layout/index.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 import type { ViewProps } from '../../src/lib/views/registry.ts';
 import { clientContext, createClientState, type ClientState } from '../client.ts';
 
@@ -222,11 +222,7 @@ let counter = 0;
 function html(view: Component<ViewProps>, state: unknown = {}, id = `probe-${(counter += 1)}`) {
     setInstanceState(id, state);
     const instance: Instance = { id, view: 'probe', state };
-    const base = defaultWorkbench();
-    apply({
-        ...base,
-        main: { kind: 'pane', tabs: [instance], active: id }
-    });
+    apply({ root: { kind: 'pane', tabs: [instance], active: id } });
     return render(view, { context: clientContext(client), props: { instance } }).body;
 }
 

@@ -6,20 +6,17 @@ export {
     MAIN_VIEW,
     MAX_CHILDREN,
     MIN_SIZE,
-    PANEL_DEFAULT,
-    PANEL_MAX,
-    PANEL_MIN,
+    PAGES_VERSION,
     WORKBENCH_VERSION,
-    clampPanel,
     defaultLayout,
     defaultPages,
     defaultWorkbench,
     isRecord,
     movePage,
-    newPage
+    newPage,
+    samePath
 } from './model.ts';
 export type {
-    Dock,
     Edge,
     Focus,
     Instance,
@@ -28,7 +25,6 @@ export type {
     Pages,
     Pane,
     Split,
-    Target,
     ViewId,
     Workbench
 } from './model.ts';
@@ -37,6 +33,11 @@ export {
     closeInstance,
     closePane,
     equalSizes,
+    expand,
+    expandTo,
+    fold,
+    foldedCount,
+    isFolded,
     moveInstance,
     openInstance,
     paneAt,
@@ -44,17 +45,8 @@ export {
     restate,
     splitPane
 } from './tree.ts';
+export { focusedPane, maximise, restore, settleFocus, splitWith } from './workbench.ts';
 export {
-    focusedPane,
-    holderOf,
-    maximise,
-    restore,
-    settleFocus,
-    splitWith,
-    transfer
-} from './workbench.ts';
-export {
-    DOCKS,
     checkLayout,
     checkPages,
     checkWorkbench,

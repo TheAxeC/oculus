@@ -10,7 +10,7 @@
     import { useState } from '$lib/state/use';
 
     const {
-        layout: { openView, workbench },
+        layout: { layout, openView },
         paletteSource: { paletteSource },
         selection: { select },
         terminals: { startChat, startTask }
@@ -55,9 +55,7 @@
     ]);
 
     function terminalOpen(): boolean {
-        return [workbench().main, workbench().panel].some(
-            (tree) => findView(tree, 'terminal', null) !== null
-        );
+        return findView(layout(), 'terminal', null) !== null;
     }
 
     async function start(kind: TaskKind): Promise<void> {
@@ -70,7 +68,7 @@
             return;
         }
         select(answer.id);
-        if (!terminalOpen()) openView('terminal', 'main');
+        if (!terminalOpen()) openView('terminal');
         onclose();
     }
 
@@ -84,7 +82,7 @@
             return;
         }
         select(answer.id);
-        if (!terminalOpen()) openView('terminal', 'main');
+        if (!terminalOpen()) openView('terminal');
         onclose();
     }
 </script>

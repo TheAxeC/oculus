@@ -113,7 +113,7 @@
     /** One local HTML file of the hub as its own tab, the way a bookmark of the rail opens one. */
     function openDocument(link: string): void {
         const parts = link.split('/').filter((one) => one !== '');
-        openView('document', 'main', {
+        openView('document', {
             root: HUB_ROOT,
             path: link,
             label: parts[parts.length - 1] ?? link

@@ -34,7 +34,7 @@
 
     /** Open a readable row from the file listing. */
     function openFile(path: string): void {
-        openView('document', 'main', {
+        openView('document', {
             root: 'hub',
             path: `${held.folder}/${path}`,
             label: nameOf(path)

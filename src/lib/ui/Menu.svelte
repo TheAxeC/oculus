@@ -17,8 +17,8 @@
         items: MenuItem[];
         /**
          * What picking a choice means. The pointer event is passed on so a caller can read its
-         * modifiers: the rail opens a view in the main area, and in the panel when shift is held,
-         * whether the view was picked from a button or from a group's list.
+         * modifiers: the rail opens a view where a view lands, and in a pane beside it when shift
+         * is held, whether the view was picked from a button or from a group's list.
          */
         onpick: (id: string, event: MouseEvent) => void;
         /** A glyph name drawn before the label, or nothing. */

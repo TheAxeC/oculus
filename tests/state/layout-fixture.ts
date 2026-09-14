@@ -1,15 +1,11 @@
 // Hand-built layout trees and a fake Storage, shared by the two suites over state/layout: the tree
-// operations and the saved form in layout.test.ts, and the named arrangements in arrangement.test.ts.
+// operations in layout.test.ts, the saved form and its migrations in layout-saved.test.ts, and the
+// named arrangements in arrangement.test.ts.
 // Nothing here touches localStorage or the DOM.
 
-import {
-    PANEL_DEFAULT,
-    WORKBENCH_VERSION,
-    panes,
-    parseLayout
-} from '../../src/lib/state/layout/index.ts';
+import { WORKBENCH_VERSION, panes, parseLayout } from '../../src/lib/state/layout/index.ts';
 import { LAYOUT_KEY } from '../../src/lib/state/layout.svelte.ts';
-import type { Dock, Instance, Layout, Workbench } from '../../src/lib/state/layout/index.ts';
+import type { Focus, Instance, Layout, Workbench } from '../../src/lib/state/layout/index.ts';
 
 export function instance(id: string, view = 'projects'): Instance {
     return { id, view, state: null };
@@ -33,26 +29,36 @@ export function three(): Layout {
     );
 }
 
-/** A whole arrangement around two trees, which is the unit that is saved. */
-export function bench(
-    main: Layout,
-    panel: Layout,
-    dockedAt: Dock = 'right',
-    share = PANEL_DEFAULT
-): Workbench {
-    return { main, panel, dock: dockedAt, panelSize: share };
+/** A whole arrangement around one tree, which is the unit that is saved. */
+export function bench(root: Layout, focus?: Focus): Workbench {
+    return focus === undefined ? { root } : { root, focus };
 }
 
-/** A version 2 envelope over a workbench that is valid except for the fields handed in. */
+/** A split whose child `at` is collapsed to the split's edge. */
+export function folded(tree: Layout, at: number[]): Layout {
+    return tree.kind === 'split' ? { ...tree, folded: at } : tree;
+}
+
+/** The two-tree workbench of a version 2 or 3 envelope, as a browser holding one wrote it. */
+export function docked(
+    main: Layout,
+    panel: Layout,
+    dock: 'right' | 'bottom' | 'hidden' = 'right',
+    panelSize = 0.3
+): Record<string, unknown> {
+    return { main, panel, dock, panelSize };
+}
+
+/** A version 2 envelope over a two-tree workbench that is valid except for the fields handed in. */
 export function envelope(over: Record<string, unknown>): unknown {
     return {
         version: WORKBENCH_VERSION,
-        workbench: { ...bench(pane(['a']), pane(['b'])), ...over }
+        workbench: { ...docked(pane(['a']), pane(['b'])), ...over }
     };
 }
 
-/** One workbench in the envelope a browser held before pages, which is what the store migrates. */
-export function saveBench(workbench: Workbench): string {
+/** One two-tree workbench in the envelope a browser held before a page was one tree. */
+export function saveBench(workbench: Record<string, unknown>): string {
     return JSON.stringify({ version: WORKBENCH_VERSION, workbench });
 }
 

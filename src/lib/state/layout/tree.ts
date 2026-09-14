@@ -1,5 +1,5 @@
 // Layer 2, client state. Pure operations over one Layout tree live here because tree rewrites
-// change independently of workbench focus, docks and persistence.
+// change independently of workbench focus and persistence.
 
 import { item } from '../../data/guards.ts';
 import { findInstance } from '../instance.ts';
@@ -39,6 +39,16 @@ export function paneAt(layout: Layout, path: number[]): Pane | null {
     return node !== null && node.kind === 'pane' ? node : null;
 }
 
+/** Whether the child at `index` of a split is collapsed to the split's edge. */
+export function isFolded(split: Split, index: number): boolean {
+    return split.folded?.includes(index) === true;
+}
+
+/** How many children of a split are drawn as a strip rather than at their share. */
+export function foldedCount(split: Split): number {
+    return split.folded?.length ?? 0;
+}
+
 // ---------------------------------------------------------------------------------------------
 // Rewriting the tree
 
@@ -60,16 +70,43 @@ export function rewrite(
     const next = rewrite(child, path.slice(1), edit);
     if (next === child) return node;
     if (next === null) return withoutChild(node, head);
-    return {
-        kind: 'split',
-        dir: node.dir,
-        sizes: node.sizes,
-        children: replaceItem(node.children, head, next)
-    };
+    return splitOf(node.dir, node.sizes, replaceItem(node.children, head, next), node.folded);
 }
 
 function replaceItem<T>(items: T[], at: number, item: T): T[] {
     return items.map((current, index) => (index === at ? item : current));
+}
+
+/**
+ * A split carrying only the folded indexes that still name a child, and never every one of them:
+ * a split whose children are all collapsed would take space and show nothing, so the first child
+ * of such a set stays open.
+ */
+function splitOf(
+    dir: 'row' | 'col',
+    sizes: number[],
+    children: Layout[],
+    folded: number[] | undefined
+): Split {
+    const inside = [...new Set(folded ?? [])]
+        .filter((index) => Number.isInteger(index) && index >= 0 && index < children.length)
+        .sort((left, right) => left - right);
+    const kept = inside.length >= children.length ? inside.slice(1) : inside;
+    const split: Split = { kind: 'split', dir, sizes, children };
+    if (kept.length > 0) split.folded = kept;
+    return split;
+}
+
+/** The folded indexes after a child is taken out at `at`: the ones above it move down one. */
+function foldedWithout(folded: number[] | undefined, at: number): number[] {
+    return (folded ?? [])
+        .filter((index) => index !== at)
+        .map((index) => (index > at ? index - 1 : index));
+}
+
+/** The folded indexes after a child is put in at `at`: the ones from there up move up one. */
+function foldedWith(folded: number[] | undefined, at: number): number[] {
+    return (folded ?? []).map((index) => (index >= at ? index + 1 : index));
 }
 
 /** The split without one child, its sizes renormalised; one child left is the child itself. */
@@ -79,7 +116,7 @@ function withoutChild(split: Split, at: number): Layout {
     const only = children.at(0);
     if (only === undefined) return emptyPane();
     if (children.length === 1) return only;
-    return { kind: 'split', dir: split.dir, sizes: normaliseSizes(sizes), children };
+    return splitOf(split.dir, normaliseSizes(sizes), children, foldedWithout(split.folded, at));
 }
 
 /** The tree without the pane at `path`. The root pane is never removed; it is emptied instead. */
@@ -232,7 +269,12 @@ export function splitPane(
             share / 2,
             ...parent.sizes.slice(at + 1)
         ];
-        const split: Split = { kind: 'split', dir, sizes: normaliseSizes(sizes), children };
+        const split = splitOf(
+            dir,
+            normaliseSizes(sizes),
+            children,
+            foldedWith(parent.folded, insert)
+        );
         return rewrite(layout, parentPath, () => split) ?? layout;
     }
 
@@ -253,9 +295,49 @@ export function resize(layout: Layout, path: number[], sizes: number[]): Layout 
     const next = normaliseSizes(sizes);
     const edit = (current: Layout): Layout =>
         current.kind === 'split'
-            ? { kind: 'split', dir: current.dir, sizes: next, children: current.children }
+            ? splitOf(current.dir, next, current.children, current.folded)
             : current;
     return rewrite(layout, path, edit) ?? layout;
+}
+
+/**
+ * Collapse the child at `path` to the edge of the split holding it. The root has no split to fold
+ * in, and the last open child of a split stays open: a split showing nothing is not a fold.
+ */
+export function fold(layout: Layout, path: number[]): Layout {
+    if (path.length === 0) return layout;
+    const parentPath = path.slice(0, -1);
+    const parent = nodeAt(layout, parentPath);
+    if (parent?.kind !== 'split') return layout;
+    const at = path[path.length - 1];
+    if (item(parent.children, at) === undefined || isFolded(parent, at)) return layout;
+    if (foldedCount(parent) + 1 >= parent.children.length) return layout;
+    const folded = [...(parent.folded ?? []), at];
+    const edit = (node: Layout): Layout =>
+        node.kind === 'split' ? splitOf(node.dir, node.sizes, node.children, folded) : node;
+    return rewrite(layout, parentPath, edit) ?? layout;
+}
+
+/** Give the folded child `index` of the split at `path` its share of the split back. */
+export function expand(layout: Layout, path: number[], index: number): Layout {
+    const split = nodeAt(layout, path);
+    if (split?.kind !== 'split' || !isFolded(split, index)) return layout;
+    const folded = (split.folded ?? []).filter((one) => one !== index);
+    const edit = (node: Layout): Layout =>
+        node.kind === 'split' ? splitOf(node.dir, node.sizes, node.children, folded) : node;
+    return rewrite(layout, path, edit) ?? layout;
+}
+
+/**
+ * Expand every folded ancestor of `path`, so the pane it names is on screen. A view opened into a
+ * pane nobody can see would look like nothing happening, which is what this is for.
+ */
+export function expandTo(layout: Layout, path: number[]): Layout {
+    let tree = layout;
+    for (let depth = 0; depth < path.length; depth += 1) {
+        tree = expand(tree, path.slice(0, depth), path[depth]);
+    }
+    return tree;
 }
 
 /** Equal shares, which satisfy MIN_SIZE for any split a valid tree can hold. */

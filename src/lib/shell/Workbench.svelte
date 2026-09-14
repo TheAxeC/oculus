@@ -1,11 +1,10 @@
 <script lang="ts">
-    // Layer 3, shell. The page: the rail, the main tree, and the panel beside or below it. It reads
-    // the arrangement from the store and every change goes back through the store, so the whole of
-    // what is on screen is the saved workbench and a reload puts it back as it was.
+    // Layer 3, shell. The page: the rail and the one tree the page is. It reads the arrangement
+    // from the store and every change goes back through the store, so the whole of what is on
+    // screen is the saved workbench and a reload puts it back as it was.
     //
-    // The panel is a second tree rather than a pane, so it splits exactly as the main area does.
-    // Between them is the one sash the trees do not own, which trades the panel's share of the
-    // window against the main area's.
+    // A page is one tree, so every split is the same kind of split and every child of one can be
+    // collapsed to its edge and shown again through the same control.
     //
     // It is also where the appearance is put on the document, in one effect: the theme's class and
     // its derived tokens, the wallpaper's layer and the properties its translucent surfaces read,
@@ -19,14 +18,13 @@
     import PageStrip from './PageStrip.svelte';
     import type { Arrangement } from './page-strip';
     import Palette from './Palette.svelte';
+    import FoldedPane from './FoldedPane.svelte';
     import PaneView from './PaneView.svelte';
     import SplitView from './SplitView.svelte';
     import UpdateTray from './UpdateTray.svelte';
     import KeySheet from '$lib/ui/KeySheet.svelte';
-    import Sash from '$lib/ui/Sash.svelte';
-    import { SASH_PX } from '$lib/ui/sash-size';
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
-    import { PANEL_DEFAULT, paneAt, resize, type Layout } from '$lib/state/layout';
+    import { paneAt, resize, type Layout } from '$lib/state/layout';
     import { setGlyphMode, t } from '$lib/state/text';
     import {
         terminalTheme,
@@ -39,16 +37,7 @@
     const client = useState();
 
     const {
-        layout: {
-            change,
-            activeInstance,
-            currentPage,
-            dockedAt,
-            focused,
-            layout,
-            panelSize,
-            resizePanel
-        },
+        layout: { change, activeInstance, currentPage, expandChild, focused, layout },
         ui: { crt, textScale, theme, unicode, updateTrayRequested, wallpaper },
         registry: { views }
     } = client;
@@ -77,25 +66,19 @@
         waiting = 0
     }: Props = $props();
 
-    let area: HTMLDivElement | undefined = $state();
     let paletteOpen = $state(false);
     let palettePrefill = $state('');
     let updateOpen = $state(false);
     let sheetOpen = $state(false);
     let handledUpdateRequest = $state(updateTrayRequested());
 
-    const dock = $derived(dockedAt());
-    const share = $derived(panelSize());
-    /** The panel sits under the main area when it is docked at the bottom, and beside it otherwise. */
-    const direction = $derived<'row' | 'col'>(dock === 'bottom' ? 'col' : 'row');
-
     /** The maximised pane, when one is: it is drawn alone and the rest of the workbench is not drawn. */
     const focus = $derived(focused());
-    const zoomed = $derived(focus === null ? null : paneAt(layout(focus.target), focus.path));
+    const zoomed = $derived(focus === null ? null : paneAt(layout(), focus.path));
 
     /** The page on screen: its trees are the ones drawn, and its id is what remounts them. */
     const page = $derived(currentPage());
-    const activeMain = $derived(activeInstance('main'));
+    const activeMain = $derived(activeInstance());
     const navigation = $derived(
         railOrder(
             views().filter((view) => view.listed !== false),
@@ -176,27 +159,14 @@
     $effect(() => {
         document.title = windowTitle(waiting, activeLabel(client.registry, activeMain));
     });
-
-    /** The space the two trees share along the dock's direction, the sash between them removed. */
-    function room(): number {
-        if (area === undefined) return 0;
-        const rect = area.getBoundingClientRect();
-        return (direction === 'row' ? rect.width : rect.height) - SASH_PX;
-    }
-
-    function panelMoved(delta: number): void {
-        const free = room();
-        if (free <= 0) return;
-        resizePanel(share - delta / free);
-    }
 </script>
 
-{#snippet mainPane(node: Layout, path: number[])}
-    <PaneView {node} target="main" {path} />
+{#snippet paneOf(node: Layout, path: number[])}
+    <PaneView {node} {path} />
 {/snippet}
 
-{#snippet panelPane(node: Layout, path: number[])}
-    <PaneView {node} target="panel" {path} />
+{#snippet foldOf(node: Layout, dir: 'row' | 'col', onexpand: () => void)}
+    <FoldedPane {node} {dir} {onexpand} />
 {/snippet}
 
 <svelte:window
@@ -214,43 +184,25 @@
     <ActivityRail {groups} {bookmarks} onsearch={() => openPalette('')} onupdate={openUpdate} />
     <div class="column">
         <PageStrip {arrangements} />
-        <div class="area {direction}" bind:this={area}>
+        <div class="area">
             <!-- Keyed by the page, so a switch unmounts the hidden page's views and mounts the
                  shown page's: nothing is drawn twice, and every view rebuilds from the stores. -->
             {#key page.id}
                 {#if zoomed !== null && focus !== null}
                     <div class="tree" style="flex: 1 1 0">
-                        <PaneView node={zoomed} target={focus.target} path={focus.path} />
+                        <PaneView node={zoomed} path={focus.path} />
                     </div>
                 {:else}
-                    <div class="tree" style="flex: {dock === 'hidden' ? 1 : 1 - share} 1 0">
+                    <div class="tree" style="flex: 1 1 0">
                         <SplitView
-                            layout={layout('main')}
-                            pane={mainPane}
+                            layout={layout()}
+                            pane={paneOf}
+                            fold={foldOf}
                             onresize={(path: number[], sizes: number[]) =>
-                                change('main', (tree) => resize(tree, path, sizes))}
+                                change((tree) => resize(tree, path, sizes))}
+                            onexpand={(path: number[], index: number) => expandChild(path, index)}
                         />
                     </div>
-                    {#if dock !== 'hidden'}
-                        <Sash
-                            dir={direction}
-                            share={1 - share}
-                            onresize={panelMoved}
-                            onreset={() => resizePanel(PANEL_DEFAULT)}
-                        />
-                        <section
-                            class="tree panel"
-                            style="flex: {share} 1 0"
-                            aria-label={t('ui.panel')}
-                        >
-                            <SplitView
-                                layout={layout('panel')}
-                                pane={panelPane}
-                                onresize={(path: number[], sizes: number[]) =>
-                                    change('panel', (tree) => resize(tree, path, sizes))}
-                            />
-                        </section>
-                    {/if}
                 {/if}
             {/key}
         </div>
@@ -294,7 +246,7 @@
         pointer-events: none;
     }
 
-    /* The column right of the rail: the page strip over the area the two trees share. */
+    /* The column right of the rail: the page strip over the area the page's tree fills. */
     .column {
         display: flex;
         flex-direction: column;
@@ -311,14 +263,6 @@
         padding: 4px;
         gap: 0;
         box-sizing: border-box;
-    }
-
-    .area.row {
-        flex-direction: row;
-    }
-
-    .area.col {
-        flex-direction: column;
     }
 
     .tree {

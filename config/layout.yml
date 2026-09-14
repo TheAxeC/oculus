@@ -22,29 +22,30 @@ nav_groups:
 direct_chord: v
 
 
-# Saved arrangements: a whole workbench written by hand, applied by a control in the rail's panel menu.
-# A node is `{ kind: split, dir, sizes, children }` or `{ kind: pane, view }`, where `view` is one view
-# id or a list of them (the tabs of that pane); `dock` and `panel_size` are the panel's, and default to
-# right and 0.3. It is the layout tree of DESIGN.md with the instance ids left out, since those are
-# minted fresh every time the arrangement is applied. An arrangement that does not add up is ignored.
+# Saved arrangements: a whole page written by hand, applied by a control in the page strip's menu.
+# An arrangement carries `root`, the page's one tree. A node is `{ kind: split, dir, sizes, children }`
+# or `{ kind: pane, view }`, where `view` is one view id or a list of them (the tabs of that pane). It is
+# the layout tree of DESIGN.md with the instance ids left out, since those are minted fresh every time
+# the arrangement is applied. An arrangement that does not add up is ignored.
 arrangements:
   sessions:
-    dock: right
-    main:
+    root:
       kind: split
       dir: row
-      sizes: [0.28, 0.72]
+      sizes: [0.7, 0.3]
       children:
-        - { kind: pane, view: session-list }
         - kind: split
-          dir: col
-          sizes: [0.6, 0.4]
+          dir: row
+          sizes: [0.28, 0.72]
           children:
-            - { kind: pane, view: terminal }
-            - { kind: pane, view: [transcript, timeline] }
-    panel:
-      kind: pane
-      view: [session-detail, changes, agents]
+            - { kind: pane, view: session-list }
+            - kind: split
+              dir: col
+              sizes: [0.6, 0.4]
+              children:
+                - { kind: pane, view: terminal }
+                - { kind: pane, view: [transcript, timeline] }
+        - { kind: pane, view: [session-detail, changes, agents] }
 
 
 # Board (Projects / Archive / Coauthor) chrome: list-view column headers, the per-board search placeholder,

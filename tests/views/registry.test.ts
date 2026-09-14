@@ -17,7 +17,7 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import type { ViewProps } from '../../src/lib/views/registry.ts';
 import { railOrder } from '../../src/lib/shell/rail.ts';
-import { defaultWorkbench, type Instance } from '../../src/lib/state/layout/index.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 import type { Component } from 'svelte';
 // Importing the route loader registers real views; collections use the keys of sources.yml.
 import { registerAll, registerCollections, registerModules } from '../../src/routes/views.ts';
@@ -431,11 +431,10 @@ describe('the real registrations', () => {
         const [kept, dropped] = COLLECTIONS;
         const held: Instance = { id: 'dropped-tab', view: dropped, state: {} };
         const other: Instance = { id: 'kept-tab', view: kept, state: {} };
-        const base = defaultWorkbench();
-        apply({ ...base, main: { kind: 'pane', tabs: [other, held], active: held.id } });
+        apply({ root: { kind: 'pane', tabs: [other, held], active: held.id } });
 
         registerCollections(client.registry, [kept]);
-        const tabs = layout('main');
+        const tabs = layout();
         expect(tabs.kind === 'pane' ? tabs.tabs.map((tab) => tab.view) : []).toEqual([kept]);
     });
 });

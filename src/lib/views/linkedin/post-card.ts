@@ -10,9 +10,5 @@ export function linkedinSourcePath(folder: string, file: string): string {
 }
 
 export function openLinkedinSource(layout: LayoutStore, folder: string, file: string): string {
-    return layout.openView(
-        'source',
-        'main',
-        sourceTabState(HUB_ROOT, linkedinSourcePath(folder, file))
-    );
+    return layout.openView('source', sourceTabState(HUB_ROOT, linkedinSourcePath(folder, file)));
 }

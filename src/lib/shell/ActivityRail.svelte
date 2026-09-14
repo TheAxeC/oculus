@@ -1,8 +1,8 @@
 <script lang="ts">
     // Layer 3, shell. The strip down the left: one button per registered view, then the appearance
-    // and the panel's dock at the foot. A click opens or activates the view in the main area and a
-    // shift-click does it in the panel, which is the whole of what the rail decides; where a view
-    // then lands inside that tree is the store's.
+    // controls at the foot. A click opens or activates the view in the pane a view lands in and a
+    // shift-click opens it in a new pane beside that one, which is the whole of what the rail
+    // decides; where a view then lands in the tree is the store's.
 
     import {
         type Bookmark,
@@ -18,13 +18,12 @@
     import { t } from '$lib/state/text';
     import { themes as themeList, wallpaperOnTheme } from '$lib/state/appearance';
     import { badgeOf, registrationGlyph, registrationLabel } from '$lib/views/registry';
-    import type { Dock } from '$lib/state/layout';
     import { useState } from '$lib/state/use';
 
     const client = useState();
 
     const {
-        layout: { dock, dockedAt, openView },
+        layout: { openBeside, openView },
         ui: {
             crt,
             setCrt,
@@ -76,17 +75,10 @@
         }))
     );
 
-    const docks = $derived([
-        { id: 'right', label: t('ui.dock_right'), active: dockedAt() === 'right' },
-        { id: 'bottom', label: t('ui.dock_bottom'), active: dockedAt() === 'bottom' },
-        { id: 'hidden', label: t('ui.dock_hidden'), active: dockedAt() === 'hidden' }
-    ]);
-
-    const dockLabel = $derived(docks.find((item) => item.active)?.label ?? t('ui.dock_right'));
-
-    /** Where the panel goes. The menu holds the three docks and nothing else. */
-    function pick(id: string): void {
-        dock(id as Dock);
+    /** A plain click opens the view where a view lands; a shift-click opens it in a pane beside. */
+    function open(view: string, event: MouseEvent): void {
+        if (event.shiftKey) openBeside(view);
+        else openView(view);
     }
 
     /** The views of one group as the choices of its list, each with its own glyph and words. */
@@ -139,8 +131,7 @@
                         rail
                         stacked
                         items={groupItems(section)}
-                        onpick={(id: string, event: MouseEvent) =>
-                            openView(id, event.shiftKey ? 'panel' : 'main')}
+                        onpick={(id: string, event: MouseEvent) => open(id, event)}
                     />
                 </div>
             {:else}
@@ -157,8 +148,7 @@
                             compact
                             rail
                             stacked
-                            onclick={(event: MouseEvent) =>
-                                openView(view.id, event.shiftKey ? 'panel' : 'main')}
+                            onclick={(event: MouseEvent) => open(view.id, event)}
                         />
                         {#if badge.text !== ''}
                             <span
@@ -188,7 +178,7 @@
                         compact
                         rail
                         stacked
-                        onclick={() => openView('document', 'main', documentState(mark))}
+                        onclick={() => openView('document', documentState(mark))}
                     />
                 </div>
             {/each}
@@ -280,14 +270,6 @@
             rail
             onclick={() => setUnicode(!unicode())}
         />
-        <Menu
-            label={dockLabel}
-            glyph={t('ui.dock_glyph')}
-            compact
-            rail
-            items={docks}
-            onpick={(where: string) => pick(where)}
-        />
     </div>
 </nav>
 
@@ -329,7 +311,7 @@
 
     /* On a short window the view list is what gives way, and it scrolls. Without this the foot
        shrinks with it, its buttons pile over each other and the last ones fall below the window,
-       which is how the theme menu and the panel's dock came to be unreachable. */
+       which leaves the theme menu unreachable. */
     .controls {
         flex-shrink: 0;
     }

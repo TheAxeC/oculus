@@ -10,7 +10,6 @@ export function openSourceFile(client: ClientState, file: EditSource): string {
     const tab = sourceTabState(file.root, file.path);
     return client.layout.openView(
         'source',
-        'main',
         file.label === undefined ? tab : { ...tab, label: file.label }
     );
 }

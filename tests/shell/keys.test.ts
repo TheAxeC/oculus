@@ -27,7 +27,6 @@ const order: RailOrder = {
 
 const context: KeyContext = {
     currentView: 'focus',
-    target: 'main',
     cursorActive: false,
     typing: false,
     paletteOpen: false,
@@ -57,8 +56,7 @@ describe('digit and chord navigation', () => {
         expect(started.action).toBe(null);
         expect(press('1', started.state, 2000 + CHORD_MS - 1).action).toEqual({
             kind: 'open',
-            view: 'focus',
-            target: 'main'
+            view: 'focus'
         });
         const again = press('v', initialKeyState(), 2000);
         expect(press('4', again.state, 2100).action).toBe(null);
@@ -87,8 +85,7 @@ describe('digit and chord navigation', () => {
         expect(started.action).toBe(null);
         expect(press('2', started.state, 2000 + CHORD_MS - 1).action).toEqual({
             kind: 'open',
-            view: 'events',
-            target: 'main'
+            view: 'events'
         });
     });
 
@@ -104,12 +101,11 @@ describe('digit and chord navigation', () => {
         expect(press('x').state.chord).toBe('');
     });
 
-    it('opens a chord in main even when the panel is focused', () => {
-        const started = press('c', initialKeyState(), 1000, { target: 'panel' });
-        expect(press('2', started.state, 1100, { target: 'panel' }).action).toEqual({
+    it('opens the numbered view of a live chord', () => {
+        const started = press('c', initialKeyState(), 1000);
+        expect(press('2', started.state, 1100).action).toEqual({
             kind: 'open',
-            view: 'events',
-            target: 'main'
+            view: 'events'
         });
     });
 });
@@ -118,42 +114,30 @@ describe('display-order cycling', () => {
     it('cycles forward and backward through direct and flyout views', () => {
         expect(press('Tab', initialKeyState(), 1000, { currentView: 'projects' }).action).toEqual({
             kind: 'open',
-            view: 'funding',
-            target: 'main'
+            view: 'funding'
         });
         expect(
             press('Tab', initialKeyState(), 1000, { currentView: 'focus' }, { shiftKey: true })
                 .action
-        ).toEqual({ kind: 'open', view: 'archive', target: 'main' });
+        ).toEqual({ kind: 'open', view: 'archive' });
     });
 
     it('starts at the applicable end when the current view is outside the rail', () => {
         expect(press('Tab', initialKeyState(), 1000, { currentView: 'detail' }).action).toEqual({
             kind: 'open',
-            view: 'focus',
-            target: 'main'
+            view: 'focus'
         });
         expect(
             press('Tab', initialKeyState(), 1000, { currentView: null }, { shiftKey: true }).action
-        ).toEqual({ kind: 'open', view: 'archive', target: 'main' });
+        ).toEqual({ kind: 'open', view: 'archive' });
     });
 
-    it.each([false, true])('cycles in the focused panel with shift=%s', (shiftKey) => {
+    it.each([false, true])('cycles from the focused pane with shift=%s', (shiftKey) => {
         expect(
-            press(
-                'Tab',
-                initialKeyState(),
-                1000,
-                {
-                    currentView: 'projects',
-                    target: 'panel'
-                },
-                { shiftKey }
-            ).action
+            press('Tab', initialKeyState(), 1000, { currentView: 'projects' }, { shiftKey }).action
         ).toEqual({
             kind: 'open',
-            view: shiftKey ? 'focus' : 'funding',
-            target: 'panel'
+            view: shiftKey ? 'focus' : 'funding'
         });
     });
 });

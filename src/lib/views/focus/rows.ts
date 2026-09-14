@@ -148,7 +148,7 @@ export function openLine(
     onproject: (id: string) => void
 ): void {
     if (line.id !== undefined) onproject(line.id);
-    else if (line.entry !== undefined) layout.openView(line.entry, 'main');
+    else if (line.entry !== undefined) layout.openView(line.entry);
 }
 
 /** What one snooze button writes: an ISO date a week or a month out, or the hidden flag. */

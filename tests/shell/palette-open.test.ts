@@ -54,8 +54,8 @@ beforeEach(() => {
 
 describe('palette result activation', () => {
     it('returns the id of the view openView activated or created', () => {
-        const id = openView('venues', 'main');
-        expect(findView(layout('main'), 'venues')?.id).toBe(id);
+        const id = openView('venues');
+        expect(findView(layout(), 'venues')?.id).toBe(id);
     });
 
     it('reuses a collection tab and puts reveal in that instance UI state', () => {
@@ -65,8 +65,8 @@ describe('palette result activation', () => {
         const reused = openPaletteItem(client.layout, client.ui, entry('second'));
 
         expect(reused).toBe(id);
-        expect(viewsOf(layout('main'))).toEqual(['status', 'events']);
+        expect(viewsOf(layout())).toEqual(['status', 'events']);
         expect(instanceState(id)).toEqual({ search: '', reveal: 'second' });
-        expect(findView(layout('main'), 'events')?.state).toEqual({});
+        expect(findView(layout(), 'events')?.state).toEqual({});
     });
 });

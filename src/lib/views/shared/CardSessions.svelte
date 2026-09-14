@@ -10,7 +10,7 @@
     import { useState } from '$lib/state/use';
 
     const {
-        layout: { openView, workbench },
+        layout: { layout, openBeside },
         selection: { select },
         selectors: { sessionsForProject }
     } = useState();
@@ -44,18 +44,15 @@
         return '--tone: var(--c-slate)';
     }
 
-    /** Whether either workbench tree already shows a session-following view. */
+    /** Whether the page's tree already shows a session-following view. */
     function sessionViewOpen(): boolean {
-        const trees = [workbench().main, workbench().panel];
-        return SESSION_VIEWS.some((view) =>
-            trees.some((tree) => findView(tree, view, null) !== null)
-        );
+        return SESSION_VIEWS.some((view) => findView(layout(), view, null) !== null);
     }
 
     /** Select one session and open a detail view when no session view is visible. */
     function pick(entry: GroupedSession): void {
         select(entry.id);
-        if (!sessionViewOpen()) openView('session-detail', 'panel');
+        if (!sessionViewOpen()) openBeside('session-detail');
     }
 </script>
 

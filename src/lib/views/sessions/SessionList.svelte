@@ -31,7 +31,7 @@
     import { useState } from '$lib/state/use';
 
     const {
-        layout: { openView, workbench },
+        layout: { layout, openView },
         selection: { select },
         selectors: { sessionsByWorkspace },
         ui: { instanceState, setInstanceState },
@@ -98,21 +98,19 @@
 
     function openTranscript(row: GroupedSession): void {
         select(row.id);
-        const where = findView(workbench().panel, 'transcript') !== null ? 'panel' : 'main';
-        openView('transcript', where);
+        openView('transcript');
     }
 
     function openPinnedSession(row: GroupedSession): void {
-        openView('session-detail', 'main', { session: row.id, label: row.title });
+        openView('session-detail', { session: row.id, label: row.title });
     }
 
     function openPinnedTerminal(entry: Terminal): void {
-        openView('terminal', 'main', { session: entry.id, label: entry.name });
+        openView('terminal', { session: entry.id, label: entry.name });
     }
 
     function terminalOpen(): boolean {
-        const trees = [workbench().main, workbench().panel];
-        return trees.some((one) => findView(one, 'terminal', null) !== null);
+        return findView(layout(), 'terminal', null) !== null;
     }
 
     async function resume(row: GroupedSession): Promise<void> {
@@ -128,7 +126,7 @@
             return;
         }
         select(answer.id);
-        if (!terminalOpen()) openView('terminal', 'main');
+        if (!terminalOpen()) openView('terminal');
     }
 
     async function dismiss(row: GroupedSession): Promise<void> {
