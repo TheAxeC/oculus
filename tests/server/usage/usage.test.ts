@@ -11,6 +11,7 @@ import {
     claudeCachedUsage,
     latestWindows,
     mergeClaudeWindows,
+    CODEX_TAIL_BYTES,
     newestCodexLimits,
     usageAccounts
 } from '../../../src/lib/server/usage/accounts.ts';
@@ -254,6 +255,39 @@ describe('usage readers', () => {
                 line({ payload: { info: { rate_limits: { plan_type: 'prolite' } } } })
         );
         expect(newestCodexLimits(dir)).toEqual({ plan_type: 'prolite' });
+    });
+
+    it('prefers the account bucket over a model family bucket a newer session reports', () => {
+        // A session on a model family with a bucket of its own writes that bucket's figures, which
+        // say nothing about the account's; the account's bucket carries the id `codex`.
+        const dir = scratch();
+        write(
+            join(dir, 'sessions', '2026', '09', '14', 'rollout-2026-09-14T05-00-00-account.jsonl'),
+            line({
+                payload: {
+                    rate_limits: {
+                        limit_id: 'codex',
+                        plan_type: 'prolite',
+                        primary: { used_percent: 77, window_minutes: 10080, resets_at: 1789810732 }
+                    }
+                }
+            }),
+            NOW - 1000
+        );
+        write(
+            join(dir, 'sessions', '2026', '09', '08', 'rollout-2026-09-08T10-00-00-spark.jsonl'),
+            line({
+                payload: {
+                    rate_limits: {
+                        limit_id: 'codex_bengalfox',
+                        limit_name: 'GPT-5.3-Codex-Spark',
+                        primary: { used_percent: 0, window_minutes: 300, resets_at: 1789404836 }
+                    }
+                }
+            })
+        );
+        expect(newestCodexLimits(dir)?.limit_id).toBe('codex');
+        expect(newestCodexLimits(dir, CODEX_TAIL_BYTES, 1)?.limit_id).toBe('codex_bengalfox');
     });
 
     it('reads the last event of a large rollout, and only within the tail it is given', () => {

@@ -324,15 +324,16 @@ function rolloutTail(path: string, tailBytes: number): string[] {
     }
 }
 
-/** The last rate_limits object in the newest rollout's tail; anything further from the end is absent. */
-export function newestCodexLimits(
-    dir: string,
-    tailBytes: number = CODEX_TAIL_BYTES
-): Record<string, unknown> | null {
-    const newest = codexRollouts(join(dir, 'sessions'), 0, 1)[0];
-    if (newest === undefined) return null;
+/** The limit id Codex gives the account's own bucket; a model family with a bucket of its own carries another id. */
+export const CODEX_ACCOUNT_LIMIT = 'codex';
+
+/** How many of the newest rollouts are read for a rate-limit event before the search gives up. */
+export const CODEX_ROLLOUTS_READ = 12;
+
+/** The last rate_limits object in one rollout's tail, or null when the tail holds none. */
+function lastRateLimits(path: string, tailBytes: number): Record<string, unknown> | null {
     try {
-        const lines = rolloutTail(newest.path, tailBytes);
+        const lines = rolloutTail(path, tailBytes);
         for (let at = lines.length - 1; at >= 0; at -= 1) {
             if (lines[at].trim() === '') continue;
             let record: unknown;
@@ -349,6 +350,29 @@ export function newestCodexLimits(
         return null;
     }
     return null;
+}
+
+/**
+ * The account's freshest rate limits: the newest rollouts are read newest first, and the first
+ * rate_limits whose id is the account's own bucket wins. A session on a model family with a bucket
+ * of its own (its limit id names the family) reports that bucket, not the account's, so the newest
+ * file alone is the wrong answer whenever such a session was the last to write. When no rollout
+ * names the account's bucket, the newest rate limits of any kind stand in.
+ */
+export function newestCodexLimits(
+    dir: string,
+    tailBytes: number = CODEX_TAIL_BYTES,
+    maxFiles: number = CODEX_ROLLOUTS_READ
+): Record<string, unknown> | null {
+    let fallback: Record<string, unknown> | null = null;
+    for (const rollout of codexRollouts(join(dir, 'sessions'), 0, maxFiles)) {
+        const found = lastRateLimits(rollout.path, tailBytes);
+        if (found === null) continue;
+        const id = found.limit_id;
+        if (id === CODEX_ACCOUNT_LIMIT || id === undefined || id === null) return found;
+        fallback ??= found;
+    }
+    return fallback;
 }
 
 function codexWindows(limits: Record<string, unknown>): UsageWindow[] {
