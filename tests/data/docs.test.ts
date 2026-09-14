@@ -151,57 +151,44 @@ describe('projectDocs', () => {
 
         const docs = projectDocs(root);
         expect(docs.map((d) => ({ name: d.name, label: d.label }))).toEqual(PROJECT_DOCS);
-        expect(docs.map((d) => d.label)).toEqual([
-            'README',
-            'PRESENT',
-            'RESULTS',
-            'CODE',
-            'PDF',
-            'TEX'
-        ]);
+        expect(docs.map((d) => d.label)).toEqual(['README', 'CODE', 'PDF', 'TEX']);
         expect(docs[0]).toMatchObject({
             name: 'README.md',
             path: join(root, 'README.md'),
             present: true
         });
         expect(docs[1].present).toBe(false);
-        expect(docs[1].path).toBe(join(root, 'PRESENT.md'));
+        expect(docs[1].path).toBe(join(root, 'code', 'README.md'));
     });
 
     it('finds the documents that are there and no others', () => {
         const root = scratch();
         write(root, 'README.md', 'readme\n');
-        write(root, 'PRESENT.md', 'slides\n');
         write(root, 'code/README.md', 'deposit root\n');
         write(root, 'manuscript/main.tex', '\\documentclass{article}\n');
 
         expect(present(projectDocs(root))).toEqual([
             'README.md',
-            'PRESENT.md',
             'code/README.md',
             'manuscript/main.tex'
         ]);
     });
 
-    it('marks only PRESENT public and no current document human', () => {
+    it('marks none of the four human, and gives no document any other mark', () => {
         const root = scratch();
         const docs = projectDocs(root);
-        expect(docs.find((doc) => doc.name === 'README.md')).toMatchObject({
-            human: false,
-            public: false
-        });
-        expect(docs.find((doc) => doc.name === 'PRESENT.md')).toMatchObject({
-            human: false,
-            public: true
-        });
-        expect(docs.find((doc) => doc.name === 'code/README.md')).toMatchObject({
-            human: false,
-            public: false
-        });
-        expect(docs.find((doc) => doc.name === 'manuscript/main.tex')).toMatchObject({
-            human: false,
-            public: false
-        });
+        expect(docs).toHaveLength(4);
+        for (const doc of docs) {
+            expect(doc.human).toBe(false);
+            expect(Object.keys(doc).sort()).toEqual([
+                'human',
+                'label',
+                'mtime',
+                'name',
+                'path',
+                'present'
+            ]);
+        }
     });
 
     it('never looks under attic', () => {
@@ -214,7 +201,7 @@ describe('projectDocs', () => {
 
     it('counts a directory named like a document as absent', () => {
         const root = scratch();
-        mkdirSync(join(root, 'RESULTS.md'), { recursive: true });
+        mkdirSync(join(root, 'README.md'), { recursive: true });
 
         expect(present(projectDocs(root))).toEqual([]);
     });
@@ -234,7 +221,7 @@ describe('projectDocs', () => {
         const docs = projectDocs(root);
 
         expect(docs.find((d) => d.name === 'README.md')?.mtime).toBe(written);
-        expect(docs.find((d) => d.name === 'PRESENT.md')?.mtime).toBe(0);
+        expect(docs.find((d) => d.name === 'code/README.md')?.mtime).toBe(0);
     });
 
     it('reports the mtime a later write gave a document', () => {

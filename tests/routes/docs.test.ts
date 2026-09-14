@@ -5,8 +5,12 @@
 // The hub is synthetic, under the system temporary directory, and every path written is asserted to
 // be inside it first. What this does NOT cover: the browser painting the HTML, and target() reading
 // the machine's own local.yml, which is exercised by the curl in the package's verification.
+//
+// The project a request names is read from the portfolio the server holds, which the route takes
+// from its own locals; the case below passes that reader itself, and the ones that pass none
+// exercise the fallback that finds the folder under the scan rules.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -14,6 +18,12 @@ import { handleDocs } from '../../src/lib/server/docs.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { DocTarget } from '../../src/lib/server/docs.ts';
+import type { Project } from '../../src/lib/data/model.ts';
+
+/** The one field of a project the document reader asks for, on an otherwise empty record. */
+function project(folder: string): Project {
+    return { folder } as Project;
+}
 
 const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\n';
 
@@ -102,9 +112,51 @@ describe('the document endpoint', () => {
     });
 
     it('answers 404 for a document the project does not have', async () => {
-        const response = handleDocs(request('project=alpha&name=RESULTS.md'), target());
+        const into = target({ 'code/README.md': README });
+        const response = handleDocs(request('project=alpha&name=README.md'), into);
         expect(response.status).toBe(404);
         expect((await response.json()).error).toBe('document does not exist');
+    });
+
+    it('reads the folder from the portfolio the request carries, and no manifest at all', async () => {
+        const into = target();
+        // Nothing on this hub is a manifest any more, so a reader that scanned the tree would find
+        // no project at all; the snapshot the server holds names the folder on its own.
+        rmSync(join(into.hub, 'projects', 'manuscripts', 'alpha', 'project.yml'));
+        const held: DocTarget = {
+            ...into,
+            project: (id) => (id === 'alpha' ? project('projects/manuscripts/alpha') : null)
+        };
+        const response = handleDocs(request('project=alpha&name=README.md'), held);
+        expect(response.status).toBe(200);
+        expect((await response.json()).html).toContain('<h1>Alpha</h1>');
+    });
+
+    it('finds the folder under a nested scan rule when no portfolio was published', async () => {
+        const dir = mkdtempSync(join(tmpdir(), 'oculus-docs-'));
+        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        const folder = join(dir, 'projects', 'coauthor', 'active', 'alpha');
+        expect(resolve(folder).startsWith(resolve(dir) + sep)).toBe(true);
+        mkdirSync(folder, { recursive: true });
+        writeFileSync(join(folder, 'project.yml'), MANIFEST);
+        writeFileSync(join(folder, 'README.md'), README);
+        const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+        const into: DocTarget = {
+            hub: dir,
+            config: { ...real, scan: [{ dir: 'projects/coauthor', nested: true }] }
+        };
+        const response = handleDocs(request('project=alpha&name=README.md'), into);
+        expect(response.status).toBe(200);
+        expect((await response.json()).html).toContain('<h1>Alpha</h1>');
+    });
+
+    it('answers 404 for an id that is a path rather than a folder name', async () => {
+        const response = handleDocs(
+            request(`project=${encodeURIComponent('../alpha')}&name=README.md`),
+            target()
+        );
+        expect(response.status).toBe(404);
+        expect((await response.json()).error).toBe('no project with the id ../alpha');
     });
 
     it('refuses a request from another origin', async () => {

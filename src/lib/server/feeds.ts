@@ -18,7 +18,7 @@ import { collectionSchema } from '../data/normalise.ts';
 import { fieldNames } from '../data/validate.ts';
 import { appendEntry, deleteEntry, renderEntry, setEntryFields } from './entry-edit/index.ts';
 import { saved } from './writes/entries.ts';
-import { asFieldValue } from './yaml-edit.ts';
+import { NOT_A_FIELD_VALUE, asFieldValue } from './yaml-edit.ts';
 import type { FieldValue, Refusal } from './yaml-edit.ts';
 import type { FeedData, FeedKind, FeedsPayload, PortfolioConfig } from '../data/model.ts';
 import type { WriteOutcome } from './writes.ts';
@@ -316,10 +316,7 @@ export function addLead(
         const value = asFieldValue(raw);
         if (value === undefined) {
             if (raw !== undefined) {
-                refused.push({
-                    field,
-                    reason: 'not a string, number, boolean, list of strings, metalist, flat scalar map or null'
-                });
+                refused.push({ field, reason: NOT_A_FIELD_VALUE });
             }
             continue;
         }

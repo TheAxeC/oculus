@@ -340,6 +340,155 @@ describe('writing one collection entry', () => {
     });
 });
 
+/** A collection file whose schema names one field of each type a form control writes. */
+const TYPED = [
+    'title: Typed',
+    'schema:',
+    '  - { field: title, type: text }',
+    '  - { field: note, type: textarea }',
+    '  - { field: status, type: select, options: [open, done] }',
+    '  - { field: deadline, type: date }',
+    '  - { field: pin, type: checkbox }',
+    'entries:',
+    '  - title: "One"',
+    '    status: open',
+    ''
+].join('\n');
+
+/** The wider hub with the typed collection under the `tasks` key, or the body a case names. */
+function typed(body = TYPED): string {
+    const root = wider();
+    writeFileSync(join(root, 'tasks', 'tasks.yml'), body);
+    return root;
+}
+
+describe('a collection entry write against the schema of its own file', () => {
+    it('refuses a value that is not text for a text or a textarea field', () => {
+        const root = typed();
+        expect(writeEntry(root, configFor(), 'tasks', 'One', { title: ['a', 'b'] })).toEqual({
+            found: true,
+            changed: [],
+            refused: [{ field: 'title', reason: 'title takes text' }]
+        });
+        expect(writeEntry(root, configFor(), 'tasks', 'One', { note: { a: 1 } })).toEqual({
+            found: true,
+            changed: [],
+            refused: [{ field: 'note', reason: 'note takes text' }]
+        });
+        expect(tasksOf(root)).toBe(TYPED);
+    });
+
+    it('refuses a select value the schema options do not name, and writes one they do', () => {
+        const root = typed();
+        expect(writeEntry(root, configFor(), 'tasks', 'One', { status: 'nonesuch' })).toEqual({
+            found: true,
+            changed: [],
+            refused: [{ field: 'status', reason: 'status takes one of open, done' }]
+        });
+        expect(tasksOf(root)).toBe(TYPED);
+        expect(writeEntry(root, configFor(), 'tasks', 'One', { status: 'done' })).toEqual({
+            found: true,
+            changed: ['status'],
+            refused: []
+        });
+        expect(tasksOf(root)).toContain('status: done');
+    });
+
+    it('refuses a date that is not one ISO day, and writes one that is', () => {
+        const root = typed();
+        expect(writeEntry(root, configFor(), 'tasks', 'One', { deadline: '1 Jan' })).toEqual({
+            found: true,
+            changed: [],
+            refused: [{ field: 'deadline', reason: 'deadline takes a date written YYYY-MM-DD' }]
+        });
+        expect(tasksOf(root)).toBe(TYPED);
+        const out = writeEntry(root, configFor(), 'tasks', 'One', { deadline: '2026-09-14' });
+        expect(out).toEqual({ found: true, changed: ['deadline'], refused: [] });
+        expect(tasksOf(root)).toContain('deadline: 2026-09-14');
+    });
+
+    it('refuses a checkbox that is not a boolean, and writes one that is', () => {
+        const root = typed();
+        expect(writeEntry(root, configFor(), 'tasks', 'One', { pin: 'yes' })).toEqual({
+            found: true,
+            changed: [],
+            refused: [{ field: 'pin', reason: 'pin takes true or false' }]
+        });
+        expect(tasksOf(root)).toBe(TYPED);
+        expect(writeEntry(root, configFor(), 'tasks', 'One', { pin: true })).toEqual({
+            found: true,
+            changed: ['pin'],
+            refused: []
+        });
+        expect(tasksOf(root)).toContain('pin: true');
+    });
+
+    it('clears a field of any type with an empty value', () => {
+        const root = typed();
+        const out = writeEntry(root, configFor(), 'tasks', 'One', { status: null });
+        expect(out).toEqual({ found: true, changed: ['status'], refused: [] });
+        expect(tasksOf(root)).not.toContain('status: open');
+    });
+
+    it('writes the fields that fit and refuses the one that does not, in one outcome', () => {
+        const root = typed();
+        const out = writeEntry(root, configFor(), 'tasks', 'One', {
+            note: 'a line worth keeping',
+            status: 'nonesuch'
+        });
+        expect(out).toEqual({
+            found: true,
+            changed: ['note'],
+            refused: [{ field: 'status', reason: 'status takes one of open, done' }]
+        });
+        expect(tasksOf(root)).toContain('note: a line worth keeping');
+        expect(tasksOf(root)).toContain('status: open');
+    });
+
+    it('writes a new entry without the field that does not fit, and refuses that one', () => {
+        const root = typed();
+        const out = createEntry(root, configFor(), 'tasks', {
+            title: 'Two',
+            note: 'kept',
+            status: 'nonesuch'
+        });
+        expect(out.changed).toEqual(['entries']);
+        expect(out.refused).toEqual([
+            { field: 'status', reason: 'status takes one of open, done' }
+        ]);
+        expect(tasksOf(root)).toContain('  - title: Two');
+        expect(tasksOf(root)).toContain('    note: kept');
+        expect(tasksOf(root)).not.toContain('status: nonesuch');
+    });
+});
+
+describe('a collection file whose entries share an identity value', () => {
+    const TWICE = TYPED.replace(
+        '  - title: "One"\n    status: open\n',
+        '  - title: "One"\n    status: open\n\n  - title: "One"\n    status: done\n'
+    );
+
+    const refusal = {
+        found: true,
+        changed: [],
+        refused: [
+            {
+                field: 'title',
+                reason: 'two entries share the title One, so a write cannot address one of them'
+            }
+        ]
+    };
+
+    it('refuses every write to the file until one of the two is changed', () => {
+        const root = typed(TWICE);
+        expect(writeEntry(root, configFor(), 'tasks', 'One', { status: 'done' })).toEqual(refusal);
+        expect(removeEntry(root, configFor(), 'tasks', 'One')).toEqual(refusal);
+        expect(reorderCollection(root, configFor(), 'tasks', ['One', 'One'])).toEqual(refusal);
+        expect(createEntry(root, configFor(), 'tasks', { title: 'Two' })).toEqual(refusal);
+        expect(tasksOf(root)).toBe(TWICE);
+    });
+});
+
 describe('reordering and deleting entries of a collection', () => {
     const TWO = TASKS.replace(
         'entries:\n',

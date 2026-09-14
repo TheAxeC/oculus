@@ -106,14 +106,8 @@ function snapshot(): Snapshot {
             domainIds: ['heart'],
             collaborators: ['someone'],
             docs: [
-                { name: 'README.md', label: 'README', present: true, human: false, public: false },
-                {
-                    name: 'manuscript/main.tex',
-                    label: 'TEX',
-                    present: false,
-                    human: false,
-                    public: false
-                }
+                { name: 'README.md', label: 'README', present: true, human: false },
+                { name: 'manuscript/main.tex', label: 'TEX', present: false, human: false }
             ]
         }),
         project('bravo', 'manuscripts', {
@@ -535,7 +529,6 @@ describe('the card controls', () => {
                         label: 'README',
                         present: true,
                         human: false,
-                        public: false,
                         mtime: 1
                     }
                 ]
@@ -560,37 +553,24 @@ describe('the card controls', () => {
         expect(html('projects')).toContain(catalog['project.helper.ask_tip']);
     });
 
-    it('labels document controls and marks only PRESENT public', () => {
+    it('labels document controls and marks only a human document', () => {
         const body = withProjects(
             {
                 alpha: {
                     docs: [
-                        {
-                            name: 'README.md',
-                            label: 'README',
-                            present: true,
-                            human: false,
-                            public: false
-                        },
-                        {
-                            name: 'PRESENT.md',
-                            label: 'PRESENT',
-                            present: true,
-                            human: false,
-                            public: true
-                        }
+                        { name: 'README.md', label: 'README', present: true, human: false },
+                        { name: 'code/README.md', label: 'CODE', present: true, human: false },
+                        { name: 'NOTES.md', label: 'NOTES', present: true, human: true }
                     ]
                 }
             },
             'projects',
             { expanded: ['alpha'] }
         );
-        expect(body).not.toMatch(/class="doc [^"]*human/);
-        expect(body).toMatch(/class="doc [^"]*public/);
-        expect(body).not.toContain(catalog['project.helper.doc_human_tip']);
-        expect(body).toContain(catalog['project.helper.doc_public_tip']);
+        expect(body).toMatch(/class="doc [^"]*human/);
+        expect(body).toContain(catalog['project.helper.doc_human_tip']);
         expect(body).toContain('>README</span>');
-        expect(body).toContain('>PRESENT</span>');
+        expect(body).toContain('>CODE</span>');
     });
 
     it('draws a ghost badge and message without manifest or pin controls', () => {
@@ -599,15 +579,7 @@ describe('the card controls', () => {
             ghost: project('ghost', 'ideas', {
                 type: 'idea',
                 ghost: true,
-                docs: [
-                    {
-                        name: 'README.md',
-                        label: 'README',
-                        present: true,
-                        human: false,
-                        public: false
-                    }
-                ]
+                docs: [{ name: 'README.md', label: 'README', present: true, human: false }]
             })
         };
         receive({ channel: 'portfolio', version: 1, payload: snap });

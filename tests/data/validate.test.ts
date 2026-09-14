@@ -105,18 +105,23 @@ function lines(data: Record<string, unknown>, rules: ValidationRules = RULES): s
 
 describe('validate', () => {
     it('reports nothing on a manifest that is entirely in order', () => {
-        expect(
-            lines({
+        // A second project stands beside it, so the `related:` id has something to resolve to.
+        const held = manifest(
+            {
                 status: { chips: ['lead'], line: 'submitted 2026-09-01' },
                 venue_id: 'bspc',
                 domain: 'heart',
                 program: ['federated'],
                 datasets: ['mimic'],
                 funding: ['FAIR'],
-                related: ['alpha'],
+                related: ['bravo'],
                 collaborators: ['someone']
-            })
-        ).toEqual([]);
+            },
+            'alpha'
+        );
+        expect(validate(portfolio({ manifests: [held, manifest({}, 'bravo')] }), RULES)).toEqual(
+            []
+        );
     });
 
     it('reports a top-level key the schema does not name', () => {
@@ -323,6 +328,73 @@ describe('validate', () => {
         ];
         expect(validate(raw, RULES)).toEqual([]);
         expect(validate(portfolio(), RULES)).toEqual([]);
+    });
+
+    it('reports a project whose related names itself', () => {
+        expect(lines({ related: ['alpha'] })).toEqual([
+            'related: related names the project itself: alpha'
+        ]);
+    });
+
+    it('reports two manifests under folders of one name, whose ids collide', () => {
+        const one: RawManifest = {
+            ...manifest({}, 'alpha'),
+            file: '/hub/projects/active/alpha/project.yml',
+            folder: 'projects/active/alpha'
+        };
+        const two: RawManifest = {
+            ...manifest({}, 'alpha'),
+            file: '/hub/projects/archive/published/alpha/project.yml',
+            folder: 'projects/archive/published/alpha'
+        };
+        expect(
+            validate(portfolio({ manifests: [one, two] }), RULES).map(
+                (finding) => `${finding.file} ${finding.key}: ${finding.message}`
+            )
+        ).toEqual([
+            '/hub/projects/active/alpha/project.yml folder: 2 projects share the folder name alpha, so their ids collide',
+            '/hub/projects/archive/published/alpha/project.yml folder: 2 projects share the folder name alpha, so their ids collide'
+        ]);
+    });
+
+    it('reports two entries of one collection that share an identity value', () => {
+        const raw = portfolio({
+            collections: {
+                venues: {
+                    key: 'venues',
+                    file: '/hub/venues.yml',
+                    meta: { schema: [{ field: 'name', type: 'text' }] },
+                    entries: [
+                        { name: 'One', provenance: { file: '/hub/venues.yml', index: 0 } },
+                        { name: 'Two', provenance: { file: '/hub/venues.yml', index: 1 } },
+                        { name: 'One', provenance: { file: '/hub/venues.yml', index: 2 } }
+                    ]
+                }
+            }
+        });
+        expect(validate(raw, RULES).map((finding) => `${finding.key}: ${finding.message}`)).toEqual(
+            [
+                'entries[0].name: two entries share the name One',
+                'entries[2].name: two entries share the name One'
+            ]
+        );
+    });
+
+    it('reports nothing when every entry of a collection has its own identity value', () => {
+        const raw = portfolio({
+            collections: {
+                venues: {
+                    key: 'venues',
+                    file: '/hub/venues.yml',
+                    meta: { schema: [{ field: 'name', type: 'text' }] },
+                    entries: [
+                        { name: 'One', provenance: { file: '/hub/venues.yml', index: 0 } },
+                        { name: 'Two', provenance: { file: '/hub/venues.yml', index: 1 } }
+                    ]
+                }
+            }
+        });
+        expect(validate(raw, RULES)).toEqual([]);
     });
 
     it('passes the sources findings through without re-deriving them', () => {

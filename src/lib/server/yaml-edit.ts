@@ -19,14 +19,24 @@ import type { Node, Pair, Scalar, YAMLMap } from 'yaml';
 /** One row of a metalist: a flat map whose keys and values are strings. */
 export type FlatStringMap = Record<string, string>;
 
-/** A scalar accepted inside a raw field's flat map. */
+/** A scalar accepted inside a raw field's map. */
 export type ScalarFieldValue = string | number | boolean | null;
 
-/** The parsed shape of a raw field: one map with scalar values and no nested structures. */
-export type FlatScalarMap = Record<string, ScalarFieldValue>;
+/** One value inside a block: a scalar, a list of values, or a map of them, at any depth. */
+export type BlockValue = ScalarFieldValue | BlockValue[] | BlockMap;
 
-/** What a field may be set to. Raw maps are flat scalar maps; null clears the field. */
-export type FieldValue = ScalarFieldValue | string[] | FlatStringMap[] | FlatScalarMap;
+/**
+ * The parsed shape of a raw field: a map whose values are scalars, lists, or maps of the same. A
+ * dataset's `retrieval:` block is one, and every real one holds a list or a map inside it.
+ */
+export type BlockMap = { [key: string]: BlockValue };
+
+/** What a field may be set to. A raw map is a block map; null clears the field. */
+export type FieldValue = ScalarFieldValue | string[] | FlatStringMap[] | BlockMap;
+
+/** The reason a value is none of the shapes a write may carry. */
+export const NOT_A_FIELD_VALUE =
+    'not a string, number, boolean, list of strings, metalist, map of scalars, lists and maps, or null';
 
 /** One field that was not written, and why. */
 export type Refusal = { field: string; reason: string };
@@ -139,22 +149,33 @@ export function asFieldValue(raw: unknown): FieldValue | undefined {
     ) {
         return raw as FlatStringMap[];
     }
-    if (isFlatScalarMap(raw)) return raw;
+    if (isBlockMap(raw)) return raw;
     return undefined;
 }
 
-/** Whether a value is a map whose values are finite scalars, the raw field's write vocabulary. */
-export function isFlatScalarMap(value: unknown): value is FlatScalarMap {
+/** Whether a value is a scalar a block may hold. */
+function isBlockScalar(value: unknown): value is ScalarFieldValue {
     return (
-        isRecord(value) &&
-        Object.values(value).every(
-            (item) =>
-                item === null ||
-                typeof item === 'string' ||
-                typeof item === 'boolean' ||
-                (typeof item === 'number' && Number.isFinite(item))
-        )
+        value === null ||
+        typeof value === 'string' ||
+        typeof value === 'boolean' ||
+        (typeof value === 'number' && Number.isFinite(value))
     );
+}
+
+/** Whether a value belongs inside a block: a scalar, a list of them, or a map of either. */
+function isBlockValue(value: unknown): value is BlockValue {
+    if (isBlockScalar(value)) return true;
+    if (Array.isArray(value)) return value.every(isBlockValue);
+    return isBlockMap(value);
+}
+
+/**
+ * Whether a value is a map of scalars, lists and maps, the raw field's write vocabulary. The page
+ * parses a raw field into exactly this, so a dataset's `retrieval:` block round-trips through it.
+ */
+export function isBlockMap(value: unknown): value is BlockMap {
+    return isRecord(value) && Object.values(value).every(isBlockValue);
 }
 
 /** Whether a non-empty list is the metalist shape rather than a list of strings. */
@@ -179,12 +200,51 @@ export function renderScalar(value: ScalarFieldValue, style?: string): string {
     return text.replace(/\n+$/, '');
 }
 
-/** A flat scalar map as block lines at the indentation of its own keys. */
-export function renderFlatMap(values: FlatScalarMap, indent: number): string {
+/** One key and its value as block lines, the key on the first of them. */
+function keyLines(key: string, value: BlockValue, indent: number): string[] {
     const pad = ' '.repeat(indent);
-    return Object.entries(values)
-        .map(([key, value]) => `${renderScalar(key)}: ${renderScalar(value)}`)
-        .join(`\n${pad}`);
+    const name = `${pad}${renderScalar(key)}:`;
+    if (isBlockMap(value)) {
+        const inner = mapLines(value, indent + DEFAULT_INDENT);
+        return inner.length === 0 ? [`${name} {}`] : [name, ...inner];
+    }
+    if (Array.isArray(value)) {
+        return value.length === 0 ? [`${name} []`] : [name, ...listLines(value, indent)];
+    }
+    return [`${name} ${renderScalar(value)}`];
+}
+
+/** Every key of a map as block lines at one indentation. */
+function mapLines(values: BlockMap, indent: number): string[] {
+    return Object.entries(values).flatMap(([key, value]) => keyLines(key, value, indent));
+}
+
+/** A block list's items at one indentation; a map item opens on its own dash line. */
+function listLines(values: BlockValue[], indent: number): string[] {
+    const pad = ' '.repeat(indent);
+    const out: string[] = [];
+    for (const item of values) {
+        if (isBlockMap(item)) {
+            const inner = mapLines(item, indent + DEFAULT_INDENT);
+            if (inner.length === 0) out.push(`${pad}- {}`);
+            else out.push(`${pad}- ${inner[0].trimStart()}`, ...inner.slice(1));
+            continue;
+        }
+        if (Array.isArray(item)) {
+            out.push(`${pad}-`, ...listLines(item, indent + DEFAULT_INDENT));
+            continue;
+        }
+        out.push(`${pad}- ${renderScalar(item)}`);
+    }
+    return out;
+}
+
+/**
+ * A block map as YAML lines at the indentation of its own keys. The first line carries none of it,
+ * since the caller writes it where the key it replaces already sits.
+ */
+export function renderBlockMap(values: BlockMap, indent: number): string {
+    return mapLines(values, indent).join('\n').slice(indent);
 }
 
 /**
@@ -318,14 +378,14 @@ function replaceValue(text: string, node: Node, value: Exclude<FieldValue, null>
     const end = valueEnd(node);
     const block = Array.isArray(value) && isSeq(node) && node.flow !== true && value.length > 0;
     let rendered: string;
-    if (isFlatScalarMap(value)) {
+    if (isBlockMap(value)) {
         const block = isMap(node) && node.flow !== true;
         const indent = block
             ? columnOf(text, start)
             : text.slice(lineStart(text, start), start).length -
               text.slice(lineStart(text, start), start).trimStart().length +
               DEFAULT_INDENT;
-        rendered = `${block ? '' : `\n${' '.repeat(indent)}`}${renderFlatMap(value, indent)}`;
+        rendered = `${block ? '' : `\n${' '.repeat(indent)}`}${renderBlockMap(value, indent)}`;
     } else if (isMetalist(value)) {
         rendered = renderMetalist(value, columnOf(text, start));
     } else if (Array.isArray(value)) {
@@ -407,7 +467,7 @@ function insertBlockChild(
 
 /** A value as it is written after `key:` on one line, or null when it cannot be. */
 function renderOneLine(value: Exclude<FieldValue, null>): string | null {
-    if (isMetalist(value) || isFlatScalarMap(value)) return null;
+    if (isMetalist(value) || isBlockMap(value)) return null;
     const rendered = Array.isArray(value) ? renderFlow(value) : renderScalar(value);
     return rendered.includes('\n') ? null : rendered;
 }
@@ -432,9 +492,9 @@ function appendTop(
     value: Exclude<FieldValue, null>
 ): Written {
     const indent = mapIndent(root, text);
-    if (isFlatScalarMap(value)) {
+    if (isBlockMap(value)) {
         const pad = ' '.repeat(indent);
-        return appendLines(text, root, `${name}:\n${pad}${renderFlatMap(value, indent)}`);
+        return appendLines(text, root, `${name}:\n${pad}${renderBlockMap(value, indent)}`);
     }
     if (isMetalist(value)) {
         const pad = ' '.repeat(indent);
@@ -586,10 +646,7 @@ export function setFields(source: string, fields: Record<string, unknown>): Edit
         }
         const parsed = asFieldValue(raw);
         if (parsed === undefined) {
-            refused.push({
-                field,
-                reason: 'not a string, number, boolean, list of strings, metalist, flat scalar map or null'
-            });
+            refused.push({ field, reason: NOT_A_FIELD_VALUE });
             continue;
         }
         const current = currentValue(base, path);
@@ -599,7 +656,7 @@ export function setFields(source: string, fields: Record<string, unknown>): Edit
             Array.isArray(current) &&
             current.some(isRecord)
                 ? null
-                : isFlatScalarMap(parsed) && Object.keys(parsed).length === 0
+                : isBlockMap(parsed) && Object.keys(parsed).length === 0
                   ? null
                   : parsed;
         if (sameValue(value, current)) continue;

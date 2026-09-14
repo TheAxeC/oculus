@@ -6,6 +6,35 @@
         counter += 1;
         return `tip-${counter}`;
     }
+
+    /** What the description is put on: the element's own attributes, and what it holds. */
+    type Described = {
+        querySelector(selectors: string): Element | null;
+        setAttribute(name: string, value: string): void;
+        removeAttribute(name: string): void;
+    };
+
+    /** What takes focus inside a wrapper, in the order the browser reaches them. */
+    const FOCUSABLE = 'a[href], button, input, select, textarea, [tabindex]:not([tabindex="-1"])';
+
+    /**
+     * The element the words describe: the control the wrapper holds, since a screen reader reads a
+     * description off the control it is on and the wrapper is not the thing being used. A wrapper
+     * around content that is no control is itself in the tab order, and then carries it instead.
+     */
+    export function describedControl(box: Described, focusable: boolean): Described | null {
+        const found = box.querySelector(FOCUSABLE);
+        if (found !== null) return found;
+        return focusable ? box : null;
+    }
+
+    /**
+     * The id the control is described by, or the empty string for a wrapper that describes nothing:
+     * one given no words, and a presentational one, whose tooltip only repeats the control's name.
+     */
+    export function describedBy(id: string, text: string, presentational: boolean): string {
+        return presentational || text === '' ? '' : id;
+    }
 </script>
 
 <script lang="ts">
@@ -126,6 +155,20 @@
         return () => document.removeEventListener('focusin', elsewhere);
     });
 
+    // The bubble's id goes on the control, once it is in the document and the bubble has been moved
+    // onto the body: the control is what the reader focuses, so it is what the description hangs on.
+    $effect(() => {
+        const wanted = describedBy(id, text, presentational);
+        const node = box === undefined ? null : describedControl(box, focusable);
+        if (node === null) return;
+        if (wanted === '') {
+            node.removeAttribute('aria-describedby');
+            return;
+        }
+        node.setAttribute('aria-describedby', wanted);
+        return () => node.removeAttribute('aria-describedby');
+    });
+
     /** Move the bubble out of the wrapper's ancestors and onto the body, and take it away with it. */
     function onBody(node: HTMLElement): { destroy: () => void } {
         document.body.append(node);
@@ -134,16 +177,15 @@
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_no_noninteractive_tabindex -->
-<!-- The wrapper normally takes no focus because the control inside it is focused and described.
-     With focusable it wraps non-control content such as a Chip and enters the tab order so focusin
-     reveals the description. -->
+<!-- The wrapper normally takes no focus because the control inside it is focused and described; the
+     description is put on that control on mount and the wrapper carries none. With focusable it
+     wraps non-control content such as a Chip and enters the tab order, and is described itself. -->
 <span
     class="tip"
     class:block
     bind:this={box}
     role={presentational ? 'presentation' : undefined}
     tabindex={focusable ? 0 : undefined}
-    aria-describedby={presentational || text === '' ? undefined : id}
     onpointerenter={later}
     onpointerleave={hide}
     onfocusin={show}

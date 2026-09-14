@@ -150,7 +150,7 @@ export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioC
 }
 
 /**
- * Which of the fixed documents each project folder holds, by project id. It is existence only, six
+ * Which of the fixed documents each project folder holds, by project id. It is existence only, four
  * `stat` calls per folder, so it runs on every rebuild beside the manifests themselves.
  */
 function documents(hub: string, manifests: RawManifest[]): Record<Id, DocPresence[]> {

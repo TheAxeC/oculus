@@ -45,11 +45,18 @@ export type Outcome = { ok: boolean; output: string; error: string };
 /** One row of `git branch --format`, as the branch menu draws it. */
 export type Branch = { name: string; upstream: string; current: boolean };
 
-/** Where a command runs: the directory git is pointed at, and the mirrors root it must stay under. */
-export type Where = { dir: string; mirrors: string };
+/**
+ * Where a command runs: the directory git is pointed at, the mirrors root it must stay under, and
+ * how git itself is run. server/deposit.ts puts its own runner here so a test can fail one command
+ * without a repository in that state; without one the real git below is used.
+ */
+export type Where = { dir: string; mirrors: string; git?: GitRunner };
 
 /** How `gh` is run. server/deposit.ts takes it as an option so a test never runs the real one. */
 export type GhRun = (args: string[], timeout: number) => Promise<Outcome>;
+
+/** How git is run: one argument vector, the `-C` of the mirror already at its head. */
+export type GitRunner = (args: string[], timeout: number) => Promise<Outcome>;
 
 /** Every git subcommand this module may run. tests/server/deposit.test.ts asserts no other ran. */
 export const SUBCOMMANDS = [
@@ -89,16 +96,22 @@ export function underMirrors(dir: string, mirrors: string): boolean {
     return full === base || full.startsWith(base + sep);
 }
 
+/** The real git, private to this module so the refusal below is the only way to it. */
+function git(args: string[], timeout: number): Promise<Outcome> {
+    return execute(GIT, args, timeout);
+}
+
 /**
- * One git command, as a list, with a timeout. This is the module's one git call site, and the
- * refusal above it has already run by the time it is reached.
+ * One git command, as a list, with a timeout. The refusal is the module's one gate, and it has
+ * already run by the time a runner is reached, so no runner is ever given a directory outside the
+ * mirrors folder. `Where` carries the runner: the real git, or the one a caller passed instead.
  */
 function run(at: Where, args: string[], timeout: number = TIMEOUT_MS): Promise<Outcome> {
     if (!underMirrors(at.dir, at.mirrors)) {
         return Promise.resolve(failed('that directory is not a deposit mirror'));
     }
     const argv = ['-C', at.dir, ...args];
-    return execute(GIT, argv, timeout);
+    return (at.git ?? git)(argv, timeout);
 }
 
 /**

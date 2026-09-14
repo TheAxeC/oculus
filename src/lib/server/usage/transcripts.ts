@@ -113,10 +113,19 @@ async function foldFile(file: Found): Promise<UsageDay[]> {
     return [...rows.values()];
 }
 
-function files(accounts: UsageAccountConfig[], now: number): Found[] {
-    const found: Found[] = [];
-    const roots = new Set<string>();
-    const cutoff = dayStart(now);
+/** What joins the labels of the accounts that share one store into the label its rows carry. */
+const SHARED_LABEL = ' + ';
+
+/** One transcript store: the tool that writes it, and the accounts that name it. */
+type Store = { tool: UsageTool; labels: string[] };
+
+/**
+ * The stores the accounts name, by the real path of each. Two accounts whose folders are one store,
+ * a symlink and its target, are one store read once; the rows it gives carry both labels joined, so
+ * a shared store is not credited to whichever account happened to be first in the configuration.
+ */
+function stores(accounts: UsageAccountConfig[]): Map<string, Store> {
+    const held = new Map<string, Store>();
     for (const account of accounts) {
         const folder =
             account.tool === 'claude'
@@ -128,15 +137,27 @@ function files(accounts: UsageAccountConfig[], now: number): Found[] {
         } catch {
             continue;
         }
-        if (roots.has(root)) continue;
-        roots.add(root);
+        const store = held.get(root);
+        if (store === undefined) {
+            held.set(root, { tool: account.tool, labels: [account.label] });
+            continue;
+        }
+        if (!store.labels.includes(account.label)) store.labels.push(account.label);
+    }
+    return held;
+}
+
+function files(accounts: UsageAccountConfig[], now: number): Found[] {
+    const found: Found[] = [];
+    const cutoff = dayStart(now);
+    for (const [root, store] of stores(accounts)) {
         const listed =
-            account.tool === 'claude'
+            store.tool === 'claude'
                 ? claudeTranscripts(root, 0, 0, { nested: true })
                 : codexRollouts(root, 0, 0);
+        const account = store.labels.join(SHARED_LABEL);
         for (const file of listed) {
-            if (file.mtimeMs >= cutoff)
-                found.push({ ...file, tool: account.tool, account: account.label });
+            if (file.mtimeMs >= cutoff) found.push({ ...file, tool: store.tool, account });
         }
     }
     return found.sort((left, right) => left.path.localeCompare(right.path));

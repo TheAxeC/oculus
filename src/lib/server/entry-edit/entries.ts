@@ -3,7 +3,7 @@
 
 import { isMap, isScalar, isSeq } from 'yaml';
 import type { Node, YAMLMap } from 'yaml';
-import { asFieldValue, deepEqual, isFlatScalarMap, sameValue } from '../yaml-edit.ts';
+import { NOT_A_FIELD_VALUE, asFieldValue, deepEqual, isBlockMap, sameValue } from '../yaml-edit.ts';
 import type { EditResult, Refusal } from '../yaml-edit.ts';
 import {
     LIST,
@@ -52,10 +52,7 @@ export function setEntryFields(
     for (const [field, raw] of Object.entries(fields)) {
         const parsed = asFieldValue(raw);
         if (parsed === undefined) {
-            refused.push({
-                field,
-                reason: 'not a string, number, boolean, list of strings, metalist, flat scalar map or null'
-            });
+            refused.push({ field, reason: NOT_A_FIELD_VALUE });
             continue;
         }
         const wanted =
@@ -64,7 +61,7 @@ export function setEntryFields(
             Array.isArray(current[field]) &&
             current[field].some(isRecord)
                 ? null
-                : isFlatScalarMap(parsed) && Object.keys(parsed).length === 0
+                : isBlockMap(parsed) && Object.keys(parsed).length === 0
                   ? null
                   : parsed;
         if (field === ident && (wanted === null || Array.isArray(wanted))) {

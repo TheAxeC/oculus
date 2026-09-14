@@ -159,7 +159,6 @@ function docs(found: DocPresence[] | undefined): DocFlag[] {
             label: doc.label,
             present: doc.present,
             human: doc.human,
-            public: doc.public,
             mtime: doc.present && doc.mtime > 0 ? doc.mtime : undefined
         })
     );

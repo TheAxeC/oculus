@@ -11,8 +11,9 @@
 // rule that holds on a fixture and not on the hub's own collection files is not a rule. Nothing
 // there is written; when the hub is not on this machine the whole block skips and says so.
 
-import { existsSync, readFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
 import {
@@ -109,7 +110,7 @@ describe('entry metalists', () => {
 });
 
 describe('entry raw maps', () => {
-    it('renders a new entry with a flat scalar map as a block map', () => {
+    it('renders a new entry with a map of scalars as a block map', () => {
         expect(
             renderEntry(['key', 'retrieval'], 'key', {
                 key: 'mimic-iv',
@@ -120,7 +121,7 @@ describe('entry raw maps', () => {
         );
     });
 
-    it('replaces one entry field with the complete flat scalar map', () => {
+    it('replaces one entry field with the complete block map', () => {
         const source = [
             'datasets:',
             '  - key: mimic-iv',
@@ -149,6 +150,70 @@ describe('entry raw maps', () => {
                 ''
             ].join('\n')
         );
+    });
+
+    it('renders a new entry whose block holds a list and a nested map', () => {
+        const retrieval = {
+            method: 'curl',
+            priority_first: ['portal', 'mirror'],
+            auth: { kind: 'token', env: 'TOKEN' }
+        };
+        const block = renderEntry(['key', 'retrieval'], 'key', { key: 'mimic-iv', retrieval });
+        expect(block.split('\n')).toEqual([
+            '  - key: mimic-iv',
+            '    retrieval:',
+            '      method: curl',
+            '      priority_first:',
+            '      - portal',
+            '      - mirror',
+            '      auth:',
+            '        kind: token',
+            '        env: TOKEN'
+        ]);
+        expect(parse(`entries:\n${block}\n`)).toEqual({
+            entries: [{ key: 'mimic-iv', retrieval }]
+        });
+    });
+
+    it('writes a block with a list, a nested map and a list of maps into a file that reads back equal', () => {
+        const source = [
+            'datasets:',
+            '  - key: mimic-iv',
+            '    retrieval:',
+            '      method: curl',
+            '    access: credentialed',
+            '',
+            'footer: kept',
+            ''
+        ].join('\n');
+        const retrieval = {
+            method: 'curl',
+            priority_first: ['portal', 'mirror'],
+            files: [{ name: 'a.zip' }, { name: 'b.zip' }],
+            auth: { kind: 'token', env: 'TOKEN' }
+        };
+        const out = setEntryFields(source, 'key', 'mimic-iv', { retrieval });
+        expect(out.refused).toEqual([]);
+        expect(out.changed).toEqual(['retrieval']);
+
+        const dir = mkdtempSync(join(tmpdir(), 'oculus-entry-edit-'));
+        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        const file = join(dir, 'data.yml');
+        writeFileSync(file, out.text, 'utf8');
+        expect(parse(readFileSync(file, 'utf8'))).toEqual({
+            datasets: [{ key: 'mimic-iv', retrieval, access: 'credentialed' }],
+            footer: 'kept'
+        });
+    });
+
+    it('writes a block under a key the entry has not got, and reads it back equal', () => {
+        const source = ['datasets:', '  - key: mimic-iv', '    access: open', ''].join('\n');
+        const retrieval = { steps: ['fetch', 'unzip'], auth: { env: 'TOKEN' } };
+        const out = setEntryFields(source, 'key', 'mimic-iv', { retrieval });
+        expect(out.refused).toEqual([]);
+        expect(parse(out.text)).toEqual({
+            datasets: [{ key: 'mimic-iv', access: 'open', retrieval }]
+        });
     });
 });
 

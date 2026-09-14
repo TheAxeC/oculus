@@ -41,6 +41,7 @@ import {
     SUBCOMMANDS,
     lsFiles,
     type GhRun,
+    type GitRunner,
     type Outcome
 } from '../../src/lib/server/deposit-git.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
@@ -533,6 +534,39 @@ describe('what is refused before any command', () => {
         const planned = await sync('nothing', options());
         expect(planned.ok).toBe(false);
         expect(planned.error).toContain('no project with the id nothing');
+    });
+});
+
+describe('the git runner the deposit is given', () => {
+    it('answers a failed switch before the branch moves, when the listing fails', async () => {
+        const mirror = join(mirrors, 'alpha-code');
+        const branch = git(mirror, 'rev-parse', '--abbrev-ref', 'HEAD').trim();
+        expect(branch).toBe('main');
+        const held = readFileSync(join(codeOf('alpha'), 'run.py'), 'utf8');
+        const listed = git(mirror, 'ls-files').split('\n').filter(Boolean);
+        expect(listed.length).toBeGreaterThan(0);
+
+        // Every command but the listing is run here, by this file, exactly as the module would have
+        // run it, so the mirror is clean and `review` is a branch the switch could take; the
+        // listing alone fails, which is what the guard is for.
+        const passthrough: GitRunner = (args) => {
+            try {
+                return answer(true, execFileSync('git', args, { encoding: 'utf8' }), '');
+            } catch (error) {
+                return answer(false, '', error instanceof Error ? error.message : String(error));
+            }
+        };
+        const failing: GitRunner = (args, timeout) =>
+            args.includes('ls-files')
+                ? answer(false, '', 'fatal: ls-files failed')
+                : passthrough(args, timeout);
+        const switched = await switchBranch('alpha', 'review', { ...options(), git: failing });
+        expect(switched.ok).toBe(false);
+        expect(switched.error).toBe('fatal: ls-files failed');
+        // The branch never moved and nothing was copied back: the switch stopped at the listing.
+        expect(git(mirror, 'rev-parse', '--abbrev-ref', 'HEAD').trim()).toBe('main');
+        expect(git(mirror, 'ls-files').split('\n').filter(Boolean)).toEqual(listed);
+        expect(readFileSync(join(codeOf('alpha'), 'run.py'), 'utf8')).toBe(held);
     });
 });
 

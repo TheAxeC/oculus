@@ -151,8 +151,6 @@ export type DocPresence = {
     present: boolean;
     /** A NOTES or DIARY document reserved for human edits. */
     human: boolean;
-    /** A document intended for public presentation or deposit. */
-    public: boolean;
     /** Last write of the file in milliseconds, and 0 for a document that is not there. */
     mtime: number;
 };
@@ -189,7 +187,6 @@ export type DocFlag = {
     label: string;
     present: boolean;
     human: boolean;
-    public: boolean;
     /** Last write of the file in milliseconds, absent for a document that is not there. */
     mtime?: number;
 };
@@ -287,7 +284,7 @@ export type Project = {
      * every project of the hub; it is here for the model to hold what the field means.
      */
     venue?: string;
-    /** The six fixed project documents, in the order sources/docs.ts lists them, presence only. */
+    /** The four fixed project documents, in the order sources/docs.ts lists them, presence only. */
     docs: DocFlag[];
     /** Folder relative to the hub, and the manifest's absolute path. */
     folder: string;

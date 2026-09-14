@@ -56,6 +56,17 @@ test('a tooltip on a hovered control closes when the palette takes the focus', a
     await expect(bubble).toHaveCount(0);
 });
 
+test('a tooltip describes the control it wraps, and not the wrapper around it', async ({
+    page
+}) => {
+    await boot(page);
+    const button = page.locator('nav button[data-view]').first();
+    const id = await button.getAttribute('aria-describedby');
+    expect(id).toMatch(/^tip-\d+$/);
+    await expect(page.locator(`#${id}`)).toHaveAttribute('role', 'tooltip');
+    expect(await page.locator('span.tip[aria-describedby]').count()).toBe(0);
+});
+
 test('a long chip value ends in an ellipsis inside its card', async ({ page }) => {
     const card = await projectCard(page);
     const label = card.locator('.chip .label').filter({ hasText: LONG_PROGRAM }).first();

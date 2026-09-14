@@ -4,9 +4,18 @@
 // routes/api/write/+server.ts is the route module and holds nothing but its POST, since a route
 // module may export only its verbs; everything the write does is here and in writes/. The order is
 // the order of the refusals: the request must come from this application's own page and carry the
-// process token, the body must be a write this route knows, the id must name a project the reader
-// found, and the field must be one the schema names. Only then does yaml-edit touch the bytes, and
-// only then, and only when something actually changed, is the file written.
+// process token, the body must be a write this route knows, and the id must name a project or an
+// entry the reader found. Only then does yaml-edit touch the bytes, and only then, and only when
+// something actually changed, is the file written.
+//
+// What the schema does to a field differs by what is written. A manifest field must be one
+// manifest-schema.yml names, and one it does not name is refused. A collection entry's text,
+// textarea, select, date or checkbox field is checked against the type its own file's schema
+// declares, so a value that does not fit is refused while the other fields of the request are
+// written; a tags, metalist or raw field is checked by yaml-edit's own vocabulary, and a field the
+// file's schema does not declare at all is written as it was given. The one write that stops whole
+// is a registry entry whose key field is cleared or moved onto another entry's value, since the
+// registry keys its entities by it.
 //
 // The four modules below it, split out when one file passed nine hundred lines: writes/manifest.ts
 // for a project.yml and a new idea, writes/entries.ts for a collection file, writes/subtasks.ts for

@@ -68,17 +68,10 @@ function project(): Record_ {
         domainIds: [],
         collaborators: [],
         docs: [
-            { name: 'README.md', label: 'README', present: true, human: false, public: false },
-            { name: 'PRESENT.md', label: 'PRESENT', present: false, human: false, public: true },
-            { name: 'RESULTS.md', label: 'RESULTS', present: true, human: false, public: false },
-            { name: 'code/README.md', label: 'CODE', present: false, human: false, public: false },
-            {
-                name: 'manuscript/main.pdf',
-                label: 'PDF',
-                present: true,
-                human: false,
-                public: false
-            }
+            { name: 'README.md', label: 'README', present: true, human: false },
+            { name: 'code/README.md', label: 'CODE', present: true, human: false },
+            { name: 'manuscript/main.pdf', label: 'PDF', present: true, human: false },
+            { name: 'manuscript/main.tex', label: 'TEX', present: false, human: false }
         ],
         folder: 'projects/manuscripts/alpha',
         file: `${FOLDER}/project.yml`,
@@ -163,11 +156,11 @@ describe('a project as its own tab', () => {
         const group = segment(body);
         expect(body).toContain(catalog['project.documents']);
         expect(group).toContain('>README.md</span>');
-        expect(group).toContain('>RESULTS.md</span>');
-        // PRESENT.md is not there, and the PDF is not a document this tab renders. Both are still
-        // on the card's own row of six, which reports presence and offers nothing.
-        expect(group).not.toContain('>PRESENT.md</span>');
+        expect(group).toContain('>code/README.md</span>');
+        // The PDF is not a document this tab renders, and the LaTeX source is not there. Both are
+        // still on the card's own row of four, which reports presence and offers nothing.
         expect(group).not.toContain('>manuscript/main.pdf</span>');
+        expect(group).not.toContain('>manuscript/main.tex</span>');
     });
 
     it('waits for the chosen document rather than drawing an empty one', () => {
@@ -185,11 +178,13 @@ describe('a project as its own tab', () => {
     });
 
     it('keeps showing the document the tab was left on', () => {
-        expect(chosen(html('alpha', { id: 'alpha', doc: 'RESULTS.md' }))).toBe('RESULTS.md');
+        expect(chosen(html('alpha', { id: 'alpha', doc: 'code/README.md' }))).toBe(
+            'code/README.md'
+        );
     });
 
     it('falls back to the first document when the one it remembers is gone', () => {
-        expect(chosen(html('alpha', { id: 'alpha', doc: 'PRESENT.md' }))).toBe('README.md');
+        expect(chosen(html('alpha', { id: 'alpha', doc: 'NOTES.md' }))).toBe('README.md');
     });
 
     it('says so when it was opened for no project, and for one the snapshot does not hold', () => {

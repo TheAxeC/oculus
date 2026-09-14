@@ -356,7 +356,7 @@ describe('usage readers', () => {
 });
 
 describe('usage transcript fold', () => {
-    it('folds both tools, excludes the eighth day, caches unchanged files and dedupes a symlinked project store', async () => {
+    it('folds both tools, excludes the eighth day, caches unchanged files and reads a symlinked project store once under both labels', async () => {
         const root = scratch();
         const claude = join(root, 'claude');
         const alias = join(root, 'claude-alias');
@@ -426,7 +426,7 @@ describe('usage transcript fold', () => {
         expect(first.rows).toEqual([
             {
                 tool: 'claude',
-                account: 'Personal',
+                account: 'Personal + Duplicate',
                 day: '2026-09-13',
                 model: 'claude-opus',
                 input: 10,
@@ -448,6 +448,35 @@ describe('usage transcript fold', () => {
         const second = await fold.fold(accounts, NOW);
         expect(second.readFiles).toBe(0);
         expect(second.readBytes).toBe(0);
+    });
+
+    it('keeps two stores of their own apart, each under its own label', async () => {
+        const root = scratch();
+        const one = join(root, 'one');
+        const two = join(root, 'two');
+        for (const [dir, model] of [
+            [one, 'claude-opus'],
+            [two, 'claude-sonnet']
+        ]) {
+            write(
+                join(dir, 'projects', 'p', 'one.jsonl'),
+                line({
+                    type: 'assistant',
+                    timestamp: '2026-09-13T10:00:00Z',
+                    message: { model, usage: { input_tokens: 10 } }
+                })
+            );
+        }
+        const accounts: UsageAccountConfig[] = [
+            { tool: 'claude', dir: one, label: 'Personal' },
+            { tool: 'claude', dir: two, label: 'Work' }
+        ];
+        const fold = await new UsageTranscriptFold().fold(accounts, NOW);
+        expect(fold.files).toBe(2);
+        expect(fold.rows.map((row) => `${row.account} ${row.model}`)).toEqual([
+            'Personal claude-opus',
+            'Work claude-sonnet'
+        ]);
     });
 
     it('includes a nested Claude sub-agent transcript in the usage rows', async () => {

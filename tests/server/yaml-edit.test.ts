@@ -14,7 +14,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
-import { setFields } from '../../src/lib/server/yaml-edit.ts';
+import { NOT_A_FIELD_VALUE, setFields } from '../../src/lib/server/yaml-edit.ts';
 import { engineDir, loadConfig, loadLocal } from '../../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 
@@ -129,17 +129,12 @@ describe('setting a metalist', () => {
     it('refuses a list whose map contains a non-string value', () => {
         const out = setFields(source, { meta: [{ label: 'Scheme', value: 3 }] });
         expect(out.changed).toEqual([]);
-        expect(out.refused).toEqual([
-            {
-                field: 'meta',
-                reason: 'not a string, number, boolean, list of strings, metalist, flat scalar map or null'
-            }
-        ]);
+        expect(out.refused).toEqual([{ field: 'meta', reason: NOT_A_FIELD_VALUE }]);
         expect(out.text).toBe(source);
     });
 });
 
-describe('setting a flat scalar map', () => {
+describe('setting a block map', () => {
     const source = [
         'title: Dataset',
         'retrieval:',
@@ -180,11 +175,58 @@ describe('setting a flat scalar map', () => {
         expect(out.text).toBe('title: Dataset\nafter: kept\n');
     });
 
-    it('refuses a nested map', () => {
-        const out = setFields(source, { retrieval: { method: { command: 'wget' } } });
+    it('writes a block holding a list, a nested map and a list of maps, and reads it back equal', () => {
+        const value = {
+            method: 'curl',
+            priority_first: ['one', 'two'],
+            files: [
+                { name: 'a.zip', sha: 'aaa' },
+                { name: 'b.zip', sha: 'bbb' }
+            ],
+            auth: { kind: 'token', env: 'TOKEN' }
+        };
+        const out = setFields(source, { retrieval: value });
+        expect(out.refused).toEqual([]);
+        expect(out.changed).toEqual(['retrieval']);
+        expect(out.text).toBe(
+            [
+                'title: Dataset',
+                'retrieval:',
+                '  method: curl',
+                '  priority_first:',
+                '  - one',
+                '  - two',
+                '  files:',
+                '  - name: a.zip',
+                '    sha: aaa',
+                '  - name: b.zip',
+                '    sha: bbb',
+                '  auth:',
+                '    kind: token',
+                '    env: TOKEN',
+                'after: kept',
+                ''
+            ].join('\n')
+        );
+        expect(parse(out.text)).toEqual({ title: 'Dataset', retrieval: value, after: 'kept' });
+    });
+
+    it('appends a block with a list and a nested map under a key the file has not got', () => {
+        const out = setFields('title: Dataset\nafter: kept\n', {
+            retrieval: { steps: ['fetch'], auth: { env: 'TOKEN' } }
+        });
+        expect(out.refused).toEqual([]);
+        expect(parse(out.text)).toEqual({
+            title: 'Dataset',
+            after: 'kept',
+            retrieval: { steps: ['fetch'], auth: { env: 'TOKEN' } }
+        });
+    });
+
+    it('refuses a map holding something that is no scalar, list or map', () => {
+        const out = setFields(source, { retrieval: { method: () => 'wget' } });
         expect(out.changed).toEqual([]);
-        expect(out.refused).toHaveLength(1);
-        expect(out.refused[0].field).toBe('retrieval');
+        expect(out.refused).toEqual([{ field: 'retrieval', reason: NOT_A_FIELD_VALUE }]);
         expect(out.text).toBe(source);
     });
 });
@@ -330,10 +372,10 @@ describe('what is not written', () => {
         ]);
     });
 
-    it('refuses a nested map and a list that is not strings', () => {
-        const out = setFields(DOC, { title: { a: { b: 1 } }, program: [1, 2] });
+    it('refuses a list that is neither strings nor maps of strings', () => {
+        const out = setFields(DOC, { program: [1, 2] });
         expect(out.text).toBe(DOC);
-        expect(out.refused.map((one) => one.field)).toEqual(['title', 'program']);
+        expect(out.refused).toEqual([{ field: 'program', reason: NOT_A_FIELD_VALUE }]);
     });
 
     it('refuses everything when the file does not parse', () => {

@@ -26,7 +26,7 @@ import { marked } from 'marked';
 /**
  * The elements a rendered document, an assistant turn and one line of inline Markdown are made of:
  * what marked emits, plus the formatting and grouping tags the hub's own Markdown writes by hand
- * (a README and a PRESENT hold `b`, `i`, `small`, `sub`, `sup`, `div` and a `details` block) and the
+ * (a README holds `b`, `i`, `small`, `sub`, `sup`, `div` and a `details` block) and the
  * `b` the catalog's own lines carry. Nothing here runs, loads or collects.
  */
 export const ALLOWED_TAGS = [

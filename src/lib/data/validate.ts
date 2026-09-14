@@ -223,6 +223,48 @@ function checkReferences(manifest: RawManifest, ids: IdSets, findings: Finding[]
     }
 }
 
+/** A project's `related:` names other projects; naming itself draws a card that links to itself. */
+function checkSelfRelated(manifest: RawManifest, findings: Finding[]): void {
+    const value = manifest.related;
+    if (!Array.isArray(value)) return;
+    for (const item of value) {
+        if (item !== manifest.id) continue;
+        findings.push({
+            file: manifest.file,
+            key: 'related',
+            message: `related names the project itself: ${manifest.id}`
+        });
+    }
+}
+
+/**
+ * Every project folder has a name of its own. The folder name is the project's id, so two manifests
+ * under folders of one name are one id: the second card overwrites the first, and the sessions
+ * matcher, which finds a project by its folder name, cannot tell the two apart.
+ */
+function checkFolderNames(raw: RawPortfolio, findings: Finding[]): void {
+    const byName = new Map<string, RawManifest[]>();
+    for (const manifest of raw.manifests) {
+        const name =
+            manifest.folder
+                .split('/')
+                .filter((part) => part !== '')
+                .pop() ?? '';
+        if (name === '') continue;
+        byName.set(name, [...(byName.get(name) ?? []), manifest]);
+    }
+    for (const [name, held] of byName) {
+        if (held.length < 2) continue;
+        for (const manifest of held) {
+            findings.push({
+                file: manifest.file,
+                key: 'folder',
+                message: `${held.length} projects share the folder name ${name}, so their ids collide`
+            });
+        }
+    }
+}
+
 /**
  * The keys of the `collaborations` collection. A collection the config does not name reaches here
  * as no keys, and every collaborator a manifest names is then a finding: an id that resolves
@@ -318,6 +360,37 @@ function checkCollectionSchema(raw: RawPortfolio, findings: Finding[]): void {
 }
 
 /**
+ * Two entries of one collection with the same identity value. The identity field is the schema's
+ * first, `title` where the file has no schema, and it is what a write addresses an entry by: with
+ * two of one value, an edit reaches the first and the second can be neither edited nor removed.
+ */
+function checkEntryIdentity(raw: RawPortfolio, findings: Finding[]): void {
+    for (const key of Object.keys(raw.collections).sort()) {
+        const collection = raw.collections[key];
+        const names = fieldNames(collection.meta.schema);
+        const ident = names.length > 0 ? names[0] : 'title';
+        const counts = new Map<string, number>();
+        for (const entry of collection.entries) {
+            const held = entry[ident];
+            if (typeof held !== 'string' && typeof held !== 'number') continue;
+            const value = String(held);
+            counts.set(value, (counts.get(value) ?? 0) + 1);
+        }
+        collection.entries.forEach((entry, index) => {
+            const held = entry[ident];
+            if (typeof held !== 'string' && typeof held !== 'number') return;
+            const value = String(held);
+            if ((counts.get(value) ?? 0) < 2) return;
+            findings.push({
+                file: collection.file,
+                key: `entries[${index}].${ident}`,
+                message: `two entries share the ${ident} ${value}`
+            });
+        });
+    }
+}
+
+/**
  * A funding entry is known by its `key` when it has one and by its `title` otherwise, so an entry
  * with neither has no identity and normalise cannot carry it. The other four registries require an
  * id and their reader has already reported a missing one, so only funding is checked here.
@@ -398,11 +471,14 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
         checkFocus(manifest, vocab.lanes, findings);
         checkShapes(manifest, findings);
         checkReferences(manifest, ids, findings);
+        checkSelfRelated(manifest, findings);
         checkCollaborators(manifest, collaborators, findings);
         checkChips(manifest, vocab.chips, findings);
     }
+    checkFolderNames(raw, findings);
     checkFundingIdentity(raw, findings);
     checkEntryStatus(raw, vocab.statuses, findings);
+    checkEntryIdentity(raw, findings);
     checkCollectionSchema(raw, findings);
     checkHostStatus(raw, rules, findings);
 

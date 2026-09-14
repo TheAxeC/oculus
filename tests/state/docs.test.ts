@@ -58,10 +58,10 @@ describe('the documents of a project', () => {
 
     it('holds what the endpoint refused with instead of the document', async () => {
         serving({ status: 404, body: { error: 'document does not exist' } });
-        document('bravo', 'RESULTS.md');
+        document('bravo', 'code/README.md');
         await settle();
-        expect(document('bravo', 'RESULTS.md').error).toBe('document does not exist');
-        expect(document('bravo', 'RESULTS.md').html).toBe('');
+        expect(document('bravo', 'code/README.md').error).toBe('document does not exist');
+        expect(document('bravo', 'code/README.md').html).toBe('');
     });
 
     it('asks again once the portfolio version moved, and shows what came back', async () => {

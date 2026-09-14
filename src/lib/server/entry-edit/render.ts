@@ -2,9 +2,9 @@
 // changes independently of locating or applying edits.
 
 import {
-    isFlatScalarMap,
+    isBlockMap,
     isMetalist,
-    renderFlatMap,
+    renderBlockMap,
     renderMetalist,
     renderScalar
 } from '../yaml-edit.ts';
@@ -33,10 +33,10 @@ export function renderEntry(
         const value = fields[name];
         if (value === undefined || value === null || value === '') continue;
         if (Array.isArray(value) && value.length === 0) continue;
-        if (isFlatScalarMap(value)) {
+        if (isBlockMap(value)) {
             if (Object.keys(value).length === 0) continue;
             lines.push(`    ${name}:`);
-            lines.push(`      ${renderFlatMap(value, 6)}`);
+            lines.push(`      ${renderBlockMap(value, 6)}`);
             continue;
         }
         if (isMetalist(value)) {

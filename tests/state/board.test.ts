@@ -235,14 +235,8 @@ function snapshot(): Snapshot {
             domainIds: ['heart'],
             collaborators: ['someone'],
             docs: [
-                { name: 'README.md', label: 'README', present: true, human: false, public: false },
-                {
-                    name: 'code/README.md',
-                    label: 'CODE',
-                    present: false,
-                    human: false,
-                    public: false
-                }
+                { name: 'README.md', label: 'README', present: true, human: false },
+                { name: 'code/README.md', label: 'CODE', present: false, human: false }
             ]
         }),
         project('bravo', 'manuscripts', {

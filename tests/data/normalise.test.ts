@@ -22,7 +22,6 @@ function documents(id: string, present: string[], mtime = 0): DocPresence[] {
         path: `/hub/projects/active/${id}/${name}`,
         present: present.includes(name),
         human: false,
-        public: false,
         mtime: present.includes(name) ? mtime : 0
     }));
 }
@@ -275,14 +274,8 @@ describe('normalise, the field mapping', () => {
             domainIds: ['heart'],
             collaborators: ['someone'],
             docs: [
-                { name: 'README.md', label: 'README', present: true, human: false, public: false },
-                {
-                    name: 'code/README.md',
-                    label: 'CODE',
-                    present: false,
-                    human: false,
-                    public: false
-                }
+                { name: 'README.md', label: 'README', present: true, human: false },
+                { name: 'code/README.md', label: 'CODE', present: false, human: false }
             ],
             folder: 'projects/active/alpha',
             file: '/hub/projects/active/alpha/project.yml'

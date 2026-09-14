@@ -29,24 +29,19 @@ export function isFinding(result: DocRead): result is Finding {
 }
 
 /**
- * The documents a project folder is asked about, in this order. Folder-relative, and every one is
- * a file: nothing under `attic/` is on the list, so an attic copy is never seen.
+ * The four documents a project folder is asked about, in this order. Folder-relative, and every one
+ * is a file: nothing under `attic/` is on the list, so an attic copy is never seen.
  */
 export const PROJECT_DOCS = [
     { name: 'README.md', label: 'README' },
-    { name: 'PRESENT.md', label: 'PRESENT' },
-    { name: 'RESULTS.md', label: 'RESULTS' },
     { name: 'code/README.md', label: 'CODE' },
     { name: 'manuscript/main.pdf', label: 'PDF' },
     { name: 'manuscript/main.tex', label: 'TEX' }
 ];
 
-/** The cockpit's document marks follow labels, including future NOTES and DIARY entries. */
-function marks(label: string): { human: boolean; public: boolean } {
-    return {
-        human: label === 'NOTES' || label === 'DIARY',
-        public: label === 'PRESENT'
-    };
+/** The document marks follow labels: a future NOTES or DIARY is a document the reader owns. */
+function marks(label: string): { human: boolean } {
+    return { human: label === 'NOTES' || label === 'DIARY' };
 }
 
 /**

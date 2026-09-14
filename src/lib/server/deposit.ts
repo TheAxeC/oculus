@@ -63,6 +63,7 @@ import {
     viewArgs,
     type Branch,
     type GhRun,
+    type GitRunner,
     type Outcome,
     type Where
 } from './deposit-git.ts';
@@ -132,6 +133,8 @@ export type DepositOptions = {
     into?: WriteTarget;
     /** How `gh` is run; the real one when absent. */
     gh?: GhRun;
+    /** How git is run; the real one when absent. A test fails one command through it. */
+    git?: GitRunner;
     /** The last plan per project, kept by the owning server context for the GET. */
     plans?: Map<string, Plan>;
 };
@@ -159,11 +162,19 @@ function done(output: string): Outcome {
     return { ok: true, output, error: '' };
 }
 
-function settings(options: DepositOptions): { mirrors: string; into: WriteTarget; run: GhRun } {
+function settings(options: DepositOptions): {
+    mirrors: string;
+    into: WriteTarget;
+    run: GhRun;
+    where: (dir: string, mirrors: string) => Where;
+} {
+    const runner = options.git;
     return {
         mirrors: options.mirrors ?? defaultMirrorsDir(),
         into: options.into ?? target(),
-        run: options.gh ?? gh
+        run: options.gh ?? gh,
+        where: (dir, mirrors) =>
+            runner === undefined ? { dir, mirrors } : { dir, mirrors, git: runner }
     };
 }
 
@@ -174,7 +185,7 @@ function mapOf(value: unknown): Record<string, unknown> {
 
 /** The deposit of one project, or null when the hub holds no project with that id. */
 function depositFor(id: string, options: DepositOptions): Deposit | null {
-    const { mirrors, into } = settings(options);
+    const { mirrors, into, where } = settings(options);
     const { manifests } = readManifests(into.hub, into.config.scan);
     const manifest = manifests.find((one) => one.id === id);
     if (manifest === undefined) return null;
@@ -193,7 +204,7 @@ function depositFor(id: string, options: DepositOptions): Deposit | null {
         repo,
         url,
         code: join(dirname(manifest.file), 'code'),
-        at: { dir: join(mirrors, repo), mirrors },
+        at: where(join(mirrors, repo), mirrors),
         about: {
             description:
                 description.length > DESCRIPTION_MAX
@@ -227,7 +238,7 @@ function made(at: Where): boolean {
  * is an empty repository on `main` with no remote, which `push` turns into a GitHub repository.
  */
 export async function adopt(id: string, options: DepositOptions = {}): Promise<Outcome> {
-    const { mirrors, run } = settings(options);
+    const { mirrors, run, where } = settings(options);
     const deposit = depositFor(id, options);
     if (deposit === null) return failed(`the hub holds no project with the id ${id}`);
     if (made(deposit.at)) return done('the mirror is already there');
@@ -242,7 +253,7 @@ export async function adopt(id: string, options: DepositOptions = {}): Promise<O
     }
     if (url !== '') {
         rmSync(deposit.at.dir, { recursive: true, force: true });
-        const cloned = await cloneInto({ dir: mirrors, mirrors }, url, deposit.repo);
+        const cloned = await cloneInto(where(mirrors, mirrors), url, deposit.repo);
         return cloned.ok ? done(`cloned ${url}`) : cloned;
     }
 

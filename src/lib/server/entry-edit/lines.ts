@@ -4,9 +4,9 @@ import { isMap, isScalar, isSeq, parseDocument } from 'yaml';
 import type { Document, Node, Pair, Scalar, YAMLMap, YAMLSeq } from 'yaml';
 import {
     deepEqual,
-    isFlatScalarMap,
+    isBlockMap,
     isMetalist,
-    renderFlatMap,
+    renderBlockMap,
     renderMetalist,
     renderScalar
 } from '../yaml-edit.ts';
@@ -263,12 +263,12 @@ export function replaceIn(text: string, node: Node, value: Exclude<FieldValue, n
     const start = range[0];
     const end = endOffset(node);
     let rendered: string;
-    if (isFlatScalarMap(value)) {
+    if (isBlockMap(value)) {
         const block = isMap(node) && node.flow !== true;
         const indent = block
             ? columnAt(text, start)
             : indentOf(text.split('\n')[lineAt(text, start)]) + 2;
-        rendered = `${block ? '' : `\n${' '.repeat(indent)}`}${renderFlatMap(value, indent)}`;
+        rendered = `${block ? '' : `\n${' '.repeat(indent)}`}${renderBlockMap(value, indent)}`;
     } else if (isMetalist(value)) {
         rendered = renderMetalist(value, columnAt(text, start));
     } else if (Array.isArray(value)) {
@@ -298,12 +298,12 @@ function appendField(
     if (own === null) return fail('the entry has no place in the file');
     const pad = ' '.repeat(columnAt(text, own[0]));
     const lines = text.split('\n');
-    if (isFlatScalarMap(value)) {
+    if (isBlockMap(value)) {
         lines.splice(
             found.range.end,
             0,
             `${pad}${field}:`,
-            `${pad}  ${renderFlatMap(value, pad.length + 2)}`
+            `${pad}  ${renderBlockMap(value, pad.length + 2)}`
         );
         return { text: lines.join('\n') };
     }

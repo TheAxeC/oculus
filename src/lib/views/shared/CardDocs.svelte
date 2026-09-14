@@ -35,11 +35,9 @@
         });
     }
 
-    /** Explain a document's human-only or public marker when it has one. */
-    function docTip(doc: { human: boolean; public: boolean }): string | undefined {
-        if (doc.human) return t('project.helper.doc_human_tip');
-        if (doc.public) return t('project.helper.doc_public_tip');
-        return undefined;
+    /** Explain a document's human-only marker when it has one. */
+    function docTip(doc: { human: boolean }): string | undefined {
+        return doc.human ? t('project.helper.doc_human_tip') : undefined;
     }
 </script>
 
@@ -49,7 +47,7 @@
         <div class="docs">
             {#each item.project.docs as doc (doc.name)}
                 {#if doc.present}
-                    <span class="doc" class:human={doc.human} class:public={doc.public}>
+                    <span class="doc" class:human={doc.human}>
                         <ToolButton
                             label={doc.label}
                             title={docTip(doc)}
@@ -129,10 +127,6 @@
 
     .doc.human :global(.tool) {
         border-color: var(--c-amber);
-    }
-
-    .doc.public :global(.tool) {
-        border-color: var(--c-green);
     }
 
     .files {

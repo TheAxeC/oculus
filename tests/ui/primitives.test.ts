@@ -26,7 +26,7 @@ import Table, { order, type Column } from '../../src/lib/ui/Table.svelte';
 import Ticker from '../../src/lib/ui/Ticker.svelte';
 import Toolbar from '../../src/lib/ui/Toolbar.svelte';
 import ToolButton from '../../src/lib/ui/ToolButton.svelte';
-import Tooltip from '../../src/lib/ui/Tooltip.svelte';
+import Tooltip, { describedBy, describedControl } from '../../src/lib/ui/Tooltip.svelte';
 import Gallery from '../../src/lib/views/Gallery.svelte';
 import {
     asciiCatalog,
@@ -456,15 +456,54 @@ describe('Tooltip', () => {
             .body;
     }
 
-    it('links its bubble to the control it wraps, and draws it hidden', () => {
+    /** An element as the description code uses it: what it holds, and the attributes it was given. */
+    function element(child: Element | null = null): {
+        attributes: Record<string, string>;
+        querySelector: (selectors: string) => Element | null;
+        setAttribute: (name: string, value: string) => void;
+        removeAttribute: (name: string) => void;
+    } {
+        const attributes: Record<string, string> = {};
+        return {
+            attributes,
+            querySelector: () => child,
+            setAttribute: (name, value) => {
+                attributes[name] = value;
+            },
+            removeAttribute: (name) => {
+                delete attributes[name];
+            }
+        };
+    }
+
+    it('draws its bubble hidden, with no description on the wrapper itself', () => {
         const body = tip({});
-        const described = /aria-describedby="(tip-\d+)"/.exec(body);
-        expect(described).not.toBe(null);
-        const id = described === null ? '' : described[1];
-        expect(body).toContain(`id="${id}"`);
+        const bubble = /id="(tip-\d+)"/.exec(body);
+        expect(bubble).not.toBe(null);
+        // The description is put on the control on mount, so the markup carries none of its own.
+        expect(body).not.toContain('aria-describedby');
         expect(body).toContain('role="tooltip"');
         expect(body).toContain('hidden');
         expect(body).toContain('Put it back');
+    });
+
+    it('describes the control the wrapper holds, and not the wrapper', () => {
+        const button = element();
+        const box = element(button as unknown as Element);
+        expect(describedControl(box, false)).toBe(button);
+        expect(describedControl(box, true)).toBe(button);
+    });
+
+    it('describes nothing where the words repeat the control name or there are none', () => {
+        expect(describedBy('tip-1', 'Put it back', false)).toBe('tip-1');
+        expect(describedBy('tip-1', '', false)).toBe('');
+        expect(describedBy('tip-1', 'Put it back', true)).toBe('');
+    });
+
+    it('describes a focusable wrapper itself when it holds no control', () => {
+        const box = element();
+        expect(describedControl(box, true)).toBe(box);
+        expect(describedControl(box, false)).toBe(null);
     });
 
     it('describes nothing when it was given no words', () => {
