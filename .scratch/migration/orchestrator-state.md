@@ -66,7 +66,7 @@ dispatch:                                  # workers_at_once: 2; R12e and R12f i
 
 ## Open items (repeated in every report until closed; Axel, 2026-09-14 00:05: a reported gap is booked here the same moment, never mentioned once and dropped)
 - R12c edge 2, the `waiting-on` finding: closed 2026-09-14 17:20, Axel ruled: a collaborator key or a project id, never a free name, a finding otherwise; the manifest's `BTFNO` is `btfno`; booked as R12f beside R12e.
-- R12c edge 8, `Entry.id` identity-first (raised 2026-09-14 16:46): built as briefed it renames 70 of 70 venue ids (`jbi` to the venue's full name, which `venue_id:` in the manifests names by `jbi`) and 3 of 11 funding ids, and every funding cross-link goes dead, since `state/collection.ts` line 427 matches `fundingIds` against `entry.id` and the manifests tag funding by key. The current order (`id`, then `key`, then the identity field) is what the server's write resolution, the manifests and the venue ids depend on. Options: (a) close the edge as a wrong premise, no change; (b) a package owning both `data/normalise.ts` and `state/collection.ts` plus every `venue_id` reader, changing what a venue id is. Recommendation: (a).
+- R12c edge 8, `Entry.id` identity-first: closed 2026-09-14 17:36, Axel agreed: a wrong premise, no change; the entry id stays the `id:` line, then `key:`, then the schema's identity field.
 - R12d edge 7, the terminal rename case: closed 2026-09-14 17:20, Axel chose (a): a `tmux_socket` local key, booked under R2 with the case.
 
 - R12b, the files listing's version: closed 2026-09-14 16:13, Axel chose (a): a `files` channel published by the roots watcher with its own version, booked as R12e after R12d.
