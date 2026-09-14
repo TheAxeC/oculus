@@ -167,6 +167,13 @@
         box-shadow: var(--shadow);
     }
 
+    /* The tray floats over a pane, so it keeps more of its colour than the pane does. */
+    :global(body.wall) .tray {
+        background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
+
     header,
     .task {
         display: flex;

@@ -43,6 +43,13 @@
         background: var(--panel);
     }
 
+    /* Over a wallpaper the box paints nothing, as the shell's pane around it does: a card, a lane,
+       a frame or a form inside it is then the one translucent layer over the picture, and content
+       the box holds directly sits on the picture itself. */
+    :global(body.wall) .pane {
+        background: transparent;
+    }
+
     header {
         display: flex;
         align-items: center;
@@ -84,6 +91,13 @@
     /* The terminal shape: the header row is a titlebar strip on the chip colour. */
     :global(body.rice) header {
         background: var(--chip);
+    }
+
+    /* The titlebar strip keeps the same fraction of the chip colour as the box keeps of its own. */
+    :global(body.rice.wall) header {
+        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
     }
 
     :global(body.rice) .title {

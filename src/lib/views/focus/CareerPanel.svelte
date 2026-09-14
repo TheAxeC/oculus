@@ -250,6 +250,12 @@
         background: var(--panel);
     }
 
+    :global(body.wall) .career {
+        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
+
     .career > summary {
         display: flex;
         align-items: center;
@@ -262,6 +268,11 @@
         color: var(--muted-txt, var(--muted));
         background: var(--chip);
         cursor: pointer;
+    }
+
+    /* Inside the panel, which is already translucent: these rows keep their rules and paint nothing. */
+    :global(body.wall) .career > summary {
+        background: transparent;
     }
 
     .body {
@@ -304,6 +315,10 @@
         font-size: var(--fs-sm);
     }
 
+    :global(body.wall) .fact {
+        background: transparent;
+    }
+
     .fact b {
         margin-right: 5px;
         font-size: var(--fs-xxs);
@@ -323,6 +338,11 @@
         border-left: 3px solid var(--c-orange);
         border-radius: 6px;
         background: var(--chip);
+    }
+
+    :global(body.wall) .milestone,
+    :global(body.wall) .caveat {
+        background: transparent;
     }
 
     .milestone {
@@ -368,6 +388,10 @@
         color: var(--accent-txt, var(--accent));
     }
 
+    :global(body.wall) .when {
+        background: transparent;
+    }
+
     .hosts {
         display: flex;
         flex-direction: column;
@@ -401,6 +425,10 @@
         color: var(--muted-txt, var(--muted));
     }
 
+    :global(body.wall) .rank {
+        background: transparent;
+    }
+
     .hostname {
         font-weight: 700;
     }
@@ -430,6 +458,10 @@
         text-transform: uppercase;
         color: var(--muted-txt, var(--muted));
         cursor: pointer;
+    }
+
+    :global(body.wall) .move {
+        background: transparent;
     }
 
     .move:hover,

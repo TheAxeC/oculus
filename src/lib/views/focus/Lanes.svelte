@@ -401,6 +401,12 @@
         background: var(--panel);
     }
 
+    :global(body.wall) .lane {
+        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
+
     .lane.lit {
         box-shadow: inset 0 0 0 2px var(--tone, var(--line));
     }

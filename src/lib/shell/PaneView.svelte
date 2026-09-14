@@ -265,13 +265,11 @@
         overflow: hidden;
     }
 
-    /* Over a wallpaper a pane keeps most of its own colour and lets the picture through the rest,
-       which is the whole reason to have one. The backdrop blur takes the picture's detail out from
-       behind the text without smearing the picture itself. */
+    /* Over a wallpaper the pane box paints nothing and keeps its border: the tab strip and the view
+       inside the body each keep their own fraction of their colour, so the picture reads through one
+       translucent layer rather than two and shows plainly around whatever the view draws. */
     :global(body.wall) .pane {
-        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
-        backdrop-filter: blur(var(--wall-blur));
-        -webkit-backdrop-filter: blur(var(--wall-blur));
+        background: transparent;
     }
 
     /* The only thing on the page that scrolls is what a view puts in here. */

@@ -15,8 +15,15 @@ import { crtDefault, defaultTheme, themes, wallpaperOnTheme } from './appearance
 /** The key the appearance and the per-instance state are saved under. */
 export const UI_KEY = 'oculus.ui.v1';
 
-/** The envelope version saveUi writes and loadUi demands. */
-export const UI_VERSION = 1;
+/** The envelope version saveUi writes. */
+export const UI_VERSION = 2;
+
+/**
+ * The one earlier envelope loadUi still reads. It differs in a single field: its `wallpaper` was
+ * written by every save rather than by the toggle alone, so a value there is not the viewer's choice
+ * and is read as none.
+ */
+const UI_VERSION_UNCHOSEN = 1;
 
 /** What the store needs of a Storage, so a test can hand it a plain object. */
 type Storable = Pick<Storage, 'getItem' | 'setItem'>;
@@ -24,7 +31,8 @@ type Storable = Pick<Storage, 'getItem' | 'setItem'>;
 type Ui = {
     theme: string;
     crt: boolean;
-    wallpaper: boolean;
+    /** The toggle's own value, or null wherever a wallpaper shows, which is the theme's answer. */
+    wallpaper: boolean | null;
     unicode: boolean;
     textScale: number | null;
     terminalFont: number | null;
@@ -35,18 +43,19 @@ type Ui = {
 };
 
 /**
- * What a browser that has saved nothing starts on. Three of the six come from
- * config/appearance.yml rather than from a literal here: the theme is the first of its list, the
- * overlay is its `crt.default`, and the wallpaper is on wherever one is configured and the theme it
- * starts on is one the wallpaper shows under. The glyphs start as the theme's own, which is the
- * ASCII stand-ins on a terminal palette; `unicode` is what turns that off.
+ * What a browser that has saved nothing starts on. Two of the six come from
+ * config/appearance.yml rather than from a literal here: the theme is the first of its list and the
+ * overlay is its `crt.default`. The wallpaper starts on none, which wallpaper() answers from the
+ * theme in force, so it shows wherever one is configured until the toggle says otherwise. The glyphs
+ * start as the theme's own, which is the ASCII stand-ins on a terminal palette; `unicode` is what
+ * turns that off.
  */
 function defaultUi(): Ui {
     const theme = defaultTheme();
     return {
         theme,
         crt: crtDefault(),
-        wallpaper: wallpaperOnTheme(theme),
+        wallpaper: null,
         unicode: false,
         textScale: null,
         terminalFont: null,
@@ -74,12 +83,15 @@ export function crt(): boolean {
 }
 
 /**
- * Whether the viewer wants the wallpaper. Whether one is actually drawn is this and the theme
- * together: the shell asks appearance.wallpaperOnTheme() as well, so switching to a theme the
- * wallpaper does not show under hides it without forgetting this.
+ * Whether the viewer wants the wallpaper. A browser that has never pressed the toggle holds none, and
+ * the answer is then the theme's: on wherever a wallpaper shows, so a save of any other field cannot
+ * put it out. Whether one is actually drawn is this and the theme together: the shell asks
+ * appearance.wallpaperOnTheme() as well, so switching to a theme the wallpaper does not show under
+ * hides it without forgetting the choice.
  */
 export function wallpaper(): boolean {
-    return store.current.wallpaper;
+    const chosen = store.current.wallpaper;
+    return chosen === null ? wallpaperOnTheme(store.current.theme) : chosen;
 }
 
 /** Whether the real glyphs are kept on a terminal theme instead of their ASCII stand-ins. */
@@ -149,14 +161,17 @@ export function loadUi(storage: Storable = localStorage): boolean {
     }
     if (typeof saved !== 'object' || saved === null || Array.isArray(saved)) return false;
     const held = saved as Record<string, unknown>;
-    if (held.version !== UI_VERSION) return false;
+    if (held.version !== UI_VERSION && held.version !== UI_VERSION_UNCHOSEN) return false;
 
     const instances = held.instances;
     const started = defaultUi();
     store.current = {
         theme: known(held.theme),
         crt: typeof held.crt === 'boolean' ? held.crt : started.crt,
-        wallpaper: typeof held.wallpaper === 'boolean' ? held.wallpaper : started.wallpaper,
+        wallpaper:
+            held.version === UI_VERSION && typeof held.wallpaper === 'boolean'
+                ? held.wallpaper
+                : null,
         unicode: held.unicode === true,
         textScale: boundedTextScale(held.textScale),
         terminalFont:
@@ -202,7 +217,7 @@ export function setCrt(on: boolean): void {
     save({ ...store.current, crt: on });
 }
 
-/** Turn the wallpaper on or off. */
+/** Turn the wallpaper on or off. The only writer of the field, so the value saved is a choice. */
 export function setWallpaper(on: boolean): void {
     save({ ...store.current, wallpaper: on });
 }

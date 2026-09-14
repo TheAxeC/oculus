@@ -172,6 +172,12 @@
         background: var(--panel);
     }
 
+    :global(body.wall) .month {
+        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
+
     .month.current {
         border-color: var(--accent);
     }

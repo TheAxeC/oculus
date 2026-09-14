@@ -100,4 +100,10 @@
         border: 0;
         background: var(--panel);
     }
+
+    :global(body.wall) .frame {
+        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
 </style>

@@ -283,11 +283,23 @@
         padding: 0 3px;
     }
 
+    :global(body.wall) .doc :global(code) {
+        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
+
     .doc :global(pre) {
         overflow-x: auto;
         padding: 8px;
         background: var(--chip);
         border-radius: var(--radius-sm);
+    }
+
+    :global(body.wall) .doc :global(pre) {
+        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
     }
 
     .doc :global(pre code) {

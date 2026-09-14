@@ -154,6 +154,11 @@
         white-space: pre-wrap;
     }
 
+    /* Inside a card that is already translucent: a second layer would read as one nearly solid one, so the block keeps its border and paints nothing. */
+    :global(body.wall) pre {
+        background: transparent;
+    }
+
     .gmail a {
         display: inline-flex;
         align-items: center;

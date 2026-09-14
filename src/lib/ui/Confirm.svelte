@@ -106,6 +106,13 @@
         box-shadow: var(--shadow);
     }
 
+    /* The box floats over a pane and holds the question, so it keeps more of its colour than the pane does. */
+    :global(body.wall) .box {
+        background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
+
     .message {
         margin: 0;
         font-size: var(--fs-sm);

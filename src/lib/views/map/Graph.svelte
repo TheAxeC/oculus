@@ -403,6 +403,12 @@
         overflow: hidden;
     }
 
+    :global(body.wall) .graph-wrap {
+        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
+
     .status {
         position: absolute;
         z-index: 1;
@@ -414,6 +420,12 @@
         background: var(--panel);
         border: 1px solid var(--c-red);
         border-radius: var(--radius-sm);
+    }
+
+    :global(body.wall) .status {
+        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
     }
 
     svg {

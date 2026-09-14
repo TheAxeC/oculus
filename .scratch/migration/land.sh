@@ -363,20 +363,34 @@ function reviewerPart(label, usage) {
     return `${label} ${integer(usage.input)} in / ${integer(usage.cached)} cached / ${integer(usage.output)} out, ${integer(usage.items)} items, ${integer(usage.seconds)} s`;
 }
 
-const first = readUsage(requiredFiles(""), "first run");
+// A worker or reviewer launched through the runner's Agent tool leaves no event log: its tokens,
+// tool uses and seconds come from the runner's result, and its row is written by hand from them.
+const firstFiles = requiredFiles("");
 const repairFiles = requiredFiles("repair-");
-const firstReview = readUsage(requiredFiles("review-"), "first review");
+const reviewFiles = requiredFiles("review-");
 const reviewTwoFiles = secondReviewFiles();
+const tail = `; +${additions} -${deletions} over ${files} files; first report passed its bar: <yes or no>; <N> fixes at landing`;
 
-let worker = `${pkg}, worker codex:gpt-5.6-sol at high, ${workerPart("first run", first, true)}`;
-if (existsAny(repairFiles)) {
-    worker += `; ${workerPart("repair round on the same thread", readUsage(repairFiles, "repair round"), false)}`;
+let worker;
+if (existsAny(firstFiles)) {
+    worker = `${pkg}, worker codex:gpt-5.6-sol at high, ${workerPart("first run", readUsage(firstFiles, "first run"), true)}`;
+    if (existsAny(repairFiles)) {
+        worker += `; ${workerPart("repair round on the same thread", readUsage(repairFiles, "repair round"), false)}`;
+    }
+} else {
+    worker = `${pkg}, worker <harness:model>, first run: <tokens>, <tool uses> tool uses, <seconds> s (from the runner's result; no event log)` +
+        `; repair round: <the same, or none>`;
 }
-worker += `; +${additions} -${deletions} over ${files} files; first report passed its bar: <yes or no>; <N> fixes at landing`;
+worker += tail;
 
-let reviewer = `${pkg}, reviewer codex:gpt-5.6-sol at high, read-only: ${reviewerPart("first review", firstReview)}`;
-if (existsAny(reviewTwoFiles)) {
-    reviewer += `; ${reviewerPart("second review", readUsage(reviewTwoFiles, "second review"))}`;
+let reviewer;
+if (existsAny(reviewFiles)) {
+    reviewer = `${pkg}, reviewer codex:gpt-5.6-sol at high, read-only: ${reviewerPart("first review", readUsage(reviewFiles, "first review"))}`;
+    if (existsAny(reviewTwoFiles)) {
+        reviewer += `; ${reviewerPart("second review", readUsage(reviewTwoFiles, "second review"))}`;
+    }
+} else {
+    reviewer = `${pkg}, reviewer <harness:model>, read-only: first review <tokens> / <tool uses> / <seconds> s; second review <the same, or none> (from the runner's result; no event log)`;
 }
 
 console.log(worker);

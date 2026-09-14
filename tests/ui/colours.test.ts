@@ -16,13 +16,15 @@
 //                (--c-<hue>-bg), none, or transparent.
 //   anywhere     no raw colour: no hex, no rgb()/hsl()/lab()/oklch(), no named colour.
 //
-// One form is allowed past both rules, for `background` and nothing else: the panel surface with
-// some of its alpha taken out, `color-mix(in srgb, var(--panel) var(--wall-panel), transparent)`,
-// and the same with `--wall-popover`. That is how a surface goes translucent over the wallpaper.
-// The colour is still the panel's, so the pair the contrast test measured is the pair that paints;
-// what changes is how much of the picture shows through. The token is written as a percentage by
-// ui/theme.ts's applyWallpaper and by nothing else, and any other token inside a `color-mix` is
-// refused exactly as before, which the negative fixture at the foot of the file shows.
+// One form is allowed past both rules, for `background` and nothing else: a surface token with some
+// of its alpha taken out, `color-mix(in srgb, var(--panel) var(--wall-panel), transparent)`, and the
+// same with `--wall-popover` or with any other of the surfaces. That is how a surface goes
+// translucent over the wallpaper. The colour is still the surface's own, so the pair the contrast
+// test measured is the pair that paints; what changes is how much of the picture shows through. The
+// token is written as a percentage by ui/theme.ts's applyWallpaper and by nothing else, and a hue
+// inside a `color-mix` is refused exactly as before, which the negative fixture at the foot of the
+// file shows. The surfaces are the four a reader looks at a view through, `--bg`, `--panel`,
+// `--card` and `--chip`; `--line` and `--accent` are not among them.
 //
 // A `var()` of a custom property the component sets itself is read through to what it was set from,
 // so the hue a Chip puts on `--tone` is checked exactly as if the rule named the hue. That covers
@@ -316,11 +318,24 @@ export function rawColour(value: string): boolean {
 }
 
 /**
- * The one `color-mix` a component may fill with: the panel surface at the wallpaper's opacity.
- * Whitespace is whatever prettier leaves; the tokens and their order are the whole of the form.
+ * The one `color-mix` a component may fill with: a surface at the wallpaper's opacity. Whitespace is
+ * whatever prettier leaves; the tokens and their order are the whole of the form.
  */
 const WALL_MIX =
-    /^color-mix\(\s*in\s+srgb\s*,\s*var\(\s*--panel\s*\)\s+var\(\s*--wall-(?:panel|popover)\s*\)\s*,\s*transparent\s*\)$/i;
+    /^color-mix\(\s*in\s+srgb\s*,\s*var\(\s*(--[a-z-]+)\s*\)\s+var\(\s*--wall-(?:panel|popover)\s*\)\s*,\s*transparent\s*\)$/i;
+
+/**
+ * The surfaces a wallpaper rule may take a fraction of: the four a reader looks at a view through.
+ * `--line` and `--accent` are not among them, and the contrast test measures no pair at a fraction
+ * of either.
+ */
+const WALL_SURFACES = ['--bg', '--panel', '--card', '--chip'];
+
+/** Whether a value is that form over one of those, which is what makes the pair a measured one. */
+function wallMix(value: string): boolean {
+    const found = value.trim().match(WALL_MIX);
+    return found !== null && WALL_SURFACES.includes(found[1].toLowerCase());
+}
 
 /** A token a component may paint text with: the derived families and nothing else. */
 function textToken(name: string): boolean {
@@ -396,7 +411,7 @@ export function findColourViolations(base: string, roots: string[]): string[] {
             const say = (one: Declaration): string =>
                 `${root}/${rel}: ${one.selector}: ${one.property}: ${one.value}`;
             for (const one of found) {
-                if (one.property === 'background' && WALL_MIX.test(one.value.trim())) continue;
+                if (one.property === 'background' && wallMix(one.value)) continue;
                 if (rawColour(one.value)) {
                     violations.push(`${say(one)} (raw colour)`);
                     continue;
@@ -528,15 +543,16 @@ describe('the colour rule', () => {
             '<span style="--tone: #ff0000"></span>\n<style>\n    .a { background: var(--tone); }\n</style>'
         );
         write('ui/Inline.svelte', '<span style="color: #00ff00"></span>');
-        // The allowance is the panel surface and no other: a hue mixed the same way is a colour the
-        // contrast test has no measurement for, and a `color-mix` as text is refused whatever it
-        // holds.
+        // The allowance is the four surfaces and no other token: a hue or an edge colour mixed the
+        // same way is a colour the contrast test has no measurement for, and a `color-mix` as text
+        // is refused whatever it holds.
         write(
             'ui/Mix.svelte',
             [
                 '<style>',
                 '    .a { background: color-mix(in srgb, var(--c-teal) var(--wall-panel), transparent); }',
                 '    .b { color: color-mix(in srgb, var(--panel) var(--wall-panel), transparent); }',
+                '    .c { background: color-mix(in srgb, var(--accent) var(--wall-panel), transparent); }',
                 '</style>'
             ].join('\n')
         );
@@ -549,6 +565,7 @@ describe('the colour rule', () => {
             'ui/Inline.svelte: style attribute: color: #00ff00 (raw colour)',
             'ui/Mix.svelte: .a: background: color-mix(in srgb, var(--c-teal) var(--wall-panel), transparent) (raw colour)',
             'ui/Mix.svelte: .b: color: color-mix(in srgb, var(--panel) var(--wall-panel), transparent) (raw colour)',
+            'ui/Mix.svelte: .c: background: color-mix(in srgb, var(--accent) var(--wall-panel), transparent) (raw colour)',
             'ui/Named.svelte: .a: border-color: rebeccapurple (raw colour)',
             'ui/Unset.svelte: .a: background: var(--nonesuch) (not a surface or a hue)'
         ]);

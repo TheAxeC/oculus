@@ -184,6 +184,12 @@
         background: var(--panel);
     }
 
+    :global(body.wall) .lane {
+        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
+
     .lane-h {
         display: flex;
         align-items: baseline;
@@ -240,6 +246,11 @@
         border: 1px solid var(--line);
         border-radius: 6px;
         background: var(--chip);
+    }
+
+    /* Inside a lane that is already translucent, so the entry keeps its border and paints nothing. */
+    :global(body.wall) .entry {
+        background: transparent;
     }
 
     .entry-h {

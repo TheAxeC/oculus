@@ -150,6 +150,13 @@
         white-space: nowrap;
     }
 
+    /* A sticky heading sits over the rows it labels, so it keeps a pane's fraction of the panel colour rather than going clear. */
+    :global(body.wall) th {
+        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
+
     th button {
         width: 100%;
         border: none;

@@ -102,6 +102,13 @@
         overflow: hidden;
     }
 
+    /* Over a wallpaper a card keeps most of its own colour and lets the picture through the rest. The backdrop blur takes the picture's detail out from behind the text without smearing the picture itself. */
+    :global(body.wall) .card {
+        background: color-mix(in srgb, var(--card) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
+
     /* The ring is drawn inside the border rather than as a second border, so a pinned card and an
        unpinned one are the same size and a list of them does not jump. */
     .card.pinned {

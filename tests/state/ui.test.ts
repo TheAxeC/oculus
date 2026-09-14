@@ -47,6 +47,9 @@ setAppearance(loadConfig(engineDir()).config);
 
 const DEFAULT_THEME = defaultTheme();
 
+/** The envelope before the toggle's value became the viewer's own choice alone. */
+const EARLIER_VERSION = UI_VERSION - 1;
+
 /** A fake Storage: what the store needs of one, and a window on what it wrote. */
 function fakeStorage(seed?: unknown) {
     const held: Record<string, string> =
@@ -224,8 +227,55 @@ describe('the appearance store', () => {
         });
         expect(loadUi(storage)).toBe(true);
         expect(theme()).toBe('mocha');
-        expect(wallpaper()).toBe(wallpaperOnTheme(DEFAULT_THEME));
+        expect(wallpaper()).toBe(wallpaperOnTheme('mocha'));
         expect(unicode()).toBe(false);
+    });
+
+    it('reads a wallpaper saved by the earlier envelope as no choice at all', () => {
+        // Every save wrote that field then, so a false there is not a press of the toggle.
+        const storage = fakeStorage({
+            version: EARLIER_VERSION,
+            theme: 'mocha',
+            crt: true,
+            wallpaper: false,
+            instances: { a: 1 }
+        });
+        expect(loadUi(storage)).toBe(true);
+        expect(wallpaperOnTheme('mocha')).toBe(true);
+        expect(wallpaper()).toBe(true);
+        expect(crt()).toBe(true);
+        expect(instanceState('a')).toBe(1);
+    });
+
+    it('keeps a wallpaper the toggle turned off under a theme that shows one', () => {
+        const first = fakeStorage();
+        loadUi(first);
+        setTheme('mocha');
+        setWallpaper(false);
+        expect(saved(first).version).toBe(UI_VERSION);
+
+        const second = fakeStorage(saved(first));
+        expect(loadUi(second)).toBe(true);
+        expect(wallpaper()).toBe(false);
+    });
+
+    it('follows the theme while the toggle has not been pressed', () => {
+        loadUi(fakeStorage());
+        expect(wallpaperOnTheme('light')).not.toBe(wallpaperOnTheme('mocha'));
+        setTheme('light');
+        expect(wallpaper()).toBe(wallpaperOnTheme('light'));
+        setTheme('mocha');
+        expect(wallpaper()).toBe(wallpaperOnTheme('mocha'));
+    });
+
+    it('leaves the wallpaper unchosen when another value is saved', () => {
+        const storage = fakeStorage();
+        loadUi(storage);
+        setTextScale(1.3);
+        expect(saved(storage).wallpaper).toBe(null);
+        setTheme('mocha');
+        expect(saved(storage).wallpaper).toBe(null);
+        expect(wallpaper()).toBe(wallpaperOnTheme('mocha'));
     });
 
     it('reads back what it wrote', () => {

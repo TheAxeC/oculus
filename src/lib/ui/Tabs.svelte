@@ -294,6 +294,13 @@
         border-bottom: 1px solid var(--line);
     }
 
+    /* The strip is the pane's own top edge over a wallpaper: the shell's pane paints nothing behind it, so the picture reads through here too. */
+    :global(body.wall) .strip {
+        background: color-mix(in srgb, var(--bg) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
+
     .tabs {
         display: flex;
         align-items: stretch;
@@ -342,6 +349,12 @@
     .tab.current {
         background: var(--panel);
         border-color: var(--line);
+    }
+
+    /* The current tab sits inside the strip, which is already translucent, so it paints nothing of
+       its own: its border and the picture showing through it are what tell it apart. */
+    :global(body.wall) .tab.current {
+        background: transparent;
     }
 
     .tab-badge {

@@ -45,6 +45,12 @@
         font-size: var(--fs-md);
     }
 
+    :global(body.wall) .intro {
+        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
+
     .content {
         display: flex;
         flex-wrap: wrap;

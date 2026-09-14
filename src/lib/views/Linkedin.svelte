@@ -242,6 +242,12 @@
         background: var(--chip);
     }
 
+    :global(body.wall) .nudge {
+        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+        -webkit-backdrop-filter: blur(var(--wall-blur));
+    }
+
     .nudge strong,
     .nudge span {
         margin-right: 4px;
