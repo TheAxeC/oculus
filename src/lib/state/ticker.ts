@@ -115,12 +115,20 @@ export type TickerItem = {
     snoozed: boolean;
 };
 
-/** What the ticker answers. Each list is already in the order it is shown in. */
+/**
+ * What the ticker answers. Each list is already in the order it is shown in. A line that carries a
+ * date is on one of the dated lists and a line that carries none is on `tasks`, which is the split
+ * the board draws: the command center is what is dated, the tasks section is what is open work.
+ */
 export type Ticker = {
     overdue: TickerItem[];
     deadlines: TickerItem[];
+    /** The due follow-up notes that carry a date, oldest due first. */
     followups: TickerItem[];
+    /** The open subtasks that carry a deadline, grouped by the kind of what holds them. */
     subtasks: TickerItem[];
+    /** The undated work: the follow-ups, then the open subtasks, then the open task entries. */
+    tasks: TickerItem[];
     venueLoad: Tally[];
     snoozed: TickerItem[];
     behind: ManifestBehind | null;
@@ -180,6 +188,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     const dated: { category: string; line: TickerItem }[] = [];
     const followups: TickerItem[] = [];
     const subtasks: TickerItem[] = [];
+    const openEntries: TickerItem[] = [];
     const asleep: TickerItem[] = [];
 
     /**
@@ -246,7 +255,10 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
             const status = str(entry.fields.status);
             if (terminal(config, status) || deadlineMet(config, status)) continue;
             const days = daysUntil(entryDate(entry), now);
-            if (days === null || days > horizon) continue;
+            // An undated entry of the tasks file is open work rather than a date, so it is a task
+            // line; an undated entry of any other file names no moment and is on no list at all.
+            if (days === null && category !== 'task') continue;
+            if (days !== null && days > horizon) continue;
             const line = item(category, GLYPHS[category], entry.title, days, {
                 entry: key,
                 status,
@@ -256,7 +268,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
                 asleep.push({ ...line, snoozed: true });
                 continue;
             }
-            if (days < 0) overdue.push({ ...line, glyph: GLYPHS.overdue });
+            if (days === null) openEntries.push(line);
+            else if (days < 0) overdue.push({ ...line, glyph: GLYPHS.overdue });
             else if (CATEGORIES.includes(category)) dated.push({ category, line });
         }
     }
@@ -336,7 +349,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         }
     }
     notes.sort((a, b) => (a.days ?? 1) - (b.days ?? 1));
-    followups.push(...notes.map((one) => one.line));
+    followups.push(...notes.filter((one) => one.days !== null).map((one) => one.line));
+    const openNotes = notes.filter((one) => one.days === null).map((one) => one.line);
 
     /**
      * Subtasks: a project's, and an entry's unless its parent is genuinely closed. A manifest names
@@ -407,7 +421,8 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         overdue,
         deadlines: dated.map((one) => one.line),
         followups,
-        subtasks,
+        subtasks: subtasks.filter((one) => one.days !== null),
+        tasks: [...openNotes, ...subtasks.filter((one) => one.days === null), ...openEntries],
         venueLoad: venueLoad(projects, snapshot.entities.venues, warn),
         snoozed: asleep,
         behind: manifestsBehind(projects, config)

@@ -39,7 +39,6 @@ text:
             grp_deadlines_label: Deadlines & dates
             grp_followups_glyph: followup
             grp_followups_label: Follow-ups
-            grp_open_subtasks_label: Open subtasks
             grp_overdue_glyph: overdue
             grp_overdue_label: Overdue
             grp_refresh_label: Refresh live data
@@ -112,6 +111,12 @@ text:
         qa_save: Save
         quick_add: 'Quick add:'
         set_priority: set priority
+        tasks:
+            grp_followups_label: Follow-ups
+            grp_subtasks_label: Subtasks
+            grp_tasks_label: Tasks
+            heading: Tasks
+            heading_glyph: tasks
         teaching_glyph: teaching
         teaching_lane: '{G.teaching} Teaching & supervision'
         teaching_sub: this academic year

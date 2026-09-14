@@ -15,7 +15,6 @@
         overdue: TickerRow[];
         categories: { category: string; rows: TickerRow[] }[];
         subtaskDated: RowGroup[];
-        subtaskOpen: RowGroup[];
         followups: TickerRow[];
         snoozed: TickerRow[];
     };
@@ -48,7 +47,6 @@
         view.overdue.length +
             view.categories.length +
             view.subtaskDated.length +
-            view.subtaskOpen.length +
             view.followups.length +
             view.snoozed.length +
             attentionRows.length +
@@ -164,11 +162,6 @@
             t('focus.command.grp_subtask_dl_label'),
             t('focus.command.grp_subtask_glyph'),
             view.subtaskDated
-        )}
-        {@render kindGroups(
-            t('focus.command.grp_open_subtasks_label'),
-            t('focus.command.grp_subtask_glyph'),
-            view.subtaskOpen
         )}
         {@render group(
             t('focus.command.grp_followups_label'),

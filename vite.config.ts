@@ -26,6 +26,10 @@ export default defineConfig({
     test: {
         environment: 'node',
         include: ['tests/**/*.test.ts'],
-        expect: { requireAssertions: true }
+        expect: { requireAssertions: true },
+        // Four workers, not one per core: two or three worktrees run this suite at once beside the
+        // machine's own sessions, and a suite that takes every core makes the timed cases of the
+        // others miss their limits under the load.
+        maxWorkers: 4
     }
 });

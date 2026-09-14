@@ -73,6 +73,7 @@ const VIEWS: Record<string, string> = {
     'focus/Lanes.svelte':
         'summary=fs-xs | .hint=fs-md | .lane-name=fs-md | .count=fs-xs | .lane-sub=fs-xs | .flames=fs-xxs | .chipicon=fs-xs | .name=fs-md | .wait, .next=fs-xs',
     'focus/QuickAdd.svelte': '.lbl=fs-xs',
+    'focus/Tasks.svelte': '.head > b=fs-sm | .lbl=fs-xs',
     // Axel allows these HPC differences from the cockpit: sm tables, header, disk and capacity
     // labels, plus an sm log heading and xs monospace log body.
     'hpc/Capacity.svelte': '.meter=fs-sm | summary=fs-sm | details :global(table)=fs-sm',

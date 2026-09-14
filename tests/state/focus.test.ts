@@ -222,7 +222,8 @@ function snapshot(): Snapshot {
                 prep: scheme('prep', {
                     title: 'A grant in prep',
                     status: 'in-prep',
-                    deadline: '2026-09-20'
+                    deadline: '2026-09-20',
+                    followups: [{ do: 'ask the officer' }]
                 }),
                 sent: scheme('sent', { title: 'A grant sent', status: 'submitted' })
             },
@@ -254,14 +255,21 @@ function snapshot(): Snapshot {
                 collaborations: collection('collaborations', [
                     { key: 'someone', title: 'Some One', status: 'active' }
                 ]),
-                tasks: collection('tasks', [
-                    {
-                        title: 'A review to write',
-                        status: 'todo',
-                        kind: 'review',
-                        subtasks: [{ do: 'read the paper' }]
-                    }
-                ])
+                tasks: collection(
+                    'tasks',
+                    [
+                        {
+                            title: 'A review to write',
+                            status: 'todo',
+                            kind: 'review',
+                            subtasks: [{ do: 'read the paper' }]
+                        },
+                        { title: 'A dated chore', status: 'todo', deadline: '2026-09-16' },
+                        { title: 'A finished chore', status: 'done' },
+                        { title: 'A chore put off', status: 'todo', snooze: '2026-10-01' }
+                    ],
+                    ['todo', 'doing', 'done']
+                )
             }
         },
         relations: EMPTY_RELATIONS,
@@ -430,6 +438,7 @@ describe('ticker, deadlines', () => {
             ['event', 'A coming talk', 7],
             ['position', 'A position', 3],
             ['position', 'A lead', 9],
+            ['task', 'A dated chore', 5],
             ['conference', 'ConfY', null]
         ]);
     });
@@ -457,31 +466,92 @@ describe('ticker, deadlines', () => {
 
 describe('ticker, follow-ups and subtasks', () => {
     it('takes a note with no after and leaves one whose after has not passed', () => {
-        expect(week.followups.map((one) => one.label)).toEqual([
-            'build-notes - chase the coauthor'
+        const notes = week.tasks.filter((one) => one.kind === 'followup');
+        expect(notes.map((one) => one.label)).toEqual([
+            'build-notes - chase the coauthor',
+            'A grant in prep - ask the officer'
         ]);
+        expect(week.followups).toEqual([]);
+        expect([...week.followups, ...week.tasks].map((one) => one.label)).not.toContain(
+            'build-notes - much later'
+        );
+    });
+
+    it('takes a scheme note, which carries no target, onto the tasks as a follow-up line', () => {
+        const note = week.tasks.find((one) => one.label === 'A grant in prep - ask the officer');
+        expect([note?.kind, note?.days, note?.target]).toEqual(['followup', null, undefined]);
     });
 
     it('takes a pending subtask with its days and leaves the one already done', () => {
-        const dated = week.subtasks.filter((one) => one.days !== null);
-        expect(dated.map((one) => [one.label, one.days])).toEqual([
+        expect(week.subtasks.map((one) => [one.label, one.days])).toEqual([
             ['backburner-list: redraw figure 2', 9]
         ]);
+        expect(week.tasks.map((one) => one.label)).not.toContain('backburner-list: already done');
     });
 
     it('groups an undated subtask by the kind of the entry that holds it', () => {
-        const open = week.subtasks.filter((one) => one.days === null);
+        const open = week.tasks.filter((one) => one.target?.subtask !== undefined);
         expect(open.map((one) => [one.kind, one.label])).toEqual([
             ['review', 'A review to write: read the paper']
         ]);
     });
 });
 
+describe('ticker, the undated tasks the command center does not carry', () => {
+    it('sends a dated note to the follow-ups and an undated one to the tasks', () => {
+        const dated = { do: 'the dated note', after: '2026-09-01' };
+        const week = ticker(
+            {
+                ...snap,
+                entities: {
+                    ...snap.entities,
+                    projects: {
+                        holder: project('holder', 'active', {
+                            followups: [dated, { do: 'the open note' }]
+                        })
+                    }
+                }
+            },
+            config,
+            NOW
+        );
+        expect(week.followups.map((one) => one.label)).toEqual(['holder - the dated note']);
+        const notes = week.tasks.filter((one) => one.target?.kind === 'followup');
+        expect(notes.map((one) => one.label)).toEqual(['holder - the open note']);
+    });
+
+    it('keeps a dated subtask on the command center and moves an undated one to the tasks', () => {
+        expect(week.subtasks.every((one) => one.days !== null)).toBe(true);
+        expect(week.subtasks.map((one) => one.label)).toContain('backburner-list: redraw figure 2');
+        expect(week.tasks.map((one) => one.label)).toContain('A review to write: read the paper');
+    });
+
+    it('makes an undated task entry a task line and a dated one a deadline line', () => {
+        const open = week.tasks.find((one) => one.label === 'A review to write');
+        expect(open?.kind).toBe('task');
+        expect(open?.days).toBe(null);
+        expect(open?.target).toEqual({
+            kind: 'entry',
+            id: 'A review to write',
+            collection: 'tasks',
+            statuses: ['todo', 'doing', 'done']
+        });
+        expect(week.deadlines.map((one) => one.label)).toContain('A dated chore');
+        expect(week.tasks.map((one) => one.label)).not.toContain('A dated chore');
+    });
+
+    it('leaves a terminal entry off every list and sends a snoozed one to the snoozed group', () => {
+        const every = [...week.deadlines, ...week.overdue, ...week.tasks];
+        expect(every.map((one) => one.label)).not.toContain('A finished chore');
+        expect(every.map((one) => one.label)).not.toContain('A chore put off');
+        expect(week.snoozed.map((one) => one.label)).toContain('A chore put off');
+    });
+});
+
 describe('ticker, snooze', () => {
     it('sends a project whose snooze is still ahead to the snoozed group and nowhere else', () => {
-        expect(week.snoozed.map((one) => [one.id, one.snoozed])).toEqual([
-            ['derisk-snoozed', true]
-        ]);
+        const projects = week.snoozed.filter((one) => one.id !== undefined);
+        expect(projects.map((one) => [one.id, one.snoozed])).toEqual([['derisk-snoozed', true]]);
         expect(week.deadlines.map((one) => one.id)).not.toContain('derisk-snoozed');
     });
 });
@@ -512,6 +582,7 @@ describe('what a line can be written to', () => {
             ...week.deadlines,
             ...week.followups,
             ...week.subtasks,
+            ...week.tasks,
             ...week.snoozed
         ];
         return every.find((one) => one.label === label);

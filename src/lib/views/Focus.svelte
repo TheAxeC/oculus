@@ -11,12 +11,13 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The landing board: the command center of everything with a date, the quick
-    // add, the strip of what is out for an answer, the lanes each manifest's `focus:` puts it on,
-    // the ideas backlog, the band of durable work that is not a project, and the career panel.
+    // Layer 3, view. The landing board: the command center of everything with a date, the tasks
+    // section of the open work that carries none, the quick add, the strip of what is out for an
+    // answer, the lanes each manifest's `focus:` puts it on, the ideas backlog, the band of durable
+    // work that is not a project, and the career panel.
     //
     // It counts nothing and draws little. The arithmetic is the pure functions of state/focus.ts,
-    // state/feeds.ts and state/career.ts; the markup is five partials under views/focus/, which are
+    // state/feeds.ts and state/career.ts; the markup is six partials under views/focus/, which are
     // this view's own and which nothing else may import. What is left here is the composition, the
     // awaiting-a-response strip, and the one line that says what the last write answered.
 
@@ -29,9 +30,11 @@
     import CommandCenter from './focus/CommandCenter.svelte';
     import Lanes from './focus/Lanes.svelte';
     import QuickAdd from './focus/QuickAdd.svelte';
+    import Tasks from './focus/Tasks.svelte';
     import { minuteNow, startMinuteClock } from '$lib/state/clock.svelte';
     import { cardCursor } from '$lib/state/instance';
     import { labelOf, lanes, waiting, type Id, type Project } from '$lib/state/focus';
+    import { ticker } from '$lib/state/ticker';
     import { configMap } from '$lib/state/selectors.svelte';
     import { portfolio } from '$lib/state/entities.svelte';
     import { openView } from '$lib/state/layout.svelte';
@@ -54,6 +57,12 @@
     const snapshot = $derived(portfolio());
     const projects = $derived(Object.values(snapshot?.entities.projects ?? {}));
     const board = $derived(lanes(config));
+
+    /**
+     * The one ticker both dated sections are drawn from. It walks the whole portfolio, so the board
+     * derives it once here and hands it down rather than each section walking it again.
+     */
+    const week = $derived(snapshot === null ? null : ticker(snapshot, config, now));
 
     /** The projects quick add may write to: the three live tiers, which is the board's own set. */
     const live = $derived(
@@ -107,7 +116,9 @@
 
 <Pane title={t('views.focus')}>
     <div class="focus" data-instance={instance.id}>
-        <CommandCenter {now} onproject={openProject} onsaid={(text) => (said = text)} />
+        <CommandCenter {week} {now} onproject={openProject} onsaid={(text) => (said = text)} />
+
+        <Tasks {week} {now} onproject={openProject} onsaid={(text) => (said = text)} />
 
         <QuickAdd projects={live} onsaid={(text) => (said = text)} />
 

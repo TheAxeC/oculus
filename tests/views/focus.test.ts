@@ -139,7 +139,10 @@ function snapshot(): Snapshot {
             next: 'Run the sweep. Then write it up.',
             waitingOn: ['someone'],
             followups: [{ do: 'chase the coauthor' }],
-            subtasks: [{ key: 'fig', do: 'redraw figure 2', deadline: daysOff(6), done: false }]
+            subtasks: [
+                { key: 'fig', do: 'redraw figure 2', deadline: daysOff(6), done: false },
+                { key: 'note', do: 'write the cover letter', done: false }
+            ]
         }),
         project('foxtrot', 'active', {
             type: 'active',
@@ -160,7 +163,8 @@ function snapshot(): Snapshot {
             title: 'Charlie',
             focus: 'review',
             chips: ['submitted'],
-            venueId: 'jbi'
+            venueId: 'jbi',
+            followups: [{ do: 'ping the editor', after: daysOff(-2) }]
         }),
         project('golf', 'manuscripts', {
             type: 'manuscript',
@@ -208,7 +212,8 @@ function snapshot(): Snapshot {
                     title: 'A grant in prep',
                     status: 'in-prep',
                     deadline: daysOff(10),
-                    note: 'The concept is written. The budget is not.'
+                    note: 'The concept is written. The budget is not.',
+                    followups: [{ do: 'ask the officer' }]
                 })
             },
             collections: {
@@ -233,7 +238,15 @@ function snapshot(): Snapshot {
                     [{ title: 'A coming talk', status: 'upcoming', date: daysOff(9) }],
                     ['upcoming', 'planned', 'not-attending', 'past']
                 ),
-                education: collection('education', [{ title: 'A course', status: 'ongoing' }])
+                education: collection('education', [{ title: 'A course', status: 'ongoing' }]),
+                tasks: collection(
+                    'tasks',
+                    [
+                        { title: 'A standing chore', status: 'todo' },
+                        { title: 'A dated chore', status: 'todo', deadline: daysOff(5) }
+                    ],
+                    ['todo', 'doing', 'done']
+                )
             }
         },
         relations: EMPTY_RELATIONS,
@@ -305,6 +318,10 @@ receive({ channel: 'config', version: 1, payload: { config, text: catalog, findi
 receive({ channel: 'portfolio', version: 1, payload: snapshot() });
 
 const body = html();
+
+/** What the command center drew, and what the tasks section under it drew. */
+const commandBody = body.slice(0, body.indexOf('<section class="tasks'));
+const tasksBody = body.slice(body.indexOf('<section class="tasks'));
 
 describe('the Live HPC pill', () => {
     it('is absent before a reachable non-empty queue arrives', () => {
@@ -413,10 +430,10 @@ describe('the command center', () => {
             'focus.command.grp_followups_label',
             'focus.command.grp_refresh_label'
         ]) {
-            expect(body).toContain(escaped(key));
+            expect(commandBody).toContain(escaped(key));
         }
-        expect(body).toContain(catalog['focus.command.emails'].replace(/&/g, '&amp;'));
-        expect(body).toContain('/research-cockpit litwatch');
+        expect(commandBody).toContain(catalog['focus.command.emails'].replace(/&/g, '&amp;'));
+        expect(commandBody).toContain('/research-cockpit litwatch');
     });
 
     it('draws the manifest-lag line and its project opener under needs attention', () => {
@@ -442,11 +459,12 @@ describe('the command center', () => {
         expect(body).toContain('>planned<');
     });
 
-    it('draws done and del on a subtask line, and done on a follow-up', () => {
-        expect(body).toContain('redraw figure 2');
-        expect(body).toContain(catalog['project.action.done']);
-        expect(body).toContain(catalog['project.action.del']);
-        expect(body).toContain('chase the coauthor');
+    it('draws done and del on a dated subtask line, and done on a dated follow-up', () => {
+        expect(commandBody).toContain('redraw figure 2');
+        expect(commandBody).toContain(catalog['project.action.done']);
+        expect(commandBody).toContain(catalog['project.action.del']);
+        expect(commandBody).toContain('ping the editor');
+        expect(tasksBody).not.toContain('ping the editor');
     });
 
     it('draws un-snooze on a snoozed line and nothing else', () => {
@@ -566,10 +584,11 @@ describe('an empty portfolio', () => {
         expect(empty).not.toContain(catalog['focus.awaiting_response']);
     });
 
-    it('draws no command center and says the hub keeps no career file', () => {
+    it('draws no command center, no tasks section, and says the hub keeps no career file', () => {
         receive({ channel: 'portfolio', version: 3, payload: bare() });
         const empty = html();
         expect(empty).not.toContain(catalog['focus.command.command_center']);
+        expect(empty).not.toContain('<section class="tasks');
         expect(empty).toContain(catalog['focus.career_empty']);
     });
 });
@@ -631,3 +650,66 @@ function due(body: string, card = 'alpha'): string[] {
     const held = next < 0 ? rest : rest.slice(0, next);
     return [...held.matchAll(/<span class="label[^"]*">(\d+d)<\/span>/g)].map((one) => one[1]);
 }
+
+describe('the tasks section', () => {
+    it('is drawn under the command center, with its own heading', () => {
+        expect(body).toContain('<section class="tasks');
+        expect(tasksBody).toContain(catalog['focus.tasks.heading']);
+    });
+
+    it('draws a scheme follow-up, which carries no target, under the follow-ups group', () => {
+        const followups = tasksBody.slice(
+            tasksBody.indexOf(catalog['focus.tasks.grp_followups_label']),
+            tasksBody.indexOf(catalog['focus.tasks.grp_subtasks_label'])
+        );
+        expect(followups).toContain('ask the officer');
+        expect(commandBody).not.toContain('ask the officer');
+    });
+
+    it('draws the undated follow-up, subtask and task entry the command center no longer has', () => {
+        for (const label of ['chase the coauthor', 'write the cover letter', 'A standing chore']) {
+            expect(tasksBody).toContain(label);
+            expect(commandBody).not.toContain(label);
+        }
+        for (const key of [
+            'focus.tasks.grp_followups_label',
+            'focus.tasks.grp_subtasks_label',
+            'focus.tasks.grp_tasks_label'
+        ]) {
+            expect(tasksBody).toContain(catalog[key]);
+        }
+    });
+
+    it('keeps the dated subtask and the dated task entry on the command center', () => {
+        expect(commandBody).toContain('redraw figure 2');
+        expect(commandBody).toContain('A dated chore');
+        expect(tasksBody).not.toContain('redraw figure 2');
+        expect(tasksBody).not.toContain('A dated chore');
+    });
+
+    it('draws tick, snooze and delete on a subtask row and done on a follow-up row', () => {
+        const rows = tasksBody.match(/<li[\s>][\s\S]*?<\/li>/g) ?? [];
+        const subtask = rows.find((row) => row.includes('write the cover letter')) ?? '';
+        for (const key of [
+            'project.action.done',
+            'project.action.snooze_1w',
+            'project.action.snooze_1mo',
+            'project.action.snooze_hide',
+            'project.action.del'
+        ]) {
+            expect(subtask).toContain(catalog[key]);
+        }
+        const note = rows.find((row) => row.includes('chase the coauthor')) ?? '';
+        expect(note).toContain(catalog['project.action.done']);
+        expect(note).not.toContain(catalog['project.action.del']);
+    });
+
+    it('draws the lifecycle statuses of the tasks file on a task row, and no tick', () => {
+        const rows = tasksBody.match(/<li[\s>][\s\S]*?<\/li>/g) ?? [];
+        const chore = rows.find((row) => row.includes('A standing chore')) ?? '';
+        expect(chore).toContain('>doing<');
+        expect(chore).toContain('>done<');
+        expect(chore).toContain(catalog['project.action.snooze_1w']);
+        expect(chore).not.toContain(catalog['project.action.del']);
+    });
+});
