@@ -23,7 +23,19 @@ workers_at_once: 2           # R9 (Axel, 2026-09-13 22:45): two packages with di
 ```
 
 ```yaml
-dispatch:                                  # workers_at_once: 2; W2 landed, R14 in flight
+dispatch:                                  # workers_at_once: 2; R14 (in repair) and R11 in flight, disjoint paths
+- package: R11
+  worker: claude:opus
+  worktree: .agents/worktrees/r11
+  base: a20972c9
+  launched: 2026-09-14T11:10:00+02:00
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R11/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R11/report.md
+  exit: none
+  pid: none
+  session_id: pending
+  landing: not-started
 - package: R14
   worker: claude:opus
   worktree: .agents/worktrees/r14
