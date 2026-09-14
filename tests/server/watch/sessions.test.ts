@@ -14,10 +14,11 @@ import type { Sink } from '../../../src/lib/server/channels.ts';
 import {
     liveSignature,
     watchSessions,
-    type SessionsWatcher
+    type SessionsWatcher,
+    type TerminalSource
 } from '../../../src/lib/server/watch/sessions.ts';
 import type { Watcher } from '../../../src/lib/server/watch/portfolio.ts';
-import type { Message, SessionsPayload } from '../../../src/lib/data/model.ts';
+import type { Message, SessionsPayload, Terminal } from '../../../src/lib/data/model.ts';
 import type { Probe } from '../../../src/lib/server/sessions/registry.ts';
 import type { CodexProbe } from '../../../src/lib/server/sessions/codex.ts';
 
@@ -154,6 +155,21 @@ class Fixture {
 
 type Started = { fixture: Fixture; got: Message[]; watcher: SessionsWatcher };
 
+/** One terminal record, as tmux would have been read for it. */
+function terminal(id: string): Terminal {
+    return {
+        id,
+        name: id,
+        kind: 'shell',
+        cwd: '/tmp/fixture/workspace',
+        command: 'zsh',
+        pid: 4242,
+        created: '2026-09-10T09:00:00.000Z',
+        attached: false,
+        resumes: null
+    };
+}
+
 function payloads(got: Message[]): SessionsPayload[] {
     return got
         .filter((message) => message.channel === 'sessions')
@@ -227,7 +243,12 @@ function recording(): { sink: Sink; got: Message[] } {
 }
 
 /** A started watcher over a fresh fixture, with a sink already subscribed to the channel. */
-function start(fixture: Fixture, liveness = 0): Started {
+function start(
+    fixture: Fixture,
+    liveness = 0,
+    rescanEvery = 0,
+    terminals?: TerminalSource
+): Started {
     const hub = new Hub();
     const client = recording();
     hub.subscribe(client.sink, ['sessions']);
@@ -241,6 +262,8 @@ function start(fixture: Fixture, liveness = 0): Started {
         projectFolders: () => [],
         debounce: 100,
         liveness,
+        rescanEvery,
+        terminals,
         probe: fixture.probe(),
         codexProbe: fixture.codexProbe()
     });
@@ -406,6 +429,32 @@ describe('watchSessions', () => {
         writeFileSync(fixture.cache, JSON.stringify({ version: 99, entries: {} }));
         await sleep(600);
         expect(started.got.length).toBe(before);
+    });
+
+    it('rescans on the slow clock for a change no file event announced, and stops at close', async () => {
+        const fixture = new Fixture();
+        fixture.transcript([prompt('2026-09-10T10:00:00.000Z', 'first question')]);
+        // The terminal list moves without anything under the three stores being written, which is
+        // what a missed event looks like to this watcher: only a rescan can find it.
+        let terminals: Terminal[] = [];
+        const source: TerminalSource = { list: () => terminals, onChange: () => () => {} };
+        const started = start(fixture, 0, 150, source);
+        const before = await quiet(started.got);
+        expect(before).toBeGreaterThan(0);
+
+        // The clock runs while nothing changed and publishes nothing.
+        await sleep(600);
+        expect(started.got.length).toBe(before);
+
+        terminals = [terminal('a1b2c3-shell')];
+        await until(() => started.got.length > before, WAIT);
+        expect(latest(started.got).terminals.map((one) => one.id)).toEqual(['a1b2c3-shell']);
+
+        const after = started.got.length;
+        watchers.pop()?.close();
+        terminals = [];
+        await sleep(600);
+        expect(started.got.length).toBe(after);
     });
 
     it('closes every handle it opened', async () => {

@@ -3,11 +3,11 @@
 // owns instead of the bridge to the last published payload: no session store, no registry and no hub
 // is read, and the only file any case opens is the one written under mkdtemp.
 
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { handleTranscript } from '../../src/lib/server/transcript-routes.ts';
+import { FIRST_READ_TURNS, handleTranscript } from '../../src/lib/server/transcript-routes.ts';
 import { record } from '../sessions-fixture.ts';
 import type { SessionRecord } from '../../src/lib/data/model.ts';
 import { sessionRecord } from '../../src/lib/server/sessions/hooks.ts';
@@ -35,6 +35,26 @@ function transcript(): string {
         }
     ];
     writeFileSync(path, lines.map((one) => JSON.stringify(one) + '\n').join(''));
+    return path;
+}
+
+/** A transcript of `turns` prompts, for the cap on what a first read answers with. */
+function longTranscript(turns: number): string {
+    const root = mkdtempSync(join(tmpdir(), 'oculus-transcript-long-'));
+    expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+    const path = join(root, `${SESSION}.jsonl`);
+    const lines: string[] = [];
+    for (let i = 0; i < turns; i += 1) {
+        lines.push(
+            JSON.stringify({
+                type: 'user',
+                timestamp: '2026-09-11T08:00:00.000Z',
+                origin: { kind: 'human' },
+                message: { role: 'user', content: `question ${i}` }
+            }) + '\n'
+        );
+    }
+    writeFileSync(path, lines.join(''));
     return path;
 }
 
@@ -81,6 +101,31 @@ describe('GET /api/transcript', () => {
         expect(body.turns.map((turn) => turn.role)).toEqual(['user', 'assistant']);
         expect(body.turns[0].text).toBe('do the thing');
         expect(body.offset).toBeGreaterThan(0);
+    });
+
+    it('answers a first read with the last turns only, and the offset of the whole file', async () => {
+        const path = longTranscript(FIRST_READ_TURNS + 30);
+        const size = statSync(path).size;
+        const response = handleTranscript(request(`id=${SESSION}`), { recordFor: recordFor(path) });
+        expect(response.status).toBe(200);
+        const body = (await response.json()) as {
+            turns: { role: string; text: string }[];
+            offset: number;
+        };
+        expect(body.turns.length).toBe(FIRST_READ_TURNS);
+        // The newest turn is the last one, and the offset is the end of the file, so the client's
+        // next read carries what is appended after it rather than what the cap dropped.
+        expect(body.turns[body.turns.length - 1].text).toBe(`question ${FIRST_READ_TURNS + 29}`);
+        expect(body.turns[0].text).toBe('question 30');
+        expect(body.offset).toBe(size);
+
+        // A later read is not capped: it carries only what was appended since the offset.
+        const after = handleTranscript(request(`id=${SESSION}&from=${size}`), {
+            recordFor: recordFor(path)
+        });
+        const tail = (await after.json()) as { turns: unknown[]; offset: number };
+        expect(tail.turns).toEqual([]);
+        expect(tail.offset).toBe(size);
     });
 
     it('refuses a request from another origin', async () => {

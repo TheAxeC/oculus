@@ -38,6 +38,13 @@ const LIVE = 'sessions.resume_live';
 /** The longest name a terminal may carry, which is what sessions.ts `label` accepts. */
 const NAME_MAX = 80;
 
+/**
+ * Why a stop or a resize is refused for a session under the `oculus-` prefix that oculus did not
+ * mint. The list carries such a session with `foreign: true`, so the refusal says what it is rather
+ * than reading as a malformed request.
+ */
+const NOT_OURS = 'id is not a terminal id: this tmux session was not started by oculus';
+
 /** The four update skills the palette and tray may start. */
 const TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
 type TaskKind = (typeof TASKS)[number];
@@ -241,7 +248,7 @@ export async function handleTerminal(
             return json(200, { ok: true, terminal });
         }
         if (message.action === 'stop') {
-            if (!isTerminalId(message.id)) return json(400, { error: 'id is not a terminal id' });
+            if (!isTerminalId(message.id)) return json(400, { error: NOT_OURS });
             await stopTerminal(message.id, options);
             options.refresh?.();
             return json(200, { ok: true, id: message.id });
@@ -260,7 +267,7 @@ export async function handleTerminal(
             );
         }
         if (message.action === 'resize') {
-            if (!isTerminalId(message.id)) return json(400, { error: 'id is not a terminal id' });
+            if (!isTerminalId(message.id)) return json(400, { error: NOT_OURS });
             await resizeTerminal(
                 message.id,
                 message.cols as number,

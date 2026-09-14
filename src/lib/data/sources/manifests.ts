@@ -11,7 +11,8 @@ import type { Finding, RawManifest, ScanRule, Tier } from '../model.ts';
 /** Folder names the walk never descends into: a project's own code and attic hold no manifests. */
 const NEVER_DESCEND = ['code', 'attic'];
 
-const MANIFEST = 'project.yml';
+/** The one filename a scan tier's folder is read for. */
+export const MANIFEST = 'project.yml';
 
 /** Remove the filing prefix from a folder's display title. */
 function stripPrefix(name: string): string {

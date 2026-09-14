@@ -511,6 +511,20 @@ describe('watchPortfolio', () => {
         expect(started.got.length).toBe(before);
     });
 
+    it('rebuilds for a registry the config names and not for another yaml beside it', async () => {
+        const started = start();
+        const before = await quiet(started.got);
+
+        write(started.hub, 'registries/notes.yml', 'note: nothing the build reads\n');
+        await sleep(500);
+        expect(started.got.length).toBe(before);
+
+        const portfolioBefore = on(started.got, 'portfolio').length;
+        write(started.hub, 'registries/venues.yml', 'entries: []\n');
+        await until(() => on(started.got, 'portfolio').length > portfolioBefore, 3000);
+        expect(on(started.got, 'portfolio').length).toBeGreaterThan(portfolioBefore);
+    });
+
     it('republishes portfolio, config, and feeds when a config file changes', async () => {
         const started = start();
         await quiet(started.got);

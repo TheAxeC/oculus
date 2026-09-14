@@ -33,7 +33,7 @@
     import { pinnedSession } from '$lib/state/selection.svelte';
     import { sessionFor } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
-    import { follow, turnsFor, type Turn } from '$lib/state/transcript.svelte';
+    import { follow, showing, turnsFor, type Turn } from '$lib/state/transcript.svelte';
     import type { ViewProps } from '$lib/views/registry';
 
     let { instance }: ViewProps = $props();
@@ -62,6 +62,10 @@
         const id = record?.id ?? '';
         if (id !== '') follow(id, record?.lastActivity ?? null);
     });
+
+    // The store keeps a session's turns while an instance is showing it and drops them when the last
+    // one stops; the effect's cleanup is that release, so a change of session or a teardown lets go.
+    $effect(() => showing(record?.id ?? ''));
 
     $effect(() => {
         const id = record?.id ?? '';

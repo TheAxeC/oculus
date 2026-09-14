@@ -50,6 +50,8 @@ export function empty(error: string | null = null): GitState {
         branch: '',
         ahead: 0,
         behind: 0,
+        // Nothing has been read yet, so whether the branch tracks anything is not known.
+        upstream: null,
         detached: false,
         staged: [],
         unstaged: [],
@@ -105,6 +107,11 @@ function state(root: string, timeout: number): GitState {
  */
 function upstream(root: string, found: GitState, timeout: number): void {
     const done = run(root, ['rev-list', '--left-right', '--count', '@{upstream}...HEAD'], timeout);
+    // The command git answers here is the one that knows: it resolves @{upstream}, so a failure is
+    // the branch having none. That fact travels with the state, which is on the page before the
+    // branch listing is, so the push control never has to read a listing that has not answered as
+    // "no upstream".
+    found.upstream = done.ok;
     if (!done.ok) return;
     const parts = done.text.split(/\s+/).filter((part) => part !== '');
     if (parts.length !== 2) return;

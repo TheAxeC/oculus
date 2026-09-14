@@ -11,6 +11,7 @@
 //     gh repo view <name> --json url,defaultBranchRef
 //     gh repo create <name> --public|--private --source <mirror> --remote origin --push
 //     gh repo edit <owner/repo> --description ... --homepage ... --add-topic ...
+//     gh repo edit <owner/repo> --default-branch main
 //
 // This module exists rather than growing git-write.ts because git-write.ts's gate
 // (tests/server/git-write.test.ts) asserts that the force option appears nowhere in that file, and
@@ -239,7 +240,7 @@ export function parseBranches(output: string): Branch[] {
     return rows;
 }
 
-// ---------------------------------------------------------------- the three `gh` shapes
+// ---------------------------------------------------------------- the `gh` shapes
 
 /** `gh repo view <name> --json url,defaultBranchRef`: whether the repo exists, and where it is. */
 export function viewArgs(name: string): string[] {
@@ -277,6 +278,11 @@ export function editArgs(
         if (topic !== '') args.push('--add-topic', topic);
     }
     return args.length === 0 ? [] : ['repo', 'edit', slug, ...args];
+}
+
+/** `gh repo edit <owner/repo> --default-branch <branch>`: what the repository's landing page is. */
+export function defaultBranchArgs(slug: string, branch: string): string[] {
+    return ['repo', 'edit', slug, '--default-branch', branch];
 }
 
 /** OWNER/REPO out of a repo URL. `gh repo edit` rejects a bare name, so the URL is reduced to one. */

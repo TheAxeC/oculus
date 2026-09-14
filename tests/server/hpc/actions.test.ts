@@ -22,5 +22,11 @@ describe('HPC actions', () => {
         const answer = await log('host', '42', new Map(), runner);
         expect(answer).toEqual({ status: 'ok', path: '/work/hpc/logs/42.out', log: 'hello' });
         expect(runner.mock.calls[0][1]).toContain('/hpc/logs/');
+        // The search inside the remote command is bounded by its own `timeout 20`, and the call is
+        // given little more than that, so a cold log never holds the page for the best part of a
+        // minute.
+        expect(runner.mock.calls[0][1]).toContain('timeout 20 ');
+        expect(runner.mock.calls[0][2]).toBeLessThanOrEqual(25000);
+        expect(runner.mock.calls[0][2]).toBeGreaterThan(20000);
     });
 });

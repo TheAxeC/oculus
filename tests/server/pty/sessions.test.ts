@@ -196,6 +196,16 @@ it('reads @oculus_resumes back out of a list line, and nothing out of a bad one'
     expect(parseTerminal(fields.join('\t'))?.resumes).toBe(null);
 });
 
+it('lists a hand-made session under the prefix and flags it as one oculus did not mint', () => {
+    const fields = ['oculus-scratch', '1757500000', '0', 'zsh', '4242', '/ws', '', ''];
+    const terminal = parseTerminal(fields.join('\t'));
+    expect(terminal?.id).toBe('scratch');
+    expect(terminal?.foreign).toBe(true);
+
+    fields[0] = 'oculus-a1b2c3-shell';
+    expect(parseTerminal(fields.join('\t'))?.foreign).toBe(false);
+});
+
 it('leaves hidden usage refresher sessions out of the terminal list', () => {
     const fields = [
         'oculus-usage-.claude-work',

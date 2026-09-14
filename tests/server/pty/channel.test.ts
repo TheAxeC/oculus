@@ -2,10 +2,12 @@
 // the driver records the argument list every channel operation built, which is what makes "the input
 // reached send-keys" an assertion rather than a process.
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import type { Sink } from '../../../src/lib/server/channels.ts';
 import {
+    IDLE_POLL_MS,
+    POLL_MS,
     Terminals,
     channelTerminal,
     ptyChannel,
@@ -299,6 +301,44 @@ describe('a socket that closed', () => {
         expect(record.attached()).toEqual([]);
         // Nothing was killed: the only commands were the list, the capture and no more.
         expect(record.calls.map((args) => args[0])).toEqual(['list-sessions', 'capture-pane']);
+    });
+});
+
+describe('the list poll', () => {
+    it('runs once a minute while nothing is attached and at the fast rate while a page is', async () => {
+        const lists = (calls: string[][]): number =>
+            calls.filter((args) => args[0] === 'list-sessions').length;
+        vi.useFakeTimers();
+        try {
+            const record = driver();
+            const hub = new Hub();
+            const held = new Terminals(hub, { driver: record.driver });
+            open.push(held);
+            await vi.advanceTimersByTimeAsync(0);
+
+            // Nothing is attached: the fast rate passes with no call, the slow one brings one.
+            const idle = lists(record.calls);
+            await vi.advanceTimersByTimeAsync(POLL_MS);
+            expect(lists(record.calls)).toBe(idle);
+            await vi.advanceTimersByTimeAsync(IDLE_POLL_MS - POLL_MS);
+            expect(lists(record.calls)).toBe(idle + 1);
+
+            const client = recorder();
+            held.subscribed(client.sink, [CHANNEL], TOKEN, TOKEN);
+            await vi.advanceTimersByTimeAsync(0);
+            const attached = lists(record.calls);
+            await vi.advanceTimersByTimeAsync(POLL_MS);
+            expect(lists(record.calls)).toBe(attached + 1);
+
+            // The page closed: the fast rate is gone with it.
+            held.remove(client.sink);
+            await vi.advanceTimersByTimeAsync(0);
+            const after = lists(record.calls);
+            await vi.advanceTimersByTimeAsync(POLL_MS);
+            expect(lists(record.calls)).toBe(after);
+        } finally {
+            vi.useRealTimers();
+        }
     });
 });
 

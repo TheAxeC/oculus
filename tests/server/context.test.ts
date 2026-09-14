@@ -30,7 +30,10 @@ describe('ServerContext', () => {
         const createTerminals = vi.fn(() => terminals);
         const watchPortfolio = vi.fn(() => ({ close: closes[0] }));
         const watchSessions = vi.fn(() => ({ onChange: vi.fn(() => () => {}), close: closes[1] }));
-        const watchGit = vi.fn(() => ({ refresh: vi.fn(), close: closes[2] }));
+        const watchGit = vi.fn((_hub: Hub, _root: string) => ({
+            refresh: vi.fn(),
+            close: closes[2]
+        }));
         const watchHpc = vi.fn(() => ({ refresh: vi.fn(async () => {}), close: closes[3] }));
         const watchUsageRefresh = vi.fn(() => ({
             ready: Promise.resolve(),
@@ -92,6 +95,10 @@ describe('ServerContext', () => {
         ]) {
             expect(built).toHaveBeenCalledTimes(1);
         }
+        // The git watcher is given the hub root as well as the channel bus: the hub's own state is
+        // on the `git` channel whether or not a session names it, which is what the deposit and the
+        // pin controls read.
+        expect(watchGit.mock.calls[0][1]).toBe('/hub');
 
         context.close();
         context.close();

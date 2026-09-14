@@ -20,9 +20,10 @@
 
 import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
-import { dirname, join, sep } from 'node:path';
+import { basename, dirname, join, sep } from 'node:path';
 import { buildPortfolio, portfolioConfigFrom } from '../../data/index.ts';
 import { loadConfig, textCatalog } from '../../data/sources/config.ts';
+import { MANIFEST } from '../../data/sources/manifests.ts';
 import { readRoots, rootsFile } from '../files.ts';
 import { buildFeeds, isLinkedinFile } from '../feeds.ts';
 import type { ConfigPayload, PortfolioConfig } from '../../data/model.ts';
@@ -56,6 +57,29 @@ export function relevant(filename: string | null): boolean {
     const parts = filename.split(/[/\\]/);
     if (parts.some((part) => NEVER.includes(part))) return false;
     return parts[parts.length - 1].endsWith('.yml');
+}
+
+/**
+ * The hub files a rebuild actually reads: every registry, collection and YAML feed file, the career
+ * file, and every `project.yml` under a scan tier. A `.yml` kept beside one of them (a note next to
+ * a registry, a draft, a second file in a project folder) changes nothing the snapshot holds, so an
+ * event for it is not a rebuild. The set is derived from the same config the build was made from,
+ * which is why the predicate is built again at every rebuild rather than held as a constant.
+ */
+export function namedByConfig(hub: string, config: PortfolioConfig): (path: string) => boolean {
+    const files = new Set<string>();
+    for (const file of Object.values(config.registries)) files.add(join(hub, file));
+    for (const file of config.collections) files.add(join(hub, file.file));
+    for (const file of [config.feeds.inbox, config.feeds.leads, config.feeds.radar]) {
+        files.add(join(hub, file));
+    }
+    files.add(join(hub, config.career));
+    const tiers = config.scan.map((rule) => join(hub, rule.dir) + sep);
+    return (path: string): boolean => {
+        if (files.has(path)) return true;
+        if (basename(path) !== MANIFEST) return false;
+        return tiers.some((tier) => path.startsWith(tier));
+    };
 }
 
 /**
@@ -101,6 +125,8 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
     /** Refusals are logged once until recovery; every rebuild still retries unopened paths. */
     const refused = new Set<string>();
     let timer: ReturnType<typeof setTimeout> | null = null;
+    /** Whether a hub path is one the build reads; replaced by every rebuild from the config read. */
+    let named: (path: string) => boolean = () => true;
     let configTouched = false;
     let feedsTouched = false;
     let closed = false;
@@ -205,6 +231,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 hub.publish('config', payload);
             }
             const portfolio = portfolioConfigFrom(config);
+            named = namedByConfig(paths.hub, portfolio);
             const version = hub.nextVersion('portfolio');
             hub.publish('portfolio', buildPortfolio(paths.hub, portfolio, version));
             const linkedinDir = join(paths.hub, portfolio.feeds.linkedin);
@@ -229,7 +256,9 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                     !linkedin || shared,
                     (filename) =>
                         (linkedin && isLinkedinFile(filename)) ||
-                        ((!linkedin || shared) && relevant(filename))
+                        ((!linkedin || shared) &&
+                            relevant(filename) &&
+                            named(join(dir, filename ?? '')))
                 );
                 if (opened && isFeed) withFeeds = true;
                 if (!opened && !handles.has(dir) && !existsSync(dir)) openParent(dir, isFeed);

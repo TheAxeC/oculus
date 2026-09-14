@@ -245,7 +245,15 @@ describe('the shape', () => {
         }
         const found = state(clone);
         expect([found.ahead, found.behind]).toEqual([2, 0]);
+        expect(found.upstream).toBe(true);
         expect(found.error).toBe(null);
+    });
+
+    it('says the branch tracks nothing, and says nothing is known before a read', () => {
+        // The repository was made here and was never cloned or pushed, so `work` tracks nothing.
+        // The page reads this rather than waiting for the branch listing to answer.
+        expect(state().upstream).toBe(false);
+        expect(empty().upstream).toBe(null);
     });
 
     it('says HEAD and detached when nothing is checked out', () => {

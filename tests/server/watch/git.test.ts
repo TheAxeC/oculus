@@ -346,6 +346,60 @@ describe('watchGit', () => {
         }
     });
 
+    it('says nothing on stderr for a workspace root that is not there at all', async () => {
+        const gone = join(dir, 'gone');
+        const quiet = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        try {
+            const hub = new Hub();
+            const client = recording();
+            hub.subscribe(client.sink, ['git']);
+            announce(hub, [gone]);
+            watchers.push(watchGit(hub));
+
+            await until(() => client.got.length >= 1, WAIT);
+            expect(latest(client.got)[gone].error).toBeTruthy();
+            expect(quiet).not.toHaveBeenCalled();
+        } finally {
+            quiet.mockRestore();
+        }
+    });
+
+    it('says nothing on stderr for a workspace directory that holds no .git', async () => {
+        const plain = join(dir, 'notrepo');
+        mkdirSync(plain);
+        const quiet = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        try {
+            const hub = new Hub();
+            const client = recording();
+            hub.subscribe(client.sink, ['git']);
+            announce(hub, [plain]);
+            watchers.push(watchGit(hub));
+
+            await until(() => client.got.length >= 1, WAIT);
+            expect(latest(client.got)[plain].error).toBeTruthy();
+            expect(quiet).not.toHaveBeenCalled();
+        } finally {
+            quiet.mockRestore();
+        }
+    });
+
+    it('watches the always root when the payload names no workspace at all', async () => {
+        const always = repository('hub');
+        const hub = new Hub();
+        const client = recording();
+        hub.subscribe(client.sink, ['git']);
+        announce(hub, []);
+        watchers.push(watchGit(hub, { always, throttle: 300 }));
+
+        await until(() => latest(client.got)[always] !== undefined, WAIT);
+        expect(latest(client.got)[always].branch).toBe('work');
+
+        const before = latest(client.got)[always].untracked.length;
+        put(always, ARM, 'x\n');
+        await until(() => latest(client.got)[always].untracked.length > before, WAIT);
+        expect(latest(client.got)[always].untracked.map((one) => one.path)).toContain(ARM);
+    });
+
     it('reads nothing more once it is closed', async () => {
         const first = repository('one');
         const hub = new Hub();

@@ -218,6 +218,9 @@ export function parseTerminal(line: string): Terminal | null {
     const named = fields[6] ?? '';
     return {
         resumes: parseResumes(fields[7] ?? ''),
+        // A session named by hand under the prefix is listed and flagged: the page can say why its
+        // controls are refused instead of offering a stop that cannot be built.
+        foreign: !isTerminalId(id),
         id,
         name: named === '' ? id : named,
         kind: kindOf(id, command),

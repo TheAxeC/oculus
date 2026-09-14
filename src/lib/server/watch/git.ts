@@ -1,12 +1,16 @@
-// Layer 2, server. The `git` channel: the read-only state of every workspace the `sessions` channel
-// names, re-read when that workspace changes. DESIGN.md, "Watchers": git watches each workspace's
-// .git and worktree and re-reads on change, no more often than every two seconds.
+// Layer 2, server. The `git` channel: the read-only state of the hub root and of every workspace the
+// `sessions` channel names, re-read when that root changes. DESIGN.md, "Watchers": git watches each
+// workspace's .git and worktree and re-reads on change, no more often than every two seconds.
 //
 // Which workspaces those are is the sessions payload's answer, and this watcher takes it from the
 // hub rather than from the sessions watcher: it subscribes a sink of its own to the `sessions`
 // channel, so the two watchers meet on the socket protocol and neither imports the other. A
 // subscription is answered with the channel's current message, so a git watcher started after the
 // first scan reads the workspaces immediately.
+//
+// The hub root is on the channel whether or not a session names it, since the deposit and the pin
+// controls read the hub's own git state; the `always` option is what names it, and the root it names
+// is opened before the first sessions message and never dropped for one.
 //
 // Two handles per workspace. `<root>/.git` non-recursively catches the index, HEAD and the refs,
 // which is what a commit or a checkout moves; the worktree recursively catches an edit to a file.
@@ -34,6 +38,12 @@ export type GitWatchOptions = {
     throttle?: number;
     /** Milliseconds one git command is given; server/git.ts's default when absent. */
     timeout?: number;
+    /**
+     * A root watched whether or not a session names it. The hub itself is one: the deposit and the
+     * pin controls read the hub's own git state, and a hub nobody has a session in would otherwise
+     * show the state it had when the page opened.
+     */
+    always?: string;
 };
 
 /**
@@ -83,6 +93,7 @@ export type GitWatcher = Watcher & {
 export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     const throttle = options.throttle ?? THROTTLE;
     const timeout = options.timeout ?? TIMEOUT_MS;
+    const always = options.always ?? '';
     const handles = new Map<string, FSWatcher[]>();
     const timers = new Map<string, ReturnType<typeof setTimeout>>();
     const last = new Map<string, number>();
@@ -146,6 +157,11 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
             [root, true, '']
         ];
         for (const [target, recursive, prefix] of targets) {
+            // A workspace directory that holds no `.git` is an ordinary folder, not a failure: its
+            // state is the empty shape statusFor gives a directory that is not a repository, and a
+            // line per start saying so is noise. Only a target that is there and still refuses the
+            // watch is worth saying.
+            if (!existsSync(target)) continue;
             try {
                 opened.push(
                     watch(target, { recursive }, (_event, filename) => {
@@ -171,8 +187,9 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     };
 
     /** The roots of the newest sessions payload: open what is new, drop what is gone, read once. */
-    const follow = (roots: string[]): void => {
+    const follow = (named: string[]): void => {
         if (closed) return;
+        const roots = always === '' ? named : [always, ...named.filter((one) => one !== always)];
         let changed = false;
         for (const root of [...handles.keys()]) {
             if (roots.includes(root)) continue;
@@ -212,6 +229,9 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         },
         close: () => {}
     };
+    // The always-watched root is opened before the first sessions message, so a hub nobody has a
+    // session in is on the channel from the start.
+    if (always !== '') follow([]);
     hub.subscribe(sink, ['sessions']);
 
     return {

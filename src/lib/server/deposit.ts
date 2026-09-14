@@ -31,7 +31,7 @@ import {
     writeFileSync
 } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, dirname, join } from 'node:path';
+import { basename, dirname, join, resolve, sep } from 'node:path';
 import { readManifests } from '../data/sources/manifests.ts';
 // `textOf` here is the shared `text`: a value that is not a string reads as the empty string.
 import { text as textOf } from '../data/guards.ts';
@@ -43,6 +43,7 @@ import {
     cloneInto,
     commitFile,
     createArgs,
+    defaultBranchArgs,
     defaultMirrorsDir,
     editArgs,
     forcePushSnapshot,
@@ -80,6 +81,9 @@ const NEVER_COPY = ['.git', '__pycache__'];
 
 /** The branch the snapshot's orphan commit is made on, deleted again as soon as it is pushed. */
 const ORPHAN = 'oculus-snapshot';
+
+/** The branch a deposit publishes on, and what the repository's default branch is made to be. */
+const MAIN = 'main';
 
 /** The first line of the mirror's generated `.gitignore`. */
 const IGNORE_HEADER = '# Generated, cached, and dead-end files - not part of this deposit.';
@@ -391,12 +395,20 @@ export async function snapshot(
     const sent = await forcePushSnapshot(deposit.at);
     if (!sent.ok) return { ...sent, plan: planned.plan };
 
-    const moved = await branchCmd(deposit.at, ['-f', 'main', 'HEAD']);
+    const moved = await branchCmd(deposit.at, ['-f', MAIN, 'HEAD']);
     if (!moved.ok) return { ...moved, plan: planned.plan };
-    const back = await switchCmd(deposit.at, ['main']);
+    const back = await switchCmd(deposit.at, [MAIN]);
     if (!back.ok) return { ...back, plan: planned.plan };
     await branchCmd(deposit.at, ['-D', ORPHAN]);
-    return { ...done('the remote now holds one commit'), plan: planned.plan };
+    const pointed = await pointDefaultAtMain(deposit, settings(options).run);
+    return {
+        ...done(
+            pointed
+                ? 'the remote now holds one commit'
+                : `the remote now holds one commit, and its default branch is not ${MAIN}`
+        ),
+        plan: planned.plan
+    };
 }
 
 /** Every branch of the mirror, with its upstream and which one is checked out. */
@@ -429,9 +441,11 @@ export async function createBranch(
 
 /**
  * Check a branch out in the mirror and copy its files back into `code/`. A dirty mirror is refused,
- * as it is on a workspace: git carries uncommitted changes across a switch. `results/`, `figures/`
- * and `attic/` of `code/` are left as they are, since the mirror never held them; the hub then shows
- * the tracked files of `code/` as modified, which is the record of the switch.
+ * as it is on a workspace: git carries uncommitted changes across a switch. A file the old branch
+ * tracked and the new one does not is deleted from `code/`, so the switch leaves the branch rather
+ * than the union of the two. `results/`, `figures/` and `attic/` of `code/` are left as they are,
+ * since the mirror never held them; the hub then shows the tracked files of `code/` as modified,
+ * which is the record of the switch.
  */
 export async function switchBranch(
     id: string,
@@ -447,8 +461,17 @@ export async function switchBranch(
     if (state.output.trim() !== '') {
         return failed('the mirror is dirty, so switching would carry the changes across');
     }
+    // Both listings are what the deletion is computed from. Without them there is no difference to
+    // delete, and copying the new branch on top of what the old one left would leave `code/` holding
+    // the union of the two, which is the state the switch is there to avoid: a listing that failed
+    // is a switch that failed, answered with git's own words.
+    const before = await lsFiles(deposit.at);
+    if (!before.ok) return before;
     const switched = await switchCmd(deposit.at, [name]);
     if (!switched.ok) return switched;
+    const after = await lsFiles(deposit.at);
+    if (!after.ok) return after;
+    dropGone(deposit, listOf(before.output), listOf(after.output));
     copyBack(deposit);
     return done(`code/ now holds the files of ${name}`);
 }
@@ -575,6 +598,42 @@ function copyBack(deposit: Deposit): void {
     }
 }
 
+/** The paths of one `ls-files` answer. */
+function listOf(output: string): string[] {
+    return output.split('\n').filter((one) => one !== '');
+}
+
+/**
+ * Delete from `code/` what the branch just left behind: a path the old branch tracked and the new
+ * one does not. Only those paths are touched, each one checked to resolve inside `code/`, and a
+ * directory the deletion emptied goes with them.
+ */
+function dropGone(deposit: Deposit, before: string[], after: string[]): void {
+    const kept = new Set(after);
+    const root = resolve(deposit.code);
+    for (const rel of before) {
+        if (kept.has(rel)) continue;
+        const full = resolve(join(deposit.code, rel));
+        if (!full.startsWith(root + sep)) continue;
+        rmSync(full, { force: true });
+        dropEmpty(dirname(full), root);
+    }
+}
+
+/** Remove the directories a deletion emptied, up to but never including `root`. */
+function dropEmpty(from: string, root: string): void {
+    let at = resolve(from);
+    while (at.startsWith(root + sep)) {
+        try {
+            if (readdirSync(at).length > 0) return;
+            rmSync(at, { recursive: true, force: true });
+        } catch {
+            return;
+        }
+        at = dirname(at);
+    }
+}
+
 /** Anything that looks like a credential or is too big to belong in a public repository. */
 function scan(mirror: string, files: string[]): Finding[] {
     const found: Finding[] = [];
@@ -650,6 +709,32 @@ function nameOf(url: string): string {
     const slug = slugOf(url);
     const at = slug.lastIndexOf('/');
     return at === -1 ? slug : slug.slice(at + 1);
+}
+
+/**
+ * Make `main` the repository's default branch when the snapshot has just replaced it and the
+ * repository still publishes the branch it was cloned with. False when `gh` could not say what the
+ * default is or could not change it, which leaves the push itself standing.
+ */
+async function pointDefaultAtMain(deposit: Deposit, run: GhRun): Promise<boolean> {
+    const view = await run(viewArgs(deposit.repo), NETWORK_TIMEOUT_MS);
+    if (!view.ok) return false;
+    const now = defaultBranchOf(view.output);
+    if (now === '' || now === MAIN) return true;
+    const url = urlOf(view.output);
+    if (url === '') return false;
+    return (await run(defaultBranchArgs(slugOf(url), MAIN), NETWORK_TIMEOUT_MS)).ok;
+}
+
+/** The `defaultBranchRef.name` of `gh repo view --json url,defaultBranchRef`, or the empty string. */
+function defaultBranchOf(output: string): string {
+    try {
+        const body = JSON.parse(output) as { defaultBranchRef?: { name?: unknown } };
+        const name = body.defaultBranchRef?.name;
+        return typeof name === 'string' ? name : '';
+    } catch {
+        return '';
+    }
 }
 
 /** The `url` of `gh repo view --json url,defaultBranchRef`, or the empty string. */

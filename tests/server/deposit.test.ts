@@ -82,6 +82,9 @@ const edits: string[][] = [];
 /** The repositories the stub knows, by name. A name it does not know does not exist on GitHub. */
 const known = new Map<string, string>();
 
+/** The default branch the stub reports per repository; `main` for one it was told nothing about. */
+const defaults = new Map<string, string>();
+
 let dir = '';
 let hub = '';
 let mirrors = '';
@@ -135,7 +138,8 @@ const gh: GhRun = (args) => {
     if (action === 'view') {
         const url = known.get(name);
         if (url === undefined) return answer(false, '', 'could not resolve to a Repository');
-        return answer(true, JSON.stringify({ url, defaultBranchRef: { name: 'main' } }), '');
+        const branch = defaults.get(name) ?? 'main';
+        return answer(true, JSON.stringify({ url, defaultBranchRef: { name: branch } }), '');
     }
     if (action === 'create') {
         const source = args[args.indexOf('--source') + 1];
@@ -346,6 +350,107 @@ describe('the snapshot', () => {
             'main'
         );
     });
+
+    it('moves the repository default to main when the snapshot replaced it', async () => {
+        defaults.set('alpha-code', 'master');
+        try {
+            const taken = await snapshot('alpha', 'Code deposit, again', options());
+            expect(taken.ok).toBe(true);
+            expect(remoteCommits('alpha-code')).toEqual(['Code deposit, again']);
+            expect(edits.at(-1)?.slice(0, 2)).toEqual(['repo', 'edit']);
+            expect(edits.at(-1)?.slice(-2)).toEqual(['--default-branch', 'main']);
+        } finally {
+            defaults.delete('alpha-code');
+        }
+    });
+
+    it('leaves the default alone when it is already main', async () => {
+        const before = edits.length;
+        const taken = await snapshot('alpha', 'Code deposit, once more', options());
+        expect(taken.ok).toBe(true);
+        expect(edits.length).toBe(before);
+    });
+});
+
+describe('what one gh answer makes the deposit do', () => {
+    it('writes the url the view answered with, not the remote it pushed to', async () => {
+        const calls: string[][] = [];
+        const url = 'https://github.com/someone/beta-code';
+        const played: GhRun = (args) => {
+            ran.push(['gh', ...args]);
+            calls.push([...args]);
+            if (args[1] === 'view') {
+                return answer(
+                    true,
+                    JSON.stringify({ url, defaultBranchRef: { name: 'main' } }),
+                    ''
+                );
+            }
+            if (args[1] === 'edit') {
+                edits.push(args);
+                return answer(true, '', '');
+            }
+            return answer(false, '', `no gh shape named ${String(args[1])}`);
+        };
+
+        const sent = await push('beta', { mirrors, into, gh: played });
+        expect(sent.ok).toBe(true);
+        // The mirror was cloned, so it has a remote: `gh repo create` is not one of the shapes here.
+        expect(calls.map((one) => one[1])).toEqual(['view', 'edit']);
+        expect(sent.output).toBe(url);
+        expect(readFileSync(manifestOf('beta'), 'utf8')).toContain(url);
+        // The About came off the manifest and went out on the edit vector.
+        expect(calls[1]).toContain('--description');
+        expect(calls[1]).toContain('One line about the repository.');
+        expect(calls[1]).toContain('tensors');
+    });
+
+    it('creates the repository for a mirror with no remote, on the answers played back to it', async () => {
+        write(
+            hub,
+            join('projects', 'manuscripts', 'delta', 'project.yml'),
+            manifest('delta', 'delta-code')
+        );
+        write(codeOf('delta'), 'README.md', '# delta\n');
+        const calls: string[][] = [];
+        const url = 'https://github.com/someone/delta-code';
+        let made = false;
+        const played: GhRun = (args) => {
+            ran.push(['gh', ...args]);
+            calls.push([...args]);
+            if (args[1] === 'view') {
+                return made
+                    ? answer(true, JSON.stringify({ url, defaultBranchRef: { name: 'main' } }), '')
+                    : answer(false, '', 'could not resolve to a Repository');
+            }
+            if (args[1] === 'create') {
+                made = true;
+                return answer(true, '', '');
+            }
+            if (args[1] === 'edit') {
+                edits.push(args);
+                return answer(true, '', '');
+            }
+            return answer(false, '', `no gh shape named ${String(args[1])}`);
+        };
+
+        const held = { mirrors, into, gh: played };
+        expect((await adopt('delta', held)).ok).toBe(true);
+        expect((await commit('delta', 'Add the first files', held)).ok).toBe(true);
+        const sent = await push('delta', held);
+        expect(sent.ok).toBe(true);
+
+        // The view that found nothing is what made the mirror empty; the push then created the
+        // repository from it, asked again for the url, and set the About on the url it was told.
+        expect(calls.map((one) => one[1])).toEqual(['view', 'create', 'view', 'edit']);
+        const create = calls[1];
+        expect(create.slice(0, 3)).toEqual(['repo', 'create', 'delta-code']);
+        expect(create[create.indexOf('--source') + 1]).toBe(join(mirrors, 'delta-code'));
+        expect(create).toContain('--push');
+        expect(sent.output).toBe(url);
+        expect(readFileSync(manifestOf('delta'), 'utf8')).toContain(url);
+        expect(calls[3].slice(0, 3)).toEqual(['repo', 'edit', 'someone/delta-code']);
+    });
 });
 
 describe('the branches', () => {
@@ -386,6 +491,32 @@ describe('the branches', () => {
         expect(readFileSync(join(codeOf('alpha'), 'run.py'), 'utf8')).toBe('print(3)\n');
         expect(existsSync(join(codeOf('alpha'), 'results', 'out.csv'))).toBe(true);
         expect(readdirSync(codeOf('alpha'))).toContain('attic');
+    });
+
+    it('deletes from code/ a file the branch it left had and the new one lacks', async () => {
+        const mirror = join(mirrors, 'alpha-code');
+        write(mirror, join('sub', 'only-on-review.py'), 'print(4)\n');
+        git(mirror, 'add', '-A');
+        git(
+            mirror,
+            '-c',
+            'user.email=t@t',
+            '-c',
+            'user.name=t',
+            'commit',
+            '-qm',
+            'A file only review has'
+        );
+        const onto = await switchBranch('alpha', 'review', options());
+        expect(onto.ok).toBe(true);
+        expect(existsSync(join(codeOf('alpha'), 'sub', 'only-on-review.py'))).toBe(true);
+
+        const back = await switchBranch('alpha', 'main', options());
+        expect(back.ok).toBe(true);
+        expect(existsSync(join(codeOf('alpha'), 'sub', 'only-on-review.py'))).toBe(false);
+        // The emptied folder goes with it, and what the mirror never held is left alone.
+        expect(existsSync(join(codeOf('alpha'), 'sub'))).toBe(false);
+        expect(existsSync(join(codeOf('alpha'), 'results', 'out.csv'))).toBe(true);
     });
 });
 

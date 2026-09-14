@@ -10,7 +10,8 @@
 // A control client is opened per attached terminal and closed a minute after nothing is attached
 // to that terminal, so a machine with no terminal open runs no tmux child. While one is open,
 // tmux's own `%session-changed` and its relatives say when the terminal list moved; while none is,
-// a `list-sessions` every five seconds does.
+// a `list-sessions` does, every five seconds while a page is attached to a terminal and once a
+// minute while none is, since nothing but a hand-made session can move the list then.
 
 import type {
     Message,
@@ -45,8 +46,15 @@ export const CHANNEL_PREFIX = 'pty:';
 /** Milliseconds with nothing attached before the control client is closed. */
 export const IDLE_MS = 60000;
 
-/** Milliseconds between two `list-sessions` calls while no control client is open. */
+/** Milliseconds between two `list-sessions` calls while a page is attached to a terminal. */
 export const POLL_MS = 5000;
+
+/**
+ * Milliseconds between two `list-sessions` calls while nothing is attached. Nobody is looking at a
+ * terminal then, and the only thing the list can report is a session started outside oculus, so a
+ * minute is soon enough and costs a twelfth of the calls the attached rate does.
+ */
+export const IDLE_POLL_MS = 60000;
 
 /** The tmux notifications that mean the terminal list or the pane map moved. */
 const CHANGE_EVENTS = new Set([
@@ -241,8 +249,10 @@ export type TerminalsOptions = {
     driver?: TerminalDriver;
     /** How many lines of scrollback an attaching page is given. */
     scrollbackLines?: number;
-    /** Milliseconds between two list polls; 0 turns the poll off. */
+    /** Milliseconds between two list polls while a page is attached; 0 turns the poll off. */
     poll?: number;
+    /** Milliseconds between two list polls while nothing is attached; 0 turns the poll off. */
+    idlePoll?: number;
     /** Passed to the default driver. A test points it at a private tmux server. */
     tmux?: TmuxOptions;
 };
@@ -263,7 +273,11 @@ export class Terminals {
     #terminals: Terminal[] = [];
     #signature = '';
     #listeners = new Set<() => void>();
+    #poll: number;
+    #idlePoll: number;
     #timer: ReturnType<typeof setInterval> | null = null;
+    /** The period the running timer was armed with, so an attach that changes nothing rearms none. */
+    #period = 0;
     #closed = false;
 
     constructor(hub: Hub, options: TerminalsOptions = {}) {
@@ -272,16 +286,31 @@ export class Terminals {
         this.#lines = options.scrollbackLines ?? SCROLLBACK_LINES;
         this.#driver.onOutput((id, bytes) => this.#output(id, bytes));
         this.#driver.onChange(() => this.refresh());
-        const poll = options.poll ?? POLL_MS;
-        if (poll > 0) {
-            this.#timer = setInterval(() => {
-                // While a control client is open, tmux itself says when the list moved.
-                if (!this.#driver.live()) this.refresh();
-            }, poll);
-            const timer = this.#timer;
-            if (typeof timer === 'object' && typeof timer.unref === 'function') timer.unref();
-        }
+        this.#poll = options.poll ?? POLL_MS;
+        // `poll: 0` is how a caller asks for no list poll at all, so the idle rate follows it unless
+        // the caller named one of its own.
+        this.#idlePoll = options.idlePoll ?? (this.#poll === 0 ? 0 : IDLE_POLL_MS);
+        this.#arm();
         this.refresh();
+    }
+
+    /**
+     * Arm the list poll at the rate the current attachment calls for, and do nothing when it is
+     * already armed at that rate. Called at construction and whenever a page attaches or detaches.
+     */
+    #arm(): void {
+        const wanted = this.#attached.size > 0 ? this.#poll : this.#idlePoll;
+        if (this.#closed || wanted === this.#period) return;
+        if (this.#timer !== null) clearInterval(this.#timer);
+        this.#timer = null;
+        this.#period = wanted;
+        if (wanted <= 0) return;
+        this.#timer = setInterval(() => {
+            // While a control client is open, tmux itself says when the list moved.
+            if (!this.#driver.live()) this.refresh();
+        }, wanted);
+        const timer = this.#timer;
+        if (typeof timer === 'object' && typeof timer.unref === 'function') timer.unref();
     }
 
     /** Every oculus terminal as the last list reported it. The `sessions` payload carries this. */
@@ -359,12 +388,14 @@ export class Terminals {
             }
         }
         this.#driver.attached([...this.#attached.keys()]);
+        this.#arm();
     }
 
     close(): void {
         this.#closed = true;
         if (this.#timer !== null) clearInterval(this.#timer);
         this.#timer = null;
+        this.#period = 0;
         for (const id of this.#attached.keys()) this.#hub.merge(ptyChannel(id), null);
         this.#listeners.clear();
         this.#attached.clear();
@@ -396,6 +427,7 @@ export class Terminals {
             this.#held.set(sink, held);
             this.#hub.subscribe(sink, [ptyChannel(id)], false);
             this.#driver.attached([...this.#attached.keys()]);
+            this.#arm();
         }
         let text = '';
         try {

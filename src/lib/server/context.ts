@@ -60,7 +60,7 @@ export type ContextDependencies = {
     createTerminals: (hub: Hub) => Terminals;
     watchPortfolio: (hub: Hub, paths: { hub: string; engine: string }) => Watcher;
     watchSessions: typeof watchSessions;
-    watchGit: (hub: Hub) => GitWatcher;
+    watchGit: (hub: Hub, root: string) => GitWatcher;
     watchHpc: (hub: Hub, options: HpcOptions) => HpcWatcher;
     watchUsageRefresh: typeof watchUsageRefresh;
     watchUsage: typeof watchUsage;
@@ -74,7 +74,7 @@ const dependencies: ContextDependencies = {
     createTerminals: (hub) => new Terminals(hub),
     watchPortfolio,
     watchSessions,
-    watchGit,
+    watchGit: (hub, root) => watchGit(hub, { always: root }),
     watchHpc,
     watchUsageRefresh,
     watchUsage
@@ -131,7 +131,7 @@ export function createServerContext(
         refresherFor: usageRefresh.state,
         onSessionsChange: sessions.onChange
     });
-    const git = make.watchGit(hub);
+    const git = make.watchGit(hub, local.hub);
     const hpc = make.watchHpc(hub, {
         host: local.hpcHost ?? slurm.host,
         days: slurm.days,

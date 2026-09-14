@@ -16,6 +16,11 @@
 // session goes from live to ended with nothing written anywhere. The re-check therefore rescans on a
 // timer and publishes only when the set of live ids or one of their states changed, so a quiet
 // machine sees no traffic on the channel.
+//
+// The slow clock beside it is the fifth: a full rescan every few minutes whatever the events said.
+// A write that lands while a watch is being opened is announced to nobody, and a re-check that sees
+// the same live ids in the same states publishes nothing for it, so without the clock those bytes
+// wait for the next write.
 
 import { watch } from 'node:fs';
 import { basename, dirname } from 'node:path';
@@ -35,6 +40,15 @@ import type { Watcher } from './portfolio.ts';
 export const DEBOUNCE = 500;
 /** Milliseconds between two liveness re-checks. */
 export const LIVENESS = 15000;
+/**
+ * Milliseconds between two full rescans that run whether or not a file event came. fs.watch can
+ * miss a write that lands in the moment a watch is being opened, and a store whose only change was
+ * that write would then stay unread until the next one: the liveness re-check publishes nothing for
+ * it, since a session that was already live with the same state has the same signature. Five
+ * minutes is slow enough to cost nothing on a quiet machine and short enough that a missed event is
+ * not what a page shows for the rest of the day.
+ */
+export const RESCAN = 300000;
 export const WINDOW_DAYS = 2;
 export const MAX_SESSIONS = 40;
 
@@ -68,6 +82,8 @@ export type SessionsWatchOptions = {
     debounce?: number;
     /** Milliseconds between liveness re-checks; 0 turns the re-check off. */
     liveness?: number;
+    /** Milliseconds between full rescans that no event asked for; 0 turns the clock off. */
+    rescanEvery?: number;
     /**
      * The tmux terminals of O17. The list is read here at every rescan and the watcher republishes
      * whenever the source says it moved, so a terminal started anywhere appears on the page without
@@ -109,10 +125,12 @@ function reason(error: unknown): string {
 export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): SessionsWatcher {
     const debounce = options.debounce ?? DEBOUNCE;
     const liveness = options.liveness ?? LIVENESS;
+    const rescanEvery = options.rescanEvery ?? RESCAN;
     const handles: FSWatcher[] = [];
     const changeListeners = new Set<() => void>();
     let timer: ReturnType<typeof setTimeout> | null = null;
     let ticker: ReturnType<typeof setInterval> | null = null;
+    let clock: ReturnType<typeof setInterval> | null = null;
     let signature: string | null = null;
     let closed = false;
 
@@ -141,6 +159,24 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
     const rescan = (): void => {
         try {
             publish(read());
+            for (const listener of changeListeners) listener();
+        } catch (error) {
+            console.error(`sessions watch: rescan failed: ${reason(error)}`);
+        }
+    };
+
+    /**
+     * The slow clock's full rescan: read both stores again whatever the events said, and publish
+     * only when what was read is not what stands on the channel, so a quiet machine sees no traffic.
+     */
+    const sweep = (): void => {
+        try {
+            const payload = read();
+            const standing = hub.latest('sessions')?.payload;
+            if (standing !== undefined && JSON.stringify(standing) === JSON.stringify(payload)) {
+                return;
+            }
+            publish(payload);
             for (const listener of changeListeners) listener();
         } catch (error) {
             console.error(`sessions watch: rescan failed: ${reason(error)}`);
@@ -213,6 +249,12 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
         // The re-check must not be the reason a process stays up.
         if (typeof ticker === 'object' && typeof ticker.unref === 'function') ticker.unref();
     }
+    if (rescanEvery > 0) {
+        clock = setInterval(() => {
+            if (!closed) sweep();
+        }, rescanEvery);
+        if (typeof clock === 'object' && typeof clock.unref === 'function') clock.unref();
+    }
 
     return {
         onChange(listener: () => void): () => void {
@@ -226,6 +268,8 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
             timer = null;
             if (ticker !== null) clearInterval(ticker);
             ticker = null;
+            if (clock !== null) clearInterval(clock);
+            clock = null;
             for (const handle of handles) handle.close();
             handles.length = 0;
             changeListeners.clear();

@@ -251,6 +251,12 @@ export type Terminal = {
     attached: boolean;
     /** The session this terminal continues, or null when it continues nothing. */
     resumes: TerminalResume | null;
+    /**
+     * True for a tmux session that carries the `oculus-` prefix but whose name oculus did not mint.
+     * It is listed, since it is there and the prefix claims it, and the stop and resize actions
+     * refuse it: the commands they build are keyed on an id of oculus's own shape.
+     */
+    foreign?: boolean;
 };
 
 /** The payload of a `pty:<id>` message: a chunk of pane output, or the scrollback, as base64. */
@@ -293,6 +299,15 @@ export type GitState = {
     branch: string;
     ahead: number;
     behind: number;
+    /**
+     * Whether the branch has a tracking branch, and null when that is not known. The rule a reader
+     * applies is `upstream === null && error === null`: that pair, and only that pair, is a state
+     * git has not answered for yet, and a control that would say "no upstream" says it is still
+     * being looked up instead. Null with `error` set is a directory that is not a repository at all,
+     * which is never pending. The upstream's own name comes from the branch listing of /api/git,
+     * which arrives after this.
+     */
+    upstream?: boolean | null;
     detached: boolean;
     staged: GitEntry[];
     unstaged: GitEntry[];

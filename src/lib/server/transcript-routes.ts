@@ -10,6 +10,14 @@ import { sameOrigin } from './auth.ts';
 import { readTurns } from './sessions/turns.ts';
 import type { SessionRecord } from '../data/model.ts';
 
+/**
+ * How many turns a first read answers with. A session that has run all day holds thousands, and the
+ * page draws the tail of the conversation; sending the whole file costs the wire and the client's
+ * memory for turns nobody scrolls back to. A later read asks from a byte offset and is not capped,
+ * since it carries only what was appended since.
+ */
+export const FIRST_READ_TURNS = 200;
+
 export type TranscriptOptions = {
     /**
      * The session record a read is about, from the last published `sessions` payload. Defaulted to
@@ -39,5 +47,10 @@ export function handleTranscript(request: Request, options: TranscriptOptions = 
     const id = url.searchParams.get('id') ?? '';
     const record = (options.recordFor ?? (() => null))(id);
     if (record === null) return json(404, { error: `no session with the id ${id}` });
-    return json(200, readTurns(record.path, record.tool, from));
+    const read = readTurns(record.path, record.tool, from);
+    if (from > 0 || read.turns.length <= FIRST_READ_TURNS) return json(200, read);
+    // The offset is the file's end either way, so the client's append path continues from the same
+    // place; what is dropped is the oldest turns, which is the end of the conversation nobody is
+    // looking at.
+    return json(200, { ...read, turns: read.turns.slice(-FIRST_READ_TURNS) });
 }

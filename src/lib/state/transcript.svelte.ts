@@ -1,4 +1,4 @@
-// Layer 2, client state. The turns of a session, held per session for the page's life.
+// Layer 2, client state. The turns of a session, held per session while an instance is showing it.
 //
 // DESIGN.md's wire model keeps the turn text out of the snapshot, so the conversation is fetched
 // rather than selected: turnsFor(id) asks api/transcript the first time a session is wanted and
@@ -72,8 +72,37 @@ export function follow(id: string, lastActivity: string | null): void {
     request(id, state.offset);
 }
 
+/** How many instances are showing each session, so the last one to close is what drops its turns. */
+const viewers: Record<string, number> = {};
+
+/**
+ * Note that one instance is showing this session, and hand back the call that says it stopped. What
+ * is held otherwise stays held for the page's life: a session opened once keeps its whole transcript
+ * in memory, and a long day's transcript is the larger part of what the page holds. When the last
+ * instance showing a session closes, its turns are dropped and the next open reads the tail again.
+ * Calling the returned function twice counts once, so an instance that releases on both a teardown
+ * and a change of session does not drop turns another instance is still drawing.
+ */
+export function showing(id: string): () => void {
+    if (id === '') return () => {};
+    viewers[id] = (viewers[id] ?? 0) + 1;
+    let released = false;
+    return () => {
+        if (released) return;
+        released = true;
+        const left = (viewers[id] ?? 1) - 1;
+        if (left > 0) {
+            viewers[id] = left;
+            return;
+        }
+        delete viewers[id];
+        forget(id);
+    };
+}
+
 /** Drop everything held for one session, so the next call for it fetches from the start again. */
 export function forget(id: string): void {
+    delete viewers[id];
     delete held[id];
     delete marks[id];
     inflight.delete(id);
