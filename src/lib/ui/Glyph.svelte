@@ -25,4 +25,10 @@
         text-align: center;
         line-height: 1;
     }
+
+    /* A terminal palette draws the ASCII stand-in of config/glyphs.yml instead of the character, and
+       a stand-in is up to three characters wide, so the box holds three of the theme's own face. */
+    :global(body.rice) .glyph {
+        width: 3ch;
+    }
 </style>

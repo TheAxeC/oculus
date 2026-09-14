@@ -434,8 +434,13 @@
     }
 
     /* Over a wallpaper the rail goes translucent with the panes, and takes the pane's colour while
-       it does: the two are one surface to the eye once the picture shows through them. */
+       it does: the two are one surface to the eye once the picture shows through them.
+       The filter makes the rail the stacking context of every fixed thing it holds, its flyout lists
+       and its tooltips, so the rail carries the order that context paints in: above the panes beside
+       it, and below the drag layer at 10 and the overlays above that. */
     :global(body.wall) .rail {
+        position: relative;
+        z-index: 5;
         background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
     }

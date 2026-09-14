@@ -19,7 +19,10 @@
     //
     // The bubble is positioned in viewport coordinates rather than against the wrapper, because both
     // places it is most needed scroll: the rail's view list and the tab strip both clip their own
-    // overflow, and a bubble laid out inside either would be cut off at its edge.
+    // overflow, and a bubble laid out inside either would be cut off at its edge. It is drawn on the
+    // body for the same reason: a surface that filters or clips what it holds is the containing
+    // block of a fixed element inside it, which reads those window coordinates from its own corner
+    // and cuts the bubble at its edge, and on the body there is no such ancestor.
 
     import type { Snippet } from 'svelte';
 
@@ -104,6 +107,12 @@
     function key(event: KeyboardEvent): void {
         if (event.key === 'Escape') hide();
     }
+
+    /** Move the bubble out of the wrapper's ancestors and onto the body, and take it away with it. */
+    function onBody(node: HTMLElement): { destroy: () => void } {
+        document.body.append(node);
+        return { destroy: () => node.remove() };
+    }
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions, a11y_no_noninteractive_tabindex -->
@@ -125,8 +134,13 @@
 >
     {@render children()}
     {#if text !== ''}
-        <span {id} class="bubble" role="tooltip" hidden={!open} style="left: {left}px; top: {top}px"
-            >{text}</span
+        <span
+            {id}
+            class="bubble"
+            role="tooltip"
+            hidden={!open}
+            style="left: {left}px; top: {top}px"
+            use:onBody>{text}</span
         >
     {/if}
 </span>
@@ -151,7 +165,9 @@
 
     .bubble {
         position: fixed;
-        z-index: 40;
+        /* Drawn on the body, so it orders against the overlays rather than inside the one whose
+           control it describes: above the tray, the confirm box, the palette and the key sheet. */
+        z-index: 80;
         max-width: 280px;
         padding: 3px 6px;
         border: 1px solid var(--line);

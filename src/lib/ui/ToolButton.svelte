@@ -188,12 +188,15 @@
         color: var(--accent-txt, var(--accent));
     }
 
-    :global(body.rice) .tool::before {
+    /* The brackets are a row's shape, around a word with the glyph inside them. A stacked control is
+       a column of a glyph over a label, where the pair would be two lines of their own above and
+       below it, and the terminal stand-in the glyph draws carries its own brackets already. */
+    :global(body.rice) .tool:not(.stacked)::before {
         content: '[';
         opacity: 0.5;
     }
 
-    :global(body.rice) .tool::after {
+    :global(body.rice) .tool:not(.stacked)::after {
         content: ']';
         opacity: 0.5;
     }
