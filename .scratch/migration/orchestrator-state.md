@@ -34,7 +34,7 @@ dispatch:                                  # workers_at_once: 2; R11 (in repair)
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R15/report.md
   exit: none
   pid: none
-  session_id: pending
+  session_id: afc56430290fd33cc            # the Agent tool's id
   landing: not-started
 - package: R11
   worker: claude:opus
