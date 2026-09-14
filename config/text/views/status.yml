@@ -3,3 +3,10 @@ text:
     views:
         status: Status
         status_glyph: now
+    status:
+        hooks_copied: Copied
+        hooks_copy: Copy the block
+        hooks_copy_blocked: this browser offers no clipboard
+        hooks_copy_failed: the clipboard refused the block
+        hooks_help: Claude Code posts to oculus when a session wants you or finishes. Merge this block into the top level of ~/.claude/settings.json, the file both accounts read, and every session notifies oculus; a session whose oculus is down waits one second.
+        hooks_title: Claude Code hooks

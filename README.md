@@ -14,6 +14,8 @@ The four verification commands are `npm test` (vitest), `npm run check` (svelte-
 
 Claude Code keeps its login, settings and session history in one folder, `~/.claude` by default; the environment variable `CLAUDE_CONFIG_DIR` points it at another folder, and the login stored for that folder is its own Keychain entry. Axel's second account (the university address, Max 5x) lives in `~/.claude-work`, whose `CLAUDE.md`, `rules`, `settings.json` and `projects` are symlinks to `~/.claude`'s, so both accounts share the rules, the settings, the transcripts and the memory, and only the login and the app state differ.
 
+The Status view prints the Claude Code hooks block that posts to oculus, which goes in `~/.claude/settings.json`, the settings file both accounts read through that symlink, so a session started in any folder tells oculus when it wants you. A block in the hub's own `.claude/settings.local.json` is not needed once it is there.
+
 Start Claude Code on the second account from the hub root:
 
 ```sh

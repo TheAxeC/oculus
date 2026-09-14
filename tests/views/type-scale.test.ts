@@ -124,6 +124,7 @@ const VIEWS: Record<string, string> = {
     'shared/Reveal.svelte': '',
     'shared/Subtasks.svelte': '.label=fs-xs | .count, .box=fs-xs | .do=fs-md',
     'source/Editor.svelte': '.message=fs-sm | .mirror=fs-sm | .input :global(.area)=fs-sm',
+    'status/Hooks.svelte': 'h3=fs-md | pre=fs-xs | .said=fs-sm',
     'venues/Facets.svelte': '.label=fs-xxs',
     'venues/Ribbon.svelte':
         '.next=fs-sm | .legend=fs-xs | .spark=fs-xs | .spark pre=fs-xl | .spark-label=fs-xxs | .spark-months=fs-3xs | .monthname=fs-xxs',

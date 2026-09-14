@@ -18,6 +18,7 @@
     import { git, portfolio, sessions } from '$lib/state/entities.svelte';
     import { status } from '$lib/state/socket.svelte';
     import { t } from '$lib/state/text';
+    import Hooks from './status/Hooks.svelte';
     import type { ViewProps } from './registry';
 
     let { instance }: ViewProps = $props();
@@ -45,6 +46,15 @@
     function count(kind: Counted): number {
         return snapshot === null ? 0 : Object.keys(snapshot.entities[kind]).length;
     }
+
+    /**
+     * The page's own origin, which is the server that printed it: the hooks block posts back there.
+     * The page renders in the browser alone (routes/+layout.ts sets ssr = false), so the empty
+     * answer belongs to a render with no location and Hooks draws nothing for it.
+     */
+    function servedOrigin(): string {
+        return typeof location === 'undefined' ? '' : location.origin;
+    }
 </script>
 
 <div class="view" data-instance={instance.id}>
@@ -65,6 +75,7 @@
     {/if}
     <p>{t('app.sessions', records.length, live)}</p>
     <p>{t('app.git', workspaces)}</p>
+    <Hooks origin={servedOrigin()} />
 </div>
 
 <style>
