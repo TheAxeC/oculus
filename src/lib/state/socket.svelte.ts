@@ -29,7 +29,7 @@ let channels: string[] = [];
 /**
  * The listeners of a channel, by channel name. A channel that has one is handed every message and
  * nothing of it is stored: entities.receive keeps one message per channel, the latest, and on a
- * `pty:` channel that rule would drop the chunk before the one that arrived (O18).
+ * `pty:` channel that rule would drop the chunk before the one that arrived.
  */
 const listeners = new Map<string, Set<(message: Message) => void>>();
 /** Whether connect() is in force; a close reconnects only while it is. */
@@ -71,13 +71,13 @@ export function disconnect(): void {
 }
 
 // The token goes with the subscription rather than with each message: the server remembers which
-// socket carried it, and a socket without it reads every channel and writes to none (O17).
+// socket carried it, and a socket without it reads every channel and writes to none.
 function subscription(): Subscription {
     return { type: 'subscribe', channels, token: writeToken() };
 }
 
 /**
- * Write one message on the open socket: the terminal input and resize of O17, and nothing else the
+ * Write one message on the open socket: the terminal input and resize, and nothing else the
  * server accepts from a page. False when there is no open socket, which a caller shows rather than
  * queueing: keystrokes held through a reconnect would be typed into whatever the pane shows by then.
  */

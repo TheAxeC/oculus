@@ -1,4 +1,4 @@
-// The write rule of package P1, one level below the manifest: a collection entry, a subtask line and
+// The write rule one level below the manifest: a collection entry, a subtask line and
 // a host line are edited in their own bytes and nothing else moves.
 //
 // The documents below carry the shapes the hub writes: entries as block maps opening with `title:`

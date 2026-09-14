@@ -67,7 +67,7 @@ export function staleAfter(config: Record<string, unknown>, feed: string): numbe
 /**
  * The lines of the "Needs attention" group: the inbox count, the LinkedIn cadence once it is past,
  * and the venues carrying too many in-flight papers. The fourth cockpit line, the manifests behind
- * their docs, needs the filesystem mtimes the snapshot does not carry and is O28's.
+ * their docs, needs the filesystem mtimes the snapshot does not carry and is not drawn here.
  */
 export function attention(
     snapshot: Snapshot,

@@ -1,4 +1,4 @@
-// The write rule of package O11: a write changes the bytes of the field it writes and no others.
+// The manifest write rule: a write changes the bytes of the field it writes and no others.
 //
 // The synthetic documents below carry every shape the tree has: a plain scalar and a quoted one, a
 // flow list and a block list, a nested map and a flow map, an empty value, comments on the edited

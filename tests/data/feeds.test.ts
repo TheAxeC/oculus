@@ -3,7 +3,7 @@
 // anything is written; nothing here touches the real hub.
 //
 // What this does NOT cover: the feed views themselves. This reads the counts and run dates the
-// command center needs, and the Inbox, Lit Watch and Position Leads views of O25 read the entries.
+// command center needs, and the Inbox, Lit Watch and Position Leads views read the entries.
 
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';

@@ -1,6 +1,6 @@
 // Layer 2, server. The git and `gh` calls of the deposit, kept apart from server/git-write.ts.
 //
-// DESIGN.md's decision of 2026-09-10 on git writes and the deposit: a project's `code/` is ordinary
+// DESIGN.md's decision on git writes and the deposit: a project's `code/` is ordinary
 // tracked content of the hub and never carries a `.git` of its own, and the deposit lives outside
 // the hub tree as one mirror clone per deposit repo under the machine-local state folder. Every
 // command here therefore runs in a directory under that mirrors folder and nowhere else, which is

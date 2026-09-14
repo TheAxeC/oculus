@@ -3,7 +3,7 @@
 //
 // The server binds 127.0.0.1, but any page open in the browser can address 127.0.0.1, so a request
 // is judged by where it came from: `Sec-Fetch-Site` when the browser sends one, and `Origin`
-// otherwise. The rule is the socket's of O6, which lives here now and is imported there.
+// otherwise. The rule is the socket's too: it lives here and server/socket.ts imports it.
 //
 // The token is minted once per process and delivered to the page as its data. It is not a secret
 // against the machine's owner; it is what stops another page in the same browser from posting a

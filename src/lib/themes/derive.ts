@@ -8,7 +8,7 @@
 //
 // The numbers come from the cockpit's build-time tools/cockpit/src/cockpit/contrast.py: the same WCAG
 // relative luminance, the same 0.02 lightness step, the same 50-step bound, the same order of grounds.
-// Nothing here touches the document; O8 sets the theme class and applies what deriveTokens returns.
+// Nothing here touches the document; ui/theme.ts sets the theme class and applies these tokens.
 // Pure functions, no imports, so the contrast test can run them over every theme in a plain node run.
 
 /** True black. A near-black scores lower and loses ties it should win. */

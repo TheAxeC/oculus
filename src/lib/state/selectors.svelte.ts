@@ -109,7 +109,7 @@ export function folderOf(project: Project): string {
 /**
  * The hub's own absolute path, or the empty string before the first snapshot. A project carries its
  * manifest's absolute path and its folder relative to the hub, so the root is the one less the
- * other and no channel has to carry it. O18 offers it as a place to start a terminal in.
+ * other and no channel has to carry it. The terminal view offers it as a place to start one in.
  */
 export function hubRoot(): string {
     const snapshot = portfolio();

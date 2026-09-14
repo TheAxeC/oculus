@@ -31,7 +31,7 @@ export function setToken(next: string): void {
 
 /**
  * The token, for the one reader that is not a fetch: the socket sends it with its subscription, so
- * that a page which may write a manifest may also type into a terminal (O17).
+ * that a page which may write a manifest may also type into a terminal.
  */
 export function writeToken(): string {
     return token;

@@ -51,8 +51,8 @@ export type EditResult = {
 
 /**
  * Fields no write ever touches. `id` and `tier` are the folder's, not the form's, and `type` is the
- * tier's on a flat scan rule; O2's reader derives all three from where the folder sits, so writing
- * them here would put the file at odds with its own location.
+ * tier's on a flat scan rule; data/sources/manifests.ts derives all three from where the folder
+ * sits, so writing them here would put the file at odds with its own location.
  */
 export const READ_ONLY = ['id', 'tier', 'type'];
 

@@ -20,7 +20,7 @@ export type SessionsOptions = ScanOptions & {
     attachedIds?: string[];
     /** hooks.ts's HookStore to merge each record's `hook` field from. */
     hooks?: HookStore;
-    /** The tmux terminals of O17, which the payload carries so the page sees one the moment it exists. */
+    /** The tmux terminals, which the payload carries so the page sees one the moment it exists. */
     terminals?: Terminal[];
 };
 

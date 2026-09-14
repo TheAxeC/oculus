@@ -1,4 +1,4 @@
-// The source tab of Q9: the edit-source bar on Lit Watch opens the feed file as an editable tab,
+// The source tab: the edit-source bar on Lit Watch opens the feed file as an editable tab,
 // and an unsaved edit survives leaving the tab and coming back, since the shell mounts only the
 // active view and the draft belongs to the instance, not the component.
 

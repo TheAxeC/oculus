@@ -21,7 +21,7 @@ export type { Turn, TurnTool } from '../data/model.ts';
 export type TurnsState = {
     turns: Turn[];
     offset: number;
-    /** True while the first answer for this session is still to come. */
+    /** True while the first answer for the session is still to come. */
     pending: boolean;
     /** What the request failed with, or the empty string. */
     error: string;
@@ -76,7 +76,7 @@ export function follow(id: string, lastActivity: string | null): void {
 const viewers: Record<string, number> = {};
 
 /**
- * Note that one instance is showing this session, and hand back the call that says it stopped. What
+ * Note that one instance is showing the session, and hand back the call that says it stopped. What
  * is held otherwise stays held for the page's life: a session opened once keeps its whole transcript
  * in memory, and a long day's transcript is the larger part of what the page holds. When the last
  * instance showing a session closes, its turns are dropped and the next open reads the tail again.

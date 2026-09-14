@@ -85,7 +85,7 @@ export function namedByConfig(hub: string, config: PortfolioConfig): (path: stri
 /**
  * The hub directories the build reads: every scan tier, the folder of every registry file and
  * collection file, and the folder of every generated feed the command center counts. The feeds
- * joined with P2, since the Focus board reads them and a refreshed feed has to reach the page the
+ * are watched too, since the Focus board reads them and a refreshed feed has to reach the page the
  * way a changed manifest does.
  *
  * The career file is not here: it sits in the hub root, where a recursive watch of its folder

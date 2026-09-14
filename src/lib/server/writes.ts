@@ -61,7 +61,7 @@ import type { PortfolioConfig } from '../data/model.ts';
 /**
  * What a write needs to know: which hub to write in, what its manifests are checked against, and
  * where the per-session overrides file is. The overrides path is absent on a machine that has not
- * set `sessions_overrides` in local.yml, and O12's own default is used then.
+ * set `sessions_overrides` in local.yml, and `defaultOverridesPath()` is used then.
  */
 export type WriteTarget = { hub: string; config: PortfolioConfig; overrides?: string };
 

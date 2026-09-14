@@ -81,7 +81,7 @@
     const used = $derived(record === null ? 0 : record.contextTokens);
     const level = $derived(limit > 0 ? used / limit : 0);
 
-    /** The window this session's turns are measured against: the transcript's own, else the config. */
+    /** The window the session's turns are measured against: the transcript's own, else the config. */
     function windowFor(session: GroupedSession | null): number {
         const own = session?.contextWindow ?? null;
         return own !== null && own > 0 ? own : contextWindow();
@@ -131,7 +131,7 @@
         return `${word} ${when}`.trim();
     }
 
-    /** The areas this session may be pinned to: every project folder, touched by a session or not. */
+    /** The areas the session may be pinned to: every project folder, touched by a session or not. */
     const areas = $derived(record === null ? [] : pinnableAreas(record.workspace));
 
     const choices = $derived(
@@ -141,7 +141,7 @@
     /** What the pin control shows: the area a pin chose, and nothing when the score chose it. */
     const pinned = $derived(record !== null && record.pinned ? record.area : '');
 
-    /** What the title box shows: the draft typed for this session, else the title it has now. */
+    /** What the title box shows: the draft typed for the session, else the title it has now. */
     const typed = $derived(
         record === null ? '' : draft !== null && draft.id === record.id ? draft.text : record.title
     );
@@ -165,7 +165,7 @@
     }
 
     /**
-     * Show the turns of this session. A transcript view already up in the panel is the one that is
+     * Show the turns of the session. A transcript view already up in the panel is the one that is
      * focused; otherwise openView activates the one in the main tree or opens it there, since the
      * conversation is read beside the terminal rather than in the narrow panel.
      */
@@ -192,7 +192,7 @@
     }
 
     /**
-     * Continue this session in a terminal. The first press arms the control and the second runs it;
+     * Continue the session in a terminal. The first press arms the control and the second runs it;
      * the server reads the directory and the title off the record, so only the tool and the id go
      * out. On success the new terminal becomes the selection, and a terminal view opens when none
      * is showing, since the pane it starts in would otherwise be nowhere.

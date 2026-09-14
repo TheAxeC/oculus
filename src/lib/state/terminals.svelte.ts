@@ -11,7 +11,7 @@
 //
 // Every action is a write in DESIGN.md's "Auth" sense, since it runs a process on the machine: the
 // POST carries the token state/writes.svelte.ts holds, and the socket carries it in its subscribe
-// message (O17), which is what lets that socket send input at all.
+// message, which is what lets that socket send input at all.
 
 import { message } from './entities.svelte.ts';
 import { listen, send, subscribe, unsubscribe } from './socket.svelte.ts';
@@ -220,7 +220,10 @@ export function sendInput(id: string, text: string): boolean {
     return send(input);
 }
 
-/** Tell a terminal its pane's new size. Whole numbers from 1 to 2000, which is what O17 accepts. */
+/**
+ * Tell a terminal its pane's new size. Whole numbers from 1 to 2000, which is the range
+ * server/pty/channel.ts accepts.
+ */
 export function sendResize(id: string, cols: number, rows: number): boolean {
     const resize: TerminalResize = {
         type: 'resize',

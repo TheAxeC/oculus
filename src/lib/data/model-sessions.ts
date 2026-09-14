@@ -146,7 +146,7 @@ export type SessionRecord = {
     /** True when the file was too large for a first read and nothing was folded. */
     truncated: boolean;
     /**
-     * The latest Notification or Stop hook this session posted, or null before one arrives or after
+     * The latest Notification or Stop hook the session posted, or null before one arrives or after
      * server/sessions/hooks.ts's HookStore has let it expire. A bare fold (finish() in record.ts)
      * always leaves this null; server/sessions/index.ts's sessions() is what merges the store in.
      */
@@ -219,7 +219,7 @@ export type SessionsPayload = {
 // messages the `pty:<id>` channel carries. JSON-safe like everything above, so the bytes of a pane
 // travel as base64 rather than as a string that a lone surrogate could break.
 
-/** What a terminal pane runs (DESIGN.md, decision of 2026-09-10 on the three things it runs). */
+/** What a terminal pane runs: DESIGN.md's two agents and a shell. */
 export type TerminalKind = 'claude' | 'codex' | 'shell';
 
 /**

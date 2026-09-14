@@ -1,7 +1,7 @@
 // Layer 2, server. The one WebSocket of DESIGN.md, "The socket": it attaches to an http server
 // that already exists, turns each connection into a Sink the Hub can send to, and accepts exactly
 // one message from the page, the subscription. Nothing else a page sends is acted on; the write
-// side is O11's and goes over fetch, not over here.
+// side is `POST /api/write`'s and goes over fetch, not over here.
 //
 // The one exception DESIGN.md's "The socket" names is terminal input: a page that carried the write
 // token in its subscribe message may also send `input` and `resize` on a `pty:` channel, which this

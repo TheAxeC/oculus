@@ -43,9 +43,9 @@ export type Drawn = {
  * the reader has switched off in the facet bar.
  *
  * The two status fields are not one field. `statuses` is a selection: empty means every status, and
- * a value in it means that value alone, which is what the menu of O14d writes. `hidden` is the facet
- * bar of the acceptance list, where every toggle is on until it is clicked and a click hides that
- * status's cards. A card is drawn when the selection admits it and the facet bar has not hidden it.
+ * a value in it means that value alone. `hidden` is the facet bar of the acceptance list, where
+ * every toggle is on until it is clicked and a click hides that status's cards. A card is drawn
+ * when the selection admits it and the facet bar has not hidden it.
  */
 export type CollectionState = {
     search: string;

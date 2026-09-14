@@ -117,7 +117,7 @@ export type RawRegistry = {
 /**
  * One entry of one collection as it was read. Every key the YAML map held is present untouched;
  * the reader adds only `provenance`. The entry's identity, its `key` when it has one and its `title`
- * otherwise, is left where it was read and is derived by O4, not here.
+ * otherwise, is left where it was read and is derived by data/normalise.ts, not here.
  */
 export type RawEntry = {
     [key: string]: unknown;
@@ -215,8 +215,9 @@ export type Subtask = {
 };
 
 /**
- * A project. The relation fields hold ids; O4 fills them from the manifest's `venue_id`,
- * `funding`, `datasets`, `program` and `domain` keys, and leaves them empty when it has none.
+ * A project. The relation fields hold ids; data/normalise.ts fills them from the manifest's
+ * `venue_id`, `funding`, `datasets`, `program` and `domain` keys, and leaves them empty when it has
+ * none.
  */
 export type Project = {
     id: Id;
@@ -338,7 +339,10 @@ export type Dataset = {
     hpcPath?: string;
     /** The dataset registry's own theme words (`ecg`, `single-cell`), which are not domain keys. */
     themes: string[];
-    /** Projects that name this dataset; filled by O4 from the other side of the relation. */
+    /**
+     * Projects that name this dataset; data/normalise.ts fills it from the other side of the
+     * relation.
+     */
     projectIds: Id[];
 };
 
@@ -391,8 +395,8 @@ export type Funding = {
 };
 
 /**
- * One entry of one collection, as O4 fills it from a RawEntry. `id` is the entry's `key` when the
- * YAML had one and its `title` otherwise, so it is unique inside its collection and nowhere wider.
- * `fields` holds every key the YAML had, `title` and `key` included, so a view can render a
- * collection from its file's own `schema` without the model naming each field.
+ * One entry of one collection, as data/normalise.ts fills it from a RawEntry. `id` is the entry's
+ * `key` when the YAML had one and its `title` otherwise, so it is unique inside its collection and
+ * nowhere wider. `fields` holds every key the YAML had, `title` and `key` included, so a view can
+ * render a collection from its file's own `schema` without the model naming each field.
  */

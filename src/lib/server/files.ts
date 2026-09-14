@@ -2,7 +2,7 @@
 // page. routes/api/file/[root]/[...path]/+server.ts is the endpoint and holds nothing but the GET,
 // since a route module may export only its verbs.
 //
-// It is what DESIGN.md's decision of 2026-09-10 needs, "a local HTML file under a configured root
+// It is what DESIGN.md's decision needs, "a local HTML file under a configured root
 // opens as a tab": the manuals of cathedra and game-engine are single HTML files beside their own
 // stylesheets and images, and a browser resolves `css/manual.css` against the document's own URL, so
 // every asset the page asks for comes back through this same route without the file being rewritten.

@@ -1,7 +1,7 @@
 // Layer 1, data. Reads the four generated feed files into the counts and run dates the command
 // center shows. Server side only: it reads the filesystem and no client module may import it.
 //
-// It summarises and does not carry. The Inbox, Lit Watch, Position Leads and LinkedIn views of O25
+// It summarises and does not carry. The Inbox, Lit Watch, Position Leads and LinkedIn views
 // read these files for themselves; what is here is the handful of numbers the Focus board needs, so
 // that a board rebuild does not pull several thousand lines of feed entries over the socket.
 //

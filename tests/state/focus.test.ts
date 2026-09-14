@@ -38,7 +38,7 @@ import type {
 const { config } = loadConfig(engineDir());
 setVocab(vocabCatalog(config));
 
-/** Noon on 2026-09-11, so every countdown below is whole days from that day. */
+/** Noon of the day NOW names, so every countdown below is whole days from that day. */
 const NOW = Date.UTC(2026, 8, 11, 12);
 
 const EMPTY_RELATIONS: Relations = {

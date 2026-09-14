@@ -59,17 +59,17 @@ export type TerminalSource = {
 };
 
 export type SessionsWatchOptions = {
-    /** The Claude Code transcript store; O12's default when absent. */
+    /** The Claude Code transcript store; `defaultStore()` when absent. */
     store?: string;
-    /** The Codex CLI rollout store; O12's default when absent. */
+    /** The Codex CLI rollout store; `defaultCodexStore()` when absent. */
     codexStore?: string;
-    /** Claude Code's session registry; O12's default when absent. */
+    /** Claude Code's session registry; `defaultRegistry()` when absent. */
     registry?: string;
-    /** The byte-offset cache file; O12's default when absent. */
+    /** The byte-offset cache file; `defaultCachePath()` when absent. */
     cache?: string;
-    /** The per-session overrides file; O12's default when absent. */
+    /** The per-session overrides file; `defaultOverridesPath()` when absent. */
     overrides?: string;
-    /** The roots a workspace is looked for under; O12's default when absent. */
+    /** The roots a workspace is looked for under; `defaultRoots()` when absent. */
     roots?: string[];
     /**
      * Every project folder with its title, read again at every rescan. It is a function rather than
@@ -85,7 +85,7 @@ export type SessionsWatchOptions = {
     /** Milliseconds between full rescans that no event asked for; 0 turns the clock off. */
     rescanEvery?: number;
     /**
-     * The tmux terminals of O17. The list is read here at every rescan and the watcher republishes
+     * The tmux terminals. The list is read here at every rescan and the watcher republishes
      * whenever the source says it moved, so a terminal started anywhere appears on the page without
      * the page asking. Absent in a process that has no terminals, where the payload carries none.
      */
@@ -236,8 +236,8 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
     // A terminal starting, stopping or being renamed is a change to the payload and nothing under
     // the three stores moved, so this handle is what carries it to every open page.
     const offTerminals = options.terminals?.onChange(() => queue()) ?? null;
-    // The default paths are resolved here rather than held as constants because O12 resolves them
-    // at the call, so a process whose home directory differs sees its own three directories.
+    // The default paths are resolved at the call rather than held as constants, so a process whose
+    // home directory differs sees its own three directories.
     open(options.store ?? defaultStore());
     open(options.registry ?? defaultRegistry());
     open(options.codexStore ?? defaultCodexStore());

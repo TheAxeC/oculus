@@ -10,7 +10,8 @@ import {
 import type { PageServerLoad } from './$types';
 
 // The catalog, the glyph vocabulary with its ASCII stand-ins, and the tone vocabulary are read per
-// request and shipped as page data. O6 replaces the read with an in-memory copy the watcher pushes.
+// request and shipped as page data, which is what the first frame draws from; every later change
+// reaches the page on the `config` channel server/watch/portfolio.ts publishes.
 // A finding from the same read is reported in hooks.server.ts, which runs for every request, so it
 // is said once and not once per load function.
 //

@@ -1,6 +1,6 @@
 // Layer 2, client state. What the socket delivered, by channel, and nothing derived from it: the
-// joins are O7's selectors and read this. One message is held per channel, the latest, which is the
-// same rule the server sends by.
+// joins are state/selectors.svelte.ts's and read this. One message is held per channel, the latest,
+// which is the same rule the server sends by.
 //
 // A message whose version is below the one held is dropped. Versions arrive in order on one
 // connection, but a reconnect subscribes again and the server sends the current message of every

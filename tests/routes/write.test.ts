@@ -368,7 +368,7 @@ describe('the write endpoint', () => {
     });
 });
 
-/** One good body of every kind this route learned in P1, and what it should answer. */
+/** One good body of every kind this route accepts, and what it should answer. */
 const KINDS: Record<string, unknown> = {
     entry: {
         kind: 'entry',

@@ -19,7 +19,7 @@
 // Nothing here is reachable from a watcher, a timer or the socket. The one caller is server/
 // git-routes.ts, which answers POST /api/git only for a request carrying the write token, coming
 // from this application's own page, and (for the five destructive actions) carrying the confirm the
-// page sets from a dialog. DESIGN.md's decision of 2026-09-10 on git writes is that shape: commit,
+// page sets from a dialog. DESIGN.md's decision on git writes is that shape: commit,
 // push and branches on the sessions' workspaces, every write behind the token and a confirm.
 //
 // `git.ts`'s `run` is not imported: putting a writing subcommand through the read-only module's one

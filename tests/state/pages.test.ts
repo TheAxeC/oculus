@@ -1,4 +1,4 @@
-// Pages: the level above the layout tree that DESIGN.md's decision of 2026-09-11 adds. The pure
+// Pages: the level above the layout tree that DESIGN.md's decision on pages adds. The pure
 // half is newPage, defaultPages, checkPages and the version 3 envelope; the store half is which
 // page is on screen, what the page operations do to the list, and that every one of them writes the
 // whole list down. tests/state/layout.test.ts covers the trees themselves and is not extended here.

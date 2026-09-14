@@ -19,7 +19,7 @@
         layout: Layout;
         /** The path of this node from the root of the tree the caller holds. */
         path?: number[];
-        /** How a pane is drawn: the tab strip, the mounted view, or in O7 a box with its path. */
+        /** How a pane is drawn: the tab strip, the mounted view, or a box with its path. */
         pane: Snippet<[Layout, number[]]>;
         /** A drag or a reset asks for these sizes on the split at this path. */
         onresize: (path: number[], sizes: number[]) => void;

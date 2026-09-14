@@ -11,7 +11,7 @@
 //
 // That rule is right for a state channel, where the newest payload is the whole truth, and wrong for
 // a byte stream, where an overwritten message is output the terminal never shows again. A channel
-// may therefore name how two of its messages combine, which is what the `pty:` channels of O17 do:
+// may therefore name how two of its messages combine, which is what the `pty:` channels do:
 // their held chunk and the next one are concatenated rather than replaced, so a page that falls
 // behind sees every byte, late, rather than a hole.
 
@@ -68,8 +68,8 @@ export class Hub {
      * Add channels to a sink's subscription and send it the current message of each named channel
      * that has one. A sink that subscribes twice keeps the channels of both calls.
      *
-     * `replay` is false for a terminal channel of O17: its current message is the previous chunk of
-     * pane output, which the scrollback that module sends already holds, so replaying it would print
+     * `replay` is false for a `pty:` terminal channel: its current message is the previous chunk of
+     * pane output, which the scrollback server/pty/channel.ts sends already holds, so replaying it would print
      * the same bytes twice. Every other caller wants the state channel's latest, which is the
      * default.
      */

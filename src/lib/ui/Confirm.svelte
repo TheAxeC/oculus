@@ -3,7 +3,7 @@
     // nothing of its own, not even whether it is open; a caller draws it while it has something to
     // ask and stops drawing it when the answer has come back.
     //
-    // DESIGN.md's decision of 2026-09-10 on git writes is that every write sits behind the token and
+    // DESIGN.md's decision on git writes is that every write sits behind the token and
     // a confirm, and a confirm that is a second press of the same button is one the hand learns to
     // press twice. So it is a real dialog: modal, focus on the confirm, Escape cancels, Tab stays
     // inside it. A click on the ground behind it cancels too, which is the way out for a pointer.

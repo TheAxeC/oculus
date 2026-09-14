@@ -141,8 +141,8 @@ it.skipIf(!TMUX)('refuses a cwd that is not an absolute existing directory', asy
     await expect(stopTerminal('../elsewhere', options)).rejects.toThrow('not a terminal id');
 });
 
-// O19's resume, as pure functions: no tmux and no agent runs here, which is why these are not
-// skipped with the rest of the file when tmux is missing. What the two commands are is checked
+// The resume commands as pure functions: no tmux and no agent runs here, which is why these are
+// not skipped with the rest of the file when tmux is missing. What the two commands are is checked
 // against what `claude --help` and `codex resume --help` document, and the option a resumed
 // terminal carries is checked by reading a list line back.
 

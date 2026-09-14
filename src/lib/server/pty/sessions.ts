@@ -19,7 +19,7 @@ export const PREFIX = 'oculus-';
 /** Hidden Claude usage sessions begin with this full tmux session-name prefix. */
 export const USAGE_PREFIX = `${PREFIX}usage-`;
 
-/** The three things a terminal runs (DESIGN.md, decision of 2026-09-10). */
+/** The three things a terminal runs: DESIGN.md's two agents and a shell. */
 export const KINDS: TerminalKind[] = ['claude', 'codex', 'shell'];
 
 /** The default scrollback handed to a page that attaches. */

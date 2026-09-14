@@ -243,7 +243,7 @@ function subAgent(acc: Acc, item: Record<string, unknown>, stamp: string | null)
     }
 }
 
-/** The agents a collaboration tool call is waiting on, each of them a subagent of this session. */
+/** The agents a collaboration tool call is waiting on, each of them a subagent of the rollout. */
 function collabAgents(acc: Acc, item: Record<string, unknown>, stamp: string | null): void {
     const paths = new Set<string>();
     for (const name of list(item.receiver_agents)) if (text(name)) paths.add(text(name));

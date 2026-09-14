@@ -134,7 +134,7 @@ describe('the roots a write may name', () => {
     });
 
     it('takes the deposit mirrors folder, for the suggested message of the deposit panel', () => {
-        // O21's mirrors live under ~/.oculus/deposits and are not a published workspace, so
+        // The deposit mirrors live under ~/.oculus/deposits and are not a published workspace, so
         // allowedRoots names that folder as a third source; nothing else here reaches it.
         const mirrors = defaultMirrorsDir();
         expect(allowedRoots()).toContain(mirrors);

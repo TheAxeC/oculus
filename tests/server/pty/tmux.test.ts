@@ -1,5 +1,5 @@
 // The control-mode protocol, on recorded text. No tmux runs here: every case feeds the parser the
-// bytes a `tmux -C attach-session` child printed on this machine on 2026-09-10, so the decoding, the
+// bytes a `tmux -C attach-session` child printed on this machine, so the decoding, the
 // reply pairing and the key map are checked without a process, a socket or a session.
 
 import { describe, expect, it } from 'vitest';

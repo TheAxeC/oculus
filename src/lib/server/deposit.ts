@@ -1,8 +1,8 @@
-// Layer 2, server. The deposit over one project, as DESIGN.md's decision of 2026-09-10 describes
-// it: a project's `code/` is ordinary tracked content of the hub and never carries a `.git` of its
-// own, and the deposit is a mirror clone per deposit repo under the machine-local state folder,
-// into which each deposit syncs `code/` minus the deposit-exclude rules and commits with a message,
-// and from which the tool pushes, lists, creates and switches branches.
+// Layer 2, server. The deposit over one project, as DESIGN.md's decision on git writes and the
+// deposit describes it: a project's `code/` is ordinary tracked content of the hub and never
+// carries a `.git` of its own, and the deposit is a mirror clone per deposit repo under the
+// machine-local state folder, into which each deposit syncs `code/` minus the deposit-exclude rules
+// and commits with a message, and from which the tool pushes, lists, creates and switches branches.
 //
 // The order of one deposit is the order of the functions below: `adopt` makes the mirror (a clone
 // when the repository already exists, which is how a project that is also a public repository keeps

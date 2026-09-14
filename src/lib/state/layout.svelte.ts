@@ -336,7 +336,7 @@ function savePages(next: Pages): void {
     }
 }
 
-/** Apply an operation to one of the two trees. This is how every O7 operation reaches the store. */
+/** Apply an operation to one of the two trees, which is how every tree edit reaches the store. */
 export function change(target: Target, edit: (tree: Layout) => Layout): void {
     const current = workbench();
     const next = edit(target === 'main' ? current.main : current.panel);

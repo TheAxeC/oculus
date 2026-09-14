@@ -3,7 +3,7 @@
 //
 // A page subscribes to `pty:<id>`, gets what the pane already shows as its first message, and then
 // one message per chunk tmux reports for that pane. It sends back `input` and `resize`, and both are
-// accepted only on a socket whose subscribe message carried the write token of O11; a socket without
+// accepted only on a socket whose subscribe message carried the write token; a socket without
 // the token reads every channel and writes to none. That is DESIGN.md's "The socket accepts nothing
 // from the page except subscriptions and, later, terminal input", made concrete.
 //
@@ -149,7 +149,7 @@ export type TerminalDriver = {
 /**
  * One control client per attached terminal, each restarted on its own when it exits and closed a
  * minute after its terminal has no page on it. tmux sends `%output` for the panes of the session a
- * control client is attached to and for no other (measured 2026-09-11 with two sessions on a
+ * control client is attached to and for no other (measured with two sessions on a
  * private server: a client attached to one saw nothing typed into the other), so one client for
  * every attached terminal is what makes every attached terminal stream. A client's output belongs
  * to its own terminal, so nothing here maps pane ids to sessions.

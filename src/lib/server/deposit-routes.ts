@@ -5,7 +5,7 @@
 // A GET answers the mirror's state and is same-origin only, like every read. A POST writes, and
 // carries three things: the write token, this application's own origin, and, for the five actions
 // that can lose work (commit, push, snapshot, createBranch, switchBranch), a `confirm: true` the
-// page sets only from the confirm dialog. DESIGN.md's decision of 2026-09-10 on git writes and the
+// page sets only from the confirm dialog. DESIGN.md's decision on git writes and the
 // deposit is that shape: every write behind the token and a confirm.
 //
 // The ids a deposit may name are the hub's own project manifests and the projects the last

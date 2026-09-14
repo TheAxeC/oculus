@@ -9,7 +9,7 @@
 // whose own instance state pins a session (`{ session: <id> }`) reads that instead and stops
 // following, which is how two detail views show two sessions side by side.
 
-// A terminal selects the same way (O18). O17 puts a record per terminal in the `sessions` payload,
+// A terminal selects the same way. The server puts a record per terminal in the `sessions` payload,
 // and a terminal's id cannot collide with a session's, so one store holds both and the two readers
 // below are the whole of the difference.
 

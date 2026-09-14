@@ -14,7 +14,7 @@
 
 <style>
     /* The page's own two colours. Every other surface is a component's, and every component reads
-       the tokens; O8 sets the theme class on the body and the derived -txt tokens with it. */
+       the tokens; ui/theme.ts sets the theme class on the body and the derived -txt tokens with it. */
     :global(body) {
         margin: 0;
         background: var(--bg);

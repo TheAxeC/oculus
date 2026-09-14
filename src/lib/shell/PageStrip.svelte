@@ -5,7 +5,7 @@
 
 <script lang="ts">
     // Layer 3, shell. The strip of pages across the top of the main area and the panel together. A
-    // page is a whole workbench of its own, which is DESIGN.md's decision of 2026-09-11, so the
+    // page is a whole workbench of its own, which is DESIGN.md's decision on pages, so the
     // strip is drawn with the same tab primitive a pane's tabs are drawn with: a page looks like
     // what it is, a tab of workbenches, and the rail is left as it was.
     //
