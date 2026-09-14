@@ -39,9 +39,9 @@ dispatch:
   repair_events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/repair-events.jsonl
   repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/repair-report.md
   repair_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/repair-exit.txt
-  repair_pid: 69068
+  repair_pid: 78953
   review_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/review-report.md
-  notes: R6, the card cursor as pane instance state; the worker finished at 05:13 (38 files, +379 -98; the seven checks green from the orchestrator's shell, 2062 of 2062); the first review is in agents/reviews/R6.md; the repair round (no `cursor: null` on every instance state, the observer scoped to the pane holding a cursor and only while one is held, a pointer press clearing only across panes as before, collision-free ids for the two synthetic program cards, the spec's second-id and pointer cases) runs on the worker's thread since 05:21; R8 is not dispatched tonight (the 06:00 rule), then R9, R10; nothing in flight at 07:05.
+  notes: R6, the card cursor as pane instance state; the worker finished at 05:13 (38 files, +379 -98; the seven checks green from the orchestrator's shell, 2062 of 2062); the first review is in agents/reviews/R6.md; the repair round (no `cursor: null` on every instance state, the observer scoped to the pane holding a cursor and only while one is held, a pointer press clearing only across panes as before, collision-free ids for the two synthetic program cards, the spec's second-id and pointer cases) ran on the worker's thread from 05:21 until the provider cut the turn at 05:24 ("Selected model is at capacity", ten file edits applied, no report; the event log kept as repair-events-cut.jsonl) and was resumed on the same thread at 05:27 with /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/repair-prompt-2.md; R8 is not dispatched tonight (the 06:00 rule), then R9, R10; nothing in flight at 07:05.
 ```
 
 ## The standing demands (from Axel, in force)
