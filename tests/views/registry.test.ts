@@ -2,6 +2,10 @@
 //
 // A registration's label and glyph are read through lookup() from data. Every registration is
 // checked here: its label resolves in the text catalog and its glyph resolves in config/glyphs.yml.
+//
+// The collection views are the registrations that come from configuration rather than from a module,
+// so the keys they are registered under are checked both ways: a key the configuration lists has a
+// view, and a key it stops listing has none, in the registry and in the rail order drawn from it.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -12,6 +16,7 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { registerView, viewFor, views, type ViewProps } from '../../src/lib/views/registry.ts';
+import { railOrder } from '../../src/lib/shell/ActivityRail.svelte';
 import type { Component } from 'svelte';
 // Importing the route loader registers real views; collections use the keys of sources.yml.
 import { registerCollections, registerModules } from '../../src/routes/views.ts';
@@ -330,5 +335,27 @@ describe('the real registrations', () => {
             (view) => !(view.glyph in catalog) || !(catalog[view.glyph] in glyphs)
         );
         expect(missing.map((view) => `${view.id}: ${view.glyph}`)).toEqual([]);
+    });
+
+    /** The rail draws the listed registrations in order, so a dropped view leaves this list. */
+    function railIds(): string[] {
+        return railOrder(
+            views().filter((view) => view.listed !== false),
+            []
+        ).all;
+    }
+
+    it('drops the collections whose keys a later call no longer lists', () => {
+        const [kept, ...dropped] = COLLECTIONS;
+        registerCollections([kept]);
+
+        expect(viewFor(kept)).toBeDefined();
+        expect(dropped.filter((key) => viewFor(key) !== undefined)).toEqual([]);
+        expect(railIds()).toContain(kept);
+        expect(railIds().filter((id) => dropped.includes(id))).toEqual([]);
+
+        registerCollections(COLLECTIONS);
+        expect(COLLECTIONS.filter((key) => viewFor(key) === undefined)).toEqual([]);
+        expect(COLLECTIONS.filter((key) => !railIds().includes(key))).toEqual([]);
     });
 });

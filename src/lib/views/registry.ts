@@ -99,6 +99,11 @@ export function registerComponent(
     for (const registration of registrations) registerView({ ...registration, component });
 }
 
+/** Drop a view's registration; an id the registry does not hold is left alone. */
+export function unregisterView(id: ViewId): void {
+    registry.delete(id);
+}
+
 /** The registration of a view, or undefined when the id names none. */
 export function viewFor(id: ViewId): Registration | undefined {
     return registry.get(id);

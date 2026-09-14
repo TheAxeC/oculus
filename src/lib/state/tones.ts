@@ -6,9 +6,11 @@
 //
 // The maps are installed the way the text catalog and the glyph vocabulary are: the server ships
 // them as the page's data at first load, and every later edit of config/vocab.yml arrives on the
-// `config` channel. Every lookup is pure over what was last installed, so a component calling one
-// during its first render gets the page's data and re-renders when a push replaces it.
+// `config` channel. Every lookup is pure over what was last installed and reads the configuration's
+// generation, state/generation.svelte.ts, so a component calling one during its first render gets
+// the page's data and draws again when a push replaces it.
 
+import { configGeneration } from './generation.svelte.ts';
 import { glyph } from './text.ts';
 
 /** The tone anything unknown gets: a hue every theme defines and nothing means. */
@@ -96,6 +98,7 @@ export function toneOf(hex: string): string {
 
 /** A palette hue, or undefined when the value has no usable palette token. */
 export function paletteTone(hex: string): string | undefined {
+    configGeneration();
     const token = palette[String(hex).trim().toLowerCase()];
     if (token === undefined || !token.startsWith('c-')) return undefined;
     const tone = token.slice('c-'.length);
@@ -104,24 +107,28 @@ export function paletteTone(hex: string): string | undefined {
 
 /** The dataset access colour from `data_access`, with an unknown value kept neutral. */
 export function dataAccessTone(access: string): string {
+    configGeneration();
     const hex = dataAccess[String(access).toLowerCase()];
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
 /** The tone of a collection entry's status, through `status_palette`. */
 export function statusTone(status: string): string {
+    configGeneration();
     const hex = statusPalette[String(status).toLowerCase()];
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
 /** The tone of a project type, through `type_color`. */
 export function typeTone(type: string): string {
+    configGeneration();
     const hex = typeColor[String(type).toLowerCase()];
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
 
 /** The tone of a research domain, through `domains`. */
 export function domainTone(domain: string): string {
+    configGeneration();
     const hex = domainColor[String(domain).toLowerCase()];
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
@@ -132,11 +139,13 @@ export function domainTone(domain: string): string {
  * theme's name in the picker is themeLabel() of state/appearance.ts, which is another thing.
  */
 export function domainLabel(domain: string): string {
+    configGeneration();
     return domainText[String(domain).toLowerCase()] ?? domain;
 }
 
 /** The glyph name a status chip carries, and nothing for a chip the legend does not list. */
 export function chipGlyphName(chip: string): string {
+    configGeneration();
     return legend[chip]?.icon ?? '';
 }
 
@@ -148,10 +157,12 @@ export function chipGlyph(chip: string): string {
 
 /** A status chip's words, and the chip's own key for one the legend does not list. */
 export function chipLabel(chip: string): string {
+    configGeneration();
     return legend[chip]?.label ?? chip;
 }
 
 /** Every chip the legend lists, in the config's order. */
 export function chipKeys(): string[] {
+    configGeneration();
     return Object.keys(legend);
 }

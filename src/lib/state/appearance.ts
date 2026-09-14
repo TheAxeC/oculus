@@ -5,10 +5,12 @@
 // first load, and every later edit of config/appearance.yml arrives on the `config` channel - so a
 // theme is added by editing YAML and nothing else.
 //
-// This holds no runes: every lookup is pure over what was last installed, so a component calling one
-// during its first render gets the page's data and re-renders when a push replaces it. What the
-// viewer picked out of this list is state/ui.svelte.ts's, which is the store that persists.
+// This holds no runes of its own: every lookup is pure over what was last installed and reads the
+// configuration's generation, state/generation.svelte.ts, so a component calling one during its
+// first render gets the page's data and draws again when a push replaces it. What the viewer picked
+// out of this list is state/ui.svelte.ts's, which is the store that persists.
 
+import { configGeneration } from './generation.svelte.ts';
 import { resolveGlyphTokens } from './text.ts';
 
 /** One theme of the picker: the name the store saves, the body class, and the words shown. */
@@ -127,37 +129,44 @@ export function setAppearance(config: Record<string, unknown>): void {
 
 /** Every theme the picker offers, in the config's order. A copy, so a caller cannot edit the list. */
 export function themes(): Theme[] {
+    configGeneration();
     return list.map((theme) => ({ ...theme, label: resolveGlyphTokens(theme.label) }));
 }
 
 /** The body class string a theme lands on the document as. The light theme's is empty. */
 export function themeClass(name: string): string {
+    configGeneration();
     return byName[name]?.class ?? '';
 }
 
 /** A theme's words in the picker, and the theme's own name for one the config does not list. */
 export function themeLabel(name: string): string {
+    configGeneration();
     const label = byName[name]?.label;
     return label === undefined ? name : resolveGlyphTokens(label);
 }
 
 /** The theme a browser that has saved none starts on: the first the config lists. */
 export function defaultTheme(): string {
+    configGeneration();
     return list[0]?.name ?? FALLBACK_THEME;
 }
 
 /** What the CRT overlay starts as, the `crt.default` of config/appearance.yml. */
 export function crtDefault(): boolean {
+    configGeneration();
     return crt;
 }
 
 /** The terminal grid's configured CSS pixel size, or null when it follows the page's type scale. */
 export function terminalFontPx(): number | null {
+    configGeneration();
     return terminalFont;
 }
 
 /** The wallpaper's numbers, or null when config/appearance.yml configures none. */
 export function wallpaperSettings(): Wallpaper | null {
+    configGeneration();
     return paper;
 }
 
@@ -167,6 +176,7 @@ export function wallpaperSettings(): Wallpaper | null {
  * palettes that were built to be seen through carry.
  */
 export function wallpaperOnTheme(name: string): boolean {
+    configGeneration();
     if (paper === null) return false;
     if (paper.themes === 'all') return true;
     return terminalTheme(name);

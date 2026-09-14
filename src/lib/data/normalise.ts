@@ -49,6 +49,25 @@ import { isMap, str, strings } from './guards.ts';
 export const REGISTRY_KEYS = ['venues', 'datasets', 'programs', 'domains', 'data'];
 
 /**
+ * The keys of the `collections:` list of config/sources.yml, in the file's order, minus the four
+ * that name a registry with a dedicated view. They ship as the page's data and the page registers
+ * the collection view once per key and again on every config push, so a collection is added through sources.yml and its owner
+ * catalog file; the collection registration supplies its group and order.
+ */
+export function collectionKeys(config: Record<string, unknown>): string[] {
+    const raw = config.collections;
+    if (!Array.isArray(raw)) return [];
+    const keys: string[] = [];
+    for (const item of raw) {
+        if (typeof item !== 'object' || item === null || Array.isArray(item)) continue;
+        const key = (item as Record<string, unknown>).key;
+        if (typeof key !== 'string' || key === '' || REGISTRY_KEYS.includes(key)) continue;
+        if (!keys.includes(key)) keys.push(key);
+    }
+    return keys;
+}
+
+/**
  * The entity kinds the snapshot keys by id. `entities.feeds` and `entities.career` are summaries of
  * one file each rather than maps of entities, so anything counting entities skips them.
  */

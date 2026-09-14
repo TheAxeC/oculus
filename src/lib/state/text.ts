@@ -1,7 +1,12 @@
 // Layer 2, client state. The text catalog, glyph vocabulary and ASCII stand-ins received from the
 // server, with the lookups components use. Nothing here touches the filesystem. Glyph tokens are
 // resolved when a string renders, so changing display mode updates catalog and configuration text.
+//
+// The three maps are plain module variables, so every reader below first reads the configuration's
+// generation, state/generation.svelte.ts: that is what a template's own effect depends on, and what
+// makes a string drawn before a push redraw with the string the push installed.
 
+import { configGeneration } from './generation.svelte.ts';
 import { glyphMode } from './glyphmode.svelte.ts';
 
 export { setGlyphMode, type GlyphMode } from './glyphmode.svelte.ts';
@@ -35,6 +40,7 @@ export function setAscii(next: Record<string, string>): void {
  * tests/views/registry.test.ts, and this throws on a missing key exactly as t() does.
  */
 function catalogEntry(key: string): string {
+    configGeneration();
     const value = catalog[key];
     if (value === undefined) {
         throw new Error(`text key not in the text catalog (config/text/): ${key}`);
@@ -48,6 +54,7 @@ export function lookup(key: string): string {
 
 /** Resolve every known {G.name} token through the active glyph mode and preserve unknown tokens. */
 export function resolveGlyphTokens(value: string): string {
+    configGeneration();
     return value.replace(/\{G\.([a-zA-Z0-9_-]+)\}/g, (placeholder, name: string) => {
         return glyphs[name] === undefined ? placeholder : glyph(name);
     });
@@ -71,6 +78,7 @@ export function t(key: string, ...args: (string | number)[]): string {
  * or a tab strip that nobody notices. A character with no stand-in is drawn as it is.
  */
 export function glyph(name: string): string {
+    configGeneration();
     const character = glyphs[name];
     if (character === undefined) throw new Error(`glyph not in config/glyphs.yml: ${name}`);
     return asciiOf(character);
@@ -81,6 +89,7 @@ export function glyph(name: string): string {
  * character while the mode is `unicode` come back unchanged, so this is safe on any string.
  */
 export function asciiOf(character: string): string {
+    configGeneration();
     if (glyphMode() !== 'ascii') return character;
     return ascii[character] ?? character;
 }

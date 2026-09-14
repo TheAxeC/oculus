@@ -9,6 +9,8 @@
     import type { Bookmark, NavGroup } from '$lib/shell/ActivityRail.svelte';
     import type { Arrangement } from '$lib/shell/PageStrip.svelte';
     import { config } from '$lib/state/entities.svelte';
+    import { configGeneration } from '$lib/state/generation.svelte';
+    import { collectionKeys } from '$lib/data/normalise';
     import { t } from '$lib/state/text';
     import { waitingCount } from '$lib/state/selectors.svelte';
     import { loadLayout } from '$lib/state/layout.svelte';
@@ -26,6 +28,20 @@
     // would be missing from that frame. The registry is a module map rather than state, so the keys
     // are read once and not tracked; untrack says so, and is what keeps the read out of any effect.
     untrack(() => registerCollections(data.collections));
+
+    /*
+     * A push may name a different set of collections, so the registry follows the pushed config:
+     * the effect reads the configuration's generation and the config the push carries, and
+     * registers the collection views the push names, which drops the views of the keys it no
+     * longer names. The first frame is the untracked call above; this runs after it, and returns
+     * until the first push has landed.
+     */
+    $effect(() => {
+        configGeneration();
+        const pushed = config()?.config;
+        if (pushed === undefined) return;
+        registerCollections(collectionKeys(pushed));
+    });
 
     /** The `nav_groups` map of config/layout.yml in order. Registrations name each group by id. */
     const groups = $derived<NavGroup[]>(readGroups(config()?.config.nav_groups));

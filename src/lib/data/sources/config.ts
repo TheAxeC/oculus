@@ -267,6 +267,9 @@ function configNames(dir: string): string[] {
  * findings and contribute nothing; a missing config directory is a finding and an empty map.
  */
 
+/** The pure reader of the `collections:` keys lives with the registry keys it excludes, client-safe. */
+export { collectionKeys } from '../normalise.ts';
+
 export function loadConfig(engine: string): {
     config: Record<string, unknown>;
     findings: Finding[];
@@ -372,25 +375,6 @@ export function vocabCatalog(config: Record<string, unknown>): Record<string, un
     const vocab: Record<string, unknown> = {};
     for (const key of VOCAB_KEYS) if (config[key] !== undefined) vocab[key] = config[key];
     return vocab;
-}
-
-/**
- * The keys of the `collections:` list of config/sources.yml, in the file's order, minus the four
- * that name a registry with a dedicated view. They ship as the page's data and the page registers
- * the collection view once per key, so a collection is added through sources.yml and its owner
- * catalog file; the collection registration supplies its group and order.
- */
-export function collectionKeys(config: Record<string, unknown>): string[] {
-    const raw = config.collections;
-    if (!Array.isArray(raw)) return [];
-    const keys: string[] = [];
-    for (const item of raw) {
-        if (typeof item !== 'object' || item === null || Array.isArray(item)) continue;
-        const key = (item as Record<string, unknown>).key;
-        if (typeof key !== 'string' || key === '' || REGISTRY_KEYS.includes(key)) continue;
-        if (!keys.includes(key)) keys.push(key);
-    }
-    return keys;
 }
 
 /**

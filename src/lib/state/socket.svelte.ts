@@ -6,8 +6,10 @@
 // The catalog arrives on the `config` channel and is installed here rather than in entities,
 // because state/text.ts holds it outside the reactive graph: the page's first render uses the
 // catalog the server shipped as page data, and every later edit of config/text.yml comes this way.
+// Raising the configuration's generation once the push is installed is what draws the page again.
 
 import { receive } from './entities.svelte.ts';
+import { configInstalled } from './generation.svelte.ts';
 import { setAscii, setCatalog, setGlyphs } from './text.ts';
 import { setAppearance } from './appearance.ts';
 import { setVocab } from './tones.ts';
@@ -162,6 +164,30 @@ function strings(raw: unknown): Record<string, string> | null {
     return map;
 }
 
+/**
+ * Install a config push into the stores the page draws from. The colours and the chip vocabulary ride the
+ * same push as the strings: they are keys of the merged config, so an edit to config/vocab.yml
+ * recolours the page without a reload, an edit to config/appearance.yml changes the theme picker's
+ * list, and the glyph vocabulary with its ASCII stand-ins arrives the same way.
+ *
+ * The configuration's generation is raised once at the end, after every store took its part, so a
+ * component that draws again sees the new strings and the new tones together and never half of each.
+ * A payload that is not an object installs nothing and raises nothing.
+ */
+export function installConfig(payload: ConfigPayload | null): void {
+    if (payload === null || typeof payload !== 'object') return;
+    if (payload.text) setCatalog(payload.text);
+    if (payload.config) {
+        setVocab(payload.config);
+        setAppearance(payload.config);
+    }
+    const glyphs = strings(payload.config?.glyphs);
+    if (glyphs !== null) setGlyphs(glyphs);
+    const ascii = strings(payload.config?.ascii);
+    if (ascii !== null) setAscii(ascii);
+    configInstalled();
+}
+
 function handle(data: string): void {
     let parsed: unknown;
     try {
@@ -178,23 +204,5 @@ function handle(data: string): void {
         return;
     }
     receive(message);
-    if (message.channel === 'config') {
-        const payload = message.payload as ConfigPayload | null;
-        if (payload === null || typeof payload !== 'object') return;
-        if (payload.text) setCatalog(payload.text);
-        // The colours and the chip vocabulary ride the same push: they are keys of the merged
-        // config, so an edit to config/vocab.yml recolours the page without a reload, and an edit
-        // to config/appearance.yml changes the theme picker's list the same way.
-        if (payload.config) {
-            setVocab(payload.config);
-            setAppearance(payload.config);
-        }
-        // The glyph vocabulary and its ASCII stand-ins ride on the same channel: they are two keys
-        // of the merged config, so an edit to config/glyphs.yml reaches the page by the push that
-        // already carries the strings.
-        const glyphs = strings(payload.config?.glyphs);
-        if (glyphs !== null) setGlyphs(glyphs);
-        const ascii = strings(payload.config?.ascii);
-        if (ascii !== null) setAscii(ascii);
-    }
+    if (message.channel === 'config') installConfig(message.payload as ConfigPayload | null);
 }
