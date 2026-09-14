@@ -47,6 +47,10 @@ dispatch:                                  # workers_at_once: 2; R14 (in repair)
   exit: none
   pid: none
   session_id: a08ec07ba9b499fda            # the Agent tool's id
+  round: 1                                 # the repair round, sent 2026-09-14T11:20:00+02:00 to the same agent
+  repair_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R14/repair-prompt.md
+  repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R14/repair-report.md
+  review_report: agents/reviews/R14.md
   landing: not-started
 ```
 
@@ -222,6 +226,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## R12, the edges (from the audit of 2026-09-14; each a fix unless it names a package that owns it)
 
+- R14: the transcript's assistant turn (`views/sessions/Transcript.svelte`) is drawn through the sanitiser but no browser check exercises it, since `demo/` holds no sessions; a sessions fixture for the demo hub would cover it. `views/shared/Intro.svelte` sanitises catalog strings too, so a catalog line with a tag outside the profile would lose it silently (only `code` and `b` today).
 - W2: a tooltip bubble already open on a pane control paints over an overlay opened by a shortcut while the pointer rests on the control (the bubble on the body at z-index 80); `ui/Chip.svelte` draws its own `[` `]` around a stand-in that carries its own brackets under `body.rice`, in a `3ch` box.
 - O4: `validate` does not check a project naming itself in `related` nor two manifests sharing a folder basename (both become findings).
 - O5: `config/meta.yml` says `title: Oculus` since R7 (closed).
