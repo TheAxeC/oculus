@@ -10,12 +10,11 @@
 // `codex` process is running, and the rollout was written in the last two minutes. That is
 // coarser than the Claude registry, which names the pid of each session.
 
-import { readdirSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import type { LiveEntry } from '../../data/model.ts';
-import type { Found } from './cache.ts';
+import { codexUsage, type UsageEvent, type UsageTotals } from '../transcripts/usage.ts';
 import { isMap, list, text, whole } from './json.ts';
 import type { Acc } from './record.ts';
 import {
@@ -39,12 +38,6 @@ export const CODEX_TOOL_ITEMS = ['CommandExecution', 'McpToolCall', 'Extension',
 /** ~/.codex/sessions, resolved at the call rather than at import. */
 export function defaultCodexStore(): string {
     return join(homedir(), '.codex', 'sessions');
-}
-
-/** A rollout is named `rollout-<stamp>-<uuid>.jsonl`, which is how a path is told from a transcript. */
-export function isRollout(path: string): boolean {
-    const name = basename(path);
-    return name.startsWith('rollout-') && name.endsWith('.jsonl');
 }
 
 /**
@@ -93,7 +86,7 @@ export function foldCodex(acc: Acc, record: Record<string, unknown>): void {
     if (kind === 'event_msg') {
         acc.seen += 1;
         touch(acc, stamp);
-        foldEvent(acc, payload, stamp);
+        foldEvent(acc, record, payload, stamp);
         return;
     }
     if (kind === 'response_item') {
@@ -135,7 +128,12 @@ function turnContext(acc: Acc, payload: Record<string, unknown>): void {
     }
 }
 
-function foldEvent(acc: Acc, payload: Record<string, unknown>, stamp: string | null): void {
+function foldEvent(
+    acc: Acc,
+    record: Record<string, unknown>,
+    payload: Record<string, unknown>,
+    stamp: string | null
+): void {
     const type = payload.type;
     if (type === 'task_started') {
         acc.turnOpen = true;
@@ -153,7 +151,9 @@ function foldEvent(acc: Acc, payload: Record<string, unknown>, stamp: string | n
         return;
     }
     if (type === 'token_count') {
-        foldTokens(acc, payload.info);
+        const totals: UsageTotals = { ...acc.tokens };
+        const usage = codexUsage(record, totals);
+        if (usage !== null) foldTokens(acc, usage, totals);
         return;
     }
     if (type === 'item_completed') foldItem(acc, payload.item, stamp);
@@ -165,20 +165,10 @@ function foldEvent(acc: Acc, payload: Record<string, unknown>, stamp: string | n
  * added: folding the same record twice cannot inflate them. The context occupancy is the last
  * turn's input plus what of it came from the cache, which is what the meter measures.
  */
-function foldTokens(acc: Acc, info: unknown): void {
-    if (!isMap(info)) return;
-    const total = info.total_token_usage;
-    if (isMap(total)) {
-        acc.tokens.input = whole(total.input_tokens);
-        acc.tokens.output = whole(total.output_tokens);
-        acc.tokens.cacheRead = whole(total.cached_input_tokens);
-        acc.tokens.cacheCreation = whole(total.cache_write_input_tokens);
-        acc.tokens.thinking = whole(total.reasoning_output_tokens);
-    }
-    const last = info.last_token_usage;
-    if (isMap(last)) acc.context = whole(last.input_tokens) + whole(last.cached_input_tokens);
-    const window = whole(info.model_context_window);
-    if (window) acc.contextWindow = window;
+function foldTokens(acc: Acc, usage: UsageEvent, totals: UsageTotals): void {
+    acc.tokens = totals;
+    if (usage.context !== undefined) acc.context = usage.context;
+    if (usage.contextWindow !== undefined) acc.contextWindow = usage.contextWindow;
 }
 
 function foldItem(acc: Acc, item: unknown, stamp: string | null): void {
@@ -342,42 +332,4 @@ export function codexLive(
         cwd: '',
         startedAt: 0
     };
-}
-
-/**
- * Every rollout under the store, newest first, inside the window and capped. The tree is
- * YYYY/MM/DD, so it is walked to any depth rather than assuming three levels. Never throws: a
- * directory that cannot be read contributes nothing.
- */
-export function rollouts(store: string, windowDays: number, maxSessions: number): Found[] {
-    const cutoff = windowDays ? Date.now() - windowDays * 86400 * 1000 : null;
-    const found: Found[] = [];
-    walk(store, found, cutoff);
-    found.sort((a, b) => b.mtimeMs - a.mtimeMs);
-    return maxSessions ? found.slice(0, maxSessions) : found;
-}
-
-function walk(folder: string, found: Found[], cutoff: number | null): void {
-    let entries;
-    try {
-        entries = readdirSync(folder, { withFileTypes: true });
-    } catch {
-        return;
-    }
-    for (const entry of entries) {
-        const path = join(folder, entry.name);
-        if (entry.isDirectory()) {
-            walk(path, found, cutoff);
-            continue;
-        }
-        if (!isRollout(entry.name)) continue;
-        try {
-            const stat = statSync(path);
-            if (cutoff === null || stat.mtimeMs >= cutoff) {
-                found.push({ path, size: stat.size, mtimeMs: stat.mtimeMs, ino: stat.ino });
-            }
-        } catch {
-            continue;
-        }
-    }
 }

@@ -1,14 +1,21 @@
 // Layer 2, server. Stream the last seven days of Claude transcripts and Codex rollouts into day-and-model token rows.
 
-import { createReadStream, readdirSync, realpathSync, statSync } from 'node:fs';
+import { createReadStream, realpathSync } from 'node:fs';
 import { createInterface } from 'node:readline';
 import { join } from 'node:path';
 import type { UsageAccountConfig, UsageDay, UsageTool } from '../../data/model.ts';
 import { isMap } from '../../data/guards.ts';
+import { claudeTranscripts, codexRollouts, type TranscriptFile } from '../transcripts/stores.ts';
+import {
+    claudeUsage,
+    codexUsage,
+    type UsageEvent,
+    type UsageTotals
+} from '../transcripts/usage.ts';
 
 export const USAGE_DAYS = 7;
 
-type Found = { path: string; size: number; mtimeMs: number; tool: UsageTool; account: string };
+type Found = TranscriptFile & { tool: UsageTool; account: string };
 type Cached = { size: number; mtimeMs: number; rows: UsageDay[] };
 export type UsageFold = {
     rows: UsageDay[];
@@ -17,29 +24,6 @@ export type UsageFold = {
     readFiles: number;
     readBytes: number;
 };
-
-function walk(folder: string, tool: UsageTool, account: string, found: Found[]): void {
-    let entries;
-    try {
-        entries = readdirSync(folder, { withFileTypes: true });
-    } catch {
-        return;
-    }
-    for (const entry of entries) {
-        const path = join(folder, entry.name);
-        if (entry.isDirectory()) {
-            walk(path, tool, account, found);
-            continue;
-        }
-        if (!entry.name.endsWith('.jsonl')) continue;
-        try {
-            const stat = statSync(path);
-            found.push({ path, size: stat.size, mtimeMs: stat.mtimeMs, tool, account });
-        } catch {
-            continue;
-        }
-    }
-}
 
 /** Days are the machine's calendar days, since the table answers "what did today cost". */
 function localDay(date: Date): string {
@@ -63,10 +47,6 @@ function dayOf(value: unknown): string {
     return Number.isNaN(date.getTime()) ? '' : localDay(date);
 }
 
-function count(value: unknown): number {
-    return typeof value === 'number' && Number.isFinite(value) ? value : 0;
-}
-
 function add(rows: Map<string, UsageDay>, row: UsageDay): void {
     // A record with no tokens (Claude's synthetic messages carry a usage of zeros) adds nothing.
     if (row.input + row.output + row.cacheRead + row.cacheCreation === 0) return;
@@ -82,65 +62,25 @@ function add(rows: Map<string, UsageDay>, row: UsageDay): void {
     held.cacheCreation += row.cacheCreation;
 }
 
-function claudeRow(record: Record<string, unknown>, account: string): UsageDay | null {
-    if (record.type !== 'assistant') return null;
-    const message = isMap(record.message) ? record.message : {};
-    const usage = isMap(message.usage) ? message.usage : null;
-    const day = dayOf(record.timestamp);
-    const model = typeof message.model === 'string' ? message.model : '';
-    if (usage === null || day === '' || model === '') return null;
-    return {
-        tool: 'claude',
-        account,
-        day,
-        model,
-        input: count(usage.input_tokens),
-        output: count(usage.output_tokens),
-        cacheRead: count(usage.cache_read_input_tokens),
-        cacheCreation: count(usage.cache_creation_input_tokens)
-    };
-}
-
-function codexRow(
-    record: Record<string, unknown>,
-    account: string,
-    model: string,
-    previous: Record<string, number>
-): UsageDay | null {
-    if (record.type !== 'event_msg') return null;
-    const payload = isMap(record.payload) ? record.payload : {};
-    if (payload.type !== 'token_count') return null;
-    const info = isMap(payload.info) ? payload.info : {};
-    const usage = isMap(info.total_token_usage) ? info.total_token_usage : null;
-    const day = dayOf(record.timestamp);
-    if (usage === null) return null;
-    // Totals span requests between events. Keep the baseline per file across days and models.
-    const delta = (key: string): number => {
-        const total = count(usage[key]);
-        const difference = total - (previous[key] ?? 0);
-        previous[key] = total;
-        return difference < 0 ? total : difference;
-    };
-    const tokens = {
-        input: delta('input_tokens'),
-        output: delta('output_tokens'),
-        cacheRead: delta('cached_input_tokens'),
-        cacheCreation: delta('cache_write_input_tokens')
-    };
+function row(event: UsageEvent, tool: UsageTool, account: string, model: string): UsageDay | null {
+    const day = dayOf(event.stamp);
     if (day === '' || model === '') return null;
     return {
-        tool: 'codex',
+        tool,
         account,
         day,
         model,
-        ...tokens
+        input: event.input,
+        output: event.output,
+        cacheRead: event.cacheRead,
+        cacheCreation: event.cacheCreation
     };
 }
 
 async function foldFile(file: Found): Promise<UsageDay[]> {
     const rows = new Map<string, UsageDay>();
     let model = '';
-    const previous: Record<string, number> = {};
+    const previous: Partial<UsageTotals> = {};
     const input = createReadStream(file.path, { encoding: 'utf8' });
     const lines = createInterface({ input, crlfDelay: Infinity });
     try {
@@ -157,11 +97,15 @@ async function foldFile(file: Found): Promise<UsageDay[]> {
                 const payload = isMap(value.payload) ? value.payload : {};
                 if (typeof payload.model === 'string' && payload.model) model = payload.model;
             }
-            const row =
-                file.tool === 'claude'
-                    ? claudeRow(value, file.account)
-                    : codexRow(value, file.account, model, previous);
-            if (row !== null) add(rows, row);
+            const event = file.tool === 'claude' ? claudeUsage(value) : codexUsage(value, previous);
+            if (event === null) continue;
+            const usageRow = row(
+                event,
+                file.tool,
+                file.account,
+                file.tool === 'claude' ? event.model : model
+            );
+            if (usageRow !== null) add(rows, usageRow);
         }
     } catch {
         return [];
@@ -186,10 +130,13 @@ function files(accounts: UsageAccountConfig[], now: number): Found[] {
         }
         if (roots.has(root)) continue;
         roots.add(root);
-        const before = found.length;
-        walk(root, account.tool, account.label, found);
-        for (let at = found.length - 1; at >= before; at -= 1) {
-            if (found[at].mtimeMs < cutoff) found.splice(at, 1);
+        const listed =
+            account.tool === 'claude'
+                ? claudeTranscripts(root, 0, 0, { nested: true })
+                : codexRollouts(root, 0, 0);
+        for (const file of listed) {
+            if (file.mtimeMs >= cutoff)
+                found.push({ ...file, tool: account.tool, account: account.label });
         }
     }
     return found.sort((left, right) => left.path.localeCompare(right.path));

@@ -8,16 +8,12 @@
 
 import { existsSync } from 'node:fs';
 import type { SessionTool } from '../../data/model.ts';
+import type { TranscriptFile } from '../transcripts/stores.ts';
 import { isMap, readJson, whole, writeJsonAtomic } from './json.ts';
 import { newAcc, type Acc } from './record.ts';
 
 /** One transcript on disk: its path, and the three facts that say whether a cache entry still fits. */
-export type Found = {
-    path: string;
-    size: number;
-    mtimeMs: number;
-    ino: number;
-};
+export type Found = TranscriptFile;
 
 /**
  * Bumped by any change to the accumulator's shape, or to what a record reads out of it. Version 2

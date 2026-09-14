@@ -12,25 +12,19 @@ import { describe, expect, it } from 'vitest';
 const LIB = resolve(fileURLToPath(import.meta.url), '..', '..', 'src', 'lib');
 const SRC = resolve(LIB, '..');
 
-const LAYERS = ['data', 'server', 'state', 'ui', 'shell', 'views', 'themes'];
+const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 'views', 'themes'];
 
 // One entry per row of the table. A pattern ending in /** matches the folder and everything
 // under it; any other pattern matches exactly. The view registry is the one module the shell
 // and the views share, so a view can register itself without importing another view.
 //
-// `views/shared/**` is the row's other addition, of Q1: a block two views draw the same way lives
-// there once instead of twice, and only a view may import it. A file under `views/shared/` is in the
-// views layer itself, so the row binds it too and it may reach no other view's partials.
+// A block two views draw the same way lives under `views/shared/**` once instead of twice, and only a view may import it. A file under `views/shared/` is in the views layer itself, so the row binds it too and it may reach no other view's partials.
 //
 // `data/guards` and `data/dates` join `data/model` in the state row as pure helpers with no reader
 // and no I/O. The model's own concern modules (`data/model-*`) are reached through the facade only,
 // which is why they are not listed here.
 //
-// The shell's row names the state modules the workbench is made of, one at a time: `state/drag`
-// joined `state/layout` and `state/ui` with the docking of O10b, since the one drag in progress is
-// state the shell reads and writes and no view has any business in. `state/appearance` joined them
-// with O10c, since the theme picker at the foot of the rail is the shell's own control and the list
-// it offers is config the shell reads and no view does.
+// The shell's row names the state modules the workbench is made of, one at a time. The one drag in progress belongs to the shell, as do the theme picker and the configuration it offers; views do not read or write either concern.
 const ALLOWED: Record<string, string[]> = {
     ui: ['ui/**', 'themes/**', 'state/text'],
     shell: [
@@ -51,12 +45,14 @@ const ALLOWED: Record<string, string[]> = {
     state: ['state/**', 'data/model', 'data/guards', 'data/dates'],
     data: ['data/**'],
     server: ['server/**', 'data/**'],
+    'server/transcripts': ['server/transcripts/**', 'data/**'],
     themes: ['themes/**']
 };
 
 const IMPORT = /(?:^|[\s;])(?:from|import)\s*\(?\s*['"]([^'"]+)['"]/g;
 
 function layerOf(id: string): string {
+    if (id.startsWith('server/transcripts/')) return 'server/transcripts';
     return id.split('/')[0];
 }
 
@@ -229,8 +225,10 @@ describe('layer boundaries', () => {
         write('state/bad.svelte.ts', "import { read } from '$lib/data/sources/config';");
         write('state/good.ts', "import { isMap } from '$lib/data/guards';");
         write('server/git.ts', "import type { Project } from '../data/model.ts';");
+        write('server/transcripts/bad.ts', "import { scan } from '../sessions/transcripts.ts';");
 
         expect(findViolations(dir)).toEqual([
+            'server/transcripts/bad.ts imports server/sessions/transcripts',
             'shell/Bad.ts imports server/git',
             'shell/Runes.ts imports state/entities.svelte',
             'shell/Shared.ts imports views/shared/Subtasks.svelte',

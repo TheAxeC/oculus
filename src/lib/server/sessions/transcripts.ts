@@ -1,4 +1,4 @@
-// Layer 2, server. Finding the session files, reading what was appended, and folding each one.
+// Layer 2, server. Read appended session files and fold each one into a current session record.
 //
 // Two stores answer to the same shape: ~/.claude/projects/<slug>/<id>.jsonl, written by Claude
 // Code, and ~/.codex/sessions/YYYY/MM/DD/rollout-<stamp>-<uuid>.jsonl, written by the Codex CLI.
@@ -8,7 +8,7 @@
 //
 // Nothing here throws. A file that cannot be read is left out and the rest come back.
 
-import { closeSync, fstatSync, openSync, readSync, readdirSync, statSync } from 'node:fs';
+import { closeSync, fstatSync, openSync, readSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { basename, join } from 'node:path';
 import type { LiveEntry, SessionRecord, SessionTool } from '../../data/model.ts';
@@ -27,13 +27,12 @@ import {
     codexState,
     defaultCodexStore,
     foldCodex,
-    isRollout,
     rolloutId,
     rolloutSlug,
-    rollouts,
     systemCodexProbe,
     type CodexProbe
 } from './codex.ts';
+import { claudeTranscripts, codexRollouts, isRollout } from '../transcripts/stores.ts';
 import { claudeState, foldClaude } from './fold.ts';
 import { whole } from './json.ts';
 import { defaultOverridesPath, hiddenIds } from './overrides.ts';
@@ -203,44 +202,6 @@ function session(
 }
 
 /**
- * Every Claude transcript in the store, newest first, inside the window and capped. The store is
- * one folder per project, one file per session, so it is two levels and no deeper.
- */
-export function transcripts(store: string, windowDays: number, maxSessions: number): Found[] {
-    const cutoff = windowDays ? Date.now() - windowDays * 86400 * 1000 : null;
-    const found: Found[] = [];
-    let projects;
-    try {
-        projects = readdirSync(store, { withFileTypes: true });
-    } catch {
-        return found;
-    }
-    for (const project of projects) {
-        if (!project.isDirectory()) continue;
-        let items;
-        try {
-            items = readdirSync(join(store, project.name), { withFileTypes: true });
-        } catch {
-            continue;
-        }
-        for (const item of items) {
-            if (!item.name.endsWith('.jsonl')) continue;
-            const path = join(store, project.name, item.name);
-            try {
-                const stat = statSync(path);
-                if (cutoff === null || stat.mtimeMs >= cutoff) {
-                    found.push({ path, size: stat.size, mtimeMs: stat.mtimeMs, ino: stat.ino });
-                }
-            } catch {
-                continue;
-            }
-        }
-    }
-    found.sort((a, b) => b.mtimeMs - a.mtimeMs);
-    return maxSessions ? found.slice(0, maxSessions) : found;
-}
-
-/**
  * Both stores, folded into one list of records, newest activity first. The registry is read once
  * per scan rather than once per record, and so is the Codex process probe; the cache is read once
  * at the start and written once at the end, holding both kinds keyed by path.
@@ -260,7 +221,7 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
     const fresh: Record<string, CacheEntry> = {};
     const found: { record: SessionRecord; mtimeMs: number }[] = [];
 
-    for (const file of transcripts(store, windowDays, maxSessions)) {
+    for (const file of claudeTranscripts(store, windowDays, maxSessions)) {
         const folded = fold(file, null, previous[file.path], limit, now);
         if (folded === null) continue;
         mergeLive(folded.record, live.get(folded.record.id), dismissed);
@@ -269,7 +230,7 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
     }
 
     let running: boolean | null = null;
-    for (const file of rollouts(codexStore, windowDays, maxSessions)) {
+    for (const file of codexRollouts(codexStore, windowDays, maxSessions)) {
         const folded = fold(file, codexStore, previous[file.path], limit, now);
         if (folded === null) continue;
         if (running === null) running = codexRunning(options.codexProbe ?? systemCodexProbe);

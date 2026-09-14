@@ -416,6 +416,83 @@ describe('usage transcript fold', () => {
         expect(second.readBytes).toBe(0);
     });
 
+    it('includes a nested Claude sub-agent transcript in the usage rows', async () => {
+        const dir = scratch();
+        write(
+            join(dir, 'projects', 'p', 'session-one', 'subagents', 'agent-one.jsonl'),
+            line({
+                type: 'assistant',
+                timestamp: '2026-09-13T10:00:00Z',
+                message: {
+                    model: 'claude-subagent',
+                    usage: {
+                        input_tokens: 11,
+                        output_tokens: 12,
+                        cache_read_input_tokens: 13,
+                        cache_creation_input_tokens: 14
+                    }
+                }
+            })
+        );
+        const result = await new UsageTranscriptFold().fold(
+            [{ tool: 'claude', dir, label: 'Personal' }],
+            NOW
+        );
+        expect(result.files).toBe(1);
+        expect(result.rows).toEqual([
+            {
+                tool: 'claude',
+                account: 'Personal',
+                day: '2026-09-13',
+                model: 'claude-subagent',
+                input: 11,
+                output: 12,
+                cacheRead: 13,
+                cacheCreation: 14
+            }
+        ]);
+    });
+
+    it('leaves the Codex baseline intact when a token-count event has no totals', async () => {
+        const dir = scratch();
+        const event = (total: number): string =>
+            line({
+                type: 'event_msg',
+                timestamp: '2026-09-13T12:00:00Z',
+                payload: {
+                    type: 'token_count',
+                    info: { total_token_usage: { input_tokens: total } }
+                }
+            });
+        write(
+            join(dir, 'sessions', '2026', '09', '13', 'rollout-baseline.jsonl'),
+            line({ type: 'turn_context', payload: { model: 'gpt-5' } }) +
+                event(100) +
+                line({
+                    type: 'event_msg',
+                    timestamp: '2026-09-13T12:01:00Z',
+                    payload: { type: 'token_count', info: {} }
+                }) +
+                event(150)
+        );
+        const result = await new UsageTranscriptFold().fold(
+            [{ tool: 'codex', dir, label: 'Codex' }],
+            NOW
+        );
+        expect(result.rows).toEqual([
+            {
+                tool: 'codex',
+                account: 'Codex',
+                day: '2026-09-13',
+                model: 'gpt-5',
+                input: 150,
+                output: 0,
+                cacheRead: 0,
+                cacheCreation: 0
+            }
+        ]);
+    });
+
     it('counts cumulative deltas across days and models, repeated totals, resets and separate files', async () => {
         const dir = scratch();
         const context = (model: string): string =>

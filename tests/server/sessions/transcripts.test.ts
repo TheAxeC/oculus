@@ -89,7 +89,7 @@ function assistant(
     options: Partial<{
         text: string;
         tools: [string, string, Json][];
-        tokens: Json;
+        tokens: Json | null;
         model: string;
         effort: string;
     }> = {}
@@ -107,7 +107,7 @@ function assistant(
             role: 'assistant',
             model: options.model ?? 'claude-test',
             content,
-            usage: options.tokens ?? usage()
+            ...(options.tokens === null ? {} : { usage: options.tokens ?? usage() })
         },
         ...CONTEXT
     };
@@ -423,6 +423,34 @@ describe('the fold', () => {
         expect(busts[0].ts).toBe('2026-01-01T10:00:01.000Z');
     });
 
+    it('takes the model but changes no usage state when an assistant has no usage map', () => {
+        const f = make();
+        f.write([
+            assistant('2026-01-01T10:00:00.000Z', {
+                tokens: usage({ input: 1, output: 2, read: 20000, created: 0 }),
+                model: 'before'
+            }),
+            assistant('2026-01-01T10:00:01.000Z', {
+                tokens: null,
+                model: 'model-only'
+            }),
+            assistant('2026-01-01T10:00:02.000Z', {
+                tokens: usage({ input: 3, output: 4, read: 0, created: 30000 }),
+                model: ''
+            })
+        ]);
+        const record = f.only();
+        expect(record.model).toBe('model-only');
+        expect(record.tokens).toEqual({
+            input: 4,
+            output: 6,
+            cacheRead: 20000,
+            cacheCreation: 30000,
+            thinking: 0
+        });
+        expect(record.cache.busts).toBe(1);
+    });
+
     it('reports agents running, done and error', () => {
         const f = make();
         f.write([
@@ -618,6 +646,18 @@ describe('the incremental read', () => {
         expect(f.scan({ windowDays: 30, maxSessions: 1 }).map((record) => record.id)).toEqual([
             SID
         ]);
+    });
+
+    it('does not list a nested sub-agent transcript as a session', () => {
+        const f = make();
+        f.write([human('2026-01-01T10:00:00.000Z', 'root')]);
+        const folder = join(f.store, SLUG, SID, 'subagents');
+        mkdirSync(folder, { recursive: true });
+        writeFileSync(
+            join(folder, 'agent-one.jsonl'),
+            JSON.stringify(human('2026-01-01T10:00:01.000Z', 'nested')) + '\n'
+        );
+        expect(f.scan({ windowDays: 30 }).map((record) => record.id)).toEqual([SID]);
     });
 
     it('reports an oversized first read as truncated', () => {

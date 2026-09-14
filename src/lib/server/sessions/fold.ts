@@ -9,6 +9,7 @@
 // is false on every record of the store and says nothing, so nothing here reads it.
 
 import type { Acc } from './record.ts';
+import { claudeUsage, type UsageEvent } from '../transcripts/usage.ts';
 import {
     CACHE_BUST_TOKENS,
     IDLE_AFTER_SECONDS,
@@ -108,10 +109,11 @@ function foldAssistant(
     stamp: string | null
 ): void {
     acc.lastKind = 'assistant';
-    if (typeof message.model === 'string' && message.model) acc.model = message.model;
+    const usage = claudeUsage(record);
+    if (usage !== null && usage.model) acc.model = usage.model;
     const effort = record.effort ?? message.effort;
     if (typeof effort === 'string' && effort) acc.effort = effort;
-    foldUsage(acc, message.usage, stamp);
+    if (usage !== null && usage.context !== undefined) foldUsage(acc, usage, stamp);
     const ids: string[] = [];
     for (const block of list(content)) {
         if (!isMap(block) || block.type !== 'tool_use') continue;
@@ -124,36 +126,27 @@ function foldAssistant(
     acc.lastToolIds = ids;
 }
 
-function foldUsage(acc: Acc, usage: unknown, stamp: string | null): void {
-    if (!isMap(usage)) return;
-    const input = whole(usage.input_tokens);
-    const created = whole(usage.cache_creation_input_tokens);
-    const read = whole(usage.cache_read_input_tokens);
-    acc.tokens.input += input;
-    acc.tokens.output += whole(usage.output_tokens);
-    acc.tokens.cacheRead += read;
-    acc.tokens.cacheCreation += created;
-    const details = usage.output_tokens_details;
-    if (isMap(details)) acc.tokens.thinking += whole(details.thinking_tokens);
+function foldUsage(acc: Acc, usage: UsageEvent, stamp: string | null): void {
+    acc.tokens.input += usage.input;
+    acc.tokens.output += usage.output;
+    acc.tokens.cacheRead += usage.cacheRead;
+    acc.tokens.cacheCreation += usage.cacheCreation;
+    acc.tokens.thinking += usage.thinking;
     // What the model actually carried on this turn. The sums above are lifetime totals and run
     // into the hundreds of millions, so they say nothing about how full the window is right now.
-    acc.context = input + created + read;
+    if (usage.context !== undefined) acc.context = usage.context;
 
-    const creation = usage.cache_creation;
-    if (isMap(creation)) {
-        if (whole(creation.ephemeral_1h_input_tokens)) acc.cache.ttl = '1h';
-        else if (whole(creation.ephemeral_5m_input_tokens)) acc.cache.ttl = '5m';
-    }
-    if (created) acc.cache.lastCreation = stamp;
-    if (read) acc.cache.lastRead = stamp;
+    if (usage.ttl !== null && usage.ttl !== undefined) acc.cache.ttl = usage.ttl;
+    if (usage.cacheCreation) acc.cache.lastCreation = stamp;
+    if (usage.cacheRead) acc.cache.lastRead = stamp;
     // A large fresh write straight after a large read means the cached prefix was thrown away. It
     // is the most expensive thing that happens in a session, so it goes on the timeline as well,
     // carrying the number of tokens that had to be written again.
-    if (created > CACHE_BUST_TOKENS && acc.prevCacheRead > CACHE_BUST_TOKENS) {
+    if (usage.cacheCreation > CACHE_BUST_TOKENS && acc.prevCacheRead > CACHE_BUST_TOKENS) {
         acc.cache.busts += 1;
-        addEvent(acc, stamp, 'bust', String(created));
+        addEvent(acc, stamp, 'bust', String(usage.cacheCreation));
     }
-    acc.prevCacheRead = read;
+    acc.prevCacheRead = usage.cacheRead;
 }
 
 function foldToolUse(acc: Acc, block: Record<string, unknown>, stamp: string | null): void {

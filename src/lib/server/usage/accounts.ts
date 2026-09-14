@@ -20,7 +20,7 @@ import type {
     UsageWindow
 } from '../../data/model.ts';
 import { isMap } from '../../data/guards.ts';
-import { rollouts } from '../sessions/codex.ts';
+import { codexRollouts } from '../transcripts/stores.ts';
 import { USAGE_PREFIX } from '../pty/sessions.ts';
 
 export type UsageTiers = Record<string, string>;
@@ -102,7 +102,7 @@ export function claudeCachedUsage(dir: string): ClaudeUsageCache {
     const cache =
         root !== null && isMap(root.cachedUsageUtilization) ? root.cachedUsageUtilization : {};
     const fetchedAtMs = number(cache.fetchedAtMs);
-    // A value outside what Date can hold (the reviewer's 1e20) would throw in toISOString.
+    // A value outside what Date can hold would throw in toISOString.
     const fetchedAt =
         fetchedAtMs === null || Math.abs(fetchedAtMs) > 8.64e15
             ? ''
@@ -329,7 +329,7 @@ export function newestCodexLimits(
     dir: string,
     tailBytes: number = CODEX_TAIL_BYTES
 ): Record<string, unknown> | null {
-    const newest = rollouts(join(dir, 'sessions'), 0, 1)[0];
+    const newest = codexRollouts(join(dir, 'sessions'), 0, 1)[0];
     if (newest === undefined) return null;
     try {
         const lines = rolloutTail(newest.path, tailBytes);

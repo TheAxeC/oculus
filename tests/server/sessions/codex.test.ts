@@ -243,6 +243,76 @@ describe('the rollout fold', () => {
         expect(record.contextWindow).toBe(258400);
     });
 
+    it('reads the occupancy and the window off a count that carries no totals', () => {
+        const roll = new Rollout();
+        roll.write([
+            meta('2026-09-07T17:56:35.426Z'),
+            line('2026-09-07T17:56:46.716Z', 'event_msg', {
+                type: 'token_count',
+                info: { total_token_usage: { input_tokens: 100, output_tokens: 5 } }
+            }),
+            line('2026-09-07T17:56:47.716Z', 'event_msg', {
+                type: 'token_count',
+                info: {
+                    last_token_usage: { input_tokens: 100, cached_input_tokens: 25 },
+                    model_context_window: 258400
+                }
+            })
+        ]);
+        const record = roll.read();
+        expect(record.tokens.input).toBe(100);
+        expect(record.tokens.output).toBe(5);
+        expect(record.contextTokens).toBe(125);
+        expect(record.contextWindow).toBe(258400);
+    });
+
+    it('assigns decreased and partial cumulative totals exactly', () => {
+        const roll = new Rollout();
+        const counts = (total: Json): Json =>
+            line('2026-09-07T17:56:46.716Z', 'event_msg', {
+                type: 'token_count',
+                info: { total_token_usage: total }
+            });
+        const hundred = {
+            input_tokens: 100,
+            output_tokens: 100,
+            cached_input_tokens: 100,
+            cache_write_input_tokens: 100,
+            reasoning_output_tokens: 100
+        };
+        roll.write([
+            meta('2026-09-07T17:56:35.426Z'),
+            counts(hundred),
+            counts({
+                input_tokens: 10,
+                output_tokens: 10,
+                cached_input_tokens: 10,
+                cache_write_input_tokens: 10,
+                reasoning_output_tokens: 10
+            })
+        ]);
+        expect(roll.read().tokens).toEqual({
+            input: 10,
+            output: 10,
+            cacheRead: 10,
+            cacheCreation: 10,
+            thinking: 10
+        });
+
+        roll.write([
+            meta('2026-09-07T17:56:35.426Z'),
+            counts(hundred),
+            counts({ output_tokens: 4 })
+        ]);
+        expect(roll.read().tokens).toEqual({
+            input: 0,
+            output: 4,
+            cacheRead: 0,
+            cacheCreation: 0,
+            thinking: 0
+        });
+    });
+
     it('counts every path a FileChange touched', () => {
         const roll = new Rollout();
         const first = `${CWD}/code/run.py`;
