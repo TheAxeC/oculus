@@ -46,7 +46,7 @@ dispatch:                                  # workers_at_once: 2; R12e and R12f i
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R12f/report.md
   exit: none
   pid: none
-  session_id: pending                      # the Agent tool's id, written the moment it is known
+  session_id: aa670e22290aac070            # the Agent tool's id
   landing: not-started
 ```
 
