@@ -27,7 +27,7 @@ import {
     setHostStatus,
     setSubtask,
     subtaskLines
-} from '../../src/lib/server/entry-edit.ts';
+} from '../../src/lib/server/entry-edit/index.ts';
 import { engineDir, loadConfig, loadLocal } from '../../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { fieldNames } from '../../src/lib/data/validate.ts';

@@ -1,6 +1,6 @@
 // Layer 2, client state. Instance identities and tree lookups, independent of tree mutations and storage.
 
-import type { Instance, Layout, Pane, ViewId } from './layout.ts';
+import type { Instance, Layout, Pane, ViewId } from './layout/index.ts';
 
 /**
  * A fresh instance of a view, with the id every operation addresses it by. The state is the view's

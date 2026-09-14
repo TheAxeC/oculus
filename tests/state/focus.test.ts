@@ -19,11 +19,10 @@ import {
     laneItems,
     lanes,
     priorities,
-    ticker,
     unplaced,
-    venueLoad,
     waiting
 } from '../../src/lib/state/focus.ts';
+import { ticker, venueLoad } from '../../src/lib/state/ticker.ts';
 import type {
     Collection,
     Entry,

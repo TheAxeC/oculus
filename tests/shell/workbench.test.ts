@@ -47,7 +47,7 @@ import {
     pages,
     switchPage
 } from '../../src/lib/state/layout.svelte.ts';
-import type { Dock, Layout, Workbench as Bench } from '../../src/lib/state/layout.ts';
+import type { Dock, Layout, Workbench as Bench } from '../../src/lib/state/layout/index.ts';
 
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));

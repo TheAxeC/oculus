@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import Programs from '../../src/lib/views/Programs.svelte';
 import LineCard from '../../src/lib/views/programs/LineCard.svelte';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
-import type { Instance } from '../../src/lib/state/layout.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
 

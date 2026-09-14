@@ -17,7 +17,7 @@ import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { loadUi, setInstanceState, setLeadDismissed } from '../../src/lib/state/ui.svelte.ts';
 import { leadId } from '../../src/lib/state/leads.ts';
 import { addLead } from '../../src/lib/state/writes.svelte.ts';
-import type { Instance } from '../../src/lib/state/layout.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);

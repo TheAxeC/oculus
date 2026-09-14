@@ -16,7 +16,7 @@ import { localDate } from '../data/dates.ts';
 import { isMap } from '../data/guards.ts';
 import { collectionSchema } from '../data/normalise.ts';
 import { fieldNames } from '../data/validate.ts';
-import { appendEntry, deleteEntry, renderEntry, setEntryFields } from './entry-edit.ts';
+import { appendEntry, deleteEntry, renderEntry, setEntryFields } from './entry-edit/index.ts';
 import { saved } from './writes/entries.ts';
 import { asFieldValue } from './yaml-edit.ts';
 import type { FieldValue, Refusal } from './yaml-edit.ts';

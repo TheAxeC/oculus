@@ -26,7 +26,7 @@ import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { CollectionState } from '../../src/lib/state/collection.ts';
 import type { Entry, Project, Relations, SchemaField, Snapshot } from '../../src/lib/data/model.ts';
-import type { Instance } from '../../src/lib/state/layout.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);

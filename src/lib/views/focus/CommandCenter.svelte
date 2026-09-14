@@ -2,7 +2,7 @@
     // Layer 3, view partial of views/Focus.svelte. The command center: the urgency ticker, in two
     // columns under one heading, with the buttons each line can be acted on by.
     //
-    // It counts nothing. The groups are state/focus.ts's ticker and state/feeds.ts's attention and
+    // It counts nothing. The groups are state/ticker.ts's ticker and state/feeds.ts's attention and
     // refresh lines; what is here is the markup, the words, the writes and the opening controls. A
     // line says what it is and what it can be written to (`kind` and `target`), and this file turns
     // the first into a sentence through the text catalog and the second into buttons through
@@ -13,29 +13,27 @@
     // from state/hpc.svelte.ts, drawn only while the cluster answers and the queue is not empty,
     // and a click on it opens the Live HPC view.
 
-    import Glyph from '$lib/ui/Glyph.svelte';
-    import Ticker, { type TickerAction, type TickerRow } from '$lib/ui/Ticker.svelte';
+    import type { TickerAction, TickerRow } from '$lib/ui/Ticker.svelte';
     import {
         CATEGORIES,
         daysTone,
         ticker,
         type TickerItem,
         type TickerTarget
-    } from '$lib/state/focus';
+    } from '$lib/state/ticker';
     import { attention, refresh } from '$lib/state/feeds';
     import { configMap } from '$lib/state/selectors.svelte';
     import { portfolio } from '$lib/state/entities.svelte';
     import { openView } from '$lib/state/layout.svelte';
     import { instanceState, requestUpdateTray, setInstanceState } from '$lib/state/ui.svelte';
     import { t } from '$lib/state/text';
-    import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { pillText } from '$lib/state/hpc.svelte';
     import {
         writeEntry,
         writeManifest,
         writeSubtask,
         type WriteAnswer
     } from '$lib/state/writes.svelte';
+    import CommandCenterView from './CommandCenterView.svelte';
 
     type Props = {
         /** The moment every countdown on the board is measured from. */
@@ -58,12 +56,6 @@
     const warnAt = $derived(
         typeof config.venue_conc_warn === 'number' ? config.venue_conc_warn : 4
     );
-
-    /** The singular or plural manifest noun, with literal catalog keys for the static audit. */
-    function manifestWord(count: number): string {
-        if (count === 1) return t('focus.command.manifest');
-        return t('focus.command.manifests');
-    }
 
     /** An ISO date a snooze button pushes an item out to. */
     function snoozeDate(days: number): string {
@@ -197,18 +189,6 @@
             : t('focus.command.in_days', line.days);
     }
 
-    /** A category's heading. The keys are literal so tests/keys.test.ts can see every one of them. */
-    function categoryLabel(category: string): string {
-        if (category === 'paper') return t('focus.command.dlcat_paper');
-        if (category === 'funding') return t('focus.command.dlcat_funding');
-        if (category === 'event') return t('focus.command.dlcat_event_label');
-        if (category === 'teaching') return t('focus.command.dlcat_teaching');
-        if (category === 'position') return t('focus.command.dlcat_position');
-        if (category === 'collab') return t('focus.command.dlcat_collab');
-        if (category === 'task') return t('focus.command.dlcat_task');
-        return t('focus.command.dlcat_conference');
-    }
-
     /** The glyph one attention line is drawn with. */
     function attentionGlyph(kind: string): string {
         if (kind === 'inbox') return t('focus.command.inbox_glyph');
@@ -332,20 +312,6 @@
         return { index, rows };
     });
 
-    /** Whether the strip has anything at all to say. */
-    const anything = $derived(
-        view.overdue.length +
-            view.categories.length +
-            view.subtaskDated.length +
-            view.subtaskOpen.length +
-            view.followups.length +
-            view.snoozed.length +
-            attentionView.rows.length +
-            (week?.behind === null || week?.behind === undefined ? 0 : 1) +
-            refreshView.rows.length >
-            0
-    );
-
     /** Put transient reveal state on the instance that was activated, never in layout identity. */
     function reveal(view: 'leads' | 'venues', item: string, expiredOpen = false): void {
         const id = openView(view, 'main');
@@ -440,210 +406,14 @@
     }
 </script>
 
-{#snippet group(label: string, glyph: string, rows: TickerRow[])}
-    {#if rows.length > 0}
-        <div class="grp">
-            <p class="lbl"><Glyph name={glyph} />{label}</p>
-            <Ticker {rows} onpick={pick} onaction={act} />
-        </div>
-    {/if}
-{/snippet}
-
-{#snippet kindGroups(label: string, glyph: string, groups: { kind: string; rows: TickerRow[] }[])}
-    {#if groups.length > 0}
-        <div class="grp">
-            <p class="lbl"><Glyph name={glyph} />{label}</p>
-            {#each groups as one (one.kind)}
-                <p class="sub">{one.kind === '' ? t('focus.command.kind_other') : one.kind}</p>
-                <Ticker rows={one.rows} onpick={pick} onaction={act} />
-            {/each}
-        </div>
-    {/if}
-{/snippet}
-
-{#if anything}
-    <section class="week">
-        <div class="head">
-            <b
-                ><Glyph name={t('focus.command.command_center_glyph')} />{t(
-                    'focus.command.command_center'
-                )}</b
-            >
-            {#if pillText()}
-                <span class="pill">
-                    <ToolButton label={pillText()} onclick={() => openView('hpc', 'main')} />
-                </span>
-            {/if}
-        </div>
-
-        {@render group(
-            t('focus.command.grp_overdue_label'),
-            t('focus.command.grp_overdue_glyph'),
-            view.overdue
-        )}
-        {#if attentionView.rows.length > 0 || week?.behind}
-            <div class="grp">
-                <p class="lbl">
-                    <Glyph name={t('focus.command.grp_attention_glyph')} />{t(
-                        'focus.command.grp_attention_label'
-                    )}
-                </p>
-                {#if attentionView.rows.length > 0}
-                    <Ticker rows={attentionView.rows} onpick={pickAttention} />
-                {/if}
-                {#if week?.behind}
-                    <div class="behind">
-                        <Glyph name={t('board.stale_glyph')} />
-                        <b>
-                            {week.behind.count}
-                            {manifestWord(week.behind.count)}
-                        </b>
-                        <span>{t('focus.command.behind_refresh')}</span>
-                        {#each week.behind.projects as project (project.id)}
-                            <ToolButton
-                                label={project.label}
-                                title={t('project.card.stale_behind', project.days)}
-                                onclick={() => onproject(project.id)}
-                            />
-                        {/each}
-                        {#if week.behind.more > 0}
-                            <span>{t('focus.command.more', week.behind.more)}</span>
-                        {/if}
-                    </div>
-                {/if}
-            </div>
-        {/if}
-
-        {#if view.categories.length > 0}
-            <div class="grp">
-                <p class="lbl">
-                    <Glyph name={t('focus.command.grp_deadlines_glyph')} />{t(
-                        'focus.command.grp_deadlines_label'
-                    )}
-                </p>
-                {#each view.categories as one (one.category)}
-                    <p class="sub">{categoryLabel(one.category)}</p>
-                    <Ticker rows={one.rows} onpick={pick} onaction={act} />
-                {/each}
-            </div>
-        {/if}
-
-        {@render kindGroups(
-            t('focus.command.grp_subtask_dl_label'),
-            t('focus.command.grp_subtask_glyph'),
-            view.subtaskDated
-        )}
-        {@render kindGroups(
-            t('focus.command.grp_open_subtasks_label'),
-            t('focus.command.grp_subtask_glyph'),
-            view.subtaskOpen
-        )}
-        {@render group(
-            t('focus.command.grp_followups_label'),
-            t('focus.command.grp_followups_glyph'),
-            view.followups
-        )}
-        {#if refreshView.rows.length > 0}
-            <div class="grp">
-                <p class="lbl">
-                    <Glyph name={t('focus.command.refresh_glyph')} />{t(
-                        'focus.command.grp_refresh_label'
-                    )}
-                </p>
-                <Ticker rows={refreshView.rows} onpick={pickRefresh} />
-            </div>
-        {/if}
-
-        {#if view.snoozed.length > 0}
-            <details class="grp">
-                <summary class="lbl">
-                    <Glyph name={t('focus.command.snoozed_glyph')} />{t(
-                        'focus.command.snoozed',
-                        view.snoozed.length
-                    )}
-                </summary>
-                <Ticker rows={view.snoozed} onpick={pick} onaction={act} />
-            </details>
-        {/if}
-    </section>
-{/if}
-
-<style>
-    /* Two columns while a column can still hold a line of text, one when it cannot. A group is kept
-       whole so its label can never sit at the foot of one column with its lines at the head of the
-       other, which is what `break-inside: avoid` is for. */
-    .week {
-        padding: 10px 12px;
-        border: 1px solid var(--line);
-        border-left: 3px solid var(--c-red);
-        border-radius: 8px;
-        background: var(--chip);
-        columns: 2 22em;
-        column-gap: 26px;
-    }
-
-    .head {
-        display: flex;
-        column-span: all;
-        align-items: center;
-        gap: 12px;
-        flex-wrap: wrap;
-    }
-
-    .head > b {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        flex: 0 0 auto;
-        margin-right: auto;
-        font-size: var(--fs-sm);
-    }
-
-    /* The live HPC pill docks here; the slot stays empty when the queue has no live counts. */
-    .pill {
-        flex: 0 0 auto;
-    }
-
-    .grp {
-        margin-top: 9px;
-        break-inside: avoid;
-    }
-
-    .lbl {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        margin: 0 0 2px;
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.05em;
-        color: var(--accent-txt, var(--accent));
-    }
-
-    summary.lbl {
-        cursor: pointer;
-    }
-
-    .sub {
-        margin: 6px 0 2px;
-        font-size: var(--fs-md);
-        color: var(--muted-txt, var(--muted));
-    }
-
-    .behind {
-        display: flex;
-        align-items: center;
-        flex-wrap: wrap;
-        gap: 5px;
-        margin-top: 3px;
-        font-size: var(--fs-md);
-    }
-
-    .behind :global(.tool) {
-        border: 0;
-        background: none;
-        padding: 0;
-        color: var(--accent-txt, var(--accent));
-    }
-</style>
+<CommandCenterView
+    {week}
+    {view}
+    attentionRows={attentionView.rows}
+    refreshRows={refreshView.rows}
+    {onproject}
+    onpick={pick}
+    onaction={act}
+    onattention={pickAttention}
+    onrefresh={pickRefresh}
+/>

@@ -9,7 +9,7 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { setAppearance } from '../../src/lib/state/appearance.ts';
-import { findView } from '../../src/lib/state/layout.ts';
+import { findView } from '../../src/lib/state/layout/index.ts';
 import { layout, loadLayout, openView } from '../../src/lib/state/layout.svelte.ts';
 import type { PaletteItem } from '../../src/lib/state/palette.ts';
 import { instanceState, loadUi, setInstanceState } from '../../src/lib/state/ui.svelte.ts';

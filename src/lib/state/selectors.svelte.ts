@@ -18,12 +18,12 @@ import {
     disseminated,
     presetFor,
     stats
-} from './board.ts';
+} from './board/index.ts';
 import { config, git, portfolio, sessions } from './entities.svelte.ts';
 import { instanceLayoutState } from './layout.svelte.ts';
 import { choicesFor, formFields, formSections } from './schema.ts';
 import { pinnedSession, selected } from './selection.svelte.ts';
-import type { BoardItem, BoardPreset, BoardStats, Dissemination } from './board.ts';
+import type { BoardItem, BoardPreset, BoardStats, Dissemination } from './board/index.ts';
 import type { Choice, FormField } from './schema.ts';
 import type {
     Area,

@@ -10,8 +10,8 @@
 
 import type { Snapshot } from '../data/model.ts';
 import { isMap } from '../data/guards.ts';
-import { daysUntil } from './board.ts';
-import { venueLoad } from './focus.ts';
+import { daysUntil } from './board/index.ts';
+import { venueLoad } from './ticker.ts';
 
 /** The three feeds a nudge can be about, in the order the group lists them. */
 export const FEEDS = ['litwatch', 'inbox', 'scout'];

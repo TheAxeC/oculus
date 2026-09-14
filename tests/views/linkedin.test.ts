@@ -18,7 +18,7 @@ import { feedsFixture } from '../feeds-fixture.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import { addLinkedinIdea, markPosted } from '../../src/lib/state/writes.svelte.ts';
-import type { Instance } from '../../src/lib/state/layout.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);

@@ -21,7 +21,7 @@ import {
     renderEntry,
     reorderEntries,
     setEntryFields
-} from '../entry-edit.ts';
+} from '../entry-edit/index.ts';
 import { asFieldValue } from '../yaml-edit.ts';
 import type { EditResult, FieldValue, Refusal } from '../yaml-edit.ts';
 import type { PortfolioConfig } from '../../data/model.ts';

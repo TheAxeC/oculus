@@ -17,7 +17,7 @@ import {
     serialiseLayout,
     type Pages,
     type Workbench
-} from '../../src/lib/state/layout.ts';
+} from '../../src/lib/state/layout/index.ts';
 import {
     LAYOUT_KEY,
     PREVIOUS_KEY,

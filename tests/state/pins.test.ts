@@ -20,7 +20,7 @@ import {
     stateId,
     type Instance,
     type Target
-} from '../../src/lib/state/layout.ts';
+} from '../../src/lib/state/layout/index.ts';
 
 /** One main pane holding the instances a case names, around the ordinary default panel. */
 function show(instances: Instance[]): void {

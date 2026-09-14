@@ -12,7 +12,7 @@
 // the pointer leaving the strip it began in, which is the whole reason they are on the document.
 
 import { splitInstance, transferInstance } from './layout.svelte.ts';
-import type { Edge, Target } from './layout.ts';
+import type { Edge, Target } from './layout/index.ts';
 
 /** A point in the viewport, which is what getBoundingClientRect is measured in. */
 export type Point = { x: number; y: number };

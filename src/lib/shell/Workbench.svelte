@@ -40,19 +40,12 @@
 
     import ActivityRail, { railOrder, type Bookmark, type NavGroup } from './ActivityRail.svelte';
     import DropLayer from './DropLayer.svelte';
-    import { activateCursor, focusSearch, scrollContainer, scrollRegion } from './key-dom';
+    import { createWorkbenchKeys } from './workbench-keys.svelte';
     import PageStrip, { type Arrangement } from './PageStrip.svelte';
     import Palette from './Palette.svelte';
     import PaneView from './PaneView.svelte';
     import SplitView from './SplitView.svelte';
     import UpdateTray from './UpdateTray.svelte';
-    import {
-        horizontalCursor,
-        initialKeyState,
-        resolveKey,
-        rowCursor,
-        type KeyAction
-    } from './keys';
     import KeySheet from '$lib/ui/KeySheet.svelte';
     import Sash, { SASH_PX } from '$lib/ui/Sash.svelte';
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
@@ -63,13 +56,9 @@
         dockedAt,
         focused,
         layout,
-        openView,
-        pageShortcut,
         panelSize,
-        resizePanel,
-        restorePanes
+        resizePanel
     } from '$lib/state/layout.svelte';
-    import { dragging } from '$lib/state/drag.svelte';
     import {
         crt,
         textScale,
@@ -110,10 +99,6 @@
     let updateOpen = $state(false);
     let sheetOpen = $state(false);
     let handledUpdateRequest = $state(updateTrayRequested());
-    let keyState = initialKeyState();
-    let cursorIndex = -1;
-    let cursorPane: HTMLElement | null = null;
-    let lastFocusedPane: HTMLElement | null = null;
 
     const dock = $derived(dockedAt());
     const share = $derived(panelSize());
@@ -138,205 +123,21 @@
         `${page.id}:${activeMain?.id ?? ''}:${activePanel?.id ?? ''}:${focus?.target ?? ''}:${focus?.path.join('.') ?? ''}`
     );
 
-    /**
-     * Escape restores the arrangement, and Ctrl+1 to Ctrl+9 show a page. A drag in progress consumes
-     * its own Escape on the document, where the drag store's listener calls preventDefault, so the
-     * two never both act on one press. Cmd+digit is the browser's own tab switch and is left alone,
-     * which is why the shortcut is Ctrl and a held Cmd is refused.
-     */
-    function keys(event: KeyboardEvent): void {
-        if (
-            sheetOpen &&
-            !typingIn(event.target) &&
-            !paletteOpen &&
-            !updateOpen &&
-            document.querySelector('[role="alertdialog"]') === null &&
-            !event.defaultPrevented &&
-            !event.metaKey &&
-            !event.ctrlKey &&
-            !event.altKey &&
-            (event.key === '?' || event.key === 'Escape')
-        ) {
-            event.preventDefault();
-            sheetOpen = false;
-            return;
-        }
-        if (sheetOpen) return;
-        if ((event.metaKey || event.ctrlKey) && event.key.toLowerCase() === 'k') {
-            event.preventDefault();
-            if (paletteOpen) paletteOpen = false;
-            else openPalette('');
-            return;
-        }
-        if (event.key === 'Escape' && paletteOpen) {
-            event.preventDefault();
-            paletteOpen = false;
-            return;
-        }
-        if (event.key === 'Escape' && updateOpen) {
-            event.preventDefault();
-            updateOpen = false;
-            return;
-        }
-        if (
-            event.key === ':' &&
-            !paletteOpen &&
-            !event.metaKey &&
-            !event.ctrlKey &&
-            !event.altKey &&
-            !typingIn(event.target)
-        ) {
-            event.preventDefault();
-            openPalette(':');
-            return;
-        }
-        if (event.ctrlKey && !event.metaKey && /^[1-9]$/.test(event.key)) {
-            if (pageShortcut(Number(event.key))) event.preventDefault();
-            return;
-        }
-        const pane = focusedPaneElement();
-        const result = resolveKey(
-            event,
-            navigation,
-            {
-                currentView: pane?.dataset.paneView ?? null,
-                target: pane?.dataset.paneTarget === 'panel' ? 'panel' : 'main',
-                cursorActive: cursorIndex >= 0,
-                typing: typingIn(event.target),
-                paletteOpen,
-                trayOpen: updateOpen,
-                confirmOpen: document.querySelector('[role="alertdialog"]') !== null
-            },
-            keyState,
-            Date.now()
-        );
-        keyState = result.state;
-        if (result.action !== null) {
-            if (perform(result.action, pane)) event.preventDefault();
-            return;
-        }
-        if (event.key !== 'Escape' || event.defaultPrevented) return;
-        if (dragging() !== null || focus === null) return;
-        event.preventDefault();
-        restorePanes();
-    }
-
-    /** Perform one DOM-independent routing decision against the pane currently addressed. */
-    function perform(action: KeyAction, pane: HTMLElement | null): boolean {
-        if (action.kind === 'open') {
-            clearCursor();
-            openView(action.view, action.target);
-        } else if (action.kind === 'cursor') {
-            return moveCursor(pane, action.direction);
-        } else if (action.kind === 'activate') {
-            return activateCursor(cursorPane);
-        } else if (action.kind === 'search') {
-            return focusSearch(pane);
-        } else if (action.kind === 'scroll') {
-            return scrollRegion(scrollContainer(pane), action.edge);
-        } else if (action.kind === 'sheet') {
-            clearCursor();
-            sheetOpen = !sheetOpen;
-        } else {
-            clearCursor();
-        }
-        return true;
-    }
-
-    /** The pane reached last, falling back to the active main pane when focus is outside a pane. */
-    function focusedPaneElement(): HTMLElement | null {
-        const element = document.activeElement;
-        if (element instanceof HTMLElement) {
-            const pane = element.closest<HTMLElement>('[data-pane]');
-            if (pane !== null) return pane;
-        }
-        if (cursorPane?.isConnected) return cursorPane;
-        if (lastFocusedPane?.isConnected) return lastFocusedPane;
-        if (focus !== null) return document.querySelector<HTMLElement>('[data-pane]');
-        const active = activeMain?.id;
-        if (active === undefined) return null;
-        return (
-            [...document.querySelectorAll<HTMLElement>('[data-pane]')].find(
-                (pane) => pane.dataset.paneActive === active
-            ) ?? null
-        );
-    }
-
-    /** Visible Card primitives in one pane, in their DOM display order. */
-    function cards(pane: HTMLElement | null): HTMLElement[] {
-        if (pane === null) return [];
-        return [...pane.querySelectorAll<HTMLElement>('[data-card]')].filter(
-            (card) => card.offsetParent !== null
-        );
-    }
-
-    function selectCard(pane: HTMLElement, index: number): boolean {
-        const visible = cards(pane);
-        if (index < 0 || index >= visible.length) return false;
-        clearCursor();
-        cursorPane = pane;
-        cursorIndex = index;
-        visible[index].setAttribute('data-cursor', '');
-        visible[index].scrollIntoView({ block: 'center', behavior: 'smooth' });
-        return true;
-    }
-
-    function moveCursor(
-        pane: HTMLElement | null,
-        direction: 'left' | 'right' | 'up' | 'down'
-    ): boolean {
-        if (pane === null) return false;
-        const visible = cards(pane);
-        const current = pane === cursorPane ? cursorIndex : -1;
-        const next =
-            direction === 'left' || direction === 'right'
-                ? horizontalCursor(current, visible.length, direction === 'left' ? -1 : 1)
-                : rowCursor(
-                      visible.map((card) => card.getBoundingClientRect()),
-                      current,
-                      direction === 'up' ? -1 : 1
-                  );
-        return selectCard(pane, next);
-    }
-
-    function clearCursor(): void {
-        document.querySelectorAll('[data-card][data-cursor]').forEach((card) => {
-            card.removeAttribute('data-cursor');
-        });
-        cursorIndex = -1;
-        cursorPane = null;
-    }
-
-    function paneFocused(event: FocusEvent): void {
-        const target = event.target;
-        const pane =
-            target instanceof HTMLElement ? target.closest<HTMLElement>('[data-pane]') : null;
-        if (pane === lastFocusedPane) return;
-        lastFocusedPane = pane;
-        clearCursor();
-    }
-
-    function panePressed(event: PointerEvent): void {
-        const target = event.target;
-        const pane =
-            target instanceof HTMLElement ? target.closest<HTMLElement>('[data-pane]') : null;
-        if (pane === lastFocusedPane) return;
-        lastFocusedPane = pane;
-        clearCursor();
-    }
-
-    /** Whether a colon belongs to a field rather than to the workbench command palette. */
-    function typingIn(target: EventTarget | null): boolean {
-        if (!(target instanceof HTMLElement)) return false;
-        return (
-            target.matches('input, textarea, select') ||
-            target.isContentEditable ||
-            target.closest('[contenteditable="true"]') !== null
-        );
-    }
+    const keyboard = createWorkbenchKeys({
+        navigation: () => navigation,
+        activeMain: () => activeMain,
+        focus: () => focus,
+        paletteOpen: () => paletteOpen,
+        updateOpen: () => updateOpen,
+        sheetOpen: () => sheetOpen,
+        setPaletteOpen: (open) => (paletteOpen = open),
+        setUpdateOpen: (open) => (updateOpen = open),
+        setSheetOpen: (open) => (sheetOpen = open),
+        openPalette: (prefill) => openPalette(prefill)
+    });
 
     function openPalette(prefill: string): void {
-        clearCursor();
+        keyboard.clearCursor();
         sheetOpen = false;
         updateOpen = false;
         palettePrefill = prefill;
@@ -344,7 +145,7 @@
     }
 
     function openUpdate(): void {
-        clearCursor();
+        keyboard.clearCursor();
         sheetOpen = false;
         paletteOpen = false;
         updateOpen = true;
@@ -389,7 +190,7 @@
 
     /** A page, view, or maximised-pane change invalidates the card list the DOM cursor indexed. */
     $effect(() => {
-        if (cursorScope !== '') clearCursor();
+        if (cursorScope !== '') keyboard.clearCursor();
     });
 
     /** The space the two trees share along the dock's direction, the sash between them removed. */
@@ -414,7 +215,11 @@
     <PaneView {node} target="panel" {path} />
 {/snippet}
 
-<svelte:window onkeydown={keys} onfocusin={paneFocused} onpointerdown={panePressed} />
+<svelte:window
+    onkeydown={keyboard.keys}
+    onfocusin={keyboard.paneFocused}
+    onpointerdown={keyboard.panePressed}
+/>
 
 <div class="workbench">
     {#if wall}

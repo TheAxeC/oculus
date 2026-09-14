@@ -68,7 +68,8 @@ const VIEWS: Record<string, string> = {
         'summary=fs-xs | .lane-name=fs-md | .count=fs-xs | .lane-sub=fs-xs | .stage=fs-3xs | .entry-name=fs-md | .entry-name :global(.tool)=fs-md | .note=fs-xs',
     'focus/CareerPanel.svelte':
         '.career > summary=fs-sm | .seclbl=fs-xxs | .sub=fs-md | .note=fs-sm | .fact=fs-sm | .fact b=fs-xxs | .milestone=fs-md | .caveat=fs-sm | .order li=fs-sm | .ordernote=fs-xs | .inst=fs-xs | .tag=fs-xs | .when=fs-xs | .host-h=fs-sm | .rank=fs-xxs | .move=fs-sm | .crit li=fs-sm | .empty=fs-md',
-    'focus/CommandCenter.svelte': '.head > b=fs-sm | .lbl=fs-xs | .sub=fs-md | .behind=fs-md',
+    'focus/CommandCenter.svelte': '',
+    'focus/CommandCenterView.svelte': '.head > b=fs-sm | .lbl=fs-xs | .sub=fs-md | .behind=fs-md',
     'focus/Lanes.svelte':
         'summary=fs-xs | .hint=fs-md | .lane-name=fs-md | .count=fs-xs | .lane-sub=fs-xs | .flames=fs-xxs | .chipicon=fs-xs | .name=fs-md | .wait, .next=fs-xs',
     'focus/QuickAdd.svelte': '.lbl=fs-xs',
@@ -93,23 +94,33 @@ const VIEWS: Record<string, string> = {
     'radar/Bucket.svelte': '',
     'radar/RadarCard.svelte': '.sub=fs-md | .date=fs-sm',
     'sessions/Agents.svelte': '.agent=fs-sm | .st=fs-xs | .mo=fs-xs',
-    'sessions/Changes.svelte':
-        '.sec-h=fs-sm | .group-h=fs-xs | .file=fs-sm | .ct, .mark, .bin=fs-xs | .to=fs-xs | .none=fs-xs | .cacts .none=fs-sm | .ct, .add, .del=fs-xs | .outcome=fs-md | .branch, .newbranch, .cacts=fs-sm | .branch .lb, .newbranch .lb=fs-xs | .branch .mt=fs-xs',
+    'sessions/Changes.svelte': '.sec-h=fs-sm | .none=fs-xs',
+    'sessions/ChangesRepo.svelte':
+        '.sec-h=fs-sm | .group-h=fs-xs | .file=fs-sm | .mark, .bin=fs-xs | .none=fs-xs | .cacts .none=fs-sm | .add, .del=fs-xs | .outcome=fs-md | .branch, .newbranch, .cacts=fs-sm | .branch .lb, .newbranch .lb=fs-xs | .branch .mt=fs-xs',
+    'sessions/ChangesTouched.svelte':
+        '.sec-h=fs-sm | .file=fs-sm | .ct, .mark=fs-xs | .to=fs-xs | .none=fs-xs',
     'sessions/SessionDetail.svelte':
         '.kv=fs-sm | .kv dt=fs-sm | .pin .lb=fs-xs | .pin .outcome=fs-md | .line=fs-sm',
-    'sessions/SessionList.svelte':
-        '.failure=fs-md | .ws-h, .area-h=fs-sm | .hide .confirm=fs-xs | .top .pin, .top .hook=fs-3xs | .top .nm=fs-md | .meta=fs-xs | .meta .ts=fs-xs | .ended-h=fs-sm',
+    'sessions/SessionList.svelte': '.failure=fs-md | .ended-h=fs-sm',
+    'sessions/SessionWorkspace.svelte':
+        '.ws-h, .area-h=fs-sm | .top .pin, .top .hook=fs-3xs | .top .nm=fs-md | .meta=fs-xs | .meta .ts=fs-xs',
     'sessions/Terminal.svelte': '.failure=fs-md',
+    'sessions/TerminalRows.svelte':
+        '.ws-h=fs-sm | .hide .confirm=fs-xs | .top .nm=fs-md | .meta=fs-xs | .meta .ts=fs-xs',
     'sessions/Timeline.svelte': '.event=fs-sm | .ts=fs-xs',
     'sessions/Transcript.svelte':
         '.turn=fs-md | .turn.tool=fs-sm | .who=fs-xs | .ts=fs-xs | .cut=fs-md | .failed=fs-md | .doc=fs-md | .doc :global(h1), .doc :global(h2), .doc :global(h3), .doc :global(h4)=fs-md | .doc :global(code), .doc :global(pre)=fs-sm',
     'shared/CrossLinks.svelte': '',
+    'shared/CardDetails.svelte': '.field .value=fs-md | .label=fs-xxs | .statusline=fs-sm',
+    'shared/CardDocs.svelte': '.label=fs-xxs | .frow=fs-md | .capped=fs-xs',
+    'shared/CardLinks.svelte': '',
+    'shared/CardSessions.svelte': '.session=fs-sm',
     'shared/EditBar.svelte': '.edit-bar=fs-sm',
     'shared/EntryForm.svelte': '.label=fs-xs | .said=fs-md',
     'shared/Intro.svelte': '.intro=fs-md',
     'shared/NewIdeaForm.svelte': '',
     'shared/ProjectCard.svelte':
-        '.folder=fs-xs | .session=fs-sm | .venue, .authors=fs-sm | .eli5 p=fs-md | .next=fs-sm | .waiting=fs-sm | .ghostmsg=fs-sm | .label=fs-xxs | .statusline=fs-sm | .field .value=fs-md | .frow=fs-md | .capped=fs-xs',
+        '.folder=fs-xs | .venue, .authors=fs-sm | .eli5 p=fs-md | .next, .waiting, .ghostmsg=fs-sm | .label=fs-xxs',
     'shared/Reveal.svelte': '',
     'shared/Subtasks.svelte': '.label=fs-xs | .count, .box=fs-xs | .do=fs-md',
     'source/Editor.svelte': '.message=fs-sm | .mirror=fs-sm | .input :global(.area)=fs-sm',

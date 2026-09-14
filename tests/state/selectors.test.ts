@@ -6,7 +6,7 @@
 import { describe, expect, it } from 'vitest';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { apply } from '../../src/lib/state/layout.svelte.ts';
-import { defaultWorkbench, type Instance } from '../../src/lib/state/layout.ts';
+import { defaultWorkbench, type Instance } from '../../src/lib/state/layout/index.ts';
 import { select } from '../../src/lib/state/selection.svelte.ts';
 import {
     contextWindow,

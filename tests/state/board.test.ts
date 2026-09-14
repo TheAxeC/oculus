@@ -32,7 +32,7 @@ import {
     waitingLine,
     type BoardItem,
     type BoardPreset
-} from '../../src/lib/state/board.ts';
+} from '../../src/lib/state/board/index.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import {
     engineDir,

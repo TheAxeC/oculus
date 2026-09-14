@@ -14,10 +14,16 @@ import { parse } from 'yaml';
 import { isMap } from '../../data/guards.ts';
 import { engineDir, loadConfig } from '../../data/sources/config.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
-import { addSubtask, deleteSubtask, entryRange, setHostStatus, setSubtask } from '../entry-edit.ts';
+import {
+    addSubtask,
+    deleteSubtask,
+    entryRange,
+    setHostStatus,
+    setSubtask
+} from '../entry-edit/index.ts';
 import { insideHub } from './manifest.ts';
 import { identityOf, readCollection, saved } from './entries.ts';
-import type { LineRange } from '../entry-edit.ts';
+import type { LineRange } from '../entry-edit/index.ts';
 import type { PortfolioConfig } from '../../data/model.ts';
 import type { WriteOutcome } from '../writes.ts';
 

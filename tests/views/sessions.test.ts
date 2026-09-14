@@ -38,7 +38,7 @@ import { forget, hold, type Turn } from '../../src/lib/state/transcript.svelte.t
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import { area, git, payload, record, terminal, workspace } from '../sessions-fixture.ts';
 import type { Component } from 'svelte';
-import { defaultWorkbench, type Instance } from '../../src/lib/state/layout.ts';
+import { defaultWorkbench, type Instance } from '../../src/lib/state/layout/index.ts';
 import type { ViewProps } from '../../src/lib/views/registry.ts';
 
 const { config } = loadConfig(engineDir());

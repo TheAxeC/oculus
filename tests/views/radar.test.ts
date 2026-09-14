@@ -19,7 +19,7 @@ import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
-import type { Instance } from '../../src/lib/state/layout.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);

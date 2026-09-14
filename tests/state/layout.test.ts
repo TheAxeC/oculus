@@ -1,6 +1,6 @@
 // The layout tree: every operation on hand-built trees, every invariant shown violated once, the
 // saved form read and refused, and the store's load and save through a fake storage. Nothing here
-// touches localStorage or the DOM: the pure half is state/layout.ts and the store takes the storage
+// touches localStorage or the DOM: the pure half is state/layout/ and the store takes the storage
 // it is given.
 
 import { describe, expect, it } from 'vitest';
@@ -34,7 +34,7 @@ import {
     type Dock,
     type Layout,
     type Workbench
-} from '../../src/lib/state/layout.ts';
+} from '../../src/lib/state/layout/index.ts';
 import {
     LAYOUT_KEY,
     activateInstance,

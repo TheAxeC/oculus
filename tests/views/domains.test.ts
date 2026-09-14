@@ -4,7 +4,7 @@ import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import Domains from '../../src/lib/views/Domains.svelte';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
-import type { Instance } from '../../src/lib/state/layout.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
 
 const INSTANCE = 'domains-one';

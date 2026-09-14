@@ -21,7 +21,7 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { hold, type MirrorState, type Plan } from '../../src/lib/state/deposit.svelte.ts';
-import type { Instance } from '../../src/lib/state/layout.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);

@@ -68,7 +68,7 @@ function ownPartials(fileRel: string): string[] {
 }
 
 // An exact pattern also covers the runes module of the same name: `state/layout` is one module in
-// two files, the pure half in state/layout.ts and the store in state/layout.svelte.ts, and the row
+// two places, the pure half in state/layout/ and the store in state/layout.svelte.ts, and the row
 // names the module. It covers that one name and no other, so `state/entities.svelte` is still
 // refused to the shell, which the synthetic case below shows.
 function matches(pattern: string, id: string): boolean {

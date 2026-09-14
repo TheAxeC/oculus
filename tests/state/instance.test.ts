@@ -11,7 +11,7 @@ import {
     stateId
 } from '../../src/lib/state/instance.ts';
 import { instance, pane, split, three } from './layout-fixture.ts';
-import type { Layout } from '../../src/lib/state/layout.ts';
+import type { Layout } from '../../src/lib/state/layout/index.ts';
 
 describe('instance identity and lookups', () => {
     it('lists every pane with its path, depth first', () => {

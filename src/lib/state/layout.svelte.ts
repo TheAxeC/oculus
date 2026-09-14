@@ -1,6 +1,6 @@
 // Layer 2, client state. The store half of the layout: the pages the shell is rendering now, and
 // their persistence. The trees themselves, their types and every operation on them are
-// state/layout.ts, which has no runes in it; this module is the one place an arrangement is reactive
+// state/layout, which has no runes in it; this module is the one place an arrangement is reactive
 // and the one place it is saved.
 //
 // The saved unit is every page: each one a whole workbench (two trees, the dock and the panel's
@@ -48,7 +48,7 @@ import {
     type Target,
     type ViewId,
     type Workbench
-} from './layout.ts';
+} from './layout/index.ts';
 import { parseArrangement } from './arrangement.ts';
 import { t } from './text.ts';
 

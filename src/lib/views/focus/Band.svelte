@@ -9,7 +9,7 @@
     import Chip from '$lib/ui/Chip.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { daysUntil, firstSentence } from '$lib/state/board';
-    import { daysTone } from '$lib/state/focus';
+    import { daysTone } from '$lib/state/ticker';
     import { collectionLanes, type BandItem } from '$lib/state/focus-lanes';
     import { toneOf } from '$lib/state/tones';
     import { configMap } from '$lib/state/selectors.svelte';

@@ -24,7 +24,7 @@ import type {
     Snapshot,
     Venue
 } from '../../src/lib/data/model.ts';
-import type { Instance } from '../../src/lib/state/layout.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);

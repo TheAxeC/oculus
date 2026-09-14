@@ -6,7 +6,7 @@ import MapView from '../../src/lib/views/Map.svelte';
 import Graph, { writeRelated } from '../../src/lib/views/map/Graph.svelte';
 import { buildGraph } from '../../src/lib/state/graph.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
-import type { Instance } from '../../src/lib/state/layout.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
 
 const INSTANCE = 'map-one';

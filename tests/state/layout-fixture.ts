@@ -7,9 +7,9 @@ import {
     WORKBENCH_VERSION,
     panes,
     parseLayout
-} from '../../src/lib/state/layout.ts';
+} from '../../src/lib/state/layout/index.ts';
 import { LAYOUT_KEY } from '../../src/lib/state/layout.svelte.ts';
-import type { Dock, Instance, Layout, Workbench } from '../../src/lib/state/layout.ts';
+import type { Dock, Instance, Layout, Workbench } from '../../src/lib/state/layout/index.ts';
 
 export function instance(id: string, view = 'projects'): Instance {
     return { id, view, state: null };

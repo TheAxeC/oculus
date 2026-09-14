@@ -22,7 +22,7 @@ import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
-import { emptyBoardState, type BoardState } from '../../src/lib/state/board.ts';
+import { emptyBoardState, type BoardState } from '../../src/lib/state/board/index.ts';
 import { area, payload, record, workspace } from '../sessions-fixture.ts';
 import type {
     Id,
@@ -32,7 +32,7 @@ import type {
     Snapshot,
     Tier
 } from '../../src/lib/data/model.ts';
-import type { Instance } from '../../src/lib/state/layout.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);

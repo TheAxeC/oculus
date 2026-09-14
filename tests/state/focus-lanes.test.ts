@@ -7,7 +7,7 @@ import {
     entryDeadline,
     manifestsBehind
 } from '../../src/lib/state/focus-lanes.ts';
-import { ticker } from '../../src/lib/state/focus.ts';
+import { ticker } from '../../src/lib/state/ticker.ts';
 import type { Entry, Project, Snapshot } from '../../src/lib/data/model.ts';
 import { NO_FEEDS } from '../entities-fixture.ts';
 

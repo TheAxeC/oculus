@@ -25,7 +25,7 @@ import { setVocab } from '../../src/lib/state/tones.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { formFields, formSections } from '../../src/lib/state/schema.ts';
 import type { Id, Project, Snapshot } from '../../src/lib/data/model.ts';
-import type { Instance } from '../../src/lib/state/layout.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);

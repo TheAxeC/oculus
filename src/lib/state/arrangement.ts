@@ -1,7 +1,6 @@
 // Layer 2, client state. An arrangement, which is a saved layout written by hand: the
-// `arrangements:` of config/layout.yml read into the workbench state/layout.ts holds. It is its own
-// module because it is its own concern, a hand-written shape read once, and because state/layout.ts
-// is at the size where a file is split rather than grown.
+// `arrangements:` of config/layout.yml read into the workbench state/layout holds. It is its own
+// module because it is its own concern and a hand-written shape read once.
 
 import {
     DOCKS,
@@ -14,7 +13,7 @@ import {
     type Instance,
     type Layout,
     type Workbench
-} from './layout.ts';
+} from './layout/index.ts';
 
 /**
  * One arrangement of `arrangements:` in config/layout.yml as a workbench, with a fresh instance id

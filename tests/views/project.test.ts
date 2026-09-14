@@ -23,7 +23,7 @@ import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import { area, payload, record, workspace } from '../sessions-fixture.ts';
 import type { Id, Project as Record_, Relations, Snapshot } from '../../src/lib/data/model.ts';
-import type { Instance } from '../../src/lib/state/layout.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
