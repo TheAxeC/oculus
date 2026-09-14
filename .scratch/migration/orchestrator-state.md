@@ -34,8 +34,14 @@ dispatch:
   pid: 20090
   session_id: 01a09d55-7183-7b62-946a-e4a4735fe5d4
   landing: not-started
-  round: 0
-  notes: R4, one transcript reader (src/lib/server/transcripts/usage.ts and stores.ts consumed by both folds); brief checked on the tree at 02:35; after it R5, R6, R8, R9, R10; no dispatch after 06:00, nothing in flight at 07:05.
+  round: 1
+  repair_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R4/repair-prompt.md
+  repair_events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R4/repair-events.jsonl
+  repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R4/repair-report.md
+  repair_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R4/repair-exit.txt
+  repair_pid: 92765
+  review_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R4/review-report.md
+  notes: R4, one transcript reader; the worker finished at 02:48 (8 files, +268 -220; the seven checks green in the worktree from the orchestrator's shell apart from load flakes that pass alone); the first review is in agents/reviews/R4.md; the repair round (the sub-agent transcripts the Usage rows lost, the Codex totals assigned again, a token_count without totals leaving the baseline, a record without a usage map leaving the cache marks, the Found alias, tests for the readers and finders, two history comments) runs on the worker's thread since 02:57; after it R5, R6, R8, R9, R10; no dispatch after 06:00, nothing in flight at 07:05.
 ```
 
 ## The standing demands (from Axel, in force)
