@@ -34,7 +34,7 @@ dispatch:                                  # workers_at_once: 2; R12a and R12b i
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R12a/report.md
   exit: none
   pid: none
-  session_id: pending
+  session_id: a3e83f831ccc0c9d7            # the Agent tool's id
   landing: not-started
 - package: R12b
   worker: claude:opus
@@ -46,7 +46,7 @@ dispatch:                                  # workers_at_once: 2; R12a and R12b i
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R12b/report.md
   exit: none
   pid: none
-  session_id: pending
+  session_id: adcd80d7df8d945b9            # the Agent tool's id
   landing: not-started
 ```
 
