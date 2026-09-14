@@ -65,7 +65,7 @@ describe('the Map view', () => {
             refused: [{ field: 'related', reason: 'fixture refusal' }]
         });
         await expect(writeRelated('alpha', ['beta'], write)).resolves.toBe(
-            catalog['js.map.edge_failed'].replace('{0}', 'related: fixture refusal')
+            catalog['map.edge_failed'].replace('{0}', 'related: fixture refusal')
         );
     });
 

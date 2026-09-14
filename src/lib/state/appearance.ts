@@ -9,6 +9,8 @@
 // during its first render gets the page's data and re-renders when a push replaces it. What the
 // viewer picked out of this list is state/ui.svelte.ts's, which is the store that persists.
 
+import { resolveGlyphTokens } from './text.ts';
+
 /** One theme of the picker: the name the store saves, the body class, and the words shown. */
 export type Theme = { name: string; class: string; label: string };
 
@@ -74,11 +76,9 @@ function percent(fraction: number): number {
 }
 
 /**
- * The `wallpaper` key of the merged config, or null when it holds none. The defaults are the
- * cockpit's, which is where these numbers were arrived at: a busy photograph wants most of its
- * light taken out and the windows over it mostly solid. An unset `popover_opacity` is three
- * quarters of the way from the panel's own opacity to solid, since a menu is read through the pane
- * beneath it as well as through the picture.
+ * The `wallpaper` key of the merged config, or null when it holds none. An unset `popover_opacity`
+ * is three quarters of the way from the panel's own opacity to solid, since a menu is read through
+ * the pane beneath it as well as through the picture.
  */
 function readWallpaper(config: Record<string, unknown>): Wallpaper | null {
     const raw = config.wallpaper;
@@ -127,7 +127,7 @@ export function setAppearance(config: Record<string, unknown>): void {
 
 /** Every theme the picker offers, in the config's order. A copy, so a caller cannot edit the list. */
 export function themes(): Theme[] {
-    return [...list];
+    return list.map((theme) => ({ ...theme, label: resolveGlyphTokens(theme.label) }));
 }
 
 /** The body class string a theme lands on the document as. The light theme's is empty. */
@@ -137,7 +137,8 @@ export function themeClass(name: string): string {
 
 /** A theme's words in the picker, and the theme's own name for one the config does not list. */
 export function themeLabel(name: string): string {
-    return byName[name]?.label ?? name;
+    const label = byName[name]?.label;
+    return label === undefined ? name : resolveGlyphTokens(label);
 }
 
 /** The theme a browser that has saved none starts on: the first the config lists. */

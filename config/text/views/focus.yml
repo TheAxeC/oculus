@@ -1,0 +1,129 @@
+# Oculus text owned by the focus view.
+text:
+    focus:
+        add_deadline: + deadline
+        add_followup: + follow-up
+        awaiting_response: Awaiting a response
+        cards_group: Funding | positions | teaching
+        career_caveat: Caveat
+        career_empty: No career file on this hub.
+        career_rules: Rules
+        career_score_tip: '{0}: {1}'
+        career_shots: Shots left
+        career_situation: Situation
+        cluster_incubate: Incubation - idea to project
+        cluster_now: Now - do these
+        cluster_parked: Parked / on hold
+        command:
+            behind_refresh: behind their docs - refresh
+            command_center: Command center
+            command_center_glyph: live
+            conference_call: call closes in {0}d
+            conference_call_approx: call closes ~{0}
+            days: days
+            days_ago: '{0}d ago'
+            dlcat_collab: collaborations
+            dlcat_conference: conference calls
+            dlcat_event_label: talks & events
+            dlcat_funding: funding
+            dlcat_paper: papers
+            dlcat_position: positions
+            dlcat_task: tasks
+            dlcat_teaching: teaching
+            emails: emails to reply / act on
+            funding_deadline: funding deadline in {0}d
+            generic_in: '{0} in {1}d'
+            grp_attention_glyph: attention
+            grp_attention_label: Needs attention
+            grp_deadlines_glyph: deadline
+            grp_deadlines_label: Deadlines & dates
+            grp_followups_glyph: followup
+            grp_followups_label: Follow-ups
+            grp_open_subtasks_label: Open subtasks
+            grp_overdue_glyph: overdue
+            grp_overdue_label: Overdue
+            grp_refresh_label: Refresh live data
+            grp_subtask_dl_label: Subtask deadlines
+            grp_subtask_glyph: pin
+            in_days: in {0}d
+            in_months: in {0} months
+            inbox_glyph: inbox
+            kind_other: other
+            last_refreshed: last refreshed {0}d ago
+            linkedin_glyph: linkedin
+            litwatch_glyph: litwatch
+            manifest: manifest
+            manifests: manifests
+            more: (+{0} more)
+            never_run: never run
+            next_month: next month
+            overdue_deadline: deadline {0}d ago
+            overdue_funding: funding deadline {0}d ago
+            overdue_generic: '{0} {1}d ago'
+            position_deadline: position deadline in {0}d
+            refresh_glyph: refresh_live
+            refresh_inbox_plain: Inbox - triaged {0}d ago | run /research-cockpit inbox
+            refresh_litwatch_plain: Lit Watch - {0} | run /research-cockpit litwatch
+            refresh_scout_plain: Position scout - ran {0}d ago | run /research-cockpit scout
+            scout_glyph: scout
+            since_linkedin: since your last LinkedIn post
+            snoozed: Snoozed ({0})
+            snoozed_glyph: snooze
+            submission_deadline: submission deadline in {0}d
+            this_month: this month
+            venue_count: '{0} x{1}'
+            venue_load_tail: (>={0} in flight - consider spreading)
+            word_application: application
+            word_collaboration: collaboration
+            word_commitment: commitment
+            word_event: event
+            word_task: task
+            word_teaching: teaching
+        days_ago: '{0}d ago'
+        dropped: Dropped
+        eligibility: FWO Senior eligibility
+        empty_glyph: circle_empty
+        fire_glyph: fire
+        funding_glyph: coin
+        funding_lane: '{G.coin} Funding'
+        funding_sub: grant applications
+        hint_count: '{0} active/manuscript'
+        hint_link: open the first one
+        hint_tail: not on the board (set their <code>focus:</code>)
+        host: 'host: {0}'
+        host_pipeline: Host pipeline
+        idea_backlog: idea backlog - drag onto a lane to start, or drop here to park
+        ideas: Ideas
+        ideas_glyph: idea
+        in_days: in {0}d
+        in_flight: '- {0} in flight'
+        jobs_glyph: scout
+        jobs_lane: '{G.scout} Job applications'
+        jobs_sub: positions - awaiting outcome
+        move_to: Move to
+        next: Next
+        none: '- none -'
+        not_hosts: Not hosts
+        now_glyph: now
+        order_of_work: Order of work
+        priority_none: No priority
+        qa_cancel: Cancel
+        qa_project: Project
+        qa_save: Save
+        quick_add: 'Quick add:'
+        set_priority: set priority
+        teaching_glyph: teaching
+        teaching_lane: '{G.teaching} Teaching & supervision'
+        teaching_sub: this academic year
+        venue_unset: (venue unset)
+        wait_apps: Applications
+        wait_blocked: Blocked
+        wait_glyph: focus
+        wait_grants: Grants
+        wait_hosts: Host outreach
+        wait_people: Waiting on
+        wait_review: Under review
+        warn_glyph: warn
+    views:
+        focus: Focus
+        focus_glyph: now

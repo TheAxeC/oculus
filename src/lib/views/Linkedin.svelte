@@ -1,3 +1,18 @@
+<script module lang="ts">
+    // Layer 3, view registration. LinkedIn closes the feeds group.
+    import type { ViewRegistration } from './registry';
+    import { linkedinBadge } from '$lib/state/rail-badges.svelte';
+    export const registration: ViewRegistration = {
+        id: 'linkedin',
+        label: 'views.linkedin',
+        glyph: 'views.linkedin_glyph',
+        group: 'feeds',
+        order: 3,
+        badge: linkedinBadge,
+        badgeTone: () => 'red'
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. LinkedIn reads its Markdown-folder feed, draws posting cadence and two card
     // sections, and keeps search plus the add-form disclosure in this view instance's saved state.
@@ -48,13 +63,13 @@
             field: 'title',
             type: 'text',
             required: true,
-            label: t('sf.linkedin_form_title')
+            label: t('linkedin.form_title')
         },
         {
             field: 'category',
             type: 'text',
-            label: t('sf.linkedin_form_category'),
-            help: t('sf.linkedin_form_category_help')
+            label: t('linkedin.form_category'),
+            help: t('linkedin.form_category_help')
         }
     ]);
     let said = $state('');
@@ -69,15 +84,15 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('sf.linkedin_search')}>
+    <Toolbar label={t('linkedin.search')}>
         <Search
             value={held.search}
-            placeholder={t('sf.linkedin_search')}
+            placeholder={t('linkedin.search')}
             oninput={(search) => write({ search })}
         />
         <ToolButton
-            label={t('sf.linkedin_addidea')}
-            title={t('sf.linkedin_addidea_tip')}
+            label={t('linkedin.addidea')}
+            title={t('linkedin.addidea_tip')}
             glyph="idea"
             active={held.adding}
             onclick={() => write({ adding: !held.adding })}
@@ -90,7 +105,7 @@
         {#if data === null}
             <Empty message={t('app.waiting')} glyph="linkedin" />
         {:else if data.missing}
-            <Empty message={t('sf.linkedin_no_folder')} glyph="warn" />
+            <Empty message={t('linkedin.no_folder')} glyph="warn" />
         {:else if data.error !== undefined}
             <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
         {:else}
@@ -102,12 +117,12 @@
                     data-cadence={status}
                 >
                     {#if status === 'no-dates'}
-                        <span>{t('sf.linkedin_no_dates')}</span>
+                        <span>{t('linkedin.no_dates')}</span>
                     {:else if status === 'overdue'}
                         <Glyph name="warn" />
-                        <span>{t('sf.linkedin_overdue', days ?? '', data.cadenceDays ?? '')}</span>
+                        <span>{t('linkedin.overdue', days ?? '', data.cadenceDays ?? '')}</span>
                     {:else}
-                        <span>{t('sf.linkedin_ontrack', days ?? '')}</span>
+                        <span>{t('linkedin.ontrack', days ?? '')}</span>
                     {/if}
                 </span>
             </Intro>
@@ -116,10 +131,10 @@
                 <div class="nudge">
                     <strong>
                         <Glyph name="pin" />
-                        {t('sf.linkedin_postdue')}
+                        {t('linkedin.postdue')}
                     </strong>
-                    <span>{@html t('sf.linkedin_nudge')}</span>
-                    <strong>{picked?.title ?? t('sf.linkedin_default_pick')}</strong>
+                    <span>{@html t('linkedin.nudge')}</span>
+                    <strong>{picked?.title ?? t('linkedin.default_pick')}</strong>
                 </div>
             {/if}
 
@@ -141,7 +156,7 @@
             <section>
                 <h3>
                     <Glyph name="idea" />
-                    <span>{t('sf.linkedin_ideas_hdr', split.ideas.length)}</span>
+                    <span>{t('linkedin.ideas_hdr', split.ideas.length)}</span>
                 </h3>
                 {#if ideas.length > 0}
                     <div class="cards" data-linkedin-section="ideas">
@@ -160,14 +175,14 @@
                         {/each}
                     </div>
                 {:else if split.ideas.length === 0}
-                    <Empty message={t('sf.linkedin_no_ideas')} glyph="idea" />
+                    <Empty message={t('linkedin.no_ideas')} glyph="idea" />
                 {/if}
             </section>
 
             <section>
                 <h3>
                     <Glyph name="done" />
-                    <span>{t('sf.linkedin_posted_hdr', split.posts.length)}</span>
+                    <span>{t('linkedin.posted_hdr', split.posts.length)}</span>
                 </h3>
                 {#if posts.length > 0}
                     <div class="cards" data-linkedin-section="posted">
@@ -187,7 +202,7 @@
                         {/each}
                     </div>
                 {:else if split.posts.length === 0}
-                    <Empty message={t('sf.linkedin_no_posts')} glyph="done" />
+                    <Empty message={t('linkedin.no_posts')} glyph="done" />
                 {/if}
             </section>
         {/if}

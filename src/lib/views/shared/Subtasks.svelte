@@ -80,11 +80,11 @@
 
 <div class="subtasks">
     <div class="hdr">
-        <span class="label">{t('actions.subtasks')}</span>
-        <span class="count">{t('actions.n_open', open)}</span>
+        <span class="label">{t('project.action.subtasks')}</span>
+        <span class="count">{t('project.action.n_open', open)}</span>
         <ToolButton
-            label={t('actions.add_subtask')}
-            title={t('actions.add_subtask_tip')}
+            label={t('project.action.add_subtask')}
+            title={t('project.action.add_subtask_tip')}
             active={adding}
             onclick={() => (adding = !adding)}
         />
@@ -94,67 +94,74 @@
         <div class="form">
             <TextInput
                 value={text}
-                label={t('actions.subtask_do')}
-                placeholder={t('actions.subtask_do')}
+                label={t('project.action.subtask_do')}
+                placeholder={t('project.action.subtask_do')}
                 oninput={(next) => (text = next)}
             />
             <DateInput
                 value={due}
-                label={t('actions.subtask_deadline')}
+                label={t('project.action.subtask_deadline')}
                 oninput={(n) => (due = n)}
             />
-            <ToolButton label={t('actions.subtask_save')} onclick={add} />
-            <ToolButton label={t('actions.subtask_cancel')} onclick={() => (adding = false)} />
+            <ToolButton label={t('project.action.subtask_save')} onclick={add} />
+            <ToolButton
+                label={t('project.action.subtask_cancel')}
+                onclick={() => (adding = false)}
+            />
         </div>
     {/if}
 
     {#each subtasks as line (line.key)}
         <div class="line" class:done={line.done}>
             <span class="box">
-                <Glyph name={line.done ? t('actions.box_on_glyph') : t('actions.box_off_glyph')} />
+                <Glyph
+                    name={line.done
+                        ? t('project.action.box_on_glyph')
+                        : t('project.action.box_off_glyph')}
+                />
             </span>
             <span class="do">{line.do}</span>
             {#if line.deadline}
-                <Chip label={line.deadline} glyph={t('cards.deadline_glyph')} />
+                <Chip label={line.deadline} glyph={t('project.card.deadline_glyph')} />
             {/if}
             <span class="acts">
                 {#if line.done}
                     <ToolButton
-                        label={t('actions.reopen')}
+                        label={t('project.action.reopen')}
                         onclick={() => act(line.key, 'reopen')}
                     />
                 {:else}
                     <ToolButton
-                        label={t('actions.done')}
-                        title={t('actions.mark_done')}
+                        label={t('project.action.done')}
+                        title={t('project.action.mark_done')}
                         onclick={() => act(line.key, 'done')}
                     />
                     {#if line.snooze}
                         <ToolButton
-                            label={t('actions.unsnooze')}
+                            label={t('project.action.unsnooze')}
                             onclick={() => act(line.key, 'snooze', '')}
                         />
                     {:else}
                         <ToolButton
-                            label={t('actions.snooze_1w')}
-                            title={t('actions.snooze_tip', t('actions.snooze_1w'))}
+                            label={t('project.action.snooze_1w')}
+                            title={t('project.action.snooze_tip', t('project.action.snooze_1w'))}
                             onclick={() => act(line.key, 'snooze', snoozeDate(7))}
                         />
                         <ToolButton
-                            label={t('actions.snooze_1mo')}
-                            title={t('actions.snooze_tip', t('actions.snooze_1mo'))}
+                            label={t('project.action.snooze_1mo')}
+                            title={t('project.action.snooze_tip', t('project.action.snooze_1mo'))}
                             onclick={() => act(line.key, 'snooze', snoozeDate(30))}
                         />
                         <ToolButton
-                            label={t('actions.snooze_hide')}
-                            title={t('actions.snooze_tip', t('actions.snooze_hide'))}
+                            label={t('project.action.snooze_hide')}
+                            title={t('project.action.snooze_tip', t('project.action.snooze_hide'))}
                             onclick={() => act(line.key, 'snooze', 'true')}
                         />
                     {/if}
                 {/if}
                 <ToolButton
-                    label={t('actions.del')}
-                    title={t('actions.delete_subtask')}
+                    label={t('project.action.del')}
+                    title={t('project.action.delete_subtask')}
                     onclick={() => act(line.key, 'delete')}
                 />
             </span>

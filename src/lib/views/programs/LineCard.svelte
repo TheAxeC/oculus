@@ -54,7 +54,7 @@
     const tone = $derived(line.color === undefined ? undefined : paletteTone(line.color));
 
     function projectWord(): string {
-        return projects.length === 1 ? t('col.project') : t('col.projects');
+        return projects.length === 1 ? t('programs.project') : t('programs.projects');
     }
 </script>
 
@@ -75,8 +75,8 @@
 
         {#if !muted}
             <div class="metrics">
-                <strong>{flight.length} {t('col.in_flight')}</strong>
-                <span class="total">{projects.length} {t('col.total')}</span>
+                <strong>{flight.length} {t('programs.in_flight')}</strong>
+                <span class="total">{projects.length} {t('programs.total')}</span>
                 {#each strip as tier (tier.key)}
                     <Chip
                         label={`${tier.count} ${tier.label}`}

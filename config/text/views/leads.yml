@@ -1,0 +1,30 @@
+# Oculus text owned by the leads view.
+text:
+    leads:
+        action:
+            applied: applied
+            decline: decline
+            decline_tip: decline / not interested
+            delete_lead_tip: delete this lead (removes the entry)
+            hide_lead: hide this lead in this browser
+            mark_applied: mark applied
+            reopen_lead_tip: reopen (back to the radar)
+            show_lead: show this lead again
+        add: + add lead
+        add_tip: add a position lead
+        empty: No live leads - run <code>/research-cockpit scout</code>.
+        exp_note: '| {0} expired (hidden)'
+        expired: expired
+        expired_sec: Expired / actioned ({0}) - hidden
+        fit_none: '-'
+        hide_dismissed: Hide dismissed ({0})
+        intro: Academic openings - auto-scouted (BE/NL/LU). {0} live{1} | fit chip = strong / moderate / reach.
+        no_deadline: no deadline
+        no_file: No position-leads file configured.
+        posting: posting
+        runlog: Run log
+        search: Search leads | institution | focus ...
+        show_dismissed: Show dismissed ({0})
+    views:
+        leads: Position Leads
+        leads_glyph: scout

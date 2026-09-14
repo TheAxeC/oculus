@@ -3,7 +3,7 @@
 // are in flight, and the short milestone the collapsed summary carries.
 //
 // Pure over the merged config and the career entity. No words live here: a status carries its own
-// label out of config/vocab.yml, and everything else the panel says is a key of config/text.yml.
+// label and glyph name out of config/vocab.yml, and every other panel string comes from the catalog.
 
 import type { Career, Host } from '../data/model.ts';
 // `str` here is the shared `text`: a config value of the wrong type reads as the empty string.
@@ -21,6 +21,7 @@ export const IN_FLIGHT = ['awaiting', 'warm'];
 export type HostStatus = {
     key: string;
     label: string;
+    glyph: string;
     tone: string;
 };
 
@@ -32,9 +33,8 @@ export type ScoreDim = {
 };
 
 /**
- * The host statuses of `career_host_status`, in the config's order, each hue already a tone. The
- * row's `icon` is dropped: a status here is a chip with words, and the glyph vocabulary of oculus
- * is config/glyphs.yml by name rather than a character carried in a colour table.
+ * The host statuses of `career_host_status`, in the config's order, each icon kept as a glyph name
+ * and each hue already resolved to a tone.
  */
 export function hostStatuses(config: Record<string, unknown>): HostStatus[] {
     const rows = config.career_host_status;
@@ -45,6 +45,7 @@ export function hostStatuses(config: Record<string, unknown>): HostStatus[] {
         out.push({
             key,
             label: str(row.label) === '' ? key : str(row.label),
+            glyph: str(row.icon),
             tone: str(row.color) === '' ? UNKNOWN_TONE : toneOf(str(row.color))
         });
     }

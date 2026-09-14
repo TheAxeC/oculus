@@ -27,7 +27,7 @@
 
 <section style={`--bucket-tone: var(--c-${toneOf(bucket.color)})`}>
     <ToolButton
-        label={t('sf.radar_count', bucket.label, entries.length)}
+        label={t('radar.count', bucket.label, entries.length)}
         glyph={bucket.glyph}
         active={open}
         onclick={() => (open = !open)}

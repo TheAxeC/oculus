@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Domains follows Programs in the structure group.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'domains',
+        label: 'views.domains',
+        glyph: 'views.domains_glyph',
+        group: 'structure',
+        order: 1
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. The application-domain board over populated registry entries and real-project
     // membership, with the shared schema-driven add and edit forms.
@@ -50,8 +62,8 @@
 {#snippet introActions()}
     {#if collection?.schema !== undefined}
         <ToolButton
-            label={t('col.add')}
-            title={t('col.add_tip')}
+            label={t('collection.add')}
+            title={t('collection.add_tip')}
             active={adding}
             onclick={() => (adding = !adding)}
         />
@@ -60,7 +72,7 @@
 
 <Pane title={t('views.domains')}>
     <div class="domains-view" data-instance={instance.id}>
-        <Intro html={inlineMarkdown(t('col.domains_intro'))} actions={introActions} />
+        <Intro html={inlineMarkdown(t('domains.intro'))} actions={introActions} />
         {#if adding && collection?.schema !== undefined}
             <EntryForm
                 collection="domains"
@@ -74,7 +86,7 @@
             <p class="said">{said}</p>
         {/if}
         {#if shown.length === 0}
-            <p class="empty">{t('col.domains_empty')}</p>
+            <p class="empty">{t('domains.empty')}</p>
         {:else}
             <div class="cards">
                 {#each shown as item (item.domain.id)}

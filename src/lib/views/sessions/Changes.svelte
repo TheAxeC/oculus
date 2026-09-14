@@ -1,7 +1,18 @@
+<script module lang="ts">
+    // Layer 3, view registration. Changes follows Timeline in the sessions flyout.
+    import type { ViewRegistration } from '$lib/views/registry';
+    export const registration: ViewRegistration = {
+        id: 'changes',
+        label: 'sessions.view_changes',
+        glyph: 'sessions.changes_glyph',
+        group: 'sessions',
+        order: 5
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. Two sections over one session: the files it touched itself, and what git says
-    // about the workspace it is sitting in. The second is the git panel of O20: it reads as it
-    // always did, and every write on it is a click of Axel's.
+    // about the workspace it is sitting in. Every git write is an explicit click.
     //
     // The first section is the session's own record. The mark on a row is the thing worth seeing at
     // once: another live session holding the same file open, named in the tooltip, which is how two
@@ -14,7 +25,7 @@
     // suggested message. A workspace that is not a repository says so, with git's own reason in the
     // tooltip, and draws no control at all.
     //
-    // DESIGN.md, "Git", and the decision of 2026-09-10 on git writes: every write goes to POST
+    // Every write goes to POST
     // /api/git with the write token, and the five that can lose work (discard, commit, push, the two
     // branch actions) carry a confirm this view sets only from ui/Confirm.svelte. Nothing here acts
     // on a timer or on a payload arriving; a write happens when a button is pressed and never
@@ -142,11 +153,11 @@
     /** The branch line: where the checkout is against its upstream, in as few words as it takes. */
     function branchState(state: GitState): string {
         const bits: string[] = [];
-        if (state.detached) bits.push(t('js.sessions.ch_detached'));
-        if (state.ahead > 0) bits.push(t('js.sessions.ch_ahead', state.ahead));
-        if (state.behind > 0) bits.push(t('js.sessions.ch_behind', state.behind));
-        if (bits.length === 0) bits.push(t('js.sessions.ch_insync'));
-        return bits.join(` ${t('js.sessions.meta_sep')} `);
+        if (state.detached) bits.push(t('sessions.ch_detached'));
+        if (state.ahead > 0) bits.push(t('sessions.ch_ahead', state.ahead));
+        if (state.behind > 0) bits.push(t('sessions.ch_behind', state.behind));
+        if (bits.length === 0) bits.push(t('sessions.ch_insync'));
+        return bits.join(` ${t('sessions.meta_sep')} `);
     }
 
     /**
@@ -253,21 +264,21 @@
 
 {#snippet counts(entry: GitEntry)}
     {#if entry.added === null && entry.deleted === null}
-        <span class="bin">{t('js.sessions.ch_binary')}</span>
+        <span class="bin">{t('sessions.ch_binary')}</span>
     {:else}
         {#if entry.added}
-            <span class="add">{t('js.sessions.ch_added', entry.added)}</span>
+            <span class="add">{t('sessions.ch_added', entry.added)}</span>
         {/if}
         {#if entry.deleted}
-            <span class="del">{t('js.sessions.ch_deleted', entry.deleted)}</span>
+            <span class="del">{t('sessions.ch_deleted', entry.deleted)}</span>
         {/if}
     {/if}
 {/snippet}
 
 {#snippet mark(also: string[])}
     {#if also.length > 0}
-        <span class="mark" title={t('js.sessions.ch_shared_tip', also.join(', '))}>
-            {t('js.sessions.ch_shared')}
+        <span class="mark" title={t('sessions.ch_shared_tip', also.join(', '))}>
+            {t('sessions.ch_shared')}
         </span>
     {/if}
 {/snippet}
@@ -279,7 +290,7 @@
             <span class="n">{entries.length}</span>
         </div>
         {#if entries.length === 0}
-            <p class="none">{t('js.sessions.ch_group_empty')}</p>
+            <p class="none">{t('sessions.ch_group_empty')}</p>
         {:else}
             {#each entries as entry (entry.path)}
                 {@const also = shared(absolute(entry.path))}
@@ -318,7 +329,7 @@
 
 {#snippet panel(state: GitState)}
     <div class="branch">
-        <span class="lb">{t('js.sessions.ch_branch')}</span>
+        <span class="lb">{t('sessions.ch_branch')}</span>
         <Menu
             label={state.branch}
             items={branchItems}
@@ -398,11 +409,11 @@
         {:else}
             <section class="sec">
                 <div class="sec-h">
-                    <span>{t('js.sessions.ch_touched')}</span>
+                    <span>{t('sessions.ch_touched')}</span>
                     <span class="n">{files.length}</span>
                 </div>
                 {#if files.length === 0}
-                    <p class="none">{t('js.sessions.ch_touched_empty')}</p>
+                    <p class="none">{t('sessions.ch_touched_empty')}</p>
                 {:else}
                     {#each files as file (file.path)}
                         {@const also = shared(file.path)}
@@ -412,23 +423,23 @@
                             </span>
                             {@render mark(also)}
                             <span class="to">{file.tool}</span>
-                            <span class="ct">{t('js.sessions.ch_times', file.count)}</span>
+                            <span class="ct">{t('sessions.ch_times', file.count)}</span>
                         </div>
                     {/each}
                 {/if}
             </section>
 
             <section class="sec">
-                <div class="sec-h"><span>{t('js.sessions.ch_repo')}</span></div>
+                <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
                 {#if repo === null || repo.error !== null}
                     <p class="none" title={repo?.error ?? undefined}>
-                        {t('js.sessions.ch_norepo')}
+                        {t('sessions.ch_norepo')}
                     </p>
                 {:else}
                     {@render panel(repo)}
-                    {@render group(t('js.sessions.ch_staged'), repo.staged, 'staged')}
-                    {@render group(t('js.sessions.ch_changed'), repo.unstaged, 'changed')}
-                    {@render group(t('js.sessions.ch_untracked'), repo.untracked, 'untracked')}
+                    {@render group(t('sessions.ch_staged'), repo.staged, 'staged')}
+                    {@render group(t('sessions.ch_changed'), repo.unstaged, 'changed')}
+                    {@render group(t('sessions.ch_untracked'), repo.untracked, 'untracked')}
                     {@render commitBox(repo)}
                 {/if}
             </section>
@@ -464,7 +475,7 @@
         letter-spacing: 0.04em;
     }
 
-    /* The cockpit's .sesssec-h and .sessgrph: a section heading one step above a group's. */
+    /* A section heading sits one step above a group's heading. */
     .sec-h {
         font-size: var(--fs-sm);
     }

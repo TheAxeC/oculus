@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Findings follows Status in the system group.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'findings',
+        label: 'views.findings',
+        glyph: 'views.findings_glyph',
+        group: 'system',
+        order: 1
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. Everything the build found wrong, in one list: the snapshot's findings, which
     // come from validate over the hub's YAML, and the config channel's own, which come from reading

@@ -1,3 +1,16 @@
+<script module lang="ts">
+    // Layer 3, view registration. A manifest editor opens from a project and is not listed.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'editor',
+        label: 'views.editor',
+        glyph: 'views.editor_glyph',
+        group: '',
+        order: 0,
+        listed: false
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. The project.yml edit form of DESIGN.md's step 4: the sections of
     // config/manifest-schema.yml in order, one widget per field, and a Save that posts only what was
@@ -6,7 +19,7 @@
     // What it holds of its own is the edits, not the values. A field reads the project's current
     // value until it is edited, and the edit sits over it until it is saved or reverted; so nothing
     // has to be copied when the project changes, and what Save posts is exactly the map of edits.
-    // The page sees its own write when O6's watcher pushes the rebuilt snapshot, at which point the
+    // The page sees its own write when the watcher pushes the rebuilt snapshot, at which point the
     // edits equal the values and the form is clean again.
 
     import Chip from '$lib/ui/Chip.svelte';

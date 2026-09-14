@@ -77,8 +77,8 @@
             />
         {/if}
         <ToolButton
-            label={t('col.ds_recover')}
-            title={t('col.ds_recover_tip')}
+            label={t('data.recover')}
+            title={t('data.recover_tip')}
             glyph="refresh"
             active={recovering}
             disabled={recovering}
@@ -93,13 +93,13 @@
     {#if dataset.size || dataset.hpcPath || method}
         <div class="meta">
             {#if dataset.size}
-                <Chip label={`${t('col.ds_size')} ${dataset.size}`} />
+                <Chip label={`${t('data.size')} ${dataset.size}`} />
             {/if}
             {#if dataset.hpcPath}
-                <Chip label={`${t('col.ds_hpc')} ${dataset.hpcPath}`} />
+                <Chip label={`${t('data.hpc')} ${dataset.hpcPath}`} />
             {/if}
             {#if method}
-                <Chip label={`${t('col.ds_fetch')} ${method}`} />
+                <Chip label={`${t('data.fetch')} ${method}`} />
             {/if}
         </div>
     {/if}
@@ -125,7 +125,7 @@
         <div class="links">
             <a href={dataset.source} target="_blank" rel="noopener">
                 <Glyph name="link" />
-                {t('col.ds_source')}
+                {t('data.source')}
             </a>
         </div>
     {/if}

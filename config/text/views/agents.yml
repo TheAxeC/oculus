@@ -1,0 +1,13 @@
+# Oculus text owned by the agents view.
+text:
+    sessions:
+        ag_chars: '{0} chars'
+        ag_done: done
+        ag_empty: This session dispatched no agents.
+        ag_error: error
+        ag_mins: '{0}m {1}s'
+        ag_running: running
+        ag_secs: '{0} s'
+        ag_type: agent
+        agents_glyph: collab
+        view_agents: Agents

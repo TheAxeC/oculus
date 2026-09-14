@@ -6,22 +6,16 @@
 # ===========================================================================
 
 
-# The rail's groups: each group = { label, keys, glyph?, chord? } is drawn as a heading over the views it names, in the order listed here; a view no group names trails at the end, and a group naming no registered view is not drawn. A key is a view id; the ids under "Academic life", "Sources" and "Personal" are views a later step registers. Each view button draws its label under its glyph. A group holding more than four registered views is drawn instead as one labelled button with the list beside it. `glyph` is a name in glyphs.yml and is what that one button carries; a group drawn that way without one carries its first view's glyph. `chord` is its optional one-letter keyboard prefix.
+# The rail's groups are drawn in this order. A view names its group and position in its registration. A group with no registered views is not drawn. A group holding more than four views is one labelled button with a flyout. `glyph` is the flyout button's glyph name, and `chord` is its optional one-letter keyboard prefix.
 nav_groups:
-  boards:
-    - { label: "Boards",        keys: [focus, projects, coauthor, archive] }
-  structure:
-    - { label: "Pillars",       glyph: program, keys: [programs, domains, map] }   # eight letters fit the rail; the pillars, their domains and the map of both
-  sessions:
-    - { label: "Sessions",      glyph: chat,  chord: m, keys: [session-list, session-detail, terminal, transcript, timeline, changes, agents] }
-  collections:
-    - { label: "Academic life", glyph: scout, chord: c, keys: [funding, events, education, applications, collaborations, tasks] }
-    - { label: "Sources",       keys: [venues, data, code, statements] }
-  feeds:
-    - { label: "Feeds",         glyph: scout, keys: [radar, leads, inbox, linkedin] }
-  more:
-    - { label: "Personal",      keys: [approach, agent-approach, memories] }
-    - { label: "System",        keys: [status, findings, gallery, hpc, usage, help, audit, config] }
+  boards: { label: "Boards" }
+  structure: { label: "Pillars", glyph: program }
+  sessions: { label: "Sessions", glyph: chat, chord: m }
+  academic: { label: "Academic life", glyph: scout, chord: c }
+  sources: { label: "Sources" }
+  feeds: { label: "Feeds", glyph: scout }
+  personal: { label: "Personal" }
+  system: { label: "System" }
 
 
 # Saved arrangements: a whole workbench written by hand, applied by a control in the rail's panel menu.
@@ -97,7 +91,7 @@ nav_live:
 # Project-title label mode per surface - `short` = a manifest's `short:` if set, else the full title (NO id is
 # ever shown); `full` = always the full title. Projects + Archive also have a live Aa toggle in the UI that
 # overrides their default below (persisted per browser). The full title is always on hover.
-focus_label_mode: short      # 🎯 Focus board cards + "This week" ticker
+focus_label_mode: short      # Focus board cards and the "This week" ticker
 
 project_label_mode: short    # Projects tab cards / list rows (live Aa toggle overrides)
 

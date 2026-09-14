@@ -36,7 +36,7 @@
         return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
     };
     const identity = $derived(text('title'));
-    const title = $derived(identity || t('sf.radar_untitled'));
+    const title = $derived(identity || t('radar.untitled'));
     const relevance = $derived(text('relevance'));
     const motif = $derived(text('motif'));
     const note = $derived(text('why') || text('idea_spark'));
@@ -45,7 +45,7 @@
     const links = $derived(crossLinksOf(entry, projects));
     const canSpin = $derived(text('bucket') === 'idea' || text('maps_to') === 'new-idea-candidate');
     const sub = $derived(
-        [text('authors'), text('venue'), text('year')].filter(Boolean).join(t('col.ven_sep'))
+        [text('authors'), text('venue'), text('year')].filter(Boolean).join(t('venues.sep'))
     );
 
     async function mark(value: boolean | null): Promise<void> {
@@ -66,7 +66,7 @@
 <Card {title} titleHtml={inlineMarkdown(title)} tone={relevanceTone(relevance)}>
     {#snippet meta()}
         {#if isNew(entry, lastRun)}
-            <Chip label={t('sf.radar_new')} filled tone="violet" />
+            <Chip label={t('radar.new')} filled tone="violet" />
         {/if}
         {#if relevance !== ''}
             <Chip label={relevance} tone={relevanceTone(relevance)} />
@@ -76,8 +76,8 @@
         {/if}
         {#if dismissed && identity !== ''}
             <ToolButton
-                label={t('sf.radar_restore')}
-                title={t('sf.radar_restore_tip')}
+                label={t('radar.restore')}
+                title={t('radar.restore_tip')}
                 glyph="refresh"
                 compact
                 onclick={() => mark(null)}
@@ -85,8 +85,8 @@
         {:else}
             {#if canSpin && identity !== ''}
                 <ToolButton
-                    label={t('sf.radar_idea')}
-                    title={t('sf.radar_idea_tip')}
+                    label={t('radar.idea')}
+                    title={t('radar.idea_tip')}
                     glyph="spark"
                     compact
                     active={spinning}
@@ -95,8 +95,8 @@
             {/if}
             {#if identity !== ''}
                 <ToolButton
-                    label={t('sf.radar_dismiss')}
-                    title={t('sf.radar_dismiss_tip')}
+                    label={t('radar.dismiss')}
+                    title={t('radar.dismiss_tip')}
                     glyph="dismiss"
                     compact
                     onclick={() => mark(true)}
@@ -119,7 +119,7 @@
     {#if threat !== ''}
         <p class="threat">
             <Glyph name="warn" />
-            <span>{@html t('sf.radar_threatens', inlineMarkdown(threat))}</span>
+            <span>{@html t('radar.threatens', inlineMarkdown(threat))}</span>
         </p>
     {/if}
     {#if links.length > 0 || text('maps_to') === 'new-idea-candidate'}
@@ -133,7 +133,7 @@
                 />
             {/each}
             {#if text('maps_to') === 'new-idea-candidate'}
-                <Chip label={t('sf.radar_new_idea_candidate')} glyph="spark" />
+                <Chip label={t('radar.new_idea_candidate')} glyph="spark" />
             {/if}
         </div>
     {/if}
@@ -141,7 +141,7 @@
         <p class="paper">
             <a href={text('url')} target="_blank" rel="noreferrer">
                 <Glyph name="link" />
-                {t('sf.radar_paper')}
+                {t('radar.paper')}
             </a>
         </p>
     {/if}

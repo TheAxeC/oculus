@@ -53,12 +53,21 @@ const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));
 setGlyphs(glyphCatalog(config));
 
-registerView({ id: 'alpha', label: 'views.status', glyph: 'views.status_glyph', component: Alpha });
+registerView({
+    id: 'alpha',
+    label: 'views.status',
+    glyph: 'views.status_glyph',
+    component: Alpha,
+    group: 'probe',
+    order: 0
+});
 registerView({
     id: 'beta',
     label: 'views.findings',
     glyph: 'views.findings_glyph',
-    component: Beta
+    component: Beta,
+    group: 'probe',
+    order: 1
 });
 
 function pane(id: string, view: string, state: unknown = {}): Layout {
@@ -80,7 +89,7 @@ function bench(dock: Dock): Bench {
     };
 }
 
-function html(dock: Dock, groups: { label: string; keys: string[] }[] = []): string {
+function html(dock: Dock, groups: { id: string; label: string }[] = []): string {
     apply(bench(dock));
     return render(Workbench, { props: { groups } }).body;
 }
@@ -123,9 +132,9 @@ describe('the workbench', () => {
 
     it('includes the catalog-backed keyboard sheet in the workbench markup', () => {
         const source = readFileSync('src/lib/shell/Workbench.svelte', 'utf8');
-        expect(source).toContain("title={t('js.keys.title')}");
-        expect(source).toContain("hint={t('js.keys.hint')}");
-        expect(source).toContain("rows={t('js.keys.rows')}");
+        expect(source).toContain("title={t('app.keys.title')}");
+        expect(source).toContain("hint={t('app.keys.hint')}");
+        expect(source).toContain("rows={t('app.keys.rows')}");
         expect(source).toContain('<KeySheet');
     });
 
@@ -195,7 +204,7 @@ describe('the workbench', () => {
     });
 
     it('groups a rail button under a group that names it, and leaves the rest ungrouped', () => {
-        const grouped = html('right', [{ label: 'Portfolio', keys: ['alpha'] }]);
+        const grouped = html('right', [{ id: 'probe', label: 'Portfolio' }]);
         expect(grouped).toContain('Portfolio');
         expect([...grouped.matchAll(/data-view="([^"]*)"/g)].map((match) => match[1])).toEqual([
             'alpha',
@@ -204,7 +213,7 @@ describe('the workbench', () => {
     });
 
     it('draws no heading for a group no registered view belongs to', () => {
-        const grouped = html('right', [{ label: 'Nothing here', keys: ['sessions'] }]);
+        const grouped = html('right', [{ id: 'nothing', label: 'Nothing here' }]);
         expect(grouped).not.toContain('Nothing here');
     });
 
@@ -411,7 +420,7 @@ describe('the insertion mark', () => {
 
 // The two the application registers, mounted through the same shell with the real catalog and the
 // real glyph vocabulary: a label key, a glyph key or a glyph name that did not resolve would throw
-// here. The registrations arrive by importing the page's barrel, and it is imported inside the test
+// here. The registrations arrive by importing the route loader inside the test
 // so that the rail above still sees only the two views this file registered.
 describe('the views the application registers', () => {
     it('mounts status and findings with nothing yet delivered on either channel', async () => {

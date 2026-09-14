@@ -83,7 +83,7 @@ describe('the source editor', () => {
         const editable = render(Source, { props: { instance } }).body;
         expect(editable).toMatch(/class="mirror(?:\s|")/);
         expect(editable).toContain(`>${catalog['editor.save']}</span>`);
-        expect(editable).toContain(catalog['js.filters.saved']);
+        expect(editable).toContain(catalog['source.saved']);
         const readonly = {
             id: 'source-read',
             view: 'source',
@@ -101,7 +101,7 @@ describe('the source editor', () => {
                 path: 'notes.yml',
                 text: 'title: "A < B"',
                 editable: true,
-                message: catalog['js.filters.saved'],
+                message: catalog['source.saved'],
                 ...actions
             }
         });
@@ -111,7 +111,7 @@ describe('the source editor', () => {
         expect(body).toContain(`>${catalog['editor.save']}</span>`);
         expect(body).toContain(`>${catalog['editor.revert']}</span>`);
         expect(body).toContain(glyphCatalog(config)[catalog['editor.revert_glyph']]);
-        expect(body).toContain(catalog['js.filters.saved']);
+        expect(body).toContain(catalog['source.saved']);
         expect(body).not.toContain('readonly');
     });
 

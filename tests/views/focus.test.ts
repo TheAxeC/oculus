@@ -2,8 +2,7 @@
 // with its flames and its next sentence, the ticker's groups, the awaiting strip, the band, and the
 // empty state of a portfolio with nothing in it.
 //
-// The catalog, the glyphs and the vocabulary are the real config, so the words checked here are the
-// words config/text.yml and config/vocab.yml hold. The projects are synthetic: what is checked is
+// The catalog, glyphs and vocabulary are the real config. The projects are synthetic: what is checked is
 // the view, not the hub.
 //
 // What this does NOT cover: anything that needs a DOM. There is no browser in this suite, so no menu
@@ -396,38 +395,42 @@ describe('a card', () => {
 
 describe('the command center', () => {
     it('carries its heading', () => {
-        expect(body).toContain(catalog['cc.command_center']);
+        expect(body).toContain(catalog['focus.command.command_center']);
     });
 
     it('draws the overdue group for a deadline that has gone by', () => {
-        expect(body).toContain(catalog['cc.grp_overdue_label']);
+        expect(body).toContain(catalog['focus.command.grp_overdue_label']);
         expect(body).toContain('Bravo');
     });
 
     it('draws every group that has a line', () => {
         for (const key of [
-            'cc.grp_overdue_label',
-            'cc.grp_attention_label',
-            'cc.grp_deadlines_label',
-            'cc.grp_subtask_dl_label',
-            'cc.grp_followups_label',
-            'cc.grp_refresh_label'
+            'focus.command.grp_overdue_label',
+            'focus.command.grp_attention_label',
+            'focus.command.grp_deadlines_label',
+            'focus.command.grp_subtask_dl_label',
+            'focus.command.grp_followups_label',
+            'focus.command.grp_refresh_label'
         ]) {
             expect(body).toContain(escaped(key));
         }
-        expect(body).toContain(catalog['cc.emails'].replace(/&/g, '&amp;'));
+        expect(body).toContain(catalog['focus.command.emails'].replace(/&/g, '&amp;'));
         expect(body).toContain('/research-cockpit litwatch');
     });
 
     it('draws the manifest-lag line and its project opener under needs attention', () => {
         expect(body).toMatch(/1\s+manifest/);
-        expect(body).toContain(catalog['cc.behind_refresh']);
+        expect(body).toContain(catalog['focus.command.behind_refresh']);
         const buttons = body.match(/<button[\s\S]*?<\/button>/g) ?? [];
         expect(buttons.some((button) => button.includes('Foxtrot'))).toBe(true);
     });
 
     it('draws the snooze buttons on a project deadline line', () => {
-        for (const key of ['actions.snooze_1w', 'actions.snooze_1mo', 'actions.snooze_hide']) {
+        for (const key of [
+            'project.action.snooze_1w',
+            'project.action.snooze_1mo',
+            'project.action.snooze_hide'
+        ]) {
             expect(body).toContain(catalog[key]);
         }
     });
@@ -440,18 +443,18 @@ describe('the command center', () => {
 
     it('draws done and del on a subtask line, and done on a follow-up', () => {
         expect(body).toContain('redraw figure 2');
-        expect(body).toContain(catalog['actions.done']);
-        expect(body).toContain(catalog['actions.del']);
+        expect(body).toContain(catalog['project.action.done']);
+        expect(body).toContain(catalog['project.action.del']);
         expect(body).toContain('chase the coauthor');
     });
 
     it('draws un-snooze on a snoozed line and nothing else', () => {
-        expect(body).toContain(catalog['cc.snoozed'].replace('{0}', '1'));
-        expect(body).toContain(catalog['actions.unsnooze']);
+        expect(body).toContain(catalog['focus.command.snoozed'].replace('{0}', '1'));
+        expect(body).toContain(catalog['project.action.unsnooze']);
     });
 
     it('draws a position lead with its own countdown', () => {
-        expect(body).toContain(escaped('cc.dlcat_position'));
+        expect(body).toContain(escaped('focus.command.dlcat_position'));
         expect(body).toContain('A lead');
     });
 
@@ -510,7 +513,7 @@ describe('the strip and the band', () => {
     it('stacks the grants by stage and names the teaching column', () => {
         expect(body).toContain(catalog['focus.cards_group']);
         expect(body).toContain('A grant in prep');
-        expect(body).toContain(escaped('focus.teaching_label'));
+        expect(body).toContain(escaped('focus.teaching_lane').replace('{G.teaching} ', ''));
         expect(body).toContain('A live position');
         expect(body).toContain('A course');
     });
@@ -560,7 +563,7 @@ describe('an empty portfolio', () => {
     it('draws no command center and says the hub keeps no career file', () => {
         receive({ channel: 'portfolio', version: 3, payload: bare() });
         const empty = html();
-        expect(empty).not.toContain(catalog['cc.command_center']);
+        expect(empty).not.toContain(catalog['focus.command.command_center']);
         expect(empty).toContain(catalog['focus.career_empty']);
     });
 });

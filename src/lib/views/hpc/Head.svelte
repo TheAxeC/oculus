@@ -6,19 +6,19 @@
     import type { HpcPayload } from '$lib/state/hpc';
     let { data, onrefresh }: { data: HpcPayload | null; onrefresh: () => void } = $props();
     function status(): string {
-        if (data === null || data.status === 'starting') return t('js.slurm.polling');
-        if (data.status === 'unreachable') return t('js.slurm.unreachable');
-        if (data.status === 'error') return t('js.slurm.error');
-        return t('js.slurm.live');
+        if (data === null || data.status === 'starting') return t('hpc.polling');
+        if (data.status === 'unreachable') return t('hpc.unreachable');
+        if (data.status === 'error') return t('hpc.error');
+        return t('hpc.live');
     }
     function parts(): string[] {
         if (data === null || data.status !== 'ok') return [];
         return [
             data.jobs.length === 0
-                ? t('js.slurm.queue_empty')
-                : t('js.slurm.queue_summary', data.running, data.pending, data.total),
-            t('js.slurm.as_of', clock(data.updated)),
-            t('js.slurm.every', data.pollMin)
+                ? t('hpc.queue_empty')
+                : t('hpc.queue_summary', data.running, data.pending, data.total),
+            t('hpc.as_of', clock(data.updated)),
+            t('hpc.every', data.pollMin)
         ];
     }
 </script>
@@ -34,7 +34,7 @@
                 {status()}
             </span>
             {#each parts() as part (part)}
-                <span class="separator">{t('js.sessions.meta_sep')}</span>
+                <span class="separator">{t('sessions.meta_sep')}</span>
                 <span>{part}</span>
             {/each}
         </p>

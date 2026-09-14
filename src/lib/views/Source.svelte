@@ -1,3 +1,16 @@
+<script module lang="ts">
+    // Layer 3, view registration. A source file opens from another view and is not listed.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'source',
+        label: 'views.source',
+        glyph: 'views.source_glyph',
+        group: '',
+        order: 0,
+        listed: false
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. One configured local text file as a tab. It reads once through api/file, keeps
     // working and saved copies in its instance's ui state across tab switches, and writes through
@@ -28,7 +41,7 @@
     const title = $derived(label === '' ? t('views.source') : label);
     const draft = $derived(sourceDraft(instance.id));
     const blocked = $derived(root === '' || path === '' || access === 'blocked');
-    const error = $derived(blocked ? t('js.filters.cannot_open', path) : draft.error);
+    const error = $derived(blocked ? t('source.cannot_open', path) : draft.error);
 
     $effect(() => {
         if (blocked) return;

@@ -71,7 +71,7 @@
                     <Chip
                         label={days < 0 ? t('focus.days_ago', -days) : t('focus.in_days', days)}
                         tone={daysTone(days)}
-                        glyph={t('cards.deadline_glyph')}
+                        glyph={t('project.card.deadline_glyph')}
                     />
                 </span>
             {/if}

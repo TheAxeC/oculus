@@ -9,7 +9,7 @@
 // exercised by the curl in the package's verification.
 
 import { describe, expect, it } from 'vitest';
-import { handleGit, handleGitBranches } from '../../src/lib/server/git-routes.ts';
+import { handleGit, handleGitBranches, messagePrompt } from '../../src/lib/server/git-routes.ts';
 import { mintToken } from '../../src/lib/server/auth.ts';
 import type { GitOptions } from '../../src/lib/server/git-routes.ts';
 import { contextFixture } from '../server/context-fixture.ts';
@@ -21,6 +21,15 @@ const URL_ = `http://${HOST}/api/git`;
 
 /** The one root every case is allowed to name. It is a name: nothing opens it. */
 const ROOT = '/hub';
+
+describe('the commit-message instruction', () => {
+    it('reads the required catalog key and reports it clearly when absent', () => {
+        expect(messagePrompt({ text: { git: { message_prompt: 'Write it' } } })).toBe('Write it');
+        expect(() => messagePrompt({ text: {} })).toThrow(
+            'text key not in the text catalog (config/text/): git.message_prompt'
+        );
+    });
+});
 
 /** What ran, so a case can assert that a refusal refused before the operation. */
 let ran: { action: string; root: string; fields: Record<string, unknown> }[] = [];

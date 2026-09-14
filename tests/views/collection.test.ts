@@ -1,8 +1,7 @@
 // One collection file as its own tab, rendered to HTML on the server: the cards in file order, what
 // a card draws for each kind of field, the search box, the status facet, and the empty state.
 //
-// The catalog, the glyphs and the tone vocabulary are the real config, so the words and the hues are
-// config/text.yml's and config/vocab.yml's. The collection is synthetic: what is checked is the view
+// The catalog, glyphs and tone vocabulary are the real config. The collection is synthetic: what is checked is the view
 // over a file's own schema, not the hub's seven files.
 //
 // What this does NOT cover: anything needing a DOM. No menu opens and no key is typed here; the
@@ -269,7 +268,7 @@ describe('a collection as its own tab', () => {
 
     it('offers the search box and the add control the catalog names', () => {
         expect(body).toContain('Search Talks and Events ...');
-        expect(body).toContain(catalog['col.add']);
+        expect(body).toContain(catalog['collection.add']);
     });
 
     it('says which collection it is drawing', () => {
@@ -333,7 +332,7 @@ describe('a field the schema does not name', () => {
 describe('the status facet', () => {
     it('draws one toggle per status, with its count, all of them on', () => {
         const body = html();
-        expect(body).toContain(catalog['col.status_facet']);
+        expect(body).toContain(catalog['collection.status_facet']);
         expect(body).toContain('upcoming 2');
         expect(body).toContain('completed 1');
         expect(body).toContain(`--accent: var(--c-${statusTone('upcoming')})`);
@@ -388,14 +387,14 @@ describe('the controls a card carries', () => {
     const card = cards(html())[0];
 
     it('carries the grip, the pin and the edit control the catalog names', () => {
-        expect(card).toContain(catalog['col.reorder_hint']);
-        expect(card).toContain(catalog['col.pin_to_top']);
-        expect(card).toContain(catalog['col.edit_delete']);
+        expect(card).toContain(catalog['collection.reorder_hint']);
+        expect(card).toContain(catalog['collection.pin_to_top']);
+        expect(card).toContain(catalog['collection.edit_delete']);
     });
 
     it('carries the subtasks block, over the entry rather than over a project', () => {
-        expect(card).toContain(catalog['actions.subtasks']);
-        expect(card).toContain(catalog['actions.add_subtask']);
+        expect(card).toContain(catalog['project.action.subtasks']);
+        expect(card).toContain(catalog['project.action.add_subtask']);
     });
 });
 
@@ -403,13 +402,13 @@ describe('a collection whose file has no schema', () => {
     const body = html('tasks');
 
     it('offers no add control, since there is no schema to draw a form from', () => {
-        expect(body).not.toContain(catalog['col.add']);
+        expect(body).not.toContain(catalog['collection.add']);
     });
 
     it("draws the file's other statuses as buttons, the current one left out", () => {
         const card = cards(body)[0];
         expect(card).toContain('>doing</span>');
-        expect(card).not.toContain(catalog['col.edit_delete']);
+        expect(card).not.toContain(catalog['collection.edit_delete']);
         expect(cards(body)[1]).toContain('>todo</span>');
     });
 });
@@ -445,7 +444,7 @@ describe('the funding view', () => {
 
     it('draws the statement as a blockquote with the tooltip the catalog names', () => {
         expect(body).toContain('<blockquote');
-        expect(body).toContain(catalog['col.fundstmt_tip']);
+        expect(body).toContain(catalog['collection.fundstmt_tip']);
         expect(body).toContain('This work was funded by FAIR.');
     });
 

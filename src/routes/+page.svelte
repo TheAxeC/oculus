@@ -27,11 +27,7 @@
     // are read once and not tracked; untrack says so, and is what keeps the read out of any effect.
     untrack(() => registerCollections(data.collections));
 
-    /**
-     * The `nav_groups` map of config/layout.yml, both of its lists in order. Its entries are the
-     * cockpit's tab keys, so a group names a view only once that view exists; a group naming none is
-     * not drawn.
-     */
+    /** The `nav_groups` map of config/layout.yml in order. Registrations name each group by id. */
     const groups = $derived<NavGroup[]>(readGroups(config()?.config.nav_groups));
 
     /**
@@ -76,29 +72,16 @@
     function readGroups(raw: unknown): NavGroup[] {
         if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return [];
         const found: NavGroup[] = [];
-        for (const list of Object.values(raw as Record<string, unknown>)) {
-            if (!Array.isArray(list)) continue;
-            for (const entry of list) {
-                if (typeof entry !== 'object' || entry === null) continue;
-                const group = entry as {
-                    label?: unknown;
-                    keys?: unknown;
-                    glyph?: unknown;
-                    chord?: unknown;
-                };
-                if (typeof group.label !== 'string' || !Array.isArray(group.keys)) continue;
-                const read: NavGroup = {
-                    label: group.label,
-                    keys: group.keys.filter((key): key is string => typeof key === 'string')
-                };
-                // The glyph a large group's one button carries. A value that is not a name is left
-                // off rather than drawn, and the rail then falls back to the first view's glyph.
-                if (typeof group.glyph === 'string') read.glyph = group.glyph;
-                if (typeof group.chord === 'string' && /^[a-z]$/.test(group.chord)) {
-                    read.chord = group.chord;
-                }
-                found.push(read);
+        for (const [id, entry] of Object.entries(raw as Record<string, unknown>)) {
+            if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) continue;
+            const group = entry as { label?: unknown; glyph?: unknown; chord?: unknown };
+            if (typeof group.label !== 'string') continue;
+            const read: NavGroup = { id, label: group.label };
+            if (typeof group.glyph === 'string') read.glyph = group.glyph;
+            if (typeof group.chord === 'string' && /^[a-z]$/.test(group.chord)) {
+                read.chord = group.chord;
             }
+            found.push(read);
         }
         return found;
     }

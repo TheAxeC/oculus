@@ -1,0 +1,55 @@
+# Oculus text owned by the application shell.
+text:
+    app:
+        chat: Chat
+        collections: 'Collections: {0}'
+        datasets: 'Datasets: {0}'
+        domains: 'Domains: {0}'
+        funding: 'Funding schemes: {0}'
+        git: 'Workspaces with git state: {0}'
+        keys:
+            hint: press ? or Esc to close
+            rows: "1-9 | switch tab;;c1-c9 | Collections menu;;m1-m9 | More menu;;Tab / Shift-Tab | next / previous tab;;j / k | move the card cursor left / right;;i / o | move the card cursor up / down a row;;Enter | expand the card under the cursor;;/ | focus this board's search;;g g | top of page;;G | bottom of page;;Cmd-K | jump palette;;: | command line;;Esc | clear the cursor;;Ctrl+1-9 | switch page;;Ctrl+Shift+Left / Right | move the page"
+            title: keyboard
+        nav:
+            host: axel@research
+            title_fmt: '{0}: ~/{1}'
+        palette:
+            cmd_unknown: '# unknown command'
+            cmdk_placeholder: Search projects, entries, tabs...
+        palette_empty: No match
+        palette_unavailable: Unavailable
+        programs: 'Pillars: {0}'
+        projects: 'Projects: {0}'
+        search: Search
+        search_tip: Search projects, entries and tabs (Cmd-K or Ctrl-K)
+        sessions: 'Sessions: {0}, {1} live'
+        socket: 'Socket: {0}'
+        socket_closed: closed
+        socket_connecting: connecting
+        socket_open: open
+        tasks:
+            close: Close
+            inbox_label: Inbox
+            inbox_note: Gmail triage (needs an interactive session)
+            linkedin_label: LinkedIn
+            linkedin_note: draft a post from _linkedin/
+            lit_label: Lit Watch
+            lit_note: new-paper radar (web | minutes)
+            note_prefix: '{G.info} {0}'
+            scout_label: Scout
+            scout_note: academic openings (web | minutes)
+            update_tasks: Update tasks
+        text_larger: Larger text
+        text_reset: Reset text size
+        text_smaller: Smaller text
+        title: oculus
+        title_waiting: oculus ({0} waiting) | {1}
+        update_tip: Open the update tasks
+        venues: 'Venues: {0}'
+        version: Snapshot version {0}
+        waiting: Waiting for the first snapshot
+    views:
+        badge_cell: '{0}: {1}'
+        badge_separator: ' | '
+        badge_title: '{0} {1}'

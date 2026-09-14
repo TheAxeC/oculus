@@ -61,7 +61,7 @@ export async function loadSourceDraft(id: string, root: string, path: string): P
                 error: ''
             });
         } else {
-            updateDraft(id, { error: t('js.filters.cannot_open', answer.error) });
+            updateDraft(id, { error: t('source.cannot_open', answer.error) });
         }
     });
     reading.set(id, request);
@@ -85,17 +85,17 @@ export function revertSourceDraft(id: string): void {
 /** A save acknowledges the exact sent copy, even if more typing follows while it is pending. */
 export async function saveSourceDraft(id: string, root: string, path: string): Promise<void> {
     const content = sourceDraft(id).text;
-    updateDraft(id, { message: t('js.filters.saving') });
+    updateDraft(id, { message: t('source.saving') });
     const answer = await saveSource(root, path, content);
     if (answer.ok) {
-        updateDraft(id, { saved: content, message: t('js.filters.saved') });
+        updateDraft(id, { saved: content, message: t('source.saved') });
     } else {
         // A request that never reached the server (offline, a dropped socket) is the catalog's
         // save_failed; a server refusal carries its own words.
         updateDraft(id, {
             message: answer.network
-                ? t('js.filters.save_failed')
-                : t('js.common.x_prefix', answer.error || t('js.filters.failed'))
+                ? t('source.save_failed')
+                : t('ui.common.x_prefix', answer.error || t('source.failed'))
         });
     }
 }

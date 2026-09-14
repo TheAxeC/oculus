@@ -5,11 +5,11 @@
     // It counts nothing. The groups are state/focus.ts's ticker and state/feeds.ts's attention and
     // refresh lines; what is here is the markup, the words, the writes and the opening controls. A
     // line says what it is and what it can be written to (`kind` and `target`), and this file turns
-    // the first into a sentence through config/text.yml and the second into buttons through
+    // the first into a sentence through the text catalog and the second into buttons through
     // state/writes.svelte.ts. Lead and attention lines open their views; refresh lines ask the
     // shell for the Update tray through the ui store.
     //
-    // The right of the heading row holds the live HPC pill (O26): the running and pending counts
+    // The right of the heading row holds the live HPC pill: the running and pending counts
     // from state/hpc.svelte.ts, drawn only while the cluster answers and the queue is not empty,
     // and a click on it opens the Live HPC view.
 
@@ -61,8 +61,8 @@
 
     /** The singular or plural manifest noun, with literal catalog keys for the static audit. */
     function manifestWord(count: number): string {
-        if (count === 1) return t('cc.manifest');
-        return t('cc.manifests');
+        if (count === 1) return t('focus.command.manifest');
+        return t('focus.command.manifests');
     }
 
     /** An ISO date a snooze button pushes an item out to. */
@@ -75,24 +75,28 @@
         return [
             {
                 id: 'snooze:7',
-                label: t('actions.snooze_1w'),
-                title: t('actions.snooze_tip', t('actions.snooze_1w'))
+                label: t('project.action.snooze_1w'),
+                title: t('project.action.snooze_tip', t('project.action.snooze_1w'))
             },
             {
                 id: 'snooze:30',
-                label: t('actions.snooze_1mo'),
-                title: t('actions.snooze_tip', t('actions.snooze_1mo'))
+                label: t('project.action.snooze_1mo'),
+                title: t('project.action.snooze_tip', t('project.action.snooze_1mo'))
             },
             {
                 id: 'snooze:hide',
-                label: t('actions.snooze_hide'),
-                title: t('actions.snooze_tip', t('actions.snooze_hide'))
+                label: t('project.action.snooze_hide'),
+                title: t('project.action.snooze_tip', t('project.action.snooze_hide'))
             }
         ];
     }
 
     function unsnooze(): TickerAction {
-        return { id: 'unsnooze', label: t('actions.unsnooze'), title: t('actions.unsnooze') };
+        return {
+            id: 'unsnooze',
+            label: t('project.action.unsnooze'),
+            title: t('project.action.unsnooze')
+        };
     }
 
     /**
@@ -105,15 +109,29 @@
     function actionsFor(line: TickerItem): TickerAction[] | undefined {
         const target = line.target;
         if (target === undefined) return undefined;
-        const remove = { id: 'del', label: t('actions.del'), title: t('actions.delete_subtask') };
+        const remove = {
+            id: 'del',
+            label: t('project.action.del'),
+            title: t('project.action.delete_subtask')
+        };
         if (target.subtask !== undefined) {
             if (line.snoozed) return [unsnooze(), remove];
-            const done = { id: 'done', label: t('actions.done'), title: t('actions.mark_done') };
+            const done = {
+                id: 'done',
+                label: t('project.action.done'),
+                title: t('project.action.mark_done')
+            };
             return [done, ...snoozeActions(), remove];
         }
         if (line.snoozed) return [unsnooze()];
         if (target.kind === 'followup') {
-            return [{ id: 'done', label: t('actions.done'), title: t('actions.mark_done') }];
+            return [
+                {
+                    id: 'done',
+                    label: t('project.action.done'),
+                    title: t('project.action.mark_done')
+                }
+            ];
         }
         if (target.kind === 'lead' || target.kind === 'venue') return undefined;
         const statuses: TickerAction[] = [];
@@ -122,7 +140,7 @@
             statuses.push({
                 id: `status:${status}`,
                 label: status,
-                title: t('actions.set_status', status)
+                title: t('project.action.set_status', status)
             });
         }
         return [...statuses, ...snoozeActions()];
@@ -135,72 +153,74 @@
 
     /** The word a collection's own dates are named by. The keys are literal so keys.test.ts sees them. */
     function word(kind: string): string {
-        if (kind === 'event') return t('cc.word_event');
-        if (kind === 'teaching') return t('cc.word_teaching');
-        if (kind === 'task') return t('cc.word_task');
-        if (kind === 'position') return t('cc.word_application');
-        return t('cc.word_collaboration');
+        if (kind === 'event') return t('focus.command.word_event');
+        if (kind === 'teaching') return t('focus.command.word_teaching');
+        if (kind === 'task') return t('focus.command.word_task');
+        if (kind === 'position') return t('focus.command.word_application');
+        return t('focus.command.word_collaboration');
     }
 
-    /** The same, for an overdue line, where the cockpit's word for a commitment is not "teaching". */
+    /** The same for an overdue line, where teaching uses the word commitment. */
     function overdueWord(kind: string): string {
-        return kind === 'teaching' ? t('cc.word_commitment') : word(kind);
+        return kind === 'teaching' ? t('focus.command.word_commitment') : word(kind);
     }
 
     function overdueTail(line: TickerItem): string {
         const days = -(line.days ?? 0);
-        if (line.kind === 'paper') return t('cc.overdue_deadline', days);
-        if (line.kind === 'funding') return t('cc.overdue_funding', days);
-        return t('cc.overdue_generic', overdueWord(line.kind), days);
+        if (line.kind === 'paper') return t('focus.command.overdue_deadline', days);
+        if (line.kind === 'funding') return t('focus.command.overdue_funding', days);
+        return t('focus.command.overdue_generic', overdueWord(line.kind), days);
     }
 
     function deadlineTail(line: TickerItem): string {
         const days = line.days ?? 0;
-        if (line.kind === 'paper') return t('cc.submission_deadline', days);
-        if (line.kind === 'funding') return t('cc.funding_deadline', days);
-        if (line.kind === 'position') return t('cc.position_deadline', days);
+        if (line.kind === 'paper') return t('focus.command.submission_deadline', days);
+        if (line.kind === 'funding') return t('focus.command.funding_deadline', days);
+        if (line.kind === 'position') return t('focus.command.position_deadline', days);
         if (line.kind === 'conference') {
-            if (line.days !== null) return t('cc.conference_call', days);
-            return t('cc.conference_call_approx', monthWords(line.months ?? 0));
+            if (line.days !== null) return t('focus.command.conference_call', days);
+            return t('focus.command.conference_call_approx', monthWords(line.months ?? 0));
         }
-        return t('cc.generic_in', word(line.kind), days);
+        return t('focus.command.generic_in', word(line.kind), days);
     }
 
     function monthWords(months: number): string {
-        if (months === 0) return t('cc.this_month');
-        if (months === 1) return t('cc.next_month');
-        return t('cc.in_months', months);
+        if (months === 0) return t('focus.command.this_month');
+        if (months === 1) return t('focus.command.next_month');
+        return t('focus.command.in_months', months);
     }
 
     function dateTail(line: TickerItem): string {
         if (line.days === null) return '';
-        return line.days < 0 ? t('cc.days_ago', -line.days) : t('cc.in_days', line.days);
+        return line.days < 0
+            ? t('focus.command.days_ago', -line.days)
+            : t('focus.command.in_days', line.days);
     }
 
     /** A category's heading. The keys are literal so tests/keys.test.ts can see every one of them. */
     function categoryLabel(category: string): string {
-        if (category === 'paper') return t('cc.dlcat_paper');
-        if (category === 'funding') return t('cc.dlcat_funding');
-        if (category === 'event') return t('cc.dlcat_event_label');
-        if (category === 'teaching') return t('cc.dlcat_teaching');
-        if (category === 'position') return t('cc.dlcat_position');
-        if (category === 'collab') return t('cc.dlcat_collab');
-        if (category === 'task') return t('cc.dlcat_task');
-        return t('cc.dlcat_conference');
+        if (category === 'paper') return t('focus.command.dlcat_paper');
+        if (category === 'funding') return t('focus.command.dlcat_funding');
+        if (category === 'event') return t('focus.command.dlcat_event_label');
+        if (category === 'teaching') return t('focus.command.dlcat_teaching');
+        if (category === 'position') return t('focus.command.dlcat_position');
+        if (category === 'collab') return t('focus.command.dlcat_collab');
+        if (category === 'task') return t('focus.command.dlcat_task');
+        return t('focus.command.dlcat_conference');
     }
 
     /** The glyph one attention line is drawn with. */
     function attentionGlyph(kind: string): string {
-        if (kind === 'inbox') return t('cc.inbox_glyph');
-        if (kind === 'linkedin') return t('cc.linkedin_glyph');
+        if (kind === 'inbox') return t('focus.command.inbox_glyph');
+        if (kind === 'linkedin') return t('focus.command.linkedin_glyph');
         return t('focus.warn_glyph');
     }
 
     /** The glyph one refresh nudge is drawn with. */
     function refreshGlyph(feed: string): string {
-        if (feed === 'inbox') return t('cc.inbox_glyph');
-        if (feed === 'scout') return t('cc.scout_glyph');
-        return t('cc.litwatch_glyph');
+        if (feed === 'inbox') return t('focus.command.inbox_glyph');
+        if (feed === 'scout') return t('focus.command.scout_glyph');
+        return t('focus.command.litwatch_glyph');
     }
 
     /**
@@ -267,23 +287,23 @@
                     id,
                     glyph: attentionGlyph(one.kind),
                     label: String(one.count),
-                    tail: t('cc.emails')
+                    tail: t('focus.command.emails')
                 };
             }
             if (one.kind === 'linkedin') {
                 return {
                     id,
                     glyph: attentionGlyph(one.kind),
-                    label: `${one.count} ${t('cc.days')}`,
-                    tail: t('cc.since_linkedin'),
+                    label: `${one.count} ${t('focus.command.days')}`,
+                    tail: t('focus.command.since_linkedin'),
                     tone: 'red'
                 };
             }
             return {
                 id,
                 glyph: attentionGlyph(one.kind),
-                label: t('cc.venue_count', one.label ?? '', one.count),
-                tail: t('cc.venue_load_tail', warnAt),
+                label: t('focus.command.venue_count', one.label ?? '', one.count),
+                tail: t('focus.command.venue_load_tail', warnAt),
                 tone: 'amber'
             };
         });
@@ -298,12 +318,14 @@
             index[id] = one;
             const label =
                 one.feed === 'inbox'
-                    ? t('cc.refresh_inbox_plain', one.days ?? 0)
+                    ? t('focus.command.refresh_inbox_plain', one.days ?? 0)
                     : one.feed === 'scout'
-                      ? t('cc.refresh_scout_plain', one.days ?? 0)
+                      ? t('focus.command.refresh_scout_plain', one.days ?? 0)
                       : t(
-                            'cc.refresh_litwatch_plain',
-                            one.days === null ? t('cc.never_run') : t('cc.last_refreshed', one.days)
+                            'focus.command.refresh_litwatch_plain',
+                            one.days === null
+                                ? t('focus.command.never_run')
+                                : t('focus.command.last_refreshed', one.days)
                         );
             return { id, glyph: refreshGlyph(one.feed), label };
         });
@@ -432,7 +454,7 @@
         <div class="grp">
             <p class="lbl"><Glyph name={glyph} />{label}</p>
             {#each groups as one (one.kind)}
-                <p class="sub">{one.kind === '' ? t('cc.kind_other') : one.kind}</p>
+                <p class="sub">{one.kind === '' ? t('focus.command.kind_other') : one.kind}</p>
                 <Ticker rows={one.rows} onpick={pick} onaction={act} />
             {/each}
         </div>
@@ -442,7 +464,11 @@
 {#if anything}
     <section class="week">
         <div class="head">
-            <b><Glyph name={t('cc.command_center_glyph')} />{t('cc.command_center')}</b>
+            <b
+                ><Glyph name={t('focus.command.command_center_glyph')} />{t(
+                    'focus.command.command_center'
+                )}</b
+            >
             {#if pillText()}
                 <span class="pill">
                     <ToolButton label={pillText()} onclick={() => openView('hpc', 'main')} />
@@ -450,11 +476,17 @@
             {/if}
         </div>
 
-        {@render group(t('cc.grp_overdue_label'), t('cc.grp_overdue_glyph'), view.overdue)}
+        {@render group(
+            t('focus.command.grp_overdue_label'),
+            t('focus.command.grp_overdue_glyph'),
+            view.overdue
+        )}
         {#if attentionView.rows.length > 0 || week?.behind}
             <div class="grp">
                 <p class="lbl">
-                    <Glyph name={t('cc.grp_attention_glyph')} />{t('cc.grp_attention_label')}
+                    <Glyph name={t('focus.command.grp_attention_glyph')} />{t(
+                        'focus.command.grp_attention_label'
+                    )}
                 </p>
                 {#if attentionView.rows.length > 0}
                     <Ticker rows={attentionView.rows} onpick={pickAttention} />
@@ -466,16 +498,16 @@
                             {week.behind.count}
                             {manifestWord(week.behind.count)}
                         </b>
-                        <span>{t('cc.behind_refresh')}</span>
+                        <span>{t('focus.command.behind_refresh')}</span>
                         {#each week.behind.projects as project (project.id)}
                             <ToolButton
                                 label={project.label}
-                                title={t('cards.stale_behind', project.days)}
+                                title={t('project.card.stale_behind', project.days)}
                                 onclick={() => onproject(project.id)}
                             />
                         {/each}
                         {#if week.behind.more > 0}
-                            <span>{t('cc.more', week.behind.more)}</span>
+                            <span>{t('focus.command.more', week.behind.more)}</span>
                         {/if}
                     </div>
                 {/if}
@@ -485,7 +517,9 @@
         {#if view.categories.length > 0}
             <div class="grp">
                 <p class="lbl">
-                    <Glyph name={t('cc.grp_deadlines_glyph')} />{t('cc.grp_deadlines_label')}
+                    <Glyph name={t('focus.command.grp_deadlines_glyph')} />{t(
+                        'focus.command.grp_deadlines_label'
+                    )}
                 </p>
                 {#each view.categories as one (one.category)}
                     <p class="sub">{categoryLabel(one.category)}</p>
@@ -495,20 +529,26 @@
         {/if}
 
         {@render kindGroups(
-            t('cc.grp_subtask_dl_label'),
-            t('cc.grp_subtask_glyph'),
+            t('focus.command.grp_subtask_dl_label'),
+            t('focus.command.grp_subtask_glyph'),
             view.subtaskDated
         )}
         {@render kindGroups(
-            t('cc.grp_open_subtasks_label'),
-            t('cc.grp_subtask_glyph'),
+            t('focus.command.grp_open_subtasks_label'),
+            t('focus.command.grp_subtask_glyph'),
             view.subtaskOpen
         )}
-        {@render group(t('cc.grp_followups_label'), t('cc.grp_followups_glyph'), view.followups)}
+        {@render group(
+            t('focus.command.grp_followups_label'),
+            t('focus.command.grp_followups_glyph'),
+            view.followups
+        )}
         {#if refreshView.rows.length > 0}
             <div class="grp">
                 <p class="lbl">
-                    <Glyph name={t('cc.refresh_glyph')} />{t('cc.grp_refresh_label')}
+                    <Glyph name={t('focus.command.refresh_glyph')} />{t(
+                        'focus.command.grp_refresh_label'
+                    )}
                 </p>
                 <Ticker rows={refreshView.rows} onpick={pickRefresh} />
             </div>
@@ -517,7 +557,10 @@
         {#if view.snoozed.length > 0}
             <details class="grp">
                 <summary class="lbl">
-                    <Glyph name={t('cc.snoozed_glyph')} />{t('cc.snoozed', view.snoozed.length)}
+                    <Glyph name={t('focus.command.snoozed_glyph')} />{t(
+                        'focus.command.snoozed',
+                        view.snoozed.length
+                    )}
                 </summary>
                 <Ticker rows={view.snoozed} onpick={pick} onaction={act} />
             </details>
@@ -556,7 +599,7 @@
         font-size: var(--fs-sm);
     }
 
-    /* The live HPC pill docks here; it is O26's and the slot stays empty until then. */
+    /* The live HPC pill docks here; the slot stays empty when the queue has no live counts. */
     .pill {
         flex: 0 0 auto;
     }

@@ -48,7 +48,7 @@ test('the add form writes a block and the delete behind the confirm takes it awa
     expect(before).not.toContain(ADDED);
     await openTasks(page);
 
-    await page.getByRole('button', { name: t('col.add') }).click();
+    await page.getByRole('button', { name: t('collection.add') }).click();
     await page.getByRole('textbox', { name: 'title', exact: true }).fill(ADDED);
     await page.getByRole('button', { name: t('collection.form_save') }).click();
     await expect.poll(() => readHubFile(TASKS), { timeout: 5000 }).toContain(ADDED);
@@ -56,7 +56,7 @@ test('the add form writes a block and the delete behind the confirm takes it awa
 
     // Cancel leaves the block where it is.
     await card(page, ADDED)
-        .getByRole('button', { name: t('col.edit_delete') })
+        .getByRole('button', { name: t('collection.edit_delete') })
         .click();
     await page.getByRole('button', { name: t('collection.form_delete'), exact: true }).click();
     await page
@@ -83,13 +83,13 @@ test('the edit form changes a status and the chip follows', async ({ page }) => 
     const one = card(page, title);
     await expect(one.getByText(held, { exact: true })).toBeVisible();
 
-    await one.getByRole('button', { name: t('col.edit_delete') }).click();
+    await one.getByRole('button', { name: t('collection.edit_delete') }).click();
     await page.getByRole('combobox', { name: 'status', exact: true }).selectOption('done');
     await page.getByRole('button', { name: t('collection.form_save') }).click();
     await expect.poll(() => readHubFile(TASKS), { timeout: 5000 }).toContain('status: done');
     await expect(one.getByText('done', { exact: true })).toBeVisible();
 
-    await one.getByRole('button', { name: t('col.edit_delete') }).click();
+    await one.getByRole('button', { name: t('collection.edit_delete') }).click();
     await page.getByRole('combobox', { name: 'status', exact: true }).selectOption(held);
     await page.getByRole('button', { name: t('collection.form_save') }).click();
     await expect.poll(() => readHubFile(TASKS), { timeout: 5000 }).toBe(before);
@@ -130,16 +130,16 @@ test('+ subtask adds a line and done ticks it', async ({ page }) => {
     await openTasks(page);
 
     const one = card(page, title);
-    await one.getByRole('button', { name: t('actions.add_subtask') }).click();
-    await one.getByRole('textbox', { name: t('actions.subtask_do') }).fill(line);
-    await one.getByRole('button', { name: t('actions.subtask_save') }).click();
+    await one.getByRole('button', { name: t('project.action.add_subtask') }).click();
+    await one.getByRole('textbox', { name: t('project.action.subtask_do') }).fill(line);
+    await one.getByRole('button', { name: t('project.action.subtask_save') }).click();
     await expect.poll(() => readHubFile(TASKS), { timeout: 5000 }).toContain(line);
     await expect(one.getByText(line)).toBeVisible();
 
     await one
         .locator('.line')
         .filter({ hasText: line })
-        .getByRole('button', { name: t('actions.done'), exact: true })
+        .getByRole('button', { name: t('project.action.done'), exact: true })
         .click();
     await expect.poll(() => /done:\s*true/.test(readHubFile(TASKS)), { timeout: 5000 }).toBe(true);
     await expect(one.locator('.line.done').filter({ hasText: line })).toHaveCount(1);
@@ -147,7 +147,7 @@ test('+ subtask adds a line and done ticks it', async ({ page }) => {
     await one
         .locator('.line')
         .filter({ hasText: line })
-        .getByRole('button', { name: t('actions.del'), exact: true })
+        .getByRole('button', { name: t('project.action.del'), exact: true })
         .click();
     await expect.poll(() => readHubFile(TASKS), { timeout: 5000 }).toBe(before);
 });

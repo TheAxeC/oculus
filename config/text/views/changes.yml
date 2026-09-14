@@ -1,0 +1,56 @@
+# Oculus text owned by the changes view.
+text:
+    git:
+        branch_new: New branch
+        branch_new_confirm: Create {0} and check it out?
+        branch_new_create: create
+        branch_new_label: Name for the new branch
+        branch_switch_confirm: Check out {0}?
+        branch_switch_detail: The working tree must be clean; a dirty tree is refused.
+        busy: Working
+        commit: commit
+        commit_confirm: Commit {0} staged paths on {1}?
+        commit_detail: The message is committed as it stands in the box.
+        commit_label: Commit message
+        commit_none: Nothing is staged, so there is nothing to commit.
+        discard: discard
+        discard_confirm: Throw away the change to {0}?
+        discard_detail: The worktree goes back to what is staged, or to what is committed when nothing is. There is no undo.
+        discard_title: Throw away the worktree change to this path
+        done: Done.
+        message_prompt: "Write the commit message for the staged diff on stdin. One line of subject: capitalised, imperative, no trailing full stop. Then a blank line. Then one bullet per change, each starting with '- ' and an imperative verb. Plain ASCII, no markdown headings, no code fences, no quotes around the message, nothing but the message itself. Name no tool, no model and no assistant anywhere in it, and add no trailer of any kind."
+        push: push
+        push_confirm: Push {0} to {1}?
+        push_detail: '{0} commits go to the upstream. Nothing is forced.'
+        push_none: This branch has no upstream, so there is nowhere to push it.
+        push_title: Push {0} to {1}
+        stage: stage
+        stage_title: Stage this path
+        suggest: suggest
+        suggest_pending: reading the staged diff
+        suggest_title: Write a message from the staged diff
+        unstage: unstage
+        unstage_title: Take this path back out of the index
+    sessions:
+        ch_added: +{0}
+        ch_ahead: '{0} ahead'
+        ch_behind: '{0} behind'
+        ch_binary: binary
+        ch_branch: branch
+        ch_changed: Changed
+        ch_deleted: -{0}
+        ch_detached: detached
+        ch_elide: ...{0}
+        ch_group_empty: nothing
+        ch_insync: in step with the upstream
+        ch_norepo: This workspace is not a git repository.
+        ch_repo: The repository
+        ch_shared: also open
+        ch_shared_tip: also touched by {0}
+        ch_staged: Staged
+        ch_times: '{0}x'
+        ch_touched: Touched by this session
+        ch_touched_empty: No file touched yet.
+        ch_untracked: Untracked
+        changes_glyph: code
+        view_changes: Changes

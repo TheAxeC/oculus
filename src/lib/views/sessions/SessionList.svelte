@@ -3,6 +3,15 @@
 
     import type { MenuItem } from '$lib/ui/Menu.svelte';
     import { t } from '$lib/state/text';
+    import type { ViewRegistration } from '$lib/views/registry';
+
+    export const registration: ViewRegistration = {
+        id: 'session-list',
+        label: 'sessions.rail_title',
+        glyph: 'sessions.rail_glyph',
+        group: 'sessions',
+        order: 0
+    };
 
     type SessionRow = { id: string; live: boolean; cwd: string | null };
 
@@ -176,8 +185,8 @@
 
     /** What the registry says the process is doing, in words beside the colour of the dot. */
     function liveLabel(row: GroupedSession): string {
-        if (row.liveStatus === 'busy') return t('js.sessions.live_busy');
-        if (row.liveStatus === 'idle') return t('js.sessions.live_idle');
+        if (row.liveStatus === 'busy') return t('sessions.live_busy');
+        if (row.liveStatus === 'idle') return t('sessions.live_idle');
         return row.liveStatus ?? '';
     }
 
@@ -187,7 +196,7 @@
         if (event === null) return row.lastPrompt;
         if (event.kind === 'turn') {
             return t(
-                'js.sessions.activity_turn',
+                'sessions.activity_turn',
                 String(Math.round((Number(event.text) || 0) / 1000))
             );
         }
@@ -276,7 +285,7 @@
         const answer = await writeSession(row.id, { hidden: next });
         if (answer.ok) return;
         flipped = { ...flipped, [row.id]: !next };
-        failure = t('js.sessions.dismiss_failed');
+        failure = t('sessions.dismiss_failed');
     }
 </script>
 
@@ -296,7 +305,7 @@
                 <span class="nm">{entry.title}</span>
                 {#if entry.pinned}
                     <span class="pin" title={t('sessions.pin_mark')}>
-                        <Glyph name={t('cards.pin_glyph')} />
+                        <Glyph name={t('project.card.pin_glyph')} />
                     </span>
                 {/if}
                 {#if entry.hook?.event === 'notification' && entry.hook.kind === 'permission_prompt'}
@@ -310,16 +319,16 @@
             <span class="meta">
                 {#if entry.live}
                     <span class="live">{liveLabel(entry)}</span>
-                    <span class="sep">{t('js.sessions.meta_sep')}</span>
+                    <span class="sep">{t('sessions.meta_sep')}</span>
                 {/if}
                 <span class="mo">{modelShort(entry.model)}</span>
-                <span class="sep">{t('js.sessions.meta_sep')}</span>
+                <span class="sep">{t('sessions.meta_sep')}</span>
                 <span class="ts">{stamp(entry.started, now)}</span>
-                <span class="sep">{t('js.sessions.meta_sep')}</span>
+                <span class="sep">{t('sessions.meta_sep')}</span>
                 <span class="act">{activity(entry)}</span>
                 {#if entry.hook?.event === 'stop'}
-                    <span class="sep">{t('js.sessions.meta_sep')}</span>
-                    <span class="stopped">{t('js.sessions.stopped_at', clock(entry.hook.at))}</span>
+                    <span class="sep">{t('sessions.meta_sep')}</span>
+                    <span class="stopped">{t('sessions.stopped_at', clock(entry.hook.at))}</span>
                 {/if}
                 {#each entry.secondaryAreas as area (area.key)}
                     <Chip label={area.short === '' ? area.key : area.short} />
@@ -345,8 +354,8 @@
             <button
                 type="button"
                 class="hide"
-                title={away ? t('js.sessions.restore_tip') : t('js.sessions.close_tip')}
-                aria-label={away ? t('js.sessions.restore_tip') : t('js.sessions.close_tip')}
+                title={away ? t('sessions.restore_tip') : t('sessions.close_tip')}
+                aria-label={away ? t('sessions.restore_tip') : t('sessions.close_tip')}
                 onclick={() => dismiss(entry)}
             >
                 {#if away}
@@ -364,7 +373,7 @@
         <div class="area-h" title={area.full}>
             <span class="short">{area.short === '' ? area.key : area.short}</span>
             {#if !area.known}
-                <span class="unknown">{t('js.sessions.area_unknown')}</span>
+                <span class="unknown">{t('sessions.area_unknown')}</span>
             {/if}
         </div>
         {#each area.sessions as entry (entry.id)}
@@ -388,7 +397,7 @@
             </span>
             <span class="meta">
                 <span class="act">{basename(entry.cwd)}</span>
-                <span class="sep">{t('js.sessions.meta_sep')}</span>
+                <span class="sep">{t('sessions.meta_sep')}</span>
                 <span class="ts">{stamp(entry.created, now)}</span>
             </span>
         </button>
@@ -454,8 +463,8 @@
         {#if dismissed > 0}
             <ToolButton
                 label={opened.dismissed
-                    ? t('js.sessions.hide_dismissed', dismissed)
-                    : t('js.sessions.show_dismissed', dismissed)}
+                    ? t('sessions.hide_dismissed', dismissed)
+                    : t('sessions.show_dismissed', dismissed)}
                 active={opened.dismissed}
                 onclick={() => write({ dismissed: !opened.dismissed })}
             />
@@ -469,7 +478,7 @@
             <p class="failure">{failure}</p>
         {/if}
         {#if rows.length === 0 && panes.length === 0}
-            <Empty message={t('js.sessions.state_empty')} glyph={t('sessions.empty_glyph')} />
+            <Empty message={t('sessions.state_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}
             {#each live as workspace (workspace.key)}
                 {@render workspaceOf(workspace)}
@@ -484,7 +493,7 @@
                         onclick={() => write({ ended: !opened.ended })}
                     >
                         <Glyph name={t('sessions.ended_glyph')} />
-                        <span>{t('js.sessions.ended_section', endedCount)}</span>
+                        <span>{t('sessions.ended_section', endedCount)}</span>
                     </button>
                     {#if opened.ended}
                         <div class="ended-body">

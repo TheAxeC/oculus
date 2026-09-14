@@ -1,10 +1,8 @@
 // The rail's grouping: what arrange() puts where, and which groups are drawn as one button with a
 // list rather than as a heading over one button per view.
 //
-// The catalog and the glyphs are the real config, so the words checked here are config/text.yml's.
-// The registrations are this file's own, except in the last block, which reads the application's
-// registry and the real nav_groups: what a group holds today is a fact about config/layout.yml and
-// config/sources.yml together, and that is the one thing no synthetic fixture can check.
+// The catalog and glyphs are the real config. The registrations are this file's own, except in the
+// last block, which reads the application's registry and nav_groups.
 //
 // What this does NOT cover: the list opening. There is no DOM in this suite, so no menu is clicked
 // and no $effect runs; a closed Menu renders its opener and no list, which is what is asserted.
@@ -35,13 +33,13 @@ import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { installBadges } from '../state/rail-badges-fixture.ts';
 import {
     registerView,
+    viewFor,
     views,
     type Registration,
     type ViewProps
 } from '../../src/lib/views/registry.ts';
 import type { Component } from 'svelte';
-// Importing the barrel registers the application's own views, exactly as the page does it; the
-// collections are registered the way the page registers them, from the keys of sources.yml.
+// Importing the route loader registers the application's views. Collections use sources.yml keys.
 import { registerCollections } from '../../src/routes/views.ts';
 
 const { config } = loadConfig(engineDir());
@@ -58,8 +56,8 @@ registerCollections(COLLECTIONS);
 const component = (() => {}) as unknown as Component<ViewProps>;
 
 /** A registration of this file's own, told apart from the application's by its id. */
-function probe(id: string): Registration {
-    return { id, label: 'views.status', glyph: 'views.status_glyph', component };
+function probe(id: string, group = '', order = 0): Registration {
+    return { id, label: 'views.status', glyph: 'views.status_glyph', component, group, order };
 }
 
 /** How many times a fragment occurs in a rendering. */
@@ -77,26 +75,34 @@ function buttonWith(body: string, attribute: string): string | undefined {
 describe('arrange', () => {
     it("puts a group's views in the group's own key order, and the rest at the end", () => {
         const found = arrange(
-            [probe('c'), probe('a'), probe('b')],
-            [{ label: 'Two', keys: ['b', 'a'] }]
+            [probe('c'), probe('a', 'two', 1), probe('b', 'two', 0)],
+            [{ id: 'two', label: 'Two' }]
         );
         expect(found.map((section) => section.label)).toEqual(['Two', null]);
         expect(found[0].items.map((view) => view.id)).toEqual(['b', 'a']);
         expect(found[1].items.map((view) => view.id)).toEqual(['c']);
     });
 
+    it('resolves equal orders by view id', () => {
+        const found = arrange(
+            [probe('charlie', 'one', 2), probe('alpha', 'one', 2), probe('bravo', 'one', 2)],
+            [{ id: 'one', label: 'One' }]
+        );
+        expect(found[0].items.map((view) => view.id)).toEqual(['alpha', 'bravo', 'charlie']);
+    });
+
     it('draws no group for keys no registration answers', () => {
-        expect(arrange([probe('a')], [{ label: 'None', keys: ['x', 'y'] }])).toEqual([
+        expect(arrange([probe('a')], [{ id: 'none', label: 'None' }])).toEqual([
             { label: null, items: [probe('a')] }
         ]);
     });
 
     it("carries the group's glyph when it has one, and leaves it off when it has none", () => {
         const found = arrange(
-            [probe('a'), probe('b')],
+            [probe('a', 'iconed'), probe('b', 'bare')],
             [
-                { label: 'Iconed', keys: ['a'], glyph: 'chat' },
-                { label: 'Bare', keys: ['b'] }
+                { id: 'iconed', label: 'Iconed', glyph: 'chat' },
+                { id: 'bare', label: 'Bare' }
             ]
         );
         expect(found[0].glyph).toBe('chat');
@@ -104,10 +110,14 @@ describe('arrange', () => {
     });
 
     it('exposes direct digits, full display order, and configured flyout chords', () => {
-        const registrations = ['a', 'b', 'c', 'd', 'e', 'f', 'g'].map(probe);
+        const registrations = [
+            probe('a', 'direct', 1),
+            probe('b', 'direct', 0),
+            ...['c', 'd', 'e', 'f', 'g'].map((id, order) => probe(id, 'flyout', order))
+        ];
         const found = railOrder(registrations, [
-            { label: 'Direct', keys: ['b', 'a'] },
-            { label: 'Flyout', keys: ['c', 'd', 'e', 'f', 'g'], chord: 'c' }
+            { id: 'direct', label: 'Direct' },
+            { id: 'flyout', label: 'Flyout', chord: 'c' }
         ]);
         expect(found).toEqual({
             direct: ['b', 'a'],
@@ -121,11 +131,12 @@ describe('the rail, drawn', () => {
     /** Five views in one group and two in another, which is either side of GROUP_MAX. */
     const BIG = ['big-1', 'big-2', 'big-3', 'big-4', 'big-5'];
     const SMALL = ['small-1', 'small-2'];
-    for (const id of [...BIG, ...SMALL]) registerView(probe(id));
+    for (const [order, id] of BIG.entries()) registerView(probe(id, 'bigger', order));
+    for (const [order, id] of SMALL.entries()) registerView(probe(id, 'smaller', order));
 
     const groups: NavGroup[] = [
-        { label: 'Bigger', keys: BIG, glyph: 'chat' },
-        { label: 'Smaller', keys: SMALL }
+        { id: 'bigger', label: 'Bigger', glyph: 'chat' },
+        { id: 'smaller', label: 'Smaller' }
     ];
     const body = render(ActivityRail, { props: { groups } }).body;
 
@@ -175,7 +186,7 @@ describe('the rail, drawn', () => {
         expect(body).toContain('data-action="search"');
         expect(body).toContain('data-action="update"');
         expect(body).toContain(`aria-label="${catalog['app.search']}"`);
-        expect(body).toContain(`aria-label="${catalog['js.tasks.update_tasks']}"`);
+        expect(body).toContain(`aria-label="${catalog['app.tasks.update_tasks']}"`);
         expect(body).toContain(catalog['app.search_tip']);
         expect(body).toContain(catalog['app.update_tip']);
         expect(body).toContain(`aria-label="${catalog['app.text_smaller']}"`);
@@ -258,10 +269,14 @@ describe('the app text controls', () => {
 
 describe('a rail badge', () => {
     it('draws a toned registration badge beside its glyph and nothing at zero', () => {
-        registerView({ ...probe('badged'), badge: () => '3 5', badgeTone: () => 'red' });
-        registerView({ ...probe('zero-badge'), badge: () => '', badgeTone: () => 'green' });
+        registerView({ ...probe('badged', 'badge'), badge: () => '3 5', badgeTone: () => 'red' });
+        registerView({
+            ...probe('zero-badge', 'badge'),
+            badge: () => '',
+            badgeTone: () => 'green'
+        });
         const body = render(ActivityRail, {
-            props: { groups: [{ label: 'Badge', keys: ['badged', 'zero-badge'] }] }
+            props: { groups: [{ id: 'badge', label: 'Badge' }] }
         }).body;
         expect(body).toMatch(/class="badge\s/);
         expect(body).toContain('3 5');
@@ -273,7 +288,7 @@ describe('a rail badge', () => {
     it('puts browser identities and the rail box class on direct and bookmark buttons', () => {
         const direct = render(ActivityRail, {
             props: {
-                groups: [{ label: 'Controls', keys: ['badged'] }],
+                groups: [{ id: 'badge', label: 'Controls' }],
                 bookmarks: [{ label: 'Manual', root: 'docs', path: 'manual.html' }]
             }
         }).body;
@@ -289,9 +304,9 @@ describe('a rail badge', () => {
 
     it('gives the large-group opener the same rail box class', () => {
         const ids = ['flyout-1', 'flyout-2', 'flyout-3', 'flyout-4', 'flyout-5'];
-        for (const id of ids) registerView(probe(id));
+        for (const [order, id] of ids.entries()) registerView(probe(id, 'flyout', order));
         const rendered = render(ActivityRail, {
-            props: { groups: [{ label: 'Flyout', glyph: 'chat', keys: ids }] }
+            props: { groups: [{ id: 'flyout', label: 'Flyout', glyph: 'chat' }] }
         }).body;
         const group = rendered.match(/data-group="Flyout"[\s\S]*?<button\b[^>]*>/)?.[0] ?? '';
         expect(group).toContain('rail-control');
@@ -304,8 +319,11 @@ describe('a rail badge', () => {
             version: 7001,
             payload: { status: 'ok', total: 3, running: 2, pending: 1 }
         });
+        const registered = viewFor('hpc');
+        expect(registered).toBeDefined();
+        registerView({ ...registered!, id: 'probe-hpc', group: 'hpc-only', order: 0 });
         const hpc = render(ActivityRail, {
-            props: { groups: [{ label: 'HPC', keys: ['hpc'] }] }
+            props: { groups: [{ id: 'hpc-only', label: 'HPC' }] }
         }).body;
         expect(hpc).toContain('title="running: 2 | pending: 1"');
         expect(hpc).toMatch(/class="badge[^>]*aria-hidden="true"/);
@@ -338,10 +356,10 @@ describe('a rail badge', () => {
 });
 
 describe('the groups of the real config', () => {
-    /** The `nav_groups` of config/layout.yml, both of its lists flattened, as the page reads it. */
+    /** The `nav_groups` mapping of config/layout.yml, as the page reads it. */
     function realGroups(): NavGroup[] {
-        const raw = config.nav_groups as Record<string, NavGroup[]>;
-        return Object.values(raw).flat();
+        const raw = config.nav_groups as Record<string, Omit<NavGroup, 'id'>>;
+        return Object.entries(raw).map(([id, group]) => ({ id, ...group }));
     }
 
     const sections = arrange(

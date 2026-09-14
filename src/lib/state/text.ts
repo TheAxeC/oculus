@@ -1,11 +1,6 @@
-// Layer 2, client state. The text catalog, the glyph vocabulary and its ASCII stand-ins as the page
-// received them, and the lookups every component uses. Nothing here touches the filesystem: the
-// server reads config/text.yml and config/glyphs.yml, ships them as the page's data, and O6's
-// watcher pushes later edits over the socket. The browser never fetches the YAML itself.
-//
-// The ASCII mode is a lookup at the moment a glyph renders, not a pass over the document: a glyph
-// reaches the DOM through ui/Glyph.svelte and a legend icon through ui/Chip.svelte's `icon`, so
-// those two calls are the whole of it.
+// Layer 2, client state. The text catalog, glyph vocabulary and ASCII stand-ins received from the
+// server, with the lookups components use. Nothing here touches the filesystem. Glyph tokens are
+// resolved when a string renders, so changing display mode updates catalog and configuration text.
 
 import { glyphMode } from './glyphmode.svelte.ts';
 
@@ -27,8 +22,7 @@ export function setGlyphs(next: Record<string, string>): void {
 
 /**
  * Install the ASCII stand-ins, the `ascii:` map of config/glyphs.yml. It is keyed by the character
- * rather than by the glyph's name, so it also covers an icon that came from data: a status chip's
- * own icon in config/vocab.yml, or an emoji somebody typed into a manifest.
+ * rather than by the glyph's name, so one character shared by several names has one stand-in.
  */
 export function setAscii(next: Record<string, string>): void {
     ascii = next;
@@ -40,11 +34,22 @@ export function setAscii(next: Record<string, string>): void {
  * tests/keys.test.ts can only check a literal key, so that family is checked instead by
  * tests/views/registry.test.ts, and this throws on a missing key exactly as t() does.
  */
-export function lookup(key: string): string {
+function catalogEntry(key: string): string {
     const value = catalog[key];
-    if (value === undefined) throw new Error(`text key not in config/text.yml: ${key}`);
+    if (value === undefined) {
+        throw new Error(`text key not in the text catalog (config/text/): ${key}`);
+    }
+    return resolveGlyphTokens(value);
+}
+
+export function lookup(key: string): string {
+    return catalogEntry(key);
+}
+
+/** Resolve every known {G.name} token through the active glyph mode and preserve unknown tokens. */
+export function resolveGlyphTokens(value: string): string {
     return value.replace(/\{G\.([a-zA-Z0-9_-]+)\}/g, (placeholder, name: string) => {
-        return glyphs[name] ?? placeholder;
+        return glyphs[name] === undefined ? placeholder : glyph(name);
     });
 }
 
@@ -53,7 +58,7 @@ export function lookup(key: string): string {
  * A key that is not in the catalog throws, so a typo fails loudly instead of rendering blank.
  */
 export function t(key: string, ...args: (string | number)[]): string {
-    const template = lookup(key);
+    const template = catalogEntry(key);
     return template.replace(/\{(\d+)\}/g, (placeholder, index: string) => {
         const arg = args[Number(index)];
         return arg === undefined ? placeholder : String(arg);
@@ -72,9 +77,8 @@ export function glyph(name: string): string {
 }
 
 /**
- * The same swap for a character that came from data rather than from a name in config/glyphs.yml: a
- * status legend's `icon` through Chip. Unknown characters and every character while the mode is
- * `unicode` come back unchanged, so this is safe on any string.
+ * The same swap for a character already resolved by a caller. Unknown characters and every
+ * character while the mode is `unicode` come back unchanged, so this is safe on any string.
  */
 export function asciiOf(character: string): string {
     if (glyphMode() !== 'ascii') return character;

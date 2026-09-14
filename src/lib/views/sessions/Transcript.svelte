@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Transcript follows Terminal in the sessions flyout.
+    import type { ViewRegistration } from '$lib/views/registry';
+    export const registration: ViewRegistration = {
+        id: 'transcript',
+        label: 'sessions.view_transcript',
+        glyph: 'sessions.transcript_glyph',
+        group: 'sessions',
+        order: 3
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. The conversation of the selected session: what was asked, what the agent
     // answered, and every tool it called on the way, oldest first.

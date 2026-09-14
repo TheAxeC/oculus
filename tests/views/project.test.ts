@@ -141,23 +141,22 @@ describe('a project as its own tab', () => {
     });
 
     it('offers the manifest editor and the deposit on the card', () => {
-        expect(body).toContain(catalog['cards.edit_manifest']);
-        expect(body).toContain(catalog['cards.deposit']);
+        expect(body).toContain(catalog['project.card.edit_manifest']);
+        expect(body).toContain(catalog['project.card.deposit']);
     });
 
-    // The three the tab lacked while its card was a copy of the board's: Q1 made the two one file,
-    // so the pin, the stale badge and the subtasks block reach the tab with it.
+    // The shared card brings its pin, stale badge and subtasks block into the project tab.
     it('offers the pin control on the card', () => {
-        expect(body).toContain(catalog['cards.pin_to_top']);
+        expect(body).toContain(catalog['project.card.pin_to_top']);
     });
 
     it('marks the manifest as behind its documents', () => {
-        expect(body).toContain(catalog['cards.stale_behind'].replace('{0}', '9'));
+        expect(body).toContain(catalog['project.card.stale_behind'].replace('{0}', '9'));
     });
 
     it('draws the subtasks block', () => {
-        expect(body).toContain(catalog['actions.subtasks']);
-        expect(body).toContain(catalog['actions.add_subtask']);
+        expect(body).toContain(catalog['project.action.subtasks']);
+        expect(body).toContain(catalog['project.action.add_subtask']);
     });
 
     it('offers the Markdown documents the project has, and no others', () => {

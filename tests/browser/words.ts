@@ -1,7 +1,6 @@
 // The catalog, in the spec's own process. A spec locates a control by its accessible name, and that
-// name is what the page read out of config/text.yml and config/text-oculus.yml; so the spec reads it
-// from the same files, through the same flattening, and never from an English string typed into a
-// spec.
+// name is what the page read out of the owner files under config/text/, so the spec reads it through
+// the same flattening and never from an English string typed into a spec.
 //
 // The flattening is data/sources/config.ts's, the same call tests/text.test.ts makes. The lookup and
 // the interpolation are repeated here rather than imported from state/text.ts, because that module

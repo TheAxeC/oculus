@@ -17,8 +17,8 @@
     } from '$lib/state/palette';
     import { paletteSource } from '$lib/state/palette-source.svelte';
     import { setCrt, setTheme, crt } from '$lib/state/ui.svelte';
-    import { lookup, t } from '$lib/state/text';
-    import { views } from '$lib/views/registry';
+    import { t } from '$lib/state/text';
+    import { registrationLabel, views } from '$lib/views/registry';
     import { untrack } from 'svelte';
 
     type Props = {
@@ -36,7 +36,7 @@
 
     const current = $derived(paletteSource());
     const knownViews = $derived(
-        views().map((view) => ({ id: view.id, label: lookup(view.label) }))
+        views().map((view) => ({ id: view.id, label: registrationLabel(view) }))
     );
     const index = $derived(open ? buildIndex(current.snapshot, current.feeds, knownViews) : []);
     const parsed = $derived(parseCommand(query));
@@ -133,7 +133,7 @@
         <div class="palette" role="dialog" aria-modal="true" aria-label={t('app.search')}>
             <Search
                 value={query}
-                placeholder={t('js.leads.cmdk_placeholder')}
+                placeholder={t('app.palette.cmdk_placeholder')}
                 oninput={(value) => {
                     query = value;
                     selected = 0;
@@ -176,7 +176,7 @@
                 {/if}
                 {#if count === 0}
                     <p class="empty">
-                        {parsed === null ? t('app.palette_empty') : t('js.leads.cmd_unknown')}
+                        {parsed === null ? t('app.palette_empty') : t('app.palette.cmd_unknown')}
                     </p>
                 {/if}
             </div>

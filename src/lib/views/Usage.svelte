@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Usage closes the current system views.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'usage',
+        label: 'views.usage',
+        glyph: 'views.usage_glyph',
+        group: 'system',
+        order: 4
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. Show each configured Claude or Codex subscription, its current windows, live Claude sessions and seven-day token totals.
 

@@ -34,8 +34,13 @@ import {
     type BoardPreset
 } from '../../src/lib/state/board.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
-import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
-import { setCatalog } from '../../src/lib/state/text.ts';
+import {
+    engineDir,
+    glyphCatalog,
+    loadConfig,
+    textCatalog
+} from '../../src/lib/data/sources/config.ts';
+import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import type {
     Collection,
     Id,
@@ -46,7 +51,9 @@ import type {
     Venue
 } from '../../src/lib/data/model.ts';
 
-setCatalog(textCatalog(loadConfig(engineDir()).config));
+const ENGINE_CONFIG = loadConfig(engineDir()).config;
+setCatalog(textCatalog(ENGINE_CONFIG));
+setGlyphs(glyphCatalog(ENGINE_CONFIG));
 setVocab({
     palette: { '#7c5cff': 'c-violet', '#0d9488': 'c-teal', '#e2374d': 'c-crimson' },
     type_color: { active: '#0d9488', manuscript: '#7c5cff', idea: '#e2374d' },
@@ -55,8 +62,8 @@ setVocab({
         brain: { color: '#7c5cff', label: 'Neuroscience | EEG' }
     },
     status_legend: [
-        { key: 'lead', icon: 'L', label: 'first author' },
-        { key: 'submitted', icon: 'S', label: 'submitted / under review' }
+        { key: 'lead', icon: 'author', label: 'first author' },
+        { key: 'submitted', icon: 'brown', label: 'submitted / under review' }
     ]
 });
 

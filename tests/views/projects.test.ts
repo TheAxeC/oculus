@@ -1,9 +1,7 @@
 // The project board rendered to HTML on the server: one card per project of the board, what a card
 // carries, what an open card adds, and the list mode's table.
 //
-// The catalog, the glyphs and the vocabulary are the real config, and so is the merged config the
-// board reads its preset out of, so the words checked here are the words config/text.yml and
-// config/layout.yml hold. The projects are synthetic: what is checked is the view, not the hub.
+// The catalog, glyphs, vocabulary and board preset are the real config. The projects are synthetic: what is checked is the view, not the hub.
 //
 // What this does NOT cover: anything that needs a DOM. There is no browser in this suite, so no
 // menu opens, no card is clicked and no $effect runs; the state a click would write is written
@@ -304,8 +302,8 @@ describe('a card', () => {
     });
 
     it('draws the sessions working in the project folder, and the live count', () => {
-        expect(body).toContain(catalog['js.sessions.card_n'].replace('{0}', '2'));
-        expect(body).toContain(catalog['js.sessions.card_live'].replace('{0}', '1'));
+        expect(body).toContain(catalog['sessions.card_n'].replace('{0}', '2'));
+        expect(body).toContain(catalog['sessions.card_live'].replace('{0}', '1'));
         expect(body).toContain('The live one');
         expect(body).toContain('The ended one');
         // The tool mark of each row, and the state dot in the hue the session list gives it.
@@ -318,8 +316,8 @@ describe('a card', () => {
     it('draws the code, reproduced and compute badges', () => {
         expect(body).toContain(catalog['board.code_deposited']);
         expect(body).toContain(catalog['board.repro_yes']);
-        expect(body).toContain(catalog['cards.hpc_label']);
-        expect(body).toContain(catalog['cards.local_label']);
+        expect(body).toContain(catalog['project.card.hpc_label']);
+        expect(body).toContain(catalog['project.card.local_label']);
     });
 
     it('draws the funding, research line, dataset and collaborator tags', () => {
@@ -330,7 +328,7 @@ describe('a card', () => {
     });
 
     it('draws the eli5 and the first sentence of next, and no more of it', () => {
-        expect(body).toContain(catalog['cards.eli5']);
+        expect(body).toContain(catalog['project.card.eli5']);
         expect(body).toContain('what it is, in one line');
         expect(body).toContain('Run the sweep.');
         expect(body).not.toContain('Then write it up.');
@@ -347,7 +345,7 @@ describe('a card', () => {
         expect(submitted).not.toContain('overdue');
     });
 
-    // The title is a button since O14b: it opens the project as its own tab.
+    // The title button opens the project as its own tab.
     it('shows the short handle in short mode and the full title in full mode', () => {
         expect(html('projects', { labels: 'short' })).toMatch(/class="open[^"]*">Alpha</);
         expect(html('projects', { labels: 'full' })).toMatch(
@@ -371,12 +369,12 @@ describe('an open card', () => {
     it('adds the status line and the labelled fields', () => {
         expect(open).toContain('submit-ready, 16 pp');
         for (const key of [
-            'cards.latest',
-            'cards.results',
-            'cards.outcome',
-            'cards.next',
-            'cards.ideas',
-            'cards.reproduced'
+            'project.card.latest',
+            'project.card.results',
+            'project.card.outcome',
+            'project.card.next',
+            'project.card.ideas',
+            'project.card.reproduced'
         ]) {
             expect(open).toContain(catalog[key]);
         }
@@ -387,7 +385,7 @@ describe('an open card', () => {
     });
 
     it('adds the project documents, present and absent', () => {
-        expect(open).toContain(catalog['cards.documents']);
+        expect(open).toContain(catalog['project.card.documents']);
         expect(open).toContain('>README</span>');
         expect(open).toContain('>TEX</span>');
         expect(open).not.toMatch(/class="label">README\.md<\/span>/);
@@ -521,9 +519,9 @@ describe('the controls beside the search', () => {
 
 describe('the card controls', () => {
     it('offers the pin control, and marks a card that is pinned', () => {
-        expect(html('projects')).toContain(catalog['cards.pin_to_top']);
+        expect(html('projects')).toContain(catalog['project.card.pin_to_top']);
         const pinned = withProjects({ alpha: { pin: true } });
-        expect(pinned).toContain(catalog['cards.unpin']);
+        expect(pinned).toContain(catalog['project.card.unpin']);
         expect(pinned).toMatch(/class="card[^"]*pinned"/);
     });
 
@@ -543,8 +541,8 @@ describe('the card controls', () => {
                 ]
             }
         });
-        expect(body).toContain(words('cards.stale_behind', '3'));
-        expect(html('projects')).not.toContain(words('cards.stale_behind', '3'));
+        expect(body).toContain(words('project.card.stale_behind', '3'));
+        expect(html('projects')).not.toContain(words('project.card.stale_behind', '3'));
     });
 
     it('draws the waiting line by precedence and offers copy-context and folder controls', () => {
@@ -553,13 +551,13 @@ describe('the card controls', () => {
         });
         expect(body).toMatch(/class="waiting [^"]*people/);
         expect(body).toContain('waiting on Someone Else');
-        expect(body).toContain(catalog['helpers.copy_context']);
-        expect(body).toContain(catalog['helpers.folder']);
+        expect(body).toContain(catalog['project.helper.copy_context']);
+        expect(body).toContain(catalog['project.helper.folder']);
     });
 
     it('offers Ask on a project with a manifest', () => {
-        expect(html('projects')).toContain(`aria-label="${catalog['helpers.ask']}"`);
-        expect(html('projects')).toContain(catalog['helpers.ask_tip']);
+        expect(html('projects')).toContain(`aria-label="${catalog['project.helper.ask']}"`);
+        expect(html('projects')).toContain(catalog['project.helper.ask_tip']);
     });
 
     it('labels document controls and marks only PRESENT public', () => {
@@ -589,8 +587,8 @@ describe('the card controls', () => {
         );
         expect(body).not.toMatch(/class="doc [^"]*human/);
         expect(body).toMatch(/class="doc [^"]*public/);
-        expect(body).not.toContain(catalog['helpers.doc_human_tip']);
-        expect(body).toContain(catalog['helpers.doc_public_tip']);
+        expect(body).not.toContain(catalog['project.helper.doc_human_tip']);
+        expect(body).toContain(catalog['project.helper.doc_public_tip']);
         expect(body).toContain('>README</span>');
         expect(body).toContain('>PRESENT</span>');
     });
@@ -615,14 +613,14 @@ describe('the card controls', () => {
         receive({ channel: 'portfolio', version: 1, payload: snap });
         const body = html('projects');
         receive({ channel: 'portfolio', version: 1, payload: snapshot() });
-        expect(body).toContain(catalog['cards.no_manifest']);
+        expect(body).toContain(catalog['project.card.no_manifest']);
         expect(body).toContain('No manifest yet');
-        expect(body).not.toContain(catalog['cards.pin_to_top']);
-        expect(body).not.toContain(catalog['cards.edit_manifest']);
-        expect(body).not.toContain(catalog['helpers.ask_tip']);
-        expect(body).not.toContain(`aria-label="${catalog['helpers.ask']}"`);
-        expect(body).toContain(catalog['helpers.copy_context']);
-        expect(body).toContain(catalog['helpers.folder']);
+        expect(body).not.toContain(catalog['project.card.pin_to_top']);
+        expect(body).not.toContain(catalog['project.card.edit_manifest']);
+        expect(body).not.toContain(catalog['project.helper.ask_tip']);
+        expect(body).not.toContain(`aria-label="${catalog['project.helper.ask']}"`);
+        expect(body).toContain(catalog['project.helper.copy_context']);
+        expect(body).toContain(catalog['project.helper.folder']);
     });
 });
 
@@ -641,21 +639,21 @@ describe('the subtasks block', () => {
     );
 
     it('draws the lines with the open count', () => {
-        expect(body).toContain(catalog['actions.subtasks']);
-        expect(body).toContain(words('actions.n_open', '1'));
+        expect(body).toContain(catalog['project.action.subtasks']);
+        expect(body).toContain(words('project.action.n_open', '1'));
         expect(body).toContain('redraw figure 2');
         expect(body).toContain('2026-10-01');
     });
 
     it('draws done, the snoozes and del on an open line, and reopen on a done one', () => {
         for (const key of [
-            'actions.done',
-            'actions.snooze_1w',
-            'actions.snooze_1mo',
-            'actions.snooze_hide',
-            'actions.del',
-            'actions.reopen',
-            'actions.add_subtask'
+            'project.action.done',
+            'project.action.snooze_1w',
+            'project.action.snooze_1mo',
+            'project.action.snooze_hide',
+            'project.action.del',
+            'project.action.reopen',
+            'project.action.add_subtask'
         ]) {
             expect(body).toContain(catalog[key]);
         }
@@ -693,12 +691,12 @@ describe('the file finder', () => {
         const body = html('projects', { expanded: ['alpha'] });
         vi.unstubAllGlobals();
 
-        expect(body).toContain(words('cards.files_hdr', '2'));
-        expect(body).toContain(catalog['cards.files_ph']);
+        expect(body).toContain(words('project.card.files_hdr', '2'));
+        expect(body).toContain(catalog['project.card.files_ph']);
         expect(body).toContain('run.py');
         expect(body).toContain('37 KB');
         expect(body).toContain('2.0 MB');
-        expect(body).toContain(words('cards.files_capped', '2'));
+        expect(body).toContain(words('project.card.files_capped', '2'));
     });
 
     it('asks for nothing on a card that is not open', () => {

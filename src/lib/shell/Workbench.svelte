@@ -1,8 +1,8 @@
 <script module lang="ts">
     // Layer 3, shell. The pure document-title builder keeps its DOM-free string contract testable.
 
-    import { lookup, t as catalogText } from '$lib/state/text';
-    import { viewFor } from '$lib/views/registry';
+    import { t as catalogText } from '$lib/state/text';
+    import { registrationLabel, viewFor } from '$lib/views/registry';
     import type { Instance } from '$lib/state/layout';
 
     /** The words on the active main tab, including the per-instance label when it has one. */
@@ -15,12 +15,12 @@
         const registered = viewFor(instance.view);
         return registered === undefined
             ? catalogText('ui.unknown_view', instance.view)
-            : lookup(registered.label);
+            : registrationLabel(registered);
     }
 
     /** The active main tab title, with a waiting count in front when a session needs attention. */
     export function windowTitle(waiting: number, label: string): string {
-        const active = catalogText('js.nav.title_fmt', catalogText('js.nav.host'), label);
+        const active = catalogText('app.nav.title_fmt', catalogText('app.nav.host'), label);
         return waiting > 0 ? catalogText('app.title_waiting', waiting, active) : active;
     }
 </script>
@@ -477,9 +477,9 @@
 <UpdateTray open={updateOpen} onclose={() => (updateOpen = false)} />
 {#if sheetOpen}
     <KeySheet
-        title={t('js.keys.title')}
-        hint={t('js.keys.hint')}
-        rows={t('js.keys.rows')}
+        title={t('app.keys.title')}
+        hint={t('app.keys.hint')}
+        rows={t('app.keys.rows')}
         onclose={() => (sheetOpen = false)}
     />
 {/if}

@@ -1,5 +1,17 @@
+<script module lang="ts">
+    // Layer 3, view registration. Terminal follows session detail in the sessions flyout.
+    import type { ViewRegistration } from '$lib/views/registry';
+    export const registration: ViewRegistration = {
+        id: 'terminal',
+        label: 'sessions.view_terminal',
+        glyph: 'sessions.terminal_glyph',
+        group: 'sessions',
+        order: 2
+    };
+</script>
+
 <script lang="ts">
-    // Layer 3, view. One terminal pane: xterm.js over the `pty:` channel of O17 and the control that
+    // Layer 3, view. One terminal pane: xterm.js over the `pty:` channel and the control that
     // starts one when nothing is selected. The grid takes keyboard input and carries its own bytes.
     //
     // xterm.js is loaded inside the effect rather than at the top of the module: it needs a DOM, and

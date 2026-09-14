@@ -52,9 +52,11 @@
     });
 
     /** The words and tone of one host's own status, and nothing for a status the config omits. */
-    function statusOf(host: Host): { label: string; tone: string } | null {
+    function statusOf(host: Host): { label: string; glyph: string; tone: string } | null {
         const held = statuses.find((one) => one.key === host.status);
-        return held === null || held === undefined ? null : { label: held.label, tone: held.tone };
+        return held === null || held === undefined
+            ? null
+            : { label: held.label, glyph: held.glyph, tone: held.tone };
     }
 
     /** Move one host along the pipeline, and say what the write answered. */
@@ -87,7 +89,7 @@
 
             {#if career.milestone !== undefined}
                 <p class="milestone">
-                    <Glyph name={t('cards.deadline_glyph')} />
+                    <Glyph name={t('project.card.deadline_glyph')} />
                     <b>{t('focus.next')}</b>
                     {career.milestone}
                 </p>
@@ -144,7 +146,12 @@
                                 {/each}
                                 {#if own !== null}
                                     <span class="own"
-                                        ><Chip label={own.label} tone={own.tone} filled /></span
+                                        ><Chip
+                                            label={own.label}
+                                            glyph={own.glyph}
+                                            tone={own.tone}
+                                            filled
+                                        /></span
                                     >
                                 {/if}
                             </summary>
@@ -155,7 +162,7 @@
                                             <button
                                                 type="button"
                                                 class="move"
-                                                title={t('actions.host', one.key)}
+                                                title={t('focus.host', one.key)}
                                                 onclick={() => move(host, one.key)}
                                             >
                                                 {one.key}
@@ -195,7 +202,11 @@
                     <p class="sub">{t('focus.career_shots')}</p>
                     <div class="chips">
                         {#each career.eligibility.shots as shot, at (`${at}:${shot}`)}
-                            <Chip label={shot} glyph={t('cards.deadline_glyph')} tone="orange" />
+                            <Chip
+                                label={shot}
+                                glyph={t('project.card.deadline_glyph')}
+                                tone="orange"
+                            />
                         {/each}
                     </div>
                 {/if}

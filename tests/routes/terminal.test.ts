@@ -438,7 +438,7 @@ describe('POST /api/terminal, the chat action', () => {
         expect(response.status).toBe(200);
         const terminal = (await answer(response)).terminal as { id: string; name: string };
         expect(terminal.name).toBe(
-            CHAT_CATALOG['js.leads.chat_name_focus'].replace('{0}', 'Alpha Study')
+            CHAT_CATALOG['server.chat.chat_name_focus'].replace('{0}', 'Alpha Study')
         );
 
         const index = chatIndexPath(join(CHAT_STATE, 'sessions.json'), terminal.id);
@@ -446,14 +446,14 @@ describe('POST /api/terminal, the chat action', () => {
         expect(readFileSync(index, 'utf8')).toContain('## projects/active/alpha');
         expect(statSync(index).mode & 0o777).toBe(0o600);
         const system = [
-            CHAT_CATALOG['js.leads.chat_instruction']
+            CHAT_CATALOG['server.chat.chat_instruction']
                 .replace('{0}', CHAT_HUB)
                 .replace('{1}', CHAT_PROJECT),
-            CHAT_CATALOG['js.leads.chat_focus_note']
+            CHAT_CATALOG['server.chat.chat_focus_note']
                 .replace('{0}', 'alpha')
                 .replace('{1}', 'Alpha Study')
                 .replace('{2}', CHAT_PROJECT),
-            CHAT_CATALOG['js.leads.chat_index_note'].replace('{0}', index)
+            CHAT_CATALOG['server.chat.chat_index_note'].replace('{0}', index)
         ].join('\n\n');
         expect(system).toContain(`The hub root is \`${CHAT_HUB}\``);
         expect(system).toContain(`Your working directory is \`${CHAT_PROJECT}\``);
@@ -466,7 +466,7 @@ describe('POST /api/terminal, the chat action', () => {
             'Bash,Edit,Write,WebFetch,WebSearch',
             '--model',
             'claude-opus-4-1',
-            CHAT_CATALOG['js.leads.seed_focus'].replace('{0}', 'Alpha Study')
+            CHAT_CATALOG['server.chat.seed_focus'].replace('{0}', 'Alpha Study')
         ]);
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
         expect(started[started.indexOf('-c') + 1]).toBe(CHAT_PROJECT);
@@ -489,11 +489,13 @@ describe('POST /api/terminal, the chat action', () => {
         expect(response.status).toBe(200);
         const terminal = (await answer(response)).terminal as { id: string; name: string };
         const catalog = textCatalog(config);
-        expect(terminal.name).toBe(catalog['js.leads.chat_name'].replace('{0}', '1'));
+        expect(terminal.name).toBe(catalog['server.chat.chat_name'].replace('{0}', '1'));
         const index = chatIndexPath(join(CHAT_STATE, 'sessions.json'), terminal.id);
         const system = [
-            catalog['js.leads.chat_instruction'].replace('{0}', CHAT_HUB).replace('{1}', CHAT_HUB),
-            catalog['js.leads.chat_index_note'].replace('{0}', index)
+            catalog['server.chat.chat_instruction']
+                .replace('{0}', CHAT_HUB)
+                .replace('{1}', CHAT_HUB),
+            catalog['server.chat.chat_index_note'].replace('{0}', index)
         ].join('\n\n');
         const expected = command([
             '/opt/Claude CLI/claude',
@@ -501,7 +503,7 @@ describe('POST /api/terminal, the chat action', () => {
             system,
             '--disallowedTools',
             'Bash,Edit,Write,WebFetch,WebSearch',
-            catalog['js.leads.seed_portfolio']
+            catalog['server.chat.seed_portfolio']
         ]);
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
         expect(started[started.indexOf('-c') + 1]).toBe(CHAT_HUB);
@@ -511,7 +513,7 @@ describe('POST /api/terminal, the chat action', () => {
 
     it('numbers a portfolio chat past an existing Chat 1', async () => {
         process.env.OCULUS_LOCAL = CHAT_LOCAL;
-        const driver = tmux([CHAT_CATALOG['js.leads.chat_name'].replace('{0}', '1')]);
+        const driver = tmux([CHAT_CATALOG['server.chat.chat_name'].replace('{0}', '1')]);
         const response = await handleTerminal(
             request({ action: 'chat', cols: 80, rows: 24 }),
             TOKEN,
@@ -519,7 +521,7 @@ describe('POST /api/terminal, the chat action', () => {
         );
         expect(response.status).toBe(200);
         const terminal = (await answer(response)).terminal as { name: string };
-        expect(terminal.name).toBe(CHAT_CATALOG['js.leads.chat_name'].replace('{0}', '2'));
+        expect(terminal.name).toBe(CHAT_CATALOG['server.chat.chat_name'].replace('{0}', '2'));
     });
 
     it('leaves no index when zero columns are refused', async () => {

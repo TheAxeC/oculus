@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Timeline follows Transcript in the sessions flyout.
+    import type { ViewRegistration } from '$lib/views/registry';
+    export const registration: ViewRegistration = {
+        id: 'timeline',
+        label: 'sessions.view_timeline',
+        glyph: 'sessions.timeline_glyph',
+        group: 'sessions',
+        order: 4
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. What the session did, newest last: a clock, what kind of thing it was, and the
     // thing itself. A path is shown as its basename with the whole of it in the tooltip; a prompt
@@ -61,11 +73,11 @@
 
     /** The chip's word. The five known kinds have one; anything else says what it calls itself. */
     function kindLabel(kind: string): string {
-        if (kind === 'prompt') return t('js.sessions.ev_k_prompt');
-        if (kind === 'tool') return t('js.sessions.ev_k_tool');
-        if (kind === 'edit') return t('js.sessions.ev_k_edit');
-        if (kind === 'turn') return t('js.sessions.ev_k_turn');
-        if (kind === 'bust') return t('js.sessions.ev_k_bust');
+        if (kind === 'prompt') return t('sessions.ev_k_prompt');
+        if (kind === 'tool') return t('sessions.ev_k_tool');
+        if (kind === 'edit') return t('sessions.ev_k_edit');
+        if (kind === 'turn') return t('sessions.ev_k_turn');
+        if (kind === 'bust') return t('sessions.ev_k_bust');
         return kind;
     }
 
@@ -73,10 +85,10 @@
     function text(event: SessionEvent): string {
         const held = String(event.text ?? '');
         if (event.kind === 'turn') {
-            return t('js.sessions.ev_turn', String(Math.round((Number(held) || 0) / 1000)));
+            return t('sessions.ev_turn', String(Math.round((Number(held) || 0) / 1000)));
         }
         if (event.kind === 'bust') {
-            return t('js.sessions.ev_bust', compactCount(Number(held) || 0));
+            return t('sessions.ev_bust', compactCount(Number(held) || 0));
         }
         if (event.kind === 'tool' || event.kind === 'edit') return basename(held);
         return held;
@@ -122,7 +134,7 @@
         {#if record === null}
             <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
         {:else if events.length === 0}
-            <Empty message={t('js.sessions.tl_empty')} glyph={t('sessions.empty_glyph')} />
+            <Empty message={t('sessions.tl_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}
             {#each events as event, at (`${at}:${event.ts ?? ''}`)}
                 <div class="event">

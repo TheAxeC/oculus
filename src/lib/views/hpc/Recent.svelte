@@ -56,14 +56,14 @@
             tone={efficiencyTone(row.cpuPct as number | null)}
         />
     {:else if column.key === 'actions'}
-        <ToolButton label={t('js.slurm.log')} onclick={() => onlog(String(row.id))} />
+        <ToolButton label={t('hpc.log')} onclick={() => onlog(String(row.id))} />
     {:else}
         {String(row[column.key] ?? '')}
     {/if}
 {/snippet}
 {#if rows.length}
     <details>
-        <summary>{t('js.slurm.recent_summary', rows.length)}</summary>
+        <summary>{t('hpc.recent_summary', rows.length)}</summary>
         <Table {columns} rows={tableRows} rowKey="id" {cell} />
     </details>
 {/if}

@@ -72,7 +72,7 @@
 >
     <Card title={entry.title}>
         {#snippet meta()}
-            <Chip label={posted ? number : t('sf.linkedin_idea_tag')} />
+            <Chip label={posted ? number : t('linkedin.idea_tag')} />
             {#if entry.category !== ''}
                 <Chip label={entry.category} />
             {/if}
@@ -87,15 +87,15 @@
             <div class="actions">
                 {#if !posted}
                     <ToolButton
-                        label={t('sf.linkedin_markpost')}
-                        title={t('sf.linkedin_markpost_tip')}
+                        label={t('linkedin.markpost')}
+                        title={t('linkedin.markpost_tip')}
                         glyph="done"
                         onclick={promote}
                     />
                 {/if}
                 <ToolButton
-                    label={t('sf.linkedin_edit')}
-                    title={t('sf.linkedin_edit_tip')}
+                    label={t('linkedin.edit')}
+                    title={t('linkedin.edit_tip')}
                     glyph="edit"
                     onclick={edit}
                 />

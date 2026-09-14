@@ -1,0 +1,52 @@
+# Oculus text owned by the usage view.
+text:
+    usage:
+        col_account: Account
+        col_cache_creation: Cache creation
+        col_cache_read: Cache read
+        col_day: Day
+        col_input: Input
+        col_model: Model
+        col_output: Output
+        col_tool: Tool
+        context: '{0}% context'
+        cost: ${0}
+        duration_days_hours: '{0}d {1}h'
+        duration_hours_minutes: '{0}h {1}m'
+        duration_minutes: '{0}m'
+        five_hour: 5 hour
+        history: Last seven days
+        live: Live sessions
+        no_accounts: No usage accounts are configured.
+        no_data: No current rate-limit data was found.
+        no_history: No token use was recorded in the last seven days.
+        no_line: No Claude status-line data yet. Install bin/claude-usage.sh as Claude Code's statusLine command.
+        no_window: no window open
+        primary: Primary
+        refresh: Refresh now
+        refresh_refused: 'refresh refused: {0}'
+        refresher: 'refresher: {0}'
+        refresher_down: 'down since {0}: {1}'
+        refresher_login_required: Claude Code needs a login
+        refresher_offline: Claude Code is offline
+        refresher_prompt_missing: the Claude Code prompt did not return
+        refresher_refresh_failed: the usage refresh failed
+        refresher_refreshing: refreshing
+        refresher_running: running
+        refresher_stale: running, figures fetched at {0}; Claude Code renews them after five minutes
+        refresher_start_failed: the Claude Code session did not start
+        refresher_usage_limit: the account usage limit was reached
+        refusal_bad_request: the request was malformed
+        refusal_failed: the server did not answer
+        refusal_forbidden: the write token was refused
+        refusal_not_found: no such account
+        resets_in: resets in {0}
+        secondary: Secondary
+        session: Session {0}
+        seven_day: 7 day
+        total: Total
+        weekly_model: '{0} this week'
+        window_text: '{0}% | {1}'
+    views:
+        usage: Usage
+        usage_glyph: coin

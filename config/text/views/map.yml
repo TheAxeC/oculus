@@ -1,0 +1,23 @@
+# Oculus text owned by the map view.
+text:
+    map:
+        archived: '+ archived:'
+        collaborators: + collaborators
+        edge_failed: 'Edge edit failed: {0}'
+        empty: No relationships yet - add program or related to manifests.
+        head: 'Research lines and projects, linked by line membership and directed related edges: a one-way edge has one arrow from the manifest that lists the other, while a mutual edge has two arrowheads and its own colour when each manifest lists the other. The layout is a self-tuning spring layout. Drag a node; click a project to open it.'
+        legend_active: active
+        legend_idea: idea
+        legend_line: research line
+        legend_manuscript: manuscript
+        line_glyph: square_filled
+        link: link
+        link_glyph: link
+        link_tip: 'Link mode: drag one project onto another to add or remove a related edge'
+        project_glyph: circle_filled
+        retune: re-tune
+        retune_glyph: refresh
+        retune_tip: Re-optimise the layout for this graph
+    views:
+        map: Map
+        map_glyph: link

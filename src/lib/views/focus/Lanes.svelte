@@ -6,8 +6,8 @@
     // badge at its leading edge, which is a different thing from the card a board of projects draws.
     //
     // The drag is the card's own HTML5 events. state/drag.svelte.ts is the shell's pane drag and a
-    // view has no business in it. The move menu of O22 stays beside the drag, because a drag is not
-    // a keyboard path and the menu is.
+    // view has no business in it. The move menu stays beside the drag because it provides the
+    // keyboard path.
 
     import Chip from '$lib/ui/Chip.svelte';
     import Empty from '$lib/ui/Empty.svelte';
@@ -81,8 +81,9 @@
         if (date === undefined || date === '') return null;
         const days = daysUntil(date, now);
         if (days === null || project.chips.includes('submitted')) return { label: date };
-        if (days < 0) return { label: t('cards.overdue', -days), tone: 'red' };
-        if (days <= DEADLINE_SOON) return { label: t('cards.due_days', days), tone: 'amber' };
+        if (days < 0) return { label: t('project.card.overdue', -days), tone: 'red' };
+        if (days <= DEADLINE_SOON)
+            return { label: t('project.card.due_days', days), tone: 'amber' };
         return { label: date };
     }
 
@@ -218,7 +219,7 @@
     >
         <div class="card-h">
             {#if project.ghost}
-                <span class="chipicon" title={t('cards.ghost_badge_tip')}>
+                <span class="chipicon" title={t('project.card.ghost_badge_tip')}>
                     <Glyph name={t('board.warn_glyph')} />
                 </span>
             {:else}
@@ -242,7 +243,11 @@
             </button>
             {#if due}
                 <span class="due">
-                    <Chip label={due.label} tone={due.tone} glyph={t('cards.deadline_glyph')} />
+                    <Chip
+                        label={due.label}
+                        tone={due.tone}
+                        glyph={t('project.card.deadline_glyph')}
+                    />
                 </span>
             {/if}
             {#if !project.ghost}

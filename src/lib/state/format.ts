@@ -33,9 +33,9 @@ export function compactCount(value: number): string {
     const count = Number.isFinite(value) ? Number(value) : 0;
     if (count >= 1000000) {
         const millions = (count / 1000000).toFixed(count >= 10000000 ? 0 : 1).replace(/\.0$/, '');
-        return t('js.sessions.n_millions', millions);
+        return t('sessions.n_millions', millions);
     }
-    if (count >= 1000) return t('js.sessions.n_thousands', String(Math.round(count / 1000)));
+    if (count >= 1000) return t('sessions.n_thousands', String(Math.round(count / 1000)));
     return String(Math.round(count));
 }
 
@@ -56,7 +56,7 @@ export function stamp(iso: string | null | undefined, now: number = Date.now()):
         return time;
     }
     const day = `${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
-    return t('js.sessions.stamp_day', day, time);
+    return t('sessions.stamp_day', day, time);
 }
 
 /** The clock alone, whatever day the stamp is from: what a timeline row carries. */
@@ -87,8 +87,8 @@ export function seconds(
 /** A span in the two forms a row has room for: `N s` under a minute, `Mm SSs` above it. */
 export function span(total: number): string {
     const whole = Math.max(0, Math.round(total));
-    if (whole < MINUTE) return t('js.sessions.ag_secs', String(whole));
-    return t('js.sessions.ag_mins', String(Math.floor(whole / MINUTE)), pad(whole % MINUTE));
+    if (whole < MINUTE) return t('sessions.ag_secs', String(whole));
+    return t('sessions.ag_mins', String(Math.floor(whole / MINUTE)), pad(whole % MINUTE));
 }
 
 /** `claude-opus-5` reads as `opus-5`, which is what a narrow rail has room for. */
@@ -118,5 +118,5 @@ export function elide(path: string | null | undefined, max: number = PATH_MAX): 
     const text = String(path ?? '');
     if (text.length <= max) return text;
     const keep = Math.max(max - 3, basename(text).length);
-    return t('js.sessions.ch_elide', text.slice(text.length - keep));
+    return t('sessions.ch_elide', text.slice(text.length - keep));
 }

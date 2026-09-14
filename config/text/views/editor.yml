@@ -1,0 +1,28 @@
+# Oculus text owned by the editor view.
+text:
+    editor:
+        clean: nothing changed
+        dirty: '{0} changed'
+        empty_choice: (none)
+        failed: 'not saved: {0}'
+        no_choices: no choices
+        none: No project chosen. Open the editor from a project card.
+        none_glyph: edit
+        not_in_model: the snapshot does not carry this field, so it opens empty; saving it writes what is typed
+        refused: '{0}: {1}'
+        remove: click to remove
+        remove_glyph: dismiss
+        revert: Revert
+        revert_glyph: note_back
+        save: Save
+        save_glyph: check
+        saved: saved {0}
+        saved_none: nothing to save
+        saving: saving
+        search: filter
+        title: Manifest
+        toolbar: Manifest editor
+        unknown: The snapshot holds no project with the id {0}.
+    views:
+        editor: Editor
+        editor_glyph: edit

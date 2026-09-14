@@ -20,7 +20,9 @@ export const handle: Handle = ({ event, resolve }) => {
     // page. The key stays a literal so tests/keys.test.ts checks it like every other.
     const t = (key: string): string => {
         const value = catalog[key];
-        if (value === undefined) throw new Error(`text key not in config/text.yml: ${key}`);
+        if (value === undefined) {
+            throw new Error(`text key not in the text catalog (config/text/): ${key}`);
+        }
         return value;
     };
 

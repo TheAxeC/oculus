@@ -24,7 +24,7 @@
     let { domain, projects, entry, schema, editing, onedit, onsaid }: Props = $props();
 
     function projectWord(): string {
-        return projects.length === 1 ? t('col.project') : t('col.projects');
+        return projects.length === 1 ? t('programs.project') : t('programs.projects');
     }
 </script>
 

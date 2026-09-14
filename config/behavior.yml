@@ -14,47 +14,36 @@ read_limits: { status.line: 220, next: 300, latest: 200, eli5: 360, results: 300
 stale_days: { litwatch: 14, inbox: 10, scout: 7, audit: 7 }
 
 
-# The context window the session detail's meter measures the last turn's occupancy against, in tokens.
-# A transcript that states its own window (Codex does, Claude does not) is measured against that instead.
+# The session detail meter measures the last turn against this token window unless the transcript names one.
 context_window: 1000000
 
-# Labels for the subscription tier identifiers reported by Claude and Codex.
+# Labels for subscription tier identifiers reported by supported command-line agents.
 usage_tiers:
   default_claude_max_20x: "Max 20x"
   default_claude_max_5x: "Max 5x"
   default_claude_pro: "Pro"
   prolite: "Plus"
 
-# Hidden Claude Code sessions refresh every account's cached usage figures on this cadence and model.
+# Hidden usage sessions refresh each account's cached figures on this cadence and model.
 usage_refresh_min: 10
 usage_refresh_model: "haiku"
 
-# domains for which a project is EXPECTED to have a dataset (the audit flags a missing Data section); the
-# theory/method/meta lines legitimately have none. Author-specific, so it lives here (config default is empty).
+# Domains expected to have a dataset. Oculus reports projects in these domains without a Data section.
 data_domains: [heart, liver, liverfl, liversurv, immune, brain, brainbci]
 
 
-# Project staleness (honest / filesystem-based): a manifest counts as "stale" when its `updated:` date is
-# this many days BEHIND the newest mtime of the project's content docs (CONTEXT/RESULTS/NEXT/notes/... - i.e.
-# you edited the project but didn't refresh the manifest). Drives the per-card "Nd behind" badge, the
-# stale filter, the "This week" line, and an Audit finding. Raise it (e.g. 3) if filesystem-sync jitter
-# makes 1-day lags noisy. (Replaces the old `updated:`-age `staleness_days`.)
+# A manifest is stale when its `updated` date trails the newest project content by this many days.
 stale_lag_days: 1
 
 
-# "This week" refresh nudges - the Projects-tab strip reminds you (with the exact command) when a live
-# feed is older than N days. Edit a number to change how long before it nudges; omit a key to use the
-# default (litwatch 14 | inbox 10 | scout 7). Set high (e.g. 999) to effectively silence one.
-# (No audit key: the audit is deterministic and regenerates every build, so it is never "stale".)
+# The Focus refresh strip prompts for live feeds older than these numbers of days.
 refresh_stale_days:
   litwatch: 14  # /research-cockpit litwatch (meta.last_run in literature-radar.yml)
   inbox: 2  # /research-cockpit inbox (`meta.run` in inbox.yml)
   scout: 7  # /research-cockpit scout (newest meta.log date in position-leads.yml)
 
 
-# "This week" Deadlines look-ahead windows - how far out each kind of date appears on the Focus strip.
-# Slower, high-value dates get a long planning horizon; fast-moving job leads get a tight one. All optional;
-# omit a key to use the default shown.
+# Look-ahead windows for each deadline class on the Focus strip.
 deadline_horizon_days: 90  # your project-manifest `deadline:` + talks / teaching (default 90)
 
 leads_horizon_days: 21  # academic-position-lead deadlines from position-leads.yml (default 21)
@@ -70,9 +59,7 @@ linkedin_cadence_days: 30   # nudge/red badge when it's been longer than this si
 
 
 # === Per-project file finder ================================================
-# Each project card carries a searchable list of its own files (cockpit/files.py). Bounded on purpose:
-# only these extensions, at most `max_per_project` files (newest first), noise dirs skipped. Set
-# `enabled: false` to drop the feature entirely.
+# Project cards index the newest matching files up to `max_per_project`; `enabled: false` disables it.
 file_index:
   enabled: true
   max_per_project: 400
@@ -80,10 +67,8 @@ file_index:
         ".csv", ".json", ".png", ".jpg", ".svg", ".txt"]
 
 
-# === Served mode: live SLURM poller + in-page chat ==========================
-# Cadences for the Live HPC tab's background threads, in minutes, and the model the Ask-the-portfolio
-# chat uses. `prewarm: false` stops the server resolving finished-job log paths ahead of the first click.
-# `model:` empty means let the `claude` CLI pick its own default (the API fallback uses claude-sonnet-4-6).
+# === Served mode: live SLURM poller and in-page chat =========================
+# Live HPC polling cadences are minutes. `prewarm: false` defers finished-job log resolution.
 slurm:
   host: utwente
   days: 3
@@ -96,10 +81,7 @@ chat:
 
 
 # === Hook push notifications ================================================
-# Which of the Notification/Stop hooks (posted to POST /api/hook) fire a macOS notification through
-# osascript. `events` names notification_type values Claude Code sends for a Notification hook
-# (permission_prompt, idle_prompt, ...) plus the literal "stop" for the Stop hook. quiet_seconds is
-# how long the same session's same event is pushed at most once.
+# Hook event names that trigger macOS notifications and their per-session repeat interval.
 notify:
   enabled: true
   events: [permission_prompt, idle_prompt, stop]
@@ -107,9 +89,6 @@ notify:
 
 
 # === The git panel ==========================================================
-# The suggested commit message of the Changes view: `claude -p` reads the staged diff and writes a
-# message in the hub's shape, which is the `git.message_prompt` of the text catalog. `message_model`
-# names the model to ask; empty means the CLI's own default. Nothing here commits anything: the
-# message lands in the box for Axel to edit, and the commit is a separate click behind a confirm.
+# The Changes view asks this model for a suggested commit message. Empty uses the command-line default.
 git:
   message_model: ""

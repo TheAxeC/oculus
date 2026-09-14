@@ -6,7 +6,7 @@
 // server is pointed at a hub in a temporary directory without writing into the checkout.
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, isAbsolute, join, resolve } from 'node:path';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
@@ -36,7 +36,7 @@ export type LocalConfig = {
     accounts: UsageAccountConfig[];
 };
 
-/** 8787 belongs to the cockpit and is never used. */
+/** The default development port; the reserved port 8787 is never used. */
 export const DEFAULT_PORT = 8790;
 
 const LOCAL_KEYS = [
@@ -201,22 +201,10 @@ export function loadLocal(engine: string): LocalConfig {
     return config;
 }
 
-/**
- * Merge every config/*.yml into one map, each file contributing its top-level keys. This is the
- * map O4's validate and O5's catalog read, so a rule can move between files without either of them
- * knowing. Files are merged in name order, so the result does not depend on the directory's order
- * on disk. Two files defining the same top-level key is a finding naming both, and the later file
- * in name order wins. A file that does not parse or is not a map is a finding and contributes
- * nothing; a missing config directory is a finding and an empty map. Nothing here throws.
- */
-/**
- * The one top-level key more than one file may carry. The catalog is a map of groups, and every
- * source file under 1000 lines is the rule, so the groups are spread over `text.yml` and
- * `text-oculus.yml`; a group defined in two of them is the finding, and the later file wins it.
- */
+/** The one top-level key more than one file may carry. Catalog fragments merge by dotted leaf. */
 export const TEXT_KEY = 'text';
 
-/** Fold one file's `text:` groups into the groups already read, naming any group read twice. */
+/** Fold one catalog fragment into the flat dotted map, naming any key read twice. */
 function mergeText(
     config: Record<string, unknown>,
     value: unknown,
@@ -225,36 +213,59 @@ function mergeText(
     from: Record<string, string>,
     findings: Finding[]
 ): void {
-    const held = config[TEXT_KEY];
-    if (
-        typeof held !== 'object' ||
-        held === null ||
-        Array.isArray(held) ||
-        typeof value !== 'object' ||
-        value === null ||
-        Array.isArray(value)
-    ) {
+    let flat: Record<string, string>;
+    try {
+        flat = flattenText(value);
+    } catch (error) {
         findings.push({
             file,
             key: TEXT_KEY,
-            message: `key ${TEXT_KEY} is already defined in ${from[TEXT_KEY]}; ${name} wins`
+            message: error instanceof Error ? error.message : String(error)
         });
-        config[TEXT_KEY] = value;
-        from[TEXT_KEY] = name;
         return;
     }
-    const groups = held as Record<string, unknown>;
-    for (const [group, entries] of Object.entries(value as Record<string, unknown>)) {
-        if (group in groups) {
+    const held = (config[TEXT_KEY] ??= {}) as Record<string, string>;
+    for (const [key, entry] of Object.entries(flat)) {
+        const dotted = `${TEXT_KEY}.${key}`;
+        if (key in held) {
             findings.push({
                 file,
-                key: `${TEXT_KEY}.${group}`,
-                message: `group ${TEXT_KEY}.${group} is already defined in ${from[TEXT_KEY]}; ${name} wins`
+                key: dotted,
+                message: `key ${dotted} is already defined in ${from[dotted]}; ${name} wins`
             });
         }
-        groups[group] = entries;
+        held[key] = entry;
+        from[dotted] = name;
     }
 }
+
+/** Root config files plus every catalog fragment, all named relative to config and sorted. */
+function configNames(dir: string): string[] {
+    const names = readdirSync(dir)
+        .filter((name) => name.endsWith('.yml'))
+        .map((name) => join(dir, name));
+    const collect = (folder: string): void => {
+        let entries;
+        try {
+            entries = readdirSync(folder, { withFileTypes: true });
+        } catch {
+            return;
+        }
+        for (const entry of entries) {
+            const path = join(folder, entry.name);
+            if (entry.isDirectory()) collect(path);
+            else if (entry.name.endsWith('.yml')) names.push(path);
+        }
+    };
+    collect(join(dir, 'text'));
+    return names.map((file) => relative(dir, file)).sort();
+}
+
+/**
+ * Merge root config files and catalog fragments into one map. Files are read in name order. A
+ * duplicate top-level key or catalog leaf is a finding and the later file wins. Invalid files are
+ * findings and contribute nothing; a missing config directory is a finding and an empty map.
+ */
 
 export function loadConfig(engine: string): {
     config: Record<string, unknown>;
@@ -268,9 +279,7 @@ export function loadConfig(engine: string): {
 
     let names: string[];
     try {
-        names = readdirSync(dir)
-            .filter((name) => name.endsWith('.yml'))
-            .sort();
+        names = configNames(dir);
     } catch {
         findings.push({ file: dir, key: '', message: 'config directory does not exist' });
         return { config, findings };
@@ -291,7 +300,7 @@ export function loadConfig(engine: string): {
             continue;
         }
         for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
-            if (key === TEXT_KEY && key in config) {
+            if (key === TEXT_KEY) {
                 mergeText(config, value, name, file, from, findings);
                 continue;
             }
@@ -327,10 +336,8 @@ export function flattenText(node: unknown, prefix = ''): Record<string, string> 
 }
 
 /**
- * The flat catalog held in the merged config's `text` key. The catalog is one of the nine config
- * files and is read like the others, so a string can move between files without this knowing.
- * Called per request until O6's watcher keeps an in-memory copy and pushes it, so editing the file
- * and reloading the browser shows the change.
+ * The flat catalog held in the merged config's `text` key. Owner files may move without changing
+ * readers because their dotted keys are the public vocabulary.
  */
 export function textCatalog(config: Record<string, unknown>): Record<string, string> {
     return flattenText(config.text ?? {});
@@ -370,8 +377,8 @@ export function vocabCatalog(config: Record<string, unknown>): Record<string, un
 /**
  * The keys of the `collections:` list of config/sources.yml, in the file's order, minus the four
  * that name a registry with a dedicated view. They ship as the page's data and the page registers
- * the collection view once per key, so a collection is added to the tool by adding a line to
- * sources.yml, a label and a glyph to text.yml, and its key to a group of nav_groups.
+ * the collection view once per key, so a collection is added through sources.yml and its owner
+ * catalog file; the collection registration supplies its group and order.
  */
 export function collectionKeys(config: Record<string, unknown>): string[] {
     const raw = config.collections;
@@ -399,8 +406,7 @@ export function glyphCatalog(config: Record<string, unknown>): Record<string, st
 /**
  * The ASCII stand-ins held in the merged config's `ascii` key: one short string per character, flat.
  * It rides with the glyphs, since it is the other half of the same vocabulary and lives in the same
- * file. Keyed by the character rather than by a glyph's name, so it reaches an icon that came from
- * data as well as one that came from a name.
+ * file. It is keyed by character so glyph names that share a character share one stand-in.
  */
 export function asciiCatalog(config: Record<string, unknown>): Record<string, string> {
     return stringMap(config.ascii);

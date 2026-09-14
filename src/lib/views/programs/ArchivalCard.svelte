@@ -24,12 +24,12 @@
 </script>
 
 <div class="muted" data-program-archival>
-    <Card title={t('col.archival')}>
+    <Card title={t('programs.archival')}>
         {#snippet meta()}
             <Glyph name="archived" />
-            <Chip label={t('col.not_active', count)} />
+            <Chip label={t('programs.not_active', count)} />
         {/snippet}
-        <p>{@html inlineMarkdown(t('col.archival_blurb'))}</p>
+        <p>{@html inlineMarkdown(t('programs.archival_blurb'))}</p>
         <div class="groups">
             {#each groups as group (group.type)}
                 <div class="group">

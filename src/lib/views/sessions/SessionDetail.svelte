@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Session detail follows the list in the sessions flyout.
+    import type { ViewRegistration } from '$lib/views/registry';
+    export const registration: ViewRegistration = {
+        id: 'session-detail',
+        label: 'sessions.detail_title',
+        glyph: 'sessions.detail_glyph',
+        group: 'sessions',
+        order: 1
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. What one session is: the key-value block, then the three measurements under it.
     //
@@ -84,9 +96,9 @@
 
     /** The status line: what the registry says while it is live, and that it ended when it is not. */
     function status(session: GroupedSession): string {
-        if (!session.live) return t('js.sessions.state_ended');
-        if (session.liveStatus === 'busy') return t('js.sessions.live_busy');
-        if (session.liveStatus === 'idle') return t('js.sessions.live_idle');
+        if (!session.live) return t('sessions.state_ended');
+        if (session.liveStatus === 'busy') return t('sessions.live_busy');
+        if (session.liveStatus === 'idle') return t('sessions.live_idle');
         return session.liveStatus ?? '';
     }
 
@@ -109,7 +121,7 @@
         const hook = session.hook;
         if (hook === null) return '';
         const when = clock(hook.at);
-        if (hook.event === 'stop') return t('js.sessions.stopped_at', when);
+        if (hook.event === 'stop') return t('sessions.stopped_at', when);
         const word =
             hook.kind === 'permission_prompt'
                 ? t('notify.permission_chip')
@@ -264,32 +276,32 @@
             <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}
             <dl class="kv">
-                {@render field(t('js.sessions.f_title'), record.title, record.title)}
-                {@render field(t('js.sessions.f_cwd'), record.cwd ?? '', record.cwd ?? '')}
-                {@render field(t('js.sessions.f_branch'), record.branch ?? '', '')}
-                {@render field(t('js.sessions.f_model'), modelShort(record.model), '')}
-                {@render field(t('js.sessions.f_effort'), record.effort ?? '', '')}
-                {@render field(t('js.sessions.f_mode'), record.permissionMode ?? '', '')}
+                {@render field(t('sessions.f_title'), record.title, record.title)}
+                {@render field(t('sessions.f_cwd'), record.cwd ?? '', record.cwd ?? '')}
+                {@render field(t('sessions.f_branch'), record.branch ?? '', '')}
+                {@render field(t('sessions.f_model'), modelShort(record.model), '')}
+                {@render field(t('sessions.f_effort'), record.effort ?? '', '')}
+                {@render field(t('sessions.f_mode'), record.permissionMode ?? '', '')}
                 {#if record.kind === 'observed'}
                     {@render field(
-                        t('js.sessions.f_kind'),
-                        t('js.sessions.kind_observed', record.kind),
+                        t('sessions.f_kind'),
+                        t('sessions.kind_observed', record.kind),
                         ''
                     )}
                 {:else}
-                    {@render field(t('js.sessions.f_kind'), record.kind, '')}
+                    {@render field(t('sessions.f_kind'), record.kind, '')}
                 {/if}
-                {@render field(t('js.sessions.f_status'), status(record), '')}
+                {@render field(t('sessions.f_status'), status(record), '')}
                 {@render field(
-                    t('js.sessions.f_pid'),
+                    t('sessions.f_pid'),
                     record.live && record.pid !== null ? String(record.pid) : '',
                     ''
                 )}
-                {@render field(t('js.sessions.f_version'), record.version ?? '', '')}
-                {@render field(t('js.sessions.f_started'), stamp(record.started, now), '')}
+                {@render field(t('sessions.f_version'), record.version ?? '', '')}
+                {@render field(t('sessions.f_started'), stamp(record.started, now), '')}
                 {#if record.hook !== null}
                     {@render field(
-                        t('js.sessions.f_hook'),
+                        t('sessions.f_hook'),
                         hookLabel(record),
                         record.hook.message ?? ''
                     )}
@@ -359,30 +371,30 @@
 
             <div class="gauge">
                 {@render line(
-                    t('js.sessions.context'),
-                    t('js.sessions.context_num', compactCount(used), compactCount(limit))
+                    t('sessions.context'),
+                    t('sessions.context_num', compactCount(used), compactCount(limit))
                 )}
-                <Meter value={level} tone={tone(level)} label={t('js.sessions.context')} />
+                <Meter value={level} tone={tone(level)} label={t('sessions.context')} />
             </div>
 
             {@render line(
-                t('js.sessions.tokens'),
+                t('sessions.tokens'),
                 [
-                    t('js.sessions.tok_in', compactCount(record.tokens.input)),
-                    t('js.sessions.tok_out', compactCount(record.tokens.output)),
-                    t('js.sessions.tok_think', compactCount(record.tokens.thinking))
-                ].join(` ${t('js.sessions.meta_sep')} `)
+                    t('sessions.tok_in', compactCount(record.tokens.input)),
+                    t('sessions.tok_out', compactCount(record.tokens.output)),
+                    t('sessions.tok_think', compactCount(record.tokens.thinking))
+                ].join(` ${t('sessions.meta_sep')} `)
             )}
 
             {@render line(
-                t('js.sessions.cache'),
+                t('sessions.cache'),
                 [
                     record.cache.ttl === null || record.cache.ttl === ''
-                        ? t('js.sessions.cache_ttl_none')
-                        : t('js.sessions.cache_ttl', record.cache.ttl),
-                    t('js.sessions.cache_share', cacheShare(record)),
-                    t('js.sessions.cache_busts', record.cache.busts)
-                ].join(` ${t('js.sessions.meta_sep')} `)
+                        ? t('sessions.cache_ttl_none')
+                        : t('sessions.cache_ttl', record.cache.ttl),
+                    t('sessions.cache_share', cacheShare(record)),
+                    t('sessions.cache_busts', record.cache.busts)
+                ].join(` ${t('sessions.meta_sep')} `)
             )}
         {/if}
     </div>

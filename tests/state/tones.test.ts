@@ -5,10 +5,17 @@
 // key the lookups read, which is the only way these functions can break without this file changing.
 
 import { describe, expect, it } from 'vitest';
-import { engineDir, loadConfig, vocabCatalog } from '../../src/lib/data/sources/config.ts';
+import {
+    asciiCatalog,
+    engineDir,
+    glyphCatalog,
+    loadConfig,
+    vocabCatalog
+} from '../../src/lib/data/sources/config.ts';
 import {
     UNKNOWN_TONE,
     chipGlyph,
+    chipGlyphName,
     chipKeys,
     chipLabel,
     setVocab,
@@ -18,6 +25,11 @@ import {
     paletteTone,
     typeTone
 } from '../../src/lib/state/tones.ts';
+import { setAscii, setGlyphMode, setGlyphs } from '../../src/lib/state/text.ts';
+
+const REAL_CONFIG = loadConfig(engineDir()).config;
+const GLYPHS = glyphCatalog(REAL_CONFIG);
+const ASCII = asciiCatalog(REAL_CONFIG);
 
 /** A vocabulary with one of everything, including the entries the lookups must refuse. */
 const SYNTHETIC = {
@@ -34,7 +46,7 @@ const SYNTHETIC = {
     },
     type_color: { manuscript: '#0d9488', idea: '#7c5cff' },
     status_legend: [
-        { key: 'submitted', icon: 'S', label: 'submitted / under review' },
+        { key: 'submitted', icon: 'check', label: 'submitted / under review' },
         { key: 'bare', label: 'no icon at all' },
         { icon: 'X', label: 'no key at all' }
     ],
@@ -42,6 +54,9 @@ const SYNTHETIC = {
 };
 
 function synthetic(): void {
+    setGlyphs(GLYPHS);
+    setAscii(ASCII);
+    setGlyphMode('unicode');
     setVocab(SYNTHETIC);
 }
 
@@ -118,21 +133,30 @@ describe('the tone of a status, a type and a research domain', () => {
 });
 
 describe('the chip legend', () => {
-    it('gives a chip its character and its words', () => {
+    it('resolves a chip glyph name and gives the chip its words', () => {
         synthetic();
-        expect(chipGlyph('submitted')).toBe('S');
+        expect(chipGlyphName('submitted')).toBe('check');
+        expect(chipGlyph('submitted')).toBe(GLYPHS.check);
         expect(chipLabel('submitted')).toBe('submitted / under review');
+    });
+
+    it('resolves a chip through the ASCII vocabulary in ASCII mode', () => {
+        synthetic();
+        setGlyphMode('ascii');
+        expect(chipGlyph('submitted')).toBe(ASCII[GLYPHS.check]);
     });
 
     it('gives an unknown chip the chip word itself and no glyph', () => {
         synthetic();
         expect(chipGlyph('nonesuch')).toBe('');
+        expect(chipGlyphName('nonesuch')).toBe('');
         expect(chipLabel('nonesuch')).toBe('nonesuch');
     });
 
     it('gives no glyph to a row that carries none', () => {
         synthetic();
         expect(chipGlyph('bare')).toBe('');
+        expect(chipGlyphName('bare')).toBe('');
         expect(chipLabel('bare')).toBe('no icon at all');
     });
 
@@ -159,7 +183,7 @@ describe('a vocabulary that is missing or wrongly shaped', () => {
 });
 
 describe('the real config/vocab.yml', () => {
-    const vocab = vocabCatalog(loadConfig(engineDir()).config);
+    const vocab = vocabCatalog(REAL_CONFIG);
 
     it('carries all ten keys the client state reads at first load', () => {
         expect(Object.keys(vocab).sort()).toEqual([
@@ -191,11 +215,19 @@ describe('the real config/vocab.yml', () => {
     });
 
     it('gives every chip in the legend a label, and most of them a character', () => {
+        setGlyphs(GLYPHS);
+        setAscii(ASCII);
+        setGlyphMode('unicode');
         setVocab(vocab);
         const keys = chipKeys();
         expect(keys.length).toBeGreaterThan(20);
         expect(keys.filter((key) => chipLabel(key) === '')).toEqual([]);
         expect(keys.filter((key) => chipGlyph(key) === '')).toEqual([]);
+    });
+
+    it('names a glyph held by config/glyphs.yml in every status legend row', () => {
+        const rows = vocab.status_legend as { key: string; icon: string }[];
+        expect(rows.filter((row) => !(row.icon in GLYPHS)).map((row) => row.key)).toEqual([]);
     });
 
     it('leaves every tone it hands out usable as a custom-property name', () => {

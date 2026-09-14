@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Data is the second source registry in the rail.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'data',
+        label: 'views.data',
+        glyph: 'views.data_glyph',
+        group: 'sources',
+        order: 1
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. The dataset registry: its access summary, search, modality facets, cards and
     // schema-driven add and edit forms. Registry entities display while its collection handles writes.
@@ -64,7 +76,7 @@
     <div class="data" data-instance={instance.id}>
         <Intro
             lines={[
-                t('col.ds_intro', allDatasets.length, accessSummary(allDatasets)),
+                t('data.intro', allDatasets.length, accessSummary(allDatasets)),
                 ...(collection?.intro ? [inlineMarkdown(collection.intro)] : [])
             ]}
         />
@@ -72,13 +84,13 @@
         <div class="controls">
             <Search
                 value={held.search}
-                placeholder={t('col.ds_search')}
+                placeholder={t('data.search')}
                 oninput={(search) => write({ search })}
             />
             {#if collection?.schema !== undefined}
                 <ToolButton
-                    label={t('col.add')}
-                    title={t('col.add_tip')}
+                    label={t('collection.add')}
+                    title={t('collection.add_tip')}
                     active={adding}
                     onclick={() => (adding = !adding)}
                 />
@@ -102,7 +114,7 @@
         <Facets {facets} off={held.off} ontoggle={toggleTheme} />
 
         {#if allDatasets.length === 0}
-            <p class="empty">{t('col.ds_empty')}</p>
+            <p class="empty">{t('data.empty')}</p>
         {:else}
             <div class="cards">
                 {#each shown as dataset (dataset.id)}

@@ -1,6 +1,19 @@
+<script module lang="ts">
+    // Layer 3, view registration. A deposit opens from a project and is not listed in the rail.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'deposit',
+        label: 'views.deposit',
+        glyph: 'views.deposit_glyph',
+        group: '',
+        order: 0,
+        listed: false
+    };
+</script>
+
 <script lang="ts">
-    // Layer 3, view. The deposit of one project, which is DESIGN.md's decision of 2026-09-10 on git
-    // writes and the deposit: a mirror clone under the machine-local state folder, into which the
+    // Layer 3, view. The deposit of one project uses a mirror clone under the machine-local state
+    // folder, into which the
     // project's `code/` is synced and committed, and from which the tool pushes, lists, creates and
     // switches branches. One instance per project, and the project it is for is the `id` in its
     // instance state, exactly as the editor and the project tab read their own.

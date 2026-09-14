@@ -35,7 +35,7 @@
     {/each}
 </div>
 {#if rows.length}<details>
-        <summary>{t('js.slurm.capacity_summary', rows.length)}</summary><Table
+        <summary>{t('hpc.capacity_summary', rows.length)}</summary><Table
             {columns}
             rows={tableRows}
             rowKey="key"

@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Agents closes the sessions flyout.
+    import type { ViewRegistration } from '$lib/views/registry';
+    export const registration: ViewRegistration = {
+        id: 'agents',
+        label: 'sessions.view_agents',
+        glyph: 'sessions.agents_glyph',
+        group: 'sessions',
+        order: 6
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. The subagents one session dispatched, newest first: what kind it was, on what
     // model, what it was asked for, and how it went.
@@ -29,9 +41,9 @@
     const agents = $derived([...(record?.agents ?? [])].reverse());
 
     function statusLabel(status: string): string {
-        if (status === 'running') return t('js.sessions.ag_running');
-        if (status === 'error') return t('js.sessions.ag_error');
-        return t('js.sessions.ag_done');
+        if (status === 'running') return t('sessions.ag_running');
+        if (status === 'error') return t('sessions.ag_error');
+        return t('sessions.ag_done');
     }
 
     function dotStyle(status: string): string {
@@ -44,9 +56,9 @@
         const took = seconds(agent.started, agent.ended, now);
         if (took !== null) parts.push(span(took));
         if (agent.resultChars > 0) {
-            parts.push(t('js.sessions.ag_chars', compactCount(agent.resultChars)));
+            parts.push(t('sessions.ag_chars', compactCount(agent.resultChars)));
         }
-        return parts.join(` ${t('js.sessions.meta_sep')} `);
+        return parts.join(` ${t('sessions.meta_sep')} `);
     }
 
     /** Pin these agents to what they show, or return them to following the selection. */
@@ -79,13 +91,13 @@
         {#if record === null}
             <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
         {:else if agents.length === 0}
-            <Empty message={t('js.sessions.ag_empty')} glyph={t('sessions.empty_glyph')} />
+            <Empty message={t('sessions.ag_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}
             {#each agents as agent (agent.id)}
                 <div class="agent">
                     <span class="dot" style={dotStyle(agent.status)}></span>
                     <span class="ty">
-                        {agent.subagentType === '' ? t('js.sessions.ag_type') : agent.subagentType}
+                        {agent.subagentType === '' ? t('sessions.ag_type') : agent.subagentType}
                     </span>
                     <span class="mo">{modelShort(agent.model)}</span>
                     <span class="ds" title={agent.description}>{agent.description}</span>

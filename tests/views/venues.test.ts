@@ -207,11 +207,11 @@ describe('the Venues controls and facets', () => {
     it('draws add, search, and theme toggles most frequent first', () => {
         const body = html();
         expect(body).toMatch(/class="intro(?:\s|")/);
-        expect(body).toContain(catalog['col.venues_intro']);
-        expect(body).toContain(catalog['col.add']);
+        expect(body).toContain(catalog['venues.intro']);
+        expect(body).toContain(catalog['collection.add']);
         expect(body).toContain('data-reveal="journal"');
         expect(body).toContain('Search Venues ...');
-        expect(body).toContain(catalog['col.ven_themes_facet']);
+        expect(body).toContain(catalog['venues.themes_facet']);
         expect(body.indexOf('ml 2')).toBeLessThan(body.indexOf('systems 1'));
         expect(body).toMatch(/class="tool [^"]*active"/);
     });
@@ -220,9 +220,9 @@ describe('the Venues controls and facets', () => {
 describe('the journal section and venue card', () => {
     it('draws the open journal section, card fields, links, themes and concentrated project users', () => {
         const body = html();
-        expect(body).toContain(catalog['col.ven_journals'].replace('{0}', '1'));
+        expect(body).toContain(catalog['venues.journals'].replace('{0}', '1'));
         expect(body).toContain('Journal of <strong>Tests</strong>');
-        expect(body).toContain(catalog['col.ven_jif'].replace('{0}', '5.9'));
+        expect(body).toContain(catalog['venues.jif'].replace('{0}', '5.9'));
         expect(body).toContain('SCIE');
         expect(body).toContain('Scopus yes');
         expect(body).toContain('<strong>elsarticle</strong>');
@@ -233,8 +233,8 @@ describe('the journal section and venue card', () => {
         expect(journal).toMatch(/class="chip [^"]*toned"/);
         expect(journal).toContain('--tone: var(--c-violet)');
         expect(journal).toContain('--tone: var(--c-green)');
-        expect(journal).toContain(catalog['col.ven_conc']);
-        expect(journal).toContain(catalog['col.ven_conc_tip']);
+        expect(journal).toContain(catalog['venues.conc']);
+        expect(journal).toContain(catalog['venues.conc_tip']);
         expect(journal).toContain('class="label">active</span>');
         expect(journal).toContain('class="count">2</strong>');
         expect(journal).toContain('aria-expanded="false"');
@@ -247,8 +247,8 @@ describe('the journal section and venue card', () => {
         const body = html();
         const firstCard = body.indexOf('<article');
         const legend = body.slice(0, firstCard);
-        expect(legend).toContain(catalog['col.ven_conc']);
-        expect(legend).toContain(catalog['col.ven_conc_tip']);
+        expect(legend).toContain(catalog['venues.conc']);
+        expect(legend).toContain(catalog['venues.conc_tip']);
         expect(legend).toContain('--tone: var(--c-violet)');
         expect(legend).toContain('tabindex="0"');
     });
@@ -261,16 +261,16 @@ describe('the journal section and venue card', () => {
 describe('the conference section and ribbon', () => {
     it('draws next deadlines, legend, all months, timed chips and biennial caveats', () => {
         const body = html();
-        expect(body).toContain(catalog['col.ven_conferences'].replace('{0}', '3'));
-        expect(body).toContain(catalog['col.ven_next']);
-        expect(body).toContain(catalog['col.ven_leg_deadline']);
-        expect(body).toContain(catalog['col.ven_leg_held']);
-        expect(body).toContain(catalog['col.ven_leg_biennial']);
-        expect(body).toContain(catalog['col.ven_leg_approx']);
+        expect(body).toContain(catalog['venues.conferences'].replace('{0}', '3'));
+        expect(body).toContain(catalog['venues.next']);
+        expect(body).toContain(catalog['venues.leg_deadline']);
+        expect(body).toContain(catalog['venues.leg_held']);
+        expect(body).toContain(catalog['venues.leg_biennial']);
+        expect(body).toContain(catalog['venues.leg_approx']);
         expect(body).toContain(' Jan</div>');
         expect(body).toContain(' Dec</div>');
         expect(body).toContain('ITC');
-        expect(body).toContain(catalog['col.ven_biennial_caveat']);
+        expect(body).toContain(catalog['venues.biennial_caveat']);
         expect(body).toContain('Untimed Conference');
         expect(body).toMatch(/class="month [^"]*current"/);
     });
@@ -279,13 +279,13 @@ describe('the conference section and ribbon', () => {
         const body = html();
         expect(body).toContain('href="https://example.org/call"');
         expect(body).toContain('href="mailto:chair@example.org"');
-        expect(body).toContain(catalog['col.ven_call']);
-        expect(body).toContain(catalog['col.ven_contact']);
+        expect(body).toContain(catalog['venues.call']);
+        expect(body).toContain(catalog['venues.contact']);
     });
 });
 
 describe('an empty venue file', () => {
     it('draws the catalogued empty state', () => {
-        expect(html([])).toContain(catalog['col.ven_empty']);
+        expect(html([])).toContain(catalog['venues.empty']);
     });
 });

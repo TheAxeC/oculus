@@ -1,0 +1,5 @@
+# Oculus text owned by the status view.
+text:
+    views:
+        status: Status
+        status_glyph: now

@@ -13,8 +13,8 @@ export function counts(): { running: number; pending: number } {
 export function pillText(): string {
     const value = hpc();
     return value?.status === 'ok' && value.total > 0
-        ? t('js.slurm.pill_running', value.running, value.running === 1 ? '' : 's') +
-              (value.pending ? t('js.slurm.pill_pending', value.pending) : '')
+        ? t('hpc.pill_running', value.running, value.running === 1 ? '' : 's') +
+              (value.pending ? t('hpc.pill_pending', value.pending) : '')
         : '';
 }
 export function badgeText(): string {

@@ -1,0 +1,73 @@
+# Oculus text owned by the projects view.
+text:
+    board:
+        code_anon: anon
+        code_deposited: deposited
+        code_none: no code
+        code_pending: pending
+        collapse: collapse
+        compute_hpc: HPC
+        compute_local: Local
+        compute_none: unset
+        empty: No entries match.
+        empty_glyph: circle_empty
+        expand_all: expand all
+        facet_category: Category
+        facet_code: Code
+        facet_compute: Compute
+        facet_dataset: Datasets
+        facet_domain: Domain
+        facet_funding: Funding
+        facet_program: Research line
+        facet_reproduced: Reproduced
+        facet_sessions: Sessions
+        facet_status: Status
+        facet_year: Year
+        filter_by: Filter by {0}
+        labels: Title length
+        new_idea: + new idea
+        new_idea_cancel: cancel
+        new_idea_domain: domain
+        new_idea_eli5: in one line
+        new_idea_id: folder name
+        new_idea_save: save
+        new_idea_short: short handle
+        new_idea_tip: scaffold a new idea manifest
+        new_idea_title: title
+        no_funding: No funding
+        no_year: No year
+        quick_deadline: deadline
+        quick_deadline_tip: only the projects that carry a deadline
+        quick_stale: stale
+        quick_stale_tip: only the projects whose manifest is behind their documents
+        repro_no: not reproduced
+        repro_yes: reproduced
+        search_default: Search
+        sessions_live: working now
+        sessions_none: no session
+        sessions_recent: worked on recently
+        stale_glyph: stale
+        stat_active: '{0} active'
+        stat_blocked: '{0} blocked'
+        stat_dated: '{0} dated'
+        stat_submit_ready: '{0} submit-ready'
+        stat_venue_count: x{0}
+        stat_venue_tip: '{0}: {1}'
+        stat_venues_tip: where the board's projects are aimed
+        stats: Board totals
+        toolbar: Board controls
+        type_toggle_tip: show or hide the {0} projects
+        venue_dist_glyph: venue_dist
+        view: View
+        view_cards: Cards
+        view_cards_glyph: cards
+        view_list: List
+        view_list_glyph: list
+        warn_glyph: warn
+    views:
+        archive: Archive
+        archive_glyph: archived
+        coauthor: Coauthor
+        coauthor_glyph: author
+        projects: Projects
+        projects_glyph: focus

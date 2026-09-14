@@ -35,20 +35,20 @@
     const metadata = $derived(
         [
             venue.jif && !['none', ' - '].includes(venue.jif.toLowerCase())
-                ? { label: t('col.ven_jif', venue.jif) }
+                ? { label: t('venues.jif', venue.jif) }
                 : null,
-            venue.wos ? { label: t('col.ven_wos', venue.wos) } : null,
-            venue.scopus ? { label: t('col.ven_scopus', venue.scopus) } : null,
+            venue.wos ? { label: t('venues.wos', venue.wos) } : null,
+            venue.scopus ? { label: t('venues.scopus', venue.scopus) } : null,
             venue.format ? { label: venue.format, bold: true } : null,
             venue.timing ? { label: venue.timing, glyph: 'timing' } : null,
             venue.link
-                ? { label: t('col.ven_site'), glyph: 'launch', href: venue.link, external: true }
+                ? { label: t('venues.site'), glyph: 'launch', href: venue.link, external: true }
                 : null,
             venue.call
-                ? { label: t('col.ven_call'), glyph: 'paper', href: venue.call, external: true }
+                ? { label: t('venues.call'), glyph: 'paper', href: venue.call, external: true }
                 : null,
             venue.email
-                ? { label: t('col.ven_contact'), glyph: 'email', href: `mailto:${venue.email}` }
+                ? { label: t('venues.contact'), glyph: 'email', href: `mailto:${venue.email}` }
                 : null
         ].filter((item) => item !== null)
     );
@@ -61,8 +61,8 @@
             <Chip label={venue.quartile} tone={quartileTone(venue.quartile)} />
         {/if}
         {#if concentrated}
-            <Tooltip text={t('col.ven_conc_tip')} focusable>
-                <Chip label={t('col.ven_conc')} tone="violet" />
+            <Tooltip text={t('venues.conc_tip')} focusable>
+                <Chip label={t('venues.conc')} tone="violet" />
             </Tooltip>
         {/if}
         {#if venue.free}
@@ -82,7 +82,7 @@
     <div class="meta">
         {#each metadata as item, at (item.label)}
             {#if at > 0}
-                <span class="sep">{t('col.ven_sep')}</span>
+                <span class="sep">{t('venues.sep')}</span>
             {/if}
             {#if item.bold}
                 <strong>{item.label}</strong>

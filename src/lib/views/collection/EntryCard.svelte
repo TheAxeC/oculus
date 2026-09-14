@@ -150,7 +150,7 @@
             {#if addressable}
                 <span
                     class="grip"
-                    title={t('col.reorder_hint')}
+                    title={t('collection.reorder_hint')}
                     onmousedown={() => (armed = true)}
                     role="presentation"
                 >
@@ -162,14 +162,14 @@
             {/if}
             {#if addressable}
                 <ToolButton
-                    label={pinned ? t('col.unpin') : t('col.pin_to_top')}
+                    label={pinned ? t('collection.unpin') : t('collection.pin_to_top')}
                     glyph={t('collection.pin_glyph')}
                     active={pinned}
                     compact
                     onclick={pin}
                 />
                 <ToolButton
-                    label={t('col.edit_delete')}
+                    label={t('collection.edit_delete')}
                     glyph={t('collection.edit_glyph')}
                     active={editing}
                     compact
@@ -204,7 +204,7 @@
                     </div>
                 {:else if drawn.kind === 'body'}
                     {#if drawn.field === 'statement'}
-                        <blockquote class="stmt" title={t('col.fundstmt_tip')}>
+                        <blockquote class="stmt" title={t('collection.fundstmt_tip')}>
                             {@html inlineMarkdown(drawn.values[0])}
                         </blockquote>
                     {:else}
@@ -212,8 +212,7 @@
                     {/if}
                 {:else if drawn.kind === 'link'}
                     {#if isDocument(drawn.values[0])}
-                        <!-- A local HTML file opens as its own tab, which is what O14c's document
-                             view is for; everything else is a link out of the page. -->
+                        <!-- A local HTML file opens in the document view; every other link leaves the page. -->
                         <p class="body">
                             <ToolButton
                                 label={drawn.values[0]}

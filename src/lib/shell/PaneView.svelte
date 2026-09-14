@@ -37,8 +37,8 @@
         start,
         withoutOwn
     } from '$lib/state/drag.svelte';
-    import { lookup, t } from '$lib/state/text';
-    import { badgeOf, viewFor } from '$lib/views/registry';
+    import { t } from '$lib/state/text';
+    import { badgeOf, registrationGlyph, registrationLabel, viewFor } from '$lib/views/registry';
     import { panes, type Instance, type Layout, type Target } from '$lib/state/layout';
 
     type Props = {
@@ -76,9 +76,9 @@
             const badge = badgeOf(found);
             return {
                 id: instance.id,
-                label: own ?? lookup(found.label),
-                glyph: lookup(found.glyph),
-                hint: own === null ? undefined : lookup(found.label),
+                label: own ?? registrationLabel(found),
+                glyph: registrationGlyph(found),
+                hint: own === null ? undefined : registrationLabel(found),
                 badge: badge.tabText,
                 badgeTone: badge.tone,
                 badgeTitle: badge.title,
@@ -241,7 +241,7 @@
 {#snippet paneMenu()}
     <Menu
         label={t('ui.pane_menu')}
-        glyph={lookup('ui.pane_menu_glyph')}
+        glyph={t('ui.pane_menu_glyph')}
         compact
         placement="down"
         align="right"

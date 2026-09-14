@@ -24,12 +24,21 @@ setCatalog(catalog);
 setGlyphs(glyphCatalog(config));
 
 receive({ channel: 'config', version: 8001, payload: { config, text: catalog, findings: [] } });
-registerView({ id: 'focus', label: 'views.focus', glyph: 'views.focus_glyph', component: Status });
+registerView({
+    id: 'focus',
+    label: 'views.focus',
+    glyph: 'views.focus_glyph',
+    component: Status,
+    group: 'probe',
+    order: 0
+});
 registerView({
     id: 'status',
     label: 'views.status',
     glyph: 'views.status_glyph',
-    component: Status
+    component: Status,
+    group: 'probe',
+    order: 1
 });
 
 receive({
@@ -67,7 +76,7 @@ describe('Palette', () => {
 
     it('renders open with the view matches and configured placeholder', () => {
         const body = render(Palette, { props: { ...props, open: true } }).body;
-        expect(body).toContain(catalog['js.leads.cmdk_placeholder']);
+        expect(body).toContain(catalog['app.palette.cmdk_placeholder']);
         expect(body).toContain('Focus');
         expect(body).toContain('Status');
     });
@@ -84,7 +93,7 @@ describe('Palette', () => {
         const body = render(Palette, {
             props: { ...props, open: true, prefill: ':nonesuch' }
         }).body;
-        expect(body).toContain(catalog['js.leads.cmd_unknown']);
+        expect(body).toContain(catalog['app.palette.cmd_unknown']);
         expect(body).not.toContain(catalog['app.palette_empty']);
     });
 });
@@ -100,7 +109,7 @@ describe('UpdateTray', () => {
         for (const date of ['2026-09-01', '2026-09-02', '2026-09-03', '2026-09-04']) {
             expect(body).toContain(date);
         }
-        expect(body).toContain(catalog['js.tasks.inbox_note']);
+        expect(body).toContain(catalog['app.tasks.inbox_note']);
         expect(body).toContain('data-task="chat"');
         expect(body).toContain(`>${catalog['app.chat']}</span>`);
     });

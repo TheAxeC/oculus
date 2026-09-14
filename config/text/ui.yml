@@ -1,0 +1,52 @@
+# Oculus text owned by the UI primitives.
+text:
+    ui:
+        close_glyph: dismiss
+        close_tab: Close tab
+        common:
+            x_prefix: '{G.cross} {0}'
+        confirm_cancel: Cancel
+        confirm_ok: Confirm
+        confirm_stop: Confirm
+        crt_on: crt
+        crt_title: 'CRT overlay: scanlines + vignette. Cosmetic only.'
+        dock_bottom: Panel along the bottom
+        dock_glyph: cards
+        dock_hidden: Panel hidden
+        dock_right: Panel on the right
+        docs: Docs
+        drag_hint: Moving {0}
+        move_to_main: Move tab to the main area
+        move_to_panel: Move tab to the panel
+        page_close_confirm: Close the page {0} and the {1} tabs on it?
+        page_default: Page {0}
+        page_from: Open {0} as a page
+        page_menu: Page
+        page_menu_glyph: expand
+        page_new: New page
+        page_rename: Rename this page
+        page_rename_label: Page name
+        page_sessions: Sessions
+        page_shortcut: '{0} - Ctrl+{1}'
+        pages: Pages
+        pane_close: Close pane
+        pane_close_confirm: Close this pane and the {0} tabs in it?
+        pane_maximise: Maximise pane
+        pane_menu: Pane
+        pane_menu_glyph: list
+        pane_restore: Restore panes
+        panel: Panel
+        rail: Views
+        row_menu: Row actions
+        sash: Resize
+        split_down: Split tab downwards
+        split_right: Split tab to the right
+        tabs_scroll_left: Scroll tabs left
+        tabs_scroll_right: Scroll tabs right
+        theme: Theme
+        theme_glyph: darkmode
+        unicode: unicode
+        unicode_title: Keep the real glyphs on a terminal theme instead of their ASCII stand-ins.
+        unknown_view: 'Unknown view: {0}'
+        wallpaper: wallpaper
+        wallpaper_title: Wallpaper behind the panels - and the slight transparency that goes with it

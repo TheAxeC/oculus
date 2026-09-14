@@ -1,0 +1,8 @@
+# Oculus text owned by the domains view.
+text:
+    domains:
+        empty: No domains.
+        intro: My projects by <b>application domain</b> (the field - colour-coded as on the cards). A different cut from Research Lines (method). Edit <code>registries/domains.yml</code>.
+    views:
+        domains: Domains
+        domains_glyph: circle_filled

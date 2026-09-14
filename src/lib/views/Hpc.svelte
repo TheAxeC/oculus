@@ -1,3 +1,21 @@
+<script module lang="ts">
+    // Layer 3, view registration. Live HPC follows Gallery in the system group.
+    import type { ViewRegistration } from './registry';
+    import { badgeText } from '$lib/state/hpc.svelte';
+    import { queueBadgeTitle, queueCells } from '$lib/state/rail-badges.svelte';
+    export const registration: ViewRegistration = {
+        id: 'hpc',
+        label: 'views.hpc',
+        glyph: 'views.hpc_glyph',
+        group: 'system',
+        order: 3,
+        badge: badgeText,
+        badgeTitle: queueBadgeTitle,
+        badgeCells: queueCells,
+        badgeTabText: () => ''
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. Live HPC composes the socket state, explicit actions, capacity, queue, recent jobs, quota, and one selected log.
     import Pane from '$lib/ui/Pane.svelte';
@@ -49,9 +67,9 @@
             <Jobs rows={data.jobs} onlog={showLog} oncancel={cancel} />
             <Recent rows={data.recent} onlog={showLog} />
         {:else if data?.status === 'starting'}
-            <p>{t('js.slurm.fetching')}</p>
+            <p>{t('hpc.fetching')}</p>
         {:else if data}
-            <p>{t('js.slurm.unreachable_msg')}</p>
+            <p>{t('hpc.unreachable_msg')}</p>
         {/if}
         {#if logId}
             <Log

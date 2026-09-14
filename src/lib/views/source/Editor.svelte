@@ -31,7 +31,7 @@
 </script>
 
 <div class="source-editor" data-source-editor={path} data-editable={editable}>
-    <Toolbar label={t('js.filters.edit')}>
+    <Toolbar label={t('source.edit')}>
         {#if editable}
             <ToolButton label={t('editor.save')} glyph="check" onclick={onsave} />
         {/if}

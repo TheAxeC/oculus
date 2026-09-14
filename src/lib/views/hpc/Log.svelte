@@ -12,16 +12,16 @@
         $props();
     const body = $derived(
         status === 'loading'
-            ? t('js.slurm.loading')
+            ? t('hpc.loading')
             : status === 'error' || status === 'timeout'
-              ? t('js.slurm.fetch_failed')
-              : output || t('js.slurm.no_output')
+              ? t('hpc.fetch_failed')
+              : output || t('hpc.no_output')
     );
 </script>
 
 <section>
     <header>
-        <b>{t('js.slurm.log_job', id)}</b><span
+        <b>{t('hpc.log_job', id)}</b><span
             ><ToolButton label={t('hpc.tail')} onclick={onrefresh} /><ToolButton
                 label={t('hpc.close')}
                 onclick={onclose}

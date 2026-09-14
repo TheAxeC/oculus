@@ -9,13 +9,15 @@
 // `config` channel. Every lookup is pure over what was last installed, so a component calling one
 // during its first render gets the page's data and re-renders when a push replaces it.
 
+import { glyph } from './text.ts';
+
 /** The tone anything unknown gets: a hue every theme defines and nothing means. */
 export const UNKNOWN_TONE = 'grey';
 
 /** A tone is a CSS custom-property name fragment, so it may hold nothing else. */
 const TONE = /^[a-z][a-z0-9-]*$/;
 
-/** One row of `status_legend`: the chip's key, the character it is drawn with, and its words. */
+/** One row of `status_legend`: the chip's key, glyph name and words. */
 type Legend = { key: string; icon: string; label: string };
 
 /** The palette hex is written in either case in the config, and matched in lower case here. */
@@ -133,9 +135,15 @@ export function domainLabel(domain: string): string {
     return domainText[String(domain).toLowerCase()] ?? domain;
 }
 
-/** The character a status chip is drawn with, and nothing for a chip the legend does not list. */
-export function chipGlyph(chip: string): string {
+/** The glyph name a status chip carries, and nothing for a chip the legend does not list. */
+export function chipGlyphName(chip: string): string {
     return legend[chip]?.icon ?? '';
+}
+
+/** The active glyph character for a status chip, and nothing for an unlisted chip. */
+export function chipGlyph(chip: string): string {
+    const name = chipGlyphName(chip);
+    return name === '' ? '' : glyph(name);
 }
 
 /** A status chip's words, and the chip's own key for one the legend does not list. */

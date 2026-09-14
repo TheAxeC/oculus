@@ -2,21 +2,19 @@
 // of its own. The route itself is a single line handing the request to lib/server/wallpaper.ts,
 // which is what this reads.
 //
-// Nothing here reads the real wallpaper folder or the real config: every case builds its own files
-// under the system temporary directory and asserts the path it is about to write is inside it. What
-// this does NOT cover: the browser painting the image, and settings() reading config/appearance.yml,
-// which is exercised by the curl in the package's verification and not from a test that would have
-// to depend on the machine's own local.yml.
+// Nothing here reads the real wallpaper folder or machine-local config: every case builds its own
+// files under the system temporary directory and asserts each write stays inside it. This does not
+// cover the browser painting the image.
 
 import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
-    DEFAULT_DIR,
     choose,
     images,
     serve,
+    settings,
     wallpaperMemory
 } from '../../src/lib/server/wallpaper.ts';
 
@@ -55,23 +53,25 @@ describe('the images of a folder', () => {
 
 describe('choosing the image', () => {
     it('takes the first by name when nothing names one', () => {
-        expect(choose({ dir: folder(PICTURES) }, memory)).toBe('a-first.jpg');
+        expect(choose({ dir: folder(PICTURES), pick: 'first' }, memory)).toBe('a-first.jpg');
     });
 
     it('takes the file whose name holds the fragment', () => {
-        expect(choose({ dir: folder(PICTURES), file: 'second' }, memory)).toBe('b-second.png');
+        expect(choose({ dir: folder(PICTURES), file: 'second', pick: 'first' }, memory)).toBe(
+            'b-second.png'
+        );
     });
 
     it('falls back to the first for a fragment no name holds', () => {
-        expect(choose({ dir: folder(PICTURES), file: 'nothing-like-it' }, memory)).toBe(
-            'a-first.jpg'
-        );
+        expect(
+            choose({ dir: folder(PICTURES), file: 'nothing-like-it', pick: 'first' }, memory)
+        ).toBe('a-first.jpg');
     });
 
     it('refuses a file that names a path rather than a name', () => {
         const dir = folder(PICTURES);
-        expect(choose({ dir, file: '../a-first.jpg' }, memory)).toBe(null);
-        expect(choose({ dir, file: '/etc/hosts' }, memory)).toBe(null);
+        expect(choose({ dir, file: '../a-first.jpg', pick: 'first' }, memory)).toBe(null);
+        expect(choose({ dir, file: '/etc/hosts', pick: 'first' }, memory)).toBe(null);
     });
 
     it('keeps one random image for the life of the process', () => {
@@ -82,13 +82,13 @@ describe('choosing the image', () => {
     });
 
     it('has nothing to choose in an empty folder', () => {
-        expect(choose({ dir: folder([]) }, memory)).toBe(null);
+        expect(choose({ dir: folder([]), pick: 'first' }, memory)).toBe(null);
     });
 });
 
 describe('the response', () => {
     it('serves the chosen image with its own type and a private cache header', async () => {
-        const response = serve({ dir: folder(PICTURES) }, local(), memory);
+        const response = serve({ dir: folder(PICTURES), pick: 'first' }, local(), memory);
         expect(response.status).toBe(200);
         expect(response.headers.get('content-type')).toBe('image/jpeg');
         expect(response.headers.get('cache-control')).toBe('private, max-age=3600');
@@ -98,39 +98,107 @@ describe('the response', () => {
     it('names the type by the extension', () => {
         const dir = folder(PICTURES);
         const type = (file: string): string | null =>
-            serve({ dir, file }, local(), memory).headers.get('content-type');
+            serve({ dir, file, pick: 'first' }, local(), memory).headers.get('content-type');
         expect(type('b-second')).toBe('image/png');
         expect(type('c-third')).toBe('image/webp');
     });
 
     it('answers 404 with no image, no folder and no configuration', () => {
-        expect(serve({ dir: folder(['notes.txt']) }, local(), memory).status).toBe(404);
-        expect(serve({ dir: join(folder([]), 'nothing') }, local(), memory).status).toBe(404);
+        expect(serve({ dir: folder(['notes.txt']), pick: 'first' }, local(), memory).status).toBe(
+            404
+        );
+        expect(
+            serve({ dir: join(folder([]), 'nothing'), pick: 'first' }, local(), memory).status
+        ).toBe(404);
         expect(serve(null, local(), memory).status).toBe(404);
     });
 
     it('answers 404 to a file that would leave the folder', () => {
         expect(
-            serve({ dir: folder(PICTURES), file: '../a-first.jpg' }, local(), memory).status
+            serve({ dir: folder(PICTURES), file: '../a-first.jpg', pick: 'first' }, local(), memory)
+                .status
         ).toBe(404);
     });
 
     it('answers 403 to another origin, and to a cross-site fetch that names none', () => {
         const dir = folder(PICTURES);
         const foreign = new Headers({ origin: 'http://evil.invalid' });
-        expect(serve({ dir }, foreign, memory).status).toBe(403);
-        expect(serve({ dir }, new Headers({ 'sec-fetch-site': 'cross-site' }), memory).status).toBe(
-            403
-        );
+        expect(serve({ dir, pick: 'first' }, foreign, memory).status).toBe(403);
+        expect(
+            serve({ dir, pick: 'first' }, new Headers({ 'sec-fetch-site': 'cross-site' }), memory)
+                .status
+        ).toBe(403);
     });
 
     it('answers the command line, which sends neither header', () => {
-        expect(serve({ dir: folder(PICTURES) }, new Headers(), memory).status).toBe(200);
+        expect(serve({ dir: folder(PICTURES), pick: 'first' }, new Headers(), memory).status).toBe(
+            200
+        );
     });
 });
 
-describe('the default folder', () => {
-    it('is the one the images sit in today, relative to the hub', () => {
-        expect(DEFAULT_DIR).toBe(join('tools', 'cockpit', 'assets', 'wallpaper'));
+describe('the configured settings', () => {
+    function fixture(body: string): { engine: string; hub: string; local: string } {
+        const root = mkdtempSync(join(tmpdir(), 'oculus-wallpaper-config-'));
+        expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        const engine = join(root, 'engine');
+        const hub = join(root, 'hub');
+        const config = join(engine, 'config');
+        mkdirSync(config, { recursive: true });
+        mkdirSync(hub, { recursive: true });
+        writeFileSync(join(config, 'appearance.yml'), body);
+        const local = join(root, 'local.yml');
+        writeFileSync(local, `hub: ${JSON.stringify(hub)}\n`);
+        return { engine, hub, local };
+    }
+
+    function withLocal<T>(file: string, run: () => T): T {
+        const before = process.env.OCULUS_LOCAL;
+        process.env.OCULUS_LOCAL = file;
+        try {
+            return run();
+        } finally {
+            if (before === undefined) delete process.env.OCULUS_LOCAL;
+            else process.env.OCULUS_LOCAL = before;
+        }
+    }
+
+    it('reads the configured directory through OCULUS_LOCAL', () => {
+        const own = fixture('wallpaper:\n  dir: pictures\n  pick: first\n');
+        expect(withLocal(own.local, () => settings(wallpaperMemory(), own.engine))).toEqual({
+            dir: join(own.hub, 'pictures'),
+            file: undefined,
+            pick: 'first'
+        });
+    });
+
+    it('returns null when dir is absent', () => {
+        const own = fixture('wallpaper:\n  pick: first\n');
+        expect(withLocal(own.local, () => settings(wallpaperMemory(), own.engine))).toBeNull();
+    });
+
+    it('reports a missing or unknown pick once and returns null', () => {
+        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        try {
+            const missing = fixture('wallpaper:\n  dir: pictures\n');
+            const missingMemory = wallpaperMemory();
+            expect(
+                withLocal(missing.local, () => settings(missingMemory, missing.engine))
+            ).toBeNull();
+            expect(
+                withLocal(missing.local, () => settings(missingMemory, missing.engine))
+            ).toBeNull();
+            const unknown = fixture('wallpaper:\n  dir: pictures\n  pick: newest\n');
+            const unknownMemory = wallpaperMemory();
+            expect(
+                withLocal(unknown.local, () => settings(unknownMemory, unknown.engine))
+            ).toBeNull();
+            expect(
+                withLocal(unknown.local, () => settings(unknownMemory, unknown.engine))
+            ).toBeNull();
+            expect(error).toHaveBeenCalledTimes(2);
+        } finally {
+            error.mockRestore();
+        }
     });
 });

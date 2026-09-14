@@ -64,8 +64,12 @@ describe('t', () => {
             'radar.tail': '{0} {G.nonesuch}'
         });
         setGlyphs(GLYPHS);
+        setAscii(ASCII);
+        setGlyphMode('unicode');
         expect(lookup('radar.head')).toBe(`${GLYPHS.litwatch} watch ${GLYPHS.red}`);
         expect(t('radar.tail', 4)).toBe('4 {G.nonesuch}');
+        setGlyphMode('ascii');
+        expect(lookup('radar.head')).toBe(`${ASCII[GLYPHS.litwatch]} watch ${ASCII[GLYPHS.red]}`);
     });
 });
 
@@ -75,6 +79,22 @@ describe('t', () => {
 const { config } = loadConfig(engineDir());
 const GLYPHS = glyphCatalog(config);
 const ASCII = asciiCatalog(config);
+
+describe('catalog glyph tokens', () => {
+    it('resolves the task note, error prefix and running-job mark in both modes', () => {
+        setCatalog(textCatalog(config));
+        setGlyphs(GLYPHS);
+        setAscii(ASCII);
+        setGlyphMode('unicode');
+        expect(t('app.tasks.note_prefix', 'note')).toBe(`${GLYPHS.info} note`);
+        expect(t('ui.common.x_prefix', 'failed')).toBe(`${GLYPHS.cross} failed`);
+        expect(t('hpc.pill_running', 2, 's')).toBe(`${GLYPHS.hpc} 2 HPC jobs running`);
+        setGlyphMode('ascii');
+        expect(t('app.tasks.note_prefix', 'note')).toBe(`${ASCII[GLYPHS.info]} note`);
+        expect(t('ui.common.x_prefix', 'failed')).toBe(`${ASCII[GLYPHS.cross]} failed`);
+        expect(t('hpc.pill_running', 2, 's')).toBe(`${ASCII[GLYPHS.hpc]} 2 HPC jobs running`);
+    });
+});
 
 describe('glyph', () => {
     it('draws the character config/glyphs.yml names while the mode is unicode', () => {

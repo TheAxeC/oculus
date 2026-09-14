@@ -26,7 +26,7 @@
     };
     const identity = $derived(text('id'));
     const subject = $derived(text('subject'));
-    const sender = $derived(text('sender') || subject || t('sf.inbox_thread'));
+    const sender = $derived(text('sender') || subject || t('inbox.thread'));
     const kind = $derived(kindOf(entry));
     const age = $derived(text('age'));
     const what = $derived(text('what'));
@@ -54,9 +54,9 @@
     }
 
     function kindLabel(): string {
-        if (kind === 'reply') return t('sf.inbox_reply');
-        if (kind === 'action') return t('sf.inbox_action');
-        return t('sf.inbox_info');
+        if (kind === 'reply') return t('inbox.reply');
+        if (kind === 'action') return t('inbox.action');
+        return t('inbox.info');
     }
 </script>
 
@@ -70,16 +70,16 @@
             {#if identity !== ''}
                 {#if triaged}
                     <ToolButton
-                        label={t('sf.inbox_restore')}
-                        title={t('sf.inbox_restore_tip')}
+                        label={t('inbox.restore')}
+                        title={t('inbox.restore_tip')}
                         glyph="refresh"
                         compact
                         onclick={() => mark(null)}
                     />
                 {:else}
                     <ToolButton
-                        label={t('sf.inbox_triaged')}
-                        title={t('sf.inbox_triage_tip')}
+                        label={t('inbox.triaged')}
+                        title={t('inbox.triage_tip')}
                         glyph="done"
                         compact
                         onclick={() => mark(true)}
@@ -97,7 +97,7 @@
         {#if draft !== ''}
             <div class="draft">
                 <ToolButton
-                    label={t('sf.show_draft')}
+                    label={t('inbox.show_draft')}
                     glyph="draft"
                     active={draftOpen}
                     expanded={draftOpen}
@@ -112,7 +112,7 @@
             <p class="gmail">
                 <a href={url} target="_blank" rel="noopener noreferrer">
                     <Glyph name="link" />
-                    <span>{t('sf.open_gmail')}</span>
+                    <span>{t('inbox.open_gmail')}</span>
                 </a>
             </p>
         {/if}

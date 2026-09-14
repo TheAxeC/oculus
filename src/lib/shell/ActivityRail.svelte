@@ -2,12 +2,8 @@
     import type { Registration } from '$lib/views/registry';
     import type { RailOrder } from './keys';
 
-    /**
-     * One group of the rail: a heading and the view ids it claims, as `nav_groups` in the config.
-     * `glyph` is a name in config/glyphs.yml and is drawn only where the group is one button with a
-     * list; a group that has none and is drawn that way carries its first view's glyph.
-     */
-    export type NavGroup = { label: string; keys: string[]; glyph?: string; chord?: string };
+    /** One configured rail group. View registrations name its stable id and their own order. */
+    export type NavGroup = { id: string; label: string; glyph?: string; chord?: string };
 
     /**
      * One entry of the rail's Docs section, as `bookmarks` in the config: a local file under one of
@@ -44,37 +40,32 @@
 
     /**
      * How many views a group may hold and still be drawn as a heading over one button per view. A
-     * larger group is drawn as one button with a list beside it, which is DESIGN.md's decision of
-     * 2026-09-10: the rail does not grow an icon per view. The ungrouped trailing section has no
-     * heading to name such a button and stays as buttons however many it holds.
+     * larger group is drawn as one button with a list beside it. The ungrouped trailing section has
+     * no heading to name such a button and stays as buttons however many it holds.
      */
     export const GROUP_MAX = 4;
 
     /**
-     * The registrations under the groups that name them, in the groups' order, and everything no
-     * group names after them. A group no registration matches is not drawn: the groups are the
-     * cockpit's tab keys and most of them name views that do not exist yet.
+     * The registrations under their configured groups, sorted by their own order and then id. A
+     * group with no matching registration is not drawn; registrations with no configured group
+     * trail without a heading.
      */
     export function arrange(registrations: Registration[], groups: NavGroup[]): Section[] {
         const sections: Section[] = [];
-        const taken = new Set<string>();
+        const ranked = (items: Registration[]): Registration[] =>
+            [...items].sort(
+                (left, right) => left.order - right.order || left.id.localeCompare(right.id)
+            );
+        const configured = new Set(groups.map((group) => group.id));
         for (const group of groups) {
-            // In the group's own order, which is what the config promises; a key naming no
-            // registration, or one already drawn, contributes nothing.
-            const items: Registration[] = [];
-            for (const key of group.keys) {
-                const found = registrations.find((view) => view.id === key);
-                if (found === undefined || taken.has(found.id)) continue;
-                taken.add(found.id);
-                items.push(found);
-            }
+            const items = ranked(registrations.filter((view) => view.group === group.id));
             if (items.length === 0) continue;
             const section: Section = { label: group.label, items };
             if (group.glyph !== undefined) section.glyph = group.glyph;
             if (group.chord !== undefined) section.chord = group.chord;
             sections.push(section);
         }
-        const rest = registrations.filter((view) => !taken.has(view.id));
+        const rest = ranked(registrations.filter((view) => !configured.has(view.group)));
         if (rest.length > 0) sections.push({ label: null, items: rest });
         return sections;
     }
@@ -117,9 +108,9 @@
         wallpaper,
         stepTextScale
     } from '$lib/state/ui.svelte';
-    import { lookup, t } from '$lib/state/text';
+    import { t } from '$lib/state/text';
     import { themes as themeList, wallpaperOnTheme } from '$lib/state/appearance';
-    import { badgeOf, views } from '$lib/views/registry';
+    import { badgeOf, registrationGlyph, registrationLabel, views } from '$lib/views/registry';
     import type { Dock } from '$lib/state/layout';
 
     type Props = {
@@ -171,8 +162,8 @@
             const badge = badgeOf(view);
             return {
                 id: view.id,
-                label: lookup(view.label),
-                glyph: lookup(view.glyph),
+                label: registrationLabel(view),
+                glyph: registrationGlyph(view),
                 badge: badge.text,
                 badgeTone: badge.tone,
                 badgeTitle: badge.text === '' ? undefined : badge.title
@@ -182,7 +173,7 @@
 
     /** The glyph a group's button carries: the group's own, or its first view's when it has none. */
     function groupGlyph(section: Section): string {
-        return section.glyph ?? lookup(section.items[0].glyph);
+        return section.glyph ?? registrationGlyph(section.items[0]);
     }
 
     /** The status pair for a registration's badge; absent leaves the accent pair in the stylesheet. */
@@ -226,8 +217,8 @@
                     {@const badge = badgeOf(view)}
                     <div class="control">
                         <ToolButton
-                            label={lookup(view.label)}
-                            glyph={lookup(view.glyph)}
+                            label={registrationLabel(view)}
+                            glyph={registrationGlyph(view)}
                             dataView={view.id}
                             compact
                             rail
@@ -283,7 +274,7 @@
         </div>
         <div data-action="update">
             <ToolButton
-                label={t('js.tasks.update_tasks')}
+                label={t('app.tasks.update_tasks')}
                 title={t('app.update_tip')}
                 glyph="refresh"
                 compact
@@ -293,7 +284,7 @@
         </div>
         <Menu
             label={t('ui.theme')}
-            glyph={lookup('ui.theme_glyph')}
+            glyph={t('ui.theme_glyph')}
             compact
             rail
             items={themes}
@@ -357,7 +348,7 @@
         />
         <Menu
             label={dockLabel}
-            glyph={lookup('ui.dock_glyph')}
+            glyph={t('ui.dock_glyph')}
             compact
             rail
             items={docks}

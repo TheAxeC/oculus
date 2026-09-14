@@ -1,0 +1,37 @@
+# Oculus text owned by the session-list view.
+text:
+    sessions:
+        activity_turn: turn finished in {0} s
+        area_unknown: no manifest
+        card_live: '{0} live'
+        card_n: '{0} sessions'
+        card_one: 1 session
+        close_tip: dismiss this ended session
+        detail_empty: Pick a session in the rail.
+        dismiss_failed: could not save that dismissal
+        dismiss_glyph: dismiss
+        empty_glyph: circle_empty
+        ended_glyph: disclosure
+        ended_section: Ended ({0})
+        hide_dismissed: Hide dismissed ({0})
+        list_toolbar: Session list controls
+        live_busy: busy
+        live_idle: idle
+        meta_sep: '|'
+        n_millions: '{0}M'
+        n_thousands: '{0}k'
+        open_pinned: Open in its own pane
+        open_pinned_tip: keep it in a pane of its own
+        pin_pane: Pin this pane
+        rail_glyph: list
+        rail_title: Sessions
+        restore_glyph: note_back
+        restore_tip: bring this session back to the rail
+        select_tip: show this session in the other session views
+        show_dismissed: Show dismissed ({0})
+        stamp_day: '{0} {1}'
+        state_empty: No sessions in the window.
+        state_ended: ended
+        stopped_at: stopped at {0}
+        tokens: tokens
+        unpin_pane: Unpin this pane

@@ -1,0 +1,6 @@
+# Oculus text owned by the findings view.
+text:
+    views:
+        findings: Findings
+        findings_glyph: warn
+        findings_none: 'No findings: every id resolves and every status is in the vocabulary.'

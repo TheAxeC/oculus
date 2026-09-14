@@ -1,0 +1,13 @@
+# Oculus text owned by the timeline view.
+text:
+    sessions:
+        ev_bust: prompt cache rewritten, {0} tokens
+        ev_k_bust: bust
+        ev_k_edit: edit
+        ev_k_prompt: prompt
+        ev_k_tool: tool
+        ev_k_turn: turn
+        ev_turn: finished in {0} s
+        timeline_glyph: timing
+        tl_empty: Nothing on the timeline for this session yet.
+        view_timeline: Timeline

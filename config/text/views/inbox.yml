@@ -1,0 +1,24 @@
+# Oculus text owned by the inbox view.
+text:
+    inbox:
+        action: action
+        clear: Inbox clear - nothing unread, starred, or labelled <code>todo</code> as of the last triage. Re-run <code>/research-cockpit inbox</code> from an interactive session (needs the Gmail connector) to refresh.
+        info: info
+        no_file: No inbox file - run <code>/research-cockpit inbox</code>.
+        open_gmail: open in Gmail
+        reply: to reply
+        restore: restore
+        restore_tip: back to the inbox
+        search: Search inbox ...
+        sec_action: To action / do
+        sec_info: Informational / no action
+        sec_reply: To reply
+        show_draft: Show draft reply
+        thread: (thread)
+        triage_tip: mark triaged / done
+        triaged: triaged
+        triaged_sec: Triaged
+        triaged_suffix: '| {0} triaged'
+    views:
+        inbox: Inbox
+        inbox_glyph: inbox

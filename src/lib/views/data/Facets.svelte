@@ -16,8 +16,8 @@
 </script>
 
 {#if facets.length > 0}
-    <div class="facets" role="group" aria-label={t('col.ds_modality_facet')}>
-        <span class="label">{t('col.ds_modality_facet')}</span>
+    <div class="facets" role="group" aria-label={t('data.modality_facet')}>
+        <span class="label">{t('data.modality_facet')}</span>
         {#each facets as facet (facet.theme)}
             <ToolButton
                 label={`${facet.label} ${facet.count}`}

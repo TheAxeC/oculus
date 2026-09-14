@@ -5,7 +5,7 @@
 // A GET lists the branches of one root and is same-origin only, like every read. A POST writes, and
 // carries three things: the write token, this application's own origin, and, for the five actions
 // that can lose work (commit, push, discard, createBranch, switchBranch), a `confirm: true` the page
-// sets only from the confirm dialog. DESIGN.md's decision of 2026-09-10 on git writes is that shape.
+// sets only from the confirm dialog.
 //
 // The roots a write may name come from the last published `git` payload, which is the sessions'
 // workspaces, plus the hub itself; server/git-write.ts checks the same thing again for itself, since
@@ -32,9 +32,6 @@ import {
     type Outcome
 } from './git-write.ts';
 import { messageModel, suggestMessage, type MessageOptions } from './git-message.ts';
-
-/** The catalog key holding the instruction the suggested message is written to. */
-export const PROMPT_KEY = 'git.message_prompt';
 
 /** Every action POST /api/git knows. */
 export const ACTIONS = [
@@ -83,6 +80,15 @@ function text(value: unknown): string {
     return typeof value === 'string' ? value : '';
 }
 
+/** The required catalog instruction used to suggest a commit message. */
+export function messagePrompt(config: Record<string, unknown>): string {
+    const prompt = textCatalog(config)['git.message_prompt'];
+    if (prompt === undefined) {
+        throw new Error('text key not in the text catalog (config/text/): git.message_prompt');
+    }
+    return prompt;
+}
+
 /** The real suggestion: the instruction from the catalog, the model from config/behavior.yml. */
 async function suggestFor(
     root: string,
@@ -90,8 +96,12 @@ async function suggestFor(
     options: MessageOptions = {}
 ): Promise<Outcome> {
     const { config } = loadConfig(engineDir());
-    const prompt = textCatalog(config)[PROMPT_KEY] ?? '';
-    return suggestMessage(root, prompt, { ...options, model: messageModel(config) }, roots);
+    return suggestMessage(
+        root,
+        messagePrompt(config),
+        { ...options, model: messageModel(config) },
+        roots
+    );
 }
 
 /** The real operations, one per action. `suggest` is answered before this is reached. */

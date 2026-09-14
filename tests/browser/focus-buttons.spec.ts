@@ -27,17 +27,19 @@ test('a deadline line snoozes to the Snoozed group and wakes back unchanged', as
     await expect(line.first()).toBeVisible();
     await line
         .first()
-        .getByRole('button', { name: t('actions.snooze_1w'), exact: true })
+        .getByRole('button', { name: t('project.action.snooze_1w'), exact: true })
         .click();
 
-    const snoozed = page.locator('details').filter({ hasText: t('cc.snoozed', 1) });
+    const snoozed = page.locator('details').filter({ hasText: t('focus.command.snoozed', 1) });
     await expect(snoozed).toBeVisible();
     expect(readHubFile(`${TRANSFER}/project.yml`)).toContain('snooze:');
 
     await snoozed.click();
     const asleep = snoozed.getByRole('listitem').filter({ hasText: name });
-    await asleep.getByRole('button', { name: t('actions.unsnooze'), exact: true }).click();
-    await expect(page.locator('details').filter({ hasText: t('cc.snoozed', 1) })).toHaveCount(0);
+    await asleep.getByRole('button', { name: t('project.action.unsnooze'), exact: true }).click();
+    await expect(
+        page.locator('details').filter({ hasText: t('focus.command.snoozed', 1) })
+    ).toHaveCount(0);
     expect(readHubFile(`${TRANSFER}/project.yml`)).toBe(before);
 });
 
@@ -100,9 +102,9 @@ test('quick add writes a follow-up and the ticker shows it', async ({ page }) =>
     const line = page
         .getByRole('listitem')
         .filter({ hasText: name })
-        .filter({ has: page.getByRole('button', { name: t('actions.done'), exact: true }) });
+        .filter({ has: page.getByRole('button', { name: t('project.action.done'), exact: true }) });
     await expect(line).toHaveCount(1);
 
-    await line.getByRole('button', { name: t('actions.done'), exact: true }).click();
+    await line.getByRole('button', { name: t('project.action.done'), exact: true }).click();
     await expect.poll(() => readHubFile(`${BANDITS}/project.yml`), { timeout: 5000 }).toBe(before);
 });

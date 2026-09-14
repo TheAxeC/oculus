@@ -5,30 +5,25 @@
 # ===========================================================================
 
 
-# The UI themes, in picker order. `name` is what the appearance store saves and what `themes.css`
-# is written against; `class` is the string that lands on <body> (empty = the default light chrome);
-# `label` is the words the picker shows, glyph and all - this file is config, so the glyph is data.
-# A name here needs a block in src/lib/themes/themes.css unless it is light or dark, which :root and
-# the .dark block already carry. The contrast gate walks this list, so a new theme is measured the
-# moment it is added.
+# The UI themes in picker order. `name` is saved, `class` lands on <body>, and `label` is shown.
 themes:
-  - { name: light,        class: "",                   label: "◐ light" }
-  - { name: dark,         class: "dark",               label: "◐ dark" }
-  - { name: vscode-dark-modern,  class: "vscode-dark-modern",  label: "vscode dark modern" }
-  - { name: vscode-light-modern, class: "vscode-light-modern", label: "vscode light modern" }
-  - { name: mocha,        class: "rice mocha",         label: "◆ mocha" }
-  - { name: gruvbox,      class: "rice gruvbox",       label: "◆ gruvbox" }
-  - { name: nord,         class: "rice nord",          label: "◆ nord" }
-  - { name: synthwave,    class: "rice synthwave",     label: "◆ synthwave '84" }
-  - { name: tokyoneon,    class: "rice tokyoneon",     label: "◆ tokyo neon" }
-  - { name: tokyonight,   class: "rice tokyonight",    label: "◆ tokyo night" }
-  - { name: rosepine,     class: "rice rosepine",      label: "◆ rose pine" }
-  - { name: everforest,   class: "rice everforest",    label: "◆ everforest" }
-  - { name: dracula,      class: "rice dracula",       label: "◆ dracula" }
-  - { name: kanagawa,     class: "rice kanagawa",      label: "◆ kanagawa" }
-  - { name: solarized,    class: "rice solarized",     label: "◆ solarized" }
-  - { name: latte,        class: "rice latte",         label: "◆ latte (light)" }
-  - { name: gruvboxlight, class: "rice gruvboxlight",  label: "◆ gruvbox light" }
+  - { name: light,        class: "",                   label: "{G.theme_base} light" }
+  - { name: dark,         class: "dark",               label: "{G.theme_base} dark" }
+  - { name: vscode-dark-modern,  class: "vscode-dark-modern",  label: "{G.theme_base} vscode dark modern" }
+  - { name: vscode-light-modern, class: "vscode-light-modern", label: "{G.theme_base} vscode light modern" }
+  - { name: mocha,        class: "rice mocha",         label: "{G.theme_rice} mocha" }
+  - { name: gruvbox,      class: "rice gruvbox",       label: "{G.theme_rice} gruvbox" }
+  - { name: nord,         class: "rice nord",          label: "{G.theme_rice} nord" }
+  - { name: synthwave,    class: "rice synthwave",     label: "{G.theme_rice} synthwave '84" }
+  - { name: tokyoneon,    class: "rice tokyoneon",     label: "{G.theme_rice} tokyo neon" }
+  - { name: tokyonight,   class: "rice tokyonight",    label: "{G.theme_rice} tokyo night" }
+  - { name: rosepine,     class: "rice rosepine",      label: "{G.theme_rice} rose pine" }
+  - { name: everforest,   class: "rice everforest",    label: "{G.theme_rice} everforest" }
+  - { name: dracula,      class: "rice dracula",       label: "{G.theme_rice} dracula" }
+  - { name: kanagawa,     class: "rice kanagawa",      label: "{G.theme_rice} kanagawa" }
+  - { name: solarized,    class: "rice solarized",     label: "{G.theme_rice} solarized" }
+  - { name: latte,        class: "rice latte",         label: "{G.theme_rice} latte (light)" }
+  - { name: gruvboxlight, class: "rice gruvboxlight",  label: "{G.theme_rice} gruvbox light" }
 
 
 # === Terminal ===============================================================
@@ -38,11 +33,9 @@ terminal:
 
 
 # === Wallpaper ==============================================================
-# The images live in `tools/cockpit/assets/wallpaper/` (in the repo, so the tool is self-contained).
-# No image there = no backdrop, and none of these settings apply. `dir:` is read relative to the hub
-# and can point elsewhere inside it; the default keeps everything in the repo. /api/wallpaper serves
-# the chosen file's own bytes, so there is no downscale step and no size setting.
+# `dir` is relative to the hub and must remain inside it. No image means no backdrop.
 wallpaper:
+  dir: tools/oculus/assets/wallpaper
   file: "wallhaven-83"       # name the image to use (full name or any unique part of it). Empty = use `pick:` below
   pick: first    # `first` = the first image in the folder | `random` = a different one each build
   dim: 0.72      # 0 = raw image, 1 = fully hidden. Busy images want 0.7-0.85

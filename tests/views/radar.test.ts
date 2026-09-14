@@ -111,19 +111,19 @@ describe('the Lit Watch view', () => {
         expect(body).toContain('New-paper radar');
         expect(body).toContain('4 tracked');
         expect(body).not.toContain('{G.');
-        expect(body).toContain(catalog['sf.radar_search']);
+        expect(body).toContain(catalog['radar.search']);
         for (const label of ['Pre-emption risk', 'Idea sparks', 'Cite / baseline', 'Adjacent'])
             expect(body).toContain(label);
         expect(body).toContain('<strong>Risk</strong> paper');
         expect(body).toContain('Ada | Nature | 2026');
-        expect(body).toContain(catalog['sf.radar_new']);
+        expect(body).toContain(catalog['radar.new']);
         expect(body).toContain('main claim');
         expect(body).toContain('Alpha project');
-        expect(body).toContain(catalog['sf.radar_new_idea_candidate']);
-        expect(body).toContain(catalog['sf.radar_paper']);
-        expect(body).toContain(catalog['sf.radar_dismiss']);
-        expect(body).toContain(catalog['sf.radar_idea']);
-        expect(body).toContain(`${catalog['sf.radar_dismissed_sec']} (1)`);
+        expect(body).toContain(catalog['radar.new_idea_candidate']);
+        expect(body).toContain(catalog['radar.paper']);
+        expect(body).toContain(catalog['radar.dismiss']);
+        expect(body).toContain(catalog['radar.idea']);
+        expect(body).toContain(`${catalog['radar.dismissed_sec']} (1)`);
         expect(body).not.toContain('Dismissed paper');
     });
 
@@ -136,7 +136,7 @@ describe('the Lit Watch view', () => {
             entries: []
         });
         expect(render(Radar, { props: { instance: instance('radar-empty') } }).body).toContain(
-            catalog['sf.radar_empty']
+            catalog['radar.empty']
         );
 
         serve({
@@ -164,7 +164,7 @@ describe('the Lit Watch view', () => {
         const body = render(Radar, {
             props: { instance: instance('radar-dismissed', true) }
         }).body;
-        expect(body).toContain(catalog['sf.radar_restore']);
+        expect(body).toContain(catalog['radar.restore']);
         expect(body.indexOf('Newer dismissed')).toBeLessThan(body.indexOf('Older dismissed'));
     });
 
@@ -177,9 +177,9 @@ describe('the Lit Watch view', () => {
             entries: [{ bucket: 'idea', maps_to: 'new-idea-candidate' }]
         });
         const body = render(Radar, { props: { instance: instance('radar-untitled') } }).body;
-        expect(body).toContain(catalog['sf.radar_untitled']);
-        expect(body).not.toContain(catalog['sf.radar_dismiss_tip']);
-        expect(body).not.toContain(catalog['sf.radar_idea_tip']);
+        expect(body).toContain(catalog['radar.untitled']);
+        expect(body).not.toContain(catalog['radar.dismiss_tip']);
+        expect(body).not.toContain(catalog['radar.idea_tip']);
     });
 
     it('draws a parse error with its configured path and reason', async () => {

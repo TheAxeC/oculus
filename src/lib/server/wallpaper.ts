@@ -16,9 +16,6 @@ import { Readable } from 'node:stream';
 import { engineDir, loadConfig, loadLocal } from '../data/sources/config.ts';
 import { allowedOrigin } from './auth.ts';
 
-/** Where the images sit when config/appearance.yml names no `dir`, relative to the hub. */
-export const DEFAULT_DIR = join('tools', 'cockpit', 'assets', 'wallpaper');
-
 /** The extensions the folder is filtered to, and the type each one is served as. */
 const TYPES: Record<string, string> = {
     '.jpg': 'image/jpeg',
@@ -37,7 +34,7 @@ export type Wallpaper = {
     /** Full name or any part of one, naming the image to use. Empty leaves it to `pick`. */
     file?: string;
     /** `first` is the first by name; `random` is one image per server process. */
-    pick?: string;
+    pick: 'first' | 'random';
 };
 
 /** The image files of a directory, by name, dotfiles and every other extension left out. */
@@ -85,7 +82,7 @@ export function choose(settings: Wallpaper, memory: WallpaperMemory): string | n
         if (part !== undefined) return part;
         return found[0];
     }
-    if ((settings.pick ?? 'first').toLowerCase() === 'random') {
+    if (settings.pick === 'random') {
         const key = resolve(settings.dir);
         const held = memory.chosen[key];
         if (held === undefined || !found.includes(held)) {
@@ -139,21 +136,31 @@ export function serve(
 
 /**
  * The configured wallpaper, or null when there is nothing to serve. The config is read per request
- * as everything else in this release is, so an edit shows on a reload; O6's watcher takes it over.
- * A `dir` that resolves outside the hub is refused with a line on stderr and serves nothing.
+ * so an edit shows on reload. A missing `dir`, or one outside the hub, serves nothing.
  */
-export function settings(memory: WallpaperMemory): Wallpaper | null {
-    const engine = engineDir();
+export function settings(memory: WallpaperMemory, engine: string = engineDir()): Wallpaper | null {
     const { config } = loadConfig(engine);
     const raw = config.wallpaper;
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
     const held = raw as Record<string, unknown>;
     const hub = loadLocal(engine).hub;
-    const named = typeof held.dir === 'string' && held.dir !== '' ? held.dir : DEFAULT_DIR;
+    if (typeof held.dir !== 'string' || held.dir === '') return null;
+    if (held.pick !== 'first' && held.pick !== 'random') {
+        const key = `pick:${String(held.pick)}`;
+        if (!memory.refused.has(key)) {
+            memory.refused.add(key);
+            console.error(
+                `wallpaper: pick must be first or random, not ${String(held.pick)}; serving no image`
+            );
+        }
+        return null;
+    }
+    const named = held.dir;
     const dir = resolve(hub, named);
     if (!inside(dir, hub)) {
-        if (!memory.refused.has(dir)) {
-            memory.refused.add(dir);
+        const key = `directory:${dir}`;
+        if (!memory.refused.has(key)) {
+            memory.refused.add(key);
             console.error(`wallpaper: ${dir} is outside the hub ${hub}; serving no image`);
         }
         return null;
@@ -161,6 +168,6 @@ export function settings(memory: WallpaperMemory): Wallpaper | null {
     return {
         dir,
         file: typeof held.file === 'string' ? held.file : undefined,
-        pick: typeof held.pick === 'string' ? held.pick : undefined
+        pick: held.pick
     };
 }

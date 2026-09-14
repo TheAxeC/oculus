@@ -31,7 +31,7 @@
     ];
 </script>
 
-{#if rows.length === 0}<p>{t('js.slurm.no_jobs')}</p>{:else}
+{#if rows.length === 0}<p>{t('hpc.no_jobs')}</p>{:else}
     <div class="scroll">
         <table>
             <thead
@@ -55,10 +55,10 @@
                         ><td>{startLabel(row.start) || t('hpc.none')}</td><td>{row.reason}</td>
                         <td class="actions"
                             ><ToolButton
-                                label={t('js.slurm.cancel_ok')}
+                                label={t('hpc.cancel_ok')}
                                 onclick={() => (asking = row.id)}
                             />{#if row.state === 'RUNNING'}<ToolButton
-                                    label={t('js.slurm.log')}
+                                    label={t('hpc.log')}
                                     onclick={() => onlog(row.id)}
                                 />{/if}</td
                         >
@@ -67,8 +67,8 @@
         </table>
     </div>{/if}
 {#if asking}<Confirm
-        message={t('js.slurm.cancel_confirm', asking)}
-        confirm={t('js.slurm.cancel_ok')}
+        message={t('hpc.cancel_confirm', asking)}
+        confirm={t('hpc.cancel_ok')}
         cancel={t('ui.confirm_cancel')}
         onconfirm={() => {
             const id = asking ?? '';

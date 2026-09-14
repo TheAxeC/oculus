@@ -1,8 +1,7 @@
 // The six session views rendered to HTML on the server: what each one draws over one synthetic
 // payload, and what each one draws when nothing is selected.
 //
-// The catalog, the glyphs and the vocabulary are the real config, so the words checked here are the
-// words config/text.yml holds. The sessions and the git state are the test's own: nothing reads
+// The catalog, glyphs and vocabulary are the real config. The sessions and git state are the test's own: nothing reads
 // ~/.claude, ~/.codex or ~/.oculus, and nothing writes anywhere.
 //
 // What this does NOT cover: anything that needs a DOM. There is no browser in this suite, so no row
@@ -241,13 +240,13 @@ describe('the session list', () => {
 
     it('marks an area that is not a known project folder', () => {
         const body = html(SessionList, { ended: true });
-        expect(body).toContain(catalog['js.sessions.area_unknown']);
+        expect(body).toContain(catalog['sessions.area_unknown']);
     });
 
     it('says how many are ended and keeps them out of the rail until asked', () => {
         // Two of the five are ended and not dismissed: the observed one and the bare one.
         const shut = html(SessionList);
-        expect(shut).toContain(catalog['js.sessions.ended_section'].replace('{0}', '2'));
+        expect(shut).toContain(catalog['sessions.ended_section'].replace('{0}', '2'));
         expect(shut).not.toContain('The ended one');
         const open = html(SessionList, { ended: true });
         expect(open).toContain('The ended one');
@@ -256,16 +255,16 @@ describe('the session list', () => {
 
     it('offers the dismissed ones by count, and shows them when asked', () => {
         const shut = html(SessionList, { ended: true });
-        expect(shut).toContain(catalog['js.sessions.show_dismissed'].replace('{0}', '1'));
+        expect(shut).toContain(catalog['sessions.show_dismissed'].replace('{0}', '1'));
         const open = html(SessionList, { ended: true, dismissed: true });
         expect(open).toContain('The dismissed one');
-        expect(open).toContain(catalog['js.sessions.hide_dismissed'].replace('{0}', '1'));
+        expect(open).toContain(catalog['sessions.hide_dismissed'].replace('{0}', '1'));
     });
 
     it('carries a dismiss control on an ended row and none on a live one', () => {
         const body = html(SessionList, { ended: true, dismissed: true });
-        expect(body).toContain(catalog['js.sessions.close_tip']);
-        expect(body).toContain(catalog['js.sessions.restore_tip']);
+        expect(body).toContain(catalog['sessions.close_tip']);
+        expect(body).toContain(catalog['sessions.restore_tip']);
     });
 
     it('marks the selected row and the live labels', () => {
@@ -274,14 +273,14 @@ describe('the session list', () => {
         // Svelte writes its own scoped class between the two, so the mark is matched rather than
         // compared: what is checked is that exactly one row carries it.
         expect(body.match(/class="row[^"]*\bon\b/g)).toHaveLength(1);
-        expect(body).toContain(catalog['js.sessions.live_busy']);
-        expect(body).toContain(catalog['js.sessions.live_idle']);
+        expect(body).toContain(catalog['sessions.live_busy']);
+        expect(body).toContain(catalog['sessions.live_idle']);
         expect(body).toContain('opus-5');
     });
 
     it('shows its empty state when the payload holds nothing', () => {
         receive({ channel: 'sessions', version: 2, payload: payload([]) });
-        expect(html(SessionList)).toContain(catalog['js.sessions.state_empty']);
+        expect(html(SessionList)).toContain(catalog['sessions.state_empty']);
         receive({ channel: 'sessions', version: 3, payload: payload(tree) });
     });
 });
@@ -290,7 +289,7 @@ describe('the session detail', () => {
     it('draws the fields of the selected session', () => {
         select('live-one');
         const body = html(SessionDetail);
-        expect(body).toContain(catalog['js.sessions.f_cwd']);
+        expect(body).toContain(catalog['sessions.f_cwd']);
         expect(body).toContain(ALPHA);
         expect(body).toContain('acceptEdits');
         expect(body).toContain('4242');
@@ -303,27 +302,27 @@ describe('the session detail', () => {
         // 800k of the 1M window: the meter's own value, and the two numbers beside it.
         expect(body).toContain('aria-valuenow="0.8"');
         expect(body).toContain(
-            catalog['js.sessions.context_num'].replace('{0}', '800k').replace('{1}', '1M')
+            catalog['sessions.context_num'].replace('{0}', '800k').replace('{1}', '1M')
         );
     });
 
     it('shows the lifetime tokens and the cache line, which are not the occupancy', () => {
         select('live-one');
         const body = html(SessionDetail);
-        expect(body).toContain(catalog['js.sessions.tok_in'].replace('{0}', '1k'));
+        expect(body).toContain(catalog['sessions.tok_in'].replace('{0}', '1k'));
         // The share is the last turn's read over the last turn's occupancy. Taken from the lifetime
         // sum beside it, 9M over 800k, it would read 1125% cached.
-        expect(body).not.toContain(catalog['js.sessions.cache_share'].replace('{0}', '1125'));
-        expect(body).toContain(catalog['js.sessions.cache_ttl'].replace('{0}', '1h'));
-        expect(body).toContain(catalog['js.sessions.cache_share'].replace('{0}', '50'));
-        expect(body).toContain(catalog['js.sessions.cache_busts'].replace('{0}', '2'));
+        expect(body).not.toContain(catalog['sessions.cache_share'].replace('{0}', '1125'));
+        expect(body).toContain(catalog['sessions.cache_ttl'].replace('{0}', '1h'));
+        expect(body).toContain(catalog['sessions.cache_share'].replace('{0}', '50'));
+        expect(body).toContain(catalog['sessions.cache_busts'].replace('{0}', '2'));
     });
 
     it('says a session is ended rather than what the registry last said', () => {
         select('ended-one');
         const body = html(SessionDetail);
-        expect(body).toContain(catalog['js.sessions.state_ended']);
-        expect(body).toContain(catalog['js.sessions.kind_observed'].replace('{0}', 'observed'));
+        expect(body).toContain(catalog['sessions.state_ended']);
+        expect(body).toContain(catalog['sessions.kind_observed'].replace('{0}', 'observed'));
     });
 
     it('draws the pin row with the known areas of the session own workspace', () => {
@@ -387,8 +386,8 @@ describe('the timeline', () => {
     it('draws every event with its kind, and prints a kind it does not know', () => {
         select('live-one');
         const body = html(Timeline);
-        expect(body).toContain(catalog['js.sessions.ev_k_prompt']);
-        expect(body).toContain(catalog['js.sessions.ev_k_edit']);
+        expect(body).toContain(catalog['sessions.ev_k_prompt']);
+        expect(body).toContain(catalog['sessions.ev_k_edit']);
         expect(body).toContain('compaction');
         expect(body).toContain('do the thing');
     });
@@ -396,8 +395,8 @@ describe('the timeline', () => {
     it('writes a turn as its length and a bust as its size', () => {
         select('live-one');
         const body = html(Timeline);
-        expect(body).toContain(catalog['js.sessions.ev_turn'].replace('{0}', '42'));
-        expect(body).toContain(catalog['js.sessions.ev_bust'].replace('{0}', '84k'));
+        expect(body).toContain(catalog['sessions.ev_turn'].replace('{0}', '42'));
+        expect(body).toContain(catalog['sessions.ev_bust'].replace('{0}', '84k'));
     });
 
     it('shows a path as its basename with the whole of it in the tooltip', () => {
@@ -409,7 +408,7 @@ describe('the timeline', () => {
 
     it('says when a session has no timeline, and when none is selected', () => {
         select('ended-one');
-        expect(html(Timeline)).toContain(catalog['js.sessions.tl_empty']);
+        expect(html(Timeline)).toContain(catalog['sessions.tl_empty']);
         select(null);
         expect(html(Timeline)).toContain(catalog['sessions.detail_empty']);
     });
@@ -501,36 +500,36 @@ describe('the changes view', () => {
     it('lists the files the session touched, relative to its workspace', () => {
         select('live-one');
         const body = html(Changes);
-        expect(body).toContain(catalog['js.sessions.ch_touched']);
+        expect(body).toContain(catalog['sessions.ch_touched']);
         expect(body).toContain('projects/manuscripts/alpha/code/run.py');
-        expect(body).toContain(catalog['js.sessions.ch_times'].replace('{0}', '3'));
+        expect(body).toContain(catalog['sessions.ch_times'].replace('{0}', '3'));
     });
 
     it('marks a file another live session is holding open, and names it', () => {
         select('live-one');
         const body = html(Changes);
-        expect(body).toContain(catalog['js.sessions.ch_shared']);
+        expect(body).toContain(catalog['sessions.ch_shared']);
         expect(body).toContain(
-            catalog['js.sessions.ch_shared_tip'].replace('{0}', 'The other live one')
+            catalog['sessions.ch_shared_tip'].replace('{0}', 'The other live one')
         );
     });
 
     it('draws the branch line and the three git groups with their letters', () => {
         select('live-one');
         const body = html(Changes);
-        expect(body).toContain(catalog['js.sessions.ch_ahead'].replace('{0}', '1'));
-        expect(body).toContain(catalog['js.sessions.ch_staged']);
-        expect(body).toContain(catalog['js.sessions.ch_untracked']);
+        expect(body).toContain(catalog['sessions.ch_ahead'].replace('{0}', '1'));
+        expect(body).toContain(catalog['sessions.ch_staged']);
+        expect(body).toContain(catalog['sessions.ch_untracked']);
         expect(body).toContain('>M</span>');
         expect(body).toContain('>?</span>');
-        expect(body).toContain(catalog['js.sessions.ch_added'].replace('{0}', '4'));
-        expect(body).toContain(catalog['js.sessions.ch_binary']);
+        expect(body).toContain(catalog['sessions.ch_added'].replace('{0}', '4'));
+        expect(body).toContain(catalog['sessions.ch_binary']);
     });
 
     it('says a workspace is not a repository, with git own reason in the tooltip', () => {
         select('bare-one');
         const body = html(Changes);
-        expect(body).toContain(catalog['js.sessions.ch_norepo']);
+        expect(body).toContain(catalog['sessions.ch_norepo']);
         expect(body).toContain('title="not a git repository"');
     });
 
@@ -553,7 +552,7 @@ describe('the changes view', () => {
         select('live-one');
         const body = html(Changes);
         expect(body).toContain('projects/manuscripts/alpha/manuscript/main.tex');
-        const marks = [...body.matchAll(new RegExp(catalog['js.sessions.ch_shared'], 'g'))];
+        const marks = [...body.matchAll(new RegExp(catalog['sessions.ch_shared'], 'g'))];
         expect(marks.length).toBeGreaterThan(1);
     });
 
@@ -595,20 +594,20 @@ describe('the agents view', () => {
         expect(body.indexOf('Still going')).toBeLessThan(
             body.indexOf('Read the whole tree and report')
         );
-        expect(body).toContain(catalog['js.sessions.ag_done']);
-        expect(body).toContain(catalog['js.sessions.ag_running']);
-        expect(body).toContain(catalog['js.sessions.ag_secs'].replace('{0}', '45'));
-        expect(body).toContain(catalog['js.sessions.ag_chars'].replace('{0}', '5k'));
+        expect(body).toContain(catalog['sessions.ag_done']);
+        expect(body).toContain(catalog['sessions.ag_running']);
+        expect(body).toContain(catalog['sessions.ag_secs'].replace('{0}', '45'));
+        expect(body).toContain(catalog['sessions.ag_chars'].replace('{0}', '5k'));
     });
 
     it('names an agent with no subagent type after the word for one', () => {
         select('live-one');
-        expect(html(Agents)).toContain(catalog['js.sessions.ag_type']);
+        expect(html(Agents)).toContain(catalog['sessions.ag_type']);
     });
 
     it('says when a session dispatched none, and when none is selected', () => {
         select('ended-one');
-        expect(html(Agents)).toContain(catalog['js.sessions.ag_empty']);
+        expect(html(Agents)).toContain(catalog['sessions.ag_empty']);
         select(null);
         expect(html(Agents)).toContain(catalog['sessions.detail_empty']);
     });
@@ -719,7 +718,7 @@ describe('a hook event on a session', () => {
     it('draws the stop event as a stopped-at line in the row meta', () => {
         const body = withHooks(() => html(SessionList, { ended: true }));
         expect(body).toContain(
-            catalog['js.sessions.stopped_at'].replace('{0}', clock(stopped.hook?.at))
+            catalog['sessions.stopped_at'].replace('{0}', clock(stopped.hook?.at))
         );
     });
 
@@ -728,14 +727,14 @@ describe('a hook event on a session', () => {
             select('stopped-one');
             return html(SessionDetail);
         });
-        expect(body).toContain(catalog['js.sessions.f_hook']);
+        expect(body).toContain(catalog['sessions.f_hook']);
         expect(body).toContain(
-            catalog['js.sessions.stopped_at'].replace('{0}', clock(stopped.hook?.at))
+            catalog['sessions.stopped_at'].replace('{0}', clock(stopped.hook?.at))
         );
     });
 });
 
-// O18's terminals, which reach the page in the same payload the sessions do. What this does NOT
+// Terminals reach the page in the same payload as sessions. What this does NOT
 // cover: xterm.js itself, which needs a DOM that `svelte/server` does not give it, so the grid here
 // is the mount point the browser fills and the assertions stop at it.
 describe('a terminal in the payload', () => {
@@ -784,7 +783,7 @@ describe('a terminal in the payload', () => {
     });
 });
 
-// O19's resume control. What this does NOT cover: the click itself, and the menu's own list, which
+// The resume control. What this does NOT cover: the click itself, and the menu's own list, which
 // Menu.svelte renders only while it is open; there is no DOM here to open it, so a row's menu is
 // checked by its opener and the confirm the second press shows is checked in the route test.
 describe('resuming a session into a terminal', () => {

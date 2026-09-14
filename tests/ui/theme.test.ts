@@ -20,13 +20,21 @@ import {
     applyWallpaper,
     type Themeable
 } from '../../src/lib/ui/theme.ts';
-import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
+import {
+    asciiCatalog,
+    engineDir,
+    glyphCatalog,
+    loadConfig
+} from '../../src/lib/data/sources/config.ts';
 import {
     setAppearance,
     terminalFontPx,
     themeClass,
+    themeLabel,
+    themes,
     wallpaperSettings
 } from '../../src/lib/state/appearance.ts';
+import { setAscii, setGlyphMode, setGlyphs } from '../../src/lib/state/text.ts';
 
 const THEMES_DIR = resolve(
     dirname(fileURLToPath(import.meta.url)),
@@ -39,9 +47,17 @@ const THEMES_DIR = resolve(
 const TOKENS = readFileSync(join(THEMES_DIR, 'tokens.css'), 'utf8');
 const THEMES = readFileSync(join(THEMES_DIR, 'themes.css'), 'utf8');
 const APPEARANCE = loadConfig(engineDir()).config;
+const GLYPHS = glyphCatalog(APPEARANCE);
+const ASCII = asciiCatalog(APPEARANCE);
+setGlyphs(GLYPHS);
+setAscii(ASCII);
+setGlyphMode('unicode');
 setAppearance(APPEARANCE);
 
-afterEach(() => setAppearance(APPEARANCE));
+afterEach(() => {
+    setGlyphMode('unicode');
+    setAppearance(APPEARANCE);
+});
 
 /** A document as applyTheme needs one, with everything it was handed kept. */
 function fakeDocument() {
@@ -66,6 +82,17 @@ function apply(name: string, crt = false) {
 }
 
 describe('applyTheme', () => {
+    it('resolves base and terminal-palette marks through the active glyph mode', () => {
+        expect(ASCII[GLYPHS.theme_base]).toBeTypeOf('string');
+        expect(ASCII[GLYPHS.theme_rice]).toBeTypeOf('string');
+        expect(themeLabel('light')).toBe(`${GLYPHS.theme_base} light`);
+        expect(themeLabel('mocha')).toBe(`${GLYPHS.theme_rice} mocha`);
+        setGlyphMode('ascii');
+        expect(themeLabel('light')).toBe(`${ASCII[GLYPHS.theme_base]} light`);
+        expect(themeLabel('mocha')).toBe(`${ASCII[GLYPHS.theme_rice]} mocha`);
+        expect(themes()[0].label).toBe(`${ASCII[GLYPHS.theme_base]} light`);
+    });
+
     it('puts the theme class string on the body', () => {
         expect(apply('mocha').className).toBe('rice mocha');
         expect(apply('dark').className).toBe('dark');

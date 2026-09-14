@@ -50,13 +50,13 @@ describe('the Programs view', () => {
     it('draws the intro, add control, line metrics, prose, edits and project groups', () => {
         const body = html();
         expect(body).toMatch(/class="intro(?:\s|")/);
-        expect(body).toContain(catalog['col.programs_intro']);
-        expect(body).toContain(catalog['col.add']);
+        expect(body).toContain(catalog['programs.intro']);
+        expect(body).toContain(catalog['collection.add']);
         expect(body).toContain('data-reveal="pillar"');
         expect(body).toContain('Pillar <strong>One</strong>');
-        expect(body).toContain(`1 ${catalog['col.project']}`);
-        expect(body).toContain(catalog['col.in_flight']);
-        expect(body).toContain(catalog['col.total']);
+        expect(body).toContain(`1 ${catalog['programs.project']}`);
+        expect(body).toContain(catalog['programs.in_flight']);
+        expect(body).toContain(catalog['programs.total']);
         expect(body).toContain('1 strong');
         expect(body).toContain('A <strong>goal</strong>.');
         expect(body).toContain('Funded by <strong>Tests</strong>.');
@@ -70,17 +70,17 @@ describe('the Programs view', () => {
 
     it('draws orphan, provisional, off-pillar and archival sections', () => {
         const body = html();
-        expect(body).toContain(catalog['col.orphans']);
+        expect(body).toContain(catalog['programs.orphans']);
         expect(body).toContain('1 untagged');
         expect(body).toContain('class="label">active</span>');
         expect(body).not.toContain('class="label">manuscript</span>');
         expect(body).toContain('aria-expanded="false"');
         expect(body).not.toContain('>ORPHAN</span>');
-        expect(body).toContain(catalog['col.provisional_h']);
+        expect(body).toContain(catalog['programs.provisional_h']);
         expect(body).toContain('Candidate line');
-        expect(body).toContain(catalog['col.offpillar_h']);
+        expect(body).toContain(catalog['programs.offpillar_h']);
         expect(body).toContain('Outside line');
-        expect(body).toContain(catalog['col.archival']);
+        expect(body).toContain(catalog['programs.archival']);
         expect(body).toContain('1 not active');
         expect(body).toContain('dropped');
     });
@@ -88,7 +88,7 @@ describe('the Programs view', () => {
     it('draws provisional metrics and omits metrics from an off-pillar card', () => {
         const body = html();
         expect(card(body, 'candidate')).toContain('class="metrics ');
-        expect(card(body, 'candidate')).toContain(catalog['col.in_flight']);
+        expect(card(body, 'candidate')).toContain(catalog['programs.in_flight']);
         expect(card(body, 'outside')).not.toContain('class="metrics ');
     });
 
@@ -143,8 +143,8 @@ describe('the Programs view', () => {
             project.programIds = ['pillar'];
         }
         const body = html(snapshot);
-        expect(body).toContain(catalog['col.no_orphans']);
-        expect(body).toContain(catalog['col.no_orphans_blurb']);
+        expect(body).toContain(catalog['programs.no_orphans']);
+        expect(body).toContain(catalog['programs.no_orphans_blurb']);
     });
 
     it('uses collection entry order for integer-like line keys', () => {

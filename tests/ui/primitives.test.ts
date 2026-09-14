@@ -139,14 +139,18 @@ describe('Chip', () => {
         expect(html(Chip, { label: 'a', tone: 'teal', filled: true })).toContain('filled');
     });
 
-    it('draws a glyph by name and an icon character from the config', () => {
-        expect(html(Chip, { label: 'a', glyph: 'pin' })).toContain('class="glyph');
-        const body = html(Chip, { label: 'a', icon: 'S' });
-        expect(body).toContain('class="icon" aria-hidden="true">S<');
+    it('draws a glyph by name', () => {
+        const body = html(Chip, { label: 'a', glyph: 'pin' });
+        expect(body).toContain('class="glyph');
+        expect(body).toContain(glyphCatalog(config).pin);
     });
 
-    it('draws nothing for an icon the legend did not give it', () => {
-        expect(html(Chip, { label: 'a', icon: '' })).not.toContain('class="icon"');
+    it('draws no glyph when none is named', () => {
+        expect(html(Chip, { label: 'a' })).not.toContain('class="glyph');
+    });
+
+    it('draws no glyph for the empty name an unlisted status chip carries', () => {
+        expect(html(Chip, { label: 'a', glyph: '' })).not.toContain('class="glyph');
     });
 });
 

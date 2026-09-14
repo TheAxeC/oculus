@@ -23,9 +23,9 @@ test('digits and Tab open rail views, ? toggles the sheet', async ({ page }) => 
     await expect(page.getByRole('tab', { name: t('views.coauthor') })).toBeVisible();
 
     await press(page, '?');
-    const sheet = page.getByRole('dialog', { name: t('js.keys.title') });
+    const sheet = page.getByRole('dialog', { name: t('app.keys.title') });
     await expect(sheet).toBeVisible();
-    await expect(sheet.getByText(t('js.keys.hint'))).toBeVisible();
+    await expect(sheet.getByText(t('app.keys.hint'))).toBeVisible();
     await page.keyboard.press('Escape');
     await expect(sheet).toHaveCount(0);
 });

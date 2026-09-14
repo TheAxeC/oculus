@@ -1,4 +1,16 @@
 <script module lang="ts">
+    // Layer 3, view registration and URL helper. Documents open from bookmarks and are not listed.
+    import type { ViewRegistration } from './registry';
+
+    export const registration: ViewRegistration = {
+        id: 'document',
+        label: 'views.document',
+        glyph: 'views.document_glyph',
+        group: '',
+        order: 0,
+        listed: false
+    };
+
     /**
      * The address api/file answers for a file under a root. Each segment is escaped on its own, so a
      * space or a hash in a name survives and the separators stay separators. It is exported because
@@ -14,8 +26,7 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One local HTML file as its own tab, which is DESIGN.md's decision of 2026-09-10:
-    // a local HTML file under a configured root opens as a tab. The file is the manuals of cathedra
+    // Layer 3, view. A local HTML file under a configured root opens as a tab. The file is the manuals of cathedra
     // and game-engine today, and the bookmarks in config/layout.yml are what the rail offers.
     //
     // The document is an iframe rather than markup pulled into the page: the manuals are whole

@@ -1,0 +1,59 @@
+# Oculus text owned by the collection view.
+text:
+    collection:
+        add: + add
+        add_tip: add a new entry
+        coverage: Code coverage
+        coverage_anon: review-anon
+        coverage_deposited: deposited
+        coverage_none: no deposit
+        delete_glyph: cross
+        edit_delete: edit / delete
+        edit_glyph: edit
+        empty: No entries yet - add some to the YAML.
+        folder_glyph: folder
+        form_add_title: New entry
+        form_cancel: Cancel
+        form_delete: Delete
+        form_delete_confirm: Delete this entry from the file?
+        form_edit_title: Edit entry
+        form_needs: '{0} is what the entry is found by; it cannot be empty.'
+        form_none: none
+        form_raw_invalid: Raw fields must be valid JSON maps whose values are strings, numbers, booleans or null.
+        form_save: Save
+        fundstmt_tip: verbatim funder acknowledgment - paste into a manuscript's Funding section
+        grip_glyph: grip
+        link_glyph: link
+        meta_add: + add row
+        meta_label: Label
+        meta_remove: Remove row
+        meta_value: Value
+        no_funding: No funding
+        no_funding_sub: Active and manuscript projects with no scheme attached.
+        pin_glyph: pin
+        pin_to_top: pin to top
+        related: Named by
+        reorder_hint: drag to reorder
+        save_glyph: check
+        search: Search {0} ...
+        status_facet: Status
+        tags_hint: comma separated
+        toolbar: Collection controls
+        unpin: unpin
+    views:
+        applications: Applications
+        applications_glyph: inbox
+        code: Code
+        code_glyph: code
+        collaborations: Collaborations
+        collaborations_glyph: collab
+        education: Education & Service
+        education_glyph: teaching
+        events: Talks & Events
+        events_glyph: events
+        funding: Funding
+        funding_glyph: funding
+        statements: Statements
+        statements_glyph: draft
+        tasks: Tasks & Service
+        tasks_glyph: tasks

@@ -1,0 +1,106 @@
+# Oculus text owned by the project view.
+text:
+    project:
+        action:
+            add_subtask: + subtask
+            add_subtask_tip: add a subtask
+            box_off_glyph: checkbox_off
+            box_on_glyph: checkbox_on
+            del: del
+            delete_subtask: delete subtask
+            done: done
+            mark_done: mark done
+            n_open: '{0} open'
+            reopen: reopen
+            set_status: 'set status: {0}'
+            snooze_1mo: 1mo
+            snooze_1w: 1w
+            snooze_hide: hide
+            snooze_tip: snooze {0}
+            subtask_cancel: cancel
+            subtask_deadline: deadline
+            subtask_do: what to do
+            subtask_save: save
+            subtasks: Subtasks
+            unsnooze: un-snooze
+        card:
+            author_glyph: author
+            clipboard_blocked: clipboard blocked
+            code_glyph: published
+            collaborations: Collaborations
+            collaborator_glyph: collab
+            collapse_glyph: collapse
+            copied: copied
+            copy_failed: copy failed
+            dataset_glyph: data
+            deadline_glyph: deadline
+            deposit: deposit
+            deposit_glyph: published
+            disseminated_in: Disseminated in
+            documents: Documents
+            due_days: '{0}d'
+            edit_glyph: edit
+            edit_manifest: edit manifest
+            eli5: ELI5
+            expand_glyph: expand
+            files_capped: showing the {0} most recent
+            files_error: 'files: {0}'
+            files_hdr: Files ({0})
+            files_loading: reading the folder ...
+            files_none: No files in this project.
+            files_ph: filter files in this project ...
+            funding_glyph: funding
+            ghost_badge_tip: no project.yml - run /project-new
+            ghostmsg: No manifest yet - folder discovered by prefix. Add <code>project.yml</code>.
+            hpc_glyph: hpc
+            hpc_label: HPC
+            ideas: Ideas / avenues
+            latest: Latest
+            local_label: local
+            next: Next
+            no_manifest: no manifest
+            open_in: open in {0}
+            outcome: Outcome
+            overdue: overdue {0}d
+            pin_glyph: pin
+            pin_to_top: pin to top
+            program_glyph: program
+            repro_glyph: check
+            reproduced: Reproduced
+            results: Results
+            stale_behind: '{0}d behind'
+            stale_tip: docs changed {0} | {1}d after the manifest was last touched - re-touch project.yml
+            toggle_tip: expand / collapse
+            unpin: unpin
+        doc_failed: 'the document was not read: {0}'
+        doc_loading: loading the document ...
+        documents: Documents
+        helper:
+            ask: Ask
+            ask_tip: open a Claude terminal focused on this project
+            blocked_external: blocked (external)
+            copy_context: copy context
+            copy_context_tip: copy this project as context to paste into a chat
+            doc_human_tip: human-only - no agent edits this
+            doc_public_tip: public presentation content
+            edit_source: 'edit source: {0}'
+            folder: folder
+            folder_tip: open project folder
+            full: Full
+            short: Short
+            under_review_at: under review at {0}
+            under_review_unset: under review (venue unset)
+            waiting_on: waiting on {0}
+            xlink_active: active
+            xlink_idea: idea
+            xlink_ideas: ideas
+            xlink_published: published
+        no_documents: This project has none of the four Markdown documents.
+        no_sessions: No session has worked in this folder.
+        none: No project chosen. Open a project from the title of its card.
+        none_glyph: folder
+        sessions: Sessions
+        unknown: The snapshot holds no project with the id {0}.
+    views:
+        project: Project
+        project_glyph: folder

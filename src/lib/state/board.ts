@@ -4,8 +4,8 @@
 // storage, and two calls over one snapshot give the same answer. The reactive face is
 // state/selectors.svelte.ts, and it is the only module that reaches this through the entities store.
 //
-// Three boards over one component. The cockpit's Projects, Archive and Coauthor tabs are one board
-// over three tier sets, and a BoardPreset is the whole difference between them. A preset is read out
+// Projects, Archive and Coauthor use one board over three tier sets, and a BoardPreset is the whole
+// difference between them. A preset is read out
 // of the merged config rather than written here, so which tiers a board shows, the words of its
 // columns, the order its types sort in and the buckets it rolls up stay in config/layout.yml,
 // config/vocab.yml and config/behavior.yml.
@@ -225,9 +225,8 @@ const REPRODUCED_VALUES = ['1', '0'];
 const NO_JIF = ['', '-', 'none'];
 
 /**
- * How near a deadline has to be for the badge to count days rather than show the date. It is the
- * fortnight the cockpit's card counted in, and it is here rather than in config/behavior.yml
- * because no key of that file says it; a key can take it over without this changing shape.
+ * How near a deadline has to be for the badge to count days rather than show the date. It remains
+ * here because no behavior config key names it.
  */
 export const DEADLINE_SOON = 14;
 
@@ -591,7 +590,7 @@ export function waitingLine(
 ): WaitingLine | null {
     if (project.waitingOn.length > 0) {
         const names = project.waitingOn.map((id) => collaborators[id] ?? id).join(', ');
-        return { kind: 'people', text: t('helpers.waiting_on', names) };
+        return { kind: 'people', text: t('project.helper.waiting_on', names) };
     }
     if (project.chips.includes('submitted')) {
         const venue = project.venueId === undefined ? undefined : venues[project.venueId];
@@ -600,12 +599,12 @@ export function waitingLine(
             kind: 'review',
             text:
                 venue === undefined
-                    ? t('helpers.under_review_unset')
-                    : t('helpers.under_review_at', name)
+                    ? t('project.helper.under_review_unset')
+                    : t('project.helper.under_review_at', name)
         };
     }
     if (project.chips.includes('blocked')) {
-        return { kind: 'blocked', text: t('helpers.blocked_external') };
+        return { kind: 'blocked', text: t('project.helper.blocked_external') };
     }
     return null;
 }

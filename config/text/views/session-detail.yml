@@ -1,0 +1,45 @@
+# Oculus text owned by the session-detail view.
+text:
+    sessions:
+        cache: prompt cache
+        cache_busts: '{0} busts'
+        cache_share: '{0}% cached'
+        cache_ttl: '{0} ttl'
+        cache_ttl_none: no ttl
+        clear_glyph: clear
+        clear_title: clear the title
+        context: context
+        context_num: '{0} / {1}'
+        detail_glyph: now
+        detail_title: Session
+        f_branch: branch
+        f_cwd: cwd
+        f_effort: effort
+        f_hook: hook
+        f_kind: kind
+        f_mode: mode
+        f_model: model
+        f_pid: pid
+        f_started: started
+        f_status: status
+        f_title: title
+        f_version: version
+        pin_label: Pin
+        pin_mark: pinned to this area by hand
+        pin_scored: (scored)
+        pin_tip: file this session under a project folder instead of the one its files scored
+        rename_glyph: check
+        rename_label: Title
+        rename_placeholder: the session's own title
+        rename_tip: show this session under a name of your own
+        resume: Resume in a terminal
+        resume_confirm: Press again to run the agent again in {0}
+        resume_glyph: goto
+        resume_label: Resume
+        resume_live: This session is still running. It can be resumed once it has ended.
+        resume_unknown: The snapshot no longer holds this session.
+        tok_in: in {0}
+        tok_out: out {0}
+        tok_think: thinking {0}
+        write_failed: not saved
+        write_saved: saved

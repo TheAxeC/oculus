@@ -9,27 +9,19 @@
     // measures under every theme.
 
     import Glyph from './Glyph.svelte';
-    import { asciiOf } from '$lib/state/text';
 
     type Props = {
         /** The chip's words, already translated by the view. */
         label: string;
         /** A hue name from state/tones.ts. A chip with none is muted. */
         tone?: string;
-        /** A name in `glyphs:`, drawn before the label. */
+        /** A name in `glyphs:`, drawn before the label. Empty draws none, as an unlisted chip's is. */
         glyph?: string;
-        /**
-         * A character the config already carries, for a chip whose icon is data rather than a name
-         * in config/glyphs.yml: the `icon` of a `status_legend` row, through chipGlyph(). It goes
-         * through asciiOf() so a terminal theme swaps it for its stand-in like every other glyph. It
-         * is decoration beside the label, so it is hidden from a screen reader like Glyph's own.
-         */
-        icon?: string;
         /** Fill the chip with its hue instead of tinting the text. */
         filled?: boolean;
     };
 
-    let { label, tone, glyph, icon, filled = false }: Props = $props();
+    let { label, tone, glyph, filled = false }: Props = $props();
 
     const style = $derived(
         tone === undefined
@@ -39,11 +31,8 @@
 </script>
 
 <span class="chip" class:toned={tone !== undefined} class:filled {style}>
-    {#if glyph !== undefined}
+    {#if glyph !== undefined && glyph !== ''}
         <Glyph name={glyph} />
-    {/if}
-    {#if icon !== undefined && icon !== ''}
-        <span class="icon" aria-hidden="true">{asciiOf(icon)}</span>
     {/if}
     <span class="label">{label}</span>
 </span>

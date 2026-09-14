@@ -1,3 +1,40 @@
+<script module lang="ts">
+    // Layer 3, view registration. The generic collection component owns each configured collection's rail placement.
+    import type { ViewRegistration } from './registry';
+    import {
+        applicationsBadge,
+        collectionBadge,
+        collectionBadgeTitle,
+        collectionBadgeTone
+    } from '$lib/state/rail-badges.svelte';
+
+    const placements: Record<string, { group: string; order: number }> = {
+        funding: { group: 'academic', order: 0 },
+        events: { group: 'academic', order: 1 },
+        education: { group: 'academic', order: 2 },
+        applications: { group: 'academic', order: 3 },
+        collaborations: { group: 'academic', order: 4 },
+        tasks: { group: 'academic', order: 5 },
+        code: { group: 'sources', order: 2 },
+        statements: { group: 'sources', order: 3 }
+    };
+
+    export const registration = (keys: string[]): ViewRegistration[] =>
+        keys.map((id, index) => {
+            const applications = id === 'applications';
+            const place = placements[id] ?? { group: 'sources', order: 100 + index };
+            return {
+                id,
+                label: `views.${id}`,
+                glyph: `views.${id}_glyph`,
+                ...place,
+                badge: applications ? applicationsBadge : () => collectionBadge(id),
+                badgeTone: applications ? () => 'green' : () => collectionBadgeTone(id),
+                badgeTitle: applications ? undefined : () => collectionBadgeTitle(id)
+            };
+        });
+</script>
+
 <script lang="ts">
     // Layer 3, view. One collection file as its own tab: the file's title and intro, a search over
     // every word an entry holds, a facet bar of the statuses the file uses, an add form over the
@@ -122,13 +159,13 @@
     <Toolbar label={t('collection.toolbar')}>
         <Search
             value={held.search}
-            placeholder={t('col.search', title())}
+            placeholder={t('collection.search', title())}
             oninput={(value) => write({ search: value })}
         />
         {#if schema !== undefined}
             <ToolButton
-                label={t('col.add')}
-                title={t('col.add_tip')}
+                label={t('collection.add')}
+                title={t('collection.add_tip')}
                 active={adding}
                 onclick={() => (adding = !adding)}
             />
@@ -144,7 +181,7 @@
 
         {#if facets.length > 0 || unfunded.length > 0}
             <div class="facets">
-                <span class="label">{t('col.status_facet')}</span>
+                <span class="label">{t('collection.status_facet')}</span>
                 {#each facets as facet (facet.value)}
                     <span
                         class="facet"

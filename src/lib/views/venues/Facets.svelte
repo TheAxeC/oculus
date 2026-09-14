@@ -16,8 +16,8 @@
 </script>
 
 {#if facets.length > 0}
-    <div class="facets" role="group" aria-label={t('col.ven_themes_facet')}>
-        <span class="label">{t('col.ven_themes_facet')}</span>
+    <div class="facets" role="group" aria-label={t('venues.themes_facet')}>
+        <span class="label">{t('venues.themes_facet')}</span>
         {#each facets as facet (facet.theme)}
             <ToolButton
                 label={`${facet.theme} ${facet.count}`}

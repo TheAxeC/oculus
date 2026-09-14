@@ -129,19 +129,19 @@ describe('the LinkedIn view', () => {
 
     it('draws search, add form, ordered sections, metadata, snippets, and card-scoped actions', async () => {
         const body = await draw('linkedin-all', entries, '', true);
-        expect(body).toContain(catalog['sf.linkedin_search'].replace('&', '&amp;'));
-        expect(body).toContain(catalog['sf.linkedin_addidea']);
-        expect(body).toContain(catalog['sf.linkedin_ideas_hdr'].replace('{0}', '2'));
-        expect(body).toContain(catalog['sf.linkedin_posted_hdr'].replace('{0}', '2'));
+        expect(body).toContain(catalog['linkedin.search'].replace('&', '&amp;'));
+        expect(body).toContain(catalog['linkedin.addidea']);
+        expect(body).toContain(catalog['linkedin.ideas_hdr'].replace('{0}', '2'));
+        expect(body).toContain(catalog['linkedin.posted_hdr'].replace('{0}', '2'));
         expect(body.indexOf('Alpha idea')).toBeLessThan(body.indexOf('Zeta idea'));
         expect(body.indexOf('New post')).toBeLessThan(body.indexOf('Old post'));
 
         const idea = card(body, 'xx-alpha.md');
-        expect(idea).toContain(catalog['sf.linkedin_idea_tag']);
+        expect(idea).toContain(catalog['linkedin.idea_tag']);
         expect(idea).toContain('mentorship');
         expect(idea).toContain('Teaching lessons for a future post....');
-        expect(hasAction(idea, catalog['sf.linkedin_markpost'])).toBe(true);
-        expect(hasAction(idea, catalog['sf.linkedin_edit'])).toBe(true);
+        expect(hasAction(idea, catalog['linkedin.markpost'])).toBe(true);
+        expect(hasAction(idea, catalog['linkedin.edit'])).toBe(true);
         expect(idea).toContain('data-editor-path="theaxec.github.io/_linkedin/xx-alpha.md"');
         expect(idea).toContain('data-editor-view="source"');
         expect(idea).toContain('data-editor-root="hub"');
@@ -149,11 +149,11 @@ describe('the LinkedIn view', () => {
         const post = card(body, '02-new.md');
         expect(post).toContain('>02</span>');
         expect(post).toContain('2026-09-10');
-        expect(hasAction(post, catalog['sf.linkedin_markpost'])).toBe(false);
-        expect(hasAction(post, catalog['sf.linkedin_edit'])).toBe(true);
-        expect(body).toContain(`aria-label="${catalog['sf.linkedin_form_title']}"`);
-        expect(body).toContain(`aria-label="${catalog['sf.linkedin_form_category']}"`);
-        expect(body).toContain(catalog['sf.linkedin_form_category_help']);
+        expect(hasAction(post, catalog['linkedin.markpost'])).toBe(false);
+        expect(hasAction(post, catalog['linkedin.edit'])).toBe(true);
+        expect(body).toContain(`aria-label="${catalog['linkedin.form_title']}"`);
+        expect(body).toContain(`aria-label="${catalog['linkedin.form_category']}"`);
+        expect(body).toContain(catalog['linkedin.form_category_help']);
     });
 
     it('searches title, category, and body without drawing an unrelated card', async () => {
@@ -169,7 +169,7 @@ describe('the LinkedIn view', () => {
         const ontrack = await draw('linkedin-ontrack');
         expect(ontrack).toMatch(/class="intro(?:\s|")/);
         expect(ontrack).toContain('data-cadence="ontrack"');
-        expect(ontrack).toContain(catalog['sf.linkedin_ontrack'].replace('{0}', '2'));
+        expect(ontrack).toContain(catalog['linkedin.ontrack'].replace('{0}', '2'));
 
         const overdueEntries = entries.map((entry) =>
             entry.idea ? entry : { ...entry, date: '2026-07-01' }
@@ -177,30 +177,30 @@ describe('the LinkedIn view', () => {
         const overdue = await draw('linkedin-overdue', overdueEntries);
         expect(overdue).toContain('data-cadence="overdue"');
         expect(overdue).toContain(
-            catalog['sf.linkedin_overdue'].replace('{0}', '73').replace('{1}', '30')
+            catalog['linkedin.overdue'].replace('{0}', '73').replace('{1}', '30')
         );
-        expect(overdue).toContain(catalog['sf.linkedin_postdue']);
-        expect(overdue).toContain(catalog['sf.linkedin_nudge']);
+        expect(overdue).toContain(catalog['linkedin.postdue']);
+        expect(overdue).toContain(catalog['linkedin.nudge']);
         expect(overdue).toContain('Zeta idea');
 
         const defaultPick = await draw(
             'linkedin-default-pick',
             overdueEntries.filter((entry) => !entry.idea)
         );
-        expect(defaultPick).toContain(catalog['sf.linkedin_default_pick']);
+        expect(defaultPick).toContain(catalog['linkedin.default_pick']);
 
         const undated = await draw(
             'linkedin-undated',
             entries.map((entry) => (entry.idea ? entry : { ...entry, date: '' }))
         );
         expect(undated).toContain('data-cadence="no-dates"');
-        expect(undated).toContain(catalog['sf.linkedin_no_dates']);
+        expect(undated).toContain(catalog['linkedin.no_dates']);
     });
 
     it('draws the empty, missing-folder, and feed-error states', async () => {
         const empty = await draw('linkedin-empty', []);
-        expect(empty).toContain(catalog['sf.linkedin_no_ideas']);
-        expect(empty).toContain(catalog['sf.linkedin_no_posts']);
+        expect(empty).toContain(catalog['linkedin.no_ideas']);
+        expect(empty).toContain(catalog['linkedin.no_posts']);
 
         serve({
             ok: true,
@@ -212,7 +212,7 @@ describe('the LinkedIn view', () => {
         });
         expect(
             render(Linkedin, { props: { instance: instance('linkedin-missing') } }).body
-        ).toContain(catalog['sf.linkedin_no_folder']);
+        ).toContain(catalog['linkedin.no_folder']);
 
         serve(
             {

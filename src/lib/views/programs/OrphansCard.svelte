@@ -13,11 +13,11 @@
     let { projects }: Props = $props();
 
     function title(): string {
-        return projects.length > 0 ? t('col.orphans') : t('col.no_orphans');
+        return projects.length > 0 ? t('programs.orphans') : t('programs.no_orphans');
     }
 
     function blurb(): string {
-        return projects.length > 0 ? t('col.orphans_blurb') : t('col.no_orphans_blurb');
+        return projects.length > 0 ? t('programs.orphans_blurb') : t('programs.no_orphans_blurb');
     }
 </script>
 
@@ -26,7 +26,7 @@
         {#snippet meta()}
             <Glyph name={projects.length > 0 ? 'warn' : 'check'} />
             {#if projects.length > 0}
-                <Chip label={t('col.untagged', projects.length)} />
+                <Chip label={t('programs.untagged', projects.length)} />
             {/if}
         {/snippet}
         <p>{@html inlineMarkdown(blurb())}</p>

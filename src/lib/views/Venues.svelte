@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Venues opens the sources group.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'venues',
+        label: 'views.venues',
+        glyph: 'views.venues_glyph',
+        group: 'sources',
+        order: 0
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. The venue catalogue: theme facets, journal cards and conference timing.
     // Registry entities provide the display model while the matching collection provides editing.
@@ -65,15 +77,15 @@
     <Toolbar label={t('collection.toolbar')}>
         {#if collection?.schema !== undefined}
             <ToolButton
-                label={t('col.add')}
-                title={t('col.add_tip')}
+                label={t('collection.add')}
+                title={t('collection.add_tip')}
                 active={adding}
                 onclick={() => (adding = !adding)}
             />
         {/if}
         <Search
             value={held.search}
-            placeholder={t('col.search', t('views.venues'))}
+            placeholder={t('collection.search', t('views.venues'))}
             oninput={(search) => write({ search })}
         />
     </Toolbar>
@@ -81,7 +93,7 @@
 
 <Pane title={t('views.venues')} toolbar={tools}>
     <div class="venues" data-instance={instance.id}>
-        <Intro html={t('col.venues_intro')} />
+        <Intro html={t('venues.intro')} />
         {#if adding && collection?.schema !== undefined}
             <EntryForm
                 collection="venues"
@@ -98,18 +110,18 @@
 
         <div class="facet-row">
             <Facets {facets} off={held.off} ontoggle={toggleTheme} />
-            <Tooltip text={t('col.ven_conc_tip')} focusable>
-                <Chip label={t('col.ven_conc')} tone="violet" />
+            <Tooltip text={t('venues.conc_tip')} focusable>
+                <Chip label={t('venues.conc')} tone="violet" />
             </Tooltip>
         </div>
 
         {#if allVenues.length === 0}
-            <p class="empty">{@html t('col.ven_empty')}</p>
+            <p class="empty">{@html t('venues.empty')}</p>
         {:else}
             {#if journals.length > 0}
                 <section>
                     <ToolButton
-                        label={t('col.ven_journals', journals.length)}
+                        label={t('venues.journals', journals.length)}
                         glyph="journals"
                         active={held.journalsOpen}
                         onclick={() => write({ journalsOpen: !held.journalsOpen })}
@@ -144,7 +156,7 @@
             {#if conferences.length > 0}
                 <section>
                     <ToolButton
-                        label={t('col.ven_conferences', conferences.length)}
+                        label={t('venues.conferences', conferences.length)}
                         glyph="conference"
                         active={held.conferencesOpen}
                         onclick={() => write({ conferencesOpen: !held.conferencesOpen })}

@@ -98,12 +98,12 @@ describe('the Inbox view', () => {
         expect(body).not.toContain('data-edit-source');
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('2026-09-12');
-        expect(body).toContain(catalog['sf.inbox_triaged_suffix'].replace('{0}', '1'));
-        expect(body).toContain(catalog['sf.inbox_search']);
+        expect(body).toContain(catalog['inbox.triaged_suffix'].replace('{0}', '1'));
+        expect(body).toContain(catalog['inbox.search']);
         const headings = [
-            `${catalog['sf.inbox_sec_reply']} (1)`,
-            `${catalog['sf.inbox_sec_action']} (1)`,
-            `${catalog['sf.inbox_sec_info']} (1)`
+            `${catalog['inbox.sec_reply']} (1)`,
+            `${catalog['inbox.sec_action']} (1)`,
+            `${catalog['inbox.sec_info']} (1)`
         ];
         const headingIndexes = headings.map((heading) => body.indexOf(heading));
         expect(headingIndexes.every((at) => at >= 0)).toBe(true);
@@ -113,19 +113,19 @@ describe('the Inbox view', () => {
         expect(reply).toContain('Reply subject');
         expect(reply).toContain('Reply <strong>needed</strong>');
         expect(reply).toContain('1d');
-        expect(reply).toContain(catalog['sf.inbox_reply']);
-        expect(reply).toContain(catalog['sf.show_draft']);
+        expect(reply).toContain(catalog['inbox.reply']);
+        expect(reply).toContain(catalog['inbox.show_draft']);
         expect(reply).not.toContain('Dear Ada');
         expect(reply).toContain('target="_blank"');
-        expect(reply).toContain(catalog['sf.open_gmail']);
+        expect(reply).toContain(catalog['inbox.open_gmail']);
         expect(reply).toContain('href="https://mail.google.com/reply"');
-        expect(hasAction(reply, catalog['sf.inbox_triaged'])).toBe(true);
+        expect(hasAction(reply, catalog['inbox.triaged'])).toBe(true);
         expect(reply).toContain(String(glyphs.done));
-        expect(reply).toContain(catalog['sf.inbox_triage_tip']);
-        expect(card(body, 'action')).toContain(catalog['sf.inbox_action']);
-        expect(card(body, 'info')).toContain(catalog['sf.inbox_info']);
+        expect(reply).toContain(catalog['inbox.triage_tip']);
+        expect(card(body, 'action')).toContain(catalog['inbox.action']);
+        expect(card(body, 'info')).toContain(catalog['inbox.info']);
         expect(card(body, 'info')).toContain('Info subject');
-        expect(body).toContain(`${catalog['sf.inbox_triaged_sec']} (1)`);
+        expect(body).toContain(`${catalog['inbox.triaged_sec']} (1)`);
         expect(body).not.toContain('data-inbox="done"');
     });
 
@@ -141,9 +141,9 @@ describe('the Inbox view', () => {
             props: { instance: instance('inbox-open', true) }
         }).body;
         const done = card(open, 'done');
-        expect(hasAction(done, catalog['sf.inbox_restore'])).toBe(true);
+        expect(hasAction(done, catalog['inbox.restore'])).toBe(true);
         expect(done).toContain(String(glyphs.refresh));
-        expect(done).toContain(catalog['sf.inbox_restore_tip']);
+        expect(done).toContain(catalog['inbox.restore_tip']);
 
         const searched = render(Inbox, {
             props: { instance: instance('inbox-search', true, 'upload bob') }
@@ -163,9 +163,9 @@ describe('the Inbox view', () => {
             entries: [entries[0], entries[2]]
         });
         const body = render(Inbox, { props: { instance: instance('inbox-no-action') } }).body;
-        expect(body).toContain(`${catalog['sf.inbox_sec_reply']} (1)`);
-        expect(body).not.toContain(catalog['sf.inbox_sec_action']);
-        expect(body).toContain(`${catalog['sf.inbox_sec_info']} (1)`);
+        expect(body).toContain(`${catalog['inbox.sec_reply']} (1)`);
+        expect(body).not.toContain(catalog['inbox.sec_action']);
+        expect(body).toContain(`${catalog['inbox.sec_info']} (1)`);
     });
 
     it('uses the subject and then the catalog thread label when the sender is empty', async () => {
@@ -182,9 +182,9 @@ describe('the Inbox view', () => {
         });
         const body = render(Inbox, { props: { instance: instance('inbox-fallbacks') } }).body;
         expect(card(body, 'info')).toMatch(/<h3[^>]*>[\s\S]*?Info subject[\s\S]*?<\/h3>/);
-        expect(card(body, 'thread')).toContain(catalog['sf.inbox_thread']);
+        expect(card(body, 'thread')).toContain(catalog['inbox.thread']);
         expect(card(body, 'unsafe')).not.toContain('javascript:');
-        expect(card(body, 'unsafe')).not.toContain(catalog['sf.open_gmail']);
+        expect(card(body, 'unsafe')).not.toContain(catalog['inbox.open_gmail']);
     });
 
     it('draws the clear, missing-file, and feed-error states', async () => {
@@ -196,7 +196,7 @@ describe('the Inbox view', () => {
             entries: [{ ...entries[3] }]
         });
         const clear = render(Inbox, { props: { instance: instance('inbox-clear') } }).body;
-        expect(clear).toContain(catalog['sf.inbox_clear']);
+        expect(clear).toContain(catalog['inbox.clear']);
         expect(clear).toContain(String(glyphs.done));
 
         serve({ ok: true, kind: 'inbox', file: 'feeds/inbox.yml', missing: true });
@@ -211,6 +211,6 @@ describe('the Inbox view', () => {
         serve({ ok: false, kind: 'inbox', file: 'feeds/inbox.yml', error: 'bad YAML' }, 500);
         const error = render(Inbox, { props: { instance: instance('inbox-error') } }).body;
         expect(error).toContain('Could not read feeds/inbox.yml: bad YAML');
-        expect(error).not.toContain(catalog['sf.inbox_no_file']);
+        expect(error).not.toContain(catalog['inbox.no_file']);
     });
 });

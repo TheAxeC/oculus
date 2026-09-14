@@ -42,7 +42,7 @@
         type GroupedSession
     } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
-    import { chipGlyph, chipLabel, statusTone } from '$lib/state/tones';
+    import { chipGlyphName, chipLabel, statusTone } from '$lib/state/tones';
     import { openFolder, writeManifest } from '$lib/state/writes.svelte';
     import { viewFor } from '../registry';
 
@@ -162,8 +162,9 @@
         if (date === undefined || date === '') return null;
         const days = daysUntil(date, now);
         if (days === null || item.chips.includes('submitted')) return { label: date };
-        if (days < 0) return { label: t('cards.overdue', -days), tone: 'red' };
-        if (days <= DEADLINE_SOON) return { label: t('cards.due_days', days), tone: 'amber' };
+        if (days < 0) return { label: t('project.card.overdue', -days), tone: 'red' };
+        if (days <= DEADLINE_SOON)
+            return { label: t('project.card.due_days', days), tone: 'amber' };
         return { label: date };
     }
 
@@ -207,8 +208,7 @@
 
     /**
      * A tag opens the tab of the collection or registry it belongs to, when one is registered. The
-     * datasets and research lines have no view yet (O24), so their chips are chips and nothing
-     * more until one is registered under that id.
+     * datasets and research lines open only when a view is registered under their id.
      */
     function opens(view: string): boolean {
         return viewFor(view) !== undefined;
@@ -289,7 +289,7 @@
             typeof navigator === 'undefined' ||
             navigator.clipboard === undefined
         ) {
-            onsaid(t('js.leads.clipboard_blocked'));
+            onsaid(t('project.card.clipboard_blocked'));
             return;
         }
         try {
@@ -298,7 +298,7 @@
             if (copyTimer !== undefined) clearTimeout(copyTimer);
             copyTimer = setTimeout(() => (copied = false), 1300);
         } catch {
-            onsaid(t('js.leads.copy_failed'));
+            onsaid(t('project.card.copy_failed'));
         }
     }
 
@@ -324,8 +324,8 @@
 
     /** The tooltip a marked document carries, and none for an unmarked one. */
     function docTip(doc: { human: boolean; public: boolean }): string | undefined {
-        if (doc.human) return t('helpers.doc_human_tip');
-        if (doc.public) return t('helpers.doc_public_tip');
+        if (doc.human) return t('project.helper.doc_human_tip');
+        if (doc.public) return t('project.helper.doc_public_tip');
         return undefined;
     }
 </script>
@@ -350,21 +350,24 @@
 
 {#snippet finder()}
     <div class="field">
-        <span class="label">{t('cards.files_hdr', held?.rows.length ?? 0)}</span>
+        <span class="label">{t('project.card.files_hdr', held?.rows.length ?? 0)}</span>
         {#if held?.loading}
-            <Empty message={t('cards.files_loading')} />
+            <Empty message={t('project.card.files_loading')} />
         {:else if held && held.error !== ''}
-            <Empty message={t('cards.files_error', held.error)} glyph={t('board.warn_glyph')} />
+            <Empty
+                message={t('project.card.files_error', held.error)}
+                glyph={t('board.warn_glyph')}
+            />
         {:else if rows.length === 0 && filter === ''}
-            <Empty message={t('cards.files_none')} />
+            <Empty message={t('project.card.files_none')} />
         {:else}
             <Search
                 value={filter}
-                placeholder={t('cards.files_ph')}
+                placeholder={t('project.card.files_ph')}
                 oninput={(value) => (filter = value)}
             />
             {#if held?.truncated}
-                <p class="capped">{t('cards.files_capped', held.rows.length)}</p>
+                <p class="capped">{t('project.card.files_capped', held.rows.length)}</p>
             {/if}
             <div class="files">
                 {#each rows as row (row.path)}
@@ -393,25 +396,25 @@
             <p class="statusline">{item.project.statusLine}</p>
         {/if}
         {#if item.project.ghost}
-            <p class="ghostmsg">{@html t('cards.ghostmsg')}</p>
+            <p class="ghostmsg">{@html t('project.card.ghostmsg')}</p>
         {:else if item.project.latest}
-            {@render field(t('cards.latest'), item.project.latest)}
+            {@render field(t('project.card.latest'), item.project.latest)}
         {/if}
         {#if !item.project.ghost && item.project.results.length > 0}
-            {@render listField(t('cards.results'), item.project.results)}
+            {@render listField(t('project.card.results'), item.project.results)}
         {/if}
         {#if !item.project.ghost && item.project.outcome}
-            {@render field(t('cards.outcome'), item.project.outcome)}
+            {@render field(t('project.card.outcome'), item.project.outcome)}
         {/if}
         {#if !item.project.ghost && item.project.next}
-            {@render field(t('cards.next'), item.project.next)}
+            {@render field(t('project.card.next'), item.project.next)}
         {/if}
         {#if !item.project.ghost && item.project.ideas.length > 0}
-            {@render listField(t('cards.ideas'), item.project.ideas)}
+            {@render listField(t('project.card.ideas'), item.project.ideas)}
         {/if}
         {#if !item.project.ghost && item.project.reproduced}
             {@render field(
-                t('cards.reproduced'),
+                t('project.card.reproduced'),
                 [item.project.reproduced.date, item.project.reproduced.note]
                     .filter((part) => part !== undefined && part !== '')
                     .join(' | ')
@@ -419,13 +422,13 @@
         {/if}
         {#if !item.project.ghost && shows.length > 0}
             <div class="field">
-                <span class="label">{t('cards.disseminated_in')}</span>
+                <span class="label">{t('project.card.disseminated_in')}</span>
                 <div class="tags">
                     {#each shows as entry (`${entry.collection}:${entry.id}`)}
                         <button
                             type="button"
                             class="tag"
-                            title={t('cards.open_in', entry.collection)}
+                            title={t('project.card.open_in', entry.collection)}
                             onclick={() => goto(entry.collection, entry.title)}
                         >
                             <Chip label={entry.title} />
@@ -436,7 +439,7 @@
         {/if}
         {#if item.project.docs.length > 0}
             <div class="field">
-                <span class="label">{t('cards.documents')}</span>
+                <span class="label">{t('project.card.documents')}</span>
                 <div class="docs">
                     {#each item.project.docs as doc (doc.name)}
                         {#if doc.present}
@@ -471,61 +474,63 @@
                 <Chip label={item.domain.label} tone={item.domain.tone} />
             {/if}
             {#if due}
-                <Chip label={due.label} tone={due.tone} glyph={t('cards.deadline_glyph')} />
+                <Chip label={due.label} tone={due.tone} glyph={t('project.card.deadline_glyph')} />
             {/if}
             {#if stale}
-                <span title={t('cards.stale_tip', newestDoc(), item.project.staleDays ?? 0)}>
+                <span title={t('project.card.stale_tip', newestDoc(), item.project.staleDays ?? 0)}>
                     <Chip
-                        label={t('cards.stale_behind', item.project.staleDays ?? 0)}
+                        label={t('project.card.stale_behind', item.project.staleDays ?? 0)}
                         glyph={t('board.stale_glyph')}
                         tone="amber"
                     />
                 </span>
             {/if}
             {#if item.project.ghost}
-                <span title={t('cards.ghost_badge_tip')}>
+                <span title={t('project.card.ghost_badge_tip')}>
                     <Chip
-                        label={t('cards.no_manifest')}
+                        label={t('project.card.no_manifest')}
                         glyph={t('board.warn_glyph')}
                         tone="amber"
                     />
                 </span>
             {:else}
                 <ToolButton
-                    label={item.project.pin === true ? t('cards.unpin') : t('cards.pin_to_top')}
-                    glyph={t('cards.pin_glyph')}
+                    label={item.project.pin === true
+                        ? t('project.card.unpin')
+                        : t('project.card.pin_to_top')}
+                    glyph={t('project.card.pin_glyph')}
                     active={item.project.pin === true}
                     compact
                     onclick={pin}
                 />
             {/if}
             <ToolButton
-                label={copied ? t('js.leads.copied') : t('helpers.copy_context')}
-                title={t('helpers.copy_context_tip')}
+                label={copied ? t('project.card.copied') : t('project.helper.copy_context')}
+                title={t('project.helper.copy_context_tip')}
                 glyph="copy"
                 compact
                 onclick={copyContext}
             />
             {#if !item.project.ghost}
                 <ToolButton
-                    label={t('helpers.ask')}
-                    title={t('helpers.ask_tip')}
+                    label={t('project.helper.ask')}
+                    title={t('project.helper.ask_tip')}
                     glyph="chat"
                     compact
                     onclick={ask}
                 />
             {/if}
             <ToolButton
-                label={t('helpers.folder')}
-                title={t('helpers.folder_tip')}
+                label={t('project.helper.folder')}
+                title={t('project.helper.folder_tip')}
                 glyph="folder"
                 compact
                 onclick={showFolder}
             />
             {#if ontoggle}
                 <ToolButton
-                    label={t('cards.toggle_tip')}
-                    glyph={open ? t('cards.collapse_glyph') : t('cards.expand_glyph')}
+                    label={t('project.card.toggle_tip')}
+                    glyph={open ? t('project.card.collapse_glyph') : t('project.card.expand_glyph')}
                     active={open}
                     compact
                     dataCardToggle
@@ -534,15 +539,15 @@
             {/if}
             {#if !item.project.ghost}
                 <ToolButton
-                    label={t('cards.edit_manifest')}
-                    glyph={t('cards.edit_glyph')}
+                    label={t('project.card.edit_manifest')}
+                    glyph={t('project.card.edit_glyph')}
                     compact
                     onclick={() => openView('editor', 'panel', { id: item.id })}
                 />
                 {#if deposit}
                     <ToolButton
-                        label={t('cards.deposit')}
-                        glyph={t('cards.deposit_glyph')}
+                        label={t('project.card.deposit')}
+                        glyph={t('project.card.deposit_glyph')}
                         compact
                         onclick={() => openView('deposit', 'panel', { id: item.id })}
                     />
@@ -556,25 +561,25 @@
                 <Chip label={item.project.focus} />
             {/if}
             {#each item.chips as chip (chip)}
-                <Chip label={chipLabel(chip)} icon={chipGlyph(chip)} tone={statusTone(chip)} />
+                <Chip label={chipLabel(chip)} glyph={chipGlyphName(chip)} tone={statusTone(chip)} />
             {/each}
             {#if item.code !== ''}
-                <Chip label={codeLabel(item.code)} glyph={t('cards.code_glyph')} />
+                <Chip label={codeLabel(item.code)} glyph={t('project.card.code_glyph')} />
             {/if}
             {#if item.reproduced}
-                <Chip label={t('board.repro_yes')} glyph={t('cards.repro_glyph')} />
+                <Chip label={t('board.repro_yes')} glyph={t('project.card.repro_glyph')} />
             {/if}
             {#if item.compute === 'hpc'}
-                <Chip label={t('cards.hpc_label')} glyph={t('cards.hpc_glyph')} />
+                <Chip label={t('project.card.hpc_label')} glyph={t('project.card.hpc_glyph')} />
             {:else if item.compute === 'local'}
-                <Chip label={t('cards.local_label')} />
+                <Chip label={t('project.card.local_label')} />
             {/if}
             {#if item.venue}
                 <span class="venue">{item.venue.text}</span>
             {/if}
             {#if item.authors !== ''}
                 <span class="authors">
-                    <Glyph name={t('cards.author_glyph')} />
+                    <Glyph name={t('project.card.author_glyph')} />
                     {item.authors}
                 </span>
             {/if}
@@ -588,26 +593,26 @@
                     <button
                         type="button"
                         class="tag"
-                        title={t('cards.open_in', t('board.facet_funding'))}
+                        title={t('project.card.open_in', t('board.facet_funding'))}
                         onclick={() => goto('funding', tag.label)}
                     >
-                        <Chip label={tag.label} glyph={t('cards.funding_glyph')} />
+                        <Chip label={tag.label} glyph={t('project.card.funding_glyph')} />
                     </button>
                 {/each}
                 {#each item.programs as tag (tag.id)}
-                    <Chip label={tag.label} glyph={t('cards.program_glyph')} />
+                    <Chip label={tag.label} glyph={t('project.card.program_glyph')} />
                 {/each}
                 {#each item.datasets as tag (tag.id)}
-                    <Chip label={tag.label} glyph={t('cards.dataset_glyph')} />
+                    <Chip label={tag.label} glyph={t('project.card.dataset_glyph')} />
                 {/each}
                 {#each item.collaborators as tag (tag.id)}
                     <button
                         type="button"
                         class="tag"
-                        title={t('cards.open_in', t('cards.collaborations'))}
+                        title={t('project.card.open_in', t('project.card.collaborations'))}
                         onclick={() => goto('collaborations', tag.label)}
                     >
-                        <Chip label={tag.label} glyph={t('cards.collaborator_glyph')} />
+                        <Chip label={tag.label} glyph={t('project.card.collaborator_glyph')} />
                     </button>
                 {/each}
             </div>
@@ -617,11 +622,11 @@
             <div class="sessions">
                 <Chip
                     label={working.length === 1
-                        ? t('js.sessions.card_one')
-                        : t('js.sessions.card_n', working.length)}
+                        ? t('sessions.card_one')
+                        : t('sessions.card_n', working.length)}
                 />
                 {#if live > 0}
-                    <Chip label={t('js.sessions.card_live', live)} tone="green" />
+                    <Chip label={t('sessions.card_live', live)} tone="green" />
                 {/if}
                 {#each working as entry (entry.id)}
                     <button
@@ -638,10 +643,10 @@
             </div>
         {/if}
         {#if item.project.ghost}
-            <p class="ghostmsg">{@html t('cards.ghostmsg')}</p>
+            <p class="ghostmsg">{@html t('project.card.ghostmsg')}</p>
         {:else if item.project.eli5}
             <div class="eli5">
-                <span class="label">{t('cards.eli5')}</span>
+                <span class="label">{t('project.card.eli5')}</span>
                 <p>{item.project.eli5}</p>
             </div>
         {/if}

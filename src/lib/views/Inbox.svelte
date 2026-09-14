@@ -1,3 +1,18 @@
+<script module lang="ts">
+    // Layer 3, view registration. Inbox follows Position Leads in the feeds group.
+    import type { ViewRegistration } from './registry';
+    import { inboxBadge } from '$lib/state/rail-badges.svelte';
+    export const registration: ViewRegistration = {
+        id: 'inbox',
+        label: 'views.inbox',
+        glyph: 'views.inbox_glyph',
+        group: 'feeds',
+        order: 2,
+        badge: inboxBadge,
+        badgeTone: () => 'red'
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. Inbox reads its socket feed, groups live cards by action kind, and keeps
     // search plus the triaged-section disclosure in this view instance's state.
@@ -44,10 +59,10 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('sf.inbox_search')}>
+    <Toolbar label={t('inbox.search')}>
         <Search
             value={held.search}
-            placeholder={t('sf.inbox_search')}
+            placeholder={t('inbox.search')}
             oninput={(search) => write({ search })}
         />
     </Toolbar>
@@ -79,15 +94,15 @@
         {:else if data.missing}
             <p class="clear">
                 <Glyph name="warn" />
-                <span>{@html t('sf.inbox_no_file')}</span>
+                <span>{@html t('inbox.no_file')}</span>
             </p>
         {:else if data.error !== undefined}
             <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
         {:else}
             <Intro>
-                <Chip label={`${t('sf.inbox_triaged')} ${run}`} tone="teal" />
+                <Chip label={`${t('inbox.triaged')} ${run}`} tone="teal" />
                 {#if split.triaged.length > 0}
-                    <span>{t('sf.inbox_triaged_suffix', split.triaged.length)}</span>
+                    <span>{t('inbox.triaged_suffix', split.triaged.length)}</span>
                 {/if}
             </Intro>
 
@@ -95,21 +110,21 @@
                 <p class="said">{said}</p>
             {/if}
 
-            {@render section(t('sf.inbox_sec_reply'), replies)}
-            {@render section(t('sf.inbox_sec_action'), actions)}
-            {@render section(t('sf.inbox_sec_info'), info)}
+            {@render section(t('inbox.sec_reply'), replies)}
+            {@render section(t('inbox.sec_action'), actions)}
+            {@render section(t('inbox.sec_info'), info)}
 
             {#if liveCount === 0}
                 <p class="clear">
                     <Glyph name="done" />
-                    <span>{@html t('sf.inbox_clear')}</span>
+                    <span>{@html t('inbox.clear')}</span>
                 </p>
             {/if}
 
             {#if split.triaged.length > 0}
                 <section class="triaged">
                     <ToolButton
-                        label={`${t('sf.inbox_triaged_sec')} (${split.triaged.length})`}
+                        label={`${t('inbox.triaged_sec')} (${split.triaged.length})`}
                         glyph="done"
                         active={held.triagedOpen}
                         expanded={held.triagedOpen}

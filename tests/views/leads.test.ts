@@ -147,8 +147,8 @@ describe('the Position Leads view', () => {
             new URL('../../src/lib/views/leads/LeadCard.svelte', import.meta.url),
             'utf8'
         );
-        expect(source).toContain(
-            "title={dismissed ? t('actions.show_lead') : t('actions.hide_lead')}"
+        expect(source).toMatch(
+            /title=\{dismissed\s*\?\s*t\('leads\.action\.show_lead'\)\s*:\s*t\('leads\.action\.hide_lead'\)\}/
         );
     });
 
@@ -167,14 +167,14 @@ describe('the Position Leads view', () => {
 
         const hidden = render(Leads, { props: { instance: instance('leads-hidden') } }).body;
         expect(hidden).not.toContain('data-lead="**Strong** role"');
-        expect(hidden).toContain(catalog['js.leads.show_dismissed'].replace('{0}', '2'));
+        expect(hidden).toContain(catalog['leads.show_dismissed'].replace('{0}', '2'));
 
         const shown = render(Leads, {
             props: { instance: instance('leads-shown', false, false, '', false, true) }
         }).body;
         expect(shown).toContain('data-lead="**Strong** role"');
-        expect(shown).toContain(catalog['js.leads.hide_dismissed'].replace('{0}', '2'));
-        expectHideControl(card(shown, '**Strong** role'), catalog['actions.show_lead']);
+        expect(shown).toContain(catalog['leads.hide_dismissed'].replace('{0}', '2'));
+        expectHideControl(card(shown, '**Strong** role'), catalog['leads.action.show_lead']);
     });
 
     it('keeps the live grid without the no-live message when every live card is dismissed', () => {
@@ -191,7 +191,7 @@ describe('the Position Leads view', () => {
         const body = render(Leads, { props: { instance: instance('all-dismissed') } }).body;
         expect(body).toMatch(/class="cards(?:\s|")/);
         expect(body).not.toContain('data-lead=');
-        expect(body).not.toContain(catalog['sf.leads_empty']);
+        expect(body).not.toContain(catalog['leads.empty']);
     });
 
     it('draws the intro, controls, ordered live cards, details, and collapsed sections', async () => {
@@ -208,8 +208,8 @@ describe('the Position Leads view', () => {
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('2 live');
         expect(body).toContain('3 expired');
-        expect(body).toContain(catalog['sf.leads_search']);
-        expect(body).toContain(catalog['sf.leads_add']);
+        expect(body).toContain(catalog['leads.search']);
+        expect(body).toContain(catalog['leads.add']);
         expect(body).toContain('<strong>Strong</strong> role');
         expect(body.indexOf('<strong>Strong</strong> role')).toBeLessThan(
             body.indexOf('Undated role')
@@ -217,12 +217,12 @@ describe('the Position Leads view', () => {
         expect(body).toContain('University One | Belgium');
         expect(body).toContain('Clinical <strong>AI</strong> - strong because methods align');
         expect(body).toContain('2099-01-02');
-        expect(body).toContain(catalog['sf.leads_posting']);
+        expect(body).toContain(catalog['leads.posting']);
         expect(body).not.toContain('ftp://example.org/not-shown');
-        expect(body).toContain(catalog['actions.applied']);
-        expect(body).toContain(catalog['actions.decline']);
-        expect(body).toContain(catalog['sf.leads_expired_sec'].replace('{0}', '3'));
-        expect(body).toContain(catalog['sf.leads_runlog']);
+        expect(body).toContain(catalog['leads.action.applied']);
+        expect(body).toContain(catalog['leads.action.decline']);
+        expect(body).toContain(catalog['leads.expired_sec'].replace('{0}', '3'));
+        expect(body).toContain(catalog['leads.runlog']);
         expect(body).not.toContain('Applied role');
         expect(body).not.toContain('first</strong> run');
     });
@@ -241,7 +241,7 @@ describe('the Position Leads view', () => {
         }).body;
         expect(body.indexOf('Applied role')).toBeLessThan(body.indexOf('Past role'));
         expect(body).toContain('2099-12-20');
-        expect(body).toContain(catalog['actions.reopen']);
+        expect(body).toContain(catalog['project.action.reopen']);
         expect(body).toContain('log <strong>1</strong>');
         expect(body).toContain('log <strong>6</strong>');
         expect(body).not.toContain('log <strong>7</strong>');
@@ -264,32 +264,32 @@ describe('the Position Leads view', () => {
         const undated = card(body, 'Undated role');
         const applied = card(body, 'Applied role');
 
-        expect(hasAction(open, catalog['actions.applied'])).toBe(true);
-        expect(hasAction(open, catalog['actions.decline'])).toBe(true);
-        expect(hasAction(open, catalog['actions.reopen'])).toBe(false);
-        expectHideControl(open, catalog['actions.hide_lead']);
-        expect(hasAction(open, catalog['actions.del'])).toBe(true);
+        expect(hasAction(open, catalog['leads.action.applied'])).toBe(true);
+        expect(hasAction(open, catalog['leads.action.decline'])).toBe(true);
+        expect(hasAction(open, catalog['project.action.reopen'])).toBe(false);
+        expectHideControl(open, catalog['leads.action.hide_lead']);
+        expect(hasAction(open, catalog['project.action.del'])).toBe(true);
         expect(open).toContain(String(glyphs.deadline));
         expect(open).toContain('>Belgium</span>');
         expect(open).toContain('>postdoc</span>');
         expect(open).toContain('target="_blank"');
-        expect(open).toContain(`>${catalog['sf.leads_posting']}</span>`);
+        expect(open).toContain(`>${catalog['leads.posting']}</span>`);
 
         expect(undated).toContain('--tone: var(--c-grey)');
-        expect(undated).toContain(`>${catalog['sf.leads_fit_none']}</span>`);
-        expect(hasAction(undated, catalog['actions.del'])).toBe(true);
+        expect(undated).toContain(`>${catalog['leads.fit_none']}</span>`);
+        expect(hasAction(undated, catalog['project.action.del'])).toBe(true);
 
         expect(applied).toMatch(/class="[^"]*expired/);
         expect(applied).toContain('>applied</span>');
-        expect(hasAction(applied, catalog['actions.applied'])).toBe(false);
-        expect(hasAction(applied, catalog['actions.decline'])).toBe(true);
-        expect(hasAction(applied, catalog['actions.reopen'])).toBe(true);
+        expect(hasAction(applied, catalog['leads.action.applied'])).toBe(false);
+        expect(hasAction(applied, catalog['leads.action.decline'])).toBe(true);
+        expect(hasAction(applied, catalog['project.action.reopen'])).toBe(true);
 
         const declined = card(body, 'Declined role');
         expect(declined).toContain('>declined</span>');
-        expect(hasAction(declined, catalog['actions.applied'])).toBe(true);
-        expect(hasAction(declined, catalog['actions.decline'])).toBe(false);
-        expect(hasAction(declined, catalog['actions.reopen'])).toBe(true);
+        expect(hasAction(declined, catalog['leads.action.applied'])).toBe(true);
+        expect(hasAction(declined, catalog['leads.action.decline'])).toBe(false);
+        expect(hasAction(declined, catalog['project.action.reopen'])).toBe(true);
         for (const title of [
             '**Strong** role',
             'Undated role',
@@ -297,7 +297,7 @@ describe('the Position Leads view', () => {
             'Past role',
             'Declined role'
         ]) {
-            expect(hasAction(card(body, title), catalog['actions.del'])).toBe(true);
+            expect(hasAction(card(body, title), catalog['project.action.del'])).toBe(true);
         }
     });
 
@@ -380,7 +380,7 @@ describe('the Position Leads view', () => {
             missing: true
         });
         expect(render(Leads, { props: { instance: instance('leads-missing') } }).body).toContain(
-            catalog['sf.leads_no_file']
+            catalog['leads.no_file']
         );
     });
 });

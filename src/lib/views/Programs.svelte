@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Programs opens the structure group.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'programs',
+        label: 'views.programs',
+        glyph: 'views.programs_glyph',
+        group: 'structure',
+        order: 0
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. The Pillars board over registry lines and real-project membership, followed by
     // provisional lines, off-pillar lines and archival provenance.
@@ -84,8 +96,8 @@
 {#snippet introActions()}
     {#if collection?.schema !== undefined}
         <ToolButton
-            label={t('col.add')}
-            title={t('col.add_tip')}
+            label={t('collection.add')}
+            title={t('collection.add_tip')}
             active={adding}
             onclick={() => (adding = !adding)}
         />
@@ -94,7 +106,7 @@
 
 <Pane title={t('views.programs')}>
     <div class="programs-view" data-instance={instance.id}>
-        <Intro html={inlineMarkdown(t('col.programs_intro'))} actions={introActions} />
+        <Intro html={inlineMarkdown(t('programs.intro'))} actions={introActions} />
         {#if adding && collection?.schema !== undefined}
             <EntryForm
                 collection="programs"
@@ -129,8 +141,8 @@
 
         {#if provisional.length > 0}
             <section>
-                <h3>{t('col.provisional_h')}</h3>
-                <p class="note">{@html inlineMarkdown(t('col.provisional_note'))}</p>
+                <h3>{t('programs.provisional_h')}</h3>
+                <p class="note">{@html inlineMarkdown(t('programs.provisional_note'))}</p>
                 <div class="cards">
                     {#each provisional as line (line.id)}
                         <Reveal
@@ -157,8 +169,8 @@
 
         {#if offpillar.length > 0 || archived.length > 0}
             <section>
-                <h3>{t('col.offpillar_h')}</h3>
-                <p class="note">{@html inlineMarkdown(t('col.offpillar_note'))}</p>
+                <h3>{t('programs.offpillar_h')}</h3>
+                <p class="note">{@html inlineMarkdown(t('programs.offpillar_note'))}</p>
                 <div class="cards">
                     {#each offpillar as line (line.id)}
                         <Reveal

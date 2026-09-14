@@ -22,11 +22,11 @@ describe('the Domains view', () => {
     it('draws the intro, add control and populated domain in file order', () => {
         const body = html();
         expect(body).toMatch(/class="intro(?:\s|")/);
-        expect(body).toContain(catalog['col.domains_intro']);
-        expect(body).toContain(catalog['col.add']);
+        expect(body).toContain(catalog['domains.intro']);
+        expect(body).toContain(catalog['collection.add']);
         expect(body).toContain('data-reveal="heart"');
         expect(body).toContain('Heart <strong>domain</strong>');
-        expect(body).toContain(`2 ${catalog['col.projects']}`);
+        expect(body).toContain(`2 ${catalog['programs.projects']}`);
         expect(body).toContain('Heart blurb.');
         expect(body).toContain('class="label">active</span>');
         expect(body).toContain('class="label">published</span>');
@@ -38,7 +38,7 @@ describe('the Domains view', () => {
     });
 
     it('draws the catalogued empty state when no domain has a member', () => {
-        expect(html(true)).toContain(catalog['col.domains_empty']);
+        expect(html(true)).toContain(catalog['domains.empty']);
     });
 
     it('marks a domain dormant when none of its members are live', () => {

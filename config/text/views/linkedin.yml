@@ -1,0 +1,28 @@
+# Oculus text owned by the linkedin view.
+text:
+    linkedin:
+        addidea: + idea
+        addidea_tip: new LinkedIn idea draft (served mode)
+        default_pick: a recent project milestone
+        edit: edit
+        edit_tip: edit this post file
+        form_category: Category
+        form_category_help: e.g. reflection / mentorship / research
+        form_title: Post title
+        idea_tag: idea
+        ideas_hdr: Ideas ({0})
+        markpost: mark posted
+        markpost_tip: mark posted - rename xx- to the next number
+        no_dates: no dated posts
+        no_folder: No _linkedin folder.
+        no_ideas: No ideas yet.
+        no_posts: No posts yet.
+        nudge: 'Run <code>/research-cockpit linkedin</code> to draft one - a ready idea:'
+        ontrack: last post {0}d ago - on track
+        overdue: '{0} days since last post (target: every {1}d)'
+        postdue: Post-due.
+        posted_hdr: Posted ({0})
+        search: Search posts & ideas ...
+    views:
+        linkedin: LinkedIn
+        linkedin_glyph: linkedin

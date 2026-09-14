@@ -1,9 +1,7 @@
 // The view registry, and the keys the real registrations name.
 //
-// The second half is the gate tests/keys.test.ts cannot give these two keys: a registration's label
-// and glyph are read at the call site through lookup(), with a key that comes from data rather than
-// from a literal, so the key test cannot see them. Here every registration is checked instead: its
-// label resolves in config/text.yml, and its glyph key resolves to a name config/glyphs.yml holds.
+// A registration's label and glyph are read through lookup() from data. Every registration is
+// checked here: its label resolves in the text catalog and its glyph resolves in config/glyphs.yml.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -15,9 +13,8 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { registerView, viewFor, views, type ViewProps } from '../../src/lib/views/registry.ts';
 import type { Component } from 'svelte';
-// Importing the barrel is what registers the real views, exactly as the page does it, and the
-// collections are registered from the keys of sources.yml the way the page registers them.
-import { registerCollections } from '../../src/routes/views.ts';
+// Importing the route loader registers real views; collections use the keys of sources.yml.
+import { registerCollections, registerModules } from '../../src/routes/views.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -40,7 +37,9 @@ describe('the view registry', () => {
             id: 'probe-one',
             label: 'views.status',
             glyph: 'views.status_glyph',
-            component
+            component,
+            group: 'probe',
+            order: 0
         });
         expect(viewFor('probe-one')?.label).toBe('views.status');
     });
@@ -54,7 +53,9 @@ describe('the view registry', () => {
             id: 'probe-two',
             label: 'views.findings',
             glyph: 'views.findings_glyph',
-            component
+            component,
+            group: 'probe',
+            order: 1
         });
         expect(probes().map((view) => view.id)).toEqual(['probe-one', 'probe-two']);
     });
@@ -64,10 +65,35 @@ describe('the view registry', () => {
             id: 'probe-one',
             label: 'views.findings',
             glyph: 'views.findings_glyph',
-            component
+            component,
+            group: 'probe',
+            order: 0
         });
         expect(probes().map((view) => view.id)).toEqual(['probe-one', 'probe-two']);
         expect(viewFor('probe-one')?.label).toBe('views.findings');
+    });
+
+    it('discovers a registered module at any nesting depth', () => {
+        registerModules({
+            '/src/lib/views/other/deep/Nested.svelte': {
+                default: component,
+                registration: {
+                    id: 'probe-nested',
+                    label: 'views.status',
+                    glyph: 'views.status_glyph',
+                    group: 'probe',
+                    order: 2
+                }
+            }
+        });
+        expect(viewFor('probe-nested')?.component).toBe(component);
+    });
+
+    it('ignores a partial without registration metadata', () => {
+        expect(() =>
+            registerModules({ '/src/lib/views/other/Partial.svelte': { default: component } })
+        ).not.toThrow();
+        expect(viewFor('Partial')).toBeUndefined();
     });
 });
 
@@ -77,47 +103,101 @@ describe('the real registrations', () => {
         return views().filter((view) => !view.id.startsWith('probe-'));
     }
 
-    it('registers every view the application has, in registration order', () => {
-        expect(real().map((view) => view.id)).toEqual([
-            'radar',
-            'leads',
-            'inbox',
-            'linkedin',
-            'hpc',
-            'usage',
-            'status',
-            'findings',
-            'gallery',
-            'venues',
-            'data',
-            'programs',
-            'domains',
-            'map',
-            'focus',
-            'projects',
-            'archive',
-            'coauthor',
-            'project',
-            'editor',
-            'deposit',
-            'document',
-            'source',
-            'session-list',
-            'session-detail',
-            'terminal',
-            'transcript',
-            'timeline',
-            'changes',
-            'agents',
-            'statements',
-            'funding',
-            'events',
-            'education',
-            'applications',
-            'collaborations',
-            'tasks',
-            'code'
-        ]);
+    it('registers every view id the application has', () => {
+        expect(
+            real()
+                .map((view) => view.id)
+                .sort()
+        ).toEqual(
+            [
+                'radar',
+                'leads',
+                'inbox',
+                'linkedin',
+                'hpc',
+                'usage',
+                'status',
+                'findings',
+                'gallery',
+                'venues',
+                'data',
+                'programs',
+                'domains',
+                'map',
+                'focus',
+                'projects',
+                'archive',
+                'coauthor',
+                'project',
+                'editor',
+                'deposit',
+                'document',
+                'source',
+                'session-list',
+                'session-detail',
+                'terminal',
+                'transcript',
+                'timeline',
+                'changes',
+                'agents',
+                'statements',
+                'funding',
+                'events',
+                'education',
+                'applications',
+                'collaborations',
+                'tasks',
+                'code'
+            ].sort()
+        );
+    });
+
+    it('gives every view its exact group and order', () => {
+        const expected: Record<string, { group: string; order: number }> = {
+            agents: { group: 'sessions', order: 6 },
+            applications: { group: 'academic', order: 3 },
+            archive: { group: 'boards', order: 3 },
+            changes: { group: 'sessions', order: 5 },
+            coauthor: { group: 'boards', order: 2 },
+            code: { group: 'sources', order: 2 },
+            collaborations: { group: 'academic', order: 4 },
+            data: { group: 'sources', order: 1 },
+            deposit: { group: '', order: 0 },
+            document: { group: '', order: 0 },
+            domains: { group: 'structure', order: 1 },
+            editor: { group: '', order: 0 },
+            education: { group: 'academic', order: 2 },
+            events: { group: 'academic', order: 1 },
+            findings: { group: 'system', order: 1 },
+            focus: { group: 'boards', order: 0 },
+            funding: { group: 'academic', order: 0 },
+            gallery: { group: 'system', order: 2 },
+            hpc: { group: 'system', order: 3 },
+            inbox: { group: 'feeds', order: 2 },
+            leads: { group: 'feeds', order: 1 },
+            linkedin: { group: 'feeds', order: 3 },
+            map: { group: 'structure', order: 2 },
+            programs: { group: 'structure', order: 0 },
+            project: { group: '', order: 0 },
+            projects: { group: 'boards', order: 1 },
+            radar: { group: 'feeds', order: 0 },
+            'session-detail': { group: 'sessions', order: 1 },
+            'session-list': { group: 'sessions', order: 0 },
+            source: { group: '', order: 0 },
+            statements: { group: 'sources', order: 3 },
+            status: { group: 'system', order: 0 },
+            tasks: { group: 'academic', order: 5 },
+            terminal: { group: 'sessions', order: 2 },
+            timeline: { group: 'sessions', order: 4 },
+            transcript: { group: 'sessions', order: 3 },
+            usage: { group: 'system', order: 4 },
+            venues: { group: 'sources', order: 0 }
+        };
+        expect(
+            Object.fromEntries(
+                real().map((view) => [view.id, { group: view.group, order: view.order }])
+            )
+        ).toEqual(expected);
     });
 
     it('registers Data directly and excludes it from generic collections', () => {
@@ -240,7 +320,7 @@ describe('the real registrations', () => {
         expect(typeof viewFor('hpc')?.badge).toBe('function');
     });
 
-    it('names a label key config/text.yml holds', () => {
+    it('names a label key the text catalog holds', () => {
         const missing = real().filter((view) => !(view.label in catalog));
         expect(missing.map((view) => `${view.id}: ${view.label}`)).toEqual([]);
     });

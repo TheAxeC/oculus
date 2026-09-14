@@ -25,26 +25,26 @@
     const tasks = $derived([
         {
             kind: 'litwatch' as const,
-            label: t('js.tasks.lit_label'),
-            note: t('js.tasks.lit_note'),
+            label: t('app.tasks.lit_label'),
+            note: t('app.tasks.lit_note'),
             last: summary?.radar?.lastRun
         },
         {
             kind: 'scout' as const,
-            label: t('js.tasks.scout_label'),
-            note: t('js.tasks.scout_note'),
+            label: t('app.tasks.scout_label'),
+            note: t('app.tasks.scout_note'),
             last: summary?.scout?.lastRun
         },
         {
             kind: 'linkedin' as const,
-            label: t('js.tasks.linkedin_label'),
-            note: t('js.tasks.linkedin_note'),
+            label: t('app.tasks.linkedin_label'),
+            note: t('app.tasks.linkedin_note'),
             last: summary?.linkedin?.lastPost
         },
         {
             kind: 'inbox' as const,
-            label: t('js.tasks.inbox_label'),
-            note: t('js.tasks.inbox_note'),
+            label: t('app.tasks.inbox_label'),
+            note: t('app.tasks.inbox_note'),
             last: summary?.inbox?.run
         }
     ]);
@@ -92,10 +92,15 @@
             if (event.target === event.currentTarget) onclose();
         }}
     >
-        <div class="tray" role="dialog" aria-modal="true" aria-label={t('js.tasks.update_tasks')}>
+        <div class="tray" role="dialog" aria-modal="true" aria-label={t('app.tasks.update_tasks')}>
             <header>
-                <h2>{t('js.tasks.update_tasks')}</h2>
-                <ToolButton label={t('js.tasks.close')} glyph="dismiss" compact onclick={onclose} />
+                <h2>{t('app.tasks.update_tasks')}</h2>
+                <ToolButton
+                    label={t('app.tasks.close')}
+                    glyph="dismiss"
+                    compact
+                    onclick={onclose}
+                />
             </header>
             <div class="tasks">
                 {#each tasks as task (task.kind)}
@@ -109,7 +114,7 @@
                         />
                         <span class="last">{task.last ?? t('app.palette_unavailable')}</span>
                         {#if task.kind === 'inbox'}
-                            <span class="note">{t('js.tasks.note_prefix', task.note)}</span>
+                            <span class="note">{t('app.tasks.note_prefix', task.note)}</span>
                         {/if}
                     </div>
                 {/each}
@@ -117,7 +122,7 @@
                     <ToolButton
                         label={t('app.chat')}
                         glyph="chat"
-                        title={t('js.leads.seed_portfolio')}
+                        title={t('server.chat.seed_portfolio')}
                         active={chatting}
                         disabled={running !== null || chatting}
                         onclick={chat}

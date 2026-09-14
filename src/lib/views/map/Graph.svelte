@@ -17,7 +17,7 @@
         const reason =
             answer.error ??
             answer.refused.map((item) => `${item.field}: ${item.reason}`).join('; ');
-        return catalogText('js.map.edge_failed', reason);
+        return catalogText('map.edge_failed', reason);
     }
 </script>
 

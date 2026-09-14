@@ -6,7 +6,12 @@
 // the hub holds. The hosts are synthetic.
 
 import { describe, expect, it } from 'vitest';
-import { engineDir, loadConfig, vocabCatalog } from '../../src/lib/data/sources/config.ts';
+import {
+    engineDir,
+    glyphCatalog,
+    loadConfig,
+    vocabCatalog
+} from '../../src/lib/data/sources/config.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import {
     hostStatuses,
@@ -50,8 +55,22 @@ describe('the host statuses', () => {
     it('carry the words the config gives them and a tone rather than a hex', () => {
         const warm = statuses.find((one) => one.key === 'warm');
         expect(warm?.label).toBe('warm');
+        expect(warm?.glyph).toBe('fire');
+        expect(warm?.glyph === undefined ? false : warm.glyph in glyphCatalog(config)).toBe(true);
         expect(warm?.tone).not.toContain('#');
         expect(warm?.tone.length).toBeGreaterThan(0);
+    });
+
+    it('name a glyph config/glyphs.yml holds in every row', () => {
+        const glyphs = glyphCatalog(config);
+        expect(statuses.filter((one) => !(one.glyph in glyphs)).map((one) => one.key)).toEqual([]);
+        expect(statuses.map((one) => [one.key, glyphs[one.glyph]])).toEqual([
+            ['awaiting', glyphs.inbox],
+            ['warm', glyphs.fire],
+            ['candidate', glyphs.white],
+            ['drafted', glyphs.writing],
+            ['dropped', glyphs.fail]
+        ]);
     });
 
     it('are empty for a config that holds no such vocabulary', () => {

@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Lit Watch opens the feeds group.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'radar',
+        label: 'views.radar',
+        glyph: 'views.radar_glyph',
+        group: 'feeds',
+        order: 0
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. Lit Watch reads the radar socket feed, groups live papers by vocabulary,
     // and keeps search and the dismissed-section disclosure in this view instance's saved state.
@@ -52,10 +64,10 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('sf.radar_search')}>
+    <Toolbar label={t('radar.search')}>
         <Search
             value={held.search}
-            placeholder={t('sf.radar_search')}
+            placeholder={t('radar.search')}
             oninput={(search) => write({ search })}
         />
     </Toolbar>
@@ -69,15 +81,15 @@
         {#if data === null}
             <Empty message={t('app.waiting')} glyph="litwatch" />
         {:else if data.missing}
-            <Empty message={t('sf.radar_no_file', data.file)} glyph="warn" />
+            <Empty message={t('radar.no_file', data.file)} glyph="warn" />
         {:else if data.error !== undefined}
             <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
         {:else}
             <Intro
-                html={`${t('sf.radar_intro_head')} ${t(
-                    'sf.radar_intro_tail',
+                html={`${t('radar.intro_head')} ${t(
+                    'radar.intro_tail',
                     live.length,
-                    String(lastRun || t('sf.radar_no_date'))
+                    String(lastRun || t('radar.no_date'))
                 )}`}
             />
 
@@ -100,11 +112,7 @@
             {#if searchedDismissed.length > 0}
                 <section class="dismissed">
                     <ToolButton
-                        label={t(
-                            'sf.radar_count',
-                            t('sf.radar_dismissed_sec'),
-                            searchedDismissed.length
-                        )}
+                        label={t('radar.count', t('radar.dismissed_sec'), searchedDismissed.length)}
                         glyph="dismiss"
                         active={held.dismissedOpen}
                         onclick={() => write({ dismissedOpen: !held.dismissedOpen })}
@@ -132,7 +140,7 @@
             {/if}
 
             {#if groups.length === 0 && searchedDismissed.length === 0}
-                <Empty message={t('sf.radar_empty')} glyph="litwatch" />
+                <Empty message={t('radar.empty')} glyph="litwatch" />
             {/if}
         {/if}
     </div>

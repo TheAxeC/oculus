@@ -1,0 +1,36 @@
+# Oculus text owned by the venues view.
+text:
+    venues:
+        biennial_caveat: '| BIENNIAL (not every year)'
+        call: call
+        conc: concentrated
+        conc_tip: Two or more active or manuscript projects target this venue; the venue policy is to spread them
+        conferences: Conferences ({0})
+        contact: contact
+        deadline: deadline
+        dist: ~{0}mo
+        empty: No venues yet - add some to <code>registries/venues.yml</code>.
+        held: held
+        intro: Target venues - pick on merit (fit + impact + indexing); the free route is just an attribute (the Dutch read-&-publish deal often waives APC). Conference timing is approximate (give-or-take a month; deadlines shift yearly). Edit <code>registries/venues.yml</code>.
+        jif: JIF {0}
+        journals: Journals ({0})
+        leg_approx: months are approximate - hover a chip for the range
+        leg_biennial: biennial
+        leg_deadline: deadline
+        leg_held: held
+        leg_thismonth: this month
+        months: Jan,Feb,Mar,Apr,May,Jun,Jul,Aug,Sep,Oct,Nov,Dec
+        next: Next deadlines
+        next_from: '(from {0}):'
+        scopus: Scopus {0}
+        sep: ' | '
+        site: site
+        spark_lbl: deadlines/mo
+        spark_tip: conference deadlines per month across the year (peak {0})
+        themes_facet: Themes
+        thismonth: this month
+        tip: '{0} - {1} ~{2}{3}'
+        wos: WoS {0}
+    views:
+        venues: Venues
+        venues_glyph: venue

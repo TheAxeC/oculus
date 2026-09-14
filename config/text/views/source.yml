@@ -1,0 +1,12 @@
+# Oculus text owned by the source view.
+text:
+    source:
+        cannot_open: 'Cannot open: {0}'
+        edit: edit
+        failed: failed
+        save_failed: save failed
+        saved: saved
+        saving: saving...
+    views:
+        source: Source
+        source_glyph: edit

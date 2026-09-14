@@ -7,12 +7,7 @@
 
 
 # === Palette tokens ========================================================
-# Every hex an author writes in this config (theme colours, status colours, type colours) is mapped
-# at BUILD time onto the CSS variable named here, wherever it lands in a `style="..."` attribute or
-# in the stylesheet. That is what makes a theme possible: one override block in `assets/css/08-themes.css`
-# recolours the whole cockpit, and nobody has to hunt inline styles. Write hex here, get a token there.
-# The token names must exist in `:root` in `assets/css/01-base.css` - `--selftest` fails the build if one
-# does not. Hexes NOT listed here are passed through untouched (a one-off colour stays a one-off colour).
+# Every configured hex maps to the named CSS token. Unlisted hex values pass through unchanged.
 palette:
   "#dc2626": c-red
   "#e2374d": c-crimson
@@ -54,10 +49,7 @@ palette:
   "#6b7280": c-grey-d
   "#475569": c-slate
 
-# The research domains: the colour and the label a project card carries, keyed by the `domain:` its
-# manifest names. Called `themes:` in the cockpit; renamed here because the UI themes in
-# appearance.yml are also themes and the two were told apart only by which file they sat in.
-# Shared palette with tools/present/content/present.yml.
+# Research-domain colours and project-card labels, keyed by the manifest's `domain` value.
 domains:
   heart:     { color: "#e2374d", label: "Cardiology | ECG" }
   liver:     { color: "#0d9488", label: "Hepatology | imaging" }
@@ -82,41 +74,37 @@ type_order: [active, manuscript, idea, published, submitted, in-prep, tech-repor
 
 # Status chips - the per-project project.yml manifests are the source of truth for status.
 status_legend:
-  - { key: submit-ready,    icon: "🟢", label: "submit-ready" }
-  - { key: submitted,       icon: "🟤", label: "submitted / under review" }
-  - { key: revision,        icon: "🟧", label: "major revision (back with the authors)" }
-  - { key: accepted,        icon: "🟩", label: "accepted (camera-ready pending)" }
-  - { key: published,       icon: "✅", label: "published" }
-  - { key: in-prep,         icon: "✍", label: "in preparation" }
-  - { key: abandoned,       icon: "❌", label: "abandoned" }
-  - { key: tech-report,     icon: "📄", label: "tech report (not peer-reviewed)" }
-  - { key: software,        icon: "📦", label: "software / framework (not a paper)" }
-  - { key: coauthor,        icon: "🤝", label: "co-author" }
-  - { key: lead,            icon: "👤", label: "first author" }
-  - { key: phd,             icon: "🎓", label: "PhD thesis" }
-  - { key: nogo,            icon: "⛔", label: "no-go (failed gate)" }
-  - { key: dropped,         icon: "🗑", label: "dropped" }
-  - { key: disproved,       icon: "❎", label: "disproved" }
-  - { key: results-positive, icon: "⚪", label: "positive result (pre-writeup)" }
-  - { key: admin-prep,      icon: "🟡", label: "admin/prep" }
-  - { key: numbers-pending, icon: "🔵", label: "numbers pending" }
-  - { key: ai-tells,        icon: "🔴", label: "AI-writing tells" }
-  - { key: blocked,         icon: "🟣", label: "blocked (external)" }
-  - { key: exploring,      icon: "🟠", label: "exploring" }
-  - { key: parked,          icon: "⚫", label: "parked" }
+  - { key: submit-ready,    icon: green, label: "submit-ready" }
+  - { key: submitted,       icon: brown, label: "submitted / under review" }
+  - { key: revision,        icon: orange_square, label: "major revision (back with the authors)" }
+  - { key: accepted,        icon: green_square, label: "accepted (camera-ready pending)" }
+  - { key: published,       icon: done, label: "published" }
+  - { key: in-prep,         icon: writing, label: "in preparation" }
+  - { key: abandoned,       icon: cross, label: "abandoned" }
+  - { key: tech-report,     icon: paper, label: "tech report (not peer-reviewed)" }
+  - { key: software,        icon: published, label: "software / framework (not a paper)" }
+  - { key: coauthor,        icon: collab, label: "co-author" }
+  - { key: lead,            icon: author, label: "first author" }
+  - { key: phd,             icon: scout, label: "PhD thesis" }
+  - { key: nogo,            icon: overdue, label: "no-go (failed gate)" }
+  - { key: dropped,         icon: trash, label: "dropped" }
+  - { key: disproved,       icon: cross_box, label: "disproved" }
+  - { key: results-positive, icon: white, label: "positive result (pre-writeup)" }
+  - { key: admin-prep,      icon: yellow, label: "admin/prep" }
+  - { key: numbers-pending, icon: blue, label: "numbers pending" }
+  - { key: ai-tells,        icon: red, label: "AI-writing tells" }
+  - { key: blocked,         icon: purple, label: "blocked (external)" }
+  - { key: exploring,       icon: orange, label: "exploring" }
+  - { key: parked,          icon: black, label: "parked" }
   # publication-type chips (on published works) - orthogonal to outcome/role; feed the Status facet
-  - { key: journal,         icon: "📰", label: "journal article" }
-  - { key: conference,      icon: "🎤", label: "conference paper" }
-  - { key: thesis,          icon: "📘", label: "thesis" }
-  - { key: abstract,        icon: "📃", label: "extended abstract" }
-  - { key: poster,          icon: "🪧", label: "poster" }
+  - { key: journal,         icon: journals, label: "journal article" }
+  - { key: conference,      icon: conference, label: "conference paper" }
+  - { key: thesis,          icon: book, label: "thesis" }
+  - { key: abstract,        icon: page, label: "extended abstract" }
+  - { key: poster,          icon: poster, label: "poster" }
 
 
-# Collection-entry status vocabulary: colour + whether it drops the entry off the deadline radar.
-# Add a status/colour HERE (not in build.py). `terminal: true` = done / closed / not-a-live-state, so it
-# leaves the ticker; absent = live (still counts down). `deadline_met: true` = still live, but the deliverable
-# is IN (a submitted grant is under review), so its own `deadline:` stops nagging Deadlines/Overdue while the
-# entry keeps its card countdown. Each collection's schema `options:` must be a subset.
+# Collection-entry status colours and terminal-state rules for the deadline radar.
 status_palette:
   # live / in-flight (still shows on the deadline radar)
   planned:         { color: "#7c5cff" }
@@ -164,11 +152,7 @@ status_palette:
   applied: { color: "#0891b2", terminal: true }
 
 
-# --- vocabulary + thresholds (moved out of build.py in step 7; edit HERE, then rebuild) ---
-# Focus-board lanes read as one lifecycle left-to-right, each named by the NEXT ACTION, in three clusters:
-# `now` (your move) over `parked` (on others / on ice) over `incubate` (idea -> project). Thread:
-# Build -> Run -> Push -> Revise -> [submit = a high-priority flag] -> Review / Blocked, Backburner to ice one.
-# (Keep in sync with `_FOCUS_LANES_DEFAULT` in cockpit/config.py.)
+# Focus lanes form one lifecycle, grouped into current, parked, and incubating work.
 focus_lanes:
   - { key: run,        label: Run,        sub: "experiments / getting the numbers", color: "#16a34a", cluster: now }
   - { key: push,       label: Push,       sub: "drafting toward first submission",  color: "#2563eb", cluster: now }
@@ -180,15 +164,11 @@ focus_lanes:
   - { key: derisk,     label: De-risk,    sub: "Tier-0 go / no-go pilot",            color: "#6366f1", cluster: incubate }
   - { key: build,      label: Build,      sub: "strongest version -> manuscript",    color: "#0d9488", cluster: incubate }
 
-# `holding` is NOT a board lane (ideas sit in the ideas-tier backlog, not on a lane); this is the colour for
-# the ideas-holding section header AND the `holding` focus pill. Distinct from every lane colour above.
-# (Keep in sync with the `.fl-holding` rule in assets/css/cockpit.css.)
+# Holding is a backlog state, not a board lane. This colour is used by its header and focus pill.
 holding_color: "#b5638a"
 
 
-# Per-card priority = a click-to-cycle 🔥 flame badge on the focus card; `flames` = how many 🔥 render
-# (High 3 | Med 2 | Low 1). OPTIONAL manifest `priority:` field, unset = no flames. Does NOT reorder cards
-# (it is a glance badge, not a sort key). In served mode, click the flames to cycle unset -> Low -> Med -> High.
+# Per-card priority controls the count badge; an unset priority draws none and does not change order.
 priority_levels:
   - { key: high, label: High, flames: 3 }
   - { key: med,  label: Med,  flames: 2 }
@@ -207,11 +187,11 @@ focus_lane_tones: { funding: gold, jobs: violet, teaching: teal }
 
 # Career host-pipeline statuses (Focus career card): status -> icon / label / colour.
 career_host_status:
-  awaiting:  { icon: "📨", label: "sent, awaiting", color: "#0891b2" }
-  warm:      { icon: "🔥", label: "warm",           color: "#ea580c" }
-  candidate: { icon: "⚪", label: "candidate",      color: "#64748b" }
-  drafted:   { icon: "✍", label: "drafted",         color: "#b45309" }
-  dropped:   { icon: "✗", label: "dropped",         color: "#9ca3af" }
+  awaiting:  { icon: inbox, label: "sent, awaiting", color: "#0891b2" }
+  warm:      { icon: fire, label: "warm",            color: "#ea580c" }
+  candidate: { icon: white, label: "candidate",      color: "#64748b" }
+  drafted:   { icon: writing, label: "drafted",      color: "#b45309" }
+  dropped:   { icon: fail, label: "dropped",         color: "#9ca3af" }
 
 
 # Career score dimensions (Focus career card host chips): `field` = the CAREER.yml host key scored, `badge` =

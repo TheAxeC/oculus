@@ -42,9 +42,7 @@
     const tone = $derived(fitTone(fit, vocab));
     const sub = $derived(`${institution} | ${country}`);
     const note = $derived(`${focus}${fit === '' ? '' : ` - ${fit}`}`);
-    const deadlineTail = $derived(
-        expired ? (isClosed(status) ? status : t('sf.leads_expired')) : ''
-    );
+    const deadlineTail = $derived(expired ? (isClosed(status) ? status : t('leads.expired')) : '');
 
     function say(answer: WriteAnswer): void {
         if (!answer.ok) {
@@ -76,14 +74,14 @@
 <div class:expired data-lead={title}>
     <Card {title} titleHtml={inlineMarkdown(title)} tone={expired ? 'grey' : tone}>
         {#snippet meta()}
-            <Chip label={key ?? t('sf.leads_fit_none')} {tone} />
+            <Chip label={key ?? t('leads.fit_none')} {tone} />
             {#if expired}
-                <Chip label={status || t('sf.leads_expired')} tone="grey" />
+                <Chip label={status || t('leads.expired')} tone="grey" />
             {/if}
             {#if deadline !== '' || expired}
                 <span class="deadline">
                     <Glyph name="deadline" />
-                    <span>{deadline || t('sf.leads_no_deadline')}</span>
+                    <span>{deadline || t('leads.no_deadline')}</span>
                     {#if deadlineTail !== ''}
                         <span> | {deadlineTail}</span>
                     {/if}
@@ -93,37 +91,41 @@
                 <span class="actions">
                     {#if status !== 'applied'}
                         <ToolButton
-                            label={t('actions.applied')}
-                            title={t('actions.mark_applied')}
+                            label={t('leads.action.applied')}
+                            title={t('leads.action.mark_applied')}
                             compact
                             onclick={() => mark('applied')}
                         />
                     {/if}
                     {#if status !== 'declined'}
                         <ToolButton
-                            label={t('actions.decline')}
-                            title={t('actions.decline_tip')}
+                            label={t('leads.action.decline')}
+                            title={t('leads.action.decline_tip')}
                             compact
                             onclick={() => mark('declined')}
                         />
                     {/if}
                     {#if status === 'applied' || status === 'declined'}
                         <ToolButton
-                            label={t('actions.reopen')}
-                            title={t('actions.reopen_lead_tip')}
+                            label={t('project.action.reopen')}
+                            title={t('leads.action.reopen_lead_tip')}
                             compact
                             onclick={() => mark('open')}
                         />
                     {/if}
                     <ToolButton
-                        label={t('actions.del')}
-                        title={t('actions.delete_lead_tip')}
+                        label={t('project.action.del')}
+                        title={t('leads.action.delete_lead_tip')}
                         compact
                         onclick={() => (sure = true)}
                     />
                     <ToolButton
-                        label={dismissed ? t('actions.show_lead') : t('actions.hide_lead')}
-                        title={dismissed ? t('actions.show_lead') : t('actions.hide_lead')}
+                        label={dismissed
+                            ? t('leads.action.show_lead')
+                            : t('leads.action.hide_lead')}
+                        title={dismissed
+                            ? t('leads.action.show_lead')
+                            : t('leads.action.hide_lead')}
                         glyph="dismiss"
                         compact
                         onclick={ondismiss}
@@ -150,7 +152,7 @@
             <p class="posting">
                 <a href={url} target="_blank" rel="noreferrer">
                     <Glyph name="link" />
-                    <span>{t('sf.leads_posting')}</span>
+                    <span>{t('leads.posting')}</span>
                 </a>
             </p>
         {/if}
@@ -159,9 +161,9 @@
 
 {#if sure}
     <Confirm
-        message={t('actions.delete_lead_tip')}
+        message={t('leads.action.delete_lead_tip')}
         detail={title}
-        confirm={t('actions.del')}
+        confirm={t('project.action.del')}
         cancel={t('collection.form_cancel')}
         onconfirm={remove}
         oncancel={() => (sure = false)}

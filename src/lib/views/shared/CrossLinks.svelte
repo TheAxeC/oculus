@@ -32,10 +32,10 @@
 
     /** The catalogued group label, singular for one idea and plural otherwise. */
     function label(group: CrossGroup): string {
-        if (group.type === 'work') return t('helpers.xlink_active');
-        if (group.type === 'published') return t('helpers.xlink_published');
-        if (group.count === 1) return t('helpers.xlink_idea');
-        return t('helpers.xlink_ideas');
+        if (group.type === 'work') return t('project.helper.xlink_active');
+        if (group.type === 'published') return t('project.helper.xlink_published');
+        if (group.count === 1) return t('project.helper.xlink_idea');
+        return t('project.helper.xlink_ideas');
     }
 
     /** The glyph vocabulary name for one group. */

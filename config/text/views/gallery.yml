@@ -1,0 +1,37 @@
+# Oculus text owned by the gallery view.
+text:
+    gallery:
+        card_body: The body is a snippet, so a card carries whatever the view puts in it.
+        card_footer: The footer is a snippet too, under a hairline.
+        card_pinned: Pinned card
+        card_plain: Plain card
+        card_tone: Toned card
+        cards: Cards
+        chips: Chips
+        col_chip: Chip
+        col_count: Chips
+        col_tone: Tone
+        confirm: Confirm dialog
+        confirm_detail: The detail line names what is about to be acted on.
+        confirm_message: Do the thing that cannot be undone?
+        confirm_open: Ask me something
+        empty: Empty state
+        empty_glyph: circle_empty
+        empty_message: Nothing matches the filter.
+        form: Chip form
+        form_both: Both
+        form_filled: Filled
+        form_outline: Outline
+        meter: Share of {0}
+        meters: Meters
+        reset: Reset
+        reset_glyph: refresh
+        search: Filter the table
+        table: Table
+        ticker: Ticker
+        ticker_tail: in 6d
+        title: Gallery
+        toolbar: Gallery controls
+    views:
+        gallery: Gallery
+        gallery_glyph: cards

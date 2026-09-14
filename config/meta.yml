@@ -1,6 +1,5 @@
-# The tool's own identity. The cockpit kept these two values in cockpit.yml beside its build target; oculus has no entry file, so they sit here with the rest of the config.
-# The tab title comes from text.app.title, because every user-facing string lives in text.yml.
+# Oculus identity metadata. The browser tab title comes from the text catalog's `app.title` key.
 
 meta:
-    title: 'Research Cockpit'
+    title: 'Oculus'
     subtitle: 'Private working dashboard - **never deploy**. Showcase = the `tools/present/` deck.'

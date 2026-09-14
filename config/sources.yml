@@ -39,42 +39,36 @@ collections:
   - { key: venues,         title: "Venues",             file: "registries/venues.yml" }
   - { key: programs,       title: "Pillars",            file: "registries/programs.yml" }
   - { key: domains,        title: "Domains",            file: "registries/domains.yml" }
-  - { key: statements,     title: "Statements",         icon: "§", file: "registries/boilerplate.yml" }
-  - { key: funding,        title: "Funding",            icon: "◈", file: "funding/funding.yml" }
-  - { key: events,         title: "Talks & Events",     icon: "🗓", file: "network/events.yml" }
-  - { key: education,      title: "Education & Service", icon: "🏫", file: "education/education.yml" }
-  - { key: applications,   title: "Applications",       icon: "▤", file: "applications/applications.yml" }
-  - { key: collaborations, title: "Collaborations",     icon: "🤝", file: "network/collaborations.yml" }
-  - { key: tasks,          title: "Tasks & Service",    icon: "🧷", file: "tasks/tasks.yml" }
-  - { key: code,           title: "Code",               icon: "💻", file: "registries/repos.yml" }
+  - { key: statements,     title: "Statements",          icon: section, file: "registries/boilerplate.yml" }
+  - { key: funding,        title: "Funding",             icon: funding, file: "funding/funding.yml" }
+  - { key: events,         title: "Talks & Events",      icon: events, file: "network/events.yml" }
+  - { key: education,      title: "Education & Service", icon: teaching, file: "education/education.yml" }
+  - { key: applications,   title: "Applications",        icon: applications, file: "applications/applications.yml" }
+  - { key: collaborations, title: "Collaborations",      icon: collab, file: "network/collaborations.yml" }
+  - { key: tasks,          title: "Tasks & Service",     icon: tasks, file: "tasks/tasks.yml" }
+  - { key: code,           title: "Code",                icon: code, file: "registries/repos.yml" }
 
 
 # Full-markdown tabs (each may concatenate several files; missing files flagged).
 docs:
-  - { key: inbox,     title: "📨 Inbox",  after_map: true, paths: ["feeds/inbox.yml"] }   # private email; tracked since 2026-08-10, never leaves this repo
+  - { key: inbox,     title: "Inbox",  after_map: true, paths: ["feeds/inbox.yml"] }   # private email that never leaves this repo
   - { key: hpc,       title: "HPC - UTwente",   paths: ["HPC-UTwente-howto.md"] }
-  - { key: approach,  title: "🧭 Research Approach", paths: ["RESEARCH-APPROACH.md"] }   # how I do research + how it differs (private strategy prose)
-  - { key: agents,    title: "🧰 Agent Approach",    paths: ["AGENT-APPROACH.md"] }       # how I work with agents: modes, context budget, enforcement (private)
+  - { key: approach,  title: "Research Approach", paths: ["RESEARCH-APPROACH.md"] }   # private research strategy prose
+  - { key: agents,    title: "Agent Approach",    paths: ["AGENT-APPROACH.md"] }       # private agent workflow prose
 
 
 # Auto-index tabs - a searchable file listing from a folder scan (no curation, no YAML).
 # Shape: { key, title, icon, dir, ext: [".pdf"] }. Keep this an explicit [] when empty; a bare
 # "indexes:" parses as null and page.py iterates it directly.
-# The Literature tab was dropped 2026-08-10 with the literature/ PDF library it scanned. The Lit
-# Watch radar below is a DIFFERENT thing (research intel, feeds/literature-radar.yml) and stays.
+# Lit Watch reads research intelligence from feeds/literature-radar.yml; no PDF-library index is configured.
 indexes: []
 
 
-# Position Leads tab: the scout's YAML, rendered as cards (build.py leads_cards_html). Moved into the
-# hub's feeds/ on 2026-09-10 (it was in the cockpit's own data/ from 2026-08-08, and before that a
-# separate git clone at applications/academic-position-leads/).
-# The search spec the scout reads sits beside the skill: .agents/skills/research-cockpit/position-leads-readme.md.
+# Position Leads reads the scout's YAML as cards. Its search specification belongs to the research-cockpit skill.
 leads_file: feeds/position-leads.yml
 
 
-# Lit Watch tab: the literature-scout radar (build.py radar_tab_html). New papers per active/manuscript
-# project, classified pre-emption / cite-baseline / adjacent, plus cross-pollination idea sparks. Entries
-# accumulate (/research-cockpit litwatch dedups by url + appends). Local tab only - no email/cron.
+# Lit Watch reads the literature scout's accumulated radar. The refresh workflow deduplicates by URL and appends entries.
 radar_file: feeds/literature-radar.yml
 
 # Public website publications feed, cross-checked in the Audit tab (missing / leaked / wrong-section / untracked).

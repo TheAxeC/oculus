@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Map closes the structure group.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'map',
+        label: 'views.map',
+        glyph: 'views.map_glyph',
+        group: 'structure',
+        order: 2
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. The relationship-map heading and visibility controls around the pure graph
     // built from the current portfolio snapshot.

@@ -1,5 +1,5 @@
-// Layer 3, views. The registry is the vocabulary of ViewId: a view registers itself here and the
-// shell mounts whatever a pane names, so no shell module imports a view by name and no view knows
+// Layer 3, views. The registry is the vocabulary of ViewId: view modules describe themselves and
+// the route loader registers them, so no shell module imports a view by name and no view knows
 // where it is mounted. It is the one module the shell and the views share.
 //
 // A registration's label and glyph are catalog keys rather than words: the label reads through
@@ -29,11 +29,15 @@ export type ViewProps = { instance: Instance };
 
 export type Registration = {
     id: ViewId;
-    /** A key in config/text.yml holding the view's name. */
+    /** A key in the text catalog holding the view's name. */
     label: string;
-    /** A key in config/text.yml whose value is a name in the `glyphs:` map of config/glyphs.yml. */
+    /** A text-catalog key whose value is a name in the `glyphs:` map of config/glyphs.yml. */
     glyph: string;
     component: Component<ViewProps>;
+    /** The stable id of the rail group that owns this view. */
+    group: string;
+    /** Position inside the group; equal positions are resolved by id. */
+    order: number;
     /**
      * Whether the rail offers the view. Every view is listed unless it says otherwise; one that is
      * only ever opened for something (a project's editor, a project, a document) says `false`,
@@ -52,6 +56,19 @@ export type Registration = {
     badgeTabText?: () => string;
 };
 
+/** What a view module exports; the loader supplies the module's default component. */
+export type ViewRegistration = Omit<Registration, 'component'>;
+
+/** Resolve the catalog label key carried by registration metadata. */
+export function registrationLabel(registration: Pick<Registration, 'label'>): string {
+    return lookup(registration.label);
+}
+
+/** Resolve the catalog glyph key carried by registration metadata. */
+export function registrationGlyph(registration: Pick<Registration, 'glyph'>): string {
+    return lookup(registration.glyph);
+}
+
 /** Assemble a registration's hooks without depending on any particular view or state selector. */
 export function badgeOf(registration: Registration): RegistrationBadge {
     const text = registration.badge?.() ?? '';
@@ -60,7 +77,8 @@ export function badgeOf(registration: Registration): RegistrationBadge {
         tabText: registration.badgeTabText?.() ?? text,
         tone: registration.badgeTone?.(),
         title:
-            registration.badgeTitle?.() ?? t('views.badge_title', lookup(registration.label), text),
+            registration.badgeTitle?.() ??
+            t('views.badge_title', registrationLabel(registration), text),
         cells: registration.badgeCells?.()
     };
 }
@@ -71,6 +89,14 @@ const registry = new Map<ViewId, Registration>();
 /** Register a view, replacing an earlier registration of the same id. */
 export function registerView(registration: Registration): void {
     registry.set(registration.id, registration);
+}
+
+/** Supply one module component to each metadata record the module exports. */
+export function registerComponent(
+    component: Component<ViewProps>,
+    registrations: ViewRegistration[]
+): void {
+    for (const registration of registrations) registerView({ ...registration, component });
 }
 
 /** The registration of a view, or undefined when the id names none. */

@@ -1,6 +1,19 @@
+<script module lang="ts">
+    // Layer 3, view registration. A project opens from a board card and is not listed in the rail.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'project',
+        label: 'views.project',
+        glyph: 'views.project_glyph',
+        group: '',
+        order: 0,
+        listed: false
+    };
+</script>
+
 <script lang="ts">
-    // Layer 3, view. One project as its own tab, which is DESIGN.md's decision of 2026-09-10: the
-    // card the board draws, opened out, then the project's documents, then the sessions working in
+    // Layer 3, view. One project as its own tab: the card the board draws, opened out, then the
+    // project's documents, then the sessions working in
     // its folder. One instance per project, and the project it is for is the `id` in its instance
     // state, exactly as the editor reads its own.
     //
@@ -104,8 +117,8 @@
 
     /** What a live row says of itself, the same two words the session list uses. */
     function liveLabel(entry: GroupedSession): string {
-        if (entry.liveStatus === 'busy') return t('js.sessions.live_busy');
-        if (entry.liveStatus === 'idle') return t('js.sessions.live_idle');
+        if (entry.liveStatus === 'busy') return t('sessions.live_busy');
+        if (entry.liveStatus === 'idle') return t('sessions.live_idle');
         return entry.liveStatus ?? '';
     }
 </script>
@@ -125,10 +138,10 @@
             <span class="meta">
                 {#if entry.live}
                     <span class="st">{liveLabel(entry)}</span>
-                    <span class="sep">{t('js.sessions.meta_sep')}</span>
+                    <span class="sep">{t('sessions.meta_sep')}</span>
                 {/if}
                 <span class="mo">{modelShort(entry.model)}</span>
-                <span class="sep">{t('js.sessions.meta_sep')}</span>
+                <span class="sep">{t('sessions.meta_sep')}</span>
                 <span class="ts">{stamp(entry.started, now)}</span>
             </span>
         </button>

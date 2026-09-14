@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Focus is the first board and the landing view.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'focus',
+        label: 'views.focus',
+        glyph: 'views.focus_glyph',
+        group: 'boards',
+        order: 0
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. The landing board: the command center of everything with a date, the quick
     // add, the strip of what is out for an answer, the lanes each manifest's `focus:` puts it on,
@@ -106,7 +118,7 @@
                     <span class="seg">
                         <span class="seg-lbl">{t('focus.wait_people')}</span>
                         {#each strip.people as one (one.label)}
-                            <Chip label={t('cc.venue_count', one.label, one.count)} />
+                            <Chip label={t('focus.command.venue_count', one.label, one.count)} />
                         {/each}
                     </span>
                 {/if}
@@ -116,7 +128,7 @@
                         {#each strip.venues as one (one.label)}
                             <Chip
                                 label={t(
-                                    'cc.venue_count',
+                                    'focus.command.venue_count',
                                     one.label === '' ? t('focus.venue_unset') : one.label,
                                     one.count
                                 )}

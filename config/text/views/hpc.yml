@@ -1,0 +1,64 @@
+# Oculus text owned by the hpc view.
+text:
+    hpc:
+        as_of: as of {0}
+        badge_pending: pending
+        badge_running: running
+        cancel_confirm: Cancel job {0}? This runs scancel and cannot be undone.
+        cancel_ok: Cancel job
+        capacity_label: '{0} partition capacity'
+        capacity_summary: Cluster capacity (sinfo) - {0} rows
+        close: close
+        col_actions: Actions
+        col_avail: Avail
+        col_cpu: CPU
+        col_elapsed: Elapsed
+        col_end: End
+        col_exit: Exit
+        col_gpu_col: GPU
+        col_gres: GRES per node
+        col_job: Job
+        col_limit: Limit
+        col_mem: Mem
+        col_name: Name
+        col_nodes: Nodes
+        col_partition: Partition
+        col_prio: Prio
+        col_reason: Node / Reason
+        col_start: Est. start
+        col_state: State
+        col_time: Time
+        col_used: Used
+        disk: disk
+        disk_label: '{0} disk usage'
+        error: error
+        every: every {0}m
+        fetch_failed: fetch failed
+        fetching: Fetching job status...
+        footer: Polls squeue, sacct, sinfo, and disk quota on {0}. See the HPC how-to.
+        gpu: gpu
+        idle_count: '{0} idle'
+        live: live
+        loading: loading...
+        log: log
+        log_job: log | job {0}
+        memory_efficiency: '{0} of {1} ({2}%)'
+        no_jobs: No jobs in the queue for you right now.
+        no_output: (no output)
+        none: '-'
+        percent: '{0}%'
+        pill_pending: ' | {0} pending'
+        pill_running: '{G.hpc} {0} HPC job{1} running'
+        polling: polling cluster...
+        queue_empty: queue empty
+        queue_summary: '{0} running | {1} pending | {2} total'
+        recent_summary: Recent (finished) - {0}
+        refresh_now: Refresh now
+        tail: tail
+        unreachable: unreachable
+        unreachable_msg: Cluster unreachable - on UT network / EduVPN?
+        used_of: '{0} of {1} ({2}%)'
+        walltime: fraction of walltime used
+    views:
+        hpc: Live HPC
+        hpc_glyph: hpc

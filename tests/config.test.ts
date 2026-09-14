@@ -15,15 +15,16 @@ import { parse } from 'yaml';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     DEFAULT_PORT,
+    asciiCatalog,
     collectionKeys,
     engineDir,
+    glyphCatalog,
     loadConfig,
     loadLocal
 } from '../src/lib/data/sources/config.ts';
 import { readRoots, rootsFile } from '../src/lib/server/files.ts';
 import { views } from '../src/lib/views/registry.ts';
-// Importing the barrel registers the application's views; the collections are registered from the
-// keys of sources.yml, the way the page does it, so the rail's keys are checked against both.
+// Importing the route loader registers views; collection registrations use sources.yml keys.
 import { registerCollections } from '../src/routes/views.ts';
 
 function scratch(): string {
@@ -274,13 +275,32 @@ describe('loadConfig', () => {
         ]);
     });
 
+    it('reports a catalog key two owner files define and takes the later value', () => {
+        const engine = scratch();
+        const dir = join(engine, 'config', 'text');
+        mkdirSync(dir, { recursive: true });
+        writeFileSync(join(dir, 'app.yml'), 'text: { app: { title: first } }\n');
+        const later = join(dir, 'ui.yml');
+        writeFileSync(later, 'text: { app: { title: second } }\n');
+
+        const { config, findings } = loadConfig(engine);
+        expect(config.text).toEqual({ 'app.title': 'second' });
+        expect(findings).toEqual([
+            {
+                file: later,
+                key: 'text.app.title',
+                message: 'key text.app.title is already defined in text/app.yml; text/ui.yml wins'
+            }
+        ]);
+    });
+
     it('reports a file that does not parse and merges the rest', () => {
         const engine = scratch();
         writeConfig(engine, 'broken.yml', 'title: "unterminated\n  - [\n');
         writeConfig(engine, 'good.yml', 'text: { app: { title: oculus } }\n');
 
         const { config, findings } = loadConfig(engine);
-        expect(config.text).toEqual({ app: { title: 'oculus' } });
+        expect(config.text).toEqual({ 'app.title': 'oculus' });
         expect(findings.length).toBe(1);
         expect(findings[0].file).toBe(join(engine, 'config', 'broken.yml'));
         expect(findings[0].message).toMatch(/^does not parse: /);
@@ -317,11 +337,9 @@ describe('loadConfig', () => {
     });
 });
 
-// The nine files that ship with the tool, read the way the server reads them. EXPECTED is the whole
-// top-level key set after the regrouping of O10c, so a key that is dropped, renamed or added shows
-// up here as well as wherever it is read.
+// The root files and owner catalog fragments that ship with the tool, read as the server reads them.
 describe("oculus's own config directory", () => {
-    /** Every top-level key the ten files hold, by the file it now sits in. */
+    /** Every non-text top-level key, by its root config file. */
     const EXPECTED: Record<string, string[]> = {
         'appearance.yml': ['themes', 'wallpaper', 'crt', 'terminal'],
         'behavior.yml': [
@@ -380,10 +398,6 @@ describe("oculus's own config directory", () => {
             'career_file',
             'roots'
         ],
-        'text.yml': ['text'],
-        // The one key two files share: the catalog's groups are spread over the two so that each
-        // file stays under 1000 lines, and loadConfig folds them into one map of groups.
-        'text-oculus.yml': ['text'],
         'vocab.yml': [
             'palette',
             'domains',
@@ -409,6 +423,41 @@ describe("oculus's own config directory", () => {
             'radar_buckets'
         ]
     };
+
+    const CATALOG_FILES = [
+        'app.yml',
+        'server.yml',
+        'ui.yml',
+        'views/agents.yml',
+        'views/changes.yml',
+        'views/collection.yml',
+        'views/data.yml',
+        'views/deposit.yml',
+        'views/document.yml',
+        'views/domains.yml',
+        'views/editor.yml',
+        'views/findings.yml',
+        'views/focus.yml',
+        'views/gallery.yml',
+        'views/hpc.yml',
+        'views/inbox.yml',
+        'views/leads.yml',
+        'views/linkedin.yml',
+        'views/map.yml',
+        'views/programs.yml',
+        'views/project.yml',
+        'views/projects.yml',
+        'views/radar.yml',
+        'views/session-detail.yml',
+        'views/session-list.yml',
+        'views/source.yml',
+        'views/status.yml',
+        'views/terminal.yml',
+        'views/timeline.yml',
+        'views/transcript.yml',
+        'views/usage.yml',
+        'views/venues.yml'
+    ];
 
     it('merges without a finding, so no key is defined in two files', () => {
         expect(loadConfig(engineDir()).findings).toEqual([]);
@@ -479,37 +528,35 @@ describe("oculus's own config directory", () => {
 
     it('holds exactly the expected top-level keys, and no more', () => {
         const { config } = loadConfig(engineDir());
-        const expected = [...new Set(Object.values(EXPECTED).flat())].sort();
+        const expected = [...new Set([...Object.values(EXPECTED).flat(), 'text'])].sort();
         expect(Object.keys(config).sort()).toEqual(expected);
     });
 
-    it('spreads the catalog over its two files with no group in both', () => {
-        const dir = join(engineDir(), 'config');
-        const groupsOf = (name: string): string[] => {
-            const parsed = parse(readFileSync(join(dir, name), 'utf8')) as {
-                text: Record<string, unknown>;
-            };
-            return Object.keys(parsed.text);
-        };
-        const ported = groupsOf('text.yml');
-        const own = groupsOf('text-oculus.yml');
-        expect(ported.filter((group) => own.includes(group))).toEqual([]);
-        expect(own).toContain('ui');
-        expect(ported).toContain('js');
-        expect(own).not.toContain('js.leads');
+    it('reads one catalog file per owner and no legacy catalog file', () => {
         const { config } = loadConfig(engineDir());
-        const text = config.text as {
-            js: { leads: Record<string, string> };
-            app: Record<string, string>;
-        };
-        expect(text.js.leads.chat_instruction).toContain('The hub root is `{0}`');
-        expect(text.js.leads.chat_focus_note).toContain('`{2}` (absolute)');
-        expect(text.js.leads.chat_index_note).toBe(
+        const dir = join(engineDir(), 'config', 'text');
+        const names = [
+            ...readdirSync(dir).filter((name) => name.endsWith('.yml')),
+            ...readdirSync(join(dir, 'views'))
+                .filter((name) => name.endsWith('.yml'))
+                .map((name) => `views/${name}`)
+        ].sort();
+        expect(names).toEqual(CATALOG_FILES);
+        expect(existsSync(join(engineDir(), 'config', 'text.yml'))).toBe(false);
+        expect(existsSync(join(engineDir(), 'config', 'text-oculus.yml'))).toBe(false);
+        for (const name of names) {
+            const file = join(dir, name);
+            const source = readFileSync(file, 'utf8');
+            expect(source.startsWith('# Oculus text owned by ')).toBe(true);
+            expect(Object.keys(parse(source) as Record<string, unknown>)).toEqual(['text']);
+        }
+        const text = config.text as Record<string, string>;
+        expect(text['server.chat.chat_instruction']).toContain('The hub root is `{0}`');
+        expect(text['server.chat.chat_focus_note']).toContain('`{2}` (absolute)');
+        expect(text['server.chat.chat_index_note']).toBe(
             'The portfolio index is the file {0}; read it first.'
         );
-        expect(text.app.chat).toBe('Chat');
-        const merged = Object.keys(config.text as Record<string, unknown>);
-        expect(merged.sort()).toEqual([...ported, ...own].sort());
+        expect(text['app.chat']).toBe('Chat');
     });
 
     // The two roots of sources.yml sit under the home directory of whoever runs this, and a
@@ -541,36 +588,57 @@ describe("oculus's own config directory", () => {
         }
     });
 
-    // Every key under nav_groups either names a view that is registered now or one of the ids a
-    // later package of the migration will register. A key that is neither is a typo: the rail draws
-    // nothing for it and says nothing about it, which is the failure this catches.
-    const RESERVED = ['approach', 'agent-approach', 'memories', 'help', 'audit', 'config'];
-
     it('keeps boards separate from the configured Pillars group', () => {
         const { config } = loadConfig(engineDir());
-        const groups = config.nav_groups as Record<
-            string,
-            { label: string; glyph?: string; keys: string[] }[]
-        >;
-        expect(groups.boards).toEqual([
-            { label: 'Boards', keys: ['focus', 'projects', 'coauthor', 'archive'] }
-        ]);
-        expect(groups.structure).toEqual([
-            { label: 'Pillars', glyph: 'program', keys: ['programs', 'domains', 'map'] }
-        ]);
+        const groups = config.nav_groups as Record<string, { label: string; glyph?: string }>;
+        expect(groups.boards).toEqual({ label: 'Boards' });
+        expect(groups.structure).toEqual({ label: 'Pillars', glyph: 'program' });
         expect(Object.keys(groups).indexOf('structure')).toBe(
             Object.keys(groups).indexOf('boards') + 1
         );
     });
 
+    it('keeps view lists out of every navigation group', () => {
+        const { config } = loadConfig(engineDir());
+        const groups = Object.values(config.nav_groups as Record<string, Record<string, unknown>>);
+        for (const group of groups) expect(group).not.toHaveProperty('keys');
+    });
+
+    it('names the wallpaper directory owned by oculus', () => {
+        const { config } = loadConfig(engineDir());
+        expect(config.wallpaper).toMatchObject({ dir: 'tools/oculus/assets/wallpaper' });
+    });
+
+    it('uses glyph names with ASCII stand-ins for every configured icon', () => {
+        const { config } = loadConfig(engineDir());
+        const glyphs = glyphCatalog(config);
+        const ascii = asciiCatalog(config);
+        const collections = config.collections as { key: string; icon?: string }[];
+        const hosts = config.career_host_status as Record<string, { icon: string }>;
+        const statuses = config.status_legend as { key: string; icon: string }[];
+        const icons = [
+            ...collections.flatMap((entry) => (entry.icon === undefined ? [] : [entry.icon])),
+            ...Object.values(hosts).map((entry) => entry.icon),
+            ...statuses.map((entry) => entry.icon)
+        ];
+        expect(
+            collections
+                .filter((entry) => entry.icon !== undefined && !(entry.icon in glyphs))
+                .map((entry) => entry.key)
+        ).toEqual([]);
+        expect(
+            Object.entries(hosts)
+                .filter(([, entry]) => !(entry.icon in glyphs))
+                .map(([key]) => key)
+        ).toEqual([]);
+        expect(icons.filter((name) => !(glyphs[name] in ascii))).toEqual([]);
+    });
+
     it('configures one lowercase chord on each flyout with a keyboard prefix', () => {
         const { config } = loadConfig(engineDir());
         const groups = Object.values(
-            config.nav_groups as Record<
-                string,
-                { label: string; glyph?: string; chord?: string; keys: string[] }[]
-            >
-        ).flat();
+            config.nav_groups as Record<string, { label: string; glyph?: string; chord?: string }>
+        );
         expect(
             groups
                 .filter((group) => group.chord !== undefined)
@@ -584,22 +652,14 @@ describe("oculus's own config directory", () => {
         }
     });
 
-    it('names a registered view or a reserved id in every key of every rail group', () => {
+    it('names a configured group and a nonnegative order in every listed registration', () => {
         const { config } = loadConfig(engineDir());
         registerCollections(collectionKeys(config));
-        const registered = new Set(views().map((view) => view.id));
-        const groups = Object.values(config.nav_groups as Record<string, { keys: string[] }[]>)
-            .flat()
-            .flatMap((group) => group.keys);
-        expect(groups.length).toBeGreaterThan(0);
-        expect(groups.filter((key) => !registered.has(key) && !RESERVED.includes(key))).toEqual([]);
-    });
-
-    it('reserves no id that is already registered, so the list stays the list of what is missing', () => {
-        const { config } = loadConfig(engineDir());
-        registerCollections(collectionKeys(config));
-        const registered = new Set(views().map((view) => view.id));
-        expect(RESERVED.filter((key) => registered.has(key))).toEqual([]);
+        const groups = new Set(Object.keys(config.nav_groups as Record<string, unknown>));
+        const invalid = views()
+            .filter((view) => view.listed !== false)
+            .filter((view) => !groups.has(view.group) || view.order < 0);
+        expect(invalid.map((view) => view.id)).toEqual([]);
     });
 
     it('reads each file on its own and finds its own keys there and nowhere else', () => {
@@ -609,9 +669,7 @@ describe("oculus's own config directory", () => {
             const parsed = parse(readFileSync(join(dir, name), 'utf8')) as Record<string, unknown>;
             expect(Object.keys(parsed).sort()).toEqual([...keys].sort());
             for (const key of keys) {
-                // The catalog is the one key two files carry, by groups; every other key sits in
-                // exactly one file.
-                if (key !== 'text') expect(seen[key]).toBe(undefined);
+                expect(seen[key]).toBe(undefined);
                 seen[key] = name;
             }
         }
@@ -620,5 +678,12 @@ describe("oculus's own config directory", () => {
                 .filter((name) => name.endsWith('.yml'))
                 .sort()
         ).toEqual(Object.keys(EXPECTED).sort());
+        for (const name of CATALOG_FILES) {
+            const parsed = parse(readFileSync(join(dir, 'text', name), 'utf8')) as Record<
+                string,
+                unknown
+            >;
+            expect(Object.keys(parsed)).toEqual(['text']);
+        }
     });
 });

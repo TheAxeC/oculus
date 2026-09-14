@@ -1,3 +1,18 @@
+<script module lang="ts">
+    // Layer 3, view registration. Position Leads follows Lit Watch in the feeds group.
+    import type { ViewRegistration } from './registry';
+    import { leadsBadge } from '$lib/state/rail-badges.svelte';
+    export const registration: ViewRegistration = {
+        id: 'leads',
+        label: 'views.leads',
+        glyph: 'views.leads_glyph',
+        group: 'feeds',
+        order: 1,
+        badge: leadsBadge,
+        badgeTone: () => 'amber'
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. Position Leads reads its socket feed, splits live from expired entries,
     // and keeps search plus the expired and run-log disclosures in this view instance's state.
@@ -47,8 +62,8 @@
     const split = $derived(splitLeads(visibleLeads(entries, dismissed, held.showDismissed), today));
     const dismissedToggleLabel = $derived(
         held.showDismissed
-            ? t('js.leads.hide_dismissed', dismissedCount)
-            : t('js.leads.show_dismissed', dismissedCount)
+            ? t('leads.hide_dismissed', dismissedCount)
+            : t('leads.show_dismissed', dismissedCount)
     );
     const live = $derived(leadsSearch(split.live, held.search));
     const expired = $derived(leadsSearch(split.expired, held.search));
@@ -71,15 +86,15 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('sf.leads_search')}>
+    <Toolbar label={t('leads.search')}>
         <Search
             value={held.search}
-            placeholder={t('sf.leads_search')}
+            placeholder={t('leads.search')}
             oninput={(search) => write({ search })}
         />
         <ToolButton
-            label={t('sf.leads_add')}
-            title={t('sf.leads_add_tip')}
+            label={t('leads.add')}
+            title={t('leads.add_tip')}
             active={held.adding}
             onclick={() => write({ adding: !held.adding })}
         />
@@ -100,17 +115,15 @@
         {#if data === null}
             <Empty message={t('app.waiting')} glyph="scout" />
         {:else if data.missing}
-            <Empty message={t('sf.leads_no_file')} glyph="warn" />
+            <Empty message={t('leads.no_file')} glyph="warn" />
         {:else if data.error !== undefined}
             <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
         {:else}
             <Intro
                 html={t(
-                    'sf.leads_intro',
+                    'leads.intro',
                     allSplit.live.length,
-                    allSplit.expired.length > 0
-                        ? t('sf.leads_exp_note', allSplit.expired.length)
-                        : ''
+                    allSplit.expired.length > 0 ? t('leads.exp_note', allSplit.expired.length) : ''
                 )}
             />
 
@@ -152,13 +165,13 @@
                     {/each}
                 </div>
             {:else}
-                <p class="empty">{@html t('sf.leads_empty')}</p>
+                <p class="empty">{@html t('leads.empty')}</p>
             {/if}
 
             {#if split.expired.length > 0}
                 <section class="disclosure">
                     <ToolButton
-                        label={t('sf.leads_expired_sec', expired.length)}
+                        label={t('leads.expired_sec', expired.length)}
                         glyph="deadline"
                         active={held.expiredOpen}
                         expanded={held.expiredOpen}
@@ -194,7 +207,7 @@
             {#if log.length > 0}
                 <section class="disclosure">
                     <ToolButton
-                        label={t('sf.leads_runlog')}
+                        label={t('leads.runlog')}
                         glyph="scout"
                         active={held.runlogOpen}
                         expanded={held.runlogOpen}

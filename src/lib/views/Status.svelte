@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Status opens the system group.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'status',
+        label: 'views.status',
+        glyph: 'views.status_glyph',
+        group: 'system',
+        order: 0
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. What the page knows: whether the socket is up, which snapshot it is holding,
     // and how many of each entity that snapshot carries. It is the smallest real view there is and
@@ -11,8 +23,7 @@
     let { instance }: ViewProps = $props();
 
     const snapshot = $derived(portfolio());
-    // The two live channels, counted rather than drawn: O14 draws them. Until then this is what
-    // says on screen that both are arriving.
+    // The two live channels are counted so the screen shows that both are arriving.
     const records = $derived(sessions()?.records ?? []);
     const live = $derived(records.filter((record) => record.live).length);
     const workspaces = $derived(Object.keys(git() ?? {}).length);

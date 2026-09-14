@@ -24,7 +24,7 @@
     <span class="st">{t('board.stat_blocked', stats.blocked)}</span>
     {#if stats.dated > 0}
         <span class="st">
-            <Glyph name={t('cards.deadline_glyph')} />
+            <Glyph name={t('project.card.deadline_glyph')} />
             {t('board.stat_dated', stats.dated)}
         </span>
     {/if}

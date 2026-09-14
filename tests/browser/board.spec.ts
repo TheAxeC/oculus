@@ -21,9 +21,9 @@ test('expanding a card lists the file finder rows', async ({ page }) => {
 
     const name = shortOf(BANDITS);
     const card = page.locator('.slot').filter({ hasText: name }).first();
-    await card.getByRole('button', { name: t('cards.toggle_tip') }).click();
+    await card.getByRole('button', { name: t('project.card.toggle_tip') }).click();
     // The manifest and the README are the two files the demo's project folder holds.
-    await expect(card.getByText(t('cards.files_hdr', 2))).toBeVisible();
+    await expect(card.getByText(t('project.card.files_hdr', 2))).toBeVisible();
     await expect(card.getByRole('button', { name: 'project.yml' })).toBeVisible();
     await expect(card.getByRole('button', { name: 'README.md' })).toBeVisible();
 });
@@ -45,14 +45,14 @@ test('the pin control writes pin: true, moves the card first, and unpin restores
         .locator('.slot')
         .filter({ hasText: name })
         .first()
-        .getByRole('button', { name: t('cards.pin_to_top') })
+        .getByRole('button', { name: t('project.card.pin_to_top') })
         .click();
     await expect.poll(() => readHubFile(file), { timeout: 5000 }).toContain('pin: true');
     await expect(cards.first()).toContainText(name);
 
     await cards
         .first()
-        .getByRole('button', { name: t('cards.unpin') })
+        .getByRole('button', { name: t('project.card.unpin') })
         .click();
     await expect.poll(() => readHubFile(file), { timeout: 5000 }).toBe(before);
     await expect(cards.first()).not.toContainText(name);
@@ -99,5 +99,5 @@ test('a card title opens the project tab, whose card carries the deposit control
         .click();
     await expect(page.getByRole('tab', { name })).toBeVisible();
     const opened = page.locator('.project .slot').first();
-    await expect(opened.getByRole('button', { name: t('cards.deposit') })).toBeVisible();
+    await expect(opened.getByRole('button', { name: t('project.card.deposit') })).toBeVisible();
 });

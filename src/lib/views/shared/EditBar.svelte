@@ -30,7 +30,7 @@
 
 {#if files.length > 0}
     <div class="edit-bar" data-edit-source>
-        <span>{t('helpers.edit_source', '')}</span>
+        <span>{t('project.helper.edit_source', '')}</span>
         {#each files as file (JSON.stringify([file.root, file.path]))}
             <span data-source-root={file.root} data-source-path={file.path}>
                 <ToolButton label={label(file)} glyph="edit" onclick={() => openSourceFile(file)} />

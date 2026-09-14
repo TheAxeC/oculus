@@ -1,8 +1,31 @@
+<script module lang="ts">
+    // Layer 3, view registration. One board component owns the three portfolio board registrations.
+    import type { ViewRegistration } from './registry';
+    import { boardBadge, boardBadgeTitle, boardCells } from '$lib/state/rail-badges.svelte';
+
+    const boardRegistration = (id: string, order: number): ViewRegistration => ({
+        id,
+        label: `views.${id}`,
+        glyph: `views.${id}_glyph`,
+        group: 'boards',
+        order,
+        badge: () => boardBadge(id),
+        badgeTitle: () => boardBadgeTitle(id),
+        badgeCells: () => boardCells(id)
+    });
+
+    export const registration: ViewRegistration[] = [
+        boardRegistration('projects', 1),
+        boardRegistration('coauthor', 2),
+        boardRegistration('archive', 3)
+    ];
+</script>
+
 <script lang="ts">
     // Layer 3, view. The project board: cards or a table, a search, quick filters, type toggles, a
     // facet menu per way the board can be split, and a short or full title. It is registered three
     // times, as `projects`, `archive` and `coauthor`, and reads which board it is from the instance
-    // it was mounted as, so the three cockpit tabs that were one board over three tier sets are one
+    // it was mounted as, so the three board tabs over separate tier sets are one
     // component here.
     //
     // It joins nothing and counts nothing itself: the projects come from the board selector already
@@ -85,8 +108,8 @@
     ];
 
     const labelModes: SegmentItem[] = [
-        { id: 'short', label: t('helpers.short') },
-        { id: 'full', label: t('helpers.full') }
+        { id: 'short', label: t('project.helper.short') },
+        { id: 'full', label: t('project.helper.full') }
     ];
 
     function write(next: Partial<BoardState>): void {
@@ -257,7 +280,7 @@
             <ToolButton
                 label={t('board.quick_deadline')}
                 title={t('board.quick_deadline_tip')}
-                glyph={t('cards.deadline_glyph')}
+                glyph={t('project.card.deadline_glyph')}
                 active={held.dated}
                 onclick={() => write({ dated: !held.dated })}
             />
@@ -284,12 +307,12 @@
         />
         <ToolButton
             label={t('board.expand_all')}
-            glyph={t('cards.expand_glyph')}
+            glyph={t('project.card.expand_glyph')}
             onclick={() => bulk(true)}
         />
         <ToolButton
             label={t('board.collapse')}
-            glyph={t('cards.collapse_glyph')}
+            glyph={t('project.card.collapse_glyph')}
             onclick={() => bulk(false)}
         />
     </Toolbar>

@@ -1,0 +1,18 @@
+# Oculus text owned by the transcript view.
+text:
+    sessions:
+        transcript_glyph: chat
+        transcript_open: Open the transcript
+        transcript_open_tip: read the turns of this session in the transcript view
+        turn_assistant: Agent
+        turn_cut: (cut at 20000 characters)
+        turn_end: Jump to the last turn
+        turn_end_glyph: disclosure
+        turn_error: error
+        turn_ok: ok
+        turn_running: running
+        turn_tool: Tool
+        turn_toolbar: Transcript controls
+        turn_user: You
+        turns_empty: This session has no turns yet.
+        view_transcript: Transcript

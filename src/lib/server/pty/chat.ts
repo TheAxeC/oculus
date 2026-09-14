@@ -62,7 +62,7 @@ export function chatIndexPath(sessionsOverrides: string | undefined, id: string)
 async function chatNumber(catalog: Record<string, string>, options: StartOptions): Promise<number> {
     const held = new Set((await listTerminals(options)).map((terminal) => terminal.name));
     let number = 1;
-    while (held.has(words(catalog, 'js.leads.chat_name', number))) number += 1;
+    while (held.has(words(catalog, 'server.chat.chat_name', number))) number += 1;
     return number;
 }
 
@@ -123,18 +123,18 @@ export async function startChat(
 
     const focus =
         typeof id === 'string' && project !== null
-            ? words(catalog, 'js.leads.chat_focus_note', id, project.title, cwd)
+            ? words(catalog, 'server.chat.chat_focus_note', id, project.title, cwd)
             : '';
-    const note = words(catalog, 'js.leads.chat_index_note', index);
-    const system = [words(catalog, 'js.leads.chat_instruction', local.hub, cwd), focus, note]
+    const note = words(catalog, 'server.chat.chat_index_note', index);
+    const system = [words(catalog, 'server.chat.chat_instruction', local.hub, cwd), focus, note]
         .filter((part) => part !== '')
         .join('\n\n');
     const name = portfolio
-        ? words(catalog, 'js.leads.chat_name', await chatNumber(catalog, options))
-        : words(catalog, 'js.leads.chat_name_focus', project.title);
+        ? words(catalog, 'server.chat.chat_name', await chatNumber(catalog, options))
+        : words(catalog, 'server.chat.chat_name_focus', project.title);
     const seed = portfolio
-        ? words(catalog, 'js.leads.seed_portfolio')
-        : words(catalog, 'js.leads.seed_focus', project.title);
+        ? words(catalog, 'server.chat.seed_portfolio')
+        : words(catalog, 'server.chat.seed_focus', project.title);
     writeTextAtomic(index, portfolioContext(local.hub, config), 0o600);
     try {
         return await startTerminal(

@@ -1,3 +1,15 @@
+<script module lang="ts">
+    // Layer 3, view registration. Gallery follows Findings in the system group.
+    import type { ViewRegistration } from './registry';
+    export const registration: ViewRegistration = {
+        id: 'gallery',
+        label: 'views.gallery',
+        glyph: 'views.gallery_glyph',
+        group: 'system',
+        order: 2
+    };
+</script>
+
 <script lang="ts">
     // Layer 3, view. Every primitive with sample data, in one pane: the living style sheet. It is
     // opened under each theme to see what a card, a chip, a meter and a table actually look like
@@ -22,7 +34,7 @@
     import { t } from '$lib/state/text';
     import {
         UNKNOWN_TONE,
-        chipGlyph,
+        chipGlyphName,
         chipKeys,
         chipLabel,
         statusTone,
@@ -52,7 +64,7 @@
             .map((key) => ({
                 key,
                 label: chipLabel(key),
-                icon: chipGlyph(key),
+                glyph: chipGlyphName(key),
                 tone: toneFor(key)
             }))
     );
@@ -104,7 +116,7 @@
 {#snippet chipRow(filled: boolean)}
     <div class="row">
         {#each chips as chip (chip.key)}
-            <Chip label={chip.label} tone={chip.tone} icon={chip.icon} {filled} />
+            <Chip label={chip.label} tone={chip.tone} glyph={chip.glyph} {filled} />
         {/each}
     </div>
 {/snippet}
@@ -142,7 +154,7 @@
                 <Card title={t('gallery.card_plain')}>
                     {#snippet meta()}
                         {#each chips.slice(0, 2) as chip (chip.key)}
-                            <Chip label={chip.label} tone={chip.tone} icon={chip.icon} />
+                            <Chip label={chip.label} tone={chip.tone} glyph={chip.glyph} />
                         {/each}
                     {/snippet}
                     {t('gallery.card_body')}
