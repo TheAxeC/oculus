@@ -23,11 +23,11 @@ workers_at_once: 2           # R9 (Axel, 2026-09-13 22:45): two packages with di
 ```
 
 ```yaml
-dispatch: none                             # nothing in flight; PAUSE (Axel, 2026-09-14 20:27) until he lifts it; then K1, alone
+dispatch: none                             # nothing in flight; K1 next, alone
 ```
 
 ## The standing demands (from Axel, in force)
-- PAUSE (Axel, 2026-09-14 20:27): once R13b lands, nothing is dispatched until he lifts it; R13b's landing goes through in full.
+- The pause of 2026-09-14 20:27 was lifted at 22:21 with a window until 2026-09-15 07:10: at 07:10 no worker, reviewer or landing is in flight, the dispatch block reads `none`, everything is committed; a package is dispatched only when it can land before then.
 
 - The hub `CLAUDE.md` "Working rules" section, in full. The ones that bite here: reports open with what is NOT done and carry a DONE / NOT DONE ledger naming the proving command; every measurement names its command or says not verified; a risk named is a task owned; no question boxes; surface rule clashes and stop; show code, not prose about code; references are not justifications (the cockpit never justifies an oculus choice); every change rewinds.
 - Agents: the worker the block above names, on the working tier (Claude Opus 5 or GPT 5.6 Sol), general-purpose, one at a time or two on disjoint paths and different views (R9, `workers_at_once: 2`; the skill's "Two packages in flight" section); the orchestrator on the top tier (Claude Fable 5.1 or GPT 6 Astra); any combination, as Axel ruled on 2026-09-11. An agent works in a git worktree the orchestrator creates at main's head (`git worktree add -b <package> .agents/worktrees/<package> HEAD`; the folder moved from `.claude/worktrees` on 2026-09-11 so nothing in the process carries a vendor's name; every git command on the worktree is run from inside it, never as `git -C <path>`, since `.codex/rules/default.rules` forbids the `-C` form and one recipe holds under both runners, then, from inside the worktree, `git sparse-checkout set <worktree_paths>` when the block names any); the agent never runs git and never edits any file under `.scratch/`. The orchestrator reads the whole diff, runs the verification commands on the worktree, lands by `git cherry-pick -n` onto main, runs them again on main, books the package in `plan.md`, commits by explicit path. Ruled by Axel 2026-09-10 as the substitute for `/rewind` over agent work.
