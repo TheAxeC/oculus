@@ -47,6 +47,10 @@ dispatch:                                  # workers_at_once: 2; R15 and W3 in f
   exit: none
   pid: none
   session_id: afc56430290fd33cc            # the Agent tool's id
+  round: 1                                 # the repair round, sent 2026-09-14T12:08:00+02:00 to the same agent
+  repair_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R15/repair-prompt.md
+  repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R15/repair-report.md
+  review_report: agents/reviews/R15.md
   landing: not-started
 ```
 
