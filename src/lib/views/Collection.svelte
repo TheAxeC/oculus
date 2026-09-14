@@ -61,12 +61,12 @@
     import EntryForm from './shared/EntryForm.svelte';
     import Intro from './shared/Intro.svelte';
     import Reveal from './shared/Reveal.svelte';
+    import { inlineMarkdown } from '$lib/ui/html';
     import {
         FUNDING,
         NO_FUNDING,
         applyCollectionFilters,
         identityValue,
-        inlineMarkdown,
         noFunding,
         parseCollectionState,
         pinnedFirst,

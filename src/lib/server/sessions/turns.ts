@@ -11,9 +11,9 @@
 // are one turn, paired by `tool_use_id`; a result whose call was read in an earlier batch cannot
 // reach that turn from here, so it travels in `results` and the client patches the turn it holds.
 //
-// The Markdown of an assistant turn is rendered here, unsanitised, the way server/docs.ts renders a
-// README: it is the user's own agent's output, read from the user's own disk and shown to the user
-// alone.
+// The Markdown of an assistant turn is rendered here and filtered on the page, the way server/docs.ts
+// renders a README: ui/html.ts's sanitise runs over the HTML before views/sessions/Transcript.svelte
+// draws it, so the rendering and the filtering stay one each and in one place.
 
 import { marked } from 'marked';
 import { isMap, list, text } from './json.ts';

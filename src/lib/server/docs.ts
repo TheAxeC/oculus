@@ -9,9 +9,9 @@
 // join of the two is checked against the hub again before the file is opened. A request naming
 // anything else is answered 404 and nothing is opened.
 //
-// The HTML is NOT sanitised. The hub's Markdown is the owner's own files, read from the owner's own
-// disk and shown to the owner alone; a sanitiser here would only be a second parser to keep honest.
-// A hub holding a document somebody else wrote would need one.
+// The HTML is rendered here and filtered on the page: ui/html.ts's sanitise runs over every body
+// this route answers with, before views/Project.svelte draws it. One filter, at the one place the
+// markup becomes a document, so this route stays the reader of a file and nothing else.
 
 import { join, resolve, sep } from 'node:path';
 import { marked } from 'marked';

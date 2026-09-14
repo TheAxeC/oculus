@@ -7,7 +7,8 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
-    import { inlineMarkdown, type Entry, type SchemaField } from '$lib/state/collection';
+    import { inlineMarkdown } from '$lib/ui/html';
+    import { type Entry, type SchemaField } from '$lib/state/collection';
     import { isDormant, type Domain, type Project } from '$lib/state/lines';
     import { t } from '$lib/state/text';
     import { domainTone } from '$lib/state/tones';

@@ -30,7 +30,7 @@
         themeFacets,
         type DataState
     } from '$lib/state/datasets';
-    import { inlineMarkdown } from '$lib/state/collection';
+    import { inlineMarkdown } from '$lib/ui/html';
     import { collectionOf, datasets, projects } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';

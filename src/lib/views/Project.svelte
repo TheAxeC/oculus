@@ -23,14 +23,15 @@
     // subtasks among it, is the board's card unchanged.
     //
     // A document is fetched, not selected: the wire model keeps documents out of the snapshot, so
-    // state/docs.svelte.ts asks api/docs for the chosen one and this renders what comes back. It is
-    // rendered with {@html} unsanitised, because it is the owner's own Markdown from the owner's own
-    // disk; api/docs says the same at greater length.
+    // state/docs.svelte.ts asks api/docs for the chosen one and this renders what comes back. The
+    // HTML is a file on disk turned into markup by marked, so it is drawn through ui/html.ts's
+    // sanitise and holds only what that profile allows.
 
     import Chip from '$lib/ui/Chip.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Segment, { type SegmentItem } from '$lib/ui/Segment.svelte';
+    import { sanitise } from '$lib/ui/html';
     import ProjectCard from './shared/ProjectCard.svelte';
     import type { BoardItem } from '$lib/state/board';
     import { document as docFor } from '$lib/state/docs.svelte';
@@ -188,7 +189,7 @@
                     {:else if shown.loading}
                         <p class="failed">{t('project.doc_loading')}</p>
                     {:else}
-                        <div class="doc">{@html shown.html}</div>
+                        <div class="doc">{@html sanitise(shown.html)}</div>
                     {/if}
                 {/if}
             </section>

@@ -8,7 +8,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { openView } from '$lib/state/layout.svelte';
     import { type ArchiveGroup, type Project } from '$lib/state/lines';
-    import { inlineMarkdown } from '$lib/state/collection';
+    import { inlineMarkdown } from '$lib/ui/html';
     import { t } from '$lib/state/text';
 
     type Props = { id: string; cursor: boolean; groups: ArchiveGroup[] };

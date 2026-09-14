@@ -14,6 +14,7 @@
     import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
     import EntryForm from '../shared/EntryForm.svelte';
     import Subtasks from '../shared/Subtasks.svelte';
+    import { inlineMarkdown } from '$lib/ui/html';
     import {
         crossLinks,
         drawnFields,
@@ -21,7 +22,6 @@
         entrySubtasks,
         hrefOf,
         HUB_ROOT,
-        inlineMarkdown,
         isPinned,
         identityValue,
         type Entry,

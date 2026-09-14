@@ -8,7 +8,6 @@
 // is how it is drawn, and that is decided by the field's name first and its type second, since the
 // seven hub files agree on the names (`status`, `tags`, `meta`, `note`) and use only six types.
 
-import { marked } from 'marked';
 import type { Entry, Project, SchemaField, Subtask } from '../data/model.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
@@ -261,17 +260,6 @@ export function applyCollectionFilters(entries: Entry[], state: CollectionState)
         if (needle === '') return true;
         return haystack(entry.fields).toLowerCase().includes(needle);
     });
-}
-
-/**
- * One field of Markdown as the HTML a card draws it with. The intro, the note and the funding
- * statement are Markdown in the hub's files, written by the owner of the hub and read by nobody
- * else, which is why the view draws this with {@html} unsanitised, exactly as views/Project.svelte
- * draws a README. It is the inline renderer: these fields are one paragraph and a link or two, so a
- * block renderer would only wrap each of them in a `<p>` the card's own markup already gives them.
- */
-export function inlineMarkdown(text: string): string {
-    return marked.parseInline(text, { async: false });
 }
 
 /** The facet value of the synthetic card the Funding view draws for the projects with no scheme. */

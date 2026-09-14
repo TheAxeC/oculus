@@ -17,7 +17,6 @@ import {
     hrefOf,
     identityField,
     identityValue,
-    inlineMarkdown,
     isPinned,
     kindOf,
     noFunding,
@@ -565,12 +564,5 @@ describe('noFunding and coverage', () => {
             ['none', 2]
         ]);
         expect(coverage(held)[0].members).toEqual([{ id: 'one', label: 'one' }]);
-    });
-});
-
-describe('inlineMarkdown', () => {
-    it('renders one line of Markdown, leaving plain words alone', () => {
-        expect(inlineMarkdown('what it **is**')).toBe('what it <strong>is</strong>');
-        expect(inlineMarkdown('plain words')).toBe('plain words');
     });
 });

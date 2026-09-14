@@ -7,6 +7,7 @@
     // custom property and the bar paints that, so the only colours here are tokens.
 
     import type { Snippet } from 'svelte';
+    import { sanitise } from './html';
 
     type Props = {
         /** The stable item id used by keyboard navigation. */
@@ -15,7 +16,7 @@
         cursor: boolean;
         /** The card's own words, already translated by the view. */
         title: string;
-        /** Trusted inline Markdown already rendered by the state layer. */
+        /** The title as inline Markdown already rendered; the card sanitises it before drawing. */
         titleHtml?: string;
         /** A hue name from state/tones.ts. A card with none has no bar. */
         tone?: string;
@@ -69,12 +70,12 @@
         <svelte:element this={heading} class="title">
             {#if ontitle !== undefined && titleHtml !== undefined}
                 <button type="button" class="open" onclick={ontitle}>
-                    {@html titleHtml}
+                    {@html sanitise(titleHtml)}
                 </button>
             {:else if ontitle !== undefined}
                 <button type="button" class="open" onclick={ontitle}>{title}</button>
             {:else if titleHtml !== undefined}
-                {@html titleHtml}
+                {@html sanitise(titleHtml)}
             {:else}
                 {title}
             {/if}

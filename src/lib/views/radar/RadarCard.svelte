@@ -7,7 +7,7 @@
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import NewIdeaForm from '$lib/views/shared/NewIdeaForm.svelte';
-    import { inlineMarkdown } from '$lib/state/collection';
+    import { inlineMarkdown } from '$lib/ui/html';
     import { openView } from '$lib/state/layout.svelte';
     import {
         crossLinksOf,

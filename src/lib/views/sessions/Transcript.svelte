@@ -18,15 +18,16 @@
     // screen and follows the file from an effect: the record's lastActivity moving is the transcript
     // being written, and that is what asks for the bytes appended since the last read.
     //
-    // An assistant turn is rendered Markdown, drawn with {@html} unsanitised, because it is the
-    // owner's own agent's output from the owner's own disk; server/sessions/turns.ts says the same
-    // at greater length. A user turn keeps its own line breaks and is never rendered.
+    // An assistant turn is rendered Markdown, drawn with {@html} through ui/html.ts's sanitise: the
+    // turn is what an agent wrote into a file on disk, so the markup is filtered to that profile
+    // before it reaches the page. A user turn keeps its own line breaks and is never rendered.
 
     import Chip from '$lib/ui/Chip.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import { sanitise } from '$lib/ui/html';
     import { clock } from '$lib/state/format';
     import { instanceLayoutState, pinInstance, unpinInstance } from '$lib/state/layout.svelte';
     import { pinnedSession } from '$lib/state/selection.svelte';
@@ -168,7 +169,7 @@
                         {/if}
                     </div>
                     {#if turn.role === 'assistant'}
-                        <div class="doc">{@html turn.html}</div>
+                        <div class="doc">{@html sanitise(turn.html)}</div>
                     {:else if turn.role === 'user'}
                         <div class="said">{turn.text}</div>
                     {/if}

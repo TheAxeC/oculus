@@ -7,7 +7,7 @@
     import Confirm from '$lib/ui/Confirm.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { inlineMarkdown } from '$lib/state/collection';
+    import { inlineMarkdown } from '$lib/ui/html';
     import { fitKey, fitTone, isClosed, leadId, type LeadEntry } from '$lib/state/leads';
     import { t } from '$lib/state/text';
     import { deleteFeedEntry, writeFeedField, type WriteAnswer } from '$lib/state/writes.svelte';

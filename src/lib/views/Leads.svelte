@@ -26,7 +26,7 @@
     import EntryForm from './shared/EntryForm.svelte';
     import Intro from './shared/Intro.svelte';
     import Reveal from './shared/Reveal.svelte';
-    import { inlineMarkdown } from '$lib/state/collection';
+    import { inlineMarkdown } from '$lib/ui/html';
     import { config } from '$lib/state/entities.svelte';
     import { feed } from '$lib/state/feeds.svelte';
     import {

@@ -8,12 +8,8 @@
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
     import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
     import { accessTone, type Dataset } from '$lib/state/datasets';
-    import {
-        inlineMarkdown,
-        type Entry,
-        type Project,
-        type SchemaField
-    } from '$lib/state/collection';
+    import { inlineMarkdown } from '$lib/ui/html';
+    import { type Entry, type Project, type SchemaField } from '$lib/state/collection';
     import { findView } from '$lib/state/layout';
     import { openView, workbench } from '$lib/state/layout.svelte';
     import { select } from '$lib/state/selection.svelte';

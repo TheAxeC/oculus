@@ -6,7 +6,8 @@
     import Chip from '$lib/ui/Chip.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
-    import { inlineMarkdown, type Project } from '$lib/state/collection';
+    import { inlineMarkdown } from '$lib/ui/html';
+    import { type Project } from '$lib/state/collection';
     import { t } from '$lib/state/text';
 
     type Props = { id: string; cursor: boolean; projects: Project[] };

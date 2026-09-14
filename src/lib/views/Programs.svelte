@@ -22,7 +22,7 @@
     import ArchivalCard from '$lib/views/programs/ArchivalCard.svelte';
     import LineCard from '$lib/views/programs/LineCard.svelte';
     import OrphansCard from '$lib/views/programs/OrphansCard.svelte';
-    import { inlineMarkdown } from '$lib/state/collection';
+    import { inlineMarkdown } from '$lib/ui/html';
     import { cardCursor } from '$lib/state/instance';
     import { portfolio } from '$lib/state/entities.svelte';
     import {

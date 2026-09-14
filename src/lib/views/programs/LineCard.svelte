@@ -8,7 +8,8 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
     import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
-    import { inlineMarkdown, type Entry, type SchemaField } from '$lib/state/collection';
+    import { inlineMarkdown } from '$lib/ui/html';
+    import { type Entry, type SchemaField } from '$lib/state/collection';
     import {
         inFlight,
         isDormant,

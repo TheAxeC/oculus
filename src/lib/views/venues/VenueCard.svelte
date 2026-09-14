@@ -8,12 +8,8 @@
     import Tooltip from '$lib/ui/Tooltip.svelte';
     import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
-    import {
-        groupProjects,
-        inlineMarkdown,
-        type Entry,
-        type SchemaField
-    } from '$lib/state/collection';
+    import { inlineMarkdown } from '$lib/ui/html';
+    import { groupProjects, type Entry, type SchemaField } from '$lib/state/collection';
     import { t } from '$lib/state/text';
     import { archiveDead } from '$lib/state/selectors.svelte';
     import { freeTone, quartileTone, type Project, type Venue } from '$lib/state/venues';

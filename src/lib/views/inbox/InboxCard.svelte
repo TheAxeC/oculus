@@ -6,7 +6,7 @@
     import Chip from '$lib/ui/Chip.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { inlineMarkdown } from '$lib/state/collection';
+    import { inlineMarkdown } from '$lib/ui/html';
     import { kindOf, kindTone, type InboxEntry } from '$lib/state/inbox';
     import { t } from '$lib/state/text';
     import { writeFeedField, type WriteAnswer } from '$lib/state/writes.svelte';
