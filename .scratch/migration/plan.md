@@ -132,7 +132,10 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - R13 lint on: the 31 rules `eslint.config.js` turns off turned back on with their sites fixed, not silenced (Q1's edge; Axel 2026-09-14 00:30); measured 2026-09-14 14:08: 1,700 violations in 268 files; split by the orchestrator into R13a and R13b below, each alone, after R10.
 - ✅ R13a the mechanical rules (landed 2026-09-14 19:40, Opus, one repair round, no fix at landing): 22 rules and the unused-directive audit on, `prefer-const` (431), `svelte/no-unused-svelte-ignore` (246), `no-empty-function` (103), the render tags, `require-await` (41) and the rest fixed at the site; 160 reasoned disables, each counted per rule in the review (brief in R13.md).
 - R13b the typing rules: `no-unnecessary-condition` (189) and the `no-unsafe-*` family (343), `no-base-to-string` (52), `no-non-null-assertion` (18), `unbound-method` (11), fixed by guards and honest types, never a cast or an `any` (brief in R13.md; alone, after R13a).
+- K1 the digit keys: a bare digit switches the page, Ctrl+digit the tab of the focused pane, `v`, `c` and `m` plus a digit open a view; the key sheet and `tests/shell/keys.test.ts` follow (Axel 2026-09-14 20:29, his own option (d); a fix of delivered work; after the pause, alone, before R17; brief at dispatch).
 - R17 client context: the browser's 12 module-level state collections (`inflight`, `versions`, `listeners`, `marks`, `registry` and the rest in `src/lib/state/*.svelte.ts`) become one context object created at the root and passed down; the boundaries test's module-state rule then covers the client too (Axel 2026-09-14 09:05, the second option after the third; after R13; brief at dispatch).
+- L1 one tree per page: the docked panel, its toggle, dock side, size and move-to-panel go; every split child collapses to its edge through one control, the collapsed state saved; the stored workbench migrated, the shipped arrangements one tree each, drag targets and browser specs follow (Axel 2026-09-14 20:29; after R17, alone; brief at dispatch).
+- L2 nested pages: a page leaf shows another page at that spot, the same page and never a copy, refused when it would contain itself; two page leaves side by side show two pages; reached by focus, not by a digit (Axel 2026-09-14 20:29; after L1, alone, before the feature stretch; brief at dispatch).
 - ✅ R14 sanitise `{@html}`: one `sanitise` over dompurify in `ui/html.ts` with a data profile, `inlineMarkdown` moved there and calling it, the six raw-HTML sites through it, an audit that every `{@html}` draws one of the two or a catalog line, six browser cases on the demo hub (ruling (a); Axel 2026-09-14 08:30; landed 11:40 on Opus beside W2 and R11, one repair round, two fixes at landing).
 - ✅ R15 global hooks snippet: the Status view prints the hooks block for `~/.claude/settings.json`, built as data in `state/hooks.ts` from the page's own origin, one command hook per event with a one-second cap, and a copy control; the README says where it goes (ruling (b); Axel 2026-09-14 08:30; landed 12:23 on Opus beside R11 and W3, one repair round, three fixes at landing).
 - ✅ R16 feed labels (inline): the position-leads feed's `schema:` block, with its `label` values, put into the scout's template in the research-cockpit skill so a rewrite keeps them; the feed file carries them already (ruling (e); Axel 2026-09-14 08:30; landed 2026-09-14 09:01 by the orchestrator, a skill edit).
@@ -152,7 +155,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 
 ## Could run in parallel
 
-- The feature stretch after R17, three at a time (Axel 2026-09-14 17:50), each set checked for disjoint paths at its dispatch: Q15 + Q16 + H1; Q17 + P1 + O27a; P2 + O27b + O28a; O28b + D1 + D2; D3 + D6 + D4; D5 + D7 + D10; D8 + D12 + D9; D16 + D11 + D13; D14 + D15 + D17; D18 + D20 + O31. Alone by nature: Q18, R10, R13a, R13b, R17 before it; R2, O29, O30, X2 after it.
+- The feature stretch after R17, three at a time (Axel 2026-09-14 17:50), each set checked for disjoint paths at its dispatch: Q15 + Q16 + H1; Q17 + P1 + O27a; P2 + O27b + O28a; O28b + D1 + D2; D3 + D6 + D4; D5 + D7 + D10; D8 + D12 + D9; D16 + D11 + D13; D14 + D15 + D17; D18 + D20 + O31. Alone by nature: Q18, R10, R13a, R13b, K1, R17, L1, L2 before it; R2, O29, O30, X2 after it.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
@@ -161,6 +164,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - O22 to O28 with each other once O10 has landed.
 
 ## Rulings (2026-09-10)
+- 2026-09-14 20:29, Axel: pages and panels become one model, booked as L1 and L2 after R17; a nested page is the same page, never a copy; the keys are his option (d), booked as K1; a pause once R13b lands (20:27).
 - 2026-09-13 12:05, Axel: the Processes view is D18; Live HPC stopping is Q15; the chat's default model is to be set in behavior.yml once its id is confirmed (he named Opus 4.6).
 - 2026-09-13 13:00, Axel: the rail at 98 px is fine; a lighter card allowed (Q16); the HPC Disk bar and Recent summary too large (Q13).
 - 2026-09-13 13:30 and 13:45, Axel: D19 and Q16's shape yes; status-only chips and one icon set agreed (Q17); the radius and the single accent not allowed.
