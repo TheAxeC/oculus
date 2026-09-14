@@ -318,6 +318,14 @@ export type GitState = {
 /** The payload of the `git` channel: one state per workspace root. */
 export type GitPayload = Record<string, GitState>;
 
+/**
+ * The payload of the `files` channel: the root that has just been re-read, absolute. A message says
+ * a write landed somewhere under that root, so every file listing taken under it may be stale. The
+ * portfolio snapshot does not say this: it is rebuilt only for a file the config names, and a file
+ * written inside a project folder moves no version of it.
+ */
+export type FilesPayload = { root: string };
+
 // ------------------------------------------------------------------ hpc
 export type HpcStatus = 'starting' | 'ok' | 'unreachable' | 'error';
 export type HpcJob = {

@@ -18,7 +18,12 @@ import type { Sink } from '../../../src/lib/server/channels.ts';
 import { IGNORED, relevant, rootsOf, watchGit } from '../../../src/lib/server/watch/git.ts';
 import type { Clock } from '../../../src/lib/server/watch/git.ts';
 import type { Watcher } from '../../../src/lib/server/watch/portfolio.ts';
-import type { GitPayload, Message, SessionsPayload } from '../../../src/lib/data/model.ts';
+import type {
+    FilesPayload,
+    GitPayload,
+    Message,
+    SessionsPayload
+} from '../../../src/lib/data/model.ts';
 
 // A watcher test waits on real file events and on git, and the suite runs several files at once, so
 // the waits are generous: they are how long a failure takes, not how long a pass takes.
@@ -325,6 +330,83 @@ describe('watchGit', () => {
         // Four commands make one read of the first root, and the second root was not read at all.
         expect(reads(first) - before.first).toBe(4);
         expect(reads(second) - before.second).toBe(0);
+    });
+
+    it('publishes one files message naming the root a write landed under, and reads that root alone', async () => {
+        const first = repository('one');
+        const second = repository('two');
+        const hub = new Hub();
+        const client = recording();
+        const clock = manual();
+        hub.subscribe(client.sink, ['git', 'files']);
+        announce(hub, [first, second]);
+        watchers.push(watchGit(hub, { throttle: 300, clock: clock.clock }));
+        await until(() => client.got.length >= 1, WAIT);
+        await arming(first, clock);
+        clock.fire();
+        await until(() => client.got.some((message) => message.channel === 'files'), WAIT);
+
+        const before = { got: client.got.length, first: reads(first), second: reads(second) };
+        put(first, 'loose.txt', 'x\n');
+        await until(() => clock.pending() > 0, WAIT);
+        // The window is this test's: nothing is published for the write until fire() closes it.
+        expect(client.got.length).toBe(before.got);
+        clock.fire();
+        await until(() => client.got.length > before.got, WAIT);
+
+        const since = client.got.slice(before.got);
+        const named = since.filter((message) => message.channel === 'files');
+        expect(named.map((message) => (message.payload as FilesPayload).root)).toEqual([first]);
+        // The cost of one write under one watched root: four git commands, none for the other root.
+        expect(reads(first) - before.first).toBe(4);
+        expect(reads(second) - before.second).toBe(0);
+    });
+
+    it('publishes files for a write git reports nothing about, since a listing is stale either way', async () => {
+        const root = repository('one');
+        const hub = new Hub();
+        const client = recording();
+        const clock = manual();
+        hub.subscribe(client.sink, ['git', 'files']);
+        announce(hub, [root]);
+        watchers.push(watchGit(hub, { throttle: 300, clock: clock.clock }));
+        await until(() => client.got.length >= 1, WAIT);
+        await arming(root, clock);
+        clock.fire();
+        await until(() => client.got.some((message) => message.channel === 'files'), WAIT);
+
+        // Writing the same bytes over an untracked file git has already reported leaves its answer
+        // exactly as it was, so the `git` channel says nothing and the `files` channel still does.
+        const held = latest(client.got)[root];
+        const before = client.got.length;
+        put(root, ARM, 'fixed\n');
+        put(root, ARM, 'fixed\n');
+        await until(() => clock.pending() > 0, WAIT);
+        clock.fire();
+        await until(() => client.got.length > before, WAIT);
+
+        const since = client.got.slice(before);
+        expect(since.filter((message) => message.channel === 'git')).toEqual([]);
+        expect(since.map((message) => message.channel)).toEqual(['files']);
+        expect((since[0].payload as FilesPayload).root).toBe(root);
+        expect(latest(client.got)[root]).toEqual(held);
+    });
+
+    it('publishes files when a caller refreshes a root by hand, which follows a write too', async () => {
+        const root = repository('one');
+        const hub = new Hub();
+        const client = recording();
+        hub.subscribe(client.sink, ['git', 'files']);
+        announce(hub, [root]);
+        const watcher = watchGit(hub);
+        watchers.push(watcher);
+        await until(() => latest(client.got)[root] !== undefined, WAIT);
+
+        const before = client.got.length;
+        watcher.refresh(root);
+        await until(() => client.got.length > before, WAIT);
+        const named = client.got.slice(before).filter((message) => message.channel === 'files');
+        expect(named.map((message) => (message.payload as FilesPayload).root)).toEqual([root]);
     });
 
     it('drops a root the sessions payload no longer names', async () => {

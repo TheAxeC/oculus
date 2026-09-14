@@ -60,6 +60,33 @@ function effects(source: string): string[] {
         .map((rest) => rest.split('\n    });')[0]);
 }
 
+describe('the page subscription', () => {
+    const source = readFileSync(join(ROUTES, '+page.svelte'), 'utf8');
+
+    /** The channel names of the one connect call, in the order the page names them. */
+    function subscribed(): string[] {
+        const inside = source.split('connect([')[1]?.split('])')[0] ?? '';
+        return [...inside.matchAll(/'([^']+)'/g)].map((found) => found[1]);
+    }
+
+    it('carries files beside the other channels, so an open listing follows a write', () => {
+        expect(subscribed()).toContain('files');
+    });
+
+    it('carries every channel the page reads', () => {
+        expect(subscribed()).toEqual([
+            'portfolio',
+            'config',
+            'sessions',
+            'git',
+            'files',
+            'hpc',
+            'usage',
+            'feeds'
+        ]);
+    });
+});
+
 describe('the page effect that follows a config push', () => {
     const source = readFileSync(join(ROUTES, '+page.svelte'), 'utf8');
 

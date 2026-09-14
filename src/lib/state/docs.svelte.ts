@@ -6,10 +6,11 @@
 // rather than run inside the call, so reading this from a $derived never writes state while a
 // derived is running.
 //
-// The portfolio's version is what makes a document stale: the server republishes the snapshot when
-// a file under a project folder changes, so an edited README is a new version, and invalidate()
-// drops what is held for that project. Nothing re-fetches on its own; the next call for the pair
-// does, which is the tab being shown again.
+// The `files` channel's version is what makes a document stale: the git watcher publishes on it
+// each time it re-reads a root, which is every write under a folder it watches, so an edited README
+// is a new version, and invalidate() drops what is held for that project. The portfolio's version
+// cannot answer this, since the snapshot is rebuilt only for a file the config names. Nothing
+// re-fetches on its own; the next call for the pair does, which is the tab being shown again.
 
 import { message } from './entities.svelte.ts';
 
@@ -42,14 +43,14 @@ function keyOf(id: string, name: string): string {
     return `${id}|${name}`;
 }
 
-/** The version of the portfolio payload, or 0 before the first one arrives. */
+/** The version of the `files` channel, or 0 before a write has been seen under any watched root. */
 function version(): number {
-    return message('portfolio')?.version ?? 0;
+    return message('files')?.version ?? 0;
 }
 
 /**
  * One document of one project. The first call for a pair asks the server; a call made after the
- * portfolio's version moved asks again, and what is held keeps showing until the answer lands.
+ * `files` version moved asks again, and what is held keeps showing until the answer lands.
  */
 export function document(id: string, name: string): DocState {
     if (id === '' || name === '') return NOTHING;

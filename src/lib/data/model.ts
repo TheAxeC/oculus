@@ -227,6 +227,7 @@ export type {
 
 export type {
     Area,
+    FilesPayload,
     GitEntry,
     GitPayload,
     GitState,

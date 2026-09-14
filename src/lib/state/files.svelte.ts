@@ -7,9 +7,10 @@
 // microtask rather than run inside the call, so reading this from a $derived never writes state
 // while a derived is running.
 //
-// The portfolio's version is what makes a listing stale: the server republishes the snapshot when a
-// file under a project folder changes, so a new file is a new version and the next call for that id
-// fetches again.
+// The `files` channel's version is what makes a listing stale. The git watcher publishes on it each
+// time it re-reads a root, which is every write under a folder it watches, so a file written inside
+// a project folder is a new version and the next call for that id fetches again. The portfolio's
+// version cannot answer this: the snapshot is rebuilt only for a file the config names.
 
 import { message } from './entities.svelte.ts';
 
@@ -37,20 +38,21 @@ const NOTHING: FilesState = { rows: [], truncated: false, folder: '', error: '',
 
 const held: Record<string, FilesState> = $state({});
 
-/** The portfolio version each held id was fetched at. Not reactive: only requests read it. */
+/** The `files` version each held id was fetched at. Not reactive: only requests read it. */
 const versions: Record<string, number> = {};
 
 /** The ids with a request in flight, so a second render does not send a second request. */
 const inflight = new Set<string>();
 
-/** The version of the portfolio payload, or 0 before the first one arrives. */
+/** The version of the `files` channel, or 0 before a write has been seen under any watched root. */
 function version(): number {
-    return message('portfolio')?.version ?? 0;
+    return message('files')?.version ?? 0;
 }
 
 /**
- * The files of one project. The first call for an id asks the server; a call made after the
- * portfolio's version moved asks again, and what is held keeps showing until the answer lands.
+ * The files of one project. The first call for an id asks the server; a call made after the `files`
+ * version moved asks again, and what is held keeps showing until the answer lands. A project whose
+ * folder is under no watched root keeps what is held until the id is forgotten.
  */
 export function files(id: string): FilesState {
     if (id === '') return NOTHING;

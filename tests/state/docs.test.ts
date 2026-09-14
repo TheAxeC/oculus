@@ -1,5 +1,5 @@
 // The documents the project view reads: one request per project and name, what is held between
-// renders, and what a new portfolio version does to it.
+// renders, and what a new version on the `files` channel does to it.
 //
 // Nothing here touches the network or the real hub: `fetch` is a stub that records the URL it was
 // given and answers what the case wants. What this does NOT cover: the endpoint itself, which is
@@ -40,7 +40,7 @@ afterEach(() => {
 describe('the documents of a project', () => {
     it('asks the endpoint once for a pair and holds the answer', async () => {
         serving({ status: 200, body: { html: '<h1>Alpha</h1>', frontmatter: { stage: 'run' } } });
-        receive({ channel: 'portfolio', version: 3, payload: { version: 3 } });
+        receive({ channel: 'files', version: 3, payload: { root: '/hub' } });
 
         expect(document('alpha', 'README.md').loading).toBe(true);
         await settle();
@@ -64,15 +64,15 @@ describe('the documents of a project', () => {
         expect(document('bravo', 'code/README.md').html).toBe('');
     });
 
-    it('asks again once the portfolio version moved, and shows what came back', async () => {
+    it('asks again once the files version moved, and shows what came back', async () => {
         serving({ status: 200, body: { html: '<p>one</p>', frontmatter: null } });
-        receive({ channel: 'portfolio', version: 4, payload: { version: 4 } });
+        receive({ channel: 'files', version: 4, payload: { root: '/hub' } });
         document('charlie', 'README.md');
         await settle();
         expect(asked).toHaveLength(1);
 
         serving({ status: 200, body: { html: '<p>two</p>', frontmatter: null } });
-        receive({ channel: 'portfolio', version: 5, payload: { version: 5 } });
+        receive({ channel: 'files', version: 5, payload: { root: '/hub' } });
         document('charlie', 'README.md');
         await settle();
         expect(asked).toHaveLength(1);

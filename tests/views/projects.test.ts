@@ -670,9 +670,9 @@ describe('the file finder', () => {
                     })
             )
         );
-        // A new portfolio version is what makes the store ask again: an earlier case in this file
-        // opened the same card with no stub in place, and what is held is held per version.
-        receive({ channel: 'portfolio', version: 2, payload: snapshot() });
+        // A new version on the `files` channel is what makes the store ask again: an earlier case in
+        // this file opened the same card with no stub in place, and what is held is held per version.
+        receive({ channel: 'files', version: 2, payload: { root: '/hub' } });
         // The first rendering asks for the listing, the second draws what the answer left held.
         html('projects', { expanded: ['alpha'] });
         await new Promise((resolve) => setTimeout(resolve, 0));

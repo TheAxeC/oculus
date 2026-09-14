@@ -2,6 +2,10 @@
 // `sessions` channel names, re-read when that root changes. DESIGN.md, "Watchers": git watches each
 // workspace's .git and worktree and re-reads on change, no more often than every two seconds.
 //
+// The same watch answers a second question, on the `files` channel: which root a write just landed
+// under. It is this watcher's because it already watches every root recursively and already
+// throttles the burst a save makes, so no second watcher and no second throttle are needed.
+//
 // Which workspaces those are is the sessions payload's answer, and this watcher takes it from the
 // hub rather than from the sessions watcher: it subscribes a sink of its own to the `sessions`
 // channel, so the two watchers meet on the socket protocol and neither imports the other. A
@@ -22,7 +26,7 @@
 import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { join } from 'node:path';
-import type { GitPayload, Message, SessionsPayload } from '../../data/model.ts';
+import type { FilesPayload, GitPayload, Message, SessionsPayload } from '../../data/model.ts';
 import type { Hub, Sink } from '../channels.ts';
 import { statusFor, TIMEOUT_MS } from '../git.ts';
 import type { Watcher } from './portfolio.ts';
@@ -127,10 +131,15 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     };
 
     // A write inside a worktree often leaves git's answer exactly as it was: saving a file that was
-    // already modified, or a build touching an ignored path the filter did not name. The channel
-    // carries state, not events, so an unchanged state is not published.
+    // already modified, or a build touching an ignored path the filter did not name. The `git`
+    // channel carries state, not events, so an unchanged state is not published.
+    //
+    // The `files` channel carries the event instead, and every re-read publishes one: a re-read is a
+    // write that landed under this root, and the file listings taken under it are stale whether or
+    // not git's answer moved. Nothing else on the wire says so for a file inside a project folder.
     const reread = (root: string): void => {
         if (closed || !handles.has(root)) return;
+        hub.publish('files', { root } satisfies FilesPayload);
         try {
             const next = statusFor([root], timeout)[root];
             if (next === undefined) return;
