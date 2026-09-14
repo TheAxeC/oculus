@@ -28,6 +28,7 @@ const RULES: ValidationRules = {
         'datasets',
         'related',
         'collaborators',
+        'waiting-on',
         'funding',
         'followup.do',
         'followup.after',
@@ -217,6 +218,7 @@ describe('validate', () => {
                 datasets: { key: 'mimic' },
                 related: 'alpha',
                 collaborators: 'someone',
+                'waiting-on': 'someone',
                 funding: 'FAIR'
             })
         ).toEqual([
@@ -226,13 +228,33 @@ describe('validate', () => {
             'funding: funding must be a list or null, not a string',
             'program: program must be a list, not a string',
             'related: related must be a list, not a string',
-            'venue_id: venue_id must be a string or null, not a number'
+            'venue_id: venue_id must be a string or null, not a number',
+            'waiting-on: waiting-on must be a list, not a string'
         ]);
     });
 
     it('reports a collaborator that names no entry of the collaborations collection', () => {
         expect(lines({ collaborators: ['someone', 'nobody'] })).toEqual([
             'collaborators: collaborators names no collaborator: nobody'
+        ]);
+    });
+
+    it('takes a waiting-on value that is a collaborator key and one that is a project id', () => {
+        const held = manifest({ 'waiting-on': ['someone', 'bravo'] }, 'alpha');
+        expect(validate(portfolio({ manifests: [held, manifest({}, 'bravo')] }), RULES)).toEqual(
+            []
+        );
+    });
+
+    it('reports a project waiting on itself', () => {
+        expect(lines({ 'waiting-on': ['alpha'] })).toEqual([
+            'waiting-on: waiting-on names the project itself: alpha'
+        ]);
+    });
+
+    it('reports a waiting-on value that names neither a collaborator nor a project', () => {
+        expect(lines({ 'waiting-on': ['someone', 'nobody'] })).toEqual([
+            'waiting-on: waiting-on names no collaborator or project: nobody'
         ]);
     });
 

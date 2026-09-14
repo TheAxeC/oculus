@@ -394,6 +394,19 @@ describe('waiting', () => {
         expect(wide.blocked).toBe(strip.blocked);
     });
 
+    it('draws a waiting-on value that is a project id by the label of that project', () => {
+        const wider = snapshot();
+        wider.entities.projects.other = project('other', 'active', {
+            title: 'The Other One',
+            short: 'Other'
+        });
+        wider.entities.projects.waits = project('waits', 'active', { waitingOn: ['other'] });
+        expect(waiting(wider, config, {}).people).toEqual([
+            { label: 'Other', count: 1 },
+            { label: 'someone', count: 1 }
+        ]);
+    });
+
     it('names the grants whose date is met, the applications out, and the hosts emailed', () => {
         expect(strip.grants).toEqual(['A grant sent']);
         expect(strip.applications).toEqual(['One out for an answer']);

@@ -4,6 +4,7 @@
 import type { Id, Project, Snapshot, Venue } from '../../data/model.ts';
 import { strings, text as str } from '../../data/guards.ts';
 import { t } from '../text.ts';
+import { waitingLabel } from '../waiting.ts';
 import { type BoardItem, type BoardStats, type TypeCount, type VenueCount } from './presets.ts';
 
 /** The status chip the stats strip counts as ready to go out. */
@@ -23,15 +24,19 @@ export type WaitingLine = { kind: 'people' | 'review' | 'blocked'; text: string 
 
 /**
  * What a project is waiting on. Explicit people win over submission review, which wins over a
- * generic external block. A collaborator id not in the collection remains useful as written.
+ * generic external block. A `waiting-on:` value is a collaborator drawn by name or another project
+ * drawn by its label, through the one rule of waiting.ts.
  */
 export function waitingLine(
     project: Project,
     venues: Record<Id, Venue>,
-    collaborators: Record<Id, string>
+    collaborators: Record<Id, string>,
+    projects: Record<Id, Project> = {}
 ): WaitingLine | null {
     if (project.waitingOn.length > 0) {
-        const names = project.waitingOn.map((id) => collaborators[id] ?? id).join(', ');
+        const names = project.waitingOn
+            .map((id) => waitingLabel(id, collaborators, projects))
+            .join(', ');
         return { kind: 'people', text: t('project.helper.waiting_on', names) };
     }
     if (project.chips.includes('submitted')) {

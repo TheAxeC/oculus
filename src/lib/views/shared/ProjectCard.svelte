@@ -63,7 +63,12 @@
     const wait = $derived(
         snapshot === null
             ? null
-            : waitingLine(item.project, snapshot.entities.venues, collaboratorNames())
+            : waitingLine(
+                  item.project,
+                  snapshot.entities.venues,
+                  collaboratorNames(),
+                  snapshot.entities.projects
+              )
     );
     type CardAction = {
         label: string;

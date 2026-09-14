@@ -67,6 +67,7 @@ const SHAPES: { field: string; kind: 'string' | 'list'; nullable: boolean }[] = 
     { field: 'datasets', kind: 'list', nullable: false },
     { field: 'related', kind: 'list', nullable: false },
     { field: 'collaborators', kind: 'list', nullable: false },
+    { field: 'waiting-on', kind: 'list', nullable: false },
     { field: 'funding', kind: 'list', nullable: true }
 ];
 
@@ -296,6 +297,38 @@ function checkCollaborators(manifest: RawManifest, keys: Set<string>, findings: 
 }
 
 /**
+ * `waiting-on` names what a project waits for before it moves: an entry of the collaborations
+ * collection, or another project by its id. A value that is neither resolves against nothing, so
+ * the strip can only draw it as written and no reader can look it up.
+ */
+function checkWaitingOn(
+    manifest: RawManifest,
+    keys: Set<string>,
+    projects: Set<string>,
+    findings: Finding[]
+): void {
+    const value = manifest['waiting-on'];
+    if (!Array.isArray(value)) return;
+    for (const item of value) {
+        if (typeof item !== 'string') continue;
+        if (item === manifest.id) {
+            findings.push({
+                file: manifest.file,
+                key: 'waiting-on',
+                message: `waiting-on names the project itself: ${item}`
+            });
+            continue;
+        }
+        if (keys.has(item) || projects.has(item)) continue;
+        findings.push({
+            file: manifest.file,
+            key: 'waiting-on',
+            message: `waiting-on names no ${COLLABORATOR} or project: ${item}`
+        });
+    }
+}
+
+/**
  * `status.chips` is a list of strings, and each chip is in the chip vocabulary when the config
  * holds one. When it does not, `chips` is absent from the vocabulary and a chip is a free string.
  */
@@ -473,6 +506,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
         checkReferences(manifest, ids, findings);
         checkSelfRelated(manifest, findings);
         checkCollaborators(manifest, collaborators, findings);
+        checkWaitingOn(manifest, collaborators, ids.projects, findings);
         checkChips(manifest, vocab.chips, findings);
     }
     checkFolderNames(raw, findings);

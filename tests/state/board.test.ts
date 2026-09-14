@@ -200,6 +200,15 @@ describe('waitingLine', () => {
         ).toEqual({ kind: 'blocked', text: 'blocked (external)' });
         expect(waitingLine(project('free', 'active'), venues, people)).toBeNull();
     });
+
+    it('names a project waited on by its short name, through the one rule the strip uses', () => {
+        const other = project('other', 'active', { title: 'The Other One', short: 'Other' });
+        const held = project('waits', 'active', { waitingOn: ['other', 'someone'] });
+        expect(waitingLine(held, venues, people, { other })).toEqual({
+            kind: 'people',
+            text: 'waiting on Other, Someone Else'
+        });
+    });
 });
 
 /**

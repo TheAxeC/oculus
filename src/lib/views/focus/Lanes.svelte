@@ -13,6 +13,7 @@
     // cursor moves over, so a lane card is reachable by key like every card the primitive draws.
 
     import Chip from '$lib/ui/Chip.svelte';
+    import { waitingLabel } from '$lib/state/waiting';
     import Empty from '$lib/ui/Empty.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu, { type MenuItem } from '$lib/ui/Menu.svelte';
@@ -96,7 +97,8 @@
     function waitLine(project: Project): string {
         const names = collaboratorNames();
         if (project.waitingOn.length > 0) {
-            const who = project.waitingOn.map((key) => names[key] ?? key).join(', ');
+            const held = snapshot?.entities.projects ?? {};
+            const who = project.waitingOn.map((key) => waitingLabel(key, names, held)).join(', ');
             return `${t('focus.wait_people')} ${who}`;
         }
         if (project.chips.includes('submitted')) {

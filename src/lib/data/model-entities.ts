@@ -252,9 +252,9 @@ export type Project = {
     ideas: string[];
     deadline?: string;
     /**
-     * Who the project is blocked on before it moves, the manifest's `waiting-on:`. An entry is a
-     * key of the collaborations collection or a free name for somebody with no entry, and the two
-     * are not told apart here: the Focus strip resolves what it can and shows the rest as written.
+     * What the project waits for before it moves, the manifest's `waiting-on:`. An entry is a key
+     * of the collaborations collection or the id of another project, and nothing else; validate
+     * reports a value that is neither, and the Focus strip draws each by the name it resolves to.
      */
     waitingOn: Id[];
     /** The `followup:` notes. One note, a map, or a list of either all reach here as a list. */

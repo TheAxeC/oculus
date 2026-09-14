@@ -49,7 +49,7 @@ manifest_schema:
     program:       { label: "Research lines", type: chips, from: programs, section: Connections, help: "programs.yml keys" }
     funding:       { label: "Funding", type: chips, from: funding, section: Connections, help: "funding.yml keys (multiple allowed)" }
     collaborators: { label: "Collaborators", type: chips, from: collaborations, section: Connections, help: "collaborations.yml keys (multiple allowed)" }
-    "waiting-on":  { label: "Waiting on", type: tags, section: Connections, help: "who this is blocked on before it moves - collaborations.yml keys (resolved to names) or free-text names; may or may not be collaborators" }
+    "waiting-on":  { label: "Waiting on", type: tags, section: Connections, help: "collaborations.yml keys or project ids" }
     related:       { label: "Related projects", type: chips, from: projects, section: Connections, help: "project ids" }
     datasets:      { label: "Datasets", type: chips, from: datasets, section: Connections, help: "data.yml keys" }
     deadline:      { label: "Deadline", type: date, section: Dates }

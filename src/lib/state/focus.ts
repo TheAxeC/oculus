@@ -16,6 +16,7 @@ import { isMap, text as str } from '../data/guards.ts';
 export type { Id, Project, Venue } from '../data/model.ts';
 import { daysUntil } from './board/index.ts';
 import { UNKNOWN_TONE, toneOf } from './tones.ts';
+import { waitingLabel } from './waiting.ts';
 
 /** The clusters of `focus_lanes`, top to bottom: your move, then on others, then idea to project. */
 export const CLUSTERS = ['now', 'parked', 'incubate'];
@@ -228,7 +229,7 @@ export function venueLabel(venue: Venue | undefined): string {
  * The awaiting-a-response strip. The people and venue tallies are one per live project, the people
  * named in `waiting-on:` first, then the venue holding it when it is `submitted`; the blocked tally
  * is over every project of every tier on its own, whatever else the project is waiting for.
- * A person is a collaborations key resolved to that entry's name, or a free name as written.
+ * A `waiting-on:` value is a collaborations key or another project's id, drawn by waiting.ts.
  */
 export function waiting(
     snapshot: Snapshot,
@@ -236,6 +237,7 @@ export function waiting(
     collaborators: Record<Id, string>
 ): Waiting {
     const venues = snapshot.entities.venues;
+    const projects = snapshot.entities.projects;
     const people: Record<string, number> = {};
     const held: Record<string, number> = {};
     let blocked = 0;
@@ -247,7 +249,7 @@ export function waiting(
         if (!live(project)) continue;
         if (project.waitingOn.length > 0) {
             for (const key of project.waitingOn) {
-                const name = collaborators[key] ?? key;
+                const name = waitingLabel(key, collaborators, projects);
                 people[name] = (people[name] ?? 0) + 1;
             }
             continue;
