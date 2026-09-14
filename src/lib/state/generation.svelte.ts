@@ -12,6 +12,10 @@
 // One counter for the whole push rather than one per store: the readers are many and the push is
 // one, and a single raise after every setter is what makes a component see the new strings and the
 // new tones together instead of half of each.
+//
+// It is module-level, with the three catalogs whose reads it makes reactive, and is named in the
+// boundaries rule beside them: the catalogs it stands for are module-level, so a counter held per
+// client would say a push had landed for one client and not for another over the same three maps.
 
 const held: { generation: number } = $state({ generation: 0 });
 

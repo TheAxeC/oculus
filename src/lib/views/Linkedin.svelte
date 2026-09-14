@@ -1,14 +1,13 @@
 <script module lang="ts">
     // Layer 3, view registration. LinkedIn closes the feeds group.
     import type { ViewRegistration } from './registry';
-    import { linkedinBadge } from '$lib/state/rail-badges.svelte';
     export const registration: ViewRegistration = {
         id: 'linkedin',
         label: 'views.linkedin',
         glyph: 'views.linkedin_glyph',
         group: 'feeds',
         order: 3,
-        badge: linkedinBadge,
+        badge: (client) => client.railBadges.linkedinBadge(),
         badgeTone: () => 'red'
     };
 </script>
@@ -27,7 +26,6 @@
     import PostCard from './linkedin/PostCard.svelte';
     import EntryForm from './shared/EntryForm.svelte';
     import Reveal from './shared/Reveal.svelte';
-    import { feed } from '$lib/state/feeds.svelte';
     import {
         cadence,
         daysSince,
@@ -42,9 +40,15 @@
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
     import { feedIdents } from '$lib/state/palette';
-    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
-    import { addLinkedinIdea, type WriteAnswer } from '$lib/state/writes.svelte';
+    import type { WriteAnswer } from '$lib/state/writes.svelte';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        feeds: { feed },
+        ui: { instanceState, setInstanceState },
+        writes: { addLinkedinIdea }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

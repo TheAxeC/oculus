@@ -1,12 +1,20 @@
 // The Live HPC view rendered to HTML: its four heads and every drawable acceptance item use one synthetic socket payload.
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Hpc from '../../src/lib/views/Hpc.svelte';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
 import type { HpcPayload } from '../../src/lib/data/model.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let receive: ClientState['entities']['receive'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ receive } = client.entities);
+});
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 const instance = { id: 'hpc-one', view: 'hpc', title: 'Live HPC', state: {} };
 const payload: HpcPayload = {
@@ -57,7 +65,7 @@ const payload: HpcPayload = {
 };
 function draw(data: HpcPayload, version: number): string {
     receive({ channel: 'hpc', version, payload: data });
-    return render(Hpc, { props: { instance } }).body;
+    return render(Hpc, { context: clientContext(client), props: { instance } }).body;
 }
 describe('Live HPC view', () => {
     it('draws heading, meta, partition segments, disk, every queue column, recent jobs, log controls, and footer', () => {

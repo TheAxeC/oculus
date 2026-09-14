@@ -6,7 +6,7 @@
 // list, and the rename box is drawn only after the menu has been picked from. Those are the
 // browser's check.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import PageStrip from '../../src/lib/shell/PageStrip.svelte';
 import {
@@ -16,14 +16,20 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
-import {
-    loadLayout,
-    movePage,
-    openPage,
-    renamePage,
-    pages
-} from '../../src/lib/state/layout.svelte.ts';
 import { fakeStorage } from '../state/layout-fixture.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let loadLayout: ClientState['layout']['loadLayout'];
+let movePage: ClientState['layout']['movePage'];
+let openPage: ClientState['layout']['openPage'];
+let renamePage: ClientState['layout']['renamePage'];
+let pages: ClientState['layout']['pages'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ loadLayout, movePage, openPage, renamePage, pages } = client.layout);
+});
 
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));
@@ -36,11 +42,15 @@ function strip(reorder = false): string {
     openPage('Runs');
     if (reorder) movePage(pages()[1].id, 0);
     return render(PageStrip, {
+        context: clientContext(client),
         props: { arrangements: [{ name: 'sessions', label: 'Sessions', node: null }] }
     }).body;
 }
 
-const body = strip();
+let body: string;
+beforeEach(() => {
+    body = strip();
+});
 
 describe('the page strip', () => {
     it('draws one tab per page, naming each of them', () => {

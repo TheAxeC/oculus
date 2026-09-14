@@ -35,19 +35,19 @@
     import { sanitise } from '$lib/ui/html';
     import ProjectCard from './shared/ProjectCard.svelte';
     import type { BoardItem } from '$lib/state/board';
-    import { document as docFor } from '$lib/state/docs.svelte';
     import { cardCursor } from '$lib/state/instance';
     import { modelShort, stamp } from '$lib/state/format';
-    import { select, selected } from '$lib/state/selection.svelte';
-    import {
-        boardItemOf,
-        sessionsForProject,
-        staleLag,
-        type GroupedSession
-    } from '$lib/state/selectors.svelte';
+    import type { GroupedSession } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
-    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        docs: { document: docFor },
+        selection: { select, selected },
+        selectors: { boardItemOf, sessionsForProject, staleLag },
+        ui: { instanceState, setInstanceState }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

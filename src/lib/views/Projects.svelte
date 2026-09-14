@@ -1,7 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. One board component owns the three portfolio board registrations.
     import type { ViewRegistration } from './registry';
-    import { boardBadge, boardBadgeTitle, boardCells } from '$lib/state/rail-badges.svelte';
 
     const boardRegistration = (id: string, order: number): ViewRegistration => ({
         id,
@@ -9,9 +8,9 @@
         glyph: `views.${id}_glyph`,
         group: 'boards',
         order,
-        badge: () => boardBadge(id),
-        badgeTitle: () => boardBadgeTitle(id),
-        badgeCells: () => boardCells(id)
+        badge: (client) => client.railBadges.boardBadge(id),
+        badgeTitle: (client) => client.railBadges.boardBadgeTitle(id),
+        badgeCells: (client) => client.railBadges.boardCells(id)
     });
 
     export const registration: ViewRegistration[] = [
@@ -61,12 +60,16 @@
         type BoardState,
         type FacetValue
     } from '$lib/state/board';
-    import { board, boardPreset, boardStats, staleLag } from '$lib/state/selectors.svelte';
     import { cardCursor } from '$lib/state/instance';
     import { lookup, t } from '$lib/state/text';
     import { chipGlyph, toneOf } from '$lib/state/tones';
-    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        selectors: { board, boardPreset, boardStats, staleLag },
+        ui: { instanceState, setInstanceState }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

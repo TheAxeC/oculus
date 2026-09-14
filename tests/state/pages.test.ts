@@ -6,7 +6,7 @@
 // Nothing here touches localStorage or the DOM: the store takes the storage it is given. The
 // catalog is installed because the store names the page loadLayout and closePage make.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
     LAYOUT_VERSION,
     checkPages,
@@ -18,28 +18,48 @@ import {
     type Pages,
     type Workbench
 } from '../../src/lib/state/layout/index.ts';
-import {
-    LAYOUT_KEY,
-    PREVIOUS_KEY,
-    closeInstancesOfView,
-    closePage,
-    currentPage,
-    dock,
-    dockedAt,
-    layout,
-    loadLayout,
-    moveInstanceToPage,
-    openPage,
-    pageShortcut,
-    pages,
-    renamePage,
-    switchPage,
-    workbench
-} from '../../src/lib/state/layout.svelte.ts';
+import { LAYOUT_KEY, PREVIOUS_KEY } from '../../src/lib/state/layout.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
 import { bench, fakeStorage, pane, saveBench, three, viewsOf } from './layout-fixture.ts';
 import { fields } from '../../src/lib/data/guards.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let closeInstancesOfView: ClientState['layout']['closeInstancesOfView'];
+let closePage: ClientState['layout']['closePage'];
+let currentPage: ClientState['layout']['currentPage'];
+let dock: ClientState['layout']['dock'];
+let dockedAt: ClientState['layout']['dockedAt'];
+let layout: ClientState['layout']['layout'];
+let loadLayout: ClientState['layout']['loadLayout'];
+let moveInstanceToPage: ClientState['layout']['moveInstanceToPage'];
+let openPage: ClientState['layout']['openPage'];
+let pageShortcut: ClientState['layout']['pageShortcut'];
+let pages: ClientState['layout']['pages'];
+let renamePage: ClientState['layout']['renamePage'];
+let switchPage: ClientState['layout']['switchPage'];
+let workbench: ClientState['layout']['workbench'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({
+        closeInstancesOfView,
+        closePage,
+        currentPage,
+        dock,
+        dockedAt,
+        layout,
+        loadLayout,
+        moveInstanceToPage,
+        openPage,
+        pageShortcut,
+        pages,
+        renamePage,
+        switchPage,
+        workbench
+    } = client.layout);
+});
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 

@@ -35,12 +35,6 @@
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import {
-        fieldChoices,
-        manifestFields,
-        manifestSections,
-        projectOf
-    } from '$lib/state/selectors.svelte';
-    import {
         NOT_IN_MODEL,
         NOT_WRITTEN,
         asList,
@@ -49,8 +43,13 @@
         type FormField
     } from '$lib/state/schema';
     import { t } from '$lib/state/text';
-    import { pending, writeManifest } from '$lib/state/writes.svelte';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        selectors: { fieldChoices, manifestFields, manifestSections, projectOf },
+        writes: { pending, writeManifest }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

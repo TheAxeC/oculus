@@ -13,6 +13,9 @@
     import type { Ticker as FocusTicker, TickerItem } from '$lib/state/ticker';
     import { t } from '$lib/state/text';
     import { act, openLine, rowMaker } from './rows';
+    import { useState } from '$lib/state/use';
+
+    const client = useState();
 
     type Props = {
         /** The board's one ticker, walked once by the view that holds both sections. */
@@ -52,12 +55,12 @@
 
     function pick(id: string): void {
         const line = view.index[id];
-        if (line !== undefined) openLine(line, onproject);
+        if (line !== undefined) openLine(client.layout, line, onproject);
     }
 
     /** One button on one line, and the one sentence the board says about what it wrote. */
     async function run(id: string, action: string): Promise<void> {
-        const said = await act(view.index[id], action, now);
+        const said = await act(client.writes, view.index[id], action, now);
         if (said !== null) onsaid(said);
     }
 </script>

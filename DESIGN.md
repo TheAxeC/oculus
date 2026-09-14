@@ -178,12 +178,14 @@ Svelte 5 state modules (`.svelte.ts`). `entities` holds the latest payload per c
 | From | May import | May not import |
 |---|---|---|
 | `ui/` | `ui/`, `themes/`, `state/text` | `state/*` otherwise, `views/`, `shell/`, `server/` |
-| `shell/` | `ui/`, `state/layout`, `state/drag`, `state/ui`, `state/text`, `state/appearance`, `state/palette`, `state/palette-source`, `state/selection`, `state/terminals`, the view registry | any view by name, `server/` |
+| `shell/` | `ui/`, `state/context`, `state/use`, `state/layout`, `state/drag`, `state/ui`, `state/text`, `state/appearance`, `state/palette`, `state/palette-source`, `state/selection`, `state/terminals`, the view registry | any view by name, `server/` |
 | `views/` | `ui/`, `state/`, `views/shared/`, its own partials under `views/<name>/` | `shell/`, `server/`, other views and their partials |
-| `state/` | `data/model`, `data/guards` | `server/`, anything in layer 3 |
+| `state/` | `data/model`, `data/guards`, `views/registry`, `ui/tip-ids` | `server/`, anything else in layer 3 |
 | `data/`, `server/` | `data/` | anything client-side |
 
 SvelteKit enforces the last row's server half by refusing client imports of `$lib/server`.
+
+The client's stores are one object, built once by the page root (`createClientState` in `state/context.ts`) and read from Svelte's context by everything below it (`useState` in `state/use.ts`), so no store is a module anything imports and two pages share nothing. `state/context.ts` is the one module of the state layer that names layer 3: the view registry and the primitives' tooltip counter are instances like the rest, and this is where every store is wired to the stores it reads. The shell's row still names the stores the workbench is made of, and `tests/boundaries.test.ts` holds a shell file to that list by the stores it takes out of the object rather than by the module it imports. Three modules stay module-level and are named in that test: the catalogs `state/text.ts`, `state/tones.ts` and `state/appearance.ts`, which hold what the server last sent, are never written after a push installs them, and are read by `t()`, `toneOf()` and `themes()` from every layer including `ui/`; with them the two runes that make those reads redraw, `state/generation.svelte.ts` and `state/glyphmode.svelte.ts`, since a generation held per client would say a push had landed for one client and not for another over the one set of maps they both read.
 
 A partial under `views/shared/` may import `ui/`, `state/` and `views/shared/`, and nothing under any other `views/<name>/`; nothing outside `views/` imports it. It is where a block two views draw the same way lives, the project card and the subtasks block being the two, so the alternative to a view importing another view's partial is one shared partial rather than a copy that falls behind.
 

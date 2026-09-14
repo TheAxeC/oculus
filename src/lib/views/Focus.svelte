@@ -31,15 +31,19 @@
     import Lanes from './focus/Lanes.svelte';
     import QuickAdd from './focus/QuickAdd.svelte';
     import Tasks from './focus/Tasks.svelte';
-    import { minuteNow, startMinuteClock } from '$lib/state/clock.svelte';
     import { cardCursor } from '$lib/state/instance';
     import { labelOf, lanes, waiting, type Id, type Project } from '$lib/state/focus';
     import { ticker } from '$lib/state/ticker';
-    import { collectionOf, configMap } from '$lib/state/selectors.svelte';
-    import { portfolio } from '$lib/state/entities.svelte';
-    import { openView } from '$lib/state/layout.svelte';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        clock: { minuteNow, startMinuteClock },
+        selectors: { collectionOf, configMap },
+        entities: { portfolio },
+        layout: { openView }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

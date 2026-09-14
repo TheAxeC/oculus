@@ -1,6 +1,6 @@
 // Layer 4, view test. The Usage view renders account cards, meters, live rows, history totals and both empty states.
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
 import Usage from '../../src/lib/views/Usage.svelte';
 import ToolButton from '../../src/lib/ui/ToolButton.svelte';
@@ -11,9 +11,18 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import type { UsagePayload } from '../../src/lib/data/model.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
-import { setToken } from '../../src/lib/state/writes.svelte.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let receive: ClientState['entities']['receive'];
+let setToken: ClientState['writes']['setToken'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ receive } = client.entities);
+    ({ setToken } = client.writes);
+});
 
 // Record the actual control callback while retaining the real primitive's server rendering.
 vi.mock('../../src/lib/ui/ToolButton.svelte', async (importOriginal) => {
@@ -53,7 +62,7 @@ let version = 10000;
 function draw(payload: UsagePayload): string {
     version += 1;
     receive({ channel: 'usage', version, payload });
-    return render(Usage, { props: { instance } }).body;
+    return render(Usage, { context: clientContext(client), props: { instance } }).body;
 }
 
 function refreshPayload(
@@ -116,9 +125,9 @@ describe('Usage', () => {
             headers: { 'content-type': 'application/json', 'x-oculus-token': 'usage-test-token' },
             body: JSON.stringify({ account: 'University' })
         });
-        expect(render(Usage, { props: { instance } }).body).toContain(
-            'refresh refused: the write token was refused'
-        );
+        expect(
+            render(Usage, { context: clientContext(client), props: { instance } }).body
+        ).toContain('refresh refused: the write token was refused');
         const next = draw(refreshPayload('refreshing'));
         expect(next).not.toContain('refresh refused:');
         expect(next).toContain('refresher: refreshing');
@@ -132,13 +141,13 @@ describe('Usage', () => {
         vi.stubGlobal('fetch', fetch);
         draw(refreshPayload());
         await press('Refresh now');
-        expect(render(Usage, { props: { instance } }).body).toContain(
-            'refresh refused: the server did not answer'
-        );
+        expect(
+            render(Usage, { context: clientContext(client), props: { instance } }).body
+        ).toContain('refresh refused: the server did not answer');
         await press('Refresh now');
-        expect(render(Usage, { props: { instance } }).body).toContain(
-            'refresh refused: the server did not answer'
-        );
+        expect(
+            render(Usage, { context: clientContext(client), props: { instance } }).body
+        ).toContain('refresh refused: the server did not answer');
     });
 
     it('draws account details, window meters, live sessions and the seven-day total', () => {

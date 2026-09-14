@@ -6,7 +6,7 @@
 // state/docs.svelte.ts leaves the pair pending and the tab renders its loading line; what api/docs
 // answers is covered by tests/routes/docs.test.ts.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Project from '../../src/lib/views/Project.svelte';
@@ -19,11 +19,21 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
-import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import { area, payload, record, workspace } from '../sessions-fixture.ts';
 import type { Id, Project as Record_, Relations, Snapshot } from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let receive: ClientState['entities']['receive'];
+let setInstanceState: ClientState['ui']['setInstanceState'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ receive } = client.entities);
+    ({ setInstanceState } = client.ui);
+    installFixture();
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -101,28 +111,34 @@ function snapshot(): Snapshot {
     };
 }
 
-receive({ channel: 'portfolio', version: 1, payload: snapshot() });
-receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
-receive({
-    channel: 'sessions',
-    version: 1,
-    payload: payload([
-        workspace('/hub', [
-            area(FOLDER, [record('in-alpha', { title: 'A session in alpha', area: FOLDER })]),
-            area('/hub/other', [record('elsewhere', { area: '/hub/other', cwd: '/hub/other' })])
+/** What every case here starts from, installed into the case's own client. */
+function installFixture(): void {
+    receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+    receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
+    receive({
+        channel: 'sessions',
+        version: 1,
+        payload: payload([
+            workspace('/hub', [
+                area(FOLDER, [record('in-alpha', { title: 'A session in alpha', area: FOLDER })]),
+                area('/hub/other', [record('elsewhere', { area: '/hub/other', cwd: '/hub/other' })])
+            ])
         ])
-    ])
-});
+    });
+}
 
 /** The tab rendered for one project id, with whatever the instance remembers. */
 function html(id: string, state: Record<string, unknown> = {}): string {
     setInstanceState(INSTANCE, state);
     const instance: Instance = { id: INSTANCE, view: 'project', state: { id } };
-    return render(Project, { props: { instance } }).body;
+    return render(Project, { context: clientContext(client), props: { instance } }).body;
 }
 
 describe('a project as its own tab', () => {
-    const body = html('alpha');
+    let body: string;
+    beforeEach(() => {
+        body = html('alpha');
+    });
 
     it('draws the card of the board, opened out', () => {
         expect(body).toContain('<article class="card');

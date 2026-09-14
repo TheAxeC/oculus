@@ -24,10 +24,18 @@ import {
     loadLocal
 } from '../src/lib/data/sources/config.ts';
 import { readRoots, rootsFile } from '../src/lib/server/files.ts';
-import { views } from '../src/lib/views/registry.ts';
 // Importing the route loader registers views; collection registrations use sources.yml keys.
-import { registerCollections } from '../src/routes/views.ts';
+import { registerAll, registerCollections } from '../src/routes/views.ts';
 import { noop } from './doubles.ts';
+import { createClientState, type ClientState } from './client.ts';
+
+let client: ClientState;
+let views: ClientState['registry']['views'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ views } = client.registry);
+});
 
 function scratch(): string {
     const dir = mkdtempSync(join(tmpdir(), 'oculus-config-'));
@@ -657,7 +665,8 @@ describe("oculus's own config directory", () => {
 
     it('names a configured group and a nonnegative order in every listed registration', () => {
         const { config } = loadConfig(engineDir());
-        registerCollections(collectionKeys(config));
+        registerAll(client.registry);
+        registerCollections(client.registry, collectionKeys(config));
         const groups = new Set(Object.keys(config.nav_groups as Record<string, unknown>));
         const invalid = views()
             .filter((view) => view.listed !== false)

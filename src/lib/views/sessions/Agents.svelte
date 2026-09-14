@@ -22,11 +22,16 @@
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { compactCount, modelShort, seconds, span } from '$lib/state/format';
-    import { instanceLayoutState, pinInstance, unpinInstance } from '$lib/state/layout.svelte';
     import { pinnedSession } from '$lib/state/selection.svelte';
-    import { sessionFor, type SessionAgent } from '$lib/state/selectors.svelte';
+    import type { SessionAgent } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
     import type { ViewProps } from '$lib/views/registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { instanceLayoutState, pinInstance, unpinInstance },
+        selectors: { sessionFor }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

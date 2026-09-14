@@ -8,7 +8,6 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import NewIdeaForm from '$lib/views/shared/NewIdeaForm.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
-    import { openView } from '$lib/state/layout.svelte';
     import {
         crossLinksOf,
         ideaSeed,
@@ -18,7 +17,12 @@
         type RadarEntry
     } from '$lib/state/radar';
     import { t } from '$lib/state/text';
-    import { writeFeedField } from '$lib/state/writes.svelte';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { openView },
+        writes: { writeFeedField }
+    } = useState();
 
     type Props = {
         entry: RadarEntry;

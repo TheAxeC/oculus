@@ -10,12 +10,11 @@
 // The countdowns are the real clock's, so the dates below are far enough from any run date that
 // which side of today they fall on is not in question.
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { scalar } from '../../src/lib/data/guards.ts';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Focus from '../../src/lib/views/Focus.svelte';
-import { startMinuteClock } from '../../src/lib/state/clock.svelte.ts';
 import Band from '../../src/lib/views/focus/Band.svelte';
 import {
     engineDir,
@@ -26,7 +25,6 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { chipLabel, setVocab } from '../../src/lib/state/tones.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
 import type {
     Career,
     Collection,
@@ -40,6 +38,18 @@ import type {
 } from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { noop } from '../doubles.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let startMinuteClock: ClientState['clock']['startMinuteClock'];
+let receive: ClientState['entities']['receive'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ startMinuteClock } = client.clock);
+    ({ receive } = client.entities);
+    installFixture();
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -313,17 +323,27 @@ function escaped(key: string): string {
 
 function html(): string {
     const instance: Instance = { id: INSTANCE, view: 'focus', state: {} };
-    return render(Focus, { props: { instance } }).body;
+    return render(Focus, { context: clientContext(client), props: { instance } }).body;
 }
 
-receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
-receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+/** What every case here starts from, installed into the case's own client. */
+function installFixture(): void {
+    receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
+    receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+}
 
-const body = html();
+let body: string;
+beforeEach(() => {
+    body = html();
+});
 
 /** What the command center drew, and what the tasks section under it drew. */
-const commandBody = body.slice(0, body.indexOf('<section class="tasks'));
-const tasksBody = body.slice(body.indexOf('<section class="tasks'));
+let commandBody: string;
+let tasksBody: string;
+beforeEach(() => {
+    commandBody = body.slice(0, body.indexOf('<section class="tasks'));
+    tasksBody = body.slice(body.indexOf('<section class="tasks'));
+});
 
 describe('the Live HPC pill', () => {
     it('is absent before a reachable non-empty queue arrives', () => {
@@ -516,7 +536,10 @@ describe('the strip and the band', () => {
         ]);
         receive({ channel: 'portfolio', version: 1, payload: snap });
         try {
-            const lane = render(Band, { props: { now: Date.UTC(2030, 0, 1, 12) } }).body;
+            const lane = render(Band, {
+                context: clientContext(client),
+                props: { now: Date.UTC(2030, 0, 1, 12) }
+            }).body;
             expect(lane).toMatch(/class="lane [^"]*" style="--tone: var\(--c-gold\)"/);
             expect(lane).toMatch(/class="stage-block [^"]*" style="--stage: var\(--c-green\)"/);
             expect(lane).toContain('Submitted grant');
@@ -608,7 +631,10 @@ describe('a lane card under the keyboard cursor', () => {
     it('marks the lane card the instance cursor holds and no other', () => {
         receive({ channel: 'portfolio', version: 5, payload: snapshot() });
         const held: Instance = { id: INSTANCE, view: 'focus', state: { cursor: 'bravo' } };
-        const drawn = render(Focus, { props: { instance: held } }).body;
+        const drawn = render(Focus, {
+            context: clientContext(client),
+            props: { instance: held }
+        }).body;
         expect(drawn).toMatch(/data-card="bravo"[^>]*data-cursor="true"/);
         expect(drawn.match(/data-cursor="true"/g)).toHaveLength(1);
     });

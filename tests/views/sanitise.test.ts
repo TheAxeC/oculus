@@ -13,10 +13,17 @@ import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { marked } from 'marked';
 import { render } from 'svelte/server';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import Card from '../../src/lib/ui/Card.svelte';
 import { inlineMarkdown, sanitise } from '../../src/lib/ui/html.ts';
 import { noop } from '../doubles.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+
+beforeEach(() => {
+    client = createClientState();
+});
 
 const VIEWS = 'src/lib/views';
 
@@ -34,6 +41,7 @@ describe('a title out of a feed', () => {
 
     it('reaches the card as the sanitiser leaves it', () => {
         const body = render(Card, {
+            context: clientContext(client),
             props: { id: 'one', cursor: false, title, titleHtml: inlineMarkdown(title) }
         }).body;
         expect(body).toContain(sanitise(inlineMarkdown(title)));
@@ -42,6 +50,7 @@ describe('a title out of a feed', () => {
 
     it('reaches a clickable card title the same way', () => {
         const body = render(Card, {
+            context: clientContext(client),
             props: {
                 id: 'two',
                 cursor: false,

@@ -6,11 +6,15 @@
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import { clock, modelShort, stamp } from '$lib/state/format';
-    import { select, selected } from '$lib/state/selection.svelte';
     import type { Area, GroupedSession, Workspace } from '$lib/state/selectors.svelte';
     import { asText } from '$lib/state/schema';
     import { t } from '$lib/state/text';
     import { sessionRowItems } from './session-list';
+    import { useState } from '$lib/state/use';
+
+    const {
+        selection: { select, selected }
+    } = useState();
 
     type Props = {
         workspace: Workspace;

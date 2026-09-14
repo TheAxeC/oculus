@@ -16,10 +16,14 @@
         summaryOf,
         type Host
     } from '$lib/state/career';
-    import { configMap } from '$lib/state/selectors.svelte';
-    import { portfolio } from '$lib/state/entities.svelte';
     import { t } from '$lib/state/text';
-    import { writeHost } from '$lib/state/writes.svelte';
+    import { useState } from '$lib/state/use';
+
+    const {
+        selectors: { configMap },
+        entities: { portfolio },
+        writes: { writeHost }
+    } = useState();
 
     type Props = {
         /** What a write answered, for the one outcome line the board holds. */

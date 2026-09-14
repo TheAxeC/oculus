@@ -11,28 +11,38 @@
 /** How often the held moment moves. */
 const MINUTE = 60000;
 
-const held: { now: number } = $state({ now: Date.now() });
+/** The minute clock of one client. */
+export type ClockStore = {
+    minuteNow: () => number;
+    startMinuteClock: () => () => void;
+};
 
-/** How many readers are running the clock; the interval lives while at least one is. */
-let readers = 0;
-let timer: ReturnType<typeof setInterval> | null = null;
+export function createClock(): ClockStore {
+    const held: { now: number } = $state({ now: Date.now() });
 
-/** The moment the page is in, to the minute. Reading it in a $derived redraws that caller. */
-export function minuteNow(): number {
-    return held.now;
-}
+    /** How many readers are running the clock; the interval lives while at least one is. */
+    let readers = 0;
+    let timer: ReturnType<typeof setInterval> | null = null;
 
-/** Run the clock while a view is mounted; the returned call stops it when the last reader goes. */
-export function startMinuteClock(): () => void {
-    readers += 1;
-    if (timer === null) {
-        held.now = Date.now();
-        timer = setInterval(() => (held.now = Date.now()), MINUTE);
+    /** The moment the page is in, to the minute. Reading it in a $derived redraws that caller. */
+    function minuteNow(): number {
+        return held.now;
     }
-    return () => {
-        readers -= 1;
-        if (readers > 0 || timer === null) return;
-        clearInterval(timer);
-        timer = null;
-    };
+
+    /** Run the clock while a view is mounted; the call it returns stops it at the last reader. */
+    function startMinuteClock(): () => void {
+        readers += 1;
+        if (timer === null) {
+            held.now = Date.now();
+            timer = setInterval(() => (held.now = Date.now()), MINUTE);
+        }
+        return () => {
+            readers -= 1;
+            if (readers > 0 || timer === null) return;
+            clearInterval(timer);
+            timer = null;
+        };
+    }
+
+    return { minuteNow, startMinuteClock };
 }

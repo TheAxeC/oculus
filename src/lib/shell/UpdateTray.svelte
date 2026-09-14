@@ -5,11 +5,16 @@
 
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { findView } from '$lib/state/layout';
-    import { openView, workbench } from '$lib/state/layout.svelte';
-    import { paletteSource } from '$lib/state/palette-source.svelte';
-    import { select } from '$lib/state/selection.svelte';
-    import { startChat, startTask, type TaskKind } from '$lib/state/terminals.svelte';
+    import type { TaskKind } from '$lib/state/terminals.svelte';
     import { t } from '$lib/state/text';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { openView, workbench },
+        paletteSource: { paletteSource },
+        selection: { select },
+        terminals: { startChat, startTask }
+    } = useState();
 
     type Props = {
         open: boolean;

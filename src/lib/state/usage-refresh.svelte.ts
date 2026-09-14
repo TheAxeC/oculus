@@ -3,16 +3,9 @@
 
 import type { UsagePayload } from '../data/model.ts';
 import { byKey } from '../data/guards.ts';
-import { usage } from './entities.svelte.ts';
+import type { EntitiesStore } from './entities.svelte.ts';
 import { t } from './text.ts';
-import { writeToken } from './writes.svelte.ts';
-
-let refusals = $state.raw<Record<string, { payload: UsagePayload | null; reason: string }>>({});
-
-export function refreshRefusal(label: string): string {
-    const held = byKey(refusals, label);
-    return held?.payload === usage() ? t('usage.refresh_refused', held.reason) : '';
-}
+import type { WritesStore } from './writes.svelte.ts';
 
 /** The route's error words, each answered by a catalog string; anything else is the request failing. */
 function refusalText(body: unknown): string {
@@ -31,23 +24,46 @@ function refusalText(body: unknown): string {
     }
 }
 
-export async function refreshUsageAccount(label: string): Promise<void> {
-    let reason = '';
-    try {
-        const response = await fetch('/api/usage/refresh', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json', 'x-oculus-token': writeToken() },
-            body: JSON.stringify({ account: label })
-        });
-        if (!response.ok) reason = refusalText(await response.json().catch(() => null));
-    } catch {
-        reason = t('usage.refusal_failed');
+/** Refresh refusals of the usage view, for one client. */
+export type UsageRefreshStore = {
+    refreshRefusal: (label: string) => string;
+    refreshUsageAccount: (label: string) => Promise<void>;
+};
+
+export function createUsageRefresh(
+    entities: EntitiesStore,
+    writes: WritesStore
+): UsageRefreshStore {
+    let refusals = $state.raw<Record<string, { payload: UsagePayload | null; reason: string }>>({});
+
+    function refreshRefusal(label: string): string {
+        const held = byKey(refusals, label);
+        return held?.payload === entities.usage() ? t('usage.refresh_refused', held.reason) : '';
     }
-    if (reason !== '') {
-        const payload = usage();
-        refusals = Object.fromEntries(
-            Object.entries(refusals).filter(([, held]) => held.payload === payload)
-        );
-        refusals = { ...refusals, [label]: { payload, reason } };
+
+    async function refreshUsageAccount(label: string): Promise<void> {
+        let reason = '';
+        try {
+            const response = await fetch('/api/usage/refresh', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'x-oculus-token': writes.writeToken()
+                },
+                body: JSON.stringify({ account: label })
+            });
+            if (!response.ok) reason = refusalText(await response.json().catch(() => null));
+        } catch {
+            reason = t('usage.refusal_failed');
+        }
+        if (reason !== '') {
+            const payload = entities.usage();
+            refusals = Object.fromEntries(
+                Object.entries(refusals).filter(([, held]) => held.payload === payload)
+            );
+            refusals = { ...refusals, [label]: { payload, reason } };
+        }
     }
+
+    return { refreshRefusal, refreshUsageAccount };
 }

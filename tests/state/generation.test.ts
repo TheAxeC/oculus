@@ -13,13 +13,21 @@
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { configGeneration } from '../../src/lib/state/generation.svelte.ts';
-import { installConfig } from '../../src/lib/state/socket.svelte.ts';
 import { defaultTheme } from '../../src/lib/state/appearance.ts';
 import { t } from '../../src/lib/state/text.ts';
 import { toneOf } from '../../src/lib/state/tones.ts';
 import type { ConfigPayload } from '../../src/lib/data/model.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let installConfig: ClientState['socket']['installConfig'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ installConfig } = client.socket);
+});
 
 /** The hex every push below carries, under whichever palette token that push names. */
 const HEX = '#7c5cff';

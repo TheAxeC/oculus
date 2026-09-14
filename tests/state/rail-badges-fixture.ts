@@ -1,7 +1,7 @@
 // Layer 2, client-state test fixture. Synthetic board and collection records exercise badge hooks without reading or writing hub data.
 
 import type { Project, Snapshot, Tier } from '../../src/lib/data/model.ts';
-import { message, receive } from '../../src/lib/state/entities.svelte.ts';
+import type { ClientState } from '../client.ts';
 import { textCatalog } from '../../src/lib/data/sources/config.ts';
 import { NO_FEEDS } from '../entities-fixture.ts';
 
@@ -89,7 +89,12 @@ export function badgeSnapshot(empty = false): Snapshot {
 }
 
 /** Install a snapshot and config with versions accepted after any earlier fixture. */
-export function installBadges(config: Record<string, unknown>, empty = false): void {
+export function installBadges(
+    client: ClientState,
+    config: Record<string, unknown>,
+    empty = false
+): void {
+    const { message, receive } = client.entities;
     receive({
         channel: 'config',
         version: (message('config')?.version ?? 0) + 1,

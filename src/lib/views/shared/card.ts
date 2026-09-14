@@ -2,8 +2,7 @@
 // display rules change independently of Svelte markup.
 
 import { DEADLINE_SOON, daysUntil, type BoardItem } from '$lib/state/board';
-import { openView } from '$lib/state/layout.svelte';
-import { viewFor } from '../registry';
+import type { ClientState } from '$lib/state/context';
 
 export type FileRow = { path: string; size: number; mtime: number };
 export type Translate = (key: string, ...args: (string | number)[]) => string;
@@ -36,13 +35,19 @@ export function urlOf(folder: string, path: string): string {
 }
 
 /** Open a registered collection or registry view at one label, and nothing when none is registered. */
-export function goto(view: string, label: string): void {
-    if (viewFor(view) !== undefined) openView(view, 'main', { label });
+export function goto(client: ClientState, view: string, label: string): void {
+    if (client.registry.viewFor(view) !== undefined) {
+        client.layout.openView(view, 'main', { label });
+    }
 }
 
 /** Open one of a project's fixed documents in a document tab under the hub root. */
-export function openDocument(folder: string, path: string): void {
-    openView('document', 'main', { root: 'hub', path: `${folder}/${path}`, label: path });
+export function openDocument(client: ClientState, folder: string, path: string): void {
+    client.layout.openView('document', 'main', {
+        root: 'hub',
+        path: `${folder}/${path}`,
+        label: path
+    });
 }
 
 /** The catalogued label for a code-deposit state. */

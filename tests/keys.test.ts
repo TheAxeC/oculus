@@ -5,15 +5,25 @@ import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
     collectionKeys,
     engineDir,
     loadConfig,
     textCatalog
 } from '../src/lib/data/sources/config.ts';
-import { views } from '../src/lib/views/registry.ts';
-import { registerCollections } from '../src/routes/views.ts';
+import { registerAll, registerCollections } from '../src/routes/views.ts';
+import { createClientState, type ClientState } from './client.ts';
+
+let client: ClientState;
+let views: ClientState['registry']['views'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ views } = client.registry);
+    registerAll(client.registry);
+    registerCollections(client.registry, collectionKeys(config));
+});
 
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
@@ -110,7 +120,6 @@ export function calls(root: string): Call[] {
 
 const config = loadConfig(engineDir()).config;
 const catalog = textCatalog(config);
-registerCollections(collectionKeys(config));
 const found = calls(SRC);
 
 function documented(call: Call): boolean {

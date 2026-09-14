@@ -36,10 +36,14 @@
         type VenuesState
     } from '$lib/state/venues';
     import { cardCursor } from '$lib/state/instance';
-    import { archiveDead, collectionOf, projects, venues } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
-    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        selectors: { archiveDead, collectionOf, projects, venues },
+        ui: { instanceState, setInstanceState }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

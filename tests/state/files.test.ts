@@ -5,9 +5,19 @@
 // given and answers what the case wants. What this does NOT cover: the endpoint itself, which is
 // tests/routes/project-files.test.ts, and the view drawing the rows, which is the browser suite's.
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { files, invalidate } from '../../src/lib/state/files.svelte.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let files: ClientState['files']['files'];
+let invalidate: ClientState['files']['invalidate'];
+let receive: ClientState['entities']['receive'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ files, invalidate } = client.files);
+    ({ receive } = client.entities);
+});
 
 type Answer = { status: number; body: unknown };
 

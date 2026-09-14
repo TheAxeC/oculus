@@ -9,8 +9,12 @@
     import Chip from '$lib/ui/Chip.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { coverage, type Project } from '$lib/state/collection';
-    import { openView } from '$lib/state/layout.svelte';
     import { t } from '$lib/state/text';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { openView }
+    } = useState();
 
     type Props = {
         projects: Project[];

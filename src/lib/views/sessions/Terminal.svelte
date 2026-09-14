@@ -31,31 +31,30 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import { terminalFontPx } from '$lib/state/appearance';
-    import {
-        instanceLayoutState,
-        pinInstance,
-        restateInstance,
-        unpinInstance
-    } from '$lib/state/layout.svelte';
-    import { hubRoot, sessionsByWorkspace } from '$lib/state/selectors.svelte';
-    import { pinnedTerminal, select, selectedTerminal } from '$lib/state/selection.svelte';
-    import {
-        resizeTerminal,
-        sendInput,
-        sendResize,
-        startTerminal,
-        subscribePty,
-        terminalById,
-        titleStripper,
-        unsubscribePty,
-        type TerminalKind
-    } from '$lib/state/terminals.svelte';
+    import { pinnedTerminal } from '$lib/state/selection.svelte';
+    import { titleStripper, type TerminalKind } from '$lib/state/terminals.svelte';
     import { t } from '$lib/state/text';
-    import { setTerminalFont, terminalFont, textScale, theme } from '$lib/state/ui.svelte';
     import { scheduleReflow } from './reflow';
     import { untrack } from 'svelte';
     import type { ViewProps } from '$lib/views/registry';
     import type { ITheme, Terminal as Grid } from '@xterm/xterm';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { instanceLayoutState, pinInstance, restateInstance, unpinInstance },
+        selectors: { hubRoot, sessionsByWorkspace },
+        selection: { select, selectedTerminal },
+        terminals: {
+            resizeTerminal,
+            sendInput,
+            sendResize,
+            startTerminal,
+            subscribePty,
+            terminalById,
+            unsubscribePty
+        },
+        ui: { setTerminalFont, terminalFont, textScale, theme }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

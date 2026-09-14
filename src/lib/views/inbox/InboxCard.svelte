@@ -9,7 +9,12 @@
     import { inlineMarkdown } from '$lib/ui/html';
     import { kindOf, kindTone, type InboxEntry } from '$lib/state/inbox';
     import { t } from '$lib/state/text';
-    import { writeFeedField, type WriteAnswer } from '$lib/state/writes.svelte';
+    import type { WriteAnswer } from '$lib/state/writes.svelte';
+    import { useState } from '$lib/state/use';
+
+    const {
+        writes: { writeFeedField }
+    } = useState();
 
     type Props = {
         entry: InboxEntry;

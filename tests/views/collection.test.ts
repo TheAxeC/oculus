@@ -9,7 +9,7 @@
 // it are tests/state/collection.test.ts.
 
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Collection from '../../src/lib/views/Collection.svelte';
@@ -23,12 +23,22 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab, statusTone } from '../../src/lib/state/tones.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
-import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { CollectionState } from '../../src/lib/state/collection.ts';
 import type { Entry, Project, Relations, SchemaField, Snapshot } from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { noop } from '../doubles.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let receive: ClientState['entities']['receive'];
+let setInstanceState: ClientState['ui']['setInstanceState'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ receive } = client.entities);
+    ({ setInstanceState } = client.ui);
+    installFixture();
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -236,14 +246,17 @@ function snapshot(): Snapshot {
     };
 }
 
-receive({ channel: 'portfolio', version: 1, payload: snapshot() });
-receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
+/** What every case here starts from, installed into the case's own client. */
+function installFixture(): void {
+    receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+    receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
+}
 
 /** The view as the instance of one collection's view id, with one saved state. */
 function html(view = 'events', state: Partial<CollectionState> = {}): string {
     setInstanceState(INSTANCE, { search: '', statuses: [], hidden: [], ...state });
     const instance: Instance = { id: INSTANCE, view, state: {} };
-    return render(Collection, { props: { instance } }).body;
+    return render(Collection, { context: clientContext(client), props: { instance } }).body;
 }
 
 /** The cards of a rendering, in the order they were drawn. */
@@ -252,7 +265,10 @@ function cards(body: string): string[] {
 }
 
 describe('a collection as its own tab', () => {
-    const body = html();
+    let body: string;
+    beforeEach(() => {
+        body = html();
+    });
 
     it("draws the pane with the file's own title and its intro as rendered Markdown", () => {
         expect(body).toMatch(/class="intro(?:\s|")/);
@@ -279,7 +295,10 @@ describe('a collection as its own tab', () => {
 });
 
 describe('a card', () => {
-    const card = cards(html())[0];
+    let card: string;
+    beforeEach(() => {
+        card = cards(html())[0];
+    });
 
     it('draws the status as a chip in the tone of the status palette', () => {
         expect(card).toContain(`--tone: var(--c-${statusTone('upcoming')})`);
@@ -323,7 +342,11 @@ describe('a card', () => {
 });
 
 describe('a field the schema does not name', () => {
-    const card = cards(html())[1];
+    let card: string;
+
+    beforeEach(() => {
+        card = cards(html())[1];
+    });
 
     it('is drawn after every field the schema does name', () => {
         expect(card).toContain('>role</span>');
@@ -365,7 +388,11 @@ describe('the status facet', () => {
 });
 
 describe('a collection the snapshot does not carry', () => {
-    const body = html('statements');
+    let body: string;
+
+    beforeEach(() => {
+        body = html('statements');
+    });
 
     it('says there is nothing rather than drawing a card', () => {
         expect(cards(body).length).toBe(0);
@@ -386,7 +413,11 @@ describe('a palette reveal', () => {
 });
 
 describe('the controls a card carries', () => {
-    const card = cards(html())[0];
+    let card: string;
+
+    beforeEach(() => {
+        card = cards(html())[0];
+    });
 
     it('carries the grip, the pin and the edit control the catalog names', () => {
         expect(card).toContain(catalog['collection.reorder_hint']);
@@ -401,7 +432,11 @@ describe('the controls a card carries', () => {
 });
 
 describe('a collection whose file has no schema', () => {
-    const body = html('tasks');
+    let body: string;
+
+    beforeEach(() => {
+        body = html('tasks');
+    });
 
     it('offers no add control, since there is no schema to draw a form from', () => {
         expect(body).not.toContain(catalog['collection.add']);
@@ -416,11 +451,18 @@ describe('a collection whose file has no schema', () => {
 });
 
 describe('the funding view', () => {
-    const body = html('funding');
+    let body: string;
+
+    beforeEach(() => {
+        body = html('funding');
+    });
 
     it('combines active and manuscript funding users into one work disclosure', () => {
         const snap = snapshot();
-        snap.entities.projects.beta = { ...snap.entities.projects.beta, fundingIds: ['FAIR'] };
+        snap.entities.projects = {
+            ...snap.entities.projects,
+            beta: { ...snap.entities.projects.beta, fundingIds: ['FAIR'] }
+        };
         receive({ channel: 'portfolio', version: 1, payload: snap });
         try {
             const mixed = html('funding');
@@ -474,7 +516,11 @@ describe('the funding view', () => {
 });
 
 describe('the code view', () => {
-    const body = html('code');
+    let body: string;
+
+    beforeEach(() => {
+        body = html('code');
+    });
 
     it('draws the coverage groups over the projects, with a count each', () => {
         expect(body).toContain(catalog['collection.coverage']);
@@ -497,6 +543,7 @@ describe('the entry form', () => {
     /** The form as the card opens it: over one entry to edit, and over none to add. */
     function form(entry: Entry | null): string {
         return render(EntryForm, {
+            context: clientContext(client),
             props: {
                 collection: 'funding',
                 schema: FUNDING_SCHEMA,
@@ -529,6 +576,7 @@ describe('the entry form', () => {
 
     it('pre-fills metalist rows and offers the add-row control', () => {
         const body = render(EntryForm, {
+            context: clientContext(client),
             props: {
                 collection: 'events',
                 schema: SCHEMA,
@@ -547,6 +595,7 @@ describe('the entry form', () => {
 
     it("pre-fills a raw textarea with the entry map's JSON", () => {
         const body = render(EntryForm, {
+            context: clientContext(client),
             props: {
                 collection: 'data',
                 schema: [{ field: 'retrieval', type: 'raw' }],

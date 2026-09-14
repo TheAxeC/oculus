@@ -4,13 +4,22 @@
 import { mkdirSync, mkdtempSync, realpathSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { scalar } from '../../src/lib/data/guards.ts';
 import { invalidateAll } from '$app/navigation';
-import { openFolder, setToken } from '../../src/lib/state/writes.svelte.ts';
 import { mintToken } from '../../src/lib/server/auth.ts';
 import { handleOpen } from '../../src/lib/server/open.ts';
 import type { Root } from '../../src/lib/server/files.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let openFolder: ClientState['writes']['openFolder'];
+let setToken: ClientState['writes']['setToken'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ openFolder, setToken } = client.writes);
+});
 
 const TOKEN = mintToken();
 const HOST = '127.0.0.1:8791';
@@ -130,6 +139,37 @@ describe('the open client', () => {
         expect(invalidateAll).toHaveBeenCalledOnce();
         expect(fetcher).toHaveBeenCalledTimes(2);
         expect(opener).toHaveBeenCalledWith(realpathSync(folder));
+        expect(opener).toHaveBeenCalledOnce();
+    });
+
+    it('retries with the token a reload installs after invalidateAll has already resolved', async () => {
+        // The page is what installs the token: the load hands it over and an effect puts it in the
+        // store, so it lands a turn after invalidateAll() resolves rather than inside it. The mock
+        // leaves the token stale and installs it from a microtask queued behind the one the caller
+        // resumes on, which is the order a flushed effect lands in, and the retry is expected to
+        // carry the new token all the same.
+        const { roots, folder } = fixture();
+        const opener = vi.fn();
+        setToken('old-token');
+        vi.mocked(invalidateAll).mockImplementation(() => {
+            queueMicrotask(() => queueMicrotask(() => setToken(TOKEN)));
+            return Promise.resolve();
+        });
+        const sent: string[] = [];
+        const fetcher = vi.fn(async (_url: string, init: RequestInit) => {
+            const carried = new Headers(init.headers).get('x-oculus-token') ?? '';
+            sent.push(carried);
+            return handleOpen(
+                request(JSON.parse(scalar(init.body)), carried),
+                TOKEN,
+                roots,
+                opener
+            );
+        });
+        vi.stubGlobal('fetch', fetcher);
+
+        expect((await openFolder(folder)).ok).toBe(true);
+        expect(sent).toEqual(['old-token', TOKEN]);
         expect(opener).toHaveBeenCalledOnce();
     });
 });

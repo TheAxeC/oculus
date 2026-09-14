@@ -26,33 +26,32 @@
     import Sash from '$lib/ui/Sash.svelte';
     import { SASH_PX } from '$lib/ui/sash-size';
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
-    import {
-        change,
-        activeInstance,
-        currentPage,
-        dockedAt,
-        focused,
-        layout,
-        panelSize,
-        resizePanel
-    } from '$lib/state/layout.svelte';
-    import {
-        crt,
-        textScale,
-        theme,
-        unicode,
-        updateTrayRequested,
-        wallpaper
-    } from '$lib/state/ui.svelte';
     import { PANEL_DEFAULT, paneAt, resize, type Layout } from '$lib/state/layout';
     import { setGlyphMode, t } from '$lib/state/text';
-    import { views } from '$lib/views/registry';
     import {
         terminalTheme,
         themeClass,
         wallpaperOnTheme,
         wallpaperSettings
     } from '$lib/state/appearance';
+    import { useState } from '$lib/state/use';
+
+    const client = useState();
+
+    const {
+        layout: {
+            change,
+            activeInstance,
+            currentPage,
+            dockedAt,
+            focused,
+            layout,
+            panelSize,
+            resizePanel
+        },
+        ui: { crt, textScale, theme, unicode, updateTrayRequested, wallpaper },
+        registry: { views }
+    } = client;
 
     type Props = {
         /** The `nav_groups`-shaped list from the merged config, for the rail. */
@@ -105,6 +104,9 @@
         )
     );
     const keyboard = createWorkbenchKeys({
+        drag: client.drag,
+        layout: client.layout,
+        ui: client.ui,
         navigation: () => navigation,
         activeMain: () => activeMain,
         focus: () => focus,
@@ -172,7 +174,7 @@
      * of sessions with an open permission prompt, so switching tabs is not the only way to notice.
      */
     $effect(() => {
-        document.title = windowTitle(waiting, activeLabel(activeMain));
+        document.title = windowTitle(waiting, activeLabel(client.registry, activeMain));
     });
 
     /** The space the two trees share along the dock's direction, the sash between them removed. */

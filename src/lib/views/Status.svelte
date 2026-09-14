@@ -15,12 +15,16 @@
     // and how many of each entity that snapshot carries. It is the smallest real view there is and
     // it is the one that says whether the data layer underneath is alive.
 
-    import { git, portfolio, sessions } from '$lib/state/entities.svelte';
-    import { status } from '$lib/state/socket.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import { t } from '$lib/state/text';
     import Hooks from './status/Hooks.svelte';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        entities: { git, portfolio, sessions },
+        socket: { status }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

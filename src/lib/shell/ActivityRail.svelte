@@ -15,24 +15,31 @@
     import Menu from '$lib/ui/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu-items';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { dock, dockedAt, openView } from '$lib/state/layout.svelte';
-    import {
-        crt,
-        setCrt,
-        setTextScale,
-        setTheme,
-        setUnicode,
-        setWallpaper,
-        theme,
-        textScale,
-        unicode,
-        wallpaper,
-        stepTextScale
-    } from '$lib/state/ui.svelte';
     import { t } from '$lib/state/text';
     import { themes as themeList, wallpaperOnTheme } from '$lib/state/appearance';
-    import { badgeOf, registrationGlyph, registrationLabel, views } from '$lib/views/registry';
+    import { badgeOf, registrationGlyph, registrationLabel } from '$lib/views/registry';
     import type { Dock } from '$lib/state/layout';
+    import { useState } from '$lib/state/use';
+
+    const client = useState();
+
+    const {
+        layout: { dock, dockedAt, openView },
+        ui: {
+            crt,
+            setCrt,
+            setTextScale,
+            setTheme,
+            setUnicode,
+            setWallpaper,
+            theme,
+            textScale,
+            unicode,
+            wallpaper,
+            stepTextScale
+        },
+        registry: { views }
+    } = client;
 
     type Props = {
         /** The `nav_groups`-shaped list from the merged config; the page reads it and passes it on. */
@@ -85,7 +92,7 @@
     /** The views of one group as the choices of its list, each with its own glyph and words. */
     function groupItems(section: Section): MenuItem[] {
         return section.items.map((view) => {
-            const badge = badgeOf(view);
+            const badge = badgeOf(view, client);
             return {
                 id: view.id,
                 label: registrationLabel(view),
@@ -141,7 +148,7 @@
                     <p class="group">{label}</p>
                 {/if}
                 {#each section.items as view (view.id)}
-                    {@const badge = badgeOf(view)}
+                    {@const badge = badgeOf(view, client)}
                     <div class="control">
                         <ToolButton
                             label={registrationLabel(view)}

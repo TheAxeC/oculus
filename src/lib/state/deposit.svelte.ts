@@ -54,63 +54,74 @@ const PENDING: Held = { state: null, error: '', loading: true };
 /** What no project at all reads as: an empty id asks nothing and waits for nothing. */
 const NOTHING: Held = { state: null, error: '', loading: false };
 
-const held: Record<string, Held | undefined> = $state({});
+/** The deposit mirror of each project, held for one client. */
+export type DepositStore = {
+    mirror: (id: string) => Held;
+    hold: (id: string, state: MirrorState | null, error?: string) => void;
+    reload: (id: string) => void;
+};
 
-/** The projects with a request in flight, so a second render does not send a second request. */
-const inflight = new Set<string>();
+export function createDeposit(): DepositStore {
+    const held: Record<string, Held | undefined> = $state({});
 
-/** The mirror of one project. The first call for a project asks the server. */
-export function mirror(id: string): Held {
-    if (id === '') return NOTHING;
-    const one = held[id];
-    if (one === undefined) request(id);
-    return one ?? PENDING;
-}
+    /** The projects with a request in flight, so a second render does not send a second request. */
+    const inflight = new Set<string>();
 
-/**
- * Put a state in by hand. The panel does not call it; tests/views/deposit.test.ts does, because
- * there is no fetch in a server-rendered test and a panel with nothing held renders its first line
- * and stops.
- */
-export function hold(id: string, state: MirrorState | null, error = ''): void {
-    held[id] = { state, error, loading: false };
-}
-
-/** Ask again for one project, which is what the panel does after every write it makes. */
-export function reload(id: string): void {
-    if (id === '') return;
-    request(id);
-}
-
-/** Schedule one fetch, off the caller's stack so no state is written inside a derived. */
-function request(id: string): void {
-    if (inflight.has(id)) return;
-    inflight.add(id);
-    queueMicrotask(() => {
-        void load(id);
-    });
-}
-
-async function load(id: string): Promise<void> {
-    try {
-        // There is no fetch while the page is rendered on the server, and nothing to show there
-        // either: the panel stays pending and the browser asks for it on the first client render.
-        if (typeof window === 'undefined' || typeof fetch !== 'function') return;
-        const response = await fetch(`/api/deposit?id=${encodeURIComponent(id)}`);
-        const body = (await response.json()) as { state?: MirrorState; error?: string };
-        if (!response.ok) {
-            held[id] = {
-                state: null,
-                error: body.error ?? String(response.status),
-                loading: false
-            };
-            return;
-        }
-        held[id] = { state: body.state ?? null, error: '', loading: false };
-    } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        held[id] = { state: null, error: reason, loading: false };
-    } finally {
-        inflight.delete(id);
+    /** The mirror of one project. The first call for a project asks the server. */
+    function mirror(id: string): Held {
+        if (id === '') return NOTHING;
+        const one = held[id];
+        if (one === undefined) request(id);
+        return one ?? PENDING;
     }
+
+    /**
+     * Put a state in by hand. The panel does not call it; tests/views/deposit.test.ts does, because
+     * there is no fetch in a server-rendered test and a panel with nothing held renders its first line
+     * and stops.
+     */
+    function hold(id: string, state: MirrorState | null, error = ''): void {
+        held[id] = { state, error, loading: false };
+    }
+
+    /** Ask again for one project, which is what the panel does after every write it makes. */
+    function reload(id: string): void {
+        if (id === '') return;
+        request(id);
+    }
+
+    /** Schedule one fetch, off the caller's stack so no state is written inside a derived. */
+    function request(id: string): void {
+        if (inflight.has(id)) return;
+        inflight.add(id);
+        queueMicrotask(() => {
+            void load(id);
+        });
+    }
+
+    async function load(id: string): Promise<void> {
+        try {
+            // There is no fetch while the page is rendered on the server, and nothing to show there
+            // either: the panel stays pending and the browser asks for it on the first client render.
+            if (typeof window === 'undefined' || typeof fetch !== 'function') return;
+            const response = await fetch(`/api/deposit?id=${encodeURIComponent(id)}`);
+            const body = (await response.json()) as { state?: MirrorState; error?: string };
+            if (!response.ok) {
+                held[id] = {
+                    state: null,
+                    error: body.error ?? String(response.status),
+                    loading: false
+                };
+                return;
+            }
+            held[id] = { state: body.state ?? null, error: '', loading: false };
+        } catch (error) {
+            const reason = error instanceof Error ? error.message : String(error);
+            held[id] = { state: null, error: reason, loading: false };
+        } finally {
+            inflight.delete(id);
+        }
+    }
+
+    return { mirror, hold, reload };
 }

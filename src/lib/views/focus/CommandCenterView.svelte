@@ -6,10 +6,14 @@
     import Ticker from '$lib/ui/Ticker.svelte';
     import type { TickerRow } from '$lib/ui/ticker-rows';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { openView } from '$lib/state/layout.svelte';
     import type { Ticker as FocusTicker } from '$lib/state/ticker';
     import { t } from '$lib/state/text';
-    import { pillText } from '$lib/state/hpc.svelte';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { openView },
+        hpc: { pillText }
+    } = useState();
 
     type RowGroup = { kind: string; rows: TickerRow[] };
     type ViewRows = {

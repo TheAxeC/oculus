@@ -1,7 +1,6 @@
 import { setAscii, setCatalog, setGlyphs } from '$lib/state/text';
 import { setAppearance } from '$lib/state/appearance';
 import { setVocab } from '$lib/state/tones';
-import { setToken } from '$lib/state/writes.svelte';
 import { configInstalled } from '$lib/state/generation.svelte';
 import type { PageLoad } from './$types';
 
@@ -11,11 +10,12 @@ import type { PageLoad } from './$types';
 // `config` channel instead.
 //
 // The collection keys are not installed anywhere: they are handed to the page, which registers one
-// view per key. They are data rather than state because the registry is not a store.
+// view per key in the registry of the client it builds.
 //
-// The write token is installed the same way. This load runs again on invalidateAll(), so the token a
-// restarted server minted replaces the stale one without the page being reloaded by hand. That
-// second run replaces the four stores as well, which is why it raises the configuration's
+// The write token is handed on rather than installed: it belongs to the client the page builds, and
+// the page puts it in that client's write store. This load runs again on invalidateAll(), so the
+// token a restarted server minted replaces the stale one without the page being reloaded by hand.
+// That second run replaces the four catalogs as well, which is why it raises the configuration's
 // generation at the end, after the last setter: a page already drawn then draws again with what
 // this installed instead of holding what it loaded with.
 export const load: PageLoad = ({ data }) => {
@@ -24,7 +24,6 @@ export const load: PageLoad = ({ data }) => {
     setAscii(data.ascii);
     setVocab(data.vocab);
     setAppearance(data.vocab);
-    setToken(data.token);
     configInstalled();
-    return { collections: data.collections };
+    return { collections: data.collections, token: data.token };
 };

@@ -1,19 +1,11 @@
 // Layer 3, shell. Workbench keyboard dispatch connects pure key actions to layout state and the
 // focused pane's ordered card ids. Views alone render the cursor held in each instance.
 
-import { dragging } from '$lib/state/drag.svelte';
-import {
-    activateInstance,
-    instanceLayoutState,
-    layout,
-    openView,
-    pageShortcut,
-    restateInstance,
-    restorePanes
-} from '$lib/state/layout.svelte';
+import type { DragStore } from '$lib/state/drag.svelte';
+import type { LayoutStore } from '$lib/state/layout.svelte';
 import type { Focus, Instance } from '$lib/state/layout';
 import { cardCursor, paneAt, reconcileCardCursor, withCardCursor } from '$lib/state/layout';
-import { requestCardMove } from '$lib/state/ui.svelte';
+import type { UiStore } from '$lib/state/ui.svelte';
 import { activateCursor, focusSearch, scrollContainer, scrollRegion } from './key-dom';
 import {
     horizontalCursor,
@@ -25,6 +17,9 @@ import {
 } from './keys';
 
 type Options = {
+    drag: DragStore;
+    layout: LayoutStore;
+    ui: UiStore;
     navigation: () => RailOrder;
     activeMain: () => Instance | null;
     focus: () => Focus | null;
@@ -124,16 +119,16 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             return;
         }
         if (event.key !== 'Escape' || event.defaultPrevented) return;
-        if (dragging() !== null || options.focus() === null) return;
+        if (options.drag.dragging() !== null || options.focus() === null) return;
         event.preventDefault();
-        restorePanes();
+        options.layout.restorePanes();
     }
 
     /** Apply one resolved key action to shell state or the focused pane's DOM. */
     function perform(action: KeyAction, pane: HTMLElement | null): boolean {
         if (action.kind === 'open') {
             clearCursor();
-            openView(action.view, action.target);
+            options.layout.openView(action.view, action.target);
         } else if (action.kind === 'cursor') {
             return moveCursor(pane, action.direction);
         } else if (action.kind === 'move') {
@@ -145,7 +140,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         } else if (action.kind === 'scroll') {
             return scrollRegion(scrollContainer(pane), action.edge);
         } else if (action.kind === 'page') {
-            return pageShortcut(action.index);
+            return options.layout.pageShortcut(action.index);
         } else if (action.kind === 'tab') {
             return activateTab(pane, action.index);
         } else if (action.kind === 'sheet') {
@@ -168,11 +163,11 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         const path = raw === '' ? [] : raw.split('.').map(Number);
         if (path.some((step) => !Number.isInteger(step))) return false;
         const target = pane?.dataset.paneTarget === 'panel' ? 'panel' : 'main';
-        const node = paneAt(layout(target), path) ?? undefined;
+        const node = paneAt(options.layout.layout(target), path) ?? undefined;
         const tab = node?.tabs.at(index - 1);
         if (tab === undefined) return false;
         clearCursor();
-        activateInstance(target, tab.id);
+        options.layout.activateInstance(target, tab.id);
         return true;
     }
 
@@ -237,7 +232,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         const id = instanceIn(pane);
         const cursor = cursorIn(pane);
         if (id === null || cursor === null) return false;
-        requestCardMove(id, cursor, direction === 'left' ? -1 : 1);
+        options.ui.requestCardMove(id, cursor, direction === 'left' ? -1 : 1);
         return true;
     }
 
@@ -249,20 +244,20 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
 
     function cursorIn(pane: HTMLElement | null): string | null {
         const id = instanceIn(pane);
-        return id === null ? null : cardCursor(instanceLayoutState(id));
+        return id === null ? null : cardCursor(options.layout.instanceLayoutState(id));
     }
 
     function writeCursor(pane: HTMLElement | null, cursor: string | null): void {
         if (pane === null) return;
         const id = instanceIn(pane);
         if (id === null) return;
-        const state = instanceLayoutState(id);
+        const state = options.layout.instanceLayoutState(id);
         if (cardCursor(state) === cursor) {
             if (cursor !== null && pane !== observedPane) observePane(pane);
             if (cursor === null && pane === observedPane) stopCards();
             return;
         }
-        restateInstance(id, withCardCursor(state, cursor));
+        options.layout.restateInstance(id, withCardCursor(state, cursor));
         if (cursor === null) {
             if (pane === observedPane) stopCards();
         } else {
@@ -278,7 +273,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     function reconcilePane(pane: HTMLElement): void {
         const id = instanceIn(pane);
         if (id === null) return;
-        const state = instanceLayoutState(id);
+        const state = options.layout.instanceLayoutState(id);
         const reconciled = reconcileCardCursor(
             state,
             cards(pane).map((card) => card.id)

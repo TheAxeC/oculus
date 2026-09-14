@@ -3,7 +3,7 @@
 // touches localStorage or the DOM: the pure half is state/layout/ and the store takes the storage
 // it is given.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
     LAYOUT_VERSION,
     MAX_CHILDREN,
@@ -35,28 +35,7 @@ import {
     type Layout,
     type Workbench
 } from '../../src/lib/state/layout/index.ts';
-import {
-    LAYOUT_KEY,
-    activateInstance,
-    activeInstance,
-    apply,
-    change,
-    closeInstanceIn,
-    closePaneIn,
-    dock,
-    dockedAt,
-    focused,
-    layout,
-    loadLayout,
-    maximisePane,
-    openView,
-    panelSize,
-    resizePanel,
-    restorePanes,
-    splitInstance,
-    transferInstance,
-    workbench
-} from '../../src/lib/state/layout.svelte.ts';
+import { LAYOUT_KEY } from '../../src/lib/state/layout.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
 import { fields } from '../../src/lib/data/guards.ts';
@@ -72,6 +51,53 @@ import {
     three,
     viewsOf
 } from './layout-fixture.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let activateInstance: ClientState['layout']['activateInstance'];
+let activeInstance: ClientState['layout']['activeInstance'];
+let apply: ClientState['layout']['apply'];
+let change: ClientState['layout']['change'];
+let closeInstanceIn: ClientState['layout']['closeInstanceIn'];
+let closePaneIn: ClientState['layout']['closePaneIn'];
+let dock: ClientState['layout']['dock'];
+let dockedAt: ClientState['layout']['dockedAt'];
+let focused: ClientState['layout']['focused'];
+let layout: ClientState['layout']['layout'];
+let loadLayout: ClientState['layout']['loadLayout'];
+let maximisePane: ClientState['layout']['maximisePane'];
+let openView: ClientState['layout']['openView'];
+let panelSize: ClientState['layout']['panelSize'];
+let resizePanel: ClientState['layout']['resizePanel'];
+let restorePanes: ClientState['layout']['restorePanes'];
+let splitInstance: ClientState['layout']['splitInstance'];
+let transferInstance: ClientState['layout']['transferInstance'];
+let workbench: ClientState['layout']['workbench'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({
+        activateInstance,
+        activeInstance,
+        apply,
+        change,
+        closeInstanceIn,
+        closePaneIn,
+        dock,
+        dockedAt,
+        focused,
+        layout,
+        loadLayout,
+        maximisePane,
+        openView,
+        panelSize,
+        resizePanel,
+        restorePanes,
+        splitInstance,
+        transferInstance,
+        workbench
+    } = client.layout);
+});
 
 // The trees, the workbenches and the fake Storage are tests/state/layout-fixture.ts, shared with
 // the pages suite beside this one. The catalog is installed because loadLayout names the page it

@@ -1,11 +1,20 @@
 // The feed reader over the latest complete socket payload, plus feed-summary attention lines.
 
-import { describe, expect, it } from 'vitest';
-import { feed } from '../../src/lib/state/feeds.svelte.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { attention } from '../../src/lib/state/feeds.ts';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import type { FeedsPayload, Project, Snapshot } from '../../src/lib/data/model.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let feed: ClientState['feeds']['feed'];
+let receive: ClientState['entities']['receive'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ feed } = client.feeds);
+    ({ receive } = client.entities);
+});
 
 describe('feed state', () => {
     it('is null before the first feeds message', () => {

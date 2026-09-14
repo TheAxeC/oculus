@@ -1,18 +1,7 @@
 // Layer 2, client state tests. Layout pins live on the instance, identify one tab per session and can be
 // replaced in place without moving the tab or changing another tree.
 
-import { describe, expect, it } from 'vitest';
-import {
-    activateInstance,
-    apply,
-    instanceLayoutState,
-    layout,
-    openPinnedView,
-    openView,
-    pinInstance,
-    restateInstance,
-    unpinInstance
-} from '../../src/lib/state/layout.svelte.ts';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
     defaultWorkbench,
     findView,
@@ -21,6 +10,33 @@ import {
     type Instance,
     type Target
 } from '../../src/lib/state/layout/index.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let activateInstance: ClientState['layout']['activateInstance'];
+let apply: ClientState['layout']['apply'];
+let instanceLayoutState: ClientState['layout']['instanceLayoutState'];
+let layout: ClientState['layout']['layout'];
+let openPinnedView: ClientState['layout']['openPinnedView'];
+let openView: ClientState['layout']['openView'];
+let pinInstance: ClientState['layout']['pinInstance'];
+let restateInstance: ClientState['layout']['restateInstance'];
+let unpinInstance: ClientState['layout']['unpinInstance'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({
+        activateInstance,
+        apply,
+        instanceLayoutState,
+        layout,
+        openPinnedView,
+        openView,
+        pinInstance,
+        restateInstance,
+        unpinInstance
+    } = client.layout);
+});
 
 /** One main pane holding the instances a case names, around the ordinary default panel. */
 function show(instances: Instance[]): void {

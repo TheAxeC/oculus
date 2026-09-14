@@ -1,11 +1,10 @@
 // The Lit Watch view rendered over a received feed message with every section and card marker.
 
 import { render } from 'svelte/server';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Radar from '../../src/lib/views/Radar.svelte';
 import { openSourceFile } from '../../src/lib/views/shared/edit-bar.ts';
 import { findInstance } from '../../src/lib/state/instance.ts';
-import { layout, loadLayout } from '../../src/lib/state/layout.svelte.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -13,14 +12,27 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { feedsFixture } from '../feeds-fixture.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
-import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { noop } from '../doubles.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let layout: ClientState['layout']['layout'];
+let loadLayout: ClientState['layout']['loadLayout'];
+let receive: ClientState['entities']['receive'];
+let setInstanceState: ClientState['ui']['setInstanceState'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ layout, loadLayout } = client.layout);
+    ({ receive } = client.entities);
+    ({ setInstanceState } = client.ui);
+    receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -74,7 +86,7 @@ describe('the Lit Watch view', () => {
     it('opens the bar file as a source tab and reuses the same file instance', () => {
         loadLayout({ getItem: () => null, setItem: noop });
         const file = { root: 'hub', path: 'feeds/literature-radar.yml' };
-        const id = openSourceFile(file);
+        const id = openSourceFile(client, file);
         expect(findInstance(layout(), id)?.instance).toEqual({
             id,
             view: 'source',
@@ -83,7 +95,7 @@ describe('the Lit Watch view', () => {
                 label: 'literature-radar.yml'
             }
         });
-        expect(openSourceFile(file)).toBe(id);
+        expect(openSourceFile(client, file)).toBe(id);
     });
 
     it('draws its intro, search, ordered sections, card details, actions, and collapsed dismissed section', () => {
@@ -104,7 +116,10 @@ describe('the Lit Watch view', () => {
             meta: { last_run: '2026-09-11' },
             entries
         });
-        const body = render(Radar, { props: { instance: instance('radar-one') } }).body;
+        const body = render(Radar, {
+            context: clientContext(client),
+            props: { instance: instance('radar-one') }
+        }).body;
         expect(body).toContain('data-edit-source');
         expect(body).toContain('data-source-root="hub"');
         expect(body).toContain('data-source-path="feeds/literature-radar.yml"');
@@ -136,9 +151,12 @@ describe('the Lit Watch view', () => {
             meta: {},
             entries: []
         });
-        expect(render(Radar, { props: { instance: instance('radar-empty') } }).body).toContain(
-            catalog['radar.empty']
-        );
+        expect(
+            render(Radar, {
+                context: clientContext(client),
+                props: { instance: instance('radar-empty') }
+            }).body
+        ).toContain(catalog['radar.empty']);
 
         serve({
             ok: true,
@@ -146,7 +164,10 @@ describe('the Lit Watch view', () => {
             file: 'feeds/literature-radar.yml',
             missing: true
         });
-        const missing = render(Radar, { props: { instance: instance('radar-missing') } }).body;
+        const missing = render(Radar, {
+            context: clientContext(client),
+            props: { instance: instance('radar-missing') }
+        }).body;
         expect(missing).toContain('No radar file yet');
         expect(missing).toContain('feeds/literature-radar.yml');
     });
@@ -163,6 +184,7 @@ describe('the Lit Watch view', () => {
             ]
         });
         const body = render(Radar, {
+            context: clientContext(client),
             props: { instance: instance('radar-dismissed', true) }
         }).body;
         expect(body).toContain(catalog['radar.restore']);
@@ -177,7 +199,10 @@ describe('the Lit Watch view', () => {
             meta: {},
             entries: [{ bucket: 'idea', maps_to: 'new-idea-candidate' }]
         });
-        const body = render(Radar, { props: { instance: instance('radar-untitled') } }).body;
+        const body = render(Radar, {
+            context: clientContext(client),
+            props: { instance: instance('radar-untitled') }
+        }).body;
         expect(body).toContain(catalog['radar.untitled']);
         expect(body).not.toContain(catalog['radar.dismiss_tip']);
         expect(body).not.toContain(catalog['radar.idea_tip']);
@@ -192,7 +217,10 @@ describe('the Lit Watch view', () => {
             },
             500
         );
-        const body = render(Radar, { props: { instance: instance('radar-error') } }).body;
+        const body = render(Radar, {
+            context: clientContext(client),
+            props: { instance: instance('radar-error') }
+        }).body;
         expect(body).toContain('Could not read feeds/literature-radar.yml: bad YAML');
         expect(body).not.toContain('No radar file yet');
     });

@@ -29,12 +29,17 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { sanitise } from '$lib/ui/html';
     import { clock } from '$lib/state/format';
-    import { instanceLayoutState, pinInstance, unpinInstance } from '$lib/state/layout.svelte';
     import { pinnedSession } from '$lib/state/selection.svelte';
-    import { sessionFor } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
-    import { follow, showing, turnsFor, type Turn } from '$lib/state/transcript.svelte';
+    import type { Turn } from '$lib/state/transcript.svelte';
     import type { ViewProps } from '$lib/views/registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { instanceLayoutState, pinInstance, unpinInstance },
+        selectors: { sessionFor },
+        transcripts: { follow, showing, turnsFor }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

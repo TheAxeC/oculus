@@ -15,18 +15,6 @@
 
 import { isTerminalId } from './terminals.svelte.ts';
 
-const store: { id: string | null } = $state({ id: null });
-
-/** Make one session the current one. An empty id and null both mean none. */
-export function select(id: string | null): void {
-    store.id = id === null || id === '' ? null : id;
-}
-
-/** The current session's id, or null when none is picked. */
-export function selected(): string | null {
-    return store.id;
-}
-
 /**
  * The session a view instance pinned, from the state it saved, or null when it follows the
  * selection. Pure over what it is handed, so a view reads it out of the layout instance and
@@ -38,13 +26,36 @@ export function pinnedSession(state: unknown): string | null {
     return typeof held === 'string' && held !== '' ? held : null;
 }
 
-/** The current selection when it names a terminal, and null when it names a session or nothing. */
-export function selectedTerminal(): string | null {
-    return isTerminalId(store.id) ? store.id : null;
-}
-
 /** The terminal a view instance pinned, out of the same `session` field pinnedSession reads. */
 export function pinnedTerminal(state: unknown): string | null {
     const held = pinnedSession(state);
     return isTerminalId(held) ? held : null;
+}
+
+/** The workbench's current session or terminal, for one client. */
+export type SelectionStore = {
+    select: (id: string | null) => void;
+    selected: () => string | null;
+    selectedTerminal: () => string | null;
+};
+
+export function createSelection(): SelectionStore {
+    const store: { id: string | null } = $state({ id: null });
+
+    /** Make one session the current one. An empty id and null both mean none. */
+    function select(id: string | null): void {
+        store.id = id === null || id === '' ? null : id;
+    }
+
+    /** The current session's id, or null when none is picked. */
+    function selected(): string | null {
+        return store.id;
+    }
+
+    /** The current selection when it names a terminal, and null when it names a session or nothing. */
+    function selectedTerminal(): string | null {
+        return isTerminalId(store.id) ? store.id : null;
+    }
+
+    return { select, selected, selectedTerminal };
 }

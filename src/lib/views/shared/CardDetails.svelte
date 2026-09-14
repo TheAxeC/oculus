@@ -4,11 +4,17 @@
 
     import Chip from '$lib/ui/Chip.svelte';
     import type { BoardItem } from '$lib/state/board';
-    import { disseminatedFor } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
     import { goto } from './card';
     import CardDocs from './CardDocs.svelte';
     import Subtasks from './Subtasks.svelte';
+    import { useState } from '$lib/state/use';
+
+    const client = useState();
+
+    const {
+        selectors: { disseminatedFor }
+    } = client;
 
     type Props = {
         /** The joined board item whose details are shown. */
@@ -80,7 +86,7 @@
                         type="button"
                         class="tag"
                         title={t('project.card.open_in', entry.collection)}
-                        onclick={() => goto(entry.collection, entry.title)}
+                        onclick={() => goto(client, entry.collection, entry.title)}
                     >
                         <Chip label={entry.title} />
                     </button>

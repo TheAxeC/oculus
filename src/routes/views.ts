@@ -2,13 +2,7 @@
 // default component. The route layer owns discovery so the view boundary does not import views.
 
 import type { Component } from 'svelte';
-import {
-    registerComponent,
-    unregisterView,
-    views,
-    type ViewProps,
-    type ViewRegistration
-} from '$lib/views/registry';
+import type { RegistryStore, ViewProps, ViewRegistration } from '$lib/views/registry';
 
 type RegistrationSource =
     ViewRegistration | ViewRegistration[] | ((keys: string[]) => ViewRegistration[]);
@@ -25,18 +19,23 @@ function definitions(source: RegistrationSource, keys?: string[]): ViewRegistrat
 }
 
 /** Register every discovered module that exports registration; other modules are view partials. */
-export function registerModules(modules: Record<string, unknown>): void {
+export function registerModules(registry: RegistryStore, modules: Record<string, unknown>): void {
     for (const [, unknownModule] of Object.entries(modules).sort(([left], [right]) =>
         left.localeCompare(right)
     )) {
         const module = unknownModule as ViewModule;
         if (module.registration === undefined) continue;
-        registerComponent(module.default, definitions(module.registration));
+        registry.registerComponent(module.default, definitions(module.registration));
     }
 }
 
-const modules = import.meta.glob('$lib/views/**/*.svelte', { eager: true });
-registerModules(modules);
+/** Every view module the build discovered, which the page registers into its own registry. */
+export const viewModules = import.meta.glob('$lib/views/**/*.svelte', { eager: true });
+
+/** Fill one client's registry with every discovered view. */
+export function registerAll(registry: RegistryStore): void {
+    registerModules(registry, viewModules);
+}
 
 /**
  * Register the generic Collection view once per configured collection key, and drop the views of
@@ -47,16 +46,16 @@ registerModules(modules);
  * drawn by that module's own component, so this module owns the collection registrations without
  * keeping a second record of them anywhere.
  */
-export function registerCollections(keys: string[]): void {
-    for (const unknownModule of Object.values(modules)) {
+export function registerCollections(registry: RegistryStore, keys: string[]): void {
+    for (const unknownModule of Object.values(viewModules)) {
         const module = unknownModule as ViewModule;
         if (typeof module.registration !== 'function') continue;
         const wanted = definitions(module.registration, keys);
         const ids = new Set(wanted.map((registration) => registration.id));
-        for (const registration of views()) {
+        for (const registration of registry.views()) {
             if (registration.component !== module.default) continue;
-            if (!ids.has(registration.id)) unregisterView(registration.id);
+            if (!ids.has(registration.id)) registry.unregisterView(registration.id);
         }
-        registerComponent(module.default, wanted);
+        registry.registerComponent(module.default, wanted);
     }
 }

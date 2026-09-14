@@ -24,12 +24,16 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // and no I/O. The model's own concern modules (`data/model-*`) are reached through the facade only,
 // which is why they are not listed here.
 //
-// The shell's row names the state modules the workbench is made of, one at a time. The one drag in progress belongs to the shell, as do the theme picker and the configuration it offers; views do not read or write either concern.
+// The shell's row names the state modules the workbench is made of, one at a time. The one drag in progress belongs to the shell, as do the theme picker and the configuration it offers; views do not read or write either concern. A shell component reaches those stores through the client object (`state/context`, read with `state/use`), which names every store there is, so the row alone would no longer hold the shell to its own: the stores a shell file may take out of the object are SHELL_STORES below, and the second rule checks each destructuring against that list.
+//
+// `state/context` is where the client's stores are wired together, so it is the one module of the state layer that names the view registry and the primitives' tooltip counter.
 const ALLOWED: Record<string, string[]> = {
     ui: ['ui/**', 'themes/**', 'state/text'],
     shell: [
         'shell/**',
         'ui/**',
+        'state/context',
+        'state/use',
         'state/layout',
         'state/drag',
         'state/ui',
@@ -42,7 +46,7 @@ const ALLOWED: Record<string, string[]> = {
         'views/registry'
     ],
     views: ['ui/**', 'state/**', 'views/registry', 'views/shared/**'],
-    state: ['state/**', 'data/model', 'data/guards', 'data/dates'],
+    state: ['state/**', 'data/model', 'data/guards', 'data/dates', 'views/registry', 'ui/tip-ids'],
     data: ['data/**'],
     server: ['server/**', 'data/**'],
     'server/transcripts': ['server/transcripts/**', 'data/**'],
@@ -121,6 +125,29 @@ export function findViolations(libRoot: string): string[] {
     return violations.sort();
 }
 
+/** Whether a file's module-level bindings are checked: the server's, the routes', the client's. */
+function holdsModuleState(fileRel: string): boolean {
+    return (
+        fileRel.startsWith('lib/server/') ||
+        fileRel.startsWith('routes/') ||
+        fileRel.startsWith('lib/state/') ||
+        fileRel.startsWith('lib/shell/') ||
+        fileRel.startsWith('lib/ui/') ||
+        fileRel === 'lib/views/registry.ts'
+    );
+}
+
+/**
+ * The lines whose bindings are module-level. A .ts file's are all of them; a component's are its
+ * `<script module>` block alone, since what its instance script declares belongs to one mounted
+ * component and not to the module.
+ */
+function moduleLines(fileRel: string, text: string): string[] {
+    if (!fileRel.endsWith('.svelte')) return text.split('\n');
+    const found = /<script[^>]*\bmodule\b[^>]*>([\s\S]*?)<\/script>/.exec(text);
+    return found === null ? [] : found[1].replace(/^ {4}/gm, '').split('\n');
+}
+
 /** Process-wide state is forbidden under src; app.d.ts alone declares Kit's App namespace. */
 export function findGlobalState(sourceRoot: string): string[] {
     const violations: string[] = [];
@@ -131,12 +158,14 @@ export function findGlobalState(sourceRoot: string): string[] {
             violations.push(`${fileRel} declares global state`);
         }
         // The server runs as two module graphs (the built handler and the Node entry), so a
-        // module-level collection there is shared state nothing owns; the client's state modules
-        // hold their runes at module level by the state layer's design and are one graph.
-        if (!fileRel.startsWith('lib/server/') && !fileRel.startsWith('routes/')) continue;
-        for (const line of text.split('\n')) {
+        // module-level collection there is shared state nothing owns. The client is one graph, and
+        // a collection held at module level there is every open page sharing one store: the stores
+        // are built per client by state/context.ts and reached through Svelte's context, so the
+        // same rule covers the client, with the catalogs named in FROZEN as the whole exception.
+        if (!holdsModuleState(fileRel)) continue;
+        for (const line of moduleLines(fileRel, text)) {
             const held =
-                /^(?:export )?const (\w+)(?::[^=]+)? = (?:new (?:Map|Set)\b|\{\}|\[\])/.exec(
+                /^(?:export )?const (\w+)(?::[^=]+)? = (?:new (?:Map|Set)\b|\{\}|\[\]|\$state)/.exec(
                     line
                 ) ?? /^(?:export )?let (\w+)\b/.exec(line);
             if (held !== null && !FROZEN.includes(`${fileRel}:${held[1]}`)) {
@@ -147,8 +176,76 @@ export function findGlobalState(sourceRoot: string): string[] {
     return violations.sort();
 }
 
-/** Module-level collections that are never written after load: lookup tables, listed by name. */
-const FROZEN = ['lib/server/pty/channel.ts:CHANGE_EVENTS', 'lib/server/pty/tmux.ts:SINGLES'];
+/**
+ * Module-level bindings that are not a store, listed by name.
+ *
+ * The server's two are lookup tables written once at load. The client's are the three catalogs:
+ * state/text.ts, state/tones.ts and state/appearance.ts hold what the server last sent, are never
+ * written after a push installs them, and are read by t(), toneOf() and themes() from every layer,
+ * `ui/` included, where there is no client object to read them from. The two runes beside them,
+ * state/generation.svelte.ts and state/glyphmode.svelte.ts, are what makes those reads redraw: a
+ * generation held per client would say a push had landed for one client and not for another over
+ * the one set of maps they both read.
+ */
+const FROZEN = [
+    'lib/server/pty/channel.ts:CHANGE_EVENTS',
+    'lib/server/pty/tmux.ts:SINGLES',
+    'lib/state/text.ts:catalog',
+    'lib/state/text.ts:glyphs',
+    'lib/state/text.ts:ascii',
+    'lib/state/tones.ts:palette',
+    'lib/state/tones.ts:statusPalette',
+    'lib/state/tones.ts:typeColor',
+    'lib/state/tones.ts:legend',
+    'lib/state/tones.ts:domainColor',
+    'lib/state/tones.ts:domainText',
+    'lib/state/tones.ts:dataAccess',
+    'lib/state/appearance.ts:list',
+    'lib/state/appearance.ts:byName',
+    'lib/state/appearance.ts:paper',
+    'lib/state/appearance.ts:crt',
+    'lib/state/appearance.ts:terminalFont',
+    'lib/state/generation.svelte.ts:held',
+    'lib/state/glyphmode.svelte.ts:held'
+];
+
+/** The stores a shell file may take out of the client object: the shell's row, by store name. */
+const SHELL_STORES = [
+    'layout',
+    'drag',
+    'ui',
+    'selection',
+    'terminals',
+    'paletteSource',
+    'registry'
+];
+
+/**
+ * A shell file reading a store the shell's row does not name, whether it destructures it out of the
+ * client object or reaches it by name. The row lists modules, and the client object names every
+ * store there is, so this is what keeps the shell to its own concerns.
+ *
+ * The one thing it cannot follow is the whole object passed on: the rail and the pane strip hand it
+ * to badgeOf(), so that a view's own badge hook reads the view's own stores.
+ */
+export function findShellStores(libRoot: string): string[] {
+    const violations: string[] = [];
+    for (const fileRel of sourceFiles(libRoot)) {
+        if (!fileRel.startsWith('shell/')) continue;
+        const text = readFileSync(join(libRoot, fileRel), 'utf8');
+        const read = (name: string) => {
+            if (name === '' || SHELL_STORES.includes(name)) return;
+            violations.push(`${fileRel} reads store ${name}`);
+        };
+        for (const match of text.matchAll(
+            /const\s*\{([^}]*(?:\{[^}]*\}[^}]*)*)\}\s*=\s*(?:client|useState\(\))/g
+        )) {
+            for (const part of match[1].split(/,(?![^{]*\})/)) read(part.split(':')[0].trim());
+        }
+        for (const match of text.matchAll(/\bclient\.(\w+)/g)) read(match[1]);
+    }
+    return violations.sort();
+}
 
 describe('layer boundaries', () => {
     it('holds across src/lib', () => {
@@ -157,6 +254,24 @@ describe('layer boundaries', () => {
 
     it('holds no process-wide state under src', () => {
         expect(findGlobalState(SRC)).toEqual([]);
+    });
+
+    it('keeps every shell file to the stores its row names', () => {
+        expect(findShellStores(LIB)).toEqual([]);
+    });
+
+    it('catches a shell file reading a store the shell may not read', () => {
+        const dir = mkdtempSync(join(tmpdir(), 'oculus-shell-stores-'));
+        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        mkdirSync(join(dir, 'shell'), { recursive: true });
+        writeFileSync(
+            join(dir, 'shell', 'Bad.svelte'),
+            '<script>\nconst {\n    layout: { openView },\n    entities: { portfolio }\n} = useState();\nconst held = client.files.files(id);\n</script>'
+        );
+        expect(findShellStores(dir)).toEqual([
+            'shell/Bad.svelte reads store entities',
+            'shell/Bad.svelte reads store files'
+        ]);
     });
 
     it('catches process-wide state outside app.d.ts', () => {
@@ -169,11 +284,17 @@ describe('layer boundaries', () => {
             'const cache = new Map<string, string>();\nlet recorder = null;\n'
         );
         writeFileSync(join(dir, 'app.d.ts'), 'declare global { namespace App {} }\n');
+        mkdirSync(join(dir, 'lib', 'state'), { recursive: true });
+        writeFileSync(
+            join(dir, 'lib', 'state', 'held.svelte.ts'),
+            'const rows = $state({});\nconst pure = (id: string) => id;\n'
+        );
         expect(findGlobalState(dir)).toEqual([
             'bad.ts declares global state',
             'bad.ts uses globalThis',
             'lib/server/held.ts holds module-level state in cache',
-            'lib/server/held.ts holds module-level state in recorder'
+            'lib/server/held.ts holds module-level state in recorder',
+            'lib/state/held.svelte.ts holds module-level state in rows'
         ]);
     });
 

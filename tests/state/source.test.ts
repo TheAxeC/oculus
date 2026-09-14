@@ -3,22 +3,33 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     loadSource,
-    saveSource,
     sourceAccess,
     sourceFileUrl,
-    sourceTabState,
-    loadSourceDraft,
-    editSourceDraft,
-    saveSourceDraft,
-    sourceDraft
+    sourceTabState
 } from '../../src/lib/state/source.svelte.ts';
-import { setToken } from '../../src/lib/state/writes.svelte.ts';
 import { stateId } from '../../src/lib/state/instance.ts';
-import { loadUi } from '../../src/lib/state/ui.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
 import { noop } from '../doubles.ts';
 import { fields, scalar } from '../../src/lib/data/guards.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let saveSource: ClientState['source']['saveSource'];
+let loadSourceDraft: ClientState['source']['loadSourceDraft'];
+let editSourceDraft: ClientState['source']['editSourceDraft'];
+let saveSourceDraft: ClientState['source']['saveSourceDraft'];
+let sourceDraft: ClientState['source']['sourceDraft'];
+let setToken: ClientState['writes']['setToken'];
+let loadUi: ClientState['ui']['loadUi'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ saveSource, loadSourceDraft, editSourceDraft, saveSourceDraft, sourceDraft } =
+        client.source);
+    ({ setToken } = client.writes);
+    ({ loadUi } = client.ui);
+});
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 

@@ -8,9 +8,13 @@
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { groupProjects, type CrossGroup, type Project } from '$lib/state/collection';
-    import { openView } from '$lib/state/layout.svelte';
     import { t } from '$lib/state/text';
-    import { archiveDead } from '$lib/state/selectors.svelte';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { openView },
+        selectors: { archiveDead }
+    } = useState();
 
     type Source =
         { projects: Project[]; groups?: never } | { projects?: never; groups: CrossGroup[] };

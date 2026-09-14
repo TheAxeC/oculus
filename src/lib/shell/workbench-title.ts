@@ -2,17 +2,18 @@
 // waiting in front of them. Apart from the component so the DOM-free string contract is testable.
 
 import { t as catalogText } from '$lib/state/text';
-import { registrationLabel, viewFor } from '$lib/views/registry';
+import { registrationLabel } from '$lib/views/registry';
+import type { RegistryStore } from '$lib/views/registry';
 import type { Instance } from '$lib/state/layout';
 
 /** The words on the active main tab, including the per-instance label when it has one. */
-export function activeLabel(instance: Instance | null): string {
+export function activeLabel(registry: RegistryStore, instance: Instance | null): string {
     if (instance === null) return catalogText('app.title');
     if (typeof instance.state === 'object' && instance.state !== null) {
         const held = (instance.state as Record<string, unknown>).label;
         if (typeof held === 'string' && held !== '') return held;
     }
-    const registered = viewFor(instance.view);
+    const registered = registry.viewFor(instance.view);
     return registered === undefined
         ? catalogText('ui.unknown_view', instance.view)
         : registrationLabel(registered);

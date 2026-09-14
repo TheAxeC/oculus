@@ -33,157 +33,175 @@ const PENDING: TurnsState = { turns: [], offset: 0, pending: true, error: '' };
 /** What no session at all reads as: an empty id asks nothing and waits for nothing. */
 const NOTHING: TurnsState = { turns: [], offset: 0, pending: false, error: '' };
 
-const held: Record<string, TurnsState | undefined> = $state({});
+/** The turns of each session, held for one client while an instance shows it. */
+export type TranscriptsStore = {
+    turnsFor: (id: string) => TurnsState;
+    follow: (id: string, lastActivity: string | null) => void;
+    showing: (id: string) => () => void;
+    forget: (id: string) => void;
+    hold: (id: string, turns: Turn[], offset?: number) => void;
+};
 
-/** The lastActivity each session was last asked at. Not reactive: only requests read it. */
-const marks: Record<string, string | undefined> = {};
+export function createTranscripts(): TranscriptsStore {
+    const held: Record<string, TurnsState | undefined> = $state({});
 
-/** The sessions with a request in flight, so a second render does not send a second request. */
-const inflight = new Set<string>();
+    /** The lastActivity each session was last asked at. Not reactive: only requests read it. */
+    const marks: Record<string, string | undefined> = {};
 
-/** The sessions whose tail was wanted while a request was in flight, asked again when it lands. */
-const again = new Set<string>();
+    /** The sessions with a request in flight, so a second render does not send a second request. */
+    const inflight = new Set<string>();
 
-/**
- * The turns of one session. The first call for a session asks the server for the whole file; every
- * later call reads what is held, and follow() is what asks for the rest.
- */
-export function turnsFor(id: string): TurnsState {
-    if (id === '') return NOTHING;
-    const state = held[id];
-    if (state === undefined) request(id, 0);
-    return state ?? PENDING;
-}
+    /** The sessions whose tail was wanted while a request was in flight, asked again when it lands. */
+    const again = new Set<string>();
 
-/**
- * Read what has been appended since the last read, when the record says there is something. Called
- * from the view's effect with the record's lastActivity: the first call for a session only notes the
- * stamp, since the read turnsFor() scheduled already carries everything written up to it.
- */
-export function follow(id: string, lastActivity: string | null): void {
-    if (id === '') return;
-    const mark = lastActivity ?? '';
-    const first = marks[id] === undefined;
-    if (marks[id] === mark) return;
-    marks[id] = mark;
-    if (first) return;
-    const state = held[id];
-    if (state === undefined) return;
-    request(id, state.offset);
-}
+    /**
+     * The turns of one session. The first call for a session asks the server for the whole file; every
+     * later call reads what is held, and follow() is what asks for the rest.
+     */
+    function turnsFor(id: string): TurnsState {
+        if (id === '') return NOTHING;
+        const state = held[id];
+        if (state === undefined) request(id, 0);
+        return state ?? PENDING;
+    }
 
-/** How many instances are showing each session, so the last one to close is what drops its turns. */
-const viewers: Record<string, number> = {};
+    /**
+     * Read what has been appended since the last read, when the record says there is something. Called
+     * from the view's effect with the record's lastActivity: the first call for a session only notes the
+     * stamp, since the read turnsFor() scheduled already carries everything written up to it.
+     */
+    function follow(id: string, lastActivity: string | null): void {
+        if (id === '') return;
+        const mark = lastActivity ?? '';
+        const first = marks[id] === undefined;
+        if (marks[id] === mark) return;
+        marks[id] = mark;
+        if (first) return;
+        const state = held[id];
+        if (state === undefined) return;
+        request(id, state.offset);
+    }
 
-/**
- * Note that one instance is showing the session, and hand back the call that says it stopped. What
- * is held otherwise stays held for the page's life: a session opened once keeps its whole transcript
- * in memory, and a long day's transcript is the larger part of what the page holds. When the last
- * instance showing a session closes, its turns are dropped and the next open reads the tail again.
- * Calling the returned function twice counts once, so an instance that releases on both a teardown
- * and a change of session does not drop turns another instance is still drawing.
- */
-export function showing(id: string): () => void {
-    if (id === '') {
+    /** How many instances are showing each session, so the last one to close is what drops its turns. */
+    const viewers: Record<string, number> = {};
+
+    /**
+     * Note that one instance is showing the session, and hand back the call that says it stopped. What
+     * is held otherwise stays held for the page's life: a session opened once keeps its whole transcript
+     * in memory, and a long day's transcript is the larger part of what the page holds. When the last
+     * instance showing a session closes, its turns are dropped and the next open reads the tail again.
+     * Calling the returned function twice counts once, so an instance that releases on both a teardown
+     * and a change of session does not drop turns another instance is still drawing.
+     */
+    function showing(id: string): () => void {
+        if (id === '') {
+            return () => {
+                // An unnamed instance was never counted, so releasing it drops nothing.
+            };
+        }
+        viewers[id] = (viewers[id] ?? 0) + 1;
+        let released = false;
         return () => {
-            // An unnamed instance was never counted, so releasing it drops nothing.
+            if (released) return;
+            released = true;
+            const left = (viewers[id] ?? 1) - 1;
+            if (left > 0) {
+                viewers[id] = left;
+                return;
+            }
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
+            delete viewers[id];
+            forget(id);
         };
     }
-    viewers[id] = (viewers[id] ?? 0) + 1;
-    let released = false;
-    return () => {
-        if (released) return;
-        released = true;
-        const left = (viewers[id] ?? 1) - 1;
-        if (left > 0) {
-            viewers[id] = left;
-            return;
-        }
+
+    /** Drop everything held for one session, so the next call for it fetches from the start again. */
+    function forget(id: string): void {
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         delete viewers[id];
-        forget(id);
-    };
-}
-
-/** Drop everything held for one session, so the next call for it fetches from the start again. */
-export function forget(id: string): void {
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
-    delete viewers[id];
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
-    delete held[id];
-    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
-    delete marks[id];
-    inflight.delete(id);
-    again.delete(id);
-}
-
-/** Schedule one fetch, off the caller's stack so no state is written inside a derived. */
-function request(id: string, from: number): void {
-    if (inflight.has(id)) {
-        again.add(id);
-        return;
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
+        delete held[id];
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
+        delete marks[id];
+        inflight.delete(id);
+        again.delete(id);
     }
-    inflight.add(id);
-    queueMicrotask(() => {
-        void load(id, from);
-    });
-}
 
-async function load(id: string, from: number): Promise<void> {
-    try {
-        // Nothing is fetched while the page is rendered on the server: there is no window to draw
-        // it in, and the browser asks for it on the first client render.
-        if (typeof window === 'undefined' || typeof fetch !== 'function') return;
-        const url = `/api/transcript?id=${encodeURIComponent(id)}&from=${from}`;
-        const response = await fetch(url);
-        const body = (await response.json()) as {
-            turns?: Turn[];
-            offset?: number;
-            results?: Record<string, boolean>;
-            error?: string;
-        };
-        if (!response.ok) {
-            held[id] = {
-                turns: held[id]?.turns ?? [],
-                offset: held[id]?.offset ?? from,
-                pending: false,
-                error: body.error ?? String(response.status)
-            };
+    /** Schedule one fetch, off the caller's stack so no state is written inside a derived. */
+    function request(id: string, from: number): void {
+        if (inflight.has(id)) {
+            again.add(id);
             return;
         }
-        merge(id, from, body.turns ?? [], body.offset ?? from, body.results ?? {});
-    } catch (error) {
-        const reason = error instanceof Error ? error.message : String(error);
-        held[id] = { turns: held[id]?.turns ?? [], offset: from, pending: false, error: reason };
-    } finally {
-        inflight.delete(id);
-        if (again.delete(id)) request(id, held[id]?.offset ?? 0);
+        inflight.add(id);
+        queueMicrotask(() => {
+            void load(id, from);
+        });
     }
-}
 
-/** Append what was read and fill in the outcome of every call whose turn is already held. */
-function merge(
-    id: string,
-    from: number,
-    turns: Turn[],
-    offset: number,
-    results: Record<string, boolean | undefined>
-): void {
-    const base = from === 0 ? [] : (held[id]?.turns ?? []);
-    const whole = [...base, ...turns];
-    for (const turn of whole) {
-        const tool = turn.tool;
-        if (tool === null || tool.id === '') continue;
-        const ok = results[tool.id];
-        if (ok !== undefined) tool.ok = ok;
+    async function load(id: string, from: number): Promise<void> {
+        try {
+            // Nothing is fetched while the page is rendered on the server: there is no window to draw
+            // it in, and the browser asks for it on the first client render.
+            if (typeof window === 'undefined' || typeof fetch !== 'function') return;
+            const url = `/api/transcript?id=${encodeURIComponent(id)}&from=${from}`;
+            const response = await fetch(url);
+            const body = (await response.json()) as {
+                turns?: Turn[];
+                offset?: number;
+                results?: Record<string, boolean>;
+                error?: string;
+            };
+            if (!response.ok) {
+                held[id] = {
+                    turns: held[id]?.turns ?? [],
+                    offset: held[id]?.offset ?? from,
+                    pending: false,
+                    error: body.error ?? String(response.status)
+                };
+                return;
+            }
+            merge(id, from, body.turns ?? [], body.offset ?? from, body.results ?? {});
+        } catch (error) {
+            const reason = error instanceof Error ? error.message : String(error);
+            held[id] = {
+                turns: held[id]?.turns ?? [],
+                offset: from,
+                pending: false,
+                error: reason
+            };
+        } finally {
+            inflight.delete(id);
+            if (again.delete(id)) request(id, held[id]?.offset ?? 0);
+        }
     }
-    held[id] = { turns: whole, offset, pending: false, error: '' };
-}
 
-/**
- * Put turns in as though they had been fetched. The one caller is tests/views/sessions.test.ts,
- * which renders on the server where no fetch runs; nothing in the application calls it.
- */
-export function hold(id: string, turns: Turn[], offset = 0): void {
-    held[id] = { turns, offset, pending: false, error: '' };
+    /** Append what was read and fill in the outcome of every call whose turn is already held. */
+    function merge(
+        id: string,
+        from: number,
+        turns: Turn[],
+        offset: number,
+        results: Record<string, boolean | undefined>
+    ): void {
+        const base = from === 0 ? [] : (held[id]?.turns ?? []);
+        const whole = [...base, ...turns];
+        for (const turn of whole) {
+            const tool = turn.tool;
+            if (tool === null || tool.id === '') continue;
+            const ok = results[tool.id];
+            if (ok !== undefined) tool.ok = ok;
+        }
+        held[id] = { turns: whole, offset, pending: false, error: '' };
+    }
+
+    /**
+     * Put turns in as though they had been fetched. The one caller is tests/views/sessions.test.ts,
+     * which renders on the server where no fetch runs; nothing in the application calls it.
+     */
+    function hold(id: string, turns: Turn[], offset = 0): void {
+        held[id] = { turns, offset, pending: false, error: '' };
+    }
+
+    return { turnsFor, follow, showing, forget, hold };
 }

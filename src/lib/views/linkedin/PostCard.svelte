@@ -9,7 +9,14 @@
     import { HUB_ROOT } from '$lib/state/collection';
     import { snippet, type LinkedinEntry } from '$lib/state/linkedin';
     import { t } from '$lib/state/text';
-    import { markPosted, type WriteAnswer } from '$lib/state/writes.svelte';
+    import type { WriteAnswer } from '$lib/state/writes.svelte';
+    import { useState } from '$lib/state/use';
+
+    const client = useState();
+
+    const {
+        writes: { markPosted }
+    } = client;
 
     type Props = {
         entry: LinkedinEntry;
@@ -46,7 +53,7 @@
     }
 
     function edit(): void {
-        openLinkedinSource(folder, entry.file);
+        openLinkedinSource(client.layout, folder, entry.file);
     }
 </script>
 

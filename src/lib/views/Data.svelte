@@ -32,10 +32,14 @@
     } from '$lib/state/datasets';
     import { inlineMarkdown } from '$lib/ui/html';
     import { cardCursor } from '$lib/state/instance';
-    import { collectionOf, datasets, projects } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
-    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        selectors: { collectionOf, datasets, projects },
+        ui: { instanceState, setInstanceState }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

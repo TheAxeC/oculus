@@ -2,9 +2,20 @@
 // guard leaves the network alone when there is no window, so every case puts turns in through
 // hold(), the module's test-only door, and reads them back through turnsFor().
 
-import { describe, expect, it } from 'vitest';
-import { forget, hold, showing, turnsFor } from '../../src/lib/state/transcript.svelte.ts';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { Turn } from '../../src/lib/data/model.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let forget: ClientState['transcripts']['forget'];
+let hold: ClientState['transcripts']['hold'];
+let showing: ClientState['transcripts']['showing'];
+let turnsFor: ClientState['transcripts']['turnsFor'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ forget, hold, showing, turnsFor } = client.transcripts);
+});
 
 /** One user turn, which is all these cases need to tell "held" from "dropped" apart. */
 function turn(text: string): Turn {

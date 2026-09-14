@@ -17,13 +17,19 @@
     import type { TickerRow } from '$lib/ui/ticker-rows';
     import { CATEGORIES, type Ticker as FocusTicker, type TickerItem } from '$lib/state/ticker';
     import { attention, refresh } from '$lib/state/feeds';
-    import { configMap } from '$lib/state/selectors.svelte';
-    import { portfolio } from '$lib/state/entities.svelte';
-    import { openView } from '$lib/state/layout.svelte';
-    import { instanceState, requestUpdateTray, setInstanceState } from '$lib/state/ui.svelte';
     import { t } from '$lib/state/text';
     import { act, dateTail, openLine, rowMaker } from './rows';
     import CommandCenterView from './CommandCenterView.svelte';
+    import { useState } from '$lib/state/use';
+
+    const client = useState();
+
+    const {
+        selectors: { configMap },
+        entities: { portfolio },
+        layout: { openView },
+        ui: { instanceState, requestUpdateTray, setInstanceState }
+    } = client;
 
     type Props = {
         /** The board's one ticker, walked once by the view that holds both sections. */
@@ -210,7 +216,7 @@
         const line = view.index[id];
         if (line === undefined) return;
         if (line.target?.kind === 'lead') reveal('leads', line.target.id, true);
-        else openLine(line, onproject);
+        else openLine(client.layout, line, onproject);
     }
 
     /** Open the view named by one attention line, revealing the exact venue when it names one. */
@@ -230,7 +236,7 @@
 
     /** One button on one line, and the one sentence the board says about what it wrote. */
     async function run(id: string, action: string): Promise<void> {
-        const said = await act(view.index[id], action, now);
+        const said = await act(client.writes, view.index[id], action, now);
         if (said !== null) onsaid(said);
     }
 </script>

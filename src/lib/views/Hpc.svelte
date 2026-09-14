@@ -1,17 +1,15 @@
 <script module lang="ts">
     // Layer 3, view registration. Live HPC follows Gallery in the system group.
     import type { ViewRegistration } from './registry';
-    import { badgeText } from '$lib/state/hpc.svelte';
-    import { queueBadgeTitle, queueCells } from '$lib/state/rail-badges.svelte';
     export const registration: ViewRegistration = {
         id: 'hpc',
         label: 'views.hpc',
         glyph: 'views.hpc_glyph',
         group: 'system',
         order: 3,
-        badge: badgeText,
-        badgeTitle: queueBadgeTitle,
-        badgeCells: queueCells,
+        badge: (client) => client.hpc.badgeText(),
+        badgeTitle: (client) => client.railBadges.queueBadgeTitle(),
+        badgeCells: (client) => client.railBadges.queueCells(),
         badgeTabText: () => ''
     };
 </script>
@@ -25,9 +23,13 @@
     import Log from './hpc/Log.svelte';
     import Quota from './hpc/Quota.svelte';
     import Recent from './hpc/Recent.svelte';
-    import { command, jobLog, queue } from '$lib/state/hpc.svelte';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        hpc: { command, jobLog, queue }
+    } = useState();
     let { instance }: ViewProps = $props();
     const data = $derived(queue());
     let logId = $state('');

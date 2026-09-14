@@ -3,22 +3,40 @@
 // The payload is synthetic and is handed to the entities store the way the socket would hand it
 // over. Nothing here reads ~/.claude, ~/.codex or ~/.oculus, and nothing writes anywhere.
 
-import { describe, expect, it } from 'vitest';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
-import { apply } from '../../src/lib/state/layout.svelte.ts';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { defaultWorkbench, type Instance } from '../../src/lib/state/layout/index.ts';
-import { select } from '../../src/lib/state/selection.svelte.ts';
-import {
-    contextWindow,
-    gitFor,
-    sessionById,
-    sessionFor,
-    sessionsByWorkspace,
-    sessionsForProject,
-    touchers
-} from '../../src/lib/state/selectors.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { area, git, payload, record, workspace } from '../sessions-fixture.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let receive: ClientState['entities']['receive'];
+let apply: ClientState['layout']['apply'];
+let select: ClientState['selection']['select'];
+let contextWindow: ClientState['selectors']['contextWindow'];
+let gitFor: ClientState['selectors']['gitFor'];
+let sessionById: ClientState['selectors']['sessionById'];
+let sessionFor: ClientState['selectors']['sessionFor'];
+let sessionsByWorkspace: ClientState['selectors']['sessionsByWorkspace'];
+let sessionsForProject: ClientState['selectors']['sessionsForProject'];
+let touchers: ClientState['selectors']['touchers'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ receive } = client.entities);
+    ({ apply } = client.layout);
+    ({ select } = client.selection);
+    ({
+        contextWindow,
+        gitFor,
+        sessionById,
+        sessionFor,
+        sessionsByWorkspace,
+        sessionsForProject,
+        touchers
+    } = client.selectors);
+    installFixture();
+});
 
 const { config } = loadConfig(engineDir());
 
@@ -67,17 +85,20 @@ const tree = [
     workspace('', [area('/(general)', [record('nowhere', { workspace: '', cwd: null })])])
 ];
 
-receive({ channel: 'sessions', version: 1, payload: payload(tree) });
-receive({
-    channel: 'git',
-    version: 1,
-    payload: { [HUB]: git({ branch: 'main', ahead: 2 }) }
-});
-receive({
-    channel: 'config',
-    version: 1,
-    payload: { config, text: textCatalog(config), findings: [] }
-});
+/** What every case here starts from, installed into the case's own client. */
+function installFixture(): void {
+    receive({ channel: 'sessions', version: 1, payload: payload(tree) });
+    receive({
+        channel: 'git',
+        version: 1,
+        payload: { [HUB]: git({ branch: 'main', ahead: 2 }) }
+    });
+    receive({
+        channel: 'config',
+        version: 1,
+        payload: { config, text: textCatalog(config), findings: [] }
+    });
+}
 
 describe('sessionById', () => {
     it('answers with the grouped session, which carries where it was filed', () => {

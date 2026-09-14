@@ -9,7 +9,7 @@
 // would write is written here through select() instead.
 
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Agents from '../../src/lib/views/sessions/Agents.svelte';
 import Changes from '../../src/lib/views/sessions/Changes.svelte';
@@ -28,19 +28,34 @@ import {
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { clock } from '../../src/lib/state/format.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
-import { apply } from '../../src/lib/state/layout.svelte.ts';
-import { select } from '../../src/lib/state/selection.svelte.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
-import { forget, hold, type Turn } from '../../src/lib/state/transcript.svelte.ts';
-import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
+import type { Turn } from '../../src/lib/state/transcript.svelte.ts';
 import { area, git, payload, record, terminal, workspace } from '../sessions-fixture.ts';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import type { Project, Snapshot } from '../../src/lib/data/model.ts';
 import type { Component } from 'svelte';
 import { defaultWorkbench, type Instance } from '../../src/lib/state/layout/index.ts';
 import type { ViewProps } from '../../src/lib/views/registry.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let receive: ClientState['entities']['receive'];
+let apply: ClientState['layout']['apply'];
+let select: ClientState['selection']['select'];
+let forget: ClientState['transcripts']['forget'];
+let hold: ClientState['transcripts']['hold'];
+let setInstanceState: ClientState['ui']['setInstanceState'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ receive } = client.entities);
+    ({ apply } = client.layout);
+    ({ select } = client.selection);
+    ({ forget, hold } = client.transcripts);
+    ({ setInstanceState } = client.ui);
+    installFixture();
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -168,7 +183,20 @@ const tree = [
     workspace('/other', [area('/other', [bare])])
 ];
 
-receive({ channel: 'sessions', version: 1, payload: payload(tree) });
+/** What every case here starts from, installed into the case's own client. */
+function installFixture(): void {
+    receive({ channel: 'sessions', version: 1, payload: payload(tree) });
+    receive({
+        channel: 'git',
+        version: 1,
+        payload: {
+            [HUB]: HUB_GIT,
+            '/other': git({ error: 'not a git repository' })
+        }
+    });
+    receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
+}
+
 /** The hub's git state as the tests read it: one staged, two changed, one untracked file. */
 const HUB_GIT = git({
     branch: 'main',
@@ -188,16 +216,6 @@ const HUB_GIT = git({
     untracked: [{ path: 'a/three.ts', status: '?', added: 0, deleted: 0 }]
 });
 
-receive({
-    channel: 'git',
-    version: 1,
-    payload: {
-        [HUB]: HUB_GIT,
-        '/other': git({ error: 'not a git repository' })
-    }
-});
-receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
-
 let counter = 0;
 
 /** One view rendered as a fresh instance, with the state that instance has saved. */
@@ -209,7 +227,7 @@ function html(view: Component<ViewProps>, state: unknown = {}, id = `probe-${(co
         ...base,
         main: { kind: 'pane', tabs: [instance], active: id }
     });
-    return render(view, { props: { instance } }).body;
+    return render(view, { context: clientContext(client), props: { instance } }).body;
 }
 
 describe('the session list', () => {

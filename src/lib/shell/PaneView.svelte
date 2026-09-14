@@ -20,32 +20,32 @@
     import type { MenuItem } from '$lib/ui/menu-items';
     import Tabs from '$lib/ui/Tabs.svelte';
     import type { Tab } from '$lib/ui/tab-strip';
-    import {
-        activateInstance,
-        closeInstanceIn,
-        closePaneIn,
-        currentPage,
-        focused,
-        layout,
-        maximisePane,
-        moveInstanceToPage,
-        pages,
-        restorePanes,
-        splitInstance,
-        transferInstance
-    } from '$lib/state/layout.svelte';
-    import {
-        AT_END,
-        dragging,
-        edgeAt,
-        hover,
-        markAt,
-        start,
-        withoutOwn
-    } from '$lib/state/drag.svelte';
+    import { AT_END, edgeAt, markAt, withoutOwn } from '$lib/state/drag.svelte';
     import { t } from '$lib/state/text';
-    import { badgeOf, registrationGlyph, registrationLabel, viewFor } from '$lib/views/registry';
+    import { badgeOf, registrationGlyph, registrationLabel } from '$lib/views/registry';
     import { panes, type Instance, type Layout, type Target } from '$lib/state/layout';
+    import { useState } from '$lib/state/use';
+
+    const client = useState();
+
+    const {
+        layout: {
+            activateInstance,
+            closeInstanceIn,
+            closePaneIn,
+            currentPage,
+            focused,
+            layout,
+            maximisePane,
+            moveInstanceToPage,
+            pages,
+            restorePanes,
+            splitInstance,
+            transferInstance
+        },
+        drag: { dragging, hover, start },
+        registry: { viewFor }
+    } = client;
 
     type Props = {
         /** The node SplitView handed the snippet. Only a pane is drawn; a split never reaches here. */
@@ -79,7 +79,7 @@
                 return { id: instance.id, label: t('ui.unknown_view', instance.view) };
             }
             const own = stateLabel(instance.state);
-            const badge = badgeOf(found);
+            const badge = badgeOf(found, client);
             return {
                 id: instance.id,
                 label: own ?? registrationLabel(found),

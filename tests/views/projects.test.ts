@@ -7,7 +7,7 @@
 // menu opens, no card is clicked and no $effect runs; the state a click would write is written
 // here through setInstanceState instead, and the interactions are checked in a browser.
 
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Projects from '../../src/lib/views/Projects.svelte';
@@ -20,8 +20,6 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
-import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import { emptyBoardState, type BoardState } from '../../src/lib/state/board/index.ts';
 import { area, payload, record, workspace } from '../sessions-fixture.ts';
 import type {
@@ -33,6 +31,18 @@ import type {
     Tier
 } from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let receive: ClientState['entities']['receive'];
+let setInstanceState: ClientState['ui']['setInstanceState'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ receive } = client.entities);
+    ({ setInstanceState } = client.ui);
+    installFixture();
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -206,15 +216,18 @@ function sessions(): SessionsPayload {
     return payload([workspace('/hub', [area(ALPHA, rows)])]);
 }
 
-receive({ channel: 'portfolio', version: 1, payload: snapshot() });
-receive({ channel: 'sessions', version: 1, payload: sessions() });
-receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
+/** What every case here starts from, installed into the case's own client. */
+function installFixture(): void {
+    receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+    receive({ channel: 'sessions', version: 1, payload: sessions() });
+    receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
+}
 
 /** The board rendered with one state, as the instance of one view id. */
 function html(view = 'projects', state: Partial<BoardState> = {}): string {
     setInstanceState(INSTANCE, { ...emptyBoardState(), ...state });
     const instance: Instance = { id: INSTANCE, view, state: {} };
-    return render(Projects, { props: { instance } }).body;
+    return render(Projects, { context: clientContext(client), props: { instance } }).body;
 }
 
 /** How many cards a rendering drew. */
@@ -271,7 +284,10 @@ describe('the board', () => {
 });
 
 describe('a card', () => {
-    const body = html('projects');
+    let body: string;
+    beforeEach(() => {
+        body = html('projects');
+    });
 
     it('draws the type as a filled chip in the type colour', () => {
         expect(body).toContain('toned filled');
@@ -357,8 +373,13 @@ describe('a card', () => {
 });
 
 describe('an open card', () => {
-    const closed = html('projects');
-    const open = html('projects', { expanded: ['alpha'] });
+    let closed: string;
+    let open: string;
+
+    beforeEach(() => {
+        closed = html('projects');
+        open = html('projects', { expanded: ['alpha'] });
+    });
 
     it('adds the status line and the labelled fields', () => {
         expect(open).toContain('submit-ready, 16 pp');
@@ -415,7 +436,10 @@ describe('the list mode', () => {
 });
 
 describe('the facets', () => {
-    const body = html('projects');
+    let body: string;
+    beforeEach(() => {
+        body = html('projects');
+    });
 
     it('offers a menu per facet the board can be split on', () => {
         expect(body).toContain(`Filter by ${catalog['board.facet_status']}`);
@@ -597,18 +621,22 @@ describe('the card controls', () => {
 });
 
 describe('the subtasks block', () => {
-    const body = withProjects(
-        {
-            alpha: {
-                subtasks: [
-                    { key: '0', do: 'redraw figure 2', deadline: '2026-10-01', done: false },
-                    { key: '1', do: 'add the funding line', done: true }
-                ]
-            }
-        },
-        'projects',
-        { expanded: ['alpha'] }
-    );
+    let body: string;
+
+    beforeEach(() => {
+        body = withProjects(
+            {
+                alpha: {
+                    subtasks: [
+                        { key: '0', do: 'redraw figure 2', deadline: '2026-10-01', done: false },
+                        { key: '1', do: 'add the funding line', done: true }
+                    ]
+                }
+            },
+            'projects',
+            { expanded: ['alpha'] }
+        );
+    });
 
     it('draws the lines with the open count', () => {
         expect(body).toContain(catalog['project.action.subtasks']);

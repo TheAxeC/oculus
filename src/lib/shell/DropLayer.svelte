@@ -7,8 +7,13 @@
     // A drop on a strip is not drawn here. The strip draws its own insertion mark, which is at the
     // place between two tabs that this layer would have to cover them to show.
 
-    import { dragging, type Rect } from '$lib/state/drag.svelte';
+    import type { Rect } from '$lib/state/drag.svelte';
     import { t } from '$lib/state/text';
+    import { useState } from '$lib/state/use';
+
+    const {
+        drag: { dragging }
+    } = useState();
 
     const held = $derived(dragging());
     const drop = $derived(held?.drop ?? null);

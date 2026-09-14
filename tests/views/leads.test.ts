@@ -12,21 +12,37 @@ import {
     loadConfig,
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { feedsFixture } from '../feeds-fixture.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
-import { loadUi, setInstanceState, setLeadDismissed } from '../../src/lib/state/ui.svelte.ts';
 import { leadId } from '../../src/lib/state/leads.ts';
-import { addLead } from '../../src/lib/state/writes.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { noop } from '../doubles.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let receive: ClientState['entities']['receive'];
+let loadUi: ClientState['ui']['loadUi'];
+let setInstanceState: ClientState['ui']['setInstanceState'];
+let setLeadDismissed: ClientState['ui']['setLeadDismissed'];
+let addLead: ClientState['writes']['addLead'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ receive } = client.entities);
+    ({ loadUi, setInstanceState, setLeadDismissed } = client.ui);
+    ({ addLead } = client.writes);
+    installFixture();
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
 const glyphs = glyphCatalog(config);
 setCatalog(catalog);
 setGlyphs(glyphs);
-receive({ channel: 'config', version: 401, payload: { config, text: catalog, findings: [] } });
+/** What every case here starts from, installed into the case's own client. */
+function installFixture(): void {
+    receive({ channel: 'config', version: 401, payload: { config, text: catalog, findings: [] } });
+}
 
 const schema = [
     { field: 'title', type: 'text', label: 'Title' },
@@ -167,11 +183,15 @@ describe('the Position Leads view', () => {
             entries
         });
 
-        const hidden = render(Leads, { props: { instance: instance('leads-hidden') } }).body;
+        const hidden = render(Leads, {
+            context: clientContext(client),
+            props: { instance: instance('leads-hidden') }
+        }).body;
         expect(hidden).not.toContain('data-lead="**Strong** role"');
         expect(hidden).toContain(catalog['leads.show_dismissed'].replace('{0}', '2'));
 
         const shown = render(Leads, {
+            context: clientContext(client),
             props: { instance: instance('leads-shown', false, false, '', false, true) }
         }).body;
         expect(shown).toContain('data-lead="**Strong** role"');
@@ -190,7 +210,10 @@ describe('the Position Leads view', () => {
             schema,
             entries: [entry]
         });
-        const body = render(Leads, { props: { instance: instance('all-dismissed') } }).body;
+        const body = render(Leads, {
+            context: clientContext(client),
+            props: { instance: instance('all-dismissed') }
+        }).body;
         expect(body).toMatch(/class="cards(?:\s|")/);
         expect(body).not.toContain('data-lead=');
         expect(body).not.toContain(catalog['leads.empty']);
@@ -205,7 +228,10 @@ describe('the Position Leads view', () => {
             schema,
             entries
         });
-        const body = render(Leads, { props: { instance: instance('leads-one') } }).body;
+        const body = render(Leads, {
+            context: clientContext(client),
+            props: { instance: instance('leads-one') }
+        }).body;
         expect(body).not.toContain('data-edit-source');
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('2 live');
@@ -239,6 +265,7 @@ describe('the Position Leads view', () => {
             entries
         });
         const body = render(Leads, {
+            context: clientContext(client),
             props: { instance: instance('leads-open', true, true) }
         }).body;
         expect(body.indexOf('Applied role')).toBeLessThan(body.indexOf('Past role'));
@@ -261,6 +288,7 @@ describe('the Position Leads view', () => {
             entries
         });
         const body = render(Leads, {
+            context: clientContext(client),
             props: { instance: instance('leads-cards', true) }
         }).body;
         const open = card(body, '**Strong** role');
@@ -314,6 +342,7 @@ describe('the Position Leads view', () => {
             entries: []
         });
         const body = render(Leads, {
+            context: clientContext(client),
             props: { instance: instance('leads-add', false, false, '', true) }
         }).body;
         const positions = schema.map((field) => body.indexOf(`aria-label="${field.label}"`));
@@ -329,7 +358,7 @@ describe('the Position Leads view', () => {
                 new Response(JSON.stringify({ ok: true, changed: ['entries'], refused: [] }))
             );
         });
-        await addFromForm('leads', { title: 'New lead' }, addLead);
+        await addFromForm(client.writes, 'leads', { title: 'New lead' }, addLead);
         expect(request).toEqual({ kind: 'lead-add', fields: { title: 'New lead' } });
     });
 
@@ -342,7 +371,10 @@ describe('the Position Leads view', () => {
             schema,
             entries: entries.slice(0, 2)
         });
-        const body = render(Leads, { props: { instance: instance('leads-live-only') } }).body;
+        const body = render(Leads, {
+            context: clientContext(client),
+            props: { instance: instance('leads-live-only') }
+        }).body;
         expect(body).toContain('2 live');
         expect(body).not.toContain('expired (hidden)');
     });
@@ -357,6 +389,7 @@ describe('the Position Leads view', () => {
             entries: entries.slice(0, 2)
         });
         const body = render(Leads, {
+            context: clientContext(client),
             props: { instance: instance('leads-zero-search', false, false, 'does-not-match') }
         }).body;
         expect(body).not.toContain('data-lead=');
@@ -372,7 +405,10 @@ describe('the Position Leads view', () => {
             schema,
             entries: [{ title: 'Done', status: 'declined' }]
         });
-        const empty = render(Leads, { props: { instance: instance('leads-empty') } }).body;
+        const empty = render(Leads, {
+            context: clientContext(client),
+            props: { instance: instance('leads-empty') }
+        }).body;
         expect(empty).toContain('<code>/research-cockpit scout</code>');
         expect(empty).not.toContain('&lt;code>');
 
@@ -382,8 +418,11 @@ describe('the Position Leads view', () => {
             file: 'feeds/position-leads.yml',
             missing: true
         });
-        expect(render(Leads, { props: { instance: instance('leads-missing') } }).body).toContain(
-            catalog['leads.no_file']
-        );
+        expect(
+            render(Leads, {
+                context: clientContext(client),
+                props: { instance: instance('leads-missing') }
+            }).body
+        ).toContain(catalog['leads.no_file']);
     });
 });

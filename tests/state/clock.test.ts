@@ -5,7 +5,16 @@
 // what is checked is the value the board's $derived reads and the timer behind it.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { minuteNow, startMinuteClock } from '../../src/lib/state/clock.svelte.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let minuteNow: ClientState['clock']['minuteNow'];
+let startMinuteClock: ClientState['clock']['startMinuteClock'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ minuteNow, startMinuteClock } = client.clock);
+});
 
 const MINUTE = 60000;
 const MIDNIGHT = Date.parse('2026-09-14T23:59:30Z');

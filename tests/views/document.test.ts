@@ -6,7 +6,7 @@
 // what the sandbox attribute governs and no server rendering exercises; the route the frame addresses
 // is covered by tests/routes/file.test.ts.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Document from '../../src/lib/views/Document.svelte';
 import { fileUrl } from '../../src/lib/views/document/file-url.ts';
@@ -18,6 +18,13 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+
+beforeEach(() => {
+    client = createClientState();
+});
 
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));
@@ -51,25 +58,37 @@ describe('the address of a document', () => {
 
 describe('a document as its own tab', () => {
     it('frames the file the bookmark names, with the pane titled by its label', () => {
-        const { body } = render(Document, { props: { instance: instance(MANUAL) } });
+        const { body } = render(Document, {
+            context: clientContext(client),
+            props: { instance: instance(MANUAL) }
+        });
         expect(body).toContain('src="/api/file/cathedra/docs/user/manual.html"');
         expect(body).toContain('cathedra manual');
         expect(body).toContain('data-root="cathedra"');
     });
 
     it('sandboxes the frame to its own origin and its own scripts, and no more', () => {
-        const { body } = render(Document, { props: { instance: instance(MANUAL) } });
+        const { body } = render(Document, {
+            context: clientContext(client),
+            props: { instance: instance(MANUAL) }
+        });
         const found = /<iframe[^>]*\ssandbox="([^"]*)"/.exec(body);
         expect(found?.[1]).toBe('allow-same-origin allow-scripts');
     });
 
     it('offers the control that opens the same address in a browser tab', () => {
-        const { body } = render(Document, { props: { instance: instance(MANUAL) } });
+        const { body } = render(Document, {
+            context: clientContext(client),
+            props: { instance: instance(MANUAL) }
+        });
         expect(body).toContain('Open in a browser tab');
     });
 
     it('frames nothing and says so when the instance names no file', () => {
-        const { body } = render(Document, { props: { instance: instance({}) } });
+        const { body } = render(Document, {
+            context: clientContext(client),
+            props: { instance: instance({}) }
+        });
         expect(body).not.toContain('<iframe');
         expect(body).toContain('No document chosen.');
     });

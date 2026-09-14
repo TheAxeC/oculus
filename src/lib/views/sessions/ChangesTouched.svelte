@@ -3,8 +3,13 @@
     // activity changes independently of repository status and controls.
 
     import { elide, relativeTo } from '$lib/state/format';
-    import { touchers, type SessionFile } from '$lib/state/selectors.svelte';
+    import type { SessionFile } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
+    import { useState } from '$lib/state/use';
+
+    const {
+        selectors: { touchers }
+    } = useState();
 
     type Props = { recordId: string; files: SessionFile[]; workspace: string };
     let { recordId, files, workspace }: Props = $props();

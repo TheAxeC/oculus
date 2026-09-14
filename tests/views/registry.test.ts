@@ -7,7 +7,7 @@
 // so the keys they are registered under are checked both ways: a key the configuration lists has a
 // view, and a key it stops listing has none, in the registry and in the rail order drawn from it.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
     collectionKeys,
     engineDir,
@@ -15,21 +15,35 @@ import {
     loadConfig,
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { registerView, viewFor, views, type ViewProps } from '../../src/lib/views/registry.ts';
+import type { ViewProps } from '../../src/lib/views/registry.ts';
 import { railOrder } from '../../src/lib/shell/rail.ts';
-import { apply, layout } from '../../src/lib/state/layout.svelte.ts';
 import { defaultWorkbench, type Instance } from '../../src/lib/state/layout/index.ts';
 import type { Component } from 'svelte';
 // Importing the route loader registers real views; collections use the keys of sources.yml.
-import { registerCollections, registerModules } from '../../src/routes/views.ts';
+import { registerAll, registerCollections, registerModules } from '../../src/routes/views.ts';
 import { noop } from '../doubles.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let registerView: ClientState['registry']['registerView'];
+let viewFor: ClientState['registry']['viewFor'];
+let views: ClientState['registry']['views'];
+let apply: ClientState['layout']['apply'];
+let layout: ClientState['layout']['layout'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ registerView, viewFor, views } = client.registry);
+    registerAll(client.registry);
+    registerCollections(client.registry, COLLECTIONS);
+    ({ apply, layout } = client.layout);
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
 const glyphs = glyphCatalog(config);
 
 const COLLECTIONS = collectionKeys(config);
-registerCollections(COLLECTIONS);
 
 /** A stand-in for a view component; the registry stores it and never calls it. */
 const component = noop as unknown as Component<ViewProps>;
@@ -58,6 +72,14 @@ describe('the view registry', () => {
 
     it('lists registrations in registration order', () => {
         registerView({
+            id: 'probe-one',
+            label: 'views.status',
+            glyph: 'views.status_glyph',
+            component,
+            group: 'probe',
+            order: 0
+        });
+        registerView({
             id: 'probe-two',
             label: 'views.findings',
             glyph: 'views.findings_glyph',
@@ -71,6 +93,22 @@ describe('the view registry', () => {
     it('replaces an earlier registration of the same id, in its place', () => {
         registerView({
             id: 'probe-one',
+            label: 'views.status',
+            glyph: 'views.status_glyph',
+            component,
+            group: 'probe',
+            order: 0
+        });
+        registerView({
+            id: 'probe-two',
+            label: 'views.findings',
+            glyph: 'views.findings_glyph',
+            component,
+            group: 'probe',
+            order: 1
+        });
+        registerView({
+            id: 'probe-one',
             label: 'views.findings',
             glyph: 'views.findings_glyph',
             component,
@@ -82,7 +120,7 @@ describe('the view registry', () => {
     });
 
     it('discovers a registered module at any nesting depth', () => {
-        registerModules({
+        registerModules(client.registry, {
             '/src/lib/views/other/deep/Nested.svelte': {
                 default: component,
                 registration: {
@@ -99,7 +137,9 @@ describe('the view registry', () => {
 
     it('ignores a partial without registration metadata', () => {
         expect(() =>
-            registerModules({ '/src/lib/views/other/Partial.svelte': { default: component } })
+            registerModules(client.registry, {
+                '/src/lib/views/other/Partial.svelte': { default: component }
+            })
         ).not.toThrow();
         expect(viewFor('Partial')).toBeUndefined();
     });
@@ -300,7 +340,7 @@ describe('the real registrations', () => {
 
     it('keeps a collection in its first position when it is registered again', () => {
         const before = real().map((view) => view.id);
-        registerCollections(COLLECTIONS);
+        registerCollections(client.registry, COLLECTIONS);
         expect(real().map((view) => view.id)).toEqual(before);
     });
 
@@ -317,10 +357,10 @@ describe('the real registrations', () => {
             expect(typeof viewFor(id)?.badge).toBe('function');
             expect(typeof viewFor(id)?.badgeTone).toBe('function');
         }
-        expect(viewFor('leads')?.badgeTone?.()).toBe('amber');
-        expect(viewFor('inbox')?.badgeTone?.()).toBe('red');
-        expect(viewFor('linkedin')?.badgeTone?.()).toBe('red');
-        expect(viewFor('applications')?.badgeTone?.()).toBe('green');
+        expect(viewFor('leads')?.badgeTone?.(client)).toBe('amber');
+        expect(viewFor('inbox')?.badgeTone?.(client)).toBe('red');
+        expect(viewFor('linkedin')?.badgeTone?.(client)).toBe('red');
+        expect(viewFor('applications')?.badgeTone?.(client)).toBe('green');
         for (const key of COLLECTIONS) {
             expect(typeof viewFor(key)?.badge).toBe('function');
             expect(typeof viewFor(key)?.badgeTone).toBe('function');
@@ -350,14 +390,14 @@ describe('the real registrations', () => {
 
     it('drops the collections whose keys a later call no longer lists', () => {
         const [kept, ...dropped] = COLLECTIONS;
-        registerCollections([kept]);
+        registerCollections(client.registry, [kept]);
 
         expect(viewFor(kept)).toBeDefined();
         expect(dropped.filter((key) => viewFor(key) !== undefined)).toEqual([]);
         expect(railIds()).toContain(kept);
         expect(railIds().filter((id) => dropped.includes(id))).toEqual([]);
 
-        registerCollections(COLLECTIONS);
+        registerCollections(client.registry, COLLECTIONS);
         expect(COLLECTIONS.filter((key) => viewFor(key) === undefined)).toEqual([]);
         expect(COLLECTIONS.filter((key) => !railIds().includes(key))).toEqual([]);
     });
@@ -394,10 +434,8 @@ describe('the real registrations', () => {
         const base = defaultWorkbench();
         apply({ ...base, main: { kind: 'pane', tabs: [other, held], active: held.id } });
 
-        registerCollections([kept]);
+        registerCollections(client.registry, [kept]);
         const tabs = layout('main');
         expect(tabs.kind === 'pane' ? tabs.tabs.map((tab) => tab.view) : []).toEqual([kept]);
-
-        registerCollections(COLLECTIONS);
     });
 });

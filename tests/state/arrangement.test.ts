@@ -5,7 +5,7 @@
 // edit of that file that stops it parsing fails in this suite instead of silently doing nothing in
 // the strip. Nothing here touches localStorage or the DOM: the store takes the storage it is given.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
     PANEL_DEFAULT,
     PANEL_MAX,
@@ -14,20 +14,26 @@ import {
     parseLayout,
     type Workbench
 } from '../../src/lib/state/layout/index.ts';
-import {
-    LAYOUT_KEY,
-    currentPage,
-    layout,
-    loadLayout,
-    openArrangement,
-    pages,
-    workbench
-} from '../../src/lib/state/layout.svelte.ts';
+import { LAYOUT_KEY } from '../../src/lib/state/layout.svelte.ts';
 import { parseArrangement } from '../../src/lib/state/arrangement.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
 import { bench, fakeStorage, pane, saveBench, three, viewsOf } from './layout-fixture.ts';
 import { present } from '../present.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let currentPage: ClientState['layout']['currentPage'];
+let layout: ClientState['layout']['layout'];
+let loadLayout: ClientState['layout']['loadLayout'];
+let openArrangement: ClientState['layout']['openArrangement'];
+let pages: ClientState['layout']['pages'];
+let workbench: ClientState['layout']['workbench'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ currentPage, layout, loadLayout, openArrangement, pages, workbench } = client.layout);
+});
 
 // loadLayout names the page it makes, and a page is named from config/text.yml like everything
 // else on screen.

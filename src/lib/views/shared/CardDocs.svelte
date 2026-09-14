@@ -7,10 +7,16 @@
     import Search from '$lib/ui/Search.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { humanSize, type BoardItem } from '$lib/state/board';
-    import { files } from '$lib/state/files.svelte';
-    import { openView } from '$lib/state/layout.svelte';
     import { t } from '$lib/state/text';
     import { matching, nameOf, openDocument, subOf, urlOf } from './card';
+    import { useState } from '$lib/state/use';
+
+    const client = useState();
+
+    const {
+        files: { files },
+        layout: { openView }
+    } = client;
 
     type Props = {
         /** The joined board item whose documents and files are listed. */
@@ -51,7 +57,7 @@
                         <ToolButton
                             label={doc.label}
                             title={docTip(doc)}
-                            onclick={() => openDocument(item.project.folder, doc.name)}
+                            onclick={() => openDocument(client, item.project.folder, doc.name)}
                         />
                     </span>
                 {:else}

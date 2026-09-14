@@ -5,10 +5,14 @@
     import Select from '$lib/ui/Select.svelte';
     import TextInput from '$lib/ui/TextInput.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { domainChoices } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
-    import { newIdea } from '$lib/state/writes.svelte';
     import { untrack } from 'svelte';
+    import { useState } from '$lib/state/use';
+
+    const {
+        selectors: { domainChoices },
+        writes: { newIdea }
+    } = useState();
 
     type Props = {
         onclose: () => void;

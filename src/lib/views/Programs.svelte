@@ -24,7 +24,6 @@
     import OrphansCard from '$lib/views/programs/OrphansCard.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import { cardCursor } from '$lib/state/instance';
-    import { portfolio } from '$lib/state/entities.svelte';
     import {
         archival,
         lineMembers,
@@ -33,17 +32,16 @@
         type ProgramsState,
         type TierRow
     } from '$lib/state/lines';
-    import {
-        archiveDead,
-        collectionOf,
-        configMap,
-        projects,
-        venues
-    } from '$lib/state/selectors.svelte';
     import { asText } from '$lib/state/schema';
     import { t } from '$lib/state/text';
-    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        entities: { portfolio },
+        selectors: { archiveDead, collectionOf, configMap, projects, venues },
+        ui: { instanceState, setInstanceState }
+    } = useState();
 
     let { instance }: ViewProps = $props();
     const ORPHANS_CARD = 'programs:orphans';

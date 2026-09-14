@@ -10,16 +10,22 @@
     import CardSessions from './CardSessions.svelte';
     import { codeLabel, deadline, openDocument } from './card';
     import { firstSentence, isStale, waitingLine, type BoardItem } from '$lib/state/board';
-    import { contextText } from '$lib/state/context';
-    import { portfolio } from '$lib/state/entities.svelte';
-    import { openView, workbench } from '$lib/state/layout.svelte';
+    import { contextText } from '$lib/state/project-context';
     import { findView } from '$lib/state/layout';
-    import { collectionOf } from '$lib/state/selectors.svelte';
-    import { select } from '$lib/state/selection.svelte';
-    import { startChat } from '$lib/state/terminals.svelte';
     import { t } from '$lib/state/text';
     import { chipGlyphName, chipLabel, statusTone } from '$lib/state/tones';
-    import { openFolder, writeManifest } from '$lib/state/writes.svelte';
+    import { useState } from '$lib/state/use';
+
+    const client = useState();
+
+    const {
+        entities: { portfolio },
+        layout: { openView, workbench },
+        selectors: { collectionOf },
+        selection: { select },
+        terminals: { startChat },
+        writes: { openFolder, writeManifest }
+    } = client;
     type Props = {
         /** The joined board item the card presents. */
         item: BoardItem;
@@ -170,7 +176,7 @@
     function openTitle(): void {
         if (item.project.ghost) {
             if (item.project.docs.some((doc) => doc.name === 'README.md' && doc.present)) {
-                openDocument(item.project.folder, 'README.md');
+                openDocument(client, item.project.folder, 'README.md');
             }
             return;
         }

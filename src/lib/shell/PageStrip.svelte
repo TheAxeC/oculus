@@ -15,19 +15,23 @@
     import Tabs from '$lib/ui/Tabs.svelte';
     import type { Tab } from '$lib/ui/tab-strip';
     import TextInput from '$lib/ui/TextInput.svelte';
-    import {
-        closePage,
-        currentPage,
-        movePage,
-        openArrangement,
-        openPage,
-        pages,
-        renamePage,
-        switchPage
-    } from '$lib/state/layout.svelte';
     import { THRESHOLD, withoutOwn, type Point } from '$lib/state/drag.svelte';
     import { panes, type Page } from '$lib/state/layout';
     import { lookup, t } from '$lib/state/text';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: {
+            closePage,
+            currentPage,
+            movePage,
+            openArrangement,
+            openPage,
+            pages,
+            renamePage,
+            switchPage
+        }
+    } = useState();
 
     type Props = {
         /** The `arrangements:` of the merged config, which the page reads and hands on. */

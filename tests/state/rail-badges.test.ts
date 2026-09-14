@@ -1,7 +1,7 @@
 // Layer 2, client-state tests. Rail badges count configured collection states and feed urgency.
 // Pure cases isolate the arithmetic; the installed-store case proves channel precedence and fallback.
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     actionableEntries,
     countText,
@@ -14,13 +14,6 @@ import {
     typeSplit
 } from '../../src/lib/state/rail-badges.ts';
 import {
-    applicationsBadge,
-    inboxBadge,
-    leadsBadge,
-    linkedinBadge
-} from '../../src/lib/state/rail-badges.svelte.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
-import {
     engineDir,
     glyphCatalog,
     loadConfig,
@@ -29,10 +22,27 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
-import { badgeOf, viewFor } from '../../src/lib/views/registry.ts';
+import { badgeOf } from '../../src/lib/views/registry.ts';
 import { installBadges } from './rail-badges-fixture.ts';
-import { registerCollections } from '../../src/routes/views.ts';
+import { registerAll, registerCollections } from '../../src/routes/views.ts';
 import { present } from '../present.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let applicationsBadge: ClientState['railBadges']['applicationsBadge'];
+let inboxBadge: ClientState['railBadges']['inboxBadge'];
+let leadsBadge: ClientState['railBadges']['leadsBadge'];
+let linkedinBadge: ClientState['railBadges']['linkedinBadge'];
+let receive: ClientState['entities']['receive'];
+let viewFor: ClientState['registry']['viewFor'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ applicationsBadge, inboxBadge, leadsBadge, linkedinBadge } = client.railBadges);
+    ({ receive } = client.entities);
+    ({ viewFor } = client.registry);
+    registerAll(client.registry);
+});
 
 const now = new Date(2026, 8, 12, 12).getTime();
 const { config } = loadConfig(engineDir());
@@ -92,7 +102,7 @@ describe('rail badge counts', () => {
             version: 7000,
             payload: { status: 'ok', total: 3, running: 2, pending: 1 }
         });
-        const badge = badgeOf(present(viewFor('hpc'), 'hpc view'));
+        const badge = badgeOf(present(viewFor('hpc'), 'hpc view'), client);
         expect(badge).toEqual({
             text: '2 1',
             tabText: '',
@@ -343,8 +353,8 @@ describe('registered board badge descriptors', () => {
     it.each(['projects', 'archive', 'coauthor'] as const)(
         'assembles %s from the real registration hooks',
         (id) => {
-            installBadges(config);
-            expect(badgeOf(present(viewFor(id), `${id} view`))).toEqual({
+            installBadges(client, config);
+            expect(badgeOf(present(viewFor(id), `${id} view`), client)).toEqual({
                 ...expected[id],
                 tabText: expected[id].text,
                 tone: undefined
@@ -355,32 +365,34 @@ describe('registered board badge descriptors', () => {
     it.each(['projects', 'archive', 'coauthor'] as const)(
         'keeps %s total and every split cell at zero',
         (id) => {
-            installBadges(config, true);
-            const badge = badgeOf(present(viewFor(id), `${id} view`));
+            installBadges(client, config, true);
+            const badge = badgeOf(present(viewFor(id), `${id} view`), client);
             expect(badge.text).toBe('0');
             expect(badge.cells).toEqual(expected[id].cells.map((cell) => ({ ...cell, count: 0 })));
         }
     );
 
     it('reads split tones from config independently of type_color', () => {
-        installBadges({
+        installBadges(client, {
             ...config,
             tab_split: { active: 'blue', manuscript: 'cyan', idea: 'pink' }
         });
         expect(
-            badgeOf(present(viewFor('projects'), 'projects view')).cells?.map((cell) => cell.color)
+            badgeOf(present(viewFor('projects'), 'projects view'), client).cells?.map(
+                (cell) => cell.color
+            )
         ).toEqual(['blue', 'cyan', 'pink']);
     });
 
     it('uses the collection rule label and hides its count at zero', () => {
-        registerCollections(['funding']);
-        installBadges(config);
-        expect(badgeOf(present(viewFor('funding'), 'funding view'))).toMatchObject({
+        registerCollections(client.registry, ['funding']);
+        installBadges(client, config);
+        expect(badgeOf(present(viewFor('funding'), 'funding view'), client)).toMatchObject({
             text: '1',
             title: '1 undecided',
             tone: 'violet'
         });
-        installBadges(config, true);
-        expect(badgeOf(present(viewFor('funding'), 'funding view')).text).toBe('');
+        installBadges(client, config, true);
+        expect(badgeOf(present(viewFor('funding'), 'funding view'), client).text).toBe('');
     });
 });

@@ -16,12 +16,16 @@
         type Physics,
         type PointNode
     } from '$lib/state/graph';
-    import { portfolio } from '$lib/state/entities.svelte';
-    import { openView } from '$lib/state/layout.svelte';
-    import { configMap } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
     import { toneOf, typeTone } from '$lib/state/tones';
-    import { writeManifest } from '$lib/state/writes.svelte';
+    import { useState } from '$lib/state/use';
+
+    const {
+        entities: { portfolio },
+        layout: { openView },
+        selectors: { configMap },
+        writes: { writeManifest }
+    } = useState();
 
     type Props = { graph: Graph; instanceId: string; linkMode: boolean };
     let { graph, instanceId, linkMode }: Props = $props();

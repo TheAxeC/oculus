@@ -20,17 +20,21 @@
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Editor from './source/Editor.svelte';
-    import { configMap } from '$lib/state/selectors.svelte';
-    import {
-        revertSourceDraft,
-        editSourceDraft,
-        loadSourceDraft,
-        saveSourceDraft,
-        sourceAccess,
-        sourceDraft
-    } from '$lib/state/source.svelte';
+    import { sourceAccess } from '$lib/state/source.svelte';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        selectors: { configMap },
+        source: {
+            revertSourceDraft,
+            editSourceDraft,
+            loadSourceDraft,
+            saveSourceDraft,
+            sourceDraft
+        }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

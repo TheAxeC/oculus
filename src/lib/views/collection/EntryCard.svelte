@@ -28,11 +28,15 @@
         type Project,
         type SchemaField
     } from '$lib/state/collection';
-    import { openView } from '$lib/state/layout.svelte';
     import { t } from '$lib/state/text';
     import { statusTone } from '$lib/state/tones';
-    import { archiveDead } from '$lib/state/selectors.svelte';
-    import { writeEntry } from '$lib/state/writes.svelte';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { openView },
+        selectors: { archiveDead },
+        writes: { writeEntry }
+    } = useState();
 
     type Props = {
         entry: Entry;

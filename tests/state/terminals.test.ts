@@ -8,31 +8,57 @@
 // What this does NOT cover: xterm.js, which needs a DOM the suite does not have, and the server's
 // own handling of the two messages, which is tests/server/pty/channel.test.ts.
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { scalar } from '../../src/lib/data/guards.ts';
-import { connect, disconnect } from '../../src/lib/state/socket.svelte.ts';
-import { message, receive } from '../../src/lib/state/entities.svelte.ts';
-import { setToken } from '../../src/lib/state/writes.svelte.ts';
 import {
     decodeBytes,
     encodeBytes,
     isTerminalId,
     ptyChannel,
-    recoverDataset,
-    resizeTerminal,
-    sendInput,
-    sendResize,
-    startChat,
-    startTask,
-    startTerminal,
-    stopTerminal,
-    subscribePty,
-    terminalById,
-    terminals,
-    titleStripper,
-    unsubscribePty
+    titleStripper
 } from '../../src/lib/state/terminals.svelte.ts';
 import type { Terminal } from '../../src/lib/data/model.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let connect: ClientState['socket']['connect'];
+let disconnect: ClientState['socket']['disconnect'];
+let message: ClientState['entities']['message'];
+let receive: ClientState['entities']['receive'];
+let setToken: ClientState['writes']['setToken'];
+let recoverDataset: ClientState['terminals']['recoverDataset'];
+let resizeTerminal: ClientState['terminals']['resizeTerminal'];
+let sendInput: ClientState['terminals']['sendInput'];
+let sendResize: ClientState['terminals']['sendResize'];
+let startChat: ClientState['terminals']['startChat'];
+let startTask: ClientState['terminals']['startTask'];
+let startTerminal: ClientState['terminals']['startTerminal'];
+let stopTerminal: ClientState['terminals']['stopTerminal'];
+let subscribePty: ClientState['terminals']['subscribePty'];
+let terminalById: ClientState['terminals']['terminalById'];
+let terminals: ClientState['terminals']['terminals'];
+let unsubscribePty: ClientState['terminals']['unsubscribePty'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ connect, disconnect } = client.socket);
+    ({ message, receive } = client.entities);
+    ({ setToken } = client.writes);
+    ({
+        recoverDataset,
+        resizeTerminal,
+        sendInput,
+        sendResize,
+        startChat,
+        startTask,
+        startTerminal,
+        stopTerminal,
+        subscribePty,
+        terminalById,
+        terminals,
+        unsubscribePty
+    } = client.terminals);
+});
 
 const ID = 'a1b2c3-shell';
 const CHANNEL = ptyChannel(ID);

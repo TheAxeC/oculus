@@ -6,7 +6,7 @@
 // this suite, so a pointer drag cannot be simulated here; svelte-check and the page are what
 // exercise Sash, and the drag itself is checked in a browser.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { createRawSnippet } from 'svelte';
 import { render } from 'svelte/server';
 import SplitView from '../../src/lib/shell/SplitView.svelte';
@@ -14,6 +14,13 @@ import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/c
 import { setCatalog } from '../../src/lib/state/text.ts';
 import type { Layout } from '../../src/lib/state/layout/index.ts';
 import { noop } from '../doubles.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+
+beforeEach(() => {
+    client = createClientState();
+});
 
 // Sash reads its label through t(), so the catalog the server ships is installed first.
 setCatalog(textCatalog(loadConfig(engineDir()).config));
@@ -48,11 +55,18 @@ const paneSnippet = createRawSnippet<[Layout, number[]]>((node, path) => ({
 }));
 
 function html(layout: Layout): string {
-    return render(SplitView, { props: { layout, pane: paneSnippet, onresize: noop } }).body;
+    return render(SplitView, {
+        context: clientContext(client),
+        props: { layout, pane: paneSnippet, onresize: noop }
+    }).body;
 }
 
 describe('SplitView', () => {
-    const body = html(tree);
+    let body: string;
+
+    beforeEach(() => {
+        body = html(tree);
+    });
 
     it('draws one box per pane, through the snippet, with its path', () => {
         const paths = [...body.matchAll(/data-path="([^"]*)"/g)].map((match) => match[1]);

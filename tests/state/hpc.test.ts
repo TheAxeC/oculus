@@ -3,7 +3,7 @@
 //
 // Nothing opens a socket: `fetch` is a stub that records the request and hands back the answer the
 // case wants, and nothing reads or writes outside it.
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
     efficiencyTone,
     partitionMeters,
@@ -12,8 +12,18 @@ import {
     walltimeFraction
 } from '../../src/lib/state/hpc.ts';
 import { scalar } from '../../src/lib/data/guards.ts';
-import { command, jobLog } from '../../src/lib/state/hpc.svelte.ts';
-import { setToken } from '../../src/lib/state/writes.svelte.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let command: ClientState['hpc']['command'];
+let jobLog: ClientState['hpc']['jobLog'];
+let setToken: ClientState['writes']['setToken'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ command, jobLog } = client.hpc);
+    ({ setToken } = client.writes);
+});
 
 /** The requests the stub fetch was given, newest last. */
 let asked: { url: string; init: RequestInit }[] = [];

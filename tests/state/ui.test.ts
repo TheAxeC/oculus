@@ -7,7 +7,7 @@
 // asserted against that file rather than against a literal: the first theme of its list, its
 // `crt.default`, and a wallpaper wherever it configures one the starting theme shows it under.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import {
     crtDefault,
@@ -16,32 +16,60 @@ import {
     themes,
     wallpaperOnTheme
 } from '../../src/lib/state/appearance.ts';
-import {
-    UI_KEY,
-    UI_VERSION,
-    crt,
-    instanceState,
-    leadsDismissed,
-    loadUi,
-    requestUpdateTray,
-    setCrt,
-    setInstanceState,
-    setLeadDismissed,
-    setTextScale,
-    setTerminalFont,
-    setTheme,
-    setUnicode,
-    setWallpaper,
-    stepTextScale,
-    theme,
-    textScale,
-    terminalFont,
-    unicode,
-    cardMoveRequested,
-    requestCardMove,
-    updateTrayRequested,
-    wallpaper
-} from '../../src/lib/state/ui.svelte.ts';
+import { UI_KEY, UI_VERSION } from '../../src/lib/state/ui.svelte.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let crt: ClientState['ui']['crt'];
+let instanceState: ClientState['ui']['instanceState'];
+let leadsDismissed: ClientState['ui']['leadsDismissed'];
+let loadUi: ClientState['ui']['loadUi'];
+let requestUpdateTray: ClientState['ui']['requestUpdateTray'];
+let setCrt: ClientState['ui']['setCrt'];
+let setInstanceState: ClientState['ui']['setInstanceState'];
+let setLeadDismissed: ClientState['ui']['setLeadDismissed'];
+let setTextScale: ClientState['ui']['setTextScale'];
+let setTerminalFont: ClientState['ui']['setTerminalFont'];
+let setTheme: ClientState['ui']['setTheme'];
+let setUnicode: ClientState['ui']['setUnicode'];
+let setWallpaper: ClientState['ui']['setWallpaper'];
+let stepTextScale: ClientState['ui']['stepTextScale'];
+let theme: ClientState['ui']['theme'];
+let textScale: ClientState['ui']['textScale'];
+let terminalFont: ClientState['ui']['terminalFont'];
+let unicode: ClientState['ui']['unicode'];
+let cardMoveRequested: ClientState['ui']['cardMoveRequested'];
+let requestCardMove: ClientState['ui']['requestCardMove'];
+let updateTrayRequested: ClientState['ui']['updateTrayRequested'];
+let wallpaper: ClientState['ui']['wallpaper'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({
+        crt,
+        instanceState,
+        leadsDismissed,
+        loadUi,
+        requestUpdateTray,
+        setCrt,
+        setInstanceState,
+        setLeadDismissed,
+        setTextScale,
+        setTerminalFont,
+        setTheme,
+        setUnicode,
+        setWallpaper,
+        stepTextScale,
+        theme,
+        textScale,
+        terminalFont,
+        unicode,
+        cardMoveRequested,
+        requestCardMove,
+        updateTrayRequested,
+        wallpaper
+    } = client.ui);
+});
 
 // The store checks a stored theme against the theme list, so the list the server ships is installed
 // first, exactly as the page installs it before the workbench renders.

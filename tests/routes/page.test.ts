@@ -14,8 +14,6 @@ import { configGeneration } from '../../src/lib/state/generation.svelte.ts';
 import { defaultTheme } from '../../src/lib/state/appearance.ts';
 import { asciiOf, glyph, t } from '../../src/lib/state/text.ts';
 import { toneOf } from '../../src/lib/state/tones.ts';
-import { writeToken } from '../../src/lib/state/writes.svelte.ts';
-
 const ROUTES = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src', 'routes');
 
 /** The hex the palette below writes as a tone. */
@@ -37,17 +35,18 @@ function pageData() {
 }
 
 describe('the page load', () => {
-    it('installs the stores the server shipped and raises the generation once', () => {
+    it('installs the catalogs the server shipped and raises the generation once', () => {
         const before = configGeneration();
         const result = load({ data: pageData() } as unknown as Parameters<typeof load>[0]);
 
-        expect(result).toEqual({ collections: ['funding'] });
+        // The collection keys and the write token are handed to the page rather than installed:
+        // both belong to the client the page builds, and the catalogs are what is module-level.
+        expect(result).toEqual({ collections: ['funding'], token: 'a-token' });
         expect(t('app.title')).toBe('from the load');
         expect(glyph('dot')).toBe('O');
         expect(asciiOf('O')).toBe('O');
         expect(toneOf(HEX)).toBe('violet');
         expect(defaultTheme()).toBe('dusk');
-        expect(writeToken()).toBe('a-token');
         expect(configGeneration()).toBe(before + 1);
     });
 });
@@ -103,6 +102,15 @@ describe('the page effect that follows a config push', () => {
     });
 
     it('leaves the first frame to the untracked call in the script body', () => {
-        expect(source).toContain('untrack(() => registerCollections(data.collections));');
+        const untracked = source.split('untrack(() => {')[1]?.split('    });')[0] ?? '';
+        expect(untracked).toContain('registerCollections(client.registry, data.collections);');
+    });
+
+    it('installs the write token the load handed on, and follows a later load', () => {
+        const untracked = source.split('untrack(() => {')[1]?.split('    });')[0] ?? '';
+        expect(untracked).toContain('setToken(data.token);');
+        const wired = effects(source).filter((body) => body.includes('setToken('));
+        expect(wired).toHaveLength(1);
+        expect(wired[0]).toContain('data.token');
     });
 });

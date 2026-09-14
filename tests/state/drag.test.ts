@@ -12,18 +12,26 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import {
     AT_END,
     THRESHOLD,
-    cancel,
-    dragging,
     edgeAt,
-    end,
-    hover,
     markAt,
-    move,
-    setDragSink,
-    start,
     withoutOwn,
     type DragSink
 } from '../../src/lib/state/drag.svelte.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let cancel: ClientState['drag']['cancel'];
+let dragging: ClientState['drag']['dragging'];
+let end: ClientState['drag']['end'];
+let hover: ClientState['drag']['hover'];
+let move: ClientState['drag']['move'];
+let setDragSink: ClientState['drag']['setDragSink'];
+let start: ClientState['drag']['start'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ cancel, dragging, end, hover, move, setDragSink, start } = client.drag);
+});
 
 /** A sink that writes down what it was asked to perform, one line per call. */
 function recorder(): DragSink & { calls: string[] } {

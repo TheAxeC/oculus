@@ -8,14 +8,9 @@
 
 import type { TickerAction, TickerRow } from '$lib/ui/ticker-rows';
 import { daysTone, type TickerItem, type TickerTarget } from '$lib/state/ticker';
-import { openView } from '$lib/state/layout.svelte';
+import type { LayoutStore } from '$lib/state/layout.svelte';
 import { t } from '$lib/state/text';
-import {
-    writeEntry,
-    writeManifest,
-    writeSubtask,
-    type WriteAnswer
-} from '$lib/state/writes.svelte';
+import type { WriteAnswer, WritesStore } from '$lib/state/writes.svelte';
 
 /** The lines one partial drew, by the row id each was given. */
 export type RowIndex = Record<string, TickerItem | undefined>;
@@ -147,9 +142,13 @@ export function rowMaker(prefix: string): Rows {
 }
 
 /** A ticker line opens what it names: a project's tab, or the collection file's own tab. */
-export function openLine(line: TickerItem, onproject: (id: string) => void): void {
+export function openLine(
+    layout: LayoutStore,
+    line: TickerItem,
+    onproject: (id: string) => void
+): void {
     if (line.id !== undefined) onproject(line.id);
-    else if (line.entry !== undefined) openView(line.entry, 'main');
+    else if (line.entry !== undefined) layout.openView(line.entry, 'main');
 }
 
 /** What one snooze button writes: an ISO date a week or a month out, or the hidden flag. */
@@ -169,6 +168,7 @@ function fieldsFor(action: string, now: number): Record<string, unknown> {
 
 /** One button, written through the write path and nothing else. */
 async function write(
+    writes: WritesStore,
     target: TickerTarget,
     action: string,
     now: number
@@ -178,20 +178,20 @@ async function write(
             target.collection === undefined
                 ? { id: target.id }
                 : { id: target.id, collection: target.collection };
-        if (action === 'done') return writeSubtask(host, target.subtask, 'done');
-        if (action === 'del') return writeSubtask(host, target.subtask, 'delete');
-        if (action === 'unsnooze') return writeSubtask(host, target.subtask, 'snooze', '');
-        return writeSubtask(host, target.subtask, 'snooze', snoozeValue(action, now));
+        if (action === 'done') return writes.writeSubtask(host, target.subtask, 'done');
+        if (action === 'del') return writes.writeSubtask(host, target.subtask, 'delete');
+        if (action === 'unsnooze') return writes.writeSubtask(host, target.subtask, 'snooze', '');
+        return writes.writeSubtask(host, target.subtask, 'snooze', snoozeValue(action, now));
     }
     const fields = fieldsFor(action, now);
-    if (target.kind === 'manifest') return writeManifest(target.id, fields);
+    if (target.kind === 'manifest') return writes.writeManifest(target.id, fields);
     if (target.kind === 'followup') {
-        if (target.collection === undefined) return writeManifest(target.id, fields);
-        return writeEntry(target.collection, target.id, fields);
+        if (target.collection === undefined) return writes.writeManifest(target.id, fields);
+        return writes.writeEntry(target.collection, target.id, fields);
     }
-    if (target.kind === 'funding') return writeEntry('funding', target.id, fields);
+    if (target.kind === 'funding') return writes.writeEntry('funding', target.id, fields);
     if (target.kind === 'entry' && target.collection !== undefined) {
-        return writeEntry(target.collection, target.id, fields);
+        return writes.writeEntry(target.collection, target.id, fields);
     }
     return null;
 }
@@ -202,13 +202,14 @@ async function write(
  * than as saved over an untouched file. A line with no target says nothing at all.
  */
 export async function act(
+    writes: WritesStore,
     line: TickerItem | undefined,
     action: string,
     now: number
 ): Promise<string | null> {
     const target = line?.target;
     if (target === undefined) return null;
-    const answer = await write(target, action, now);
+    const answer = await write(writes, target, action, now);
     if (answer === null) return null;
     const refused = answer.refused.map((one) => one.reason).join(', ');
     if (!answer.ok) return t('editor.failed', answer.error ?? '');

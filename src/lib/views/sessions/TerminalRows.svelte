@@ -6,10 +6,14 @@
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import { stamp } from '$lib/state/format';
-    import { select, selected } from '$lib/state/selection.svelte';
     import type { Terminal, TerminalKind } from '$lib/state/terminals.svelte';
     import { t } from '$lib/state/text';
     import { terminalRowItems } from './session-list';
+    import { useState } from '$lib/state/use';
+
+    const {
+        selection: { select, selected }
+    } = useState();
 
     type Props = {
         entries: Terminal[];

@@ -2,11 +2,10 @@
 
 import { render } from 'svelte/server';
 import { scalar } from '../../src/lib/data/guards.ts';
-import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import Linkedin from '../../src/lib/views/Linkedin.svelte';
 import { openLinkedinSource } from '../../src/lib/views/linkedin/post-card.ts';
 import { findInstance } from '../../src/lib/state/instance.ts';
-import { layout, loadLayout } from '../../src/lib/state/layout.svelte.ts';
 import { addFromForm } from '../../src/lib/views/shared/entry-form.ts';
 import {
     engineDir,
@@ -14,13 +13,27 @@ import {
     loadConfig,
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { feedsFixture } from '../feeds-fixture.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
-import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
-import { addLinkedinIdea, markPosted } from '../../src/lib/state/writes.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { noop } from '../doubles.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let layout: ClientState['layout']['layout'];
+let loadLayout: ClientState['layout']['loadLayout'];
+let receive: ClientState['entities']['receive'];
+let setInstanceState: ClientState['ui']['setInstanceState'];
+let addLinkedinIdea: ClientState['writes']['addLinkedinIdea'];
+let markPosted: ClientState['writes']['markPosted'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ layout, loadLayout } = client.layout);
+    ({ receive } = client.entities);
+    ({ setInstanceState } = client.ui);
+    ({ addLinkedinIdea, markPosted } = client.writes);
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -87,7 +100,10 @@ function draw(
         entries: feedEntries,
         cadenceDays: 30
     });
-    return render(Linkedin, { props: { instance: instance(id, search, adding) } }).body;
+    return render(Linkedin, {
+        context: clientContext(client),
+        props: { instance: instance(id, search, adding) }
+    }).body;
 }
 
 function card(body: string, file: string): string {
@@ -116,7 +132,7 @@ describe('the LinkedIn view', () => {
     it('opens Edit in a source tab using the hub-relative folder and post file', () => {
         loadLayout({ getItem: () => null, setItem: noop });
         const folder = 'theaxec.github.io/_linkedin';
-        const id = openLinkedinSource(folder, 'xx-zeta.md');
+        const id = openLinkedinSource(client.layout, folder, 'xx-zeta.md');
         expect(findInstance(layout(), id)?.instance).toEqual({
             id,
             view: 'source',
@@ -126,7 +142,7 @@ describe('the LinkedIn view', () => {
                 label: 'xx-zeta.md'
             }
         });
-        expect(openLinkedinSource(`${folder}/`, 'xx-zeta.md')).toBe(id);
+        expect(openLinkedinSource(client.layout, `${folder}/`, 'xx-zeta.md')).toBe(id);
     });
 
     it('draws search, add form, ordered sections, metadata, snippets, and card-scoped actions', () => {
@@ -233,7 +249,10 @@ describe('the LinkedIn view', () => {
             cadenceDays: 30
         });
         expect(
-            render(Linkedin, { props: { instance: instance('linkedin-missing') } }).body
+            render(Linkedin, {
+                context: clientContext(client),
+                props: { instance: instance('linkedin-missing') }
+            }).body
         ).toContain(catalog['linkedin.no_folder']);
 
         serve(
@@ -245,6 +264,7 @@ describe('the LinkedIn view', () => {
             500
         );
         const failed = render(Linkedin, {
+            context: clientContext(client),
             props: { instance: instance('linkedin-error') }
         }).body;
         expect(failed).toContain('cannot read folder');
@@ -259,8 +279,13 @@ describe('the LinkedIn view', () => {
                 new Response(JSON.stringify({ ok: true, changed: ['file'], refused: [] }))
             );
         });
-        await addFromForm('linkedin', { title: 'New idea', category: 'research' }, addLinkedinIdea);
-        await addFromForm('linkedin', { title: 'Uncategorised' }, addLinkedinIdea);
+        await addFromForm(
+            client.writes,
+            'linkedin',
+            { title: 'New idea', category: 'research' },
+            addLinkedinIdea
+        );
+        await addFromForm(client.writes, 'linkedin', { title: 'Uncategorised' }, addLinkedinIdea);
         await markPosted('xx-new-idea.md');
         expect(requests).toEqual([
             { kind: 'linkedin-idea', title: 'New idea', category: 'research' },

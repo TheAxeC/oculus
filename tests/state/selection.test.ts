@@ -1,12 +1,17 @@
 // The workbench's current session, and the pin that lets one view stop following it.
 
-import { describe, expect, it } from 'vitest';
-import {
-    pinnedSession,
-    pinnedTerminal,
-    select,
-    selected
-} from '../../src/lib/state/selection.svelte.ts';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { pinnedSession, pinnedTerminal } from '../../src/lib/state/selection.svelte.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let select: ClientState['selection']['select'];
+let selected: ClientState['selection']['selected'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ select, selected } = client.selection);
+});
 
 describe('the selection', () => {
     it('starts on nothing', () => {

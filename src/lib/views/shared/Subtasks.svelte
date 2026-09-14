@@ -18,13 +18,13 @@
     import TextInput from '$lib/ui/TextInput.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { t } from '$lib/state/text';
-    import {
-        addSubtask,
-        writeSubtask,
-        type SubtaskAction,
-        type SubtaskTarget
-    } from '$lib/state/writes.svelte';
+    import type { SubtaskAction, SubtaskTarget } from '$lib/state/writes.svelte';
     import type { Subtask } from '$lib/state/collection';
+    import { useState } from '$lib/state/use';
+
+    const {
+        writes: { addSubtask, writeSubtask }
+    } = useState();
 
     type Props = {
         /** What the lines hang under: one project by its id, or one entry of one collection. */

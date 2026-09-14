@@ -9,7 +9,7 @@
 // checked in a browser. The insertion mark below is rendered from a prop, not from a pointer.
 
 import { readFileSync } from 'node:fs';
-import { beforeAll, describe, expect, it } from 'vitest';
+import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import DropLayer from '../../src/lib/shell/DropLayer.svelte';
 import Workbench from '../../src/lib/shell/Workbench.svelte';
@@ -20,14 +20,7 @@ import {
     insertionIndex,
     tabScrollState
 } from '../../src/lib/ui/tab-strip.ts';
-import {
-    THRESHOLD,
-    cancel,
-    hover,
-    move,
-    start,
-    type Drop
-} from '../../src/lib/state/drag.svelte.ts';
+import { THRESHOLD, type Drop } from '../../src/lib/state/drag.svelte.ts';
 import Alpha from './fixtures/Alpha.svelte';
 import Beta from './fixtures/Beta.svelte';
 import {
@@ -37,42 +30,60 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
-import { registerView } from '../../src/lib/views/registry.ts';
 import { installBadges } from '../state/rail-badges-fixture.ts';
-import { message, receive } from '../../src/lib/state/entities.svelte.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
-import {
-    apply,
-    closePage,
-    currentPage,
-    openPage,
-    pages,
-    switchPage
-} from '../../src/lib/state/layout.svelte.ts';
 import type { Dock, Layout, Workbench as Bench } from '../../src/lib/state/layout/index.ts';
 import { noop } from '../doubles.ts';
 import { present } from '../present.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let cancel: ClientState['drag']['cancel'];
+let hover: ClientState['drag']['hover'];
+let move: ClientState['drag']['move'];
+let start: ClientState['drag']['start'];
+let registerView: ClientState['registry']['registerView'];
+let message: ClientState['entities']['message'];
+let receive: ClientState['entities']['receive'];
+let apply: ClientState['layout']['apply'];
+let closePage: ClientState['layout']['closePage'];
+let currentPage: ClientState['layout']['currentPage'];
+let openPage: ClientState['layout']['openPage'];
+let pages: ClientState['layout']['pages'];
+let switchPage: ClientState['layout']['switchPage'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ cancel, hover, move, start } = client.drag);
+    ({ registerView } = client.registry);
+    ({ message, receive } = client.entities);
+    ({ apply, closePage, currentPage, openPage, pages, switchPage } = client.layout);
+    installFixture();
+});
 
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));
 setGlyphs(glyphCatalog(config));
 
-registerView({
-    id: 'alpha',
-    label: 'views.status',
-    glyph: 'views.status_glyph',
-    component: Alpha,
-    group: 'probe',
-    order: 0
-});
-registerView({
-    id: 'beta',
-    label: 'views.findings',
-    glyph: 'views.findings_glyph',
-    component: Beta,
-    group: 'probe',
-    order: 1
-});
+/** What every case here starts from, installed into the case's own client. */
+function installFixture(): void {
+    registerView({
+        id: 'alpha',
+        label: 'views.status',
+        glyph: 'views.status_glyph',
+        component: Alpha,
+        group: 'probe',
+        order: 0
+    });
+    registerView({
+        id: 'beta',
+        label: 'views.findings',
+        glyph: 'views.findings_glyph',
+        component: Beta,
+        group: 'probe',
+        order: 1
+    });
+}
 
 function pane(id: string, view: string, state: unknown = {}): Layout {
     return { kind: 'pane', tabs: [{ id, view, state }], active: id };
@@ -95,17 +106,20 @@ function bench(dock: Dock): Bench {
 
 function html(dock: Dock, groups: { id: string; label: string }[] = []): string {
     apply(bench(dock));
-    return render(Workbench, { props: { groups } }).body;
+    return render(Workbench, { context: clientContext(client), props: { groups } }).body;
 }
 
-const docked = html('right');
+let docked: string;
+beforeEach(() => {
+    docked = html('right');
+});
 
 /** Milliseconds the one import of every view is given, which is not what a case is measured on. */
 const IMPORT_MS = 60000;
 
 describe('the workbench', () => {
     it('uses the instance label for the active main tab title', () => {
-        const label = activeLabel({
+        const label = activeLabel(client.registry, {
             id: 'pinned',
             view: 'alpha',
             state: { label: 'Pinned session' }
@@ -116,15 +130,17 @@ describe('the workbench', () => {
 
     it('uses the registered label when the instance has no nonempty label', () => {
         for (const state of [null, {}, { label: '' }, { label: 3 }]) {
-            expect(activeLabel({ id: 'one', view: 'alpha', state })).toBe('Status');
+            expect(activeLabel(client.registry, { id: 'one', view: 'alpha', state })).toBe(
+                'Status'
+            );
         }
     });
 
     it('names an unknown view and handles an empty main tree', () => {
-        expect(activeLabel({ id: 'unknown', view: 'from-2027', state: {} })).toBe(
+        expect(activeLabel(client.registry, { id: 'unknown', view: 'from-2027', state: {} })).toBe(
             'Unknown view: from-2027'
         );
-        expect(activeLabel(null)).toBe('oculus');
+        expect(activeLabel(client.registry, null)).toBe('oculus');
     });
 
     it('builds the active main tab title with the configured host and a leading waiting count', () => {
@@ -166,9 +182,13 @@ describe('the workbench', () => {
         const first = currentPage().id;
         apply(bench('right'));
         openPage('Page 2');
-        expect(render(Workbench, { props: { groups: [] } }).body).not.toContain('data-alpha="one"');
+        expect(
+            render(Workbench, { context: clientContext(client), props: { groups: [] } }).body
+        ).not.toContain('data-alpha="one"');
         switchPage(first);
-        expect(render(Workbench, { props: { groups: [] } }).body).toContain('data-alpha="one"');
+        expect(
+            render(Workbench, { context: clientContext(client), props: { groups: [] } }).body
+        ).toContain('data-alpha="one"');
         closePage(pages()[1].id);
     });
 
@@ -184,7 +204,10 @@ describe('the workbench', () => {
             dock: 'right',
             panelSize: 0.3
         });
-        const body = render(Workbench, { props: { groups: [] } }).body;
+        const body = render(Workbench, {
+            context: clientContext(client),
+            props: { groups: [] }
+        }).body;
         expect(body).toMatch(/Pinned session.*class="bubble[^"]*"[^>]*>Status</s);
     });
 
@@ -242,10 +265,13 @@ describe('a maximised pane', () => {
     /** The workbench of the tests above with one of the two main panes maximised. */
     function zoomed(path: number[], target: 'main' | 'panel'): string {
         apply({ ...bench('right'), focus: { target, path } });
-        return render(Workbench, { props: { groups: [] } }).body;
+        return render(Workbench, { context: clientContext(client), props: { groups: [] } }).body;
     }
 
-    const one = zoomed([1], 'main');
+    let one: string;
+    beforeEach(() => {
+        one = zoomed([1], 'main');
+    });
 
     it('draws the focused pane and no other', () => {
         expect(one).toContain('data-beta="two"');
@@ -286,7 +312,7 @@ describe('the drop layer', () => {
         start('one', 'main', 'Status', { x: 0, y: 0 });
         move({ x: THRESHOLD, y: 0 });
         if (drop !== null) hover(drop, body);
-        const html = render(DropLayer, { props: {} }).body;
+        const html = render(DropLayer, { context: clientContext(client), props: {} }).body;
         cancel();
         return html;
     }
@@ -320,13 +346,16 @@ describe('the drop layer', () => {
 
     it('draws nothing at all when no drag is in progress', () => {
         cancel();
-        expect(render(DropLayer, { props: {} }).body).not.toContain('Moving');
+        expect(render(DropLayer, { context: clientContext(client), props: {} }).body).not.toContain(
+            'Moving'
+        );
     });
 });
 
 describe('the insertion mark', () => {
     function strip(dropIndex: number | null): string {
         return render(Tabs, {
+            context: clientContext(client),
             props: {
                 tabs: [
                     { id: 'one', label: 'One' },
@@ -401,6 +430,7 @@ describe('the insertion mark', () => {
 
     it('draws an aria-hidden badge and split cells without changing the tab name', () => {
         const body = render(Tabs, {
+            context: clientContext(client),
             props: {
                 tabs: [
                     {
@@ -438,9 +468,15 @@ describe('the insertion mark', () => {
 describe('the views the application registers', () => {
     // Every view of the application is compiled here, which on a loaded machine is slower than the
     // per-case timeout the assertions are measured against.
+    let registerAll: (registry: ClientState['registry']) => void;
+
     beforeAll(async () => {
-        await import('../../src/routes/views.ts');
+        ({ registerAll } = await import('../../src/routes/views.ts'));
     }, IMPORT_MS);
+
+    beforeEach(() => {
+        registerAll(client.registry);
+    });
 
     it('mounts status and findings with nothing yet delivered on either channel', () => {
         apply({
@@ -449,7 +485,10 @@ describe('the views the application registers', () => {
             dock: 'right',
             panelSize: 0.3
         });
-        const body = render(Workbench, { props: { groups: [] } }).body;
+        const body = render(Workbench, {
+            context: clientContext(client),
+            props: { groups: [] }
+        }).body;
         expect(body).toContain('Waiting for the first snapshot');
         expect(body).toContain('No findings');
     });
@@ -461,7 +500,10 @@ describe('the views the application registers', () => {
             dock: 'hidden',
             panelSize: 0.3
         });
-        const body = render(Workbench, { props: { groups: [] } }).body;
+        const body = render(Workbench, {
+            context: clientContext(client),
+            props: { groups: [] }
+        }).body;
         expect(body).toContain('Unknown view: from-2027');
         expect(body).not.toContain('data-alpha');
     });
@@ -478,7 +520,7 @@ describe('the views the application registers', () => {
     it.each([false, true])(
         'renders a registered board badge and cells through Workbench (empty: %s)',
         (empty) => {
-            installBadges(config, empty);
+            installBadges(client, config, empty);
             setVocab(config);
             apply({
                 main: pane('q6', 'projects'),
@@ -486,7 +528,10 @@ describe('the views the application registers', () => {
                 dock: 'hidden',
                 panelSize: 0.3
             });
-            const tab = tabOf(render(Workbench, { props: { groups: [] } }).body, 'Projects');
+            const tab = tabOf(
+                render(Workbench, { context: clientContext(client), props: { groups: [] } }).body,
+                'Projects'
+            );
             expect(tab).toMatch(
                 new RegExp(
                     `class="tab-badge[^>]*aria-hidden="true"[^>]*>\\s*${empty ? '0' : '2'}\\s*</span>`
@@ -531,7 +576,10 @@ describe('the views the application registers', () => {
                 dock: 'hidden',
                 panelSize: 0.3
             });
-            const body = render(Workbench, { props: { groups: [] } }).body;
+            const body = render(Workbench, {
+                context: clientContext(client),
+                props: { groups: [] }
+            }).body;
             const tab = tabOf(body, 'Live HPC');
             expect(tab).not.toContain('class="tab-badge');
             if (total) {

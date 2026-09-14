@@ -6,6 +6,9 @@
 // swap happens where a glyph renders, so every component that drew one has to draw it again when
 // the mode changes. state/text.ts reads this inside glyph() and asciiOf(), which is what makes the
 // read part of the component's own effect.
+//
+// It is module-level for the same reason state/generation.svelte.ts is: it is read inside asciiOf()
+// from every layer, `ui/` included, where there is no client object to read it from.
 
 /** The characters as authored, or their ASCII stand-ins. */
 export type GlyphMode = 'unicode' | 'ascii';

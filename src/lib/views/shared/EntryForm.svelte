@@ -30,9 +30,16 @@
         type Entry,
         type SchemaField
     } from '$lib/state/collection';
-    import { configMap } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
-    import { deleteEntry, writeEntry, type WriteAnswer } from '$lib/state/writes.svelte';
+    import type { WriteAnswer } from '$lib/state/writes.svelte';
+    import { useState } from '$lib/state/use';
+
+    const client = useState();
+
+    const {
+        selectors: { configMap },
+        writes: { deleteEntry, writeEntry }
+    } = client;
 
     type Props = {
         /** The collection key, which is what a write names its file by. */
@@ -188,7 +195,7 @@
         asked = '';
         const answer =
             entry === null
-                ? await addFromForm(collection, wanted, onadd)
+                ? await addFromForm(client.writes, collection, wanted, onadd)
                 : await writeEntry(collection, entry.id, wanted);
         said(answer);
         if (answer.ok && answer.refused.length === 0) onclose();

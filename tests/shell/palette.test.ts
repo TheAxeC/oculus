@@ -1,7 +1,7 @@
 // The shell palette rendered closed, as search results, and as its command list. The test installs
 // the same state stores and view registry production reads, without a socket or browser.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Palette from '../../src/lib/shell/Palette.svelte';
 import UpdateTray from '../../src/lib/shell/UpdateTray.svelte';
@@ -14,75 +14,94 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { setAscii, setCatalog, setGlyphMode, setGlyphs } from '../../src/lib/state/text.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
-import { registerView } from '../../src/lib/views/registry.ts';
 import { noop } from '../doubles.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let receive: ClientState['entities']['receive'];
+let registerView: ClientState['registry']['registerView'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ receive } = client.entities);
+    ({ registerView } = client.registry);
+    installFixture();
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
 setCatalog(catalog);
 setGlyphs(glyphCatalog(config));
 
-receive({ channel: 'config', version: 8001, payload: { config, text: catalog, findings: [] } });
-registerView({
-    id: 'focus',
-    label: 'views.focus',
-    glyph: 'views.focus_glyph',
-    component: Status,
-    group: 'probe',
-    order: 0
-});
-registerView({
-    id: 'status',
-    label: 'views.status',
-    glyph: 'views.status_glyph',
-    component: Status,
-    group: 'probe',
-    order: 1
-});
-
-receive({
-    channel: 'portfolio',
-    version: 8001,
-    payload: {
-        entities: {
-            projects: {},
-            venues: {},
-            datasets: {},
-            programs: {},
-            domains: {},
-            funding: {},
-            collections: {},
-            career: null,
-            feeds: {
-                radar: { lastRun: '2026-09-01' },
-                scout: { lastRun: '2026-09-02' },
-                linkedin: { lastPost: '2026-09-03' },
-                inbox: { run: '2026-09-04', actionable: 2 },
-                leads: null
+/** What every case here starts from, installed into the case's own client. */
+function installFixture(): void {
+    receive({ channel: 'config', version: 8001, payload: { config, text: catalog, findings: [] } });
+    registerView({
+        id: 'focus',
+        label: 'views.focus',
+        glyph: 'views.focus_glyph',
+        component: Status,
+        group: 'probe',
+        order: 0
+    });
+    registerView({
+        id: 'status',
+        label: 'views.status',
+        glyph: 'views.status_glyph',
+        component: Status,
+        group: 'probe',
+        order: 1
+    });
+    receive({
+        channel: 'portfolio',
+        version: 8001,
+        payload: {
+            entities: {
+                projects: {},
+                venues: {},
+                datasets: {},
+                programs: {},
+                domains: {},
+                funding: {},
+                collections: {},
+                career: null,
+                feeds: {
+                    radar: { lastRun: '2026-09-01' },
+                    scout: { lastRun: '2026-09-02' },
+                    linkedin: { lastPost: '2026-09-03' },
+                    inbox: { run: '2026-09-04', actionable: 2 },
+                    leads: null
+                }
             }
         }
-    }
-});
+    });
+}
 
 const props = { onclose: noop, onupdate: noop };
 
 describe('Palette', () => {
     it('renders nothing while closed', () => {
-        expect(render(Palette, { props: { ...props, open: false } }).body).not.toContain(
-            'role="dialog"'
-        );
+        expect(
+            render(Palette, { context: clientContext(client), props: { ...props, open: false } })
+                .body
+        ).not.toContain('role="dialog"');
     });
 
     it('renders open with the view matches and configured placeholder', () => {
-        const body = render(Palette, { props: { ...props, open: true } }).body;
+        const body = render(Palette, {
+            context: clientContext(client),
+            props: { ...props, open: true }
+        }).body;
         expect(body).toContain(catalog['app.palette.cmdk_placeholder']);
         expect(body).toContain('Focus');
         expect(body).toContain('Status');
     });
 
     it('renders command names, argument hints and unavailable labels in command mode', () => {
-        const body = render(Palette, { props: { ...props, open: true, prefill: ':' } }).body;
+        const body = render(Palette, {
+            context: clientContext(client),
+            props: { ...props, open: true, prefill: ':' }
+        }).body;
         expect(body).toContain('theme');
         expect(body).toContain('accent');
         expect(body).toContain('view id');
@@ -91,6 +110,7 @@ describe('Palette', () => {
 
     it('draws the command-specific unknown line when no command matches', () => {
         const body = render(Palette, {
+            context: clientContext(client),
             props: { ...props, open: true, prefill: ':nonesuch' }
         }).body;
         expect(body).toContain(catalog['app.palette.cmd_unknown']);
@@ -101,6 +121,7 @@ describe('Palette', () => {
 describe('UpdateTray', () => {
     it('draws the four tasks, the portfolio Chat row, their last runs and the inbox note', () => {
         const body = render(UpdateTray, {
+            context: clientContext(client),
             props: { open: true, onclose: noop }
         }).body;
         for (const kind of ['litwatch', 'scout', 'linkedin', 'inbox']) {
@@ -119,7 +140,10 @@ describe('UpdateTray', () => {
         setAscii(ascii);
         setGlyphMode('ascii');
         try {
-            const body = render(UpdateTray, { props: { open: true, onclose: noop } }).body;
+            const body = render(UpdateTray, {
+                context: clientContext(client),
+                props: { open: true, onclose: noop }
+            }).body;
             const row = body.slice(body.indexOf('data-task="chat"'));
             expect(row).toContain(`>${ascii[glyphCatalog(config).chat]}</span>`);
             expect(row).not.toContain(glyphCatalog(config).chat);
@@ -131,6 +155,7 @@ describe('UpdateTray', () => {
 
     it('opens on a full-window ground with a dialog inside it', () => {
         const body = render(UpdateTray, {
+            context: clientContext(client),
             props: { open: true, onclose: noop }
         }).body;
         expect(body).toMatch(/class="[^"]*ground[^"]*"[^>]*role="presentation"/);

@@ -9,7 +9,7 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
+import type { ClientState } from '../client.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import type {
@@ -28,7 +28,14 @@ export const catalog = textCatalog(config);
 setCatalog(catalog);
 setGlyphs(glyphCatalog(config));
 setVocab(vocabCatalog(config));
-receive({ channel: 'config', version: 2400, payload: { config, text: catalog, findings: [] } });
+/** The config message every case here starts from. */
+export function installConfig(client: ClientState): void {
+    client.entities.receive({
+        channel: 'config',
+        version: 2400,
+        payload: { config, text: catalog, findings: [] }
+    });
+}
 
 const PROGRAM_FILE = '/hub/registries/programs.yml';
 const DOMAIN_FILE = '/hub/registries/domains.yml';
@@ -192,6 +199,7 @@ export function fixture(): Snapshot {
     });
 }
 
-export function install(snapshot = fixture(), version = 2401): void {
-    receive({ channel: 'portfolio', version, payload: snapshot });
+export function install(client: ClientState, snapshot = fixture(), version = 2401): void {
+    installConfig(client);
+    client.entities.receive({ channel: 'portfolio', version, payload: snapshot });
 }

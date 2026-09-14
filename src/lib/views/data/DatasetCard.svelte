@@ -13,10 +13,14 @@
     import { inlineMarkdown } from '$lib/ui/html';
     import type { Entry, Project, SchemaField } from '$lib/state/collection';
     import { findView } from '$lib/state/layout';
-    import { openView, workbench } from '$lib/state/layout.svelte';
-    import { select } from '$lib/state/selection.svelte';
     import { t } from '$lib/state/text';
-    import { recoverDataset } from '$lib/state/terminals.svelte';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { openView, workbench },
+        selection: { select },
+        terminals: { recoverDataset }
+    } = useState();
 
     type Props = {
         dataset: Dataset;

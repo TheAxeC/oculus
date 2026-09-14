@@ -27,26 +27,28 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import { clock, compactCount, modelShort, stamp } from '$lib/state/format';
-    import {
-        instanceLayoutState,
-        openView,
-        openPinnedView,
-        pinInstance,
-        unpinInstance,
-        workbench
-    } from '$lib/state/layout.svelte';
     import { findView } from '$lib/state/layout';
-    import { pinnedSession, select } from '$lib/state/selection.svelte';
-    import {
-        contextWindow,
-        pinnableAreas,
-        sessionFor,
-        type GroupedSession
-    } from '$lib/state/selectors.svelte';
-    import { resumeRefusal, resumeTerminal } from '$lib/state/terminals.svelte';
+    import { pinnedSession } from '$lib/state/selection.svelte';
+    import type { GroupedSession } from '$lib/state/selectors.svelte';
+    import { resumeRefusal } from '$lib/state/terminals.svelte';
     import { t } from '$lib/state/text';
-    import { writeSession } from '$lib/state/writes.svelte';
     import type { ViewProps } from '$lib/views/registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: {
+            instanceLayoutState,
+            openView,
+            openPinnedView,
+            pinInstance,
+            unpinInstance,
+            workbench
+        },
+        selection: { select },
+        selectors: { contextWindow, pinnableAreas, sessionFor },
+        terminals: { resumeTerminal },
+        writes: { writeSession }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

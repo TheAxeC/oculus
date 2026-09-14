@@ -1,12 +1,6 @@
 <script module lang="ts">
     // Layer 3, view registration. The generic collection component owns each configured collection's rail placement.
     import type { ViewRegistration } from './registry';
-    import {
-        applicationsBadge,
-        collectionBadge,
-        collectionBadgeTitle,
-        collectionBadgeTone
-    } from '$lib/state/rail-badges.svelte';
 
     const placements: Record<string, { group: string; order: number }> = {
         funding: { group: 'academic', order: 0 },
@@ -28,9 +22,15 @@
                 label: `views.${id}`,
                 glyph: `views.${id}_glyph`,
                 ...place,
-                badge: applications ? applicationsBadge : () => collectionBadge(id),
-                badgeTone: applications ? () => 'green' : () => collectionBadgeTone(id),
-                badgeTitle: applications ? undefined : () => collectionBadgeTitle(id)
+                badge: applications
+                    ? (client) => client.railBadges.applicationsBadge()
+                    : (client) => client.railBadges.collectionBadge(id),
+                badgeTone: applications
+                    ? () => 'green'
+                    : (client) => client.railBadges.collectionBadgeTone(id),
+                badgeTitle: applications
+                    ? undefined
+                    : (client) => client.railBadges.collectionBadgeTitle(id)
             };
         });
 </script>
@@ -74,14 +74,18 @@
         statusFacets,
         type CollectionState
     } from '$lib/state/collection';
-    import { openView } from '$lib/state/layout.svelte';
     import { cardCursor } from '$lib/state/instance';
-    import { archiveDead, collectionOf, projects } from '$lib/state/selectors.svelte';
     import { lookup, t } from '$lib/state/text';
     import { statusTone } from '$lib/state/tones';
-    import { cardMoveRequested, instanceState, setInstanceState } from '$lib/state/ui.svelte';
-    import { reorderEntries } from '$lib/state/writes.svelte';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { openView },
+        selectors: { archiveDead, collectionOf, projects },
+        ui: { cardMoveRequested, instanceState, setInstanceState },
+        writes: { reorderEntries }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

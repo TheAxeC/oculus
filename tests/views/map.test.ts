@@ -1,14 +1,22 @@
 // The Map view rendered on the server over visible relationships, controls and the empty state.
 
 import { render } from 'svelte/server';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import MapView from '../../src/lib/views/Map.svelte';
 import Graph from '../../src/lib/views/map/Graph.svelte';
 import { writeRelated } from '../../src/lib/views/map/edge-write.ts';
 import { buildGraph, parseMapState } from '../../src/lib/state/graph.ts';
-import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let setInstanceState: ClientState['ui']['setInstanceState'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ setInstanceState } = client.ui);
+});
 
 const INSTANCE = 'map-one';
 
@@ -31,10 +39,10 @@ function html(empty = false): string {
             project.relatedIds = [];
         }
     }
-    install(snapshot, empty ? 2405 : 2404);
+    install(client, snapshot, empty ? 2405 : 2404);
     setInstanceState(INSTANCE, {});
     const instance: Instance = { id: INSTANCE, view: 'map', state: {} };
-    return render(MapView, { props: { instance } }).body;
+    return render(MapView, { context: clientContext(client), props: { instance } }).body;
 }
 
 function graphFixture() {
@@ -100,6 +108,7 @@ describe('the Map view', () => {
     it('draws one-way and mutual related edges with their arrow markers', () => {
         const graph = buildGraph(graphFixture());
         const body = render(Graph, {
+            context: clientContext(client),
             props: { graph, instanceId: 'map-markers', linkMode: false }
         }).body;
         const oneWay = edgeTag(body, 'related::alpha::candidate-project');
@@ -113,6 +122,7 @@ describe('the Map view', () => {
     it('draws a collaborator only when the graph option is on', () => {
         const snapshot = graphFixture();
         const hidden = render(Graph, {
+            context: clientContext(client),
             props: {
                 graph: buildGraph(snapshot),
                 instanceId: 'map-collaborators-off',
@@ -120,6 +130,7 @@ describe('the Map view', () => {
             }
         }).body;
         const shown = render(Graph, {
+            context: clientContext(client),
             props: {
                 graph: buildGraph(snapshot, { collaborators: true }),
                 instanceId: 'map-collaborators-on',
@@ -159,12 +170,12 @@ describe('the Map instance state', () => {
 
     it('draws the collaborators toggle from the instance state, so a reopened tab keeps it', () => {
         const snapshot = fixture();
-        install(snapshot, 2406);
+        install(client, snapshot, 2406);
         const instance: Instance = { id: INSTANCE, view: 'map', state: {} };
         setInstanceState(INSTANCE, { collaborators: false, enabled: [], linkMode: false });
-        const off = render(MapView, { props: { instance } }).body;
+        const off = render(MapView, { context: clientContext(client), props: { instance } }).body;
         setInstanceState(INSTANCE, { collaborators: true, enabled: [], linkMode: false });
-        const on = render(MapView, { props: { instance } }).body;
+        const on = render(MapView, { context: clientContext(client), props: { instance } }).body;
         const box = /<input[^>]*type="checkbox"[^>]*>/;
         expect(box.exec(off)?.[0]).not.toContain('checked');
         expect(box.exec(on)?.[0]).toContain('checked');

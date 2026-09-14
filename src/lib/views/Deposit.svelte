@@ -39,16 +39,15 @@
     import TextArea from '$lib/ui/TextArea.svelte';
     import TextInput from '$lib/ui/TextInput.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import {
-        mirror,
-        reload,
-        type Finding,
-        type MirrorState,
-        type Plan
-    } from '$lib/state/deposit.svelte';
+    import type { Finding, MirrorState, Plan } from '$lib/state/deposit.svelte';
     import { t } from '$lib/state/text';
-    import { writeDeposit, writeGit } from '$lib/state/writes.svelte';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        deposit: { mirror, reload },
+        writes: { writeDeposit, writeGit }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

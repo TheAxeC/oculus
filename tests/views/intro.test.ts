@@ -4,12 +4,20 @@
 
 import { readFileSync } from 'node:fs';
 import { render } from 'svelte/server';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import Intro from '../../src/lib/views/shared/Intro.svelte';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+
+beforeEach(() => {
+    client = createClientState();
+});
 
 describe('Intro', () => {
     it('draws a trusted catalog line inside the shared intro class', () => {
         const body = render(Intro, {
+            context: clientContext(client),
             props: { html: 'A <b>catalog</b> line.', trusted: true }
         }).body;
         expect(body).toMatch(/class="intro(?:\s|")/);
@@ -25,8 +33,16 @@ describe('Intro', () => {
 
     it('draws the same lines whichever path they take, the caller choosing only the filter', () => {
         const line = 'A <b>catalog</b> line.';
-        expect(render(Intro, { props: { html: line, trusted: true } }).body).toContain(line);
-        expect(render(Intro, { props: { lines: [line], trusted: true } }).body).toContain(line);
+        expect(
+            render(Intro, { context: clientContext(client), props: { html: line, trusted: true } })
+                .body
+        ).toContain(line);
+        expect(
+            render(Intro, {
+                context: clientContext(client),
+                props: { lines: [line], trusted: true }
+            }).body
+        ).toContain(line);
     });
 
     it('wraps its row at every width, so a control beside a long line is not cut off', () => {

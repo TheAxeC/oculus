@@ -21,13 +21,17 @@
     import Table from '$lib/ui/Table.svelte';
     import type { Column } from '$lib/ui/table-rows';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { usage } from '$lib/state/entities.svelte';
     import { basename, clock } from '$lib/state/format';
     import { cardCursor } from '$lib/state/instance';
     import { t } from '$lib/state/text';
-    import { refreshRefusal, refreshUsageAccount } from '$lib/state/usage-refresh.svelte';
     import type { UsageAccount, UsageDay, UsageWindow } from '$lib/state/usage';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        entities: { usage },
+        usageRefresh: { refreshRefusal, refreshUsageAccount }
+    } = useState();
 
     let { instance }: ViewProps = $props();
     const data = $derived(usage());

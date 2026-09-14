@@ -1,23 +1,31 @@
 // The Programs view rendered on the server over every line band and portfolio-fit state.
 
 import { render } from 'svelte/server';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import Programs from '../../src/lib/views/Programs.svelte';
 import LineCard from '../../src/lib/views/programs/LineCard.svelte';
-import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
 import { noop } from '../doubles.ts';
 import { present } from '../present.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let setInstanceState: ClientState['ui']['setInstanceState'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ setInstanceState } = client.ui);
+});
 
 const INSTANCE = 'programs-one';
 
 function html(snapshot = fixture()): string {
-    install(snapshot);
+    install(client, snapshot);
     setInstanceState(INSTANCE, { reveal: 'pillar' });
     const instance: Instance = { id: INSTANCE, view: 'programs', state: {} };
-    return render(Programs, { props: { instance } }).body;
+    return render(Programs, { context: clientContext(client), props: { instance } }).body;
 }
 
 function card(body: string, id: string): string {
@@ -119,9 +127,10 @@ describe('the Programs view', () => {
 
     it('draws the Colour field and saved value in the Programs edit form', () => {
         const snapshot = fixture();
-        install(snapshot);
+        install(client, snapshot);
         const collection = snapshot.entities.collections.programs;
         const body = render(LineCard, {
+            context: clientContext(client),
             props: {
                 line: snapshot.entities.programs.pillar,
                 cursor: false,

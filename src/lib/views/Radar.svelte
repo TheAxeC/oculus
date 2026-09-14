@@ -24,8 +24,6 @@
     import Bucket from './radar/Bucket.svelte';
     import RadarCard from './radar/RadarCard.svelte';
     import Reveal from './shared/Reveal.svelte';
-    import { config, portfolio } from '$lib/state/entities.svelte';
-    import { feed } from '$lib/state/feeds.svelte';
     import {
         bucketsOf,
         isDismissed,
@@ -39,9 +37,15 @@
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
     import { feedIdents } from '$lib/state/palette';
-    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import { HUB_ROOT } from '$lib/state/collection';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        entities: { config, portfolio },
+        feeds: { feed },
+        ui: { instanceState, setInstanceState }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

@@ -12,7 +12,11 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { labelOf, type Project } from '$lib/state/focus';
     import { t } from '$lib/state/text';
-    import { writeManifest } from '$lib/state/writes.svelte';
+    import { useState } from '$lib/state/use';
+
+    const {
+        writes: { writeManifest }
+    } = useState();
 
     type Props = {
         /** The projects the form may write to, already filtered to the live ones by the board. */

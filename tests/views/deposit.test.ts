@@ -10,7 +10,7 @@
 // and no write is posted; what the endpoint does with one is tests/routes/deposit.test.ts and
 // tests/server/deposit.test.ts.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Deposit from '../../src/lib/views/Deposit.svelte';
 import {
@@ -20,8 +20,17 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
-import { hold, type MirrorState, type Plan } from '../../src/lib/state/deposit.svelte.ts';
+import type { MirrorState, Plan } from '../../src/lib/state/deposit.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let hold: ClientState['deposit']['hold'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ hold } = client.deposit);
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -59,13 +68,19 @@ function mirror(made: Plan | null): MirrorState {
 
 describe('the deposit panel', () => {
     it('says so when no project was chosen', () => {
-        const { body } = render(Deposit, { props: { instance: instance('') } });
+        const { body } = render(Deposit, {
+            context: clientContext(client),
+            props: { instance: instance('') }
+        });
         expect(body).toContain(catalog['deposit.none']);
     });
 
     it('draws the mirror and the plan it was given', () => {
         hold('alpha', mirror(plan([])));
-        const { body } = render(Deposit, { props: { instance: instance('alpha') } });
+        const { body } = render(Deposit, {
+            context: clientContext(client),
+            props: { instance: instance('alpha') }
+        });
         expect(body).toContain('alpha-code');
         expect(body).toContain('run.py');
         expect(body).toContain(catalog['deposit.remote_none']);
@@ -74,14 +89,20 @@ describe('the deposit panel', () => {
 
     it('says there is no mirror yet, and offers adopt alone', () => {
         hold('alpha', { ...mirror(null), exists: false });
-        const { body } = render(Deposit, { props: { instance: instance('alpha') } });
+        const { body } = render(Deposit, {
+            context: clientContext(client),
+            props: { instance: instance('alpha') }
+        });
         expect(body).toContain(catalog['deposit.no_mirror']);
         expect(body).not.toContain(catalog['deposit.commit_label']);
     });
 
     it('disables the writes while the plan has findings, with the reason', () => {
         hold('alpha', mirror(plan([{ kind: 'secret', path: '.env', mb: 0 }])));
-        const { body } = render(Deposit, { props: { instance: instance('alpha') } });
+        const { body } = render(Deposit, {
+            context: clientContext(client),
+            props: { instance: instance('alpha') }
+        });
         expect(body).toContain('possible secret: .env');
         expect(body).toContain(catalog['deposit.why_findings']);
         expect(body).toContain('disabled');
@@ -89,7 +110,10 @@ describe('the deposit panel', () => {
 
     it('holds the plan and its findings apart from the mirror with no plan yet', () => {
         hold('alpha', mirror(null));
-        const { body } = render(Deposit, { props: { instance: instance('alpha') } });
+        const { body } = render(Deposit, {
+            context: clientContext(client),
+            props: { instance: instance('alpha') }
+        });
         expect(body).toContain(catalog['deposit.plan_none']);
         expect(body).toContain(catalog['deposit.why_no_plan']);
     });

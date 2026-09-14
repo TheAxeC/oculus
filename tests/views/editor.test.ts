@@ -9,7 +9,7 @@
 // is typed, no Save is pressed and no write is posted; the write itself is tests/server/writes.test.ts
 // and tests/routes/write.test.ts.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Editor from '../../src/lib/views/Editor.svelte';
@@ -22,10 +22,19 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { formFields, formSections } from '../../src/lib/state/schema.ts';
 import type { Id, Project, Snapshot } from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let receive: ClientState['entities']['receive'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ receive } = client.entities);
+    installFixture();
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -106,13 +115,16 @@ function snapshot(): Snapshot {
     };
 }
 
-receive({ channel: 'portfolio', version: 1, payload: snapshot() });
-receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
+/** What every case here starts from, installed into the case's own client. */
+function installFixture(): void {
+    receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+    receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
+}
 
 /** The editor as an instance opened for one project, or for none. */
 function html(state: unknown): string {
     const instance: Instance = { id: 'editor-one', view: 'editor', state };
-    return render(Editor, { props: { instance } }).body;
+    return render(Editor, { context: clientContext(client), props: { instance } }).body;
 }
 
 /** How many controls a rendering drew. */
@@ -124,7 +136,10 @@ function controls(body: string): number {
 }
 
 describe('the editor of one project', () => {
-    const body = html({ id: 'alpha' });
+    let body: string;
+    beforeEach(() => {
+        body = html({ id: 'alpha' });
+    });
 
     it('draws one control per field of the schema', () => {
         expect(controls(body)).toBe(fields.length);

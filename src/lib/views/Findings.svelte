@@ -16,9 +16,13 @@
     // config/. A finding is reported and never repaired, so this view is where a bad manifest edit
     // shows up within a second of being saved.
 
-    import { config, portfolio } from '$lib/state/entities.svelte';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        entities: { config, portfolio }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

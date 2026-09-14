@@ -1,14 +1,13 @@
 <script module lang="ts">
     // Layer 3, view registration. Inbox follows Position Leads in the feeds group.
     import type { ViewRegistration } from './registry';
-    import { inboxBadge } from '$lib/state/rail-badges.svelte';
     export const registration: ViewRegistration = {
         id: 'inbox',
         label: 'views.inbox',
         glyph: 'views.inbox_glyph',
         group: 'feeds',
         order: 2,
-        badge: inboxBadge,
+        badge: (client) => client.railBadges.inboxBadge(),
         badgeTone: () => 'red'
     };
 </script>
@@ -27,7 +26,6 @@
     import InboxCard from './inbox/InboxCard.svelte';
     import Intro from './shared/Intro.svelte';
     import Reveal from './shared/Reveal.svelte';
-    import { feed } from '$lib/state/feeds.svelte';
     import {
         inboxSearch,
         parseInboxState,
@@ -39,8 +37,13 @@
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
     import { feedIdents } from '$lib/state/palette';
-    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        feeds: { feed },
+        ui: { instanceState, setInstanceState }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

@@ -8,7 +8,7 @@
 // tests/ui/colours.test.ts and tests/contrast.test.ts, which read the style rather than the markup.
 
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import { createRawSnippet } from 'svelte';
 import type { Component } from 'svelte';
@@ -42,6 +42,13 @@ import {
 import { glyph, setAscii, setCatalog, setGlyphMode, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import { noop } from '../doubles.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+
+beforeEach(() => {
+    client = createClientState();
+});
 
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));
@@ -58,7 +65,7 @@ function html<Props extends Record<string, unknown>>(
     component: Component<Props>,
     props: Props
 ): string {
-    return render(component, { props }).body;
+    return render(component, { context: clientContext(client), props }).body;
 }
 
 describe('Menu placement', () => {
@@ -470,8 +477,10 @@ describe('Tooltip', () => {
 
     /** A wrapper round one button, which is every way it is used. */
     function tip(props: Record<string, unknown>): string {
-        return render(Tooltip, { props: { text: 'Put it back', children: control, ...props } })
-            .body;
+        return render(Tooltip, {
+            context: clientContext(client),
+            props: { text: 'Put it back', children: control, ...props }
+        }).body;
     }
 
     /** An element as the description code uses it: what it holds, and the attributes it was given. */
@@ -555,7 +564,11 @@ describe('Tooltip', () => {
 });
 
 describe('the gallery', () => {
-    const body = html(Gallery, { instance: { id: 'g1', view: 'gallery', state: {} } });
+    let body: string;
+
+    beforeEach(() => {
+        body = html(Gallery, { instance: { id: 'g1', view: 'gallery', state: {} } });
+    });
 
     it('renders every primitive it is made of', () => {
         expect(body).toContain('role="toolbar"');

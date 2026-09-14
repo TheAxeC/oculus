@@ -8,7 +8,7 @@
 // and no $effect runs; a closed Menu renders its opener and no list, which is what is asserted.
 
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import ActivityRail from '../../src/lib/shell/ActivityRail.svelte';
 import {
@@ -30,21 +30,31 @@ import {
 import { setAscii, setCatalog, setGlyphMode, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import { setAppearance } from '../../src/lib/state/appearance.ts';
-import { setTextScale, setTheme } from '../../src/lib/state/ui.svelte.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { installBadges } from '../state/rail-badges-fixture.ts';
-import {
-    registerView,
-    viewFor,
-    views,
-    type Registration,
-    type ViewProps
-} from '../../src/lib/views/registry.ts';
+import type { Registration, ViewProps } from '../../src/lib/views/registry.ts';
 import type { Component } from 'svelte';
 // Importing the route loader registers the application's views. Collections use sources.yml keys.
-import { registerCollections } from '../../src/routes/views.ts';
+import { registerAll, registerCollections } from '../../src/routes/views.ts';
 import { noop } from '../doubles.ts';
 import { present } from '../present.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let setTextScale: ClientState['ui']['setTextScale'];
+let setTheme: ClientState['ui']['setTheme'];
+let receive: ClientState['entities']['receive'];
+let registerView: ClientState['registry']['registerView'];
+let viewFor: ClientState['registry']['viewFor'];
+let views: ClientState['registry']['views'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ setTextScale, setTheme } = client.ui);
+    ({ receive } = client.entities);
+    ({ registerView, viewFor, views } = client.registry);
+    registerAll(client.registry);
+    registerCollections(client.registry, COLLECTIONS);
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -54,7 +64,6 @@ setVocab(vocabCatalog(config));
 setAppearance(config);
 
 const COLLECTIONS = collectionKeys(config);
-registerCollections(COLLECTIONS);
 
 /** A stand-in for a view component; the registry stores it and the rail never mounts it. */
 const component = noop as unknown as Component<ViewProps>;
@@ -154,14 +163,19 @@ describe('the rail, drawn', () => {
     /** Five views in one group and two in another, which is either side of GROUP_MAX. */
     const BIG = ['big-1', 'big-2', 'big-3', 'big-4', 'big-5'];
     const SMALL = ['small-1', 'small-2'];
-    for (const [order, id] of BIG.entries()) registerView(probe(id, 'bigger', order));
-    for (const [order, id] of SMALL.entries()) registerView(probe(id, 'smaller', order));
+    beforeEach(() => {
+        for (const [order, id] of BIG.entries()) registerView(probe(id, 'bigger', order));
+        for (const [order, id] of SMALL.entries()) registerView(probe(id, 'smaller', order));
+    });
 
     const groups: NavGroup[] = [
         { id: 'bigger', label: 'Bigger', glyph: 'chat' },
         { id: 'smaller', label: 'Smaller' }
     ];
-    const body = render(ActivityRail, { props: { groups } }).body;
+    let body: string;
+    beforeEach(() => {
+        body = render(ActivityRail, { context: clientContext(client), props: { groups } }).body;
+    });
 
     it('holds more views in the big group than a group may have and still be buttons', () => {
         expect(BIG.length).toBeGreaterThan(GROUP_MAX);
@@ -225,7 +239,10 @@ describe('the rail, drawn', () => {
     it('draws the three appearance toggles with their own glyphs and short labels', () => {
         setTheme('mocha');
         try {
-            const themed = render(ActivityRail, { props: { groups } }).body;
+            const themed = render(ActivityRail, {
+                context: clientContext(client),
+                props: { groups }
+            }).body;
             for (const [key, glyph] of [
                 ['ui.crt_on', 'crt'],
                 ['ui.wallpaper', 'wallpaper'],
@@ -247,7 +264,10 @@ describe('the rail, drawn', () => {
         setAscii(asciiCatalog(config));
         setGlyphMode('ascii');
         try {
-            const themed = render(ActivityRail, { props: { groups } }).body;
+            const themed = render(ActivityRail, {
+                context: clientContext(client),
+                props: { groups }
+            }).body;
             for (const [key, name, standIn] of [
                 ['ui.crt_on', 'crt', '[/]'],
                 ['ui.wallpaper', 'wallpaper', '[w]'],
@@ -275,7 +295,10 @@ describe('the app text controls', () => {
     ])('disables the applicable controls at scale $scale', ({ scale, disabled }) => {
         setTextScale(scale);
         try {
-            const body = render(ActivityRail, { props: { groups: [] } }).body;
+            const body = render(ActivityRail, {
+                context: clientContext(client),
+                props: { groups: [] }
+            }).body;
             const keys = ['app.text_smaller', 'app.text_larger', 'app.text_reset'];
             for (const [index, key] of keys.entries()) {
                 const button = buttonWith(body, `aria-label="${catalog[key]}"`);
@@ -291,14 +314,18 @@ describe('the app text controls', () => {
 });
 
 describe('a rail badge', () => {
-    it('draws a toned registration badge beside its glyph and nothing at zero', () => {
+    beforeEach(() => {
         registerView({ ...probe('badged', 'badge'), badge: () => '3 5', badgeTone: () => 'red' });
         registerView({
             ...probe('zero-badge', 'badge'),
             badge: () => '',
             badgeTone: () => 'green'
         });
+    });
+
+    it('draws a toned registration badge beside its glyph and nothing at zero', () => {
         const body = render(ActivityRail, {
+            context: clientContext(client),
             props: { groups: [{ id: 'badge', label: 'Badge' }] }
         }).body;
         expect(body).toMatch(/class="badge\s/);
@@ -310,6 +337,7 @@ describe('a rail badge', () => {
 
     it('puts browser identities and the rail box class on direct and bookmark buttons', () => {
         const direct = render(ActivityRail, {
+            context: clientContext(client),
             props: {
                 groups: [{ id: 'badge', label: 'Controls' }],
                 bookmarks: [{ label: 'Manual', root: 'docs', path: 'manual.html' }]
@@ -329,6 +357,7 @@ describe('a rail badge', () => {
         const ids = ['flyout-1', 'flyout-2', 'flyout-3', 'flyout-4', 'flyout-5'];
         for (const [order, id] of ids.entries()) registerView(probe(id, 'flyout', order));
         const rendered = render(ActivityRail, {
+            context: clientContext(client),
             props: { groups: [{ id: 'flyout', label: 'Flyout', glyph: 'chat' }] }
         }).body;
         const group = /data-group="Flyout"[\s\S]*?<button\b[^>]*>/.exec(rendered)?.[0] ?? '';
@@ -351,6 +380,7 @@ describe('a rail badge', () => {
             order: 0
         });
         const hpc = render(ActivityRail, {
+            context: clientContext(client),
             props: { groups: [{ id: 'hpc-only', label: 'HPC' }] }
         }).body;
         expect(hpc).toContain('title="running: 2 | pending: 1"');
@@ -358,8 +388,11 @@ describe('a rail badge', () => {
     });
 
     it('puts an archive rollup and a collection rule label in the rail badge titles', () => {
-        installBadges(config);
-        const body = render(ActivityRail, { props: { groups: [] } }).body;
+        installBadges(client, config);
+        const body = render(ActivityRail, {
+            context: clientContext(client),
+            props: { groups: [] }
+        }).body;
         const archive = /data-view="archive"[\s\S]*?<span\b[^>]*class="badge[^>]*>/.exec(body)?.[0];
         const funding = /data-view="funding"[\s\S]*?<span\b[^>]*class="badge[^>]*>/.exec(body)?.[0];
         const projects = /data-view="projects"[\s\S]*?<span\b[^>]*class="badge[^>]*>/.exec(
@@ -386,10 +419,14 @@ describe('the groups of the real config', () => {
         return Object.entries(raw).map(([id, group]) => ({ id, ...group }));
     }
 
-    const sections = arrange(
-        views().filter((view) => view.listed !== false),
-        realGroups()
-    );
+    let sections: ReturnType<typeof arrange>;
+
+    beforeEach(() => {
+        sections = arrange(
+            views().filter((view) => view.listed !== false),
+            realGroups()
+        );
+    });
 
     function section(label: string): Registration[] {
         return sections.find((found) => found.label === label)?.items ?? [];
@@ -421,7 +458,10 @@ describe('the groups of the real config', () => {
     });
 
     it('draws headings above the Sessions and Academic life flyout openers', () => {
-        const body = render(ActivityRail, { props: { groups: realGroups() } }).body;
+        const body = render(ActivityRail, {
+            context: clientContext(client),
+            props: { groups: realGroups() }
+        }).body;
         for (const [label, chord] of [
             ['Sessions', 'm'],
             ['Academic life', 'c']
@@ -483,9 +523,12 @@ describe('the groups of the real config', () => {
             'linkedin'
         ]);
         expect(section('Feeds').length).toBeLessThanOrEqual(GROUP_MAX);
-        expect(render(ActivityRail, { props: { groups: realGroups() } }).body).toContain(
-            '>Feeds</p>'
-        );
+        expect(
+            render(ActivityRail, {
+                context: clientContext(client),
+                props: { groups: realGroups() }
+            }).body
+        ).toContain('>Feeds</p>');
     });
 
     it('keeps the four boards together and puts Programs, Domains and Map under Pillars', () => {

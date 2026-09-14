@@ -21,28 +21,23 @@
     import Pane from '$lib/ui/Pane.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { openView, workbench } from '$lib/state/layout.svelte';
     import { findView } from '$lib/state/layout';
-    import { select } from '$lib/state/selection.svelte';
-    import {
-        sessionsByWorkspace,
-        type Area,
-        type GroupedSession,
-        type Workspace
-    } from '$lib/state/selectors.svelte';
-    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
-    import {
-        resumeRefusal,
-        resumeTerminal,
-        stopTerminal,
-        terminals,
-        type Terminal
-    } from '$lib/state/terminals.svelte';
+    import type { Area, GroupedSession, Workspace } from '$lib/state/selectors.svelte';
+    import { resumeRefusal, type Terminal } from '$lib/state/terminals.svelte';
     import { t } from '$lib/state/text';
-    import { writeSession } from '$lib/state/writes.svelte';
     import type { ViewProps } from '$lib/views/registry';
     import SessionWorkspace from './SessionWorkspace.svelte';
     import TerminalRows from './TerminalRows.svelte';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { openView, workbench },
+        selection: { select },
+        selectors: { sessionsByWorkspace },
+        ui: { instanceState, setInstanceState },
+        terminals: { resumeTerminal, stopTerminal, terminals },
+        writes: { writeSession }
+    } = useState();
 
     let { instance }: ViewProps = $props();
     type ListState = { ended: boolean; dismissed: boolean };

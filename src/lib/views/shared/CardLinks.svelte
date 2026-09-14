@@ -6,6 +6,9 @@
     import type { BoardItem } from '$lib/state/board';
     import { t } from '$lib/state/text';
     import { goto } from './card';
+    import { useState } from '$lib/state/use';
+
+    const client = useState();
 
     type Props = {
         /** The joined board item whose cross-links are shown. */
@@ -29,7 +32,7 @@
                 type="button"
                 class="tag"
                 title={t('project.card.open_in', t('board.facet_funding'))}
-                onclick={() => goto('funding', tag.label)}
+                onclick={() => goto(client, 'funding', tag.label)}
             >
                 <Chip label={tag.label} glyph={t('project.card.funding_glyph')} />
             </button>
@@ -45,7 +48,7 @@
                 type="button"
                 class="tag"
                 title={t('project.card.open_in', t('project.card.collaborations'))}
-                onclick={() => goto('collaborations', tag.label)}
+                onclick={() => goto(client, 'collaborations', tag.label)}
             >
                 <Chip label={tag.label} glyph={t('project.card.collaborator_glyph')} />
             </button>

@@ -3,11 +3,18 @@
 
 import { readFileSync } from 'node:fs';
 import { render } from 'svelte/server';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import Hooks from '../../src/lib/views/status/Hooks.svelte';
 import { hooksSnippet } from '../../src/lib/state/hooks.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+
+beforeEach(() => {
+    client = createClientState();
+});
 
 const config = loadConfig(engineDir()).config;
 const catalog = textCatalog(config);
@@ -26,7 +33,10 @@ function pre(body: string): string | null {
 
 describe('the status view hooks section', () => {
     it('prints the block for the origin it was given', () => {
-        const body = render(Hooks, { props: { origin: 'http://127.0.0.1:8793' } }).body;
+        const body = render(Hooks, {
+            context: clientContext(client),
+            props: { origin: 'http://127.0.0.1:8793' }
+        }).body;
         const printed = pre(body);
         expect(printed).not.toBeNull();
         expect(JSON.parse(printed ?? 'null')).toEqual(
@@ -35,14 +45,19 @@ describe('the status view hooks section', () => {
     });
 
     it('names the file the block goes in and carries the copy control with its label', () => {
-        const body = plain(render(Hooks, { props: { origin: 'http://127.0.0.1:8790' } }).body);
+        const body = plain(
+            render(Hooks, {
+                context: clientContext(client),
+                props: { origin: 'http://127.0.0.1:8790' }
+            }).body
+        );
         expect(body).toContain(catalog['status.hooks_title']);
         expect(body).toContain('~/.claude/settings.json');
         expect(body).toContain(catalog['status.hooks_copy']);
     });
 
     it('draws nothing where there is no origin to post to', () => {
-        const body = render(Hooks, { props: { origin: '' } }).body;
+        const body = render(Hooks, { context: clientContext(client), props: { origin: '' } }).body;
         expect(pre(body)).toBeNull();
         expect(body).not.toContain(catalog['status.hooks_title']);
     });

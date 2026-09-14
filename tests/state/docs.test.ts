@@ -5,9 +5,19 @@
 // given and answers what the case wants. What this does NOT cover: the endpoint itself, which is
 // tests/routes/docs.test.ts, and the view drawing the HTML, which is tests/views/project.test.ts.
 
-import { afterEach, describe, expect, it, vi } from 'vitest';
-import { document, invalidate } from '../../src/lib/state/docs.svelte.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let document: ClientState['docs']['document'];
+let invalidate: ClientState['docs']['invalidate'];
+let receive: ClientState['entities']['receive'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ document, invalidate } = client.docs);
+    ({ receive } = client.entities);
+});
 
 type Answer = { status: number; body: unknown };
 

@@ -1,8 +1,20 @@
 // The client's store of what the socket delivered: one message per channel, the latest.
 
-import { describe, expect, it } from 'vitest';
-import { config, message, portfolio, receive, usage } from '../../src/lib/state/entities.svelte.ts';
+import { beforeEach, describe, expect, it } from 'vitest';
 import type { Snapshot } from '../../src/lib/data/model.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let config: ClientState['entities']['config'];
+let message: ClientState['entities']['message'];
+let portfolio: ClientState['entities']['portfolio'];
+let receive: ClientState['entities']['receive'];
+let usage: ClientState['entities']['usage'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ config, message, portfolio, receive, usage } = client.entities);
+});
 
 /** A snapshot with the one field this test reads; the shape itself is data/normalise's business. */
 function snapshot(version: number, projects: string[]): Snapshot {

@@ -9,7 +9,8 @@
 
 import type { Component } from 'svelte';
 import type { Instance, ViewId } from '$lib/state/layout';
-import { closeInstancesOfView } from '$lib/state/layout.svelte';
+import type { LayoutStore } from '$lib/state/layout.svelte';
+import type { ClientState } from '$lib/state/context';
 import { lookup, t } from '$lib/state/text';
 
 /** A split cell carries a theme hue, its count and its configured label. */
@@ -46,15 +47,15 @@ export type Registration = {
      */
     listed?: boolean;
     /** Live text drawn beside the rail glyph; an empty string draws no badge. */
-    badge?: () => string;
+    badge?: (state: ClientState) => string;
     /** A hue name from state/tones.ts; absent keeps the rail's accent badge. */
-    badgeTone?: () => string;
+    badgeTone?: (state: ClientState) => string;
     /** The badge's hover words, supplied by the registration's state selectors. */
-    badgeTitle?: () => string;
+    badgeTitle?: (state: ClientState) => string;
     /** The split counts shown on a pane tab. */
-    badgeCells?: () => BadgeCell[];
+    badgeCells?: (state: ClientState) => BadgeCell[];
     /** The text a pane tab draws when it differs from the rail's; empty when the cells say it all. */
-    badgeTabText?: () => string;
+    badgeTabText?: (state: ClientState) => string;
 };
 
 /** What a view module exports; the loader supplies the module's default component. */
@@ -70,51 +71,67 @@ export function registrationGlyph(registration: Pick<Registration, 'glyph'>): st
     return lookup(registration.glyph);
 }
 
-/** Assemble a registration's hooks without depending on any particular view or state selector. */
-export function badgeOf(registration: Registration): RegistrationBadge {
-    const text = registration.badge?.() ?? '';
+/**
+ * Assemble a registration's hooks without depending on any particular view or state selector. The
+ * hooks read stores, so the client they read is handed to them rather than reached from a module.
+ */
+export function badgeOf(registration: Registration, client: ClientState): RegistrationBadge {
+    const text = registration.badge?.(client) ?? '';
     return {
         text,
-        tabText: registration.badgeTabText?.() ?? text,
-        tone: registration.badgeTone?.(),
+        tabText: registration.badgeTabText?.(client) ?? text,
+        tone: registration.badgeTone?.(client),
         title:
-            registration.badgeTitle?.() ??
+            registration.badgeTitle?.(client) ??
             t('views.badge_title', registrationLabel(registration), text),
-        cells: registration.badgeCells?.()
+        cells: registration.badgeCells?.(client)
     };
 }
 
-/** Insertion order is registration order, and a re-registration keeps the id's first position. */
-const registry = new Map<ViewId, Registration>();
+/** The views one client knows about, in registration order. */
+export type RegistryStore = {
+    registerView: (registration: Registration) => void;
+    registerComponent: (component: Component<ViewProps>, registrations: ViewRegistration[]) => void;
+    unregisterView: (id: ViewId) => void;
+    viewFor: (id: ViewId) => Registration | undefined;
+    views: () => Registration[];
+};
 
-/** Register a view, replacing an earlier registration of the same id. */
-export function registerView(registration: Registration): void {
-    registry.set(registration.id, registration);
-}
+export function createRegistry(layout: LayoutStore): RegistryStore {
+    /** Insertion order is registration order, and a re-registration keeps the id's first position. */
+    const registry = new Map<ViewId, Registration>();
 
-/** Supply one module component to each metadata record the module exports. */
-export function registerComponent(
-    component: Component<ViewProps>,
-    registrations: ViewRegistration[]
-): void {
-    for (const registration of registrations) registerView({ ...registration, component });
-}
+    /** Register a view, replacing an earlier registration of the same id. */
+    function registerView(registration: Registration): void {
+        registry.set(registration.id, registration);
+    }
 
-/**
- * Drop a view's registration and close the tabs open on it; an id the registry does not hold is
- * left alone. A tab whose view has gone has no body the shell can draw, so it goes with the key.
- */
-export function unregisterView(id: ViewId): void {
-    if (!registry.delete(id)) return;
-    closeInstancesOfView(id);
-}
+    /** Supply one module component to each metadata record the module exports. */
+    function registerComponent(
+        component: Component<ViewProps>,
+        registrations: ViewRegistration[]
+    ): void {
+        for (const registration of registrations) registerView({ ...registration, component });
+    }
 
-/** The registration of a view, or undefined when the id names none. */
-export function viewFor(id: ViewId): Registration | undefined {
-    return registry.get(id);
-}
+    /**
+     * Drop a view's registration and close the tabs open on it; an id the registry does not hold is
+     * left alone. A tab whose view has gone has no body the shell can draw, so it goes with the key.
+     */
+    function unregisterView(id: ViewId): void {
+        if (!registry.delete(id)) return;
+        layout.closeInstancesOfView(id);
+    }
 
-/** Every registration, in registration order. */
-export function views(): Registration[] {
-    return [...registry.values()];
+    /** The registration of a view, or undefined when the id names none. */
+    function viewFor(id: ViewId): Registration | undefined {
+        return registry.get(id);
+    }
+
+    /** Every registration, in registration order. */
+    function views(): Registration[] {
+        return [...registry.values()];
+    }
+
+    return { registerView, registerComponent, unregisterView, viewFor, views };
 }

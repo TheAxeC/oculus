@@ -5,6 +5,8 @@
 //
 // A 403 without a field refusal can mean the server minted a new token while the page kept the old one. It reloads the page data and retries once. A field refusal, such as an open path outside the configured roots, is reported without retrying.
 
+import { tick } from 'svelte';
+
 /** What the endpoint answers with when it wrote, or refused what it was asked to write. */
 export type WriteAnswer = {
     ok: boolean;
@@ -20,57 +22,6 @@ export type WriteAnswer = {
     branches?: { name: string; upstream: string; current: boolean }[];
 };
 
-const state: { pending: number; error: string | null } = $state({ pending: 0, error: null });
-
-let token = '';
-
-/** Install the token the page was given. Called from the page's load, on every load. */
-export function setToken(next: string): void {
-    token = typeof next === 'string' ? next : '';
-}
-
-/**
- * The token, for the one reader that is not a fetch: the socket sends it with its subscription, so
- * that a page which may write a manifest may also type into a terminal.
- */
-export function writeToken(): string {
-    return token;
-}
-
-/** Whether a write is in flight. */
-export function pending(): boolean {
-    return state.pending > 0;
-}
-
-/** What the last write failed with, or null when the last one was answered. */
-export function lastError(): string | null {
-    return state.error;
-}
-
-async function post(body: unknown, path = '/api/write'): Promise<Response> {
-    return fetch(path, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json', 'x-oculus-token': token },
-        body: JSON.stringify(body)
-    });
-}
-
-/**
- * Set fields of one project's manifest. The answer says what changed and what was refused; a
- * request the server would not answer at all comes back as `ok: false` with the error it gave.
- */
-export async function writeManifest(
-    id: string,
-    fields: Record<string, unknown>
-): Promise<WriteAnswer> {
-    return send({ kind: 'manifest', id, fields });
-}
-
-/** Ask the local server to open one project folder under the hub or another configured root. */
-export async function openFolder(path: string): Promise<WriteAnswer> {
-    return send({ path }, '/api/open');
-}
-
 /** What one session write may set. A field left out is left as the overrides file has it. */
 export type SessionFields = {
     /** True dismisses the session from the rail, false brings it back. */
@@ -81,204 +32,349 @@ export type SessionFields = {
     title?: string;
 };
 
-/**
- * Dismiss one session or bring it back, pin it to an area or unpin it, rename it or clear the name.
- * It is the same endpoint and the same token as a manifest write; what it writes is the per-session
- * overrides file rather than a project.yml, and the answer's `refused` names a field the server
- * would not write, an area that is not an absolute path above all.
- */
-export async function writeSession(id: string, fields: SessionFields): Promise<WriteAnswer> {
-    return send({ kind: 'session', id, ...fields });
-}
-
 /** What a subtask write hangs under: one project by its id, or one entry of one collection. */
 export type SubtaskTarget = { id: string; collection?: string };
 
 /** What one subtask button does to its line. */
 export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete';
 
-/**
- * Set fields of one collection entry, found by the id the reader gave it. The same endpoint and the
- * same token as a manifest write; what it writes is one entry's lines inside its collection file.
- */
-export async function writeEntry(
-    collection: string,
-    id: string,
-    fields: Record<string, unknown>
-): Promise<WriteAnswer> {
-    return send({ kind: 'entry', collection, id, fields });
-}
-
-/**
- * Tick one subtask line, reopen it, snooze it until a date, or delete it. `key` is what the reader
- * addressed the line by: the key of the map the file writes, or the position in the list.
- */
-export async function writeSubtask(
-    target: SubtaskTarget,
-    key: string,
-    action: SubtaskAction,
-    value?: string
-): Promise<WriteAnswer> {
-    return send({
-        kind: 'subtask',
-        target,
-        key,
-        action,
-        ...(value === undefined ? {} : { value })
-    });
-}
-
-/** Add one subtask line to a project or to a collection entry, making the block when it has none. */
-export async function addSubtask(
-    target: SubtaskTarget,
-    fields: { do: string; deadline?: string }
-): Promise<WriteAnswer> {
-    return send({ kind: 'subtask-add', target, fields });
-}
-
-/** Move one host of CAREER.yml along the pipeline. A status outside the vocabulary is refused. */
-export async function writeHost(name: string, status: string): Promise<WriteAnswer> {
-    return send({ kind: 'host', name, status });
-}
-
-/**
- * Put one collection's entries in the order a drag left them. `order` is every entry's identity
- * value, the file's own schema's first field, in the new order; an order that does not name every
- * entry exactly once is refused by the server and the file is left alone.
- */
-export async function reorderEntries(collection: string, order: string[]): Promise<WriteAnswer> {
-    return send({ kind: 'reorder', collection, order });
-}
-
-/** Take one entry out of its collection file, by the id the reader gave it. */
-export async function deleteEntry(collection: string, id: string): Promise<WriteAnswer> {
-    return send({ kind: 'delete-entry', collection, id });
-}
-
-/** Set or clear one field allowed by a generated feed. */
-export async function writeFeedField(
-    feed: string,
-    id: string,
-    field: string,
-    value: string | number | boolean | null
-): Promise<WriteAnswer> {
-    return send({ kind: 'feed-field', feed, id, field, value });
-}
-
-/** Delete one entry from a generated feed that permits deletion. */
-export async function deleteFeedEntry(feed: string, id: string): Promise<WriteAnswer> {
-    return send({ kind: 'feed-delete', feed, id });
-}
-
-/** Add one position lead through the feed file's own schema. */
-export async function addLead(fields: Record<string, unknown>): Promise<WriteAnswer> {
-    return send({ kind: 'lead-add', fields });
-}
-
-/** Add one LinkedIn idea stub through the configured folder. */
-export async function addLinkedinIdea(fields: Record<string, unknown>): Promise<WriteAnswer> {
-    return send({
-        kind: 'linkedin-idea',
-        title: typeof fields.title === 'string' ? fields.title : '',
-        category: typeof fields.category === 'string' ? fields.category : ''
-    });
-}
-
-/** Rename one LinkedIn idea and its same-basename sidecars as the next numbered post. */
-export async function markPosted(file: string): Promise<WriteAnswer> {
-    return send({ kind: 'linkedin-post', file });
-}
-
-/** Add one entry to a collection, rendered from that file's own schema. */
-export async function newEntry(
-    collection: string,
-    fields: Record<string, unknown>
-): Promise<WriteAnswer> {
-    return send({ kind: 'new-entry', collection, fields });
-}
-
-/** Scaffold one idea project: a manifest and a README under projects/ideas/<id>. */
-export async function newIdea(fields: {
-    id: string;
-    title?: string;
-    short?: string;
-    domain?: string;
-    eli5?: string;
-}): Promise<WriteAnswer> {
-    return send({ kind: 'new-idea', fields });
-}
-
 /** The endpoint of the git panel: one action on one workspace, behind the same token. */
 export const GIT_PATH = '/api/git';
-
-/**
- * One git action on one workspace: staging, a commit, a push, a branch, or the suggested message.
- * The endpoint is /api/git rather than /api/write, and the answer's `output` is what git said or the
- * message that was suggested; everything else, the token and the one retry above all, is the same.
- * An action that can lose work carries `confirm: true`, which the panel sets only from its dialog.
- */
-export async function writeGit(
-    action: string,
-    root: string,
-    fields: Record<string, unknown> = {}
-): Promise<WriteAnswer> {
-    return send({ action, root, ...fields }, GIT_PATH);
-}
 
 /** The endpoint of the deposit panel: one action on one project, behind the same token. */
 export const DEPOSIT_PATH = '/api/deposit';
 
-/**
- * One deposit action on one project: adopt, plan, commit, push, snapshot, or a branch. The endpoint
- * is /api/deposit, and what the action did to the mirror is read back by state/deposit.svelte.ts's
- * own GET rather than carried here. An action that can lose work carries `confirm: true`, which the
- * panel sets only from its dialog.
- */
-export async function writeDeposit(
-    action: string,
-    id: string,
-    fields: Record<string, unknown> = {}
-): Promise<WriteAnswer> {
-    return send({ action, id, ...fields }, DEPOSIT_PATH);
-}
+/** The page's end of the write endpoint, one per client. */
+export type WritesStore = {
+    setToken: (next: string) => void;
+    writeToken: () => string;
+    pending: () => boolean;
+    lastError: () => string | null;
+    writeManifest: (id: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
+    openFolder: (path: string) => Promise<WriteAnswer>;
+    writeSession: (id: string, fields: SessionFields) => Promise<WriteAnswer>;
+    writeEntry: (
+        collection: string,
+        id: string,
+        fields: Record<string, unknown>
+    ) => Promise<WriteAnswer>;
+    writeSubtask: (
+        target: SubtaskTarget,
+        key: string,
+        action: SubtaskAction,
+        value?: string
+    ) => Promise<WriteAnswer>;
+    addSubtask: (
+        target: SubtaskTarget,
+        fields: { do: string; deadline?: string }
+    ) => Promise<WriteAnswer>;
+    writeHost: (name: string, status: string) => Promise<WriteAnswer>;
+    reorderEntries: (collection: string, order: string[]) => Promise<WriteAnswer>;
+    deleteEntry: (collection: string, id: string) => Promise<WriteAnswer>;
+    writeFeedField: (
+        feed: string,
+        id: string,
+        field: string,
+        value: string | number | boolean | null
+    ) => Promise<WriteAnswer>;
+    deleteFeedEntry: (feed: string, id: string) => Promise<WriteAnswer>;
+    addLead: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
+    addLinkedinIdea: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
+    markPosted: (file: string) => Promise<WriteAnswer>;
+    newEntry: (collection: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
+    newIdea: (fields: {
+        id: string;
+        title?: string;
+        short?: string;
+        domain?: string;
+        eli5?: string;
+    }) => Promise<WriteAnswer>;
+    writeGit: (
+        action: string,
+        root: string,
+        fields?: Record<string, unknown>
+    ) => Promise<WriteAnswer>;
+    writeDeposit: (
+        action: string,
+        id: string,
+        fields?: Record<string, unknown>
+    ) => Promise<WriteAnswer>;
+    send: (request: unknown, path?: string) => Promise<WriteAnswer>;
+};
 
-/** One write, with the one retry a stale token gets. */
-export async function send(request: unknown, path = '/api/write'): Promise<WriteAnswer> {
-    state.pending += 1;
-    state.error = null;
-    try {
-        let response = await post(request, path);
-        let body = (await response.json()) as Partial<WriteAnswer>;
-        if (response.status === 403 && !(Array.isArray(body.refused) && body.refused.length > 0)) {
-            // The import is here rather than at the top so nothing but a stale token pulls Kit's
-            // navigation module in, and a server-rendered page never touches it.
-            const { invalidateAll } = await import('$app/navigation');
-            await invalidateAll();
-            response = await post(request, path);
-            body = (await response.json()) as Partial<WriteAnswer>;
-        }
-        if (!response.ok) {
-            const error = typeof body.error === 'string' ? body.error : `HTTP ${response.status}`;
-            state.error = error;
-            return {
-                ok: false,
-                changed: [],
-                refused: Array.isArray(body.refused) ? body.refused : [],
-                error
-            };
-        }
-        return {
-            ok: true,
-            changed: Array.isArray(body.changed) ? body.changed : [],
-            refused: Array.isArray(body.refused) ? body.refused : [],
-            output: typeof body.output === 'string' ? body.output : undefined,
-            branches: Array.isArray(body.branches) ? body.branches : undefined
-        };
-    } catch (error) {
-        const message = error instanceof Error ? error.message : String(error);
-        state.error = message;
-        return { ok: false, changed: [], refused: [], error: message, network: true };
-    } finally {
-        state.pending -= 1;
+export function createWrites(): WritesStore {
+    const state: { pending: number; error: string | null } = $state({ pending: 0, error: null });
+
+    let token = '';
+
+    /** Install the token the page was given. Called from the page's load, on every load. */
+    function setToken(next: string): void {
+        token = typeof next === 'string' ? next : '';
     }
+
+    /**
+     * The token, for the one reader that is not a fetch: the socket sends it with its subscription, so
+     * that a page which may write a manifest may also type into a terminal.
+     */
+    function writeToken(): string {
+        return token;
+    }
+
+    /** Whether a write is in flight. */
+    function pending(): boolean {
+        return state.pending > 0;
+    }
+
+    /** What the last write failed with, or null when the last one was answered. */
+    function lastError(): string | null {
+        return state.error;
+    }
+
+    async function post(body: unknown, path = '/api/write'): Promise<Response> {
+        return fetch(path, {
+            method: 'POST',
+            headers: { 'content-type': 'application/json', 'x-oculus-token': token },
+            body: JSON.stringify(body)
+        });
+    }
+
+    /**
+     * Set fields of one project's manifest. The answer says what changed and what was refused; a
+     * request the server would not answer at all comes back as `ok: false` with the error it gave.
+     */
+    async function writeManifest(
+        id: string,
+        fields: Record<string, unknown>
+    ): Promise<WriteAnswer> {
+        return send({ kind: 'manifest', id, fields });
+    }
+
+    /** Ask the local server to open one project folder under the hub or another configured root. */
+    async function openFolder(path: string): Promise<WriteAnswer> {
+        return send({ path }, '/api/open');
+    }
+
+    /**
+     * Dismiss one session or bring it back, pin it to an area or unpin it, rename it or clear the name.
+     * It is the same endpoint and the same token as a manifest write; what it writes is the per-session
+     * overrides file rather than a project.yml, and the answer's `refused` names a field the server
+     * would not write, an area that is not an absolute path above all.
+     */
+    async function writeSession(id: string, fields: SessionFields): Promise<WriteAnswer> {
+        return send({ kind: 'session', id, ...fields });
+    }
+
+    /**
+     * Set fields of one collection entry, found by the id the reader gave it. The same endpoint and the
+     * same token as a manifest write; what it writes is one entry's lines inside its collection file.
+     */
+    async function writeEntry(
+        collection: string,
+        id: string,
+        fields: Record<string, unknown>
+    ): Promise<WriteAnswer> {
+        return send({ kind: 'entry', collection, id, fields });
+    }
+
+    /**
+     * Tick one subtask line, reopen it, snooze it until a date, or delete it. `key` is what the reader
+     * addressed the line by: the key of the map the file writes, or the position in the list.
+     */
+    async function writeSubtask(
+        target: SubtaskTarget,
+        key: string,
+        action: SubtaskAction,
+        value?: string
+    ): Promise<WriteAnswer> {
+        return send({
+            kind: 'subtask',
+            target,
+            key,
+            action,
+            ...(value === undefined ? {} : { value })
+        });
+    }
+
+    /** Add one subtask line to a project or to a collection entry, making the block when it has none. */
+    async function addSubtask(
+        target: SubtaskTarget,
+        fields: { do: string; deadline?: string }
+    ): Promise<WriteAnswer> {
+        return send({ kind: 'subtask-add', target, fields });
+    }
+
+    /** Move one host of CAREER.yml along the pipeline. A status outside the vocabulary is refused. */
+    async function writeHost(name: string, status: string): Promise<WriteAnswer> {
+        return send({ kind: 'host', name, status });
+    }
+
+    /**
+     * Put one collection's entries in the order a drag left them. `order` is every entry's identity
+     * value, the file's own schema's first field, in the new order; an order that does not name every
+     * entry exactly once is refused by the server and the file is left alone.
+     */
+    async function reorderEntries(collection: string, order: string[]): Promise<WriteAnswer> {
+        return send({ kind: 'reorder', collection, order });
+    }
+
+    /** Take one entry out of its collection file, by the id the reader gave it. */
+    async function deleteEntry(collection: string, id: string): Promise<WriteAnswer> {
+        return send({ kind: 'delete-entry', collection, id });
+    }
+
+    /** Set or clear one field allowed by a generated feed. */
+    async function writeFeedField(
+        feed: string,
+        id: string,
+        field: string,
+        value: string | number | boolean | null
+    ): Promise<WriteAnswer> {
+        return send({ kind: 'feed-field', feed, id, field, value });
+    }
+
+    /** Delete one entry from a generated feed that permits deletion. */
+    async function deleteFeedEntry(feed: string, id: string): Promise<WriteAnswer> {
+        return send({ kind: 'feed-delete', feed, id });
+    }
+
+    /** Add one position lead through the feed file's own schema. */
+    async function addLead(fields: Record<string, unknown>): Promise<WriteAnswer> {
+        return send({ kind: 'lead-add', fields });
+    }
+
+    /** Add one LinkedIn idea stub through the configured folder. */
+    async function addLinkedinIdea(fields: Record<string, unknown>): Promise<WriteAnswer> {
+        return send({
+            kind: 'linkedin-idea',
+            title: typeof fields.title === 'string' ? fields.title : '',
+            category: typeof fields.category === 'string' ? fields.category : ''
+        });
+    }
+
+    /** Rename one LinkedIn idea and its same-basename sidecars as the next numbered post. */
+    async function markPosted(file: string): Promise<WriteAnswer> {
+        return send({ kind: 'linkedin-post', file });
+    }
+
+    /** Add one entry to a collection, rendered from that file's own schema. */
+    async function newEntry(
+        collection: string,
+        fields: Record<string, unknown>
+    ): Promise<WriteAnswer> {
+        return send({ kind: 'new-entry', collection, fields });
+    }
+
+    /** Scaffold one idea project: a manifest and a README under projects/ideas/<id>. */
+    async function newIdea(fields: {
+        id: string;
+        title?: string;
+        short?: string;
+        domain?: string;
+        eli5?: string;
+    }): Promise<WriteAnswer> {
+        return send({ kind: 'new-idea', fields });
+    }
+
+    /**
+     * One git action on one workspace: staging, a commit, a push, a branch, or the suggested message.
+     * The endpoint is /api/git rather than /api/write, and the answer's `output` is what git said or the
+     * message that was suggested; everything else, the token and the one retry above all, is the same.
+     * An action that can lose work carries `confirm: true`, which the panel sets only from its dialog.
+     */
+    async function writeGit(
+        action: string,
+        root: string,
+        fields: Record<string, unknown> = {}
+    ): Promise<WriteAnswer> {
+        return send({ action, root, ...fields }, GIT_PATH);
+    }
+
+    /**
+     * One deposit action on one project: adopt, plan, commit, push, snapshot, or a branch. The endpoint
+     * is /api/deposit, and what the action did to the mirror is read back by state/deposit.svelte.ts's
+     * own GET rather than carried here. An action that can lose work carries `confirm: true`, which the
+     * panel sets only from its dialog.
+     */
+    async function writeDeposit(
+        action: string,
+        id: string,
+        fields: Record<string, unknown> = {}
+    ): Promise<WriteAnswer> {
+        return send({ action, id, ...fields }, DEPOSIT_PATH);
+    }
+
+    /** One write, with the one retry a stale token gets. */
+    async function send(request: unknown, path = '/api/write'): Promise<WriteAnswer> {
+        state.pending += 1;
+        state.error = null;
+        try {
+            let response = await post(request, path);
+            let body = (await response.json()) as Partial<WriteAnswer>;
+            if (
+                response.status === 403 &&
+                !(Array.isArray(body.refused) && body.refused.length > 0)
+            ) {
+                // The import is here rather than at the top so nothing but a stale token pulls Kit's
+                // navigation module in, and a server-rendered page never touches it.
+                const { invalidateAll } = await import('$app/navigation');
+                await invalidateAll();
+                // The load hands the token to the page rather than installing it, and the page's
+                // effect is what puts it in this store; the tick flushes that effect, so the retry
+                // below carries the token the reload minted and not the stale one.
+                await tick();
+                response = await post(request, path);
+                body = (await response.json()) as Partial<WriteAnswer>;
+            }
+            if (!response.ok) {
+                const error =
+                    typeof body.error === 'string' ? body.error : `HTTP ${response.status}`;
+                state.error = error;
+                return {
+                    ok: false,
+                    changed: [],
+                    refused: Array.isArray(body.refused) ? body.refused : [],
+                    error
+                };
+            }
+            return {
+                ok: true,
+                changed: Array.isArray(body.changed) ? body.changed : [],
+                refused: Array.isArray(body.refused) ? body.refused : [],
+                output: typeof body.output === 'string' ? body.output : undefined,
+                branches: Array.isArray(body.branches) ? body.branches : undefined
+            };
+        } catch (error) {
+            const message = error instanceof Error ? error.message : String(error);
+            state.error = message;
+            return { ok: false, changed: [], refused: [], error: message, network: true };
+        } finally {
+            state.pending -= 1;
+        }
+    }
+
+    return {
+        setToken,
+        writeToken,
+        pending,
+        lastError,
+        writeManifest,
+        openFolder,
+        writeSession,
+        writeEntry,
+        writeSubtask,
+        addSubtask,
+        writeHost,
+        reorderEntries,
+        deleteEntry,
+        writeFeedField,
+        deleteFeedEntry,
+        addLead,
+        addLinkedinIdea,
+        markPosted,
+        newEntry,
+        newIdea,
+        writeGit,
+        writeDeposit,
+        send
+    };
 }

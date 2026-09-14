@@ -13,10 +13,10 @@
 // POST carries the token state/writes.svelte.ts holds, and the socket carries it in its subscribe
 // message, which is what lets that socket send input at all.
 
-import { message } from './entities.svelte.ts';
-import { listen, send, subscribe, unsubscribe } from './socket.svelte.ts';
+import type { EntitiesStore } from './entities.svelte.ts';
+import type { SocketStore } from './socket.svelte.ts';
 import { t } from './text.ts';
-import { writeToken } from './writes.svelte.ts';
+import type { WritesStore } from './writes.svelte.ts';
 import type {
     SessionsPayload,
     PtyPayload,
@@ -68,20 +68,6 @@ export function isTerminalId(id: unknown): id is string {
     return typeof id === 'string' && /^[0-9a-f]{6}-(claude|codex|shell)$/.test(id);
 }
 
-/** Every terminal oculus owns, as the last `sessions` payload reported them. */
-export function terminals(): Terminal[] {
-    const held = message('sessions');
-    if (held === null) return [];
-    const payload = held.payload as SessionsPayload;
-    return Array.isArray(payload.terminals) ? payload.terminals : [];
-}
-
-/** One terminal by id, or null when the payload does not hold it. */
-export function terminalById(id: string | null): Terminal | null {
-    if (id === null || id === '') return null;
-    return terminals().find((one) => one.id === id) ?? null;
-}
-
 /** The base64 of a string's UTF-8 bytes, which is how the wire carries a pane's input. */
 export function encodeBytes(text: string): string {
     let binary = '';
@@ -102,89 +88,6 @@ export function decodeBytes(encoded: string): Uint8Array {
     return bytes;
 }
 
-async function post(body: unknown): Promise<TerminalAnswer> {
-    // There is no fetch while the page is rendered on the server, and nothing to start there either.
-    if (typeof fetch !== 'function') return { ok: false, id: '', error: '' };
-    try {
-        const response = await fetch('/api/terminal', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json', 'x-oculus-token': writeToken() },
-            body: JSON.stringify(body)
-        });
-        const answer = (await response.json()) as {
-            ok?: boolean;
-            id?: string;
-            terminal?: Terminal;
-            error?: string;
-        };
-        if (!response.ok) {
-            return {
-                ok: false,
-                id: '',
-                error: typeof answer.error === 'string' ? answer.error : String(response.status)
-            };
-        }
-        return { ok: true, id: answer.terminal?.id ?? answer.id ?? '', error: '' };
-    } catch (error) {
-        return { ok: false, id: '', error: error instanceof Error ? error.message : String(error) };
-    }
-}
-
-/**
- * Start one terminal in a directory. The geometry goes with the request because the tmux session is
- * created at a size and the server requires one (server/pty/sessions.ts, `geometry`); the view
- * passes what the fit addon measured, and the default is a terminal nobody has measured yet.
- */
-export async function startTerminal(
-    kind: TerminalKind,
-    cwd: string,
-    cols: number = COLS,
-    rows: number = ROWS
-): Promise<TerminalAnswer> {
-    return post({ action: 'start', kind, cwd, cols, rows });
-}
-
-/** Recover one dataset in a shell terminal; the server supplies both the command and the hub cwd. */
-export async function recoverDataset(
-    key: string,
-    cols: number = COLS,
-    rows: number = ROWS
-): Promise<TerminalAnswer> {
-    return post({ action: 'recover', key, cols, rows });
-}
-
-/** Start one update skill as a Claude terminal; the server supplies its argv and hub directory. */
-export async function startTask(
-    kind: TaskKind,
-    cols: number = COLS,
-    rows: number = ROWS
-): Promise<TerminalAnswer> {
-    return post({ action: 'task', kind, cols, rows });
-}
-
-/** Start a project-focused or portfolio-wide Claude chat; the server supplies argv and directory. */
-export async function startChat(
-    id: string | null,
-    cols: number = COLS,
-    rows: number = ROWS
-): Promise<TerminalAnswer> {
-    return post({ action: 'chat', id, cols, rows });
-}
-
-/**
- * Continue an observed session in a terminal: DESIGN.md's one explicit migration, which runs
- * `claude --resume <id>` or `codex resume <id>` in the session's own directory. The server reads
- * the directory off the record, so nothing about where it starts travels from the page.
- */
-export async function resumeTerminal(
-    tool: TerminalResume['tool'],
-    id: string,
-    cols: number = COLS,
-    rows: number = ROWS
-): Promise<TerminalAnswer> {
-    return post({ action: 'resume', tool, id, cols, rows });
-}
-
 /**
  * A refused resume in words. The endpoint answers the catalog key of the two refusals the page has
  * words for, so the keys stay literal here and tests/keys.test.ts can still see them; anything else
@@ -194,44 +97,6 @@ export function resumeRefusal(error: string): string {
     if (error === 'sessions.resume_live') return t('sessions.resume_live');
     if (error === 'sessions.resume_unknown') return t('sessions.resume_unknown');
     return error;
-}
-
-/** Stop one terminal. Its tmux session ends, and with it everything running inside it. */
-export async function stopTerminal(id: string): Promise<TerminalAnswer> {
-    return post({ action: 'stop', id });
-}
-
-/** Resize one terminal's tmux window, for a page whose socket is not open to carry the message. */
-export async function resizeTerminal(
-    id: string,
-    cols: number,
-    rows: number
-): Promise<TerminalAnswer> {
-    return post({ action: 'resize', id, cols, rows });
-}
-
-/** Send keystrokes to a terminal. The text is what xterm.js's `onData` produced. */
-export function sendInput(id: string, text: string): boolean {
-    const input: TerminalInput = {
-        type: 'input',
-        channel: ptyChannel(id),
-        bytes: encodeBytes(text)
-    };
-    return send(input);
-}
-
-/**
- * Tell a terminal its pane's new size. Whole numbers from 1 to 2000, which is the range
- * server/pty/channel.ts accepts.
- */
-export function sendResize(id: string, cols: number, rows: number): boolean {
-    const resize: TerminalResize = {
-        type: 'resize',
-        channel: ptyChannel(id),
-        cols: Math.round(cols),
-        rows: Math.round(rows)
-    };
-    return send(resize);
 }
 
 /** ESC, the byte a title sequence opens and closes with. */
@@ -295,23 +160,210 @@ function indexOfPair(bytes: Uint8Array, first: number, second: number, from: num
     return -1;
 }
 
-/**
- * Read one terminal's output. The listener is handed the scrollback first, then every chunk after
- * it, and the call returned takes the listener off without unsubscribing, for a view that is
- * swapping one terminal for another.
- */
-export function subscribePty(id: string, onBytes: PtyListener): () => void {
-    const channel = ptyChannel(id);
-    const off = listen(channel, (received) => {
-        const payload = received.payload as PtyPayload | null;
-        const encoded = typeof payload?.bytes === 'string' ? payload.bytes : '';
-        onBytes(decodeBytes(encoded), received.version === 0);
-    });
-    subscribe([channel]);
-    return off;
-}
+/** The terminals one client owns, and the actions it runs on them. */
+export type TerminalsStore = {
+    terminals: () => Terminal[];
+    terminalById: (id: string | null) => Terminal | null;
+    startTerminal: (
+        kind: TerminalKind,
+        cwd: string,
+        cols?: number,
+        rows?: number
+    ) => Promise<TerminalAnswer>;
+    recoverDataset: (key: string, cols?: number, rows?: number) => Promise<TerminalAnswer>;
+    startTask: (kind: TaskKind, cols?: number, rows?: number) => Promise<TerminalAnswer>;
+    startChat: (id: string | null, cols?: number, rows?: number) => Promise<TerminalAnswer>;
+    resumeTerminal: (
+        tool: TerminalResume['tool'],
+        id: string,
+        cols?: number,
+        rows?: number
+    ) => Promise<TerminalAnswer>;
+    stopTerminal: (id: string) => Promise<TerminalAnswer>;
+    resizeTerminal: (id: string, cols: number, rows: number) => Promise<TerminalAnswer>;
+    sendInput: (id: string, text: string) => boolean;
+    sendResize: (id: string, cols: number, rows: number) => boolean;
+    subscribePty: (id: string, onBytes: PtyListener) => () => void;
+    unsubscribePty: (id: string) => void;
+};
 
-/** Stop reading one terminal's output, and stop asking for its channel on the next reconnect. */
-export function unsubscribePty(id: string): void {
-    unsubscribe([ptyChannel(id)]);
+export function createTerminals(
+    entities: EntitiesStore,
+    socket: SocketStore,
+    writes: WritesStore
+): TerminalsStore {
+    /** Every terminal oculus owns, as the last `sessions` payload reported them. */
+    function terminals(): Terminal[] {
+        const held = entities.message('sessions');
+        if (held === null) return [];
+        const payload = held.payload as SessionsPayload;
+        return Array.isArray(payload.terminals) ? payload.terminals : [];
+    }
+
+    /** One terminal by id, or null when the payload does not hold it. */
+    function terminalById(id: string | null): Terminal | null {
+        if (id === null || id === '') return null;
+        return terminals().find((one) => one.id === id) ?? null;
+    }
+
+    async function post(body: unknown): Promise<TerminalAnswer> {
+        // There is no fetch while the page is rendered on the server, and nothing to start there either.
+        if (typeof fetch !== 'function') return { ok: false, id: '', error: '' };
+        try {
+            const response = await fetch('/api/terminal', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'x-oculus-token': writes.writeToken()
+                },
+                body: JSON.stringify(body)
+            });
+            const answer = (await response.json()) as {
+                ok?: boolean;
+                id?: string;
+                terminal?: Terminal;
+                error?: string;
+            };
+            if (!response.ok) {
+                return {
+                    ok: false,
+                    id: '',
+                    error: typeof answer.error === 'string' ? answer.error : String(response.status)
+                };
+            }
+            return { ok: true, id: answer.terminal?.id ?? answer.id ?? '', error: '' };
+        } catch (error) {
+            return {
+                ok: false,
+                id: '',
+                error: error instanceof Error ? error.message : String(error)
+            };
+        }
+    }
+
+    /**
+     * Start one terminal in a directory. The geometry goes with the request because the tmux session is
+     * created at a size and the server requires one (server/pty/sessions.ts, `geometry`); the view
+     * passes what the fit addon measured, and the default is a terminal nobody has measured yet.
+     */
+    async function startTerminal(
+        kind: TerminalKind,
+        cwd: string,
+        cols: number = COLS,
+        rows: number = ROWS
+    ): Promise<TerminalAnswer> {
+        return post({ action: 'start', kind, cwd, cols, rows });
+    }
+
+    /** Recover one dataset in a shell terminal; the server supplies both the command and the hub cwd. */
+    async function recoverDataset(
+        key: string,
+        cols: number = COLS,
+        rows: number = ROWS
+    ): Promise<TerminalAnswer> {
+        return post({ action: 'recover', key, cols, rows });
+    }
+
+    /** Start one update skill as a Claude terminal; the server supplies its argv and hub directory. */
+    async function startTask(
+        kind: TaskKind,
+        cols: number = COLS,
+        rows: number = ROWS
+    ): Promise<TerminalAnswer> {
+        return post({ action: 'task', kind, cols, rows });
+    }
+
+    /** Start a project-focused or portfolio-wide Claude chat; the server supplies argv and directory. */
+    async function startChat(
+        id: string | null,
+        cols: number = COLS,
+        rows: number = ROWS
+    ): Promise<TerminalAnswer> {
+        return post({ action: 'chat', id, cols, rows });
+    }
+
+    /**
+     * Continue an observed session in a terminal: DESIGN.md's one explicit migration, which runs
+     * `claude --resume <id>` or `codex resume <id>` in the session's own directory. The server reads
+     * the directory off the record, so nothing about where it starts travels from the page.
+     */
+    async function resumeTerminal(
+        tool: TerminalResume['tool'],
+        id: string,
+        cols: number = COLS,
+        rows: number = ROWS
+    ): Promise<TerminalAnswer> {
+        return post({ action: 'resume', tool, id, cols, rows });
+    }
+
+    /** Stop one terminal. Its tmux session ends, and with it everything running inside it. */
+    async function stopTerminal(id: string): Promise<TerminalAnswer> {
+        return post({ action: 'stop', id });
+    }
+
+    /** Resize one terminal's tmux window, for a page whose socket is not open to carry the message. */
+    async function resizeTerminal(id: string, cols: number, rows: number): Promise<TerminalAnswer> {
+        return post({ action: 'resize', id, cols, rows });
+    }
+
+    /** Send keystrokes to a terminal. The text is what xterm.js's `onData` produced. */
+    function sendInput(id: string, text: string): boolean {
+        const input: TerminalInput = {
+            type: 'input',
+            channel: ptyChannel(id),
+            bytes: encodeBytes(text)
+        };
+        return socket.send(input);
+    }
+
+    /**
+     * Tell a terminal its pane's new size. Whole numbers from 1 to 2000, which is the range
+     * server/pty/channel.ts accepts.
+     */
+    function sendResize(id: string, cols: number, rows: number): boolean {
+        const resize: TerminalResize = {
+            type: 'resize',
+            channel: ptyChannel(id),
+            cols: Math.round(cols),
+            rows: Math.round(rows)
+        };
+        return socket.send(resize);
+    }
+
+    /**
+     * Read one terminal's output. The listener is handed the scrollback first, then every chunk after
+     * it, and the call returned takes the listener off without unsubscribing, for a view that is
+     * swapping one terminal for another.
+     */
+    function subscribePty(id: string, onBytes: PtyListener): () => void {
+        const channel = ptyChannel(id);
+        const off = socket.listen(channel, (received) => {
+            const payload = received.payload as PtyPayload | null;
+            const encoded = typeof payload?.bytes === 'string' ? payload.bytes : '';
+            onBytes(decodeBytes(encoded), received.version === 0);
+        });
+        socket.subscribe([channel]);
+        return off;
+    }
+
+    /** Stop reading one terminal's output, and stop asking for its channel on the next reconnect. */
+    function unsubscribePty(id: string): void {
+        socket.unsubscribe([ptyChannel(id)]);
+    }
+
+    return {
+        terminals,
+        terminalById,
+        startTerminal,
+        recoverDataset,
+        startTask,
+        startChat,
+        resumeTerminal,
+        stopTerminal,
+        resizeTerminal,
+        sendInput,
+        sendResize,
+        subscribePty,
+        unsubscribePty
+    };
 }

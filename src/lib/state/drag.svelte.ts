@@ -11,7 +11,7 @@
 // removed by end() and cancel(), so a page nobody is dragging on carries none, and a drag survives
 // the pointer leaving the strip it began in, which is the whole reason they are on the document.
 
-import { splitInstance, transferInstance } from './layout.svelte.ts';
+import type { LayoutStore } from './layout.svelte.ts';
 import type { Edge, Target } from './layout/index.ts';
 
 /** A point in the viewport, which is what getBoundingClientRect is measured in. */
@@ -26,8 +26,8 @@ export type Rect = { x: number; y: number; width: number; height: number };
  */
 export type Drop =
     | { kind: 'strip'; target: Target; path: number[]; index: number }
-    | { kind: 'edge'; target: Target; path: number[]; edge: Edge }
-    | { kind: 'centre'; target: Target; path: number[] };
+    | { kind: 'centre'; target: Target; path: number[] }
+    | { kind: 'edge'; target: Target; path: number[]; edge: Edge };
 
 /** The operations a drop is performed through. The store's are the default; a test hands its own. */
 export type DragSink = {
@@ -54,120 +54,8 @@ export const THRESHOLD = 6;
 
 type Held = Dragging & { origin: Point; armed: boolean };
 
-const store: { current: Held | null } = $state({ current: null });
-
-const storeSink: DragSink = {
-    transfer: (id, target, path, index) => transferInstance(id, target, path, index),
-    split: (id, target, path, edge) => splitInstance(id, target, path, edge)
-};
-
-let sink: DragSink = storeSink;
-
-/** Perform drops through these operations instead of the store's. Null puts the store's back. */
-export function setDragSink(next: DragSink | null): void {
-    sink = next ?? storeSink;
-}
-
-/** The drag in progress, or null when there is none or the pointer has not moved far enough yet. */
-export function dragging(): Dragging | null {
-    const held = store.current;
-    if (!held?.armed) return null;
-    const { id, label, target, point, drop, rect } = held;
-    return { id, label, target, point, drop, rect };
-}
-
-/**
- * A pointer went down on a tab. Nothing is drawn and nothing will be performed until the pointer has
- * moved THRESHOLD pixels, so the press that starts a drag is the same press that selects a tab.
- */
-export function start(id: string, target: Target, label: string, point: Point): void {
-    store.current = {
-        id,
-        label,
-        target,
-        point,
-        drop: null,
-        rect: null,
-        origin: point,
-        armed: false
-    };
-    listen(true);
-}
-
-/** The pointer moved. Past the threshold the drag is armed and stays armed. */
-export function move(point: Point): void {
-    const held = store.current;
-    if (held === null) return;
-    const armed = held.armed || far(held.origin, point);
-    store.current = { ...held, point, armed };
-}
-
-/**
- * Where the drop would land now, from whatever the pointer is over, and null when it is over nothing
- * that takes one. The rect is the pane body the indicator is drawn over, for an edge or a centre.
- */
-export function hover(drop: Drop | null, rect: Rect | null = null): void {
-    const held = store.current;
-    if (held === null) return;
-    store.current = { ...held, drop, rect };
-}
-
-/** The pointer came up: the hovered drop is performed, and nothing happens when none is hovered. */
-export function end(): void {
-    const held = store.current;
-    store.current = null;
-    listen(false);
-    if (!held?.armed) return;
-    const drop = held.drop;
-    if (drop === null) return;
-    if (drop.kind === 'strip') sink.transfer(held.id, drop.target, drop.path, drop.index);
-    else if (drop.kind === 'centre') sink.transfer(held.id, drop.target, drop.path, AT_END);
-    else sink.split(held.id, drop.target, drop.path, drop.edge);
-}
-
-/** Escape, or anything else that calls the drag off. Nothing is performed. */
-export function cancel(): void {
-    store.current = null;
-    listen(false);
-}
-
 function far(origin: Point, point: Point): boolean {
     return Math.hypot(point.x - origin.x, point.y - origin.y) >= THRESHOLD;
-}
-
-function onPointerMove(event: PointerEvent): void {
-    move({ x: event.clientX, y: event.clientY });
-}
-
-function onPointerUp(): void {
-    end();
-}
-
-function onKeyDown(event: KeyboardEvent): void {
-    if (event.key !== 'Escape') return;
-    event.preventDefault();
-    cancel();
-}
-
-/**
- * The document listeners a drag needs, and the text selection it must not make. There is no document
- * in the test suite, so a drag driven by its own calls runs there exactly as it does in a browser.
- */
-function listen(on: boolean): void {
-    if (typeof document === 'undefined') return;
-    if (on) {
-        document.addEventListener('pointermove', onPointerMove);
-        document.addEventListener('pointerup', onPointerUp);
-        document.addEventListener('pointercancel', onPointerUp);
-        document.addEventListener('keydown', onKeyDown);
-        document.body.style.userSelect = 'none';
-        return;
-    }
-    document.removeEventListener('pointermove', onPointerMove);
-    document.removeEventListener('pointerup', onPointerUp);
-    document.removeEventListener('pointercancel', onPointerUp);
-    document.removeEventListener('keydown', onKeyDown);
-    document.body.style.userSelect = '';
 }
 
 /**
@@ -207,4 +95,131 @@ export function edgeAt(rect: Rect, point: Point): Edge | null {
     let nearest = sides[0];
     for (const side of sides) if (side.depth < nearest.depth) nearest = side;
     return nearest.depth < 0.25 ? nearest.edge : null;
+}
+
+/** The one drag in progress, for one client. */
+export type DragStore = {
+    setDragSink: (next: DragSink | null) => void;
+    dragging: () => Dragging | null;
+    start: (id: string, target: Target, label: string, point: Point) => void;
+    move: (point: Point) => void;
+    hover: (drop: Drop | null, rect?: Rect | null) => void;
+    end: () => void;
+    cancel: () => void;
+};
+
+export function createDrag(layout: LayoutStore): DragStore {
+    const store: { current: Held | null } = $state({ current: null });
+
+    const storeSink: DragSink = {
+        transfer: (id, target, path, index) => layout.transferInstance(id, target, path, index),
+        split: (id, target, path, edge) => layout.splitInstance(id, target, path, edge)
+    };
+
+    let sink: DragSink = storeSink;
+
+    /** Perform drops through these operations instead of the store's. Null puts the store's back. */
+    function setDragSink(next: DragSink | null): void {
+        sink = next ?? storeSink;
+    }
+
+    /** The drag in progress, or null when there is none or the pointer has not moved far enough yet. */
+    function dragging(): Dragging | null {
+        const held = store.current;
+        if (!held?.armed) return null;
+        const { id, label, target, point, drop, rect } = held;
+        return { id, label, target, point, drop, rect };
+    }
+
+    /**
+     * A pointer went down on a tab. Nothing is drawn and nothing will be performed until the pointer has
+     * moved THRESHOLD pixels, so the press that starts a drag is the same press that selects a tab.
+     */
+    function start(id: string, target: Target, label: string, point: Point): void {
+        store.current = {
+            id,
+            label,
+            target,
+            point,
+            drop: null,
+            rect: null,
+            origin: point,
+            armed: false
+        };
+        listen(true);
+    }
+
+    /** The pointer moved. Past the threshold the drag is armed and stays armed. */
+    function move(point: Point): void {
+        const held = store.current;
+        if (held === null) return;
+        const armed = held.armed || far(held.origin, point);
+        store.current = { ...held, point, armed };
+    }
+
+    /**
+     * Where the drop would land now, from whatever the pointer is over, and null when it is over nothing
+     * that takes one. The rect is the pane body the indicator is drawn over, for an edge or a centre.
+     */
+    function hover(drop: Drop | null, rect: Rect | null = null): void {
+        const held = store.current;
+        if (held === null) return;
+        store.current = { ...held, drop, rect };
+    }
+
+    /** The pointer came up: the hovered drop is performed, and nothing happens when none is hovered. */
+    function end(): void {
+        const held = store.current;
+        store.current = null;
+        listen(false);
+        if (!held?.armed) return;
+        const drop = held.drop;
+        if (drop === null) return;
+        if (drop.kind === 'strip') sink.transfer(held.id, drop.target, drop.path, drop.index);
+        else if (drop.kind === 'centre') sink.transfer(held.id, drop.target, drop.path, AT_END);
+        else sink.split(held.id, drop.target, drop.path, drop.edge);
+    }
+
+    /** Escape, or anything else that calls the drag off. Nothing is performed. */
+    function cancel(): void {
+        store.current = null;
+        listen(false);
+    }
+
+    function onPointerMove(event: PointerEvent): void {
+        move({ x: event.clientX, y: event.clientY });
+    }
+
+    function onPointerUp(): void {
+        end();
+    }
+
+    function onKeyDown(event: KeyboardEvent): void {
+        if (event.key !== 'Escape') return;
+        event.preventDefault();
+        cancel();
+    }
+
+    /**
+     * The document listeners a drag needs, and the text selection it must not make. There is no document
+     * in the test suite, so a drag driven by its own calls runs there exactly as it does in a browser.
+     */
+    function listen(on: boolean): void {
+        if (typeof document === 'undefined') return;
+        if (on) {
+            document.addEventListener('pointermove', onPointerMove);
+            document.addEventListener('pointerup', onPointerUp);
+            document.addEventListener('pointercancel', onPointerUp);
+            document.addEventListener('keydown', onKeyDown);
+            document.body.style.userSelect = 'none';
+            return;
+        }
+        document.removeEventListener('pointermove', onPointerMove);
+        document.removeEventListener('pointerup', onPointerUp);
+        document.removeEventListener('pointercancel', onPointerUp);
+        document.removeEventListener('keydown', onKeyDown);
+        document.body.style.userSelect = '';
+    }
+
+    return { setDragSink, dragging, start, move, hover, end, cancel };
 }

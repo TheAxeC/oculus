@@ -6,7 +6,6 @@
     import Search from '$lib/ui/Search.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { openPaletteItem } from '$lib/shell/palette-open';
-    import { openView } from '$lib/state/layout.svelte';
     import {
         buildIndex,
         commands,
@@ -15,11 +14,19 @@
         type PaletteCommand,
         type PaletteItem
     } from '$lib/state/palette';
-    import { paletteSource } from '$lib/state/palette-source.svelte';
-    import { setCrt, setTheme, crt } from '$lib/state/ui.svelte';
     import { t } from '$lib/state/text';
-    import { registrationLabel, views } from '$lib/views/registry';
+    import { registrationLabel } from '$lib/views/registry';
     import { untrack } from 'svelte';
+    import { useState } from '$lib/state/use';
+
+    const client = useState();
+
+    const {
+        layout: { openView },
+        paletteSource: { paletteSource },
+        ui: { setCrt, setTheme, crt },
+        registry: { views }
+    } = client;
 
     type Props = {
         open: boolean;
@@ -67,7 +74,7 @@
 
     function choose(item: PaletteItem): void {
         onclose();
-        openPaletteItem(item);
+        openPaletteItem(client.layout, client.ui, item);
     }
 
     function run(command: PaletteCommand): void {

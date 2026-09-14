@@ -1,7 +1,7 @@
 // The Inbox view rendered over a received feed with every kind, one triaged card, and a draft.
 
 import { render } from 'svelte/server';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Inbox from '../../src/lib/views/Inbox.svelte';
 import {
     engineDir,
@@ -9,18 +9,31 @@ import {
     loadConfig,
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { feedsFixture } from '../feeds-fixture.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
-import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let receive: ClientState['entities']['receive'];
+let setInstanceState: ClientState['ui']['setInstanceState'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ receive } = client.entities);
+    ({ setInstanceState } = client.ui);
+    installFixture();
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
 const glyphs = glyphCatalog(config);
 setCatalog(catalog);
 setGlyphs(glyphs);
-receive({ channel: 'config', version: 501, payload: { config, text: catalog, findings: [] } });
+/** What every case here starts from, installed into the case's own client. */
+function installFixture(): void {
+    receive({ channel: 'config', version: 501, payload: { config, text: catalog, findings: [] } });
+}
 
 const entries = [
     {
@@ -94,7 +107,10 @@ describe('the Inbox view', () => {
             meta: { run: '2026-09-12' },
             entries
         });
-        const body = render(Inbox, { props: { instance: instance('inbox-one') } }).body;
+        const body = render(Inbox, {
+            context: clientContext(client),
+            props: { instance: instance('inbox-one') }
+        }).body;
         expect(body).not.toContain('data-edit-source');
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('2026-09-12');
@@ -138,6 +154,7 @@ describe('the Inbox view', () => {
             entries
         });
         const open = render(Inbox, {
+            context: clientContext(client),
             props: { instance: instance('inbox-open', true) }
         }).body;
         const done = card(open, 'done');
@@ -146,6 +163,7 @@ describe('the Inbox view', () => {
         expect(done).toContain(catalog['inbox.restore_tip']);
 
         const searched = render(Inbox, {
+            context: clientContext(client),
             props: { instance: instance('inbox-search', true, 'upload bob') }
         }).body;
         expect(searched).toContain('data-inbox="action"');
@@ -162,7 +180,10 @@ describe('the Inbox view', () => {
             meta: { run: '2026-09-12' },
             entries: [entries[0], entries[2]]
         });
-        const body = render(Inbox, { props: { instance: instance('inbox-no-action') } }).body;
+        const body = render(Inbox, {
+            context: clientContext(client),
+            props: { instance: instance('inbox-no-action') }
+        }).body;
         expect(body).toContain(`${catalog['inbox.sec_reply']} (1)`);
         expect(body).not.toContain(catalog['inbox.sec_action']);
         expect(body).toContain(`${catalog['inbox.sec_info']} (1)`);
@@ -180,7 +201,10 @@ describe('the Inbox view', () => {
                 { id: 'unsafe', sender: 'S', kind: 'info', url: 'javascript:alert(1)' }
             ]
         });
-        const body = render(Inbox, { props: { instance: instance('inbox-fallbacks') } }).body;
+        const body = render(Inbox, {
+            context: clientContext(client),
+            props: { instance: instance('inbox-fallbacks') }
+        }).body;
         expect(card(body, 'info')).toMatch(/<h3[^>]*>[\s\S]*?Info subject[\s\S]*?<\/h3>/);
         expect(card(body, 'thread')).toContain(catalog['inbox.thread']);
         expect(card(body, 'unsafe')).not.toContain('javascript:');
@@ -195,12 +219,16 @@ describe('the Inbox view', () => {
             meta: { run: '2026-09-12' },
             entries: [{ ...entries[3] }]
         });
-        const clear = render(Inbox, { props: { instance: instance('inbox-clear') } }).body;
+        const clear = render(Inbox, {
+            context: clientContext(client),
+            props: { instance: instance('inbox-clear') }
+        }).body;
         expect(clear).toContain(catalog['inbox.clear']);
         expect(clear).toContain(glyphs.done);
 
         serve({ ok: true, kind: 'inbox', file: 'feeds/inbox.yml', missing: true });
         const missing = render(Inbox, {
+            context: clientContext(client),
             props: { instance: instance('inbox-missing') }
         }).body;
         expect(missing).toContain('No inbox file');
@@ -209,7 +237,10 @@ describe('the Inbox view', () => {
         expect(missing).toContain('/research-cockpit inbox');
 
         serve({ ok: false, kind: 'inbox', file: 'feeds/inbox.yml', error: 'bad YAML' }, 500);
-        const error = render(Inbox, { props: { instance: instance('inbox-error') } }).body;
+        const error = render(Inbox, {
+            context: clientContext(client),
+            props: { instance: instance('inbox-error') }
+        }).body;
         expect(error).toContain('Could not read feeds/inbox.yml: bad YAML');
         expect(error).not.toContain(catalog['inbox.no_file']);
     });

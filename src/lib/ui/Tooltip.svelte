@@ -14,7 +14,8 @@
     // block of a fixed element inside it, which reads those window coordinates from its own corner
     // and cuts the bubble at its edge, and on the body there is no such ancestor.
 
-    import { describedBy, describedControl, nextId } from '$lib/ui/tooltip-target';
+    import { describedBy, describedControl } from '$lib/ui/tooltip-target';
+    import { useTipIds } from '$lib/ui/tip-ids';
     import type { Snippet } from 'svelte';
 
     type Props = {
@@ -53,7 +54,7 @@
     /** How near the right edge of the window the bubble may be laid out. */
     const MARGIN = 8;
 
-    const id = nextId();
+    const id = useTipIds().nextTipId();
 
     let box: HTMLElement | undefined = $state();
     let open = $state(false);

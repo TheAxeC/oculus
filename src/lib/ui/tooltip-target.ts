@@ -2,14 +2,6 @@
 // reads a description off the control being used, so the wrapper hands it to the control it holds;
 // apart from the component so both choices can be read without a DOM.
 
-let counter = 0;
-
-/** One id per tooltip on the page, so aria-describedby names this bubble and no other. */
-export function nextId(): string {
-    counter += 1;
-    return `tip-${counter}`;
-}
-
 /** What the description is put on: the element's own attributes, and what it holds. */
 type Described = {
     querySelector(selectors: string): Element | null;

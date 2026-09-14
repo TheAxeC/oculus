@@ -2,7 +2,7 @@
 
 import { render } from 'svelte/server';
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import CrossLinks from '../../src/lib/views/shared/CrossLinks.svelte';
 import { byType } from '../../src/lib/views/shared/cross-links.ts';
 import type { CrossGroup } from '../../src/lib/state/collection.ts';
@@ -13,6 +13,13 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+
+beforeEach(() => {
+    client = createClientState();
+});
 
 const config = loadConfig(engineDir()).config;
 const glyphs = glyphCatalog(config);
@@ -30,7 +37,7 @@ const groups: CrossGroup[] = [
 
 describe('CrossLinks', () => {
     it('draws the closed group control and no member', () => {
-        const body = render(CrossLinks, { props: { groups } }).body;
+        const body = render(CrossLinks, { context: clientContext(client), props: { groups } }).body;
         expect(body).toMatch(/class="disclosure(?:\s|")/);
         expect(body).toContain('class="count">1</strong>');
         expect(body).toContain('class="label">active</span>');

@@ -2,7 +2,7 @@
 // Pure click behaviour is covered in state/venues.test.ts; this checks every visible acceptance item.
 
 import { render } from 'svelte/server';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import Venues from '../../src/lib/views/Venues.svelte';
 import {
@@ -12,10 +12,8 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
-import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type {
     Collection,
     Entry,
@@ -25,13 +23,28 @@ import type {
     Venue
 } from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let receive: ClientState['entities']['receive'];
+let setInstanceState: ClientState['ui']['setInstanceState'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ receive } = client.entities);
+    ({ setInstanceState } = client.ui);
+    installFixture();
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
 setCatalog(catalog);
 setGlyphs(glyphCatalog(config));
 setVocab(vocabCatalog(config));
-receive({ channel: 'config', version: 24, payload: { config, text: catalog, findings: [] } });
+/** What every case here starts from, installed into the case's own client. */
+function installFixture(): void {
+    receive({ channel: 'config', version: 24, payload: { config, text: catalog, findings: [] } });
+}
 
 const FILE = '/hub/registries/venues.yml';
 const INSTANCE = 'venues-one';
@@ -192,7 +205,7 @@ function html(items: Venue[] = VENUES): string {
         reveal: 'journal'
     });
     const instance: Instance = { id: INSTANCE, view: 'venues', state: {} };
-    return render(Venues, { props: { instance } }).body;
+    return render(Venues, { context: clientContext(client), props: { instance } }).body;
 }
 
 function venueCard(body: string, id: string): string {
@@ -294,7 +307,10 @@ describe('the venue card as a card primitive', () => {
     it('marks the card the instance cursor holds and no other', () => {
         html();
         const held: Instance = { id: INSTANCE, view: 'venues', state: { cursor: 'journal' } };
-        const body = render(Venues, { props: { instance: held } }).body;
+        const body = render(Venues, {
+            context: clientContext(client),
+            props: { instance: held }
+        }).body;
         expect(body).toMatch(/data-card="journal"[^>]*data-cursor="true"/);
         expect(body.match(/data-cursor="true"/g)).toHaveLength(1);
     });

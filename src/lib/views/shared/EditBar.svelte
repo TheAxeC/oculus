@@ -6,6 +6,9 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { sourceTabState } from '$lib/state/source.svelte';
     import { t } from '$lib/state/text';
+    import { useState } from '$lib/state/use';
+
+    const client = useState();
 
     let { files }: { files: EditSource[] } = $props();
 
@@ -19,7 +22,11 @@
         <span>{t('project.helper.edit_source', '')}</span>
         {#each files as file (JSON.stringify([file.root, file.path]))}
             <span data-source-root={file.root} data-source-path={file.path}>
-                <ToolButton label={label(file)} glyph="edit" onclick={() => openSourceFile(file)} />
+                <ToolButton
+                    label={label(file)}
+                    glyph="edit"
+                    onclick={() => openSourceFile(client, file)}
+                />
             </span>
         {/each}
     </div>

@@ -18,13 +18,17 @@
     import Glyph from '$lib/ui/Glyph.svelte';
     import Controls from '$lib/views/map/Controls.svelte';
     import Graph from '$lib/views/map/Graph.svelte';
-    import { portfolio } from '$lib/state/entities.svelte';
     import { buildGraph, layoutKey } from '$lib/state/graph';
-    import { configMap } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
-    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import { parseMapState, type MapState } from '$lib/state/graph';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        entities: { portfolio },
+        selectors: { configMap },
+        ui: { instanceState, setInstanceState }
+    } = useState();
 
     let { instance }: ViewProps = $props();
     const held = $derived(parseMapState(instanceState(instance.id)));

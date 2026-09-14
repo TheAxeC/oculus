@@ -1,7 +1,7 @@
 // The plain project context copied from a card, assembled from a synthetic project and snapshot.
 
 import { describe, expect, it } from 'vitest';
-import { contextText } from '../../src/lib/state/context.ts';
+import { contextText } from '../../src/lib/state/project-context.ts';
 import type { Project, Snapshot } from '../../src/lib/data/model.ts';
 import { NO_FEEDS } from '../entities-fixture.ts';
 

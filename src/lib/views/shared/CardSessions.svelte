@@ -4,11 +4,16 @@
 
     import Chip from '$lib/ui/Chip.svelte';
     import type { BoardItem } from '$lib/state/board';
-    import { openView, workbench } from '$lib/state/layout.svelte';
     import { findView } from '$lib/state/layout';
-    import { select } from '$lib/state/selection.svelte';
-    import { folderOf, sessionsForProject, type GroupedSession } from '$lib/state/selectors.svelte';
+    import { folderOf, type GroupedSession } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { openView, workbench },
+        selection: { select },
+        selectors: { sessionsForProject }
+    } = useState();
 
     type Props = {
         /** The joined board item whose working sessions are shown. */

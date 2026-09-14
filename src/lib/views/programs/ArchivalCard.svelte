@@ -6,10 +6,14 @@
     import Chip from '$lib/ui/Chip.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { openView } from '$lib/state/layout.svelte';
     import type { ArchiveGroup, Project } from '$lib/state/lines';
     import { inlineMarkdown } from '$lib/ui/html';
     import { t } from '$lib/state/text';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { openView }
+    } = useState();
 
     type Props = { id: string; cursor: boolean; groups: ArchiveGroup[] };
     let { id, cursor, groups }: Props = $props();

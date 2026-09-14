@@ -1,8 +1,7 @@
 // The command palette's pure index, ranking and command vocabulary over a synthetic snapshot and
 // feed entries, including the state adapter over one complete socket message.
 
-import { describe, expect, it } from 'vitest';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
+import { beforeEach, describe, expect, it } from 'vitest';
 import {
     buildIndex,
     commands,
@@ -12,8 +11,18 @@ import {
     parseCommand,
     uniqueIdents
 } from '../../src/lib/state/palette.ts';
-import { paletteSource } from '../../src/lib/state/palette-source.svelte.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
+import { createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let receive: ClientState['entities']['receive'];
+let paletteSource: ClientState['paletteSource']['paletteSource'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ receive } = client.entities);
+    ({ paletteSource } = client.paletteSource);
+});
 
 const snapshot = {
     version: 1,

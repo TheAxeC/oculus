@@ -35,12 +35,16 @@
         type Project,
         type Venue
     } from '$lib/state/focus';
-    import { collectionOf, configMap } from '$lib/state/selectors.svelte';
-    import { portfolio } from '$lib/state/entities.svelte';
     import { t } from '$lib/state/text';
     import { chipGlyph, chipLabel } from '$lib/state/tones';
-    import { writeManifest } from '$lib/state/writes.svelte';
-    import { openView } from '$lib/state/layout.svelte';
+    import { useState } from '$lib/state/use';
+
+    const {
+        selectors: { collectionOf, configMap },
+        entities: { portfolio },
+        writes: { writeManifest },
+        layout: { openView }
+    } = useState();
 
     type Props = {
         now: number;

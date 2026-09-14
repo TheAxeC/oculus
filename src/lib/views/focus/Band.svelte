@@ -12,11 +12,15 @@
     import { daysTone } from '$lib/state/ticker';
     import { collectionLanes, type BandItem } from '$lib/state/focus-lanes';
     import { toneOf } from '$lib/state/tones';
-    import { configMap } from '$lib/state/selectors.svelte';
-    import { portfolio } from '$lib/state/entities.svelte';
-    import { openView } from '$lib/state/layout.svelte';
-    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import { t } from '$lib/state/text';
+    import { useState } from '$lib/state/use';
+
+    const {
+        selectors: { configMap },
+        entities: { portfolio },
+        layout: { openView },
+        ui: { instanceState, setInstanceState }
+    } = useState();
 
     type Props = { now: number };
 

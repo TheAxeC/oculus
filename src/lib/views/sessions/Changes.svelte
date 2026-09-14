@@ -21,14 +21,19 @@
     import Pane from '$lib/ui/Pane.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
-    import { instanceLayoutState, pinInstance, unpinInstance } from '$lib/state/layout.svelte';
     import { pinnedSession } from '$lib/state/selection.svelte';
-    import { gitFor, sessionFor, touchers, type GitState } from '$lib/state/selectors.svelte';
+    import type { GitState } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
-    import { writeGit } from '$lib/state/writes.svelte';
     import type { ViewProps } from '$lib/views/registry';
     import ChangesRepo from './ChangesRepo.svelte';
     import ChangesTouched from './ChangesTouched.svelte';
+    import { useState } from '$lib/state/use';
+
+    const {
+        layout: { instanceLayoutState, pinInstance, unpinInstance },
+        selectors: { gitFor, sessionFor, touchers },
+        writes: { writeGit }
+    } = useState();
 
     let { instance }: ViewProps = $props();
     type Branch = { name: string; upstream: string; current: boolean };

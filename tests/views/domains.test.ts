@@ -1,21 +1,29 @@
 // The Domains view rendered on the server over populated and empty registry entries.
 
 import { render } from 'svelte/server';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import Domains from '../../src/lib/views/Domains.svelte';
-import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let setInstanceState: ClientState['ui']['setInstanceState'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ setInstanceState } = client.ui);
+});
 
 const INSTANCE = 'domains-one';
 
 function html(empty = false): string {
     const snapshot = fixture();
     if (empty) snapshot.entities.projects = {};
-    install(snapshot, empty ? 2403 : 2402);
+    install(client, snapshot, empty ? 2403 : 2402);
     setInstanceState(INSTANCE, { reveal: 'heart' });
     const instance: Instance = { id: INSTANCE, view: 'domains', state: {} };
-    return render(Domains, { props: { instance } }).body;
+    return render(Domains, { context: clientContext(client), props: { instance } }).body;
 }
 
 describe('the Domains view', () => {
@@ -56,10 +64,10 @@ describe('the Domains view', () => {
             index: 2
         });
         snapshot.entities.projects.old.domainIds = ['sleep'];
-        install(snapshot, 2406);
+        install(client, snapshot, 2406);
         setInstanceState(INSTANCE, {});
         const instance: Instance = { id: INSTANCE, view: 'domains', state: {} };
-        const body = render(Domains, { props: { instance } }).body;
+        const body = render(Domains, { context: clientContext(client), props: { instance } }).body;
         expect(body).toMatch(/data-domain="sleep"[^>]*class="[^"]*dormant/);
     });
 
@@ -88,10 +96,10 @@ describe('the Domains view', () => {
             }
         ];
         snapshot.entities.projects.alpha.domainIds = ['10', '2'];
-        install(snapshot, 2407);
+        install(client, snapshot, 2407);
         setInstanceState(INSTANCE, {});
         const instance: Instance = { id: INSTANCE, view: 'domains', state: {} };
-        const body = render(Domains, { props: { instance } }).body;
+        const body = render(Domains, { context: clientContext(client), props: { instance } }).body;
         expect(body.indexOf('Domain ten')).toBeLessThan(body.indexOf('Domain two'));
     });
 });

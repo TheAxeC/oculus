@@ -1,14 +1,13 @@
 <script module lang="ts">
     // Layer 3, view registration. Position Leads follows Lit Watch in the feeds group.
     import type { ViewRegistration } from './registry';
-    import { leadsBadge } from '$lib/state/rail-badges.svelte';
     export const registration: ViewRegistration = {
         id: 'leads',
         label: 'views.leads',
         glyph: 'views.leads_glyph',
         group: 'feeds',
         order: 1,
-        badge: leadsBadge,
+        badge: (client) => client.railBadges.leadsBadge(),
         badgeTone: () => 'amber'
     };
 </script>
@@ -27,8 +26,6 @@
     import Intro from './shared/Intro.svelte';
     import Reveal from './shared/Reveal.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
-    import { config } from '$lib/state/entities.svelte';
-    import { feed } from '$lib/state/feeds.svelte';
     import {
         leadsSearch,
         leadIdents,
@@ -42,14 +39,15 @@
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
     import { feedIdents } from '$lib/state/palette';
-    import {
-        instanceState,
-        leadsDismissed,
-        setInstanceState,
-        setLeadDismissed
-    } from '$lib/state/ui.svelte';
-    import { addLead } from '$lib/state/writes.svelte';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        entities: { config },
+        feeds: { feed },
+        ui: { instanceState, leadsDismissed, setInstanceState, setLeadDismissed },
+        writes: { addLead }
+    } = useState();
 
     let { instance }: ViewProps = $props();
 

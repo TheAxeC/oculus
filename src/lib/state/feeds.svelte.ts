@@ -1,11 +1,20 @@
 // Layer 2, client state. Reads one kind from the complete feed payload delivered by the socket.
 
-import { feeds } from './entities.svelte.ts';
+import type { EntitiesStore } from './entities.svelte.ts';
 import type { FeedKind, FeedsPayload } from '../data/model.ts';
 
 export type FeedState = FeedsPayload[FeedKind];
 
-/** One feed state, or null before the starting `feeds` message arrives. */
-export function feed(kind: FeedKind): FeedState | null {
-    return feeds()?.[kind] ?? null;
+/** One client's reader of the four generated feeds. */
+export type FeedsStore = {
+    feed: (kind: FeedKind) => FeedState | null;
+};
+
+export function createFeeds(entities: EntitiesStore): FeedsStore {
+    /** One feed state, or null before the starting `feeds` message arrives. */
+    function feed(kind: FeedKind): FeedState | null {
+        return entities.feeds()?.[kind] ?? null;
+    }
+
+    return { feed };
 }

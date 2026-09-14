@@ -2,7 +2,7 @@
 // an editable collection. Pure filtering and recovery-command rules are covered by state tests.
 
 import { render } from 'svelte/server';
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import Data from '../../src/lib/views/Data.svelte';
 import {
@@ -12,10 +12,8 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
-import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type {
     Collection,
     Dataset,
@@ -25,13 +23,28 @@ import type {
     Snapshot
 } from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+let receive: ClientState['entities']['receive'];
+let setInstanceState: ClientState['ui']['setInstanceState'];
+
+beforeEach(() => {
+    client = createClientState();
+    ({ receive } = client.entities);
+    ({ setInstanceState } = client.ui);
+    installFixture();
+});
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
 setCatalog(catalog);
 setGlyphs(glyphCatalog(config));
 setVocab(vocabCatalog(config));
-receive({ channel: 'config', version: 25, payload: { config, text: catalog, findings: [] } });
+/** What every case here starts from, installed into the case's own client. */
+function installFixture(): void {
+    receive({ channel: 'config', version: 25, payload: { config, text: catalog, findings: [] } });
+}
 
 const FILE = '/hub/registries/data.yml';
 const INSTANCE = 'data-one';
@@ -163,7 +176,10 @@ describe('the Data view', () => {
     it('draws the intro, controls, facets and every dataset card in file order', () => {
         receive({ channel: 'portfolio', version: 25, payload: snapshot(DATASETS) });
         setInstanceState(INSTANCE, { search: '', off: [], reveal: 'open' });
-        const html = render(Data, { props: { instance: instance() } }).body;
+        const html = render(Data, {
+            context: clientContext(client),
+            props: { instance: instance() }
+        }).body;
 
         expect(html).toMatch(/class="intro(?:\s|")/);
         expect(html).toContain(
@@ -183,7 +199,10 @@ describe('the Data view', () => {
 
     it('draws Markdown, access tones, metadata, notes, projects, source and recovery', () => {
         receive({ channel: 'portfolio', version: 26, payload: snapshot(DATASETS) });
-        const html = render(Data, { props: { instance: instance() } }).body;
+        const html = render(Data, {
+            context: clientContext(client),
+            props: { instance: instance() }
+        }).body;
 
         expect(html).toContain('Open <strong>ECG</strong>');
         expect(html).toContain('A <strong>signal</strong> dataset.');
@@ -209,7 +228,10 @@ describe('the Data view', () => {
 
     it('does not invent project links for a dataset with no users', () => {
         receive({ channel: 'portfolio', version: 27, payload: snapshot(DATASETS) });
-        const html = render(Data, { props: { instance: instance() } }).body;
+        const html = render(Data, {
+            context: clientContext(client),
+            props: { instance: instance() }
+        }).body;
         const start = html.indexOf('data-dataset="public"');
         const card = html.slice(start);
         expect(start).toBeGreaterThan(0);
@@ -218,7 +240,10 @@ describe('the Data view', () => {
 
     it('draws the dataset empty message when the file has no entries', () => {
         receive({ channel: 'portfolio', version: 28, payload: snapshot([]) });
-        const html = render(Data, { props: { instance: instance() } }).body;
+        const html = render(Data, {
+            context: clientContext(client),
+            props: { instance: instance() }
+        }).body;
         expect(html).toContain('No datasets yet - add some to registries/data.yml.');
         expect(html).not.toContain('data-dataset=');
     });
@@ -227,7 +252,10 @@ describe('the Data view', () => {
 describe('the dataset card as a card primitive', () => {
     it('gives every card the dataset id the keyboard cursor moves over', () => {
         receive({ channel: 'portfolio', version: 29, payload: snapshot(DATASETS) });
-        const html = render(Data, { props: { instance: instance() } }).body;
+        const html = render(Data, {
+            context: clientContext(client),
+            props: { instance: instance() }
+        }).body;
         for (const item of DATASETS) expect(html).toContain(`data-card="${item.id}"`);
         expect(html).not.toContain('data-cursor');
     });
@@ -235,14 +263,20 @@ describe('the dataset card as a card primitive', () => {
     it('marks the card the instance cursor holds and no other', () => {
         receive({ channel: 'portfolio', version: 30, payload: snapshot(DATASETS) });
         const held: Instance = { id: INSTANCE, view: 'data', state: { cursor: 'private' } };
-        const html = render(Data, { props: { instance: held } }).body;
+        const html = render(Data, {
+            context: clientContext(client),
+            props: { instance: held }
+        }).body;
         expect(html).toMatch(/data-card="private"[^>]*data-cursor="true"/);
         expect(html.match(/data-cursor="true"/g)).toHaveLength(1);
     });
 
     it('carries the whole value of a size, HPC or fetch chip in a tooltip beside it', () => {
         receive({ channel: 'portfolio', version: 31, payload: snapshot(DATASETS) });
-        const html = render(Data, { props: { instance: instance() } }).body;
+        const html = render(Data, {
+            context: clientContext(client),
+            props: { instance: instance() }
+        }).body;
         for (const words of ['Size 2 GB', 'HPC ~/data/open', 'Fetch wget']) {
             const bubble = new RegExp(
                 `role="tooltip"[^>]*>${words.replace(/[.*+?^$()|[\]\\]/g, '\\$&')}<`

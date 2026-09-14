@@ -22,12 +22,16 @@
     import Reveal from '$lib/views/shared/Reveal.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import { cardCursor } from '$lib/state/instance';
-    import { portfolio } from '$lib/state/entities.svelte';
     import { domainMembers, parseDomainsState, type DomainsState } from '$lib/state/lines';
-    import { archiveDead, collectionOf, projects } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
-    import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
+    import { useState } from '$lib/state/use';
+
+    const {
+        entities: { portfolio },
+        selectors: { archiveDead, collectionOf, projects },
+        ui: { instanceState, setInstanceState }
+    } = useState();
 
     let { instance }: ViewProps = $props();
     const held = $derived(parseDomainsState(instanceState(instance.id)));
