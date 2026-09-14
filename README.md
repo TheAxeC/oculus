@@ -29,4 +29,4 @@ Resume a session there, whichever account it started on, since the transcripts a
 CLAUDE_CONFIG_DIR=~/.claude-work claude --resume <session-id>
 ```
 
-A terminal without the variable runs on the first account. Never resume one session in two terminals at once: both write the same transcript. To branch instead, add `--fork-session`. Codex has the same in `CODEX_HOME`. The Usage view (D19) reads both folders through the `accounts:` list in `local.yml`.
+`~/.zshrc` on Axel's machine defines `claude-work` as a shortcut for `CLAUDE_CONFIG_DIR=~/.claude-work claude`, with arguments passed through, so `claude-work` and `claude-work --resume <session-id>` do the same as the two commands above. A terminal without the variable runs on the first account. Never resume one session in two terminals at once: both write the same transcript. To branch instead, add `--fork-session`. Codex has the same in `CODEX_HOME`. The Usage view (D19) reads both folders through the `accounts:` list in `local.yml`.
