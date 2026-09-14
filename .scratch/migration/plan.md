@@ -156,7 +156,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 
 ## Could run in parallel
 
-- The feature stretch after R17, three at a time (Axel 2026-09-14 17:50), each set checked for disjoint paths at its dispatch: Q15 + Q16 + H1, Q15b with the next set; Q17 + P1 + O27a; P2 + O27b + O28a; O28b + D1 + D2; D3 + D6 + D4; D5 + D7 + D10; D8 + D12 + D9; D16 + D11 + D13; D14 + D15 + D17; D18 + D20 + O31. Alone by nature: Q18, R10, R13a, R13b, K1, R17, L1, L2 before it; R2, O29, O30, X2 after it.
+- The feature stretch after R17, three at a time (Axel 2026-09-14 17:50), each set checked for disjoint paths at its dispatch: Q15 + Q16 + H1, then Q15b; Q17 + P1 + O27a; P2 + O27b + O28a; O28b + D1 + D2; D3 + D6 + D4; D5 + D7 + D10; D8 + D12 + D9; D16 + D11 + D13; D14 + D15 + D17; D18 + D20 + O31. Alone by nature: Q18, R10, R13a, R13b, K1, R17, L1, L2 before it; R2, O29, O30, X2 after it.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
