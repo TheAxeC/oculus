@@ -14,11 +14,13 @@ describe('HPC actions', () => {
         expect(runner).not.toHaveBeenCalled();
     });
     it('uses the candidate ladder and parses its path marker', async () => {
-        const runner = vi.fn(async (_host: string, _remote: string, _timeout: number) => ({
-            stdout: '@@oculus:logpath=/work/hpc/logs/42.out\nhello\n',
-            stderr: '',
-            code: 0
-        }));
+        const runner = vi.fn((_host: string, _remote: string, _timeout: number) =>
+            Promise.resolve({
+                stdout: '@@oculus:logpath=/work/hpc/logs/42.out\nhello\n',
+                stderr: '',
+                code: 0
+            })
+        );
         const answer = await log('host', '42', new Map(), runner);
         expect(answer).toEqual({ status: 'ok', path: '/work/hpc/logs/42.out', log: 'hello' });
         expect(runner.mock.calls[0][1]).toContain('/hpc/logs/');

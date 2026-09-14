@@ -91,6 +91,7 @@
         </div>
         <div class="area">
             {#each entries as entry (entry.id)}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render row(entry)}{/each}
         </div>
     </div>

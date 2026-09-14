@@ -128,7 +128,7 @@ describe('GET /api/transcript', () => {
         expect(tail.offset).toBe(size);
     });
 
-    it('refuses a request from another origin', async () => {
+    it('refuses a request from another origin', () => {
         const other = new Request(`http://${HOST}/api/transcript?id=${SESSION}`, {
             headers: { origin: 'http://elsewhere.example', 'sec-fetch-site': 'cross-site' }
         });

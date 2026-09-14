@@ -293,6 +293,7 @@
             ondrop={(event) => dropped(one.key, event)}
         >
             {#each held as project (project.id)}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render card(project)}
             {:else}
                 <Empty message={t('focus.none')} glyph={t('focus.empty_glyph')} />
@@ -316,6 +317,7 @@
             </summary>
             <div class="lanes">
                 {#each inCluster as one (one.key)}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render lane(one, items[one.key] ?? [], false)}
                 {/each}
             </div>
@@ -326,6 +328,7 @@
 <details class="cluster muted" open>
     <summary><Glyph name={t('focus.ideas_glyph')} />{t('focus.ideas')}</summary>
     <div class="lanes one">
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render lane(
             {
                 key: 'holding',
@@ -349,6 +352,7 @@
                 onclick={() => openMissing(missing[0])}
             />
         </span>
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
         {@html t('focus.hint_tail')}
     </p>
 {/if}

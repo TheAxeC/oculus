@@ -12,7 +12,7 @@
         return t('hpc.live');
     }
     function parts(): string[] {
-        if (data === null || data.status !== 'ok') return [];
+        if (data?.status !== 'ok') return [];
         return [
             data.jobs.length === 0
                 ? t('hpc.queue_empty')

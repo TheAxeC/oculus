@@ -9,14 +9,16 @@ describe('watchHpc', () => {
     it('publishes starting, parsed data, refreshes, and closes timers', async () => {
         vi.useFakeTimers();
         const hub = new Hub();
-        const runner = vi.fn(async (_h, remote: string) =>
-            remote.startsWith('quota')
-                ? { stdout: '', stderr: '', code: 0 }
-                : {
-                      stdout: `1|x|cpu|RUNNING|1|2|1|1||1G|1||n\n${SEC_RC}0@@\n${SEC_SACCT}\n${SEC_SINFO}\ncpu|up|1|idle|(null)`,
-                      stderr: '',
-                      code: 0
-                  }
+        const runner = vi.fn((_h, remote: string) =>
+            Promise.resolve(
+                remote.startsWith('quota')
+                    ? { stdout: '', stderr: '', code: 0 }
+                    : {
+                          stdout: `1|x|cpu|RUNNING|1|2|1|1||1G|1||n\n${SEC_RC}0@@\n${SEC_SACCT}\n${SEC_SINFO}\ncpu|up|1|idle|(null)`,
+                          stderr: '',
+                          code: 0
+                      }
+            )
         );
         const watcher = watchHpc(hub, { ...options, runner });
         expect((hub.latest('hpc')?.payload as { status: string }).status).toBe('starting');
@@ -33,9 +35,7 @@ describe('watchHpc', () => {
         const hub = new Hub();
         const watcher = watchHpc(hub, {
             ...options,
-            runner: async () => {
-                throw new Error('timeout');
-            }
+            runner: () => Promise.reject(new Error('timeout'))
         });
         await watcher.refresh();
         expect((hub.latest('hpc')?.payload as { status: string }).status).toBe('unreachable');

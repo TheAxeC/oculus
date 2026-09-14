@@ -167,7 +167,7 @@
 
     function reheat(): void {
         alpha = Math.max(alpha, 0.4);
-        if (frame === null) frame = requestAnimationFrame(step);
+        frame ??= requestAnimationFrame(step);
     }
 
     function step(): void {
@@ -258,7 +258,7 @@
     }
 
     onMount(() => {
-        let cached: Physics | null = null;
+        let cached: Physics | null;
         try {
             const raw = localStorage.getItem(key);
             const parsed: unknown = raw === null ? null : JSON.parse(raw);

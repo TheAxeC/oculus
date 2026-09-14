@@ -68,6 +68,7 @@
                 String(Math.round((Number(event.text) || 0) / 1000))
             );
         }
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the event text is folded from a session record's JSON, which may hold any scalar under that key
         const text = String(event.text ?? '');
         const at = text.lastIndexOf('/');
         return at < 0 ? text : text.slice(at + 1);
@@ -162,6 +163,7 @@
             {/if}
         </div>
         {#each area.sessions as entry (entry.id)}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render row(entry)}{/each}
     </div>
 {/snippet}
@@ -172,6 +174,7 @@
         <span class="n">{count()}</span>
     </div>
     {#each workspace.areas as area (area.key)}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render areaOf(area)}{/each}
 </div>
 

@@ -166,16 +166,21 @@ describe('the git endpoint', () => {
                 rootsFor: () => [published],
                 suggest: undefined,
                 message: {
-                    diff: async (root, roots) => {
+                    diff: (root, roots) => {
                         expect(root).toBe(published);
                         expect(roots).toEqual([published]);
-                        return { ok: true, output: 'diff --git a/a.txt b/a.txt', error: '' };
+                        return Promise.resolve({
+                            ok: true,
+                            output: 'diff --git a/a.txt b/a.txt',
+                            error: ''
+                        });
                     },
-                    ask: async () => ({
-                        ok: true,
-                        output: 'Describe the published change',
-                        error: ''
-                    })
+                    ask: () =>
+                        Promise.resolve({
+                            ok: true,
+                            output: 'Describe the published change',
+                            error: ''
+                        })
                 }
             })
         );

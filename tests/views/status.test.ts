@@ -29,7 +29,7 @@ describe('the status view hooks section', () => {
         const body = render(Hooks, { props: { origin: 'http://127.0.0.1:8793' } }).body;
         const printed = pre(body);
         expect(printed).not.toBeNull();
-        expect(JSON.parse(printed === null ? 'null' : printed)).toEqual(
+        expect(JSON.parse(printed ?? 'null')).toEqual(
             JSON.parse(hooksSnippet('http://127.0.0.1:8793'))
         );
     });

@@ -66,7 +66,7 @@ function partialPath(file: string, specifier: string): string {
 function read(file: string): Read {
     const source = readFileSync(file, 'utf8');
     const rules = [...css(source).matchAll(/([^{}]+)\{([^{}]*)\}/g)];
-    const opening = source.match(/<Pane\b[\s\S]*?>/);
+    const opening = /<Pane\b[\s\S]*?>/.exec(source);
     return {
         surface: rules.some((rule) => WALL.test(rule[1]) && WALL_MIX.test(rule[2])),
         card: /<Card[\s/>]/.test(source),

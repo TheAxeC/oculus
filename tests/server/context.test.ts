@@ -11,12 +11,13 @@ import {
     type OculusRequest
 } from '../../src/lib/server/context.ts';
 import { Terminals, type TerminalDriver } from '../../src/lib/server/pty/channel.ts';
+import { noop, noopAsync } from '../doubles.ts';
 
-const driver = (close: () => void = () => {}): TerminalDriver => ({
+const driver = (close: () => void = noop): TerminalDriver => ({
     run: () => Promise.resolve(''),
-    onOutput: () => {},
-    onChange: () => {},
-    attached: () => {},
+    onOutput: noop,
+    onChange: noop,
+    attached: noop,
     live: () => false,
     close
 });
@@ -29,16 +30,16 @@ describe('ServerContext', () => {
         const createHub = vi.fn(() => hub);
         const createTerminals = vi.fn(() => terminals);
         const watchPortfolio = vi.fn(() => ({ close: closes[0] }));
-        const watchSessions = vi.fn(() => ({ onChange: vi.fn(() => () => {}), close: closes[1] }));
+        const watchSessions = vi.fn(() => ({ onChange: vi.fn(() => noop), close: closes[1] }));
         const watchGit = vi.fn((_hub: Hub, _root: string) => ({
             refresh: vi.fn(),
             close: closes[2]
         }));
-        const watchHpc = vi.fn(() => ({ refresh: vi.fn(async () => {}), close: closes[3] }));
+        const watchHpc = vi.fn(() => ({ refresh: vi.fn(noopAsync), close: closes[3] }));
         const watchUsageRefresh = vi.fn(() => ({
             ready: Promise.resolve(),
-            refresh: vi.fn(async () => true),
-            refreshAll: vi.fn(async () => {}),
+            refresh: vi.fn(() => Promise.resolve(true)),
+            refreshAll: vi.fn(noopAsync),
             state: vi.fn(() => ({
                 state: 'running' as const,
                 since: '',
@@ -48,7 +49,7 @@ describe('ServerContext', () => {
             })),
             close: closes[4]
         }));
-        const watchUsage = vi.fn(() => ({ refresh: vi.fn(async () => {}), close: closes[5] }));
+        const watchUsage = vi.fn(() => ({ refresh: vi.fn(noopAsync), close: closes[5] }));
         const context = createServerContext('/engine', {
             loadLocal: vi.fn(() => ({
                 hub: '/hub',
@@ -106,8 +107,8 @@ describe('ServerContext', () => {
     });
 
     it('keeps session rescan signals inside their owning context', () => {
-        const rescans: Array<() => void> = [];
-        const refreshes = [vi.fn(async () => {}), vi.fn(async () => {})];
+        const rescans: (() => void)[] = [];
+        const refreshes = [vi.fn(noopAsync), vi.fn(noopAsync)];
         let usageIndex = 0;
         const replacements: Partial<ContextDependencies> = {
             loadLocal: () => ({
@@ -134,7 +135,7 @@ describe('ServerContext', () => {
             mintToken: () => 'context-token',
             createHub: () => new Hub(),
             createTerminals: (hub) => new Terminals(hub, { driver: driver(), poll: 0 }),
-            watchPortfolio: () => ({ close() {} }),
+            watchPortfolio: () => ({ close: noop }),
             watchSessions: () => {
                 const listeners = new Set<() => void>();
                 rescans.push(() => {
@@ -152,12 +153,12 @@ describe('ServerContext', () => {
                     }
                 };
             },
-            watchGit: () => ({ refresh: async () => {}, close() {} }),
-            watchHpc: () => ({ refresh: async () => {}, close() {} }),
+            watchGit: () => ({ refresh: noopAsync, close: noop }),
+            watchHpc: () => ({ refresh: noopAsync, close: noop }),
             watchUsageRefresh: () => ({
                 ready: Promise.resolve(),
-                refresh: async () => true,
-                refreshAll: async () => {},
+                refresh: () => Promise.resolve(true),
+                refreshAll: noopAsync,
                 state: () => ({
                     state: 'running',
                     since: '',
@@ -165,11 +166,11 @@ describe('ServerContext', () => {
                     lastRefresh: '',
                     renewed: true
                 }),
-                close() {}
+                close: noop
             }),
             watchUsage: (_hub, options) => {
                 const refresh = refreshes[usageIndex++];
-                const off = options.onSessionsChange?.(() => void refresh()) ?? (() => {});
+                const off = options.onSessionsChange?.(() => void refresh()) ?? noop;
                 return { refresh, close: off };
             }
         };

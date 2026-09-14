@@ -60,7 +60,7 @@ export function readFeedFile(
     if (!isMap(parsed)) throw new Error(`${file}: expected a map of keys`);
     const meta = parsed.meta === undefined ? {} : parsed.meta;
     if (!isMap(meta)) throw new Error(`${file}: meta is not a map`);
-    const entries = parsed.entries === undefined || parsed.entries === null ? [] : parsed.entries;
+    const entries = parsed.entries ?? [];
     if (!Array.isArray(entries) || !entries.every(isMap)) {
         throw new Error(`${file}: every entry must be a map`);
     }
@@ -348,10 +348,7 @@ export function writeFeedField(
     if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
     const source = readFileSync(full, 'utf8');
     const parsed = readFeedFile(hub, config, feed);
-    if (
-        parsed === null ||
-        !parsed.entries.some((entry) => String(entry[rule.identity] ?? '') === id)
-    ) {
+    if (!parsed?.entries.some((entry) => String(entry[rule.identity] ?? '') === id)) {
         return { found: false, changed: [], refused: [] };
     }
     return saved(full, source, setEntryFields(source, rule.identity, id, { [field]: value }));
@@ -376,10 +373,7 @@ export function deleteFeedEntry(
     if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
     const source = readFileSync(full, 'utf8');
     const parsed = readFeedFile(hub, config, feed);
-    if (
-        parsed === null ||
-        !parsed.entries.some((entry) => String(entry[rule.identity] ?? '') === id)
-    ) {
+    if (!parsed?.entries.some((entry) => String(entry[rule.identity] ?? '') === id)) {
         return { found: false, changed: [], refused: [] };
     }
     return saved(full, source, deleteEntry(source, rule.identity, id));

@@ -173,6 +173,7 @@
                     {/each}
                 </div>
             {:else}
+                <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
                 <p class="empty">{@html t('leads.empty')}</p>
             {/if}
 
@@ -225,6 +226,7 @@
                     {#if held.runlogOpen}
                         <ul class="runlog">
                             {#each shownLog as line, at (`${at}:${line}`)}
+                                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
                                 <li>{@html inlineMarkdown(line)}</li>
                             {/each}
                         </ul>

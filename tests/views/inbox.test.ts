@@ -86,7 +86,7 @@ function serve(body: Record<string, unknown>, _status = 200): void {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('the Inbox view', () => {
-    it('draws meta, search, ordered live sections, card details, and collapsed triaged cards', async () => {
+    it('draws meta, search, ordered live sections, card details, and collapsed triaged cards', () => {
         serve({
             ok: true,
             kind: 'inbox',
@@ -120,7 +120,7 @@ describe('the Inbox view', () => {
         expect(reply).toContain(catalog['inbox.open_gmail']);
         expect(reply).toContain('href="https://mail.google.com/reply"');
         expect(hasAction(reply, catalog['inbox.triaged'])).toBe(true);
-        expect(reply).toContain(String(glyphs.done));
+        expect(reply).toContain(glyphs.done);
         expect(reply).toContain(catalog['inbox.triage_tip']);
         expect(card(body, 'action')).toContain(catalog['inbox.action']);
         expect(card(body, 'info')).toContain(catalog['inbox.info']);
@@ -129,7 +129,7 @@ describe('the Inbox view', () => {
         expect(body).not.toContain('data-inbox="done"');
     });
 
-    it('draws the open triaged section with restore and filters all cards', async () => {
+    it('draws the open triaged section with restore and filters all cards', () => {
         serve({
             ok: true,
             kind: 'inbox',
@@ -142,7 +142,7 @@ describe('the Inbox view', () => {
         }).body;
         const done = card(open, 'done');
         expect(hasAction(done, catalog['inbox.restore'])).toBe(true);
-        expect(done).toContain(String(glyphs.refresh));
+        expect(done).toContain(glyphs.refresh);
         expect(done).toContain(catalog['inbox.restore_tip']);
 
         const searched = render(Inbox, {
@@ -154,7 +154,7 @@ describe('the Inbox view', () => {
         expect(searched).not.toContain('data-inbox="done"');
     });
 
-    it('omits an empty kind section', async () => {
+    it('omits an empty kind section', () => {
         serve({
             ok: true,
             kind: 'inbox',
@@ -168,7 +168,7 @@ describe('the Inbox view', () => {
         expect(body).toContain(`${catalog['inbox.sec_info']} (1)`);
     });
 
-    it('uses the subject and then the catalog thread label when the sender is empty', async () => {
+    it('uses the subject and then the catalog thread label when the sender is empty', () => {
         serve({
             ok: true,
             kind: 'inbox',
@@ -187,7 +187,7 @@ describe('the Inbox view', () => {
         expect(card(body, 'unsafe')).not.toContain(catalog['inbox.open_gmail']);
     });
 
-    it('draws the clear, missing-file, and feed-error states', async () => {
+    it('draws the clear, missing-file, and feed-error states', () => {
         serve({
             ok: true,
             kind: 'inbox',
@@ -197,7 +197,7 @@ describe('the Inbox view', () => {
         });
         const clear = render(Inbox, { props: { instance: instance('inbox-clear') } }).body;
         expect(clear).toContain(catalog['inbox.clear']);
-        expect(clear).toContain(String(glyphs.done));
+        expect(clear).toContain(glyphs.done);
 
         serve({ ok: true, kind: 'inbox', file: 'feeds/inbox.yml', missing: true });
         const missing = render(Inbox, {

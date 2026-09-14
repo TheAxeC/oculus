@@ -17,6 +17,7 @@ import { stateId } from '../../src/lib/state/instance.ts';
 import { loadUi } from '../../src/lib/state/ui.svelte.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
+import { noop } from '../doubles.ts';
 
 setCatalog(textCatalog(loadConfig(engineDir()).config));
 
@@ -26,7 +27,7 @@ const CONFIG = {
 };
 
 afterEach(() => vi.unstubAllGlobals());
-beforeEach(() => loadUi({ getItem: () => null, setItem: () => {} }));
+beforeEach(() => loadUi({ getItem: () => null, setItem: noop }));
 
 describe('source tab state', () => {
     it('uses configured editable and viewable extensions and blocks everything else', () => {

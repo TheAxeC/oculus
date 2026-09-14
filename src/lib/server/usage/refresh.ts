@@ -139,7 +139,11 @@ export function watchUsageRefresh(options: UsageRefreshOptions): UsageRefreshWat
     const exec = options.run ?? run;
     const now = options.now ?? Date.now;
     const pause = options.pause ?? wait;
-    const onChange = options.onChange ?? (() => {});
+    const onChange =
+        options.onChange ??
+        (() => {
+            // A caller that wants no notice of a state change passes no onChange.
+        });
     const held = new Map<string, UsageRefresher>();
     const down = new Map<string, { reason: string; since: string }>();
     const queues = new Map<string, Promise<void>>();

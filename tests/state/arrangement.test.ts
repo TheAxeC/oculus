@@ -42,20 +42,15 @@ describe('parseArrangement', () => {
     it('turns the shipped sessions arrangement into a workbench that checks out', () => {
         const made = parseArrangement(real());
         expect(made).not.toBe(null);
-        expect(checkWorkbench(made as Workbench)).toEqual([]);
+        expect(checkWorkbench(made!)).toEqual([]);
         expect(made?.dock).toBe('right');
-        expect(viewsOf((made as Workbench).main)).toEqual([
-            'session-list',
-            'terminal',
-            'transcript',
-            'timeline'
-        ]);
-        expect(viewsOf((made as Workbench).panel)).toEqual(['session-detail', 'changes', 'agents']);
+        expect(viewsOf(made!.main)).toEqual(['session-list', 'terminal', 'transcript', 'timeline']);
+        expect(viewsOf(made!.panel)).toEqual(['session-detail', 'changes', 'agents']);
     });
 
     it('mints a fresh instance id for every tab, so two applications never collide', () => {
-        const first = parseArrangement(real()) as Workbench;
-        const second = parseArrangement(real()) as Workbench;
+        const first = parseArrangement(real())!;
+        const second = parseArrangement(real())!;
         const ids = (made: Workbench): string[] =>
             [...panes(made.main), ...panes(made.panel)].flatMap(({ pane: node }) =>
                 node.tabs.map((tab) => tab.id)
@@ -68,7 +63,7 @@ describe('parseArrangement', () => {
         const made = parseArrangement({
             main: { kind: 'pane', view: 'timeline' },
             panel: { kind: 'pane', view: ['changes', 'agents'] }
-        }) as Workbench;
+        })!;
         expect(viewsOf(made.main)).toEqual(['timeline']);
         expect(viewsOf(made.panel)).toEqual(['changes', 'agents']);
         expect(made.dock).toBe('right');
@@ -81,7 +76,7 @@ describe('parseArrangement', () => {
             panel: { kind: 'pane', view: 'changes' },
             dock: 'bottom',
             panel_size: 0.9
-        }) as Workbench;
+        })!;
         expect(made.dock).toBe('bottom');
         expect(made.panelSize).toBe(PANEL_MAX);
     });

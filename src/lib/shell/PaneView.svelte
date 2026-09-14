@@ -90,7 +90,7 @@
 
     let { node, target, path = [] }: Props = $props();
 
-    let body: HTMLDivElement | undefined = $state(undefined);
+    let body: HTMLDivElement | undefined = $state();
 
     const instances = $derived<Instance[]>(node.kind === 'pane' ? node.tabs : []);
     const active = $derived(node.kind === 'pane' ? node.active : '');
@@ -254,9 +254,10 @@
         onhoverindex={held === null ? undefined : stripHover}
         menu={paneMenu}
     />
-    <!-- svelte-ignore a11y_no_static_element_interactions the body is where a view is mounted, and
-         the two pointer handlers only report where a drop would land while a drag is in progress.
-         Every drop they report has an item in the pane menu, which is the keyboard path. -->
+    <!-- The body is where a view is mounted, and the two pointer handlers only report where a drop
+         would land while a drag is in progress. Every drop they report has an item in the pane menu,
+         which is the keyboard path. -->
+    <!-- svelte-ignore a11y_no_static_element_interactions -->
     <div
         class="body"
         data-pane-body

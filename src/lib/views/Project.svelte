@@ -67,9 +67,6 @@
     /** Read once, so the stamps of one rendering all agree on what day it is. */
     const now = Date.now();
 
-    /** The documents this view renders. The other two the manifest reports are a PDF and a source. */
-    const MARKDOWN = /\.md$/;
-
     function readId(state: unknown): string {
         if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
         const held = (state as Record<string, unknown>).id;
@@ -95,7 +92,7 @@
     }
 
     function markdown(doc: { name: string; present: boolean }): boolean {
-        return doc.present && MARKDOWN.test(doc.name);
+        return doc.present && doc.name.endsWith('.md');
     }
 
     function nameOf(doc: { name: string }): string {
@@ -189,6 +186,7 @@
                     {:else if shown.loading}
                         <p class="failed">{t('project.doc_loading')}</p>
                     {:else}
+                        <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
                         <div class="doc">{@html sanitise(shown.html)}</div>
                     {/if}
                 {/if}
@@ -200,6 +198,7 @@
                     <Empty message={t('project.no_sessions')} glyph={t('project.none_glyph')} />
                 {:else}
                     {#each rows as entry (entry.id)}
+                        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                         {@render sessionRow(entry)}
                     {/each}
                 {/if}

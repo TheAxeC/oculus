@@ -39,6 +39,7 @@
     }
     const snapshot = $derived(portfolio());
     const statuses = $derived.by(() => {
+        // eslint-disable-next-line svelte/prefer-svelte-reactivity -- the set is built and dropped inside one derivation, and nothing renders from it
         const found = new Set<string>();
         for (const project of Object.values(snapshot?.entities.projects ?? {})) {
             if ((project.tier === 'archive' || project.tier === 'coauthor') && project.type) {

@@ -224,7 +224,7 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
         try {
             handles.push(
                 watch(dirname(file), { recursive: false }, (_event, changed) => {
-                    if (changed !== null && String(changed) === name) queue();
+                    if (changed === name) queue();
                 })
             );
         } catch (error) {

@@ -217,9 +217,11 @@
                 {:else if drawn.kind === 'body'}
                     {#if drawn.field === 'statement'}
                         <blockquote class="stmt" title={t('collection.fundstmt_tip')}>
+                            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
                             {@html inlineMarkdown(drawn.values[0])}
                         </blockquote>
                     {:else}
+                        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
                         <p class="body">{@html inlineMarkdown(drawn.values[0])}</p>
                     {/if}
                 {:else if drawn.kind === 'link'}
@@ -234,6 +236,7 @@
                         </p>
                     {:else}
                         <p class="body">
+                            <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
                             <a href={hrefOf(drawn.values[0])} target="_blank" rel="noreferrer">
                                 <Glyph
                                     name={drawn.field === 'url'

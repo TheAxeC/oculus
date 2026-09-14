@@ -84,7 +84,11 @@ const viewers: Record<string, number> = {};
  * and a change of session does not drop turns another instance is still drawing.
  */
 export function showing(id: string): () => void {
-    if (id === '') return () => {};
+    if (id === '') {
+        return () => {
+            // An unnamed instance was never counted, so releasing it drops nothing.
+        };
+    }
     viewers[id] = (viewers[id] ?? 0) + 1;
     let released = false;
     return () => {
@@ -95,6 +99,7 @@ export function showing(id: string): () => void {
             viewers[id] = left;
             return;
         }
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         delete viewers[id];
         forget(id);
     };
@@ -102,8 +107,11 @@ export function showing(id: string): () => void {
 
 /** Drop everything held for one session, so the next call for it fetches from the start again. */
 export function forget(id: string): void {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     delete viewers[id];
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     delete held[id];
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     delete marks[id];
     inflight.delete(id);
     again.delete(id);

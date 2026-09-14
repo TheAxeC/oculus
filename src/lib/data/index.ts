@@ -102,7 +102,7 @@ function vocabKeys(value: unknown): string[] {
  */
 export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioConfig {
     const path = (key: string, fallback: string): string =>
-        typeof merged[key] === 'string' ? (merged[key] as string) : fallback;
+        typeof merged[key] === 'string' ? merged[key] : fallback;
     const collections = collectionFiles(merged.collections);
     const fundingFile = collections.find((file) => file.key === 'funding')?.file;
 

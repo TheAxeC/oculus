@@ -386,7 +386,7 @@ function readFolders(projectFolders: ProjectFolder[]): {
     const paths = new Set<string>();
     const titles = new Map<string, string>();
     for (const item of Array.isArray(projectFolders) ? projectFolders : []) {
-        let path = '';
+        let path: string;
         let title = '';
         if (Array.isArray(item)) {
             path = clean(item[0]);

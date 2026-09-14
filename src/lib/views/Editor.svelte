@@ -138,6 +138,11 @@
     function noteFor(field: FormField): string | undefined {
         return NOT_IN_MODEL.includes(field.field) ? t('editor.not_in_model') : undefined;
     }
+
+    /** The handler of a read-only box: the typed character is dropped and the value stands. */
+    function keepValue(): void {
+        // A read-only TextInput still reports input; the form keeps what the snapshot holds.
+    }
 </script>
 
 {#snippet control(field: FormField)}
@@ -146,7 +151,7 @@
             value={asText(valueOf(field.field))}
             label={field.label}
             readonly
-            oninput={() => {}}
+            oninput={keepValue}
         />
     {:else if field.type === 'checkbox'}
         <Checkbox
@@ -193,7 +198,7 @@
             value={asText(valueOf(field.field))}
             label={field.label}
             readonly
-            oninput={() => {}}
+            oninput={keepValue}
         />
     {:else}
         <TextInput
@@ -236,6 +241,7 @@
                                 note={noteFor(field)}
                                 dirty={changed(field.field)}
                             >
+                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                                 {@render control(field)}
                             </Field>
                         {/each}

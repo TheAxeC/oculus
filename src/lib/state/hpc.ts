@@ -28,7 +28,7 @@ export function efficiencyTone(pct: number | null): string | undefined {
     return pct === null ? undefined : pct >= 90 ? 'green' : pct < 25 ? 'red' : 'amber';
 }
 export function startLabel(value: string): string {
-    const found = value.match(/^\d{4}-(\d{2})-(\d{2})T(\d{2}):(\d{2})/);
+    const found = /^\d{4}-(\d{2})-(\d{2})T(\d{2}):(\d{2})/.exec(value);
     return found ? `${found[1]}-${found[2]} ${found[3]}:${found[4]}` : value;
 }
 export type PartitionMeter = {

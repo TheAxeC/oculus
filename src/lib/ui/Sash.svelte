@@ -79,10 +79,11 @@
     }
 </script>
 
-<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions this is
-     the WAI-ARIA window splitter: a separator that takes focus is a widget and carries aria-valuenow,
-     which is what the four aria attributes below are. aria-query models the role as structure only, so
-     svelte cannot tell the focusable variant from the decorative one and warns on both. -->
+<!-- This is the WAI-ARIA window splitter: a separator that takes focus is a widget and carries
+     aria-valuenow, which is what the four aria attributes below are. aria-query models the role as
+     structure only, so svelte cannot tell the focusable variant from the decorative one and warns
+     on both. -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex, a11y_no_noninteractive_element_interactions -->
 <div
     class="sash {dir}"
     class:dragging

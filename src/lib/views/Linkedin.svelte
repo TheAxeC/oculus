@@ -136,6 +136,7 @@
                         <Glyph name="pin" />
                         {t('linkedin.postdue')}
                     </strong>
+                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
                     <span>{@html t('linkedin.nudge')}</span>
                     <strong>{picked?.title ?? t('linkedin.default_pick')}</strong>
                 </div>

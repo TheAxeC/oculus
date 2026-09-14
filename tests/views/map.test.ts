@@ -54,16 +54,17 @@ function graphFixture() {
 }
 
 function edgeTag(body: string, id: string): string {
-    return body.match(new RegExp(`<line[^>]*data-edge="${id}"[^>]*>`))?.[0] ?? '';
+    return new RegExp(`<line[^>]*data-edge="${id}"[^>]*>`).exec(body)?.[0] ?? '';
 }
 
 describe('the Map view', () => {
     it('draws the catalogued edge failure when the manifest write refuses related', async () => {
-        const write = async () => ({
-            ok: true,
-            changed: [],
-            refused: [{ field: 'related', reason: 'fixture refusal' }]
-        });
+        const write = () =>
+            Promise.resolve({
+                ok: true,
+                changed: [],
+                refused: [{ field: 'related', reason: 'fixture refusal' }]
+            });
         await expect(writeRelated('alpha', ['beta'], write)).resolves.toBe(
             catalog['map.edge_failed'].replace('{0}', 'related: fixture refusal')
         );

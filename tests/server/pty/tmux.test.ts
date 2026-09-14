@@ -16,7 +16,7 @@ import {
 
 /** A parser with every callback recorded, so a case reads what came out of the bytes it fed. */
 function recorder() {
-    const outputs: Array<[string, Buffer]> = [];
+    const outputs: [string, Buffer][] = [];
     const replies: ControlReply[] = [];
     const events: ControlEvent[] = [];
     const parser = createParser({
@@ -106,7 +106,7 @@ describe('the argument quoting', () => {
 
 describe('the key map', () => {
     it('names every control character xterm.js sends', () => {
-        const expected: Array<[string, string]> = [
+        const expected: [string, string][] = [
             ['\r', 'Enter'],
             ['\n', 'Enter'],
             ['\t', 'Tab'],
@@ -125,7 +125,7 @@ describe('the key map', () => {
     });
 
     it('names the arrows, Home, End and the two page keys in both their forms', () => {
-        const expected: Array<[string, string]> = [
+        const expected: [string, string][] = [
             ['\u001b[A', 'Up'],
             ['\u001b[B', 'Down'],
             ['\u001b[C', 'Right'],

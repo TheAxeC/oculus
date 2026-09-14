@@ -100,7 +100,7 @@ export function crt(): boolean {
  */
 export function wallpaper(): boolean {
     const chosen = store.current.wallpaper;
-    return chosen === null ? wallpaperOnTheme(store.current.theme) : chosen;
+    return chosen ?? wallpaperOnTheme(store.current.theme);
 }
 
 /** Whether the real glyphs are kept on a terminal theme instead of their ASCII stand-ins. */
@@ -164,7 +164,7 @@ function known(name: unknown): string {
  */
 export function loadUi(storage: Storable = localStorage): boolean {
     backing = storage;
-    let raw: string | null = null;
+    let raw: string | null;
     try {
         raw = storage.getItem(UI_KEY);
     } catch {
@@ -289,6 +289,7 @@ export function setInstanceState(id: string, state: unknown): void {
 export function clearInstanceState(id: string): void {
     if (!(id in store.current.instances)) return;
     const instances = { ...store.current.instances };
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     delete instances[id];
     save({ ...store.current, instances });
 }

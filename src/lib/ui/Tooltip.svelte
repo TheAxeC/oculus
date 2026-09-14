@@ -176,10 +176,10 @@
     }
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions, a11y_no_noninteractive_tabindex -->
 <!-- The wrapper normally takes no focus because the control inside it is focused and described; the
      description is put on that control on mount and the wrapper carries none. With focusable it
      wraps non-control content such as a Chip and enters the tab order, and is described itself. -->
+<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
 <span
     class="tip"
     class:block

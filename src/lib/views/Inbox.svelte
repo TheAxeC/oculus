@@ -102,6 +102,7 @@
         {:else if data.missing}
             <p class="clear">
                 <Glyph name="warn" />
+                <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
                 <span>{@html t('inbox.no_file')}</span>
             </p>
         {:else if data.error !== undefined}
@@ -118,13 +119,17 @@
                 <p class="said">{said}</p>
             {/if}
 
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render section(t('inbox.sec_reply'), replies)}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render section(t('inbox.sec_action'), actions)}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render section(t('inbox.sec_info'), info)}
 
             {#if liveCount === 0}
                 <p class="clear">
                     <Glyph name="done" />
+                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
                     <span>{@html t('inbox.clear')}</span>
                 </p>
             {/if}

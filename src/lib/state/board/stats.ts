@@ -41,6 +41,7 @@ export function waitingLine(
     }
     if (project.chips.includes('submitted')) {
         const venue = project.venueId === undefined ? undefined : venues[project.venueId];
+        // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string takes the fallback here, which ?? would not
         const name = venue === undefined ? '' : venue.short?.trim() || venue.name;
         return {
             kind: 'review',

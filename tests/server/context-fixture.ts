@@ -8,17 +8,18 @@ import { RateLimiter, notifyConfig } from '../../src/lib/server/hooks.ts';
 import { Terminals, type TerminalDriver } from '../../src/lib/server/pty/channel.ts';
 import { HookStore, sessionRecord } from '../../src/lib/server/sessions/hooks.ts';
 import { wallpaperMemory } from '../../src/lib/server/wallpaper.ts';
+import { noop } from '../doubles.ts';
 
 export const ROUTE_TOKEN = 'the-write-token-of-this-context';
 
 function terminalDriver(): TerminalDriver {
     return {
         run: () => Promise.resolve(''),
-        onOutput: () => {},
-        onChange: () => {},
-        attached: () => {},
+        onOutput: noop,
+        onChange: noop,
+        attached: noop,
         live: () => false,
-        close: () => {}
+        close: noop
     };
 }
 
@@ -46,9 +47,9 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         hub,
         terminals,
         hooks,
-        git: { refresh: () => {}, close: () => {} },
-        hpc: { refresh: () => Promise.resolve(), close: () => {} },
-        usage: { refresh: () => Promise.resolve(), close: () => {} },
+        git: { refresh: noop, close: noop },
+        hpc: { refresh: () => Promise.resolve(), close: noop },
+        usage: { refresh: () => Promise.resolve(), close: noop },
         usageRefresh: {
             ready: Promise.resolve(),
             refresh: () => Promise.resolve(true),
@@ -60,7 +61,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
                 lastRefresh: '',
                 renewed: true
             }),
-            close: () => {}
+            close: noop
         },
         token: ROUTE_TOKEN,
         local,

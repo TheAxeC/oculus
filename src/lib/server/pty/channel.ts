@@ -160,8 +160,12 @@ export function tmuxDriver(options: TmuxOptions = {}): TerminalDriver {
     const idles = new Map<string, ReturnType<typeof setTimeout>>();
     let ids = new Set<string>();
     let closed = false;
-    let outputs: (id: string, bytes: Buffer) => void = () => {};
-    let changed: () => void = () => {};
+    let outputs: (id: string, bytes: Buffer) => void = () => {
+        // Bytes read before attach() wires a sink have nowhere to go.
+    };
+    let changed: () => void = () => {
+        // The same for a roster change: nobody is listening until attach().
+    };
 
     const unref = (timer: ReturnType<typeof setTimeout>): void => {
         if (typeof timer === 'object' && typeof timer.unref === 'function') timer.unref();

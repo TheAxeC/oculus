@@ -20,6 +20,7 @@ import {
 } from '../../src/lib/server/watch/portfolio.ts';
 import type { Watcher } from '../../src/lib/server/watch/portfolio.ts';
 import type { ConfigPayload, FeedsPayload, Message, Snapshot } from '../../src/lib/data/model.ts';
+import { noop } from '../doubles.ts';
 
 const LAYOUT = [
     'scan:',
@@ -123,7 +124,7 @@ function recording(): Recording {
                 got.push(JSON.parse(text) as Message);
                 return Promise.resolve();
             },
-            close: () => {}
+            close: noop
         }
     };
 }

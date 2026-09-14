@@ -156,7 +156,7 @@ export function readSession(path: string, store: string | null = null): SessionR
     const acc = accFor(path, store, tool);
     foldInto(acc, path, 0);
     prune(acc);
-    let mtimeMs: number | null = null;
+    let mtimeMs: number | null;
     try {
         mtimeMs = statSync(path).mtimeMs;
     } catch {
@@ -233,7 +233,7 @@ export function scan(options: ScanOptions = {}): SessionRecord[] {
     for (const file of codexRollouts(codexStore, windowDays, maxSessions)) {
         const folded = fold(file, codexStore, previous[file.path], limit, now);
         if (folded === null) continue;
-        if (running === null) running = codexRunning(options.codexProbe ?? systemCodexProbe);
+        running ??= codexRunning(options.codexProbe ?? systemCodexProbe);
         const entry: LiveEntry | undefined = codexLive(
             folded.record.state,
             file.mtimeMs / 1000,

@@ -118,7 +118,9 @@
                 <div class="file" class:shared={also.length > 0}>
                     <span class="st" style={letterStyle(entry.status)}>{entry.status}</span>
                     <span class="pa" title={entry.path}>{elide(entry.path)}</span>
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render mark(also)}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render counts(entry)}
                     <span class="acts">
                         {#if kind === 'staged'}
@@ -175,8 +177,11 @@
         <TextInput value={branchName} label={t('git.branch_new_label')} oninput={onbranchname} />
         <ToolButton label={t('git.branch_new_create')} onclick={onbranch} />
     </div>
+    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
     {@render group(t('sessions.ch_staged'), state.staged, 'staged')}
+    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
     {@render group(t('sessions.ch_changed'), state.unstaged, 'changed')}
+    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
     {@render group(t('sessions.ch_untracked'), state.untracked, 'untracked')}
     <div class="commit">
         <TextArea value={message} label={t('git.commit_label')} rows={4} oninput={onmessage} />

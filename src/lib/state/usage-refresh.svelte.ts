@@ -10,9 +10,7 @@ let refusals = $state.raw<Record<string, { payload: UsagePayload | null; reason:
 
 export function refreshRefusal(label: string): string {
     const held = refusals[label];
-    return held !== undefined && held.payload === usage()
-        ? t('usage.refresh_refused', held.reason)
-        : '';
+    return held?.payload === usage() ? t('usage.refresh_refused', held.reason) : '';
 }
 
 /** The route's error words, each answered by a catalog string; anything else is the request failing. */

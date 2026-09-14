@@ -43,21 +43,27 @@
         <p class="statusline">{item.project.statusLine}</p>
     {/if}
     {#if item.project.latest}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render field(t('project.card.latest'), item.project.latest)}
     {/if}
     {#if item.project.results.length > 0}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render listField(t('project.card.results'), item.project.results)}
     {/if}
     {#if item.project.outcome}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render field(t('project.card.outcome'), item.project.outcome)}
     {/if}
     {#if item.project.next}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render field(t('project.card.next'), item.project.next)}
     {/if}
     {#if item.project.ideas.length > 0}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render listField(t('project.card.ideas'), item.project.ideas)}
     {/if}
     {#if item.project.reproduced}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render field(
             t('project.card.reproduced'),
             [item.project.reproduced.date, item.project.reproduced.note]

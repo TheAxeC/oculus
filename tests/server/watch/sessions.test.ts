@@ -21,6 +21,7 @@ import type { Watcher } from '../../../src/lib/server/watch/portfolio.ts';
 import type { Message, SessionsPayload, Terminal } from '../../../src/lib/data/model.ts';
 import type { Probe } from '../../../src/lib/server/sessions/registry.ts';
 import type { CodexProbe } from '../../../src/lib/server/sessions/codex.ts';
+import { noop } from '../../doubles.ts';
 
 // A watcher test waits on real file events, and the suite runs several files at once, so the waits
 // are generous: they are how long a failure takes, not how long a pass takes.
@@ -237,7 +238,7 @@ function recording(): { sink: Sink; got: Message[] } {
                 got.push(JSON.parse(text) as Message);
                 return Promise.resolve();
             },
-            close: () => {}
+            close: noop
         }
     };
 }
@@ -422,7 +423,7 @@ describe('watchSessions', () => {
 
         // A dismissal, as api/write would have written it.
         writeFileSync(fixture.overrides, JSON.stringify({ sessions: { [SID]: { hidden: true } } }));
-        await until(() => latest(started.got).records[0].hidden === true, WAIT);
+        await until(() => latest(started.got).records[0].hidden, WAIT);
         expect(latest(started.got).records[0].hidden).toBe(true);
 
         const before = await quiet(started.got);
@@ -437,7 +438,7 @@ describe('watchSessions', () => {
         // The terminal list moves without anything under the three stores being written, which is
         // what a missed event looks like to this watcher: only a rescan can find it.
         let terminals: Terminal[] = [];
-        const source: TerminalSource = { list: () => terminals, onChange: () => () => {} };
+        const source: TerminalSource = { list: () => terminals, onChange: () => noop };
         const started = start(fixture, 0, 150, source);
         const before = await quiet(started.got);
         expect(before).toBeGreaterThan(0);

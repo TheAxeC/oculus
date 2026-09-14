@@ -51,6 +51,7 @@
             {/if}
         {/snippet}
         {#if domain.blurb}
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
             <p>{@html inlineMarkdown(domain.blurb)}</p>
         {/if}
         <CrossLinks {projects} />

@@ -153,7 +153,7 @@
 
 <Pane title={t('views.usage')}>
     <div class="usage" data-instance={instance.id}>
-        {#if data && data.accounts.length}
+        {#if data?.accounts.length}
             <div class="accounts">
                 {#each data.accounts as account (`${account.tool}:${account.label}`)}
                     {@const windows = orderedWindows(account.windows)}

@@ -47,7 +47,7 @@
     const panePin = $derived(pinnedSession(instanceLayoutState(instance.id)));
     const events = $derived(record?.timeline ?? []);
 
-    let column: HTMLDivElement | undefined = $state(undefined);
+    let column: HTMLDivElement | undefined = $state();
 
     /** The session on screen. A change to it is what makes the column fresh and sends it to the foot. */
     let shown = '';
@@ -83,6 +83,7 @@
 
     /** What the row reads: a turn as its length, a bust as its size, a path as its basename. */
     function text(event: SessionEvent): string {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the event text is folded from a session record's JSON, which may hold any scalar under that key
         const held = String(event.text ?? '');
         if (event.kind === 'turn') {
             return t('sessions.ev_turn', String(Math.round((Number(held) || 0) / 1000)));
@@ -96,6 +97,7 @@
 
     /** The tooltip: the whole path, and nothing where the row already says everything it has. */
     function tip(event: SessionEvent): string | undefined {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the event text is folded from a session record's JSON, which may hold any scalar under that key
         const held = String(event.text ?? '');
         if (event.kind === 'turn' || event.kind === 'bust') return undefined;
         if (event.kind === 'tool' || event.kind === 'edit') {

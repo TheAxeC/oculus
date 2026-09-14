@@ -108,6 +108,7 @@
                 >
             {/if}
         </div>
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render group(
             t('focus.command.grp_overdue_label'),
             t('focus.command.grp_overdue_glyph'),
@@ -158,11 +159,13 @@
                 {/each}
             </div>
         {/if}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render kindGroups(
             t('focus.command.grp_subtask_dl_label'),
             t('focus.command.grp_subtask_glyph'),
             view.subtaskDated
         )}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render group(
             t('focus.command.grp_followups_label'),
             t('focus.command.grp_followups_glyph'),

@@ -57,7 +57,7 @@ export function parseSubscription(data: string): Subscription | null {
     if (!message.channels.every((channel) => typeof channel === 'string')) return null;
     return {
         type: 'subscribe',
-        channels: message.channels as string[],
+        channels: message.channels,
         token: typeof message.token === 'string' ? message.token : undefined
     };
 }

@@ -124,7 +124,12 @@
         onupdate?: () => void;
     };
 
-    let { groups = [], bookmarks = [], onsearch = () => {}, onupdate = () => {} }: Props = $props();
+    /** The default for a callback the page did not pass: the control is drawn and does nothing. */
+    function ignore(): void {
+        // A rail without a search or update owner still draws its buttons.
+    }
+
+    let { groups = [], bookmarks = [], onsearch = ignore, onupdate = ignore }: Props = $props();
 
     /* A view registered as not listed (the editor, a project, a document) is opened from a card or a
        bookmark and has nothing to show when opened bare, so the rail draws no button for it. */

@@ -79,6 +79,7 @@
         <summary><Glyph name={t('focus.wait_glyph')} />{summary}</summary>
         <div class="body">
             {#if career.situation.length > 0}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render section(t('focus.career_situation'))}
                 <div class="facts">
                     {#each career.situation as fact (fact.label)}
@@ -96,6 +97,7 @@
             {/if}
 
             {#if career.order.length > 0}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render section(t('focus.order_of_work'))}
                 <ol class="order">
                     {#each career.order as row, at (`${at}:${row.task}`)}
@@ -116,6 +118,7 @@
             {/if}
 
             {#if career.hosts.length > 0}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render section(t('focus.host_pipeline'))}
                 <div class="hosts">
                     {#each career.hosts as host, at (host.name)}
@@ -185,6 +188,7 @@
                     </ul>
                 {/if}
                 {#if career.notHosts.length > 0}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render section(t('focus.not_hosts'))}
                     <div class="chips">
                         {#each career.notHosts as one (one.who)}
@@ -197,6 +201,7 @@
             {/if}
 
             {#if career.eligibility !== null}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render section(t('focus.eligibility'))}
                 {#if career.eligibility.shots.length > 0}
                     <p class="sub">{t('focus.career_shots')}</p>
@@ -228,6 +233,7 @@
             {/if}
 
             {#if career.dropped.length > 0}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render section(t('focus.dropped'))}
                 <div class="chips">
                     {#each career.dropped as one (one.what)}

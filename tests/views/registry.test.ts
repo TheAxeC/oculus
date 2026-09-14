@@ -22,6 +22,7 @@ import { defaultWorkbench, type Instance } from '../../src/lib/state/layout/inde
 import type { Component } from 'svelte';
 // Importing the route loader registers real views; collections use the keys of sources.yml.
 import { registerCollections, registerModules } from '../../src/routes/views.ts';
+import { noop } from '../doubles.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -31,7 +32,7 @@ const COLLECTIONS = collectionKeys(config);
 registerCollections(COLLECTIONS);
 
 /** A stand-in for a view component; the registry stores it and never calls it. */
-const component = (() => {}) as unknown as Component<ViewProps>;
+const component = noop as unknown as Component<ViewProps>;
 
 /** The registrations this file makes, told apart from the application's own. */
 function probes() {

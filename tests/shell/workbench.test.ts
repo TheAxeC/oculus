@@ -48,6 +48,7 @@ import {
     switchPage
 } from '../../src/lib/state/layout.svelte.ts';
 import type { Dock, Layout, Workbench as Bench } from '../../src/lib/state/layout/index.ts';
+import { noop } from '../doubles.ts';
 
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));
@@ -283,7 +284,7 @@ describe('the drop layer', () => {
     }
 
     function style(html: string): string {
-        return html.match(/class="target[^"]*" style="([^"]*)"/)?.[1] ?? '';
+        return /class="target[^"]*" style="([^"]*)"/.exec(html)?.[1] ?? '';
     }
 
     it('draws the ghost beside the pointer, with the tab it is carrying', () => {
@@ -324,8 +325,8 @@ describe('the insertion mark', () => {
                     { id: 'two', label: 'Two' }
                 ],
                 active: 'one',
-                onselect: () => {},
-                onclose: () => {},
+                onselect: noop,
+                onclose: noop,
                 dropIndex
             }
         }).body;
@@ -407,8 +408,8 @@ describe('the insertion mark', () => {
                     }
                 ],
                 active: 'one',
-                onselect: () => {},
-                onclose: () => {}
+                onselect: noop,
+                onclose: noop
             }
         }).body;
         expect(body).toMatch(/class="tab-badge[^>]*aria-hidden="true"/);

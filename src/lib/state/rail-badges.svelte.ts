@@ -27,7 +27,7 @@ export type BadgeCell = { count: number; color: string; label: string };
 
 /** A socket feed with readable entries that can supply a badge count. */
 function available(feed: FeedState | null): feed is FeedState {
-    return feed !== null && feed.ok && feed.error === undefined && feed.missing !== true;
+    return feed?.ok === true && feed.error === undefined && feed.missing !== true;
 }
 
 /** The number of cards on one of the three project boards. */

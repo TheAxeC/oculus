@@ -22,6 +22,7 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
+import { noop } from '../doubles.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -29,10 +30,10 @@ setCatalog(catalog);
 setGlyphs(glyphCatalog(config));
 receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
 
-beforeEach(() => loadUi({ getItem: () => null, setItem: () => {} }));
+beforeEach(() => loadUi({ getItem: () => null, setItem: noop }));
 afterEach(() => vi.unstubAllGlobals());
 
-const actions = { oninput: () => {}, onsave: () => {}, onrevert: () => {} };
+const actions = { oninput: noop, onsave: noop, onrevert: noop };
 
 describe('the source editor', () => {
     it('restores the working and saved copies when Source is rendered again after another tab', async () => {

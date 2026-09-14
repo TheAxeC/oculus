@@ -12,7 +12,6 @@
 // without waiting for the next debounced rescan. Nothing here runs a rescan or touches a file.
 
 import type {
-    GitPayload,
     HookEvent,
     Project,
     SessionRecord,
@@ -137,7 +136,7 @@ export function gitRoots(hub: HubLike): string[] {
     if (message === undefined) return [];
     const payload = message.payload;
     if (typeof payload !== 'object' || payload === null || Array.isArray(payload)) return [];
-    return Object.keys(payload as GitPayload);
+    return Object.keys(payload);
 }
 
 /**

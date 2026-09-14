@@ -29,9 +29,11 @@
     <div class="content">
         {#if lines !== undefined}
             {#each lines as line, index (`${index}:${line}`)}
+                <!-- eslint-disable-next-line svelte/no-at-html-tags -- drawn() sanitises unless the words were marked trusted, and a trusted site draws a catalog line -->
                 <p>{@html drawn(line)}</p>
             {/each}
         {:else if html !== undefined}
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- drawn() sanitises unless the words were marked trusted, and a trusted site draws a catalog line -->
             {@html drawn(html)}
         {:else if children}
             {@render children()}

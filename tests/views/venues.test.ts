@@ -196,7 +196,7 @@ function html(items: Venue[] = VENUES): string {
 }
 
 function venueCard(body: string, id: string): string {
-    const found = body.match(new RegExp(`<div[^>]*data-venue="${id}"[^>]*>[\\s\\S]*?</article>`));
+    const found = new RegExp(`<div[^>]*data-venue="${id}"[^>]*>[\\s\\S]*?</article>`).exec(body);
     expect(found).not.toBeNull();
     return found?.[0] ?? '';
 }

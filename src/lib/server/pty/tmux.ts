@@ -60,7 +60,7 @@ export function run(
                     resolve(stdout);
                     return;
                 }
-                const said = String(stderr).trim();
+                const said = stderr.trim();
                 reject(new Error(said === '' ? error.message : said));
             }
         );
@@ -222,7 +222,7 @@ export function control(
         stdio: ['pipe', 'pipe', 'pipe']
     });
     let alive = true;
-    const pending: Array<{ resolve(text: string): void; reject(error: Error): void }> = [];
+    const pending: { resolve(text: string): void; reject(error: Error): void }[] = [];
 
     const parser = createParser({
         output: handlers.output,
@@ -277,7 +277,7 @@ export function control(
 export type KeyChunk = { literal: string } | { key: string };
 
 /** The escape sequences xterm.js sends, longest first, each with tmux's name for that key. */
-const SEQUENCES: Array<[string, string]> = [
+const SEQUENCES: [string, string][] = [
     ['\u001b[1~', 'Home'],
     ['\u001b[4~', 'End'],
     ['\u001b[3~', 'DC'],

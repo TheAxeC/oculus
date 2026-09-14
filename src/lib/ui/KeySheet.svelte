@@ -28,8 +28,7 @@
     const entries = $derived(sheetRows(rows));
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events a11y_no_static_element_interactions the
-     keyboard path is owned by the shell, and this ground is the pointer path out of the sheet. -->
+<!-- The keyboard path is owned by the shell, and this ground is the pointer path out of the sheet. -->
 <div class="ground" role="presentation" onclick={onclose}>
     <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="key-sheet-title">
         <header>

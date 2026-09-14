@@ -21,10 +21,7 @@ export function durationSeconds(value: string): number | null {
 }
 
 export function memoryBytes(value: string): { bytes: number; per: string } | null {
-    const found = value
-        .trim()
-        .replace(/\*$/, '')
-        .match(/^([\d.]+)\s*([KMGTP]?)([nc]?)$/i);
+    const found = /^([\d.]+)\s*([KMGTP]?)([nc]?)$/i.exec(value.trim().replace(/\*$/, ''));
     if (!found) return null;
     const amount = Number(found[1]);
     if (!(amount > 0)) return null;
@@ -41,7 +38,7 @@ export function humanMemory(bytes?: number): string {
 }
 
 export function gpuCount(value: string): string {
-    const found = value.match(/gpu[:=][^,\s]*/i);
+    const found = /gpu[:=][^,\s]*/i.exec(value);
     if (!found) return '';
     const last = found[0].split(/[:=]/).at(-1) ?? '';
     return /^\d+$/.test(last) ? last : '';
@@ -140,6 +137,7 @@ export function parseQuota(raw: string): HpcQuotaItem[] {
             const limit = memoryBytes(p[3]);
             if (used && limit)
                 quota.push({
+                    // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string takes the fallback here, which ?? would not
                     name: p[0].split('/').at(-1) || 'home',
                     used: humanMemory(used.bytes),
                     limit: humanMemory(limit.bytes),
@@ -152,7 +150,8 @@ export function parseQuota(raw: string): HpcQuotaItem[] {
                     ? 'scratch'
                     : /home/i.test(p[at + 1])
                       ? 'home'
-                      : p[at + 1].split('/').at(-1) || 'disk',
+                      : // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string takes the fallback here, which ?? would not
+                        p[at + 1].split('/').at(-1) || 'disk',
                 used: p[at - 2],
                 limit: p[at - 3],
                 pct: Number(p[at].slice(0, -1))

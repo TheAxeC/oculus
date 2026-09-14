@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { Hub } from '../../src/lib/server/channels.ts';
 import type { Sink } from '../../src/lib/server/channels.ts';
 import type { Message } from '../../src/lib/data/model.ts';
+import { noop } from '../doubles.ts';
 
 /** Let every pending microtask and one turn of the event loop run. */
 function settle(): Promise<void> {
@@ -24,7 +25,7 @@ function recorder(): Recorder {
             got.push(JSON.parse(text) as Message);
             return Promise.resolve();
         },
-        close: () => {}
+        close: noop
     };
     return { sink, got };
 }
@@ -45,7 +46,7 @@ function manual(): Manual {
             got.push(JSON.parse(text) as Message);
             return new Promise((resolve) => waiting.push(resolve));
         },
-        close: () => {}
+        close: noop
     };
     return {
         sink,

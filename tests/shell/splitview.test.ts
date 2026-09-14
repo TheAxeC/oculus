@@ -13,6 +13,7 @@ import SplitView from '../../src/lib/shell/SplitView.svelte';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
 import type { Layout } from '../../src/lib/state/layout/index.ts';
+import { noop } from '../doubles.ts';
 
 // Sash reads its label through t(), so the catalog the server ships is installed first.
 setCatalog(textCatalog(loadConfig(engineDir()).config));
@@ -47,7 +48,7 @@ const paneSnippet = createRawSnippet<[Layout, number[]]>((node, path) => ({
 }));
 
 function html(layout: Layout): string {
-    return render(SplitView, { props: { layout, pane: paneSnippet, onresize: () => {} } }).body;
+    return render(SplitView, { props: { layout, pane: paneSnippet, onresize: noop } }).body;
 }
 
 describe('SplitView', () => {

@@ -179,7 +179,7 @@ function foldItem(acc: Acc, item: unknown, stamp: string | null): void {
         acc.messages += 1;
         const said = contentText(item.content);
         if (said) {
-            if (acc.firstPrompt === null) acc.firstPrompt = said;
+            acc.firstPrompt ??= said;
             acc.lastPrompt = said;
             addEvent(acc, stamp, 'prompt', said.slice(0, PROMPT_CHARS));
         }

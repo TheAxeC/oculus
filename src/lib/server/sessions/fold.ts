@@ -85,13 +85,14 @@ function foldUser(
     if (isMap(origin) && origin.kind === 'human') {
         acc.prompts += 1;
         if (typeof content === 'string' && content) {
-            if (acc.firstPrompt === null) acc.firstPrompt = content;
+            acc.firstPrompt ??= content;
             addEvent(acc, stamp, 'prompt', content.slice(0, PROMPT_CHARS));
         }
     }
     for (const block of list(content)) {
         if (!isMap(block) || block.type !== 'tool_result') continue;
         const ident = typeof block.tool_use_id === 'string' ? block.tool_use_id : '';
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         if (ident) delete acc.pending[ident];
         const agent = ident ? acc.agents[ident] : undefined;
         if (agent === undefined) continue;
@@ -110,10 +111,10 @@ function foldAssistant(
 ): void {
     acc.lastKind = 'assistant';
     const usage = claudeUsage(record);
-    if (usage !== null && usage.model) acc.model = usage.model;
+    if (usage?.model) acc.model = usage.model;
     const effort = record.effort ?? message.effort;
     if (typeof effort === 'string' && effort) acc.effort = effort;
-    if (usage !== null && usage.context !== undefined) foldUsage(acc, usage, stamp);
+    if (usage?.context !== undefined) foldUsage(acc, usage, stamp);
     const ids: string[] = [];
     for (const block of list(content)) {
         if (!isMap(block) || block.type !== 'tool_use') continue;

@@ -78,8 +78,7 @@ function isFolderName(id: string): boolean {
  */
 function under(hub: string, dir: string, id: string): string | null {
     const queue = [dir];
-    while (queue.length > 0) {
-        const at = queue.shift() as string;
+    for (let at = queue.shift(); at !== undefined; at = queue.shift()) {
         const here = join(at, id);
         if (existsSync(join(hub, here, 'project.yml'))) return here;
         let held;

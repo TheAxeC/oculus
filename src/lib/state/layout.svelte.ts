@@ -196,6 +196,7 @@ export function loadLayout(storage: Storable = localStorage): boolean {
     const raw = read(storage, LAYOUT_KEY);
     const parsed = raw === null ? null : parseLayout(raw, first);
     const held = parseWorkbench(read(storage, PREVIOUS_KEY));
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     for (const id of Object.keys(lastActive)) delete lastActive[id];
     // A browser that ran before pages holds one workbench, and holds the user's own arrangement
     // beside it when the rail control pages retired had put the sessions arrangement on screen.
@@ -289,6 +290,7 @@ export function closePage(id: string): void {
     const held = store.current.pages;
     const at = held.findIndex((page) => page.id === id);
     if (at < 0) return;
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     delete lastActive[id];
     const left = held.filter((page) => page.id !== id);
     if (left.length === 0) {

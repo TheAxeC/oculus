@@ -8,6 +8,7 @@ import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
+import { noop } from '../doubles.ts';
 
 const INSTANCE = 'programs-one';
 
@@ -110,7 +111,7 @@ describe('the Programs view', () => {
         const snapshot = fixture();
         snapshot.entities.programs.pillar.color = '#123456';
         const body = card(html(snapshot), 'pillar');
-        const article = body.match(/<article\b[^>]*>/)?.[0];
+        const article = /<article\b[^>]*>/.exec(body)?.[0];
         expect(article).toBeDefined();
         expect(article).not.toContain('--tone:');
     });
@@ -129,8 +130,8 @@ describe('the Programs view', () => {
                 entry: collection.entries.find((entry) => entry.id === 'pillar')!,
                 schema: collection.schema,
                 editing: true,
-                onedit: () => {},
-                onsaid: () => {}
+                onedit: noop,
+                onsaid: noop
             }
         }).body;
         expect(body).toContain('data-form="edit"');

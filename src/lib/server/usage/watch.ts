@@ -114,7 +114,11 @@ export function watchUsage(hub: Hub, options: UsageWatchOptions): UsageWatcher {
         }
     }
 
-    const offSessions = options.onSessionsChange?.(queue) ?? (() => {});
+    const offSessions =
+        options.onSessionsChange?.(queue) ??
+        (() => {
+            // Nothing subscribed, so there is nothing to unsubscribe.
+        });
     const clock = setInterval(queue, interval);
     clock.unref();
     void refresh();

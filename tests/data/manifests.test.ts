@@ -98,7 +98,7 @@ function buildHub(): string {
 function byId(manifests: RawManifest[], id: string): RawManifest {
     const found = manifests.find((m) => m.id === id);
     expect(found, `no manifest with id ${id}`).toBeDefined();
-    return found as RawManifest;
+    return found!;
 }
 
 describe('readManifests', () => {

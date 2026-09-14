@@ -186,8 +186,8 @@ export function carryingHandler<Response>(
 }
 
 /** Read the context from Kit's platform request, with one clear startup error when it is absent. */
-export function serverContext(platform: { req?: IncomingMessage } | undefined): ServerContext {
-    const context = (platform?.req as OculusRequest | undefined)?.oculus;
+export function serverContext(platform: { req?: OculusRequest } | undefined): ServerContext {
+    const context = platform?.req?.oculus;
     if (context === undefined) {
         throw new Error('oculus server context is absent from event.platform.req');
     }

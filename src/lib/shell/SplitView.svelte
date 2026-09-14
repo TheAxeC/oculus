@@ -27,7 +27,7 @@
 
     let { layout, path = [], pane, onresize }: Props = $props();
 
-    let box: HTMLDivElement | undefined = $state(undefined);
+    let box: HTMLDivElement | undefined = $state();
 
     /** The space the children actually share along the split's direction, in pixels. */
     function free(node: Extract<Layout, { kind: 'split' }>): number {

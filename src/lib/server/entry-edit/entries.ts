@@ -156,7 +156,7 @@ function placedEntries(source: string, ident: string): { list: string; items: Pl
     for (const node of list.seq.items as Node[]) {
         if (!isMap(node)) return null;
         const pair = pairOf(node, ident);
-        if (pair === undefined || pair.value === null || !isScalar(pair.value)) return null;
+        if (pair?.value == null || !isScalar(pair.value)) return null;
         const range = linesOf(source, node);
         if (range === null) return null;
         items.push({ value: String(pair.value.value), range });

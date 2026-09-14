@@ -116,11 +116,13 @@
         </div>
     {/if}
     {#if note !== ''}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
         <p class="note">{@html inlineMarkdown(note)}</p>
     {/if}
     {#if threat !== ''}
         <p class="threat">
             <Glyph name="warn" />
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
             <span>{@html t('radar.threatens', inlineMarkdown(threat))}</span>
         </p>
     {/if}
@@ -141,6 +143,7 @@
     {/if}
     {#if text('url').startsWith('http')}
         <p class="paper">
+            <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
             <a href={text('url')} target="_blank" rel="noreferrer">
                 <Glyph name="link" />
                 {t('radar.paper')}

@@ -62,7 +62,7 @@
     $effect(() => {
         const root = workspace;
         const state = repo;
-        if (root === '' || state === null || state.error !== null) {
+        if (root === '' || state?.error !== null) {
             branches = [];
             return;
         }
@@ -198,7 +198,7 @@
             <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}
             <ChangesTouched recordId={record.id} {files} {workspace} />
-            {#if repo === null || repo.error !== null}
+            {#if repo?.error !== null}
                 <section class="repo">
                     <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
                     <p class="none" title={repo?.error ?? undefined}>{t('sessions.ch_norepo')}</p>

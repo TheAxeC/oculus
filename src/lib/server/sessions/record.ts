@@ -121,7 +121,7 @@ export function stampOf(value: unknown): string | null {
 /** Note the moment: the first stamp seen opens the session and every one moves its last activity. */
 export function touch(acc: Acc, stamp: string | null): void {
     if (stamp === null) return;
-    if (acc.started === null) acc.started = stamp;
+    acc.started ??= stamp;
     acc.lastActivity = stamp;
 }
 

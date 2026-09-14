@@ -133,6 +133,7 @@ function checkPaths(root: string, paths: string[], roots: string[]): string {
     if (!permitted(root, roots)) return 'that directory is not a workspace oculus knows';
     if (!Array.isArray(paths) || paths.length === 0) return 'no path was given';
     for (const path of paths) {
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the path is an element of a request body list, and Array.isArray(paths) above checks the list, not what is in it
         if (!insideRepo(root, path)) return `the path ${String(path)} is not inside the workspace`;
     }
     return '';
@@ -323,7 +324,7 @@ function untrackedIn(output: string): Set<string> {
         const record = records[at];
         if (record.length < 4) continue;
         const code = record.slice(0, 2);
-        if (code[0] === 'R' || code[0] === 'C') at += 1;
+        if (code.startsWith('R') || code.startsWith('C')) at += 1;
         if (code === '??') loose.add(record.slice(3));
     }
     return loose;

@@ -38,6 +38,7 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { glyph, setAscii, setCatalog, setGlyphMode, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
+import { noop } from '../doubles.ts';
 
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));
@@ -130,7 +131,7 @@ describe('Card', () => {
             cursor: false,
             title: 'Fallback',
             titleHtml: 'Open <strong>title</strong>',
-            ontitle: () => {}
+            ontitle: noop
         });
         expect(plain).toContain('Plain title');
         expect(plain).not.toContain('class="open ');
@@ -326,7 +327,7 @@ describe('Pane, Empty, Toolbar, ToolButton, Segment and Search', () => {
             label: 'Reset',
             title: 'Put it back',
             active: true,
-            onclick: () => {}
+            onclick: noop
         });
         expect(body).toContain('Reset');
         // The words are the tooltip's, not the browser's `title`, which waits about a second and
@@ -345,7 +346,7 @@ describe('Pane, Empty, Toolbar, ToolButton, Segment and Search', () => {
             compact: true,
             rail: true,
             pressed: true,
-            onclick: () => {}
+            onclick: noop
         });
         expect(body).toContain('rail-control');
         expect(body).toContain('aria-pressed="true"');
@@ -353,13 +354,13 @@ describe('Pane, Empty, Toolbar, ToolButton, Segment and Search', () => {
     });
 
     it('draws no tooltip for a tool button that was given no words', () => {
-        const body = html(ToolButton, { label: 'Reset', onclick: () => {} });
+        const body = html(ToolButton, { label: 'Reset', onclick: noop });
         expect(body).not.toContain('role="tooltip"');
         expect(body).not.toContain('aria-describedby');
     });
 
     it('is a radio only inside an exclusive group', () => {
-        const body = html(ToolButton, { label: 'a', checked: false, onclick: () => {} });
+        const body = html(ToolButton, { label: 'a', checked: false, onclick: noop });
         expect(body).toContain('role="radio"');
         expect(body).toContain('aria-checked="false"');
     });
@@ -369,14 +370,14 @@ describe('Pane, Empty, Toolbar, ToolButton, Segment and Search', () => {
             { id: 'one', label: 'One' },
             { id: 'two', label: 'Two' }
         ];
-        const body = html(Segment, { items, value: 'two', label: 'Shape', onchange: () => {} });
+        const body = html(Segment, { items, value: 'two', label: 'Shape', onchange: noop });
         expect(body).toContain('role="radiogroup"');
         expect([...body.matchAll(/aria-checked="true"/g)]).toHaveLength(1);
         expect([...body.matchAll(/aria-checked="false"/g)]).toHaveLength(1);
     });
 
     it('is a search box named by its placeholder', () => {
-        const body = html(Search, { value: 'bt', placeholder: 'Filter', oninput: () => {} });
+        const body = html(Search, { value: 'bt', placeholder: 'Filter', oninput: noop });
         expect(body).toContain('type="search"');
         expect(body).toContain('data-search');
         expect(body).toContain('aria-label="Filter"');
@@ -432,14 +433,14 @@ describe('Ticker', () => {
 
     it('draws a row action as a button only when the caller says what one means', () => {
         expect(html(Ticker, { rows })).not.toContain('1w');
-        const body = html(Ticker, { rows, onaction: () => {} });
+        const body = html(Ticker, { rows, onaction: noop });
         expect(body).toContain('>1w<');
         expect(body).toContain('title="snooze 1w"');
         expect(body).toContain('>hide<');
     });
 
     it('leaves a plain row as text in a list that can otherwise be picked', () => {
-        const body = html(Ticker, { rows, onpick: () => {} });
+        const body = html(Ticker, { rows, onpick: noop });
         expect(body).toContain('<button type="button" class="name');
         const grant = body.slice(body.indexOf('A grant') - 200, body.indexOf('A grant'));
         expect(grant).toContain('class="name plain');
@@ -471,6 +472,7 @@ describe('Tooltip', () => {
                 attributes[name] = value;
             },
             removeAttribute: (name) => {
+                // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
                 delete attributes[name];
             }
         };

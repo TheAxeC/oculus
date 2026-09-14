@@ -89,15 +89,18 @@
             </div>
         {/if}
         {#if line.goal}
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
             <p class="goal">{@html inlineMarkdown(line.goal)}</p>
         {/if}
         {#if funding}
             <p class="funding">
                 <Glyph name="funding" />
+                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
                 {@html inlineMarkdown(funding)}
             </p>
         {/if}
         {#if line.blurb}
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
             <p class="blurb">{@html inlineMarkdown(line.blurb)}</p>
         {/if}
         <CrossLinks {projects} />

@@ -117,6 +117,7 @@
         </Facets>
 
         {#if allVenues.length === 0}
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
             <p class="empty">{@html t('venues.empty')}</p>
         {:else}
             {#if journals.length > 0}

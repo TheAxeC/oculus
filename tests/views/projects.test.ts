@@ -662,12 +662,13 @@ describe('the file finder', () => {
     it('draws the heading, the filter box, the rows and the cap once they are held', async () => {
         vi.stubGlobal(
             'fetch',
-            vi.fn(
-                async () =>
+            vi.fn(() =>
+                Promise.resolve(
                     new Response(JSON.stringify(answer), {
                         status: 200,
                         headers: { 'content-type': 'application/json' }
                     })
+                )
             )
         );
         // A new version on the `files` channel is what makes the store ask again: an earlier case in

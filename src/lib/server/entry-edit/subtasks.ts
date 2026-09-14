@@ -153,6 +153,7 @@ export function setSubtask(
         }
         if (clears) {
             if (!(field in next)) continue;
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
             delete next[field];
         } else {
             if (sameValue(wanted, next[field])) continue;
@@ -244,9 +245,7 @@ export function addSubtask(
             block.items.length === 0 ? block.key + 1 : block.items[block.items.length - 1].line + 1;
         const subtasks = pairOf(host.node, SUBTASKS)?.value;
         held =
-            subtasks !== undefined && subtasks !== null && isSeq(subtasks)
-                ? (subtasks.toJSON() as unknown[])
-                : [];
+            subtasks !== undefined && subtasks !== null && isSeq(subtasks) ? subtasks.toJSON() : [];
         lines.splice(at, 0, line);
     }
     const text = lines.join('\n');

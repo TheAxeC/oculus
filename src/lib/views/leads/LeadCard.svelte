@@ -149,6 +149,7 @@
             {/if}
         {/snippet}
 
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
         <p class="sub">{@html inlineMarkdown(sub)}</p>
         {#if country !== '' || type !== ''}
             <div class="chips">
@@ -161,10 +162,12 @@
             </div>
         {/if}
         {#if note !== ''}
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
             <p class="note">{@html inlineMarkdown(note)}</p>
         {/if}
         {#if url.startsWith('http')}
             <p class="posting">
+                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
                 <a href={url} target="_blank" rel="noreferrer">
                     <Glyph name="link" />
                     <span>{t('leads.posting')}</span>

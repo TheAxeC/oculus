@@ -139,7 +139,7 @@ export function asFieldValue(raw: unknown): FieldValue | undefined {
     if (raw === null) return null;
     if (typeof raw === 'string' || typeof raw === 'boolean') return raw;
     if (typeof raw === 'number') return Number.isFinite(raw) ? raw : undefined;
-    if (Array.isArray(raw) && raw.every((item) => typeof item === 'string')) return raw as string[];
+    if (Array.isArray(raw) && raw.every((item) => typeof item === 'string')) return raw;
     if (
         Array.isArray(raw) &&
         raw.every(
@@ -317,7 +317,7 @@ function lineEndAfter(text: string, at: number): number {
 
 function rangeOf(node: unknown): [number, number, number] | null {
     const range = (node as Node | null)?.range;
-    return Array.isArray(range) ? (range as [number, number, number]) : null;
+    return Array.isArray(range) ? range : null;
 }
 
 /** The pair of a key in a map node, or undefined when the map has no such key. */
@@ -343,7 +343,7 @@ function valueEnd(node: Node): number {
 
 /** Where a pair's own text ends: its value's end, or its key's when it has no value. */
 function pairEnd(pair: Pair<Scalar, Node>): number | null {
-    const value = pair.value as Node | null;
+    const value = pair.value;
     if (value !== null) return valueEnd(value);
     return rangeOf(pair.key)?.[1] ?? null;
 }
@@ -588,6 +588,7 @@ function applyOne(text: string, path: string[], value: FieldValue): Written {
 /** The parsed document with one path set or cleared, which is what the new text must equal. */
 function expect(data: Parsed, path: string[], value: FieldValue): void {
     if (path.length === 1) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         if (value === null) delete data[path[0]];
         else data[path[0]] = value;
         return;
@@ -596,7 +597,9 @@ function expect(data: Parsed, path: string[], value: FieldValue): void {
     const held = data[parent];
     if (value === null) {
         if (!isRecord(held)) return;
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         delete held[child];
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         if (Object.keys(held).length === 0) delete data[parent];
         return;
     }

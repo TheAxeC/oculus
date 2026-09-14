@@ -24,7 +24,7 @@ function typeRules(file: string): string {
         .replace(/\/\*[\s\S]*?\*\//g, ' ');
     const rules: string[] = [];
     for (const match of css.matchAll(/([^{}]+)\{([^{}]*)\}/g)) {
-        const size = match[2].match(/font-size\s*:\s*var\(--(fs-[^)]+)\)/);
+        const size = /font-size\s*:\s*var\(--(fs-[^)]+)\)/.exec(match[2]);
         if (size === null) continue;
         const selector = match[1].trim().replace(/\s+/g, ' ');
         rules.push(`${selector}=${size[1]}`);

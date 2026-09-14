@@ -16,6 +16,7 @@ import { render } from 'svelte/server';
 import { describe, expect, it } from 'vitest';
 import Card from '../../src/lib/ui/Card.svelte';
 import { inlineMarkdown, sanitise } from '../../src/lib/ui/html.ts';
+import { noop } from '../doubles.ts';
 
 const VIEWS = 'src/lib/views';
 
@@ -46,7 +47,7 @@ describe('a title out of a feed', () => {
                 cursor: false,
                 title,
                 titleHtml: inlineMarkdown(title),
-                ontitle: () => {}
+                ontitle: noop
             }
         }).body;
         expect(body).toContain('class="open ');

@@ -17,6 +17,7 @@ import {
 } from '../../../src/lib/server/usage/accounts.ts';
 import { UsageTranscriptFold } from '../../../src/lib/server/usage/transcripts.ts';
 import { watchUsage } from '../../../src/lib/server/usage/watch.ts';
+import { noop } from '../../doubles.ts';
 
 const NOW = Date.parse('2026-09-13T12:00:00.000Z');
 const made: string[] = [];
@@ -638,7 +639,7 @@ describe('usage transcript fold', () => {
 describe('usage watcher', () => {
     it('refreshes Codex windows through the session signal when a new day folder appears', async () => {
         vi.useFakeTimers();
-        let changed = (): void => {};
+        let changed = noop;
         const off = vi.fn();
         const dir = scratch();
         const hub = new Hub();
@@ -671,7 +672,17 @@ describe('usage watcher', () => {
                 })
             );
             const published = new Promise<void>((resolve) => {
-                hub.subscribe({ send: async () => resolve(), close() {} }, ['usage'], false);
+                hub.subscribe(
+                    {
+                        send: () => {
+                            resolve();
+                            return Promise.resolve();
+                        },
+                        close: noop
+                    },
+                    ['usage'],
+                    false
+                );
             });
             changed();
             await vi.advanceTimersByTimeAsync(1);
@@ -741,7 +752,7 @@ describe('usage watcher', () => {
             now: () => NOW,
             watchFolder: (folder, changed) => {
                 watched.set(folder, changed);
-                return { close() {} };
+                return { close: noop };
             }
         });
         try {
@@ -753,15 +764,16 @@ describe('usage watcher', () => {
                 );
                 hub.subscribe(
                     {
-                        send: async () => {
+                        send: () => {
                             const windows = (hub.latest('usage')?.payload as UsagePayload)
                                 .accounts[0].windows;
                             if (windows.some((window) => window.name === 'weekly_model')) {
                                 clearTimeout(timeout);
                                 resolve();
                             }
+                            return Promise.resolve();
                         },
-                        close() {}
+                        close: noop
                     },
                     ['usage'],
                     false
@@ -805,7 +817,7 @@ describe('usage watcher', () => {
             debounce: 1,
             interval: 5,
             now: () => NOW + ticks++ * 1000,
-            watchFolder: () => ({ close() {} })
+            watchFolder: () => ({ close: noop })
         });
         await watcher.refresh();
         const first = hub.latest('usage')?.version;
@@ -846,7 +858,7 @@ describe('usage watcher', () => {
             usageRoot: status,
             debounce: 1,
             now: () => NOW,
-            watchFolder: () => ({ close() {} })
+            watchFolder: () => ({ close: noop })
         });
         await watcher.refresh();
         const payload = hub.latest('usage')?.payload as UsagePayload;

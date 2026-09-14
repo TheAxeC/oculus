@@ -35,7 +35,6 @@ import type {
     SchemaField,
     Snapshot,
     Subtask,
-    Tier,
     Venue
 } from './model.ts';
 import { isMap, str, strings } from './guards.ts';
@@ -90,6 +89,7 @@ function num(value: unknown): number | undefined {
 function compact<T extends object>(value: T): T {
     const record = value as Record<string, unknown>;
     for (const key of Object.keys(record)) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         if (record[key] === undefined) delete record[key];
     }
     return value;
@@ -244,7 +244,7 @@ function project(manifest: RawManifest, found: DocPresence[] | undefined): Proje
     const lag = staleDays(found, manifest.fileMtime);
     return compact({
         id: manifest.id,
-        tier: manifest.tier as Tier,
+        tier: manifest.tier,
         ghost: manifest.ghost,
         category: str(manifest.category),
         type: str(manifest.type),

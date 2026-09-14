@@ -155,7 +155,7 @@ const gh: GhRun = (args) => {
         edits.push(args);
         return answer(true, '', '');
     }
-    return answer(false, '', `no gh shape named ${String(action)}`);
+    return answer(false, '', `no gh shape named ${action}`);
 };
 
 function answer(ok: boolean, output: string, error: string): Promise<Outcome> {
@@ -391,7 +391,7 @@ describe('what one gh answer makes the deposit do', () => {
                 edits.push(args);
                 return answer(true, '', '');
             }
-            return answer(false, '', `no gh shape named ${String(args[1])}`);
+            return answer(false, '', `no gh shape named ${args[1]}`);
         };
 
         const sent = await push('beta', { mirrors, into, gh: played });
@@ -432,7 +432,7 @@ describe('what one gh answer makes the deposit do', () => {
                 edits.push(args);
                 return answer(true, '', '');
             }
-            return answer(false, '', `no gh shape named ${String(args[1])}`);
+            return answer(false, '', `no gh shape named ${args[1]}`);
         };
 
         const held = { mirrors, into, gh: played };

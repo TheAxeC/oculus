@@ -14,6 +14,7 @@ import { allowedOrigin } from '../../src/lib/server/auth.ts';
 import { attachSocket, subscriptionChannels } from '../../src/lib/server/socket.ts';
 import type { Attached, TerminalSink } from '../../src/lib/server/socket.ts';
 import type { Message } from '../../src/lib/data/model.ts';
+import { noop } from '../doubles.ts';
 
 type Running = {
     hub: Hub;
@@ -60,7 +61,7 @@ function collect(ws: WebSocket, count: number): Promise<Message[]> {
 
 afterEach(async () => {
     while (running.length > 0) {
-        const started = running.pop() as Running;
+        const started = running.pop()!;
         started.attached.close();
         await new Promise<void>((resolve) => started.server.close(() => resolve()));
     }
@@ -147,7 +148,9 @@ describe('attachSocket', () => {
     });
 
     it('passes the subscription token and context token to the terminal sink', async () => {
-        let record = (_value: { channels: string[]; token: unknown; expected: string }): void => {};
+        let record = (_value: { channels: string[]; token: unknown; expected: string }): void => {
+            // Replaced by the promise's resolve below, before anything calls it.
+        };
         const received = new Promise<{ channels: string[]; token: unknown; expected: string }>(
             (resolve) => {
                 record = resolve;
@@ -158,7 +161,7 @@ describe('attachSocket', () => {
                 record({ channels, token, expected });
             },
             inbound: () => false,
-            remove: () => {}
+            remove: noop
         };
         const started = await start(terminals);
         const ws = new WebSocket(`ws://127.0.0.1:${started.port}/ws`, {

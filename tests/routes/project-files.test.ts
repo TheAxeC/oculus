@@ -85,7 +85,7 @@ describe('the project-files route', () => {
         expect(await body(response)).toMatchObject({ rows: [], truncated: false });
     });
 
-    it('refuses a request from another origin', async () => {
+    it('refuses a request from another origin', () => {
         const response = handleProjectFiles(
             request('id=alpha', { origin: 'http://example.invalid' }),
             target()

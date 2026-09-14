@@ -147,6 +147,7 @@
         {#if provisional.length > 0}
             <section>
                 <h3>{t('programs.provisional_h')}</h3>
+                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
                 <p class="note">{@html inlineMarkdown(t('programs.provisional_note'))}</p>
                 <div class="cards">
                     {#each provisional as line (line.id)}
@@ -176,6 +177,7 @@
         {#if offpillar.length > 0 || archived.length > 0}
             <section>
                 <h3>{t('programs.offpillar_h')}</h3>
+                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
                 <p class="note">{@html inlineMarkdown(t('programs.offpillar_note'))}</p>
                 <div class="cards">
                     {#each offpillar as line (line.id)}

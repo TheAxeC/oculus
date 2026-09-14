@@ -139,7 +139,7 @@
     );
 
     /** What the pin control shows: the area a pin chose, and nothing when the score chose it. */
-    const pinned = $derived(record !== null && record.pinned ? record.area : '');
+    const pinned = $derived(record?.pinned ? record.area : '');
 
     /** What the title box shows: the draft typed for the session, else the title it has now. */
     const typed = $derived(
@@ -276,30 +276,43 @@
             <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}
             <dl class="kv">
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render field(t('sessions.f_title'), record.title, record.title)}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render field(t('sessions.f_cwd'), record.cwd ?? '', record.cwd ?? '')}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render field(t('sessions.f_branch'), record.branch ?? '', '')}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render field(t('sessions.f_model'), modelShort(record.model), '')}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render field(t('sessions.f_effort'), record.effort ?? '', '')}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render field(t('sessions.f_mode'), record.permissionMode ?? '', '')}
                 {#if record.kind === 'observed'}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render field(
                         t('sessions.f_kind'),
                         t('sessions.kind_observed', record.kind),
                         ''
                     )}
                 {:else}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render field(t('sessions.f_kind'), record.kind, '')}
                 {/if}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render field(t('sessions.f_status'), status(record), '')}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render field(
                     t('sessions.f_pid'),
                     record.live && record.pid !== null ? String(record.pid) : '',
                     ''
                 )}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render field(t('sessions.f_version'), record.version ?? '', '')}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render field(t('sessions.f_started'), stamp(record.started, now), '')}
                 {#if record.hook !== null}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render field(
                         t('sessions.f_hook'),
                         hookLabel(record),
@@ -370,6 +383,7 @@
             </div>
 
             <div class="gauge">
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render line(
                     t('sessions.context'),
                     t('sessions.context_num', compactCount(used), compactCount(limit))
@@ -377,6 +391,7 @@
                 <Meter value={level} tone={tone(level)} label={t('sessions.context')} />
             </div>
 
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render line(
                 t('sessions.tokens'),
                 [
@@ -386,6 +401,7 @@
                 ].join(` ${t('sessions.meta_sep')} `)
             )}
 
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render line(
                 t('sessions.cache'),
                 [

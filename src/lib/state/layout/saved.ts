@@ -240,7 +240,7 @@ function asEnvelope(value: unknown): Record<string, unknown> | null {
 /** Read one valid workbench from its versioned envelope. */
 export function parseWorkbench(value: unknown): Workbench | null {
     const envelope = asEnvelope(value);
-    if (envelope === null || envelope.version !== WORKBENCH_VERSION) return null;
+    if (envelope?.version !== WORKBENCH_VERSION) return null;
     return readWorkbench(envelope.workbench);
 }
 

@@ -42,6 +42,7 @@ import {
 import type { Component } from 'svelte';
 // Importing the route loader registers the application's views. Collections use sources.yml keys.
 import { registerCollections } from '../../src/routes/views.ts';
+import { noop } from '../doubles.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -54,7 +55,7 @@ const COLLECTIONS = collectionKeys(config);
 registerCollections(COLLECTIONS);
 
 /** A stand-in for a view component; the registry stores it and the rail never mounts it. */
-const component = (() => {}) as unknown as Component<ViewProps>;
+const component = noop as unknown as Component<ViewProps>;
 
 /** A registration of this file's own, told apart from the application's by its id. */
 function probe(id: string, group = '', order = 0): Registration {
@@ -165,8 +166,8 @@ describe('the rail, drawn', () => {
 
     it('draws each direct view label under its glyph without moving its browser identity', () => {
         for (const id of SMALL) {
-            const button = body.match(
-                new RegExp(`<button[^>]*data-view="${id}"[\\s\\S]*?<\\/button>`)
+            const button = new RegExp(`<button[^>]*data-view="${id}"[\\s\\S]*?<\\/button>`).exec(
+                body
             )?.[0];
             expect(button).toMatch(/class="[^"]*stacked[^"]*"/);
             expect(button).toMatch(/class="glyph[^"]*"[\s\S]*class="label[^"]*">Status/);
@@ -209,11 +210,9 @@ describe('the rail, drawn', () => {
                 ['ui.wallpaper', 'wallpaper'],
                 ['ui.unicode', 'unicode']
             ]) {
-                const button = themed.match(
-                    new RegExp(
-                        `<button[^>]*aria-label="${catalog[key]}"[^>]*>[\\s\\S]*?<\\/button>`
-                    )
-                )?.[0];
+                const button = new RegExp(
+                    `<button[^>]*aria-label="${catalog[key]}"[^>]*>[\\s\\S]*?<\\/button>`
+                ).exec(themed)?.[0];
                 expect(button).toBeDefined();
                 expect(button).toContain(glyphCatalog(config)[glyph]);
             }
@@ -309,7 +308,7 @@ describe('a rail badge', () => {
         const rendered = render(ActivityRail, {
             props: { groups: [{ id: 'flyout', label: 'Flyout', glyph: 'chat' }] }
         }).body;
-        const group = rendered.match(/data-group="Flyout"[\s\S]*?<button\b[^>]*>/)?.[0] ?? '';
+        const group = /data-group="Flyout"[\s\S]*?<button\b[^>]*>/.exec(rendered)?.[0] ?? '';
         expect(group).toContain('rail-control');
         expect(group).toContain('stacked');
     });
@@ -333,17 +332,13 @@ describe('a rail badge', () => {
     it('puts an archive rollup and a collection rule label in the rail badge titles', () => {
         installBadges(config);
         const body = render(ActivityRail, { props: { groups: [] } }).body;
-        const archive = body.match(
-            /data-view="archive"[\s\S]*?<span\b[^>]*class="badge[^>]*>/
+        const archive = /data-view="archive"[\s\S]*?<span\b[^>]*class="badge[^>]*>/.exec(body)?.[0];
+        const funding = /data-view="funding"[\s\S]*?<span\b[^>]*class="badge[^>]*>/.exec(body)?.[0];
+        const projects = /data-view="projects"[\s\S]*?<span\b[^>]*class="badge[^>]*>/.exec(
+            body
         )?.[0];
-        const funding = body.match(
-            /data-view="funding"[\s\S]*?<span\b[^>]*class="badge[^>]*>/
-        )?.[0];
-        const projects = body.match(
-            /data-view="projects"[\s\S]*?<span\b[^>]*class="badge[^>]*>/
-        )?.[0];
-        const coauthor = body.match(
-            /data-view="coauthor"[\s\S]*?<span\b[^>]*class="badge[^>]*>/
+        const coauthor = /data-view="coauthor"[\s\S]*?<span\b[^>]*class="badge[^>]*>/.exec(
+            body
         )?.[0];
         expect(archive).toContain('title="papers: 1 | outputs: 1 | dead-ends: 1"');
         expect(funding).toContain('title="1 undecided"');

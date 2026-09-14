@@ -18,6 +18,7 @@ import { loadUi, setInstanceState, setLeadDismissed } from '../../src/lib/state/
 import { leadId } from '../../src/lib/state/leads.ts';
 import { addLead } from '../../src/lib/state/writes.svelte.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
+import { noop } from '../doubles.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -128,7 +129,7 @@ function hasAction(body: string, label: string): boolean {
 function expectHideControl(body: string, label: string): void {
     const start = body.indexOf(`aria-label="${label}"`);
     expect(start).toBeGreaterThanOrEqual(0);
-    const tooltip = body.slice(start).match(/<span\b[^>]*role="tooltip"[^>]*>([^<]*)<\/span>/);
+    const tooltip = /<span\b[^>]*role="tooltip"[^>]*>([^<]*)<\/span>/.exec(body.slice(start));
     expect(tooltip?.[1]).toBe(label);
 }
 
@@ -138,7 +139,7 @@ function serve(body: Record<string, unknown>, _status = 200): void {
     receive({ channel: 'feeds', version: ++feedVersion, payload: feedsFixture('leads', body) });
 }
 
-beforeEach(() => loadUi({ getItem: () => null, setItem: () => {} }));
+beforeEach(() => loadUi({ getItem: () => null, setItem: noop }));
 afterEach(() => vi.unstubAllGlobals());
 
 describe('the Position Leads view', () => {
@@ -194,7 +195,7 @@ describe('the Position Leads view', () => {
         expect(body).not.toContain(catalog['leads.empty']);
     });
 
-    it('draws the intro, controls, ordered live cards, details, and collapsed sections', async () => {
+    it('draws the intro, controls, ordered live cards, details, and collapsed sections', () => {
         serve({
             ok: true,
             kind: 'leads',
@@ -227,7 +228,7 @@ describe('the Position Leads view', () => {
         expect(body).not.toContain('first</strong> run');
     });
 
-    it('draws actioned and past-deadline cards newest first, and only six log lines', async () => {
+    it('draws actioned and past-deadline cards newest first, and only six log lines', () => {
         serve({
             ok: true,
             kind: 'leads',
@@ -249,7 +250,7 @@ describe('the Position Leads view', () => {
         expect(body).toContain('expired');
     });
 
-    it('draws each card detail and only the actions allowed by that card status', async () => {
+    it('draws each card detail and only the actions allowed by that card status', () => {
         serve({
             ok: true,
             kind: 'leads',
@@ -270,7 +271,7 @@ describe('the Position Leads view', () => {
         expect(hasAction(open, catalog['project.action.reopen'])).toBe(false);
         expectHideControl(open, catalog['leads.action.hide_lead']);
         expect(hasAction(open, catalog['project.action.del'])).toBe(true);
-        expect(open).toContain(String(glyphs.deadline));
+        expect(open).toContain(glyphs.deadline);
         expect(open).toContain('>Belgium</span>');
         expect(open).toContain('>postdoc</span>');
         expect(open).toContain('target="_blank"');
@@ -302,7 +303,7 @@ describe('the Position Leads view', () => {
         }
     });
 
-    it('draws the ten schema controls in order when the instance holds the form open', async () => {
+    it('draws the ten schema controls in order when the instance holds the form open', () => {
         serve({
             ok: true,
             kind: 'leads',
@@ -331,7 +332,7 @@ describe('the Position Leads view', () => {
         expect(request).toEqual({ kind: 'lead-add', fields: { title: 'New lead' } });
     });
 
-    it('omits the expired intro note when every lead is live', async () => {
+    it('omits the expired intro note when every lead is live', () => {
         serve({
             ok: true,
             kind: 'leads',
@@ -345,7 +346,7 @@ describe('the Position Leads view', () => {
         expect(body).not.toContain('expired (hidden)');
     });
 
-    it('draws no empty-state message when search alone hides every live card', async () => {
+    it('draws no empty-state message when search alone hides every live card', () => {
         serve({
             ok: true,
             kind: 'leads',
@@ -361,7 +362,7 @@ describe('the Position Leads view', () => {
         expect(body).not.toContain('No live leads');
     });
 
-    it('draws the empty and missing-file states', async () => {
+    it('draws the empty and missing-file states', () => {
         serve({
             ok: true,
             kind: 'leads',

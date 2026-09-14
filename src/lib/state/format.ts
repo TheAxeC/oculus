@@ -30,7 +30,7 @@ function dateOf(iso: string | null | undefined): Date | null {
  * decimal, since the digit says nothing at that size and the column is narrow.
  */
 export function compactCount(value: number): string {
-    const count = Number.isFinite(value) ? Number(value) : 0;
+    const count = Number.isFinite(value) ? value : 0;
     if (count >= 1000000) {
         const millions = (count / 1000000).toFixed(count >= 10000000 ? 0 : 1).replace(/\.0$/, '');
         return t('sessions.n_millions', millions);
@@ -93,11 +93,13 @@ export function span(total: number): string {
 
 /** `claude-opus-5` reads as `opus-5`, which is what a narrow rail has room for. */
 export function modelShort(name: string | null | undefined): string {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the name is folded from a session record's JSON, which may hold any scalar under that key
     return String(name ?? '').replace(/^claude-/, '');
 }
 
 /** The last segment of a path, which is what a row shows of a touched file. */
 export function basename(path: string | null | undefined): string {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the path is folded from a session record's JSON, which may hold any scalar under that key
     const text = String(path ?? '');
     const at = text.lastIndexOf('/');
     return at < 0 ? text : text.slice(at + 1);
@@ -105,7 +107,9 @@ export function basename(path: string | null | undefined): string {
 
 /** A path inside a workspace, written relative to it; anything else is left as it is. */
 export function relativeTo(path: string | null | undefined, workspace: string | null | undefined) {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the path is folded from a session record's JSON, which may hold any scalar under that key
     const text = String(path ?? '');
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the workspace is folded from a session record's JSON, which may hold any scalar under that key
     const root = String(workspace ?? '');
     return root !== '' && text.startsWith(`${root}/`) ? text.slice(root.length + 1) : text;
 }
@@ -115,6 +119,7 @@ export function relativeTo(path: string | null | undefined, workspace: string | 
  * the file, however deep it sits, so two rows are never both an ellipsis and a directory.
  */
 export function elide(path: string | null | undefined, max: number = PATH_MAX): string {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the path is folded from a session record's JSON, which may hold any scalar under that key
     const text = String(path ?? '');
     if (text.length <= max) return text;
     const keep = Math.max(max - 3, basename(text).length);

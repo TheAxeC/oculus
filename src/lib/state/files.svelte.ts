@@ -64,7 +64,9 @@ export function files(id: string): FilesState {
 
 /** Forget what is held for one project, so the next call for it fetches again. */
 export function invalidate(id: string): void {
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     delete held[id];
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     delete versions[id];
 }
 

@@ -26,6 +26,7 @@ import { readRoots, rootsFile } from '../src/lib/server/files.ts';
 import { views } from '../src/lib/views/registry.ts';
 // Importing the route loader registers views; collection registrations use sources.yml keys.
 import { registerCollections } from '../src/routes/views.ts';
+import { noop } from './doubles.ts';
 
 function scratch(): string {
     const dir = mkdtempSync(join(tmpdir(), 'oculus-config-'));
@@ -58,7 +59,7 @@ describe('loadLocal', () => {
     let warn: ReturnType<typeof vi.spyOn>;
 
     beforeEach(() => {
-        warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+        warn = vi.spyOn(console, 'warn').mockImplementation(noop);
     });
 
     afterEach(() => {

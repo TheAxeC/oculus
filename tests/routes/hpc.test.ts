@@ -8,8 +8,8 @@ const target = (): HpcTarget => {
         host: 'fixture',
         token: server.token,
         refresh: vi.fn(() => server.hpc.refresh()),
-        cancel: vi.fn(async () => ({ status: 'ok' })),
-        log: vi.fn(async () => ({ status: 'ok', log: 'x', path: '/x' }))
+        cancel: vi.fn(() => Promise.resolve({ status: 'ok' })),
+        log: vi.fn(() => Promise.resolve({ status: 'ok', log: 'x', path: '/x' }))
     };
 };
 const request = (body: unknown, origin = 'http://127.0.0.1:8791') =>

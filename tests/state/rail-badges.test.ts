@@ -29,7 +29,6 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
-import type { Snapshot } from '../../src/lib/data/model.ts';
 import { badgeOf, viewFor } from '../../src/lib/views/registry.ts';
 import { installBadges } from './rail-badges-fixture.ts';
 import { registerCollections } from '../../src/routes/views.ts';
@@ -230,7 +229,7 @@ describe('rail badge counts', () => {
                 },
                 relations: {},
                 findings: []
-            } as unknown as Snapshot
+            }
         });
 
         expect([inboxBadge(), leadsBadge(), linkedinBadge(), applicationsBadge()]).toEqual([

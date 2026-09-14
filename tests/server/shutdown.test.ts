@@ -4,6 +4,7 @@
 
 import { describe, expect, it } from 'vitest';
 import { SIGNALS, onShutdown } from '../../src/lib/server/shutdown.ts';
+import { noop } from '../doubles.ts';
 
 type Recorder = {
     handlers: Map<string, () => void>;
@@ -27,14 +28,14 @@ function target(): {
 describe('onShutdown', () => {
     it('takes both stop signals', () => {
         const held = target();
-        onShutdown(held.target, () => {});
+        onShutdown(held.target, noop);
         expect([...held.record.handlers.keys()].sort()).toEqual([...SIGNALS].sort());
     });
 
     it('closes once for two signals and exits when the close calls back', () => {
         const held = target();
         let closes = 0;
-        let finish: () => void = () => {};
+        let finish: () => void = noop;
         onShutdown(held.target, (done) => {
             closes += 1;
             finish = done;

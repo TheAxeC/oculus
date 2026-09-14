@@ -108,7 +108,7 @@
             const groups: { kind: string; rows: TickerRow[] }[] = [];
             for (const line of lines) {
                 const held = groups.at(-1);
-                if (held === undefined || held.kind !== line.kind) {
+                if (held?.kind !== line.kind) {
                     groups.push({ kind: line.kind, rows: [row(line, dateTail(line))] });
                 } else {
                     held.rows.push(row(line, dateTail(line)));

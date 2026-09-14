@@ -16,7 +16,7 @@ import {
 import { setAscii, setCatalog, setGlyphMode, setGlyphs } from '../../src/lib/state/text.ts';
 import { receive } from '../../src/lib/state/entities.svelte.ts';
 import { registerView } from '../../src/lib/views/registry.ts';
-import type { Snapshot } from '../../src/lib/data/model.ts';
+import { noop } from '../doubles.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -62,10 +62,10 @@ receive({
                 leads: null
             }
         }
-    } as unknown as Snapshot
+    }
 });
 
-const props = { onclose: () => {}, onupdate: () => {} };
+const props = { onclose: noop, onupdate: noop };
 
 describe('Palette', () => {
     it('renders nothing while closed', () => {
@@ -101,7 +101,7 @@ describe('Palette', () => {
 describe('UpdateTray', () => {
     it('draws the four tasks, the portfolio Chat row, their last runs and the inbox note', () => {
         const body = render(UpdateTray, {
-            props: { open: true, onclose: () => {} }
+            props: { open: true, onclose: noop }
         }).body;
         for (const kind of ['litwatch', 'scout', 'linkedin', 'inbox']) {
             expect(body).toContain(`data-task="${kind}"`);
@@ -119,7 +119,7 @@ describe('UpdateTray', () => {
         setAscii(ascii);
         setGlyphMode('ascii');
         try {
-            const body = render(UpdateTray, { props: { open: true, onclose: () => {} } }).body;
+            const body = render(UpdateTray, { props: { open: true, onclose: noop } }).body;
             const row = body.slice(body.indexOf('data-task="chat"'));
             expect(row).toContain(`>${ascii[glyphCatalog(config).chat]}</span>`);
             expect(row).not.toContain(glyphCatalog(config).chat);
@@ -131,7 +131,7 @@ describe('UpdateTray', () => {
 
     it('opens on a full-window ground with a dialog inside it', () => {
         const body = render(UpdateTray, {
-            props: { open: true, onclose: () => {} }
+            props: { open: true, onclose: noop }
         }).body;
         expect(body).toMatch(/class="[^"]*ground[^"]*"[^>]*role="presentation"/);
         expect(body).toMatch(/class="[^"]*tray[^"]*"[^>]*role="dialog"/);

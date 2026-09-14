@@ -76,6 +76,7 @@ export function scoreDims(config: Record<string, unknown>): ScoreDim[] {
  * every string the file may write.
  */
 export function scoreTier(value: string): string {
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the value is a CAREER.yml score field, which YAML may parse as a number
     const text = String(value ?? '')
         .trim()
         .toLowerCase();

@@ -35,6 +35,7 @@
             {@const also = shared(file.path)}
             <div class="file" class:shared={also.length > 0}>
                 <span class="pa" title={file.path}>{elide(relativeTo(file.path, workspace))}</span>
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render mark(also)}
                 <span class="to">{file.tool}</span>
                 <span class="ct">{t('sessions.ch_times', file.count)}</span>

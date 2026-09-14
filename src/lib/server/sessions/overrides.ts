@@ -31,7 +31,7 @@ export function overrides(path?: string): Record<string, Override> {
     if (!isMap(data) || !isMap(data.sessions)) return {};
     const found: Record<string, Override> = {};
     for (const [key, value] of Object.entries(data.sessions)) {
-        if (isMap(value)) found[key] = value as Override;
+        if (isMap(value)) found[key] = value;
     }
     return found;
 }
@@ -64,6 +64,7 @@ export function setHidden(sessionId: unknown, hidden: boolean, path?: string): b
     if (hidden) entry.hidden = true;
     else delete entry.hidden;
     if (Object.keys(entry).length > 0) sessions[ident] = entry;
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     else delete sessions[ident];
     data.sessions = sessions;
     writeJsonAtomic(file, data);
@@ -115,6 +116,7 @@ export function setOverride(
         const before = entry[key];
         if (wanted === '') {
             if (before === undefined) continue;
+            // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
             delete entry[key];
         } else {
             if (before === wanted) continue;
@@ -125,6 +127,7 @@ export function setOverride(
 
     if (changed.length === 0) return { changed, refused };
     if (Object.keys(entry).length > 0) sessions[ident] = entry;
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     else delete sessions[ident];
     data.sessions = sessions;
     writeJsonAtomic(file, data);

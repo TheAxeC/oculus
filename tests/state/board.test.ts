@@ -834,7 +834,7 @@ describe('typeCounts', () => {
 describe('isStale', () => {
     it('is the lag against the threshold it is given', () => {
         const { items } = over({ alpha: { staleDays: 2 } });
-        const one = items.find((held) => held.id === 'alpha') as BoardItem;
+        const one = items.find((held) => held.id === 'alpha')!;
 
         expect(isStale(one, 1)).toBe(true);
         expect(isStale(one, 2)).toBe(true);

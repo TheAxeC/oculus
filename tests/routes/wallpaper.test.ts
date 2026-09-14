@@ -17,6 +17,7 @@ import {
     settings,
     wallpaperMemory
 } from '../../src/lib/server/wallpaper.ts';
+import { noop } from '../doubles.ts';
 
 /** A directory holding the named files, each one byte, inside the system temporary directory. */
 function folder(names: string[]): string {
@@ -178,7 +179,7 @@ describe('the configured settings', () => {
     });
 
     it('reports a missing or unknown pick once and returns null', () => {
-        const error = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const error = vi.spyOn(console, 'error').mockImplementation(noop);
         try {
             const missing = fixture('wallpaper:\n  dir: pictures\n');
             const missingMemory = wallpaperMemory();

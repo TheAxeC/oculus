@@ -174,7 +174,7 @@
         if (configured !== null) return configured;
         const root = getComputedStyle(document.body);
         const base = Number.parseFloat(
-            root.getPropertyValue('--fs-md').match(/[\d.]+px/)?.[0] ?? ''
+            /[\d.]+px/.exec(root.getPropertyValue('--fs-md'))?.[0] ?? ''
         );
         const computed = base * scale;
         return Number.isFinite(computed) && computed >= 1 ? computed : undefined;

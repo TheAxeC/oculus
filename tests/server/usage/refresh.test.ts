@@ -26,6 +26,7 @@ import { claudeAccountFile, usageAccounts } from '../../../src/lib/server/usage/
 import { watchUsage } from '../../../src/lib/server/usage/watch.ts';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import { contextFixture } from '../context-fixture.ts';
+import { noop } from '../../doubles.ts';
 
 const NOW = Date.parse('2026-09-13T12:00:00Z');
 const BIN = '/opt/Claude Code/claude';
@@ -82,7 +83,7 @@ function tmux(present = false) {
         screen: '> ',
         /** The screen once /usage has been typed; undefined leaves `screen` as it is. */
         afterKeys: undefined as string | undefined,
-        async run(args: string[]): Promise<string> {
+        run(args: string[]): Promise<string> {
             stub.calls.push(args);
             if (args[0] === 'new-session') {
                 if (stub.startsFail) throw new Error('start failed');
@@ -93,7 +94,7 @@ function tmux(present = false) {
                 if (!sessions.has(args[2])) throw new Error("can't find session");
                 sessions.delete(args[2]);
             }
-            if (args[0] === 'capture-pane') return stub.screen;
+            if (args[0] === 'capture-pane') return Promise.resolve(stub.screen);
             if (
                 args[0] === 'send-keys' &&
                 args.at(-1) === '/usage' &&
@@ -102,7 +103,7 @@ function tmux(present = false) {
                 stub.screen = stub.afterKeys;
             }
             if (args[0] === 'send-keys' && args.at(-1) === 'Enter' && stub.updates) fetched(at + 1);
-            return '';
+            return Promise.resolve('');
         }
     };
     return stub;
@@ -117,8 +118,9 @@ function watcher(stub: ReturnType<typeof tmux>, options: Partial<UsageRefreshOpt
         refreshMin: 10,
         run: stub.run,
         now: () => at,
-        pause: async (ms) => {
+        pause: (ms) => {
             at += ms;
+            return Promise.resolve();
         },
         ...options
     });
@@ -198,10 +200,11 @@ describe('one-shot Claude usage refresher', () => {
         fetched(NOW);
         const pauses: number[] = [];
         const refresh = watcher(stub, {
-            pause: async (ms) => {
+            pause: (ms) => {
                 at += ms;
                 pauses.push(ms);
                 if (pauses.length === 2) fetched(at);
+                return Promise.resolve();
             }
         });
         await refresh.ready;
@@ -267,10 +270,11 @@ describe('one-shot Claude usage refresher', () => {
         stub.afterKeys = 'Current week (Fable)\n12% used';
         let pauses = 0;
         const refresh = watcher(stub, {
-            pause: async (ms) => {
+            pause: (ms) => {
                 at += ms;
                 pauses += 1;
                 if (pauses === 2) fetched(at);
+                return Promise.resolve();
             }
         });
         await refresh.ready;
@@ -450,7 +454,7 @@ describe('one-shot Claude usage refresher', () => {
             tiers: {},
             usageRoot: join(root, 'status'),
             now: () => at,
-            watchFolder: () => ({ close() {} }),
+            watchFolder: () => ({ close: noop }),
             refresherFor: refresh.state
         });
         try {
@@ -488,9 +492,9 @@ describe('usage refresh route', () => {
         const server = contextFixture({ token: 'write-token' });
         const target: UsageRefreshTarget = {
             token: server.token,
-            refresh: async (label) => {
+            refresh: (label) => {
                 labels.push(label);
-                return label === 'University';
+                return Promise.resolve(label === 'University');
             }
         };
         const response = await handleUsageRefresh(request({ account: 'University' }), target);
@@ -507,7 +511,7 @@ describe('usage refresh route', () => {
     });
 
     it('rejects a cross-origin request before dispatch even with the correct token', async () => {
-        const refresh = vi.fn(async () => true);
+        const refresh = vi.fn(() => Promise.resolve(true));
         const server = contextFixture({ token: 'write-token' });
         const response = await handleUsageRefresh(
             request({ account: 'University' }, 'write-token', 'https://example.com'),

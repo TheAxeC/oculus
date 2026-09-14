@@ -92,6 +92,7 @@
             <p class="lane-sub">{sub}</p>
             <div class="lane-body">
                 {#each rows as item, at (`${at}:${item.title}`)}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render entry(item, glyph)}
                 {/each}
             </div>
@@ -122,6 +123,7 @@
                             >
                                 <p class="stage">{stage.label}</p>
                                 {#each stage.items as item, at (`${at}:${item.title}`)}
+                                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                                     {@render entry(item, t('focus.funding_glyph'))}
                                 {/each}
                             </div>
@@ -129,6 +131,7 @@
                     </div>
                 </div>
             {/if}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render column(
                 t('focus.jobs_lane'),
                 t('focus.jobs_glyph'),
@@ -136,6 +139,7 @@
                 cards.tones.jobs,
                 cards.applications
             )}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render column(
                 t('focus.teaching_lane'),
                 t('focus.teaching_glyph'),

@@ -30,6 +30,7 @@
                 <Chip label={t('programs.untagged', projects.length)} />
             {/if}
         {/snippet}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
         <p>{@html inlineMarkdown(blurb())}</p>
         {#if projects.length > 0}
             <CrossLinks {projects} />

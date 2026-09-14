@@ -176,7 +176,7 @@ export class UsageTranscriptFold {
         let readBytes = 0;
         for (const file of found) {
             let held = this.#cache.get(file.path);
-            if (held === undefined || held.size !== file.size || held.mtimeMs !== file.mtimeMs) {
+            if (held?.size !== file.size || held.mtimeMs !== file.mtimeMs) {
                 held = { size: file.size, mtimeMs: file.mtimeMs, rows: await foldFile(file) };
                 this.#cache.set(file.path, held);
                 readFiles += 1;

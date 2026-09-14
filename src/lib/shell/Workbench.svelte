@@ -93,7 +93,7 @@
 
     let { groups = [], bookmarks = [], arrangements = [], waiting = 0 }: Props = $props();
 
-    let area: HTMLDivElement | undefined = $state(undefined);
+    let area: HTMLDivElement | undefined = $state();
     let paletteOpen = $state(false);
     let palettePrefill = $state('');
     let updateOpen = $state(false);

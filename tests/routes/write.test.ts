@@ -87,7 +87,7 @@ function target(): WriteTarget {
 
 /** What the overrides file holds, or null when nothing has written it yet. */
 function overridesOf(into: WriteTarget): unknown {
-    const path = into.overrides as string;
+    const path = into.overrides!;
     if (!existsSync(path)) return null;
     return JSON.parse(readFileSync(path, 'utf8'));
 }

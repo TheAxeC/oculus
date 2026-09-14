@@ -15,6 +15,7 @@ import {
     type TerminalDriver
 } from '../../../src/lib/server/pty/channel.ts';
 import type { Message } from '../../../src/lib/data/model.ts';
+import { noop } from '../../doubles.ts';
 
 const ID = 'a1b2c3-shell';
 const CHANNEL = ptyChannel(ID);
@@ -33,7 +34,7 @@ function recorder(): { sink: Sink; messages: Message[] } {
                 messages.push(JSON.parse(text) as Message);
                 return Promise.resolve();
             },
-            close: () => {}
+            close: noop
         }
     };
 }
@@ -47,7 +48,7 @@ function driver(): {
     screen(text: string): void;
 } {
     const calls: string[][] = [];
-    let output: (id: string, bytes: Buffer) => void = () => {};
+    let output: (id: string, bytes: Buffer) => void = noop;
     let ids: string[] = [];
     let screen = SCREEN;
     return {
@@ -65,12 +66,12 @@ function driver(): {
             onOutput(listener): void {
                 output = listener;
             },
-            onChange(): void {},
+            onChange: noop,
             attached(next: string[]): void {
                 ids = [...next];
             },
             live: () => false,
-            close(): void {}
+            close: noop
         }
     };
 }
@@ -259,13 +260,13 @@ describe('a page that falls behind', () => {
         // A sink whose sends are resolved by hand, which is what "behind" is: the Hub holds the
         // next message per channel while one send is in flight.
         const messages: Message[] = [];
-        const waiting: Array<() => void> = [];
+        const waiting: (() => void)[] = [];
         const sink: Sink = {
             send: (text: string) => {
                 messages.push(JSON.parse(text) as Message);
                 return new Promise<void>((resolve) => waiting.push(resolve));
             },
-            close: () => {}
+            close: noop
         };
         held.subscribed(sink, [CHANNEL], TOKEN, TOKEN);
         await settle();

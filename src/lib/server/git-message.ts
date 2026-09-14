@@ -85,9 +85,7 @@ function run(prompt: string, model: string, input: string): Promise<Outcome> {
             { encoding: 'utf8', timeout: TIMEOUT_MS, maxBuffer: MAX_OUTPUT },
             (error, stdout, stderr) => {
                 if (error !== null) {
-                    const first = String(stderr || error.message)
-                        .trim()
-                        .split('\n')[0];
+                    const first = (stderr || error.message).trim().split('\n')[0];
                     settle({
                         ok: false,
                         output: '',

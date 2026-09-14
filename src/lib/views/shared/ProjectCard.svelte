@@ -317,6 +317,7 @@
         <CardLinks {item} />
         <CardSessions {item} />
         {#if item.project.ghost}
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
             <p class="ghostmsg">{@html t('project.card.ghostmsg')}</p>
         {:else if item.project.eli5}
             <div class="eli5">

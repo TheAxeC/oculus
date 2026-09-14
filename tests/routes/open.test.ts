@@ -109,8 +109,9 @@ describe('the open client', () => {
         const { roots, folder } = fixture();
         const opener = vi.fn();
         setToken('old-token');
-        vi.mocked(invalidateAll).mockImplementation(async () => {
+        vi.mocked(invalidateAll).mockImplementation(() => {
             setToken(TOKEN);
+            return Promise.resolve();
         });
         const fetcher = vi.fn(async (_url: string, init: RequestInit) =>
             handleOpen(

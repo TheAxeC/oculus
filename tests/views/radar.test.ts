@@ -20,6 +20,7 @@ import { setVocab } from '../../src/lib/state/tones.ts';
 import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
+import { noop } from '../doubles.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -71,7 +72,7 @@ afterEach(() => vi.unstubAllGlobals());
 
 describe('the Lit Watch view', () => {
     it('opens the bar file as a source tab and reuses the same file instance', () => {
-        loadLayout({ getItem: () => null, setItem: () => {} });
+        loadLayout({ getItem: () => null, setItem: noop });
         const file = { root: 'hub', path: 'feeds/literature-radar.yml' };
         const id = openSourceFile(file);
         expect(findInstance(layout(), id)?.instance).toEqual({
@@ -85,7 +86,7 @@ describe('the Lit Watch view', () => {
         expect(openSourceFile(file)).toBe(id);
     });
 
-    it('draws its intro, search, ordered sections, card details, actions, and collapsed dismissed section', async () => {
+    it('draws its intro, search, ordered sections, card details, actions, and collapsed dismissed section', () => {
         const snapshot = {
             version: 301,
             entities: { projects: { alpha: { id: 'alpha', title: 'Alpha project' } } }
@@ -127,7 +128,7 @@ describe('the Lit Watch view', () => {
         expect(body).not.toContain('Dismissed paper');
     });
 
-    it('draws the empty and missing-file states', async () => {
+    it('draws the empty and missing-file states', () => {
         serve({
             ok: true,
             kind: 'radar',
@@ -150,7 +151,7 @@ describe('the Lit Watch view', () => {
         expect(missing).toContain('feeds/literature-radar.yml');
     });
 
-    it('draws dismissed string and boolean values open, newest first, with restore actions', async () => {
+    it('draws dismissed string and boolean values open, newest first, with restore actions', () => {
         serve({
             ok: true,
             kind: 'radar',
@@ -168,7 +169,7 @@ describe('the Lit Watch view', () => {
         expect(body.indexOf('Newer dismissed')).toBeLessThan(body.indexOf('Older dismissed'));
     });
 
-    it('draws no write action for an untitled entry', async () => {
+    it('draws no write action for an untitled entry', () => {
         serve({
             ok: true,
             kind: 'radar',
@@ -182,7 +183,7 @@ describe('the Lit Watch view', () => {
         expect(body).not.toContain(catalog['radar.idea_tip']);
     });
 
-    it('draws a parse error with its configured path and reason', async () => {
+    it('draws a parse error with its configured path and reason', () => {
         serve(
             {
                 error: 'bad YAML',

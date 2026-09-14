@@ -99,8 +99,9 @@ export function toneOf(hex: string): string {
 /** A palette hue, or undefined when the value has no usable palette token. */
 export function paletteTone(hex: string): string | undefined {
     configGeneration();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the hex is a colour field of the config or a registry entry, which YAML may parse as a number
     const token = palette[String(hex).trim().toLowerCase()];
-    if (token === undefined || !token.startsWith('c-')) return undefined;
+    if (!token?.startsWith('c-')) return undefined;
     const tone = token.slice('c-'.length);
     return TONE.test(tone) ? tone : undefined;
 }
@@ -108,6 +109,7 @@ export function paletteTone(hex: string): string | undefined {
 /** The dataset access colour from `data_access`, with an unknown value kept neutral. */
 export function dataAccessTone(access: string): string {
     configGeneration();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the access is a dataset registry field, which YAML may parse as a number
     const hex = dataAccess[String(access).toLowerCase()];
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
@@ -115,6 +117,7 @@ export function dataAccessTone(access: string): string {
 /** The tone of a collection entry's status, through `status_palette`. */
 export function statusTone(status: string): string {
     configGeneration();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the status is a collection entry field, which YAML may parse as a number
     const hex = statusPalette[String(status).toLowerCase()];
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
@@ -122,6 +125,7 @@ export function statusTone(status: string): string {
 /** The tone of a project type, through `type_color`. */
 export function typeTone(type: string): string {
     configGeneration();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the type is a manifest field, which YAML may parse as a number
     const hex = typeColor[String(type).toLowerCase()];
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
@@ -129,6 +133,7 @@ export function typeTone(type: string): string {
 /** The tone of a research domain, through `domains`. */
 export function domainTone(domain: string): string {
     configGeneration();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the domain is a manifest field, which YAML may parse as a number
     const hex = domainColor[String(domain).toLowerCase()];
     return hex === undefined ? UNKNOWN_TONE : toneOf(hex);
 }
@@ -140,6 +145,7 @@ export function domainTone(domain: string): string {
  */
 export function domainLabel(domain: string): string {
     configGeneration();
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the domain is a manifest field, which YAML may parse as a number
     return domainText[String(domain).toLowerCase()] ?? domain;
 }
 

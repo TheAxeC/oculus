@@ -213,6 +213,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         if (timer !== undefined) clock.clearTimeout(timer);
         timers.delete(root);
         last.delete(root);
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         delete state[root];
     };
 
@@ -257,7 +258,9 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
             }
             return Promise.resolve();
         },
-        close: () => {}
+        close: () => {
+            // The probe holds no handle, so closing it frees nothing.
+        }
     };
     // The always-watched root is opened before the first sessions message, so a hub nobody has a
     // session in is on the channel from the start.

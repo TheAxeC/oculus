@@ -98,7 +98,7 @@
 
     function reason(one: MirrorState | null, made: Plan | null, working: boolean): string {
         if (working) return t('deposit.why_busy');
-        if (one === null || !one.exists) return t('deposit.why_no_mirror');
+        if (!one?.exists) return t('deposit.why_no_mirror');
         if (made === null) return t('deposit.why_no_plan');
         if (made.findings.length > 0) return t('deposit.why_findings');
         return '';
@@ -155,7 +155,7 @@
     }
 
     async function suggest(): Promise<void> {
-        if (busy || suggesting || now === null || !now.exists) return;
+        if (busy || suggesting || !now?.exists) return;
         suggesting = true;
         const answer = await writeGit('suggest', now.mirror);
         suggesting = false;
@@ -368,14 +368,18 @@
         {:else if now === null}
             <p class="none">{t('deposit.unknown', id)}</p>
         {:else}
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render head(now)}
             {#if now.exists}
                 {#if plan === null}
                     <p class="none">{t('deposit.plan_none')}</p>
                 {:else}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                     {@render made(plan)}
                 {/if}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render branchBox(now)}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render commitBox(now)}
             {/if}
         {/if}

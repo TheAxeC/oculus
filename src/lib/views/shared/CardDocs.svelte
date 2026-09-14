@@ -87,6 +87,7 @@
                             {nameOf(row.path)}
                         </button>
                     {:else}
+                        <!-- eslint-disable svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
                         <a
                             class="fname"
                             href={urlOf(held.folder, row.path)}
@@ -95,6 +96,7 @@
                         >
                             {nameOf(row.path)}
                         </a>
+                        <!-- eslint-enable svelte/no-navigation-without-resolve -->
                     {/if}
                     <span class="fsub">{subOf(row.path)}</span>
                     <span class="fsize">{humanSize(row.size)}</span>

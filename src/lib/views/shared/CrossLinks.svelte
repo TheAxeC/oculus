@@ -6,6 +6,7 @@
 
     /** One group's members by their own project type, in the order the members are in. */
     export function byType(group: Group): { type: string; members: Group['members'] }[] {
+        // eslint-disable-next-line svelte/prefer-svelte-reactivity -- the collection is local to the call and is read once, never mutated in place while the page holds it
         const held = new Map<string, Group['members']>();
         for (const member of group.members) {
             const found = held.get(member.type);
@@ -39,6 +40,7 @@
     }
 
     function toggle(type: string): void {
+        // eslint-disable-next-line svelte/prefer-svelte-reactivity -- the collection is local to the call and is read once, never mutated in place while the page holds it
         const next = new Set(opened);
         if (next.has(type)) next.delete(type);
         else next.add(type);

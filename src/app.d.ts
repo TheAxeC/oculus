@@ -4,6 +4,7 @@ import type { OculusRequest, ServerContext } from '$lib/server/context';
 declare global {
     namespace App {
         // interface Error {}
+        // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- the App namespace is augmented by declaration merging, which only an interface does
         interface Locals {
             /**
              * The write token of DESIGN.md's "Auth", minted by ServerContext and shipped to the
@@ -15,6 +16,7 @@ declare global {
         }
         // interface PageData {}
         // interface PageState {}
+        // eslint-disable-next-line @typescript-eslint/consistent-type-definitions -- the App namespace is augmented by declaration merging, which only an interface does
         interface Platform {
             req: OculusRequest;
         }

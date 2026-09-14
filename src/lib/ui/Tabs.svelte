@@ -106,9 +106,9 @@
      * leaves null behind rather than shortening the array, so every read skips what is not there.
      */
     let faces: (HTMLElement | undefined | null)[] = $state([]);
-    let strip: HTMLDivElement | undefined = $state(undefined);
-    let opener: HTMLDivElement | undefined = $state(undefined);
-    let scroller: HTMLDivElement | undefined = $state(undefined);
+    let strip: HTMLDivElement | undefined = $state();
+    let opener: HTMLDivElement | undefined = $state();
+    let scroller: HTMLDivElement | undefined = $state();
     let scroll = $state<TabScrollState>({ overflowing: false, atStart: true, atEnd: true });
 
     function measureScroll(): void {
@@ -192,10 +192,11 @@
     }
 </script>
 
-<!-- svelte-ignore a11y_no_static_element_interactions the two handlers report where a dragged tab
-     would be inserted and do nothing else; the strip is not a control and takes no focus. They sit
-     on the wrapper rather than on the tab list, since a tablist with handlers on it is a widget
-     that must take focus, and this one is still only a list of buttons. -->
+<!-- The two handlers report where a dragged tab would be inserted and do nothing else; the strip is
+     not a control and takes no focus. They sit on the wrapper rather than on the tab list, since a
+     tablist with handlers on it is a widget that must take focus, and this one is still only a list
+     of buttons. -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div class="strip" bind:this={strip} onpointermove={over} onpointerleave={out}>
     <div class="scroll-control scroll-left" hidden={!scroll.overflowing}>
         <ToolButton
@@ -206,8 +207,8 @@
             onclick={() => scrollOne(-1)}
         />
     </div>
-    <!-- svelte-ignore a11y_no_static_element_interactions the wheel translates vertical wheel
-         travel into the horizontal scrolling this strip already owns. -->
+    <!-- The wheel translates vertical wheel travel into the horizontal scrolling this strip already
+         owns. -->
     <div class="tabs" role="tablist" bind:this={scroller} onscroll={measureScroll} onwheel={wheel}>
         {#each tabs as tab, index (tab.id)}
             {#if dropIndex === index}

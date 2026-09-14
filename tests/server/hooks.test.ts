@@ -17,6 +17,7 @@ import {
 import { HookStore, mergeHooks, patchPayload } from '../../src/lib/server/sessions/hooks.ts';
 import type { HookEvent, SessionRecord, SessionsPayload } from '../../src/lib/data/model.ts';
 import { record } from '../sessions-fixture.ts';
+import { noop } from '../doubles.ts';
 
 const NOW = Date.parse('2026-09-11T10:00:00.000Z');
 
@@ -233,7 +234,7 @@ describe('notify', () => {
     });
 
     it('writes one stderr line and does not throw when the process fails', () => {
-        const stderr = vi.spyOn(console, 'error').mockImplementation(() => {});
+        const stderr = vi.spyOn(console, 'error').mockImplementation(noop);
         const failing: ExecFile = (_file, _args, _options, callback) =>
             callback(new Error('no such binary'));
         const event: HookEvent = { session: 's1', event: 'stop', at: new Date(NOW).toISOString() };

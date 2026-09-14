@@ -27,6 +27,7 @@ import {
     stopTerminal
 } from '../../../src/lib/server/pty/sessions.ts';
 import { control, run } from '../../../src/lib/server/pty/tmux.ts';
+import { noop } from '../../doubles.ts';
 
 vi.setConfig({ testTimeout: 30000 });
 
@@ -92,8 +93,8 @@ it.skipIf(!TMUX)('starts, lists, feeds, resizes, captures and stops a terminal',
         sessionName(started.id),
         {
             output: (_pane, bytes) => seen.push(bytes),
-            event: () => {},
-            exit: () => {}
+            event: noop,
+            exit: noop
         },
         options
     );

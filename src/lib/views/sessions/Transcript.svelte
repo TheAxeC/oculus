@@ -43,7 +43,7 @@
     const held = $derived(turnsFor(record?.id ?? ''));
     const turns = $derived(held.turns);
 
-    let column: HTMLDivElement | undefined = $state(undefined);
+    let column: HTMLDivElement | undefined = $state();
 
     /** The session whose turns are on screen. A change to it sends the column to the foot. */
     let shown = '';
@@ -173,6 +173,7 @@
                         {/if}
                     </div>
                     {#if turn.role === 'assistant'}
+                        <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
                         <div class="doc">{@html sanitise(turn.html)}</div>
                     {:else if turn.role === 'user'}
                         <div class="said">{turn.text}</div>

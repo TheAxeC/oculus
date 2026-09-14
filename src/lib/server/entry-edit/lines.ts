@@ -91,7 +91,7 @@ export function asJs(source: string): unknown {
 
 export function rangeOf(node: unknown): [number, number, number] | null {
     const range = (node as Node | null)?.range;
-    return Array.isArray(range) ? (range as [number, number, number]) : null;
+    return Array.isArray(range) ? range : null;
 }
 
 export function pairOf(map: YAMLMap, name: string): Pair<Scalar, Node> | undefined {
@@ -117,7 +117,7 @@ export function endOffset(node: Node): number {
 
 /** Where a pair's own text ends: its value's end, or its key's when it has no value. */
 export function pairEnd(pair: Pair<Scalar, Node>): number | null {
-    const value = pair.value as Node | null;
+    const value = pair.value;
     if (value !== null) return endOffset(value);
     return rangeOf(pair.key)?.[1] ?? null;
 }
@@ -175,7 +175,7 @@ function itemStyles(node: Node): (string | undefined)[] {
  */
 export function listOf(root: YAMLMap): { key: string; seq: YAMLSeq } | null {
     const direct = pairOf(root, LIST);
-    if (direct !== undefined && direct.value !== null && isSeq(direct.value)) {
+    if (direct?.value != null && isSeq(direct.value)) {
         return { key: LIST, seq: direct.value };
     }
     for (const item of root.items as Pair<Scalar, Node>[]) {
@@ -209,7 +209,8 @@ export function locate(source: string, ident: string, value: string): Located | 
         const node = list.seq.items[at] as Node;
         if (!isMap(node)) continue;
         const pair = pairOf(node, ident);
-        if (pair === undefined || pair.value === null || !isScalar(pair.value)) continue;
+        if (pair?.value == null || !isScalar(pair.value)) continue;
+        // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-conversion -- the value reaches locate from the route's request body, where nothing has made it a string yet
         if (String(pair.value.value) !== String(value)) continue;
         const range = linesOf(source, node);
         if (range === null) continue;
@@ -251,6 +252,7 @@ function applyChange(root: unknown, change: Change): boolean {
         return true;
     }
     if (!isRecord(holder) || typeof last !== 'string') return false;
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     if (change.remove === true) delete holder[last];
     else holder[last] = change.value;
     return true;

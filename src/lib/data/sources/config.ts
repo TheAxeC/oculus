@@ -10,7 +10,7 @@ import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
-import type { Finding, UsageAccountConfig, UsageTool } from '../model.ts';
+import type { Finding, UsageAccountConfig } from '../model.ts';
 
 export type LocalConfig = {
     /** Absolute path of the research hub whose YAML the portfolio is built from. */
@@ -114,7 +114,7 @@ function usageAccounts(value: unknown, file: string, base: string): UsageAccount
             }
             claudeLabels.add(reduced);
         }
-        return { tool: tool as UsageTool, dir: accountDir(row.dir, base), label: row.label };
+        return { tool: tool, dir: accountDir(row.dir, base), label: row.label };
     });
 }
 
@@ -194,7 +194,7 @@ export function loadLocal(engine: string): LocalConfig {
         if (typeof record[key] !== 'string' || record[key] === '') {
             throw new Error(`${file}: ${key} must be a path`);
         }
-        const value = record[key] as string;
+        const value = record[key];
         config[field] = isAbsolute(value) ? value : resolve(base, value);
     }
     return config;

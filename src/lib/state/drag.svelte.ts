@@ -71,7 +71,7 @@ export function setDragSink(next: DragSink | null): void {
 /** The drag in progress, or null when there is none or the pointer has not moved far enough yet. */
 export function dragging(): Dragging | null {
     const held = store.current;
-    if (held === null || !held.armed) return null;
+    if (!held?.armed) return null;
     const { id, label, target, point, drop, rect } = held;
     return { id, label, target, point, drop, rect };
 }
@@ -117,7 +117,7 @@ export function end(): void {
     const held = store.current;
     store.current = null;
     listen(false);
-    if (held === null || !held.armed) return;
+    if (!held?.armed) return;
     const drop = held.drop;
     if (drop === null) return;
     if (drop.kind === 'strip') sink.transfer(held.id, drop.target, drop.path, drop.index);

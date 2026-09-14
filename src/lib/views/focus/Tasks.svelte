@@ -80,16 +80,19 @@
         <div class="head">
             <b><Glyph name={t('focus.tasks.heading_glyph')} />{t('focus.tasks.heading')}</b>
         </div>
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render group(
             t('focus.tasks.grp_followups_label'),
             t('focus.command.grp_followups_glyph'),
             view.followups
         )}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render group(
             t('focus.tasks.grp_subtasks_label'),
             t('focus.command.grp_subtask_glyph'),
             view.subtasks
         )}
+        <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
         {@render group(t('focus.tasks.grp_tasks_label'), '', view.tasks)}
     </section>
 {/if}

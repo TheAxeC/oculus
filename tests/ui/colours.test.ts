@@ -333,7 +333,7 @@ const WALL_SURFACES = ['--bg', '--panel', '--card', '--chip'];
 
 /** Whether a value is that form over one of those, which is what makes the pair a measured one. */
 function wallMix(value: string): boolean {
-    const found = value.trim().match(WALL_MIX);
+    const found = WALL_MIX.exec(value.trim());
     return found !== null && WALL_SURFACES.includes(found[1].toLowerCase());
 }
 
@@ -453,7 +453,7 @@ describe('the surfaces a component may fill and paint on', () => {
             expect(
                 tokens.map((token) => {
                     const value = blocks[block][`--fs-${token}`];
-                    const match = value.match(/^calc\(([\d.]+)px \* var\(--text-scale, 1\)\)$/);
+                    const match = /^calc\(([\d.]+)px \* var\(--text-scale, 1\)\)$/.exec(value);
                     return match === null ? Number.NaN : Number(match[1]);
                 })
             ).toEqual(pixels);

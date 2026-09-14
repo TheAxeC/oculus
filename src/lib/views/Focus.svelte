@@ -154,8 +154,11 @@
                         {/each}
                     </span>
                 {/if}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render segment(t('focus.wait_apps'), strip.applications)}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render segment(t('focus.wait_grants'), strip.grants)}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render segment(t('focus.wait_hosts'), strip.hosts)}
                 {#if strip.blocked > 0}
                     <span class="seg">

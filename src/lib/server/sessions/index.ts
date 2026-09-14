@@ -2,7 +2,7 @@
 // Composition only, so the order of the two steps is the whole content of this file.
 
 import { join } from 'node:path';
-import type { Project, SessionsPayload, Snapshot, Terminal } from '../../data/model.ts';
+import type { SessionsPayload, Snapshot, Terminal } from '../../data/model.ts';
 import { group, type ProjectFolder } from './group.ts';
 import { HookStore, mergeHooks } from './hooks.ts';
 import { defaultOverridesPath } from './overrides.ts';
@@ -31,7 +31,7 @@ export type { SessionsPayload };
 /** Every project's absolute folder with its title, which is what the area scoring is given. */
 export function projectFolders(hub: string, snapshot: Snapshot): ProjectFolder[] {
     const folders: ProjectFolder[] = [];
-    for (const project of Object.values(snapshot.entities.projects) as Project[]) {
+    for (const project of Object.values(snapshot.entities.projects)) {
         if (typeof project.folder !== 'string' || !project.folder) continue;
         folders.push([join(hub, project.folder), project.title ?? '']);
     }

@@ -60,6 +60,7 @@ export function manifestsBehind(
         count: stale.length,
         projects: stale.slice(0, 4).map((project) => ({
             id: project.id,
+            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string takes the fallback here, which ?? would not
             label: project.short || project.title,
             days: project.staleDays ?? 0
         })),

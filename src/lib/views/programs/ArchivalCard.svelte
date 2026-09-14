@@ -29,6 +29,7 @@
             <Glyph name="archived" />
             <Chip label={t('programs.not_active', count)} />
         {/snippet}
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
         <p>{@html inlineMarkdown(t('programs.archival_blurb'))}</p>
         <div class="groups">
             {#each groups as group (group.type)}

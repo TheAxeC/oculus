@@ -125,6 +125,7 @@
             ? selected.filter((one) => one !== value)
             : [...selected, value];
         const filters = { ...held.filters };
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         if (next.length === 0) delete filters[facet];
         else filters[facet] = next;
         write({ filters });

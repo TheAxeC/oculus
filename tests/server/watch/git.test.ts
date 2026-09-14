@@ -24,6 +24,7 @@ import type {
     Message,
     SessionsPayload
 } from '../../../src/lib/data/model.ts';
+import { noop } from '../../doubles.ts';
 
 // A watcher test waits on real file events and on git, and the suite runs several files at once, so
 // the waits are generous: they are how long a failure takes, not how long a pass takes.
@@ -201,7 +202,7 @@ function recording(): { sink: Sink; got: Message[] } {
                 got.push(JSON.parse(text) as Message);
                 return Promise.resolve();
             },
-            close: () => {}
+            close: noop
         }
     };
 }

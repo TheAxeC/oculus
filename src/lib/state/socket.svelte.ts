@@ -82,7 +82,7 @@ function subscription(): Subscription {
  * queueing: keystrokes held through a reconnect would be typed into whatever the pane shows by then.
  */
 export function send(message: unknown): boolean {
-    if (live === null || live.readyState !== WebSocket.OPEN) return false;
+    if (live?.readyState !== WebSocket.OPEN) return false;
     live.send(JSON.stringify(message));
     return true;
 }

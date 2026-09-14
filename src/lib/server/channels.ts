@@ -73,7 +73,7 @@ export class Hub {
      * the same bytes twice. Every other caller wants the state channel's latest, which is the
      * default.
      */
-    subscribe(sink: Sink, channels: string[], replay: boolean = true): void {
+    subscribe(sink: Sink, channels: string[], replay = true): void {
         let subscriber = this.#subscribers.get(sink);
         if (subscriber === undefined) {
             subscriber = { channels: new Set(), sending: false, pending: new Map() };

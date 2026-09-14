@@ -19,7 +19,7 @@
     };
 
     let { path, text, editable, message = '', oninput, onsave, onrevert }: Props = $props();
-    let mirror: HTMLPreElement | undefined = $state(undefined);
+    let mirror: HTMLPreElement | undefined = $state();
 
     const painted = $derived(highlight(text, languageFor(path)));
 
@@ -46,6 +46,7 @@
     </Toolbar>
     <div class="editor-wrap">
         <!-- Keep pre and code on one line: a line break inside pre would enter the mirror's text. -->
+        <!-- eslint-disable-next-line svelte/no-at-html-tags -- state/highlight.ts escapes the file text before it emits its own span classes -->
         <pre class="mirror" bind:this={mirror} aria-hidden="true"><code>{@html painted}</code></pre>
         <div class="input">
             <TextArea

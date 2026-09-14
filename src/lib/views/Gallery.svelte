@@ -73,6 +73,7 @@
 
     /** One row per hue the chips use: the hue, the first chip wearing it, and how many wear it. */
     const rows = $derived.by(() => {
+        // eslint-disable-next-line svelte/prefer-svelte-reactivity -- the map is built and dropped inside one derivation, and nothing renders from it
         const byTone = new Map<string, { tone: string; chip: string; count: number }>();
         for (const key of chipKeys()) {
             const tone = toneFor(key);
@@ -186,9 +187,11 @@
         <section>
             <h3>{t('gallery.chips')}</h3>
             {#if form !== 'filled'}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render chipRow(false)}
             {/if}
             {#if form !== 'outline'}
+                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render chipRow(true)}
             {/if}
         </section>

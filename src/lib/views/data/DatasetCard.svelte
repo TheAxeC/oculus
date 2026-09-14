@@ -92,9 +92,11 @@
         {/snippet}
 
         {#if dataset.description}
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
             <p class="description">{@html inlineMarkdown(dataset.description)}</p>
         {/if}
 
+        <!-- eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string must not count as a value here, which ?? would make it -->
         {#if dataset.size || dataset.hpcPath || method}
             <div class="meta">
                 {#if dataset.size}
@@ -127,6 +129,7 @@
         {#if notes !== ''}
             <div class="note">
                 <Glyph name="note_back" />
+                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
                 <span>{@html inlineMarkdown(notes)}</span>
             </div>
         {/if}
@@ -137,6 +140,7 @@
 
         {#if dataset.source}
             <div class="links">
+                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
                 <a href={dataset.source} target="_blank" rel="noopener">
                     <Glyph name="link" />
                     {t('data.source')}

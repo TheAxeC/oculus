@@ -108,7 +108,7 @@ function readRegistry(
         else if (shape.idRequired) {
             findings.push({ file, key: where, message: `entry has no string ${shape.idField}` });
         }
-        entries.push({ ...raw, registry: name, key, file } as RawRegistryEntry);
+        entries.push({ ...raw, registry: name, key, file });
     });
 
     return { entries, meta };

@@ -74,7 +74,7 @@ class FakeSocket {
     }
 }
 
-let opened: FakeSocket | null = null;
+const opened: FakeSocket[] = [];
 
 /** A connected page: the stub socket in place of the browser's, already open. */
 function connected(channels: string[] = ['sessions']): FakeSocket {
@@ -84,12 +84,12 @@ function connected(channels: string[] = ['sessions']): FakeSocket {
         class extends FakeSocket {
             constructor() {
                 super();
-                opened = this;
+                opened.push(this);
             }
         }
     );
     connect(channels);
-    const socket = opened;
+    const socket = opened.at(-1) ?? null;
     if (socket === null) throw new Error('the stub socket was not constructed');
     socket.fire('open');
     socket.sent = [];
@@ -135,7 +135,7 @@ function terminal(over: Partial<Terminal> = {}): Terminal {
 
 afterEach(() => {
     disconnect();
-    opened = null;
+    opened.length = 0;
     vi.unstubAllGlobals();
 });
 

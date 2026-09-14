@@ -21,6 +21,9 @@ vi.mock('../../src/lib/ui/ToolButton.svelte', async (importOriginal) => {
     return { ...original, default: vi.fn(original.default) };
 });
 
+/** The control's handler reads nothing off the event, so the cases hand it an empty stand-in. */
+const CLICK = {} as MouseEvent;
+
 afterEach(() => {
     vi.unstubAllGlobals();
     vi.mocked(ToolButton).mockClear();
@@ -85,8 +88,8 @@ describe('Usage', () => {
     });
 
     it('sends the card account and token, shows refusal until the next usage payload', async () => {
-        const fetch = vi.fn(
-            async () => new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 })
+        const fetch = vi.fn(() =>
+            Promise.resolve(new Response(JSON.stringify({ error: 'forbidden' }), { status: 403 }))
         );
         vi.stubGlobal('fetch', fetch);
         setToken('usage-test-token');
@@ -95,7 +98,7 @@ describe('Usage', () => {
             .mocked(ToolButton)
             .mock.calls.find((call) => call[1].label === 'Refresh now');
         expect(control).toBeDefined();
-        await control![1].onclick({} as MouseEvent);
+        await control![1].onclick(CLICK);
         expect(fetch).toHaveBeenCalledWith('/api/usage/refresh', {
             method: 'POST',
             headers: { 'content-type': 'application/json', 'x-oculus-token': 'usage-test-token' },
@@ -119,11 +122,11 @@ describe('Usage', () => {
         const control = vi
             .mocked(ToolButton)
             .mock.calls.find((call) => call[1].label === 'Refresh now');
-        await control![1].onclick({} as MouseEvent);
+        await control![1].onclick(CLICK);
         expect(render(Usage, { props: { instance } }).body).toContain(
             'refresh refused: the server did not answer'
         );
-        await control![1].onclick({} as MouseEvent);
+        await control![1].onclick(CLICK);
         expect(render(Usage, { props: { instance } }).body).toContain(
             'refresh refused: the server did not answer'
         );
@@ -193,7 +196,7 @@ describe('Usage', () => {
         expect(html).toContain('a@example.test');
         expect(html).toContain('Lab');
         expect(html).toContain('stripe');
-        const live = html.match(/<div class="live-row[^>]*>([\s\S]*?)<\/div>/)?.[1] ?? '';
+        const live = /<div class="live-row[^>]*>([\s\S]*?)<\/div>/.exec(html)?.[1] ?? '';
         expect(live).toContain('Opus');
         expect(live).toContain('12% context');
         // The words are rounded; the meter's fill keeps the exact width, which nobody reads.
@@ -205,7 +208,7 @@ describe('Usage', () => {
         expect(html).toContain('project');
         expect(html).toContain('claude-opus');
         expect(html).toContain('Total');
-        const body = html.match(/<tbody[^>]*>([\s\S]*?)<\/tbody>/)?.[1] ?? '';
+        const body = /<tbody[^>]*>([\s\S]*?)<\/tbody>/.exec(html)?.[1] ?? '';
         const rows = [...body.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g)].map((row) =>
             [...row[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)].map((cell) =>
                 cell[1].replace(/<!--[\s\S]*?-->/g, '').trim()

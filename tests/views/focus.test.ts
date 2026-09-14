@@ -38,6 +38,7 @@ import type {
     Venue
 } from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
+import { noop } from '../doubles.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -622,7 +623,7 @@ describe('the board day', () => {
         const snap = snapshot();
         snap.entities.projects.alpha.deadline = '2026-09-20';
         vi.useFakeTimers();
-        let stop = (): void => {};
+        let stop = noop;
         try {
             vi.setSystemTime(day);
             stop = startMinuteClock();

@@ -73,7 +73,7 @@
     }
 
     function sorted(key: string): 'ascending' | 'descending' | 'none' {
-        if (!sortable || sort === null || sort.key !== key) return 'none';
+        if (!sortable || sort?.key !== key) return 'none';
         return sort.direction === 'asc' ? 'ascending' : 'descending';
     }
 

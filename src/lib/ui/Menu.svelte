@@ -105,8 +105,8 @@
     }: Props = $props();
 
     let open = $state(false);
-    let box: HTMLDivElement | undefined = $state(undefined);
-    let button: HTMLButtonElement | undefined = $state(undefined);
+    let box: HTMLDivElement | undefined = $state();
+    let button: HTMLButtonElement | undefined = $state();
     let entries: (HTMLButtonElement | undefined)[] = $state([]);
 
     $effect(() => {

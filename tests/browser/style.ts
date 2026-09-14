@@ -3,10 +3,10 @@
 
 /** The alpha of a computed colour, in either the comma form or the slash form a browser may return. */
 export function alphaOf(colour: string): number {
-    const slash = colour.match(/\/\s*([\d.]+)(%?)\s*\)/);
+    const slash = /\/\s*([\d.]+)(%?)\s*\)/.exec(colour);
     if (slash !== null) {
         return slash[2] === '%' ? Number.parseFloat(slash[1]) / 100 : Number.parseFloat(slash[1]);
     }
-    const comma = colour.match(/rgba\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*\)/);
+    const comma = /rgba\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*\)/.exec(colour);
     return comma === null ? 1 : Number.parseFloat(comma[1]);
 }

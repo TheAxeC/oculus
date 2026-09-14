@@ -36,7 +36,7 @@ export function setHostStatus(source: string, name: string, status: string): Edi
         const node = seq.items[at] as Node;
         if (!isMap(node)) continue;
         const named = pairOf(node, 'name');
-        if (named === undefined || named.value === null || !isScalar(named.value)) continue;
+        if (named?.value == null || !isScalar(named.value)) continue;
         if (String(named.value.value) !== name) continue;
 
         const held = pairOf(node, 'status');

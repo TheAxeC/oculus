@@ -211,8 +211,9 @@
     }
 </script>
 
-<!-- svelte-ignore a11y_no_noninteractive_element_interactions the shortcut bubbles from the tab or
-     menu control that has focus; the region itself does not enter the tab order. -->
+<!-- The shortcut bubbles from the tab or menu control that has focus; the region itself does not
+     enter the tab order. -->
+<!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
 <section class="strip" aria-label={t('ui.pages')} onkeydown={pageKeys}>
     <Tabs
         {tabs}
@@ -245,9 +246,10 @@
 
 {#snippet pageMenu()}
     {#if draft !== null}
-        <!-- svelte-ignore a11y_no_static_element_interactions the wrapper exists to read Enter and
-             Escape out of the box inside it, which has no keys of its own to report; the box is the
-             control and it is the one thing here that takes focus. -->
+        <!-- The wrapper exists to read Enter and Escape out of the box inside it, which has no keys
+             of its own to report; the box is the control and it is the one thing here that takes
+             focus. -->
+        <!-- svelte-ignore a11y_no_static_element_interactions -->
         <span class="rename" use:takesFocus onkeydown={keys}>
             <TextInput
                 value={draft}

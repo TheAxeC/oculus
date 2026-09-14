@@ -87,6 +87,7 @@
                 {#if item.bold}
                     <strong>{item.label}</strong>
                 {:else if item.href}
+                    <!-- eslint-disable svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
                     <a
                         href={item.href}
                         target={item.external ? '_blank' : undefined}
@@ -97,6 +98,7 @@
                         {/if}
                         {item.label}
                     </a>
+                    <!-- eslint-enable svelte/no-navigation-without-resolve -->
                 {:else}
                     <span>
                         {#if item.glyph}
@@ -109,6 +111,7 @@
         </div>
 
         {#if venue.wants}
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
             <p class="wants">{@html inlineMarkdown(venue.wants)}</p>
         {/if}
 

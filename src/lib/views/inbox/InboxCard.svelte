@@ -91,9 +91,11 @@
         {/snippet}
 
         {#if subject !== ''}
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
             <p class="sub">{@html inlineMarkdown(subject)}</p>
         {/if}
         {#if what !== ''}
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
             <p class="what">{@html inlineMarkdown(what)}</p>
         {/if}
         {#if draft !== ''}
@@ -112,6 +114,7 @@
         {/if}
         {#if url.startsWith('http')}
             <p class="gmail">
+                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
                 <a href={url} target="_blank" rel="noopener noreferrer">
                     <Glyph name="link" />
                     <span>{t('inbox.open_gmail')}</span>

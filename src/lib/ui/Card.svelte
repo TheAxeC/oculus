@@ -70,11 +70,13 @@
         <svelte:element this={heading} class="title">
             {#if ontitle !== undefined && titleHtml !== undefined}
                 <button type="button" class="open" onclick={ontitle}>
+                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
                     {@html sanitise(titleHtml)}
                 </button>
             {:else if ontitle !== undefined}
                 <button type="button" class="open" onclick={ontitle}>{title}</button>
             {:else if titleHtml !== undefined}
+                <!-- eslint-disable-next-line svelte/no-at-html-tags -- the sanitiser writes this -->
                 {@html sanitise(titleHtml)}
             {:else}
                 {title}

@@ -65,9 +65,11 @@ export function document(id: string, name: string): DocState {
 export function invalidate(id: string): void {
     const prefix = `${id}|`;
     for (const key of Object.keys(held)) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         if (key.startsWith(prefix)) delete held[key];
     }
     for (const key of Object.keys(versions)) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         if (key.startsWith(prefix)) delete versions[key];
     }
 }

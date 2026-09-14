@@ -95,7 +95,8 @@ export async function saveSourceDraft(id: string, root: string, path: string): P
         updateDraft(id, {
             message: answer.network
                 ? t('source.save_failed')
-                : t('ui.common.x_prefix', answer.error || t('source.failed'))
+                : // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string takes the fallback here, which ?? would not
+                  t('ui.common.x_prefix', answer.error || t('source.failed'))
         });
     }
 }

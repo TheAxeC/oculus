@@ -247,7 +247,7 @@ export function splitPane(
 /** Give the split at `path` these sizes, normalised to sum to 1 with none below MIN_SIZE. */
 export function resize(layout: Layout, path: number[], sizes: number[]): Layout {
     const node = nodeAt(layout, path);
-    if (node === null || node.kind !== 'split') return layout;
+    if (node?.kind !== 'split') return layout;
     if (sizes.length !== node.children.length) return layout;
     const next = normaliseSizes(sizes);
     const edit = (current: Layout): Layout =>

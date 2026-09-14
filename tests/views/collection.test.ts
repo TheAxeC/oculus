@@ -28,6 +28,7 @@ import { setInstanceState } from '../../src/lib/state/ui.svelte.ts';
 import type { CollectionState } from '../../src/lib/state/collection.ts';
 import type { Entry, Project, Relations, SchemaField, Snapshot } from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
+import { noop } from '../doubles.ts';
 
 const { config } = loadConfig(engineDir());
 const catalog = textCatalog(config);
@@ -500,8 +501,8 @@ describe('the entry form', () => {
                 collection: 'funding',
                 schema: FUNDING_SCHEMA,
                 entry,
-                onclose: () => {},
-                onsaid: () => {}
+                onclose: noop,
+                onsaid: noop
             }
         }).body;
     }
@@ -532,8 +533,8 @@ describe('the entry form', () => {
                 collection: 'events',
                 schema: SCHEMA,
                 entry: ENTRIES[0],
-                onclose: () => {},
-                onsaid: () => {}
+                onclose: noop,
+                onsaid: noop
             }
         }).body;
         expect(body).toContain('data-metalist="meta"');
@@ -552,8 +553,8 @@ describe('the entry form', () => {
                 entry: entry(0, 'A dataset', {
                     retrieval: { method: 'wget', verified: true }
                 }),
-                onclose: () => {},
-                onsaid: () => {}
+                onclose: noop,
+                onsaid: noop
             }
         }).body;
         expect(body).toContain('<textarea');
