@@ -34,7 +34,7 @@ dispatch:                                  # R17 alone
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R17/report.md
   exit: none
   pid: none
-  session_id: pending                      # the Agent tool's id, written at launch
+  session_id: a1f9f09703e44e195            # the Agent tool's id
   landing: not-started
 ```
 
