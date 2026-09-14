@@ -34,8 +34,14 @@ dispatch:
   pid: 11328
   session_id: 01a09dd1-d762-77c0-8a67-c8508656fb4f
   landing: not-started
-  round: 0
-  notes: R6, the card cursor as pane instance state (Card gains an id prop for data-card and a cursor prop; key-dom finds the cursor card by id; the spec's selector stays); brief re-read on the tree at 04:50; after it R8 only if dispatched before 06:00, then R9, R10; nothing in flight at 07:05.
+  round: 1
+  repair_prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/repair-prompt.md
+  repair_events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/repair-events.jsonl
+  repair_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/repair-report.md
+  repair_exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/repair-exit.txt
+  repair_pid: 69068
+  review_report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R6/review-report.md
+  notes: R6, the card cursor as pane instance state; the worker finished at 05:13 (38 files, +379 -98; the seven checks green from the orchestrator's shell, 2062 of 2062); the first review is in agents/reviews/R6.md; the repair round (no `cursor: null` on every instance state, the observer scoped to the pane holding a cursor and only while one is held, a pointer press clearing only across panes as before, collision-free ids for the two synthetic program cards, the spec's second-id and pointer cases) runs on the worker's thread since 05:21; R8 is not dispatched tonight (the 06:00 rule), then R9, R10; nothing in flight at 07:05.
 ```
 
 ## The standing demands (from Axel, in force)
