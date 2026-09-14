@@ -168,7 +168,6 @@
     :global(body.wall) .bubble {
         background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
         backdrop-filter: blur(var(--wall-blur));
-        -webkit-backdrop-filter: blur(var(--wall-blur));
     }
 
     /* The terminal shape: the same face as the rest of the theme, and a square corner. */

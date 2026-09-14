@@ -221,7 +221,6 @@
     :global(body.wall) .palette {
         background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
         backdrop-filter: blur(var(--wall-blur));
-        -webkit-backdrop-filter: blur(var(--wall-blur));
     }
 
     .palette :global(input) {

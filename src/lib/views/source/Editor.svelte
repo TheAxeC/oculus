@@ -88,7 +88,6 @@
     :global(body.wall) .editor-wrap {
         background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
-        -webkit-backdrop-filter: blur(var(--wall-blur));
     }
 
     .mirror,

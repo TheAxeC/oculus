@@ -110,7 +110,6 @@
     :global(body.wall) .box {
         background: color-mix(in srgb, var(--panel) var(--wall-popover), transparent);
         backdrop-filter: blur(var(--wall-blur));
-        -webkit-backdrop-filter: blur(var(--wall-blur));
     }
 
     .message {

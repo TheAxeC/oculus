@@ -163,6 +163,16 @@ describe('the wallpaper rule', () => {
         expect(answersForWallpaper('backdrop-filter: blur(var(--wall-blur));')).toBe(false);
     });
 
+    it('leaves the vendor prefix to the build', () => {
+        // The CSS transformer adds the prefixed form for the targets it is given and drops the
+        // standard one when a prefixed declaration follows it, so a source that writes both loses
+        // the blur in every browser that reads the standard property.
+        const prefixed = ROOTS.flatMap(files).filter((file) =>
+            readFileSync(file, 'utf8').includes('-webkit-backdrop-filter')
+        );
+        expect(prefixed).toEqual([]);
+    });
+
     it('gives every solid surface a reason', () => {
         for (const [surface, reason] of Object.entries(SOLID)) {
             expect(reason.length, surface).toBeGreaterThan(10);

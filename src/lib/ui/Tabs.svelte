@@ -298,7 +298,6 @@
     :global(body.wall) .strip {
         background: color-mix(in srgb, var(--bg) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
-        -webkit-backdrop-filter: blur(var(--wall-blur));
     }
 
     .tabs {
