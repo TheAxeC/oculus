@@ -21,7 +21,21 @@ reviewer: codex:gpt-5.6-sol  # the reviewer stage, tried from O24a on (Axel, 202
 ```
 
 ```yaml
-dispatch: none
+dispatch:
+  package: R4
+  worker: codex:gpt-5.6-sol
+  worktree: .agents/worktrees/r4
+  base: d39aaafe5d6bd8d7454e6935d191a7b060ad63ac
+  launched: 2026-09-14T02:37:00+02:00
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R4/prompt.md
+  events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R4/events.jsonl
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R4/report.md
+  exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R4/exit.txt
+  pid: pending
+  session_id: pending
+  landing: not-started
+  round: 0
+  notes: R4, one transcript reader (src/lib/server/transcripts/usage.ts and stores.ts consumed by both folds); brief checked on the tree at 02:35; after it R5, R6, R8, R9, R10; no dispatch after 06:00, nothing in flight at 07:05.
 ```
 
 ## The standing demands (from Axel, in force)
