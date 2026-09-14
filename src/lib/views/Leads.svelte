@@ -39,6 +39,7 @@
         type LeadsState
     } from '$lib/state/leads';
     import { t } from '$lib/state/text';
+    import { cardCursor } from '$lib/state/instance';
     import { feedIdentity } from '$lib/state/palette';
     import {
         instanceState,
@@ -54,6 +55,7 @@
     const today = localDate(Date.now());
     const data = $derived(feed('leads'));
     const held = $derived(parseLeadsState(instanceState(instance.id)));
+    const cursor = $derived(cardCursor(instance.state));
     const vocab = $derived(config()?.config ?? {});
     const entries = $derived(data?.entries ?? []);
     const dismissed = $derived(leadsDismissed());
@@ -153,6 +155,7 @@
                             <LeadCard
                                 {entry}
                                 {vocab}
+                                cursor={cursor === leadId(entry)}
                                 dismissed={dismissed.includes(leadId(entry))}
                                 ondismiss={() =>
                                     setLeadDismissed(
@@ -188,6 +191,7 @@
                                     <LeadCard
                                         {entry}
                                         {vocab}
+                                        cursor={cursor === leadId(entry)}
                                         expired
                                         dismissed={dismissed.includes(leadId(entry))}
                                         ondismiss={() =>

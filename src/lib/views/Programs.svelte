@@ -23,6 +23,7 @@
     import LineCard from '$lib/views/programs/LineCard.svelte';
     import OrphansCard from '$lib/views/programs/OrphansCard.svelte';
     import { inlineMarkdown } from '$lib/state/collection';
+    import { cardCursor } from '$lib/state/instance';
     import { portfolio } from '$lib/state/entities.svelte';
     import {
         archival,
@@ -44,7 +45,10 @@
     import type { ViewProps } from './registry';
 
     let { instance }: ViewProps = $props();
+    const ORPHANS_CARD = 'programs:orphans';
+    const ARCHIVAL_CARD = 'programs:archival';
     const held = $derived(parseProgramsState(instanceState(instance.id)));
+    const cursor = $derived(cardCursor(instance.state));
     const collection = $derived(collectionOf('programs'));
     const lines = $derived.by(() => {
         const entities = Object.values(portfolio()?.entities.programs ?? {});
@@ -125,6 +129,7 @@
                 <Reveal id={line.id} wanted={held.reveal} onrevealed={() => write({ reveal: '' })}>
                     <LineCard
                         {line}
+                        cursor={cursor === line.id}
                         projects={lineMembers(line, allProjects, dead)}
                         venues={allVenues}
                         {tiers}
@@ -136,7 +141,7 @@
                     />
                 </Reveal>
             {/each}
-            <OrphansCard projects={unmatched} />
+            <OrphansCard id={ORPHANS_CARD} cursor={cursor === ORPHANS_CARD} projects={unmatched} />
         </div>
 
         {#if provisional.length > 0}
@@ -152,6 +157,7 @@
                         >
                             <LineCard
                                 {line}
+                                cursor={cursor === line.id}
                                 projects={lineMembers(line, allProjects, dead)}
                                 venues={allVenues}
                                 {tiers}
@@ -180,6 +186,7 @@
                         >
                             <LineCard
                                 {line}
+                                cursor={cursor === line.id}
                                 projects={lineMembers(line, allProjects, dead)}
                                 venues={allVenues}
                                 {tiers}
@@ -193,7 +200,11 @@
                         </Reveal>
                     {/each}
                     {#if archived.length > 0}
-                        <ArchivalCard groups={archived} />
+                        <ArchivalCard
+                            id={ARCHIVAL_CARD}
+                            cursor={cursor === ARCHIVAL_CARD}
+                            groups={archived}
+                        />
                     {/if}
                 </div>
             </section>

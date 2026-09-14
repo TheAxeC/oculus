@@ -9,8 +9,8 @@
     import { inlineMarkdown, type Project } from '$lib/state/collection';
     import { t } from '$lib/state/text';
 
-    type Props = { projects: Project[] };
-    let { projects }: Props = $props();
+    type Props = { id: string; cursor: boolean; projects: Project[] };
+    let { id, cursor, projects }: Props = $props();
 
     function title(): string {
         return projects.length > 0 ? t('programs.orphans') : t('programs.no_orphans');
@@ -22,7 +22,7 @@
 </script>
 
 <div data-program-orphans>
-    <Card title={title()}>
+    <Card {id} {cursor} title={title()}>
         {#snippet meta()}
             <Glyph name={projects.length > 0 ? 'warn' : 'check'} />
             {#if projects.length > 0}

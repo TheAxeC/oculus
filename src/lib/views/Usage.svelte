@@ -22,6 +22,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { usage } from '$lib/state/entities.svelte';
     import { basename, clock } from '$lib/state/format';
+    import { cardCursor } from '$lib/state/instance';
     import { t } from '$lib/state/text';
     import { refreshRefusal, refreshUsageAccount } from '$lib/state/usage-refresh.svelte';
     import type { UsageAccount, UsageDay, UsageWindow } from '$lib/state/usage';
@@ -29,6 +30,7 @@
 
     let { instance }: ViewProps = $props();
     const data = $derived(usage());
+    const cursor = $derived(cardCursor(instance.state));
 
     const columns: Column[] = [
         { key: 'day', label: t('usage.col_day') },
@@ -111,6 +113,10 @@
         return account.windows.length > 0 || account.live.length > 0;
     }
 
+    function accountId(account: UsageAccount): string {
+        return `${account.tool}:${account.label}`;
+    }
+
     function refresherReason(reason: string): string {
         if (reason === 'login_required') return t('usage.refresher_login_required');
         if (reason === 'usage_limit') return t('usage.refresher_usage_limit');
@@ -151,7 +157,12 @@
             <div class="accounts">
                 {#each data.accounts as account (`${account.tool}:${account.label}`)}
                     {@const windows = orderedWindows(account.windows)}
-                    <Card title={account.label} level={3}>
+                    <Card
+                        id={accountId(account)}
+                        cursor={cursor === accountId(account)}
+                        title={account.label}
+                        level={3}
+                    >
                         {#snippet meta()}
                             <Chip label={account.tool} />
                             {#if account.email}

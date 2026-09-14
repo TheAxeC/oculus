@@ -122,6 +122,7 @@ describe('the Programs view', () => {
         const body = render(LineCard, {
             props: {
                 line: snapshot.entities.programs.pillar,
+                cursor: false,
                 projects: [],
                 venues: [],
                 tiers: [],

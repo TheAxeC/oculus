@@ -22,13 +22,15 @@
 
     type Props = {
         entry: RadarEntry;
+        id: string;
+        cursor: boolean;
         lastRun: unknown;
         projects: Record<string, Project>;
         dismissed?: boolean;
         onsaid: (words: string) => void;
     };
 
-    let { entry, lastRun, projects, dismissed = false, onsaid }: Props = $props();
+    let { entry, id, cursor, lastRun, projects, dismissed = false, onsaid }: Props = $props();
     let spinning = $state(false);
 
     const text = (field: string): string => {
@@ -63,7 +65,7 @@
     }
 </script>
 
-<Card {title} titleHtml={inlineMarkdown(title)} tone={relevanceTone(relevance)}>
+<Card {id} {cursor} {title} titleHtml={inlineMarkdown(title)} tone={relevanceTone(relevance)}>
     {#snippet meta()}
         {#if isNew(entry, lastRun)}
             <Chip label={t('radar.new')} filled tone="violet" />

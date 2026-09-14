@@ -36,6 +36,8 @@
 
     type Props = {
         entry: Entry;
+        /** Whether keyboard navigation has selected this entry. */
+        cursor: boolean;
         /** The collection key: which file the entry is in, and which cross-link rule it follows. */
         collection: string;
         schema: SchemaField[] | undefined;
@@ -57,6 +59,7 @@
 
     let {
         entry,
+        cursor,
         collection,
         schema,
         projects,
@@ -142,6 +145,8 @@
     role="listitem"
 >
     <Card
+        id={value}
+        {cursor}
         title={entry.title === '' ? entry.id : entry.title}
         tone={status === undefined ? undefined : statusTone(status)}
         {pinned}

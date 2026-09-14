@@ -135,7 +135,10 @@ describe('layout instance pins', () => {
 
         restateInstance('detail', { session: 'one', label: 'One' });
 
-        expect(instanceLayoutState('detail')).toEqual({ session: 'one', label: 'One' });
+        expect(instanceLayoutState('detail')).toEqual({
+            session: 'one',
+            label: 'One'
+        });
         expect(instanceLayoutState('other')).toEqual({ session: 'old', label: 'Old' });
         expect(instanceLayoutState('missing')).toBe(undefined);
     });
@@ -152,7 +155,10 @@ describe('layout instance pins', () => {
 
         restateInstance('panel', { session: 'a1b2c3-shell', label: 'Shell' });
 
-        expect(instanceLayoutState('panel')).toEqual({ session: 'a1b2c3-shell', label: 'Shell' });
+        expect(instanceLayoutState('panel')).toEqual({
+            session: 'a1b2c3-shell',
+            label: 'Shell'
+        });
         expect(instanceLayoutState('main')).toEqual({});
     });
 

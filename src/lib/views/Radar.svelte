@@ -36,6 +36,7 @@
         type RadarState
     } from '$lib/state/radar';
     import { t } from '$lib/state/text';
+    import { cardCursor } from '$lib/state/instance';
     import { feedIdentity } from '$lib/state/palette';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import { HUB_ROOT } from '$lib/state/collection';
@@ -45,6 +46,7 @@
 
     const data = $derived(feed('radar'));
     const held = $derived(parseRadarState(instanceState(instance.id)));
+    const cursor = $derived(cardCursor(instance.state));
     const buckets = $derived(radarBuckets(config()?.config.radar_buckets));
     const projects = $derived(portfolio()?.entities.projects ?? {});
     const all = $derived(data?.entries ?? []);
@@ -103,6 +105,7 @@
                     entries={group.entries}
                     {lastRun}
                     {projects}
+                    {cursor}
                     reveal={held.reveal}
                     onrevealed={() => write({ reveal: '' })}
                     onsaid={(words) => (said = words)}
@@ -127,6 +130,8 @@
                                 >
                                     <RadarCard
                                         {entry}
+                                        id={feedIdentity('radar', entry)}
+                                        cursor={cursor === feedIdentity('radar', entry)}
                                         {lastRun}
                                         {projects}
                                         dismissed

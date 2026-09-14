@@ -15,13 +15,22 @@
     type Props = {
         entry: LeadEntry;
         vocab: unknown;
+        cursor: boolean;
         expired?: boolean;
         dismissed?: boolean;
         ondismiss: () => void;
         onsaid: (words: string) => void;
     };
 
-    let { entry, vocab, expired = false, dismissed = false, ondismiss, onsaid }: Props = $props();
+    let {
+        entry,
+        vocab,
+        cursor,
+        expired = false,
+        dismissed = false,
+        ondismiss,
+        onsaid
+    }: Props = $props();
     let sure = $state(false);
 
     const text = (field: string): string => {
@@ -72,7 +81,13 @@
 </script>
 
 <div class:expired data-lead={title}>
-    <Card {title} titleHtml={inlineMarkdown(title)} tone={expired ? 'grey' : tone}>
+    <Card
+        id={identity}
+        {cursor}
+        {title}
+        titleHtml={inlineMarkdown(title)}
+        tone={expired ? 'grey' : tone}
+    >
         {#snippet meta()}
             <Chip label={key ?? t('leads.fit_none')} {tone} />
             {#if expired}

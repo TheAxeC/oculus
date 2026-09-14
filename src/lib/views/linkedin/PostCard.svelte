@@ -29,12 +29,14 @@
 
     type Props = {
         entry: LinkedinEntry;
+        id: string;
+        cursor: boolean;
         folder: string;
         posted?: boolean;
         onsaid: (words: string) => void;
     };
 
-    let { entry, folder, posted = false, onsaid }: Props = $props();
+    let { entry, id, cursor, folder, posted = false, onsaid }: Props = $props();
 
     const number = $derived(/^\d+/.exec(entry.file)?.[0] ?? '');
     const path = $derived(linkedinSourcePath(folder, entry.file));
@@ -70,7 +72,7 @@
     data-editor-root={HUB_ROOT}
     data-editor-path={path}
 >
-    <Card title={entry.title}>
+    <Card {id} {cursor} title={entry.title}>
         {#snippet meta()}
             <Chip label={posted ? number : t('linkedin.idea_tag')} />
             {#if entry.category !== ''}

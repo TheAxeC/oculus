@@ -14,6 +14,7 @@
 
     type Props = {
         domain: Domain;
+        cursor: boolean;
         projects: Project[];
         entry: Entry | null;
         schema: SchemaField[] | undefined;
@@ -21,7 +22,7 @@
         onedit: () => void;
         onsaid: (said: string) => void;
     };
-    let { domain, projects, entry, schema, editing, onedit, onsaid }: Props = $props();
+    let { domain, cursor, projects, entry, schema, editing, onedit, onsaid }: Props = $props();
 
     function projectWord(): string {
         return projects.length === 1 ? t('programs.project') : t('programs.projects');
@@ -30,6 +31,8 @@
 
 <div class:dormant={isDormant(projects)} data-domain={domain.id}>
     <Card
+        id={domain.id}
+        {cursor}
         title={domain.title}
         titleHtml={inlineMarkdown(domain.title)}
         tone={domainTone(domain.id)}

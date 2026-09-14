@@ -74,6 +74,7 @@
         type CollectionState
     } from '$lib/state/collection';
     import { openView } from '$lib/state/layout.svelte';
+    import { cardCursor } from '$lib/state/instance';
     import { collectionOf, projects } from '$lib/state/selectors.svelte';
     import { lookup, t } from '$lib/state/text';
     import { statusTone } from '$lib/state/tones';
@@ -89,6 +90,7 @@
     const collection = $derived(collectionOf(key));
     const schema = $derived(collection?.schema);
     const held = $derived(parseCollectionState(instanceState(instance.id)));
+    const cursor = $derived(cardCursor(instance.state));
     const entries = $derived(pinnedFirst(collection?.entries ?? []));
     const shown = $derived(applyCollectionFilters(entries, held));
     const facets = $derived(statusFacets(entries));
@@ -234,6 +236,7 @@
                     >
                         <EntryCard
                             {entry}
+                            cursor={cursor === identityValue(entry, schema)}
                             collection={key}
                             {schema}
                             projects={all}
@@ -248,7 +251,11 @@
                 {/each}
                 {#if unfunded.length > 0 && !held.hidden.includes(NO_FUNDING)}
                     <div class="slot" data-entry={NO_FUNDING} role="listitem">
-                        <Card title={t('collection.no_funding')}>
+                        <Card
+                            id={NO_FUNDING}
+                            cursor={cursor === NO_FUNDING}
+                            title={t('collection.no_funding')}
+                        >
                             {#snippet meta()}
                                 <Chip label={String(unfunded.length)} />
                             {/snippet}

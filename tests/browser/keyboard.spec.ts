@@ -40,14 +40,19 @@ test('the card cursor, the search key and the scroll keys act on the focused pan
     });
     await pane.locator('[data-card]').first().waitFor();
 
+    const visible = pane.locator('[data-card]:visible');
+    const firstId = await visible.nth(0).getAttribute('data-card');
+    const secondId = await visible.nth(1).getAttribute('data-card');
     await press(page, 'k');
     await expect(pane.locator('[data-card][data-cursor]')).toHaveCount(1);
-    const first = await pane.locator('[data-card][data-cursor]').getAttribute('data-card');
+    expect(await pane.locator('[data-card][data-cursor]').getAttribute('data-card')).toBe(firstId);
     await page.keyboard.press('k');
     await expect(pane.locator('[data-card][data-cursor]')).toHaveCount(1);
+    expect(await pane.locator('[data-card][data-cursor]').getAttribute('data-card')).toBe(secondId);
     await page.keyboard.press('Escape');
     await expect(pane.locator('[data-card][data-cursor]')).toHaveCount(0);
-    expect(first).not.toBeNull();
+    expect(firstId).not.toBeNull();
+    expect(secondId).not.toBeNull();
 
     await press(page, '/');
     await expect(pane.locator('[data-search]')).toBeFocused();
@@ -59,4 +64,33 @@ test('the card cursor, the search key and the scroll keys act on the focused pan
     await page.keyboard.press('g');
     await page.keyboard.press('g');
     await expect.poll(() => scroller.evaluate((node) => node.scrollTop)).toBe(0);
+});
+
+test('a pointer press keeps the cursor in one pane and clears it on a pane change', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'projects', t('views.projects'));
+    let pane = page.locator('[data-pane]', {
+        has: page.getByRole('tab', { name: t('views.projects') })
+    });
+    await pane.locator('[data-card]').first().waitFor();
+    await pane.getByRole('button', { name: t('ui.pane_menu'), exact: true }).click();
+    await page.getByRole('menuitem', { name: t('ui.split_right'), exact: true }).click();
+
+    pane = page.locator('[data-pane]', {
+        has: page.getByRole('tab', { name: t('views.projects') })
+    });
+    const other = page.locator('[data-pane]').filter({
+        hasNot: page.getByRole('tab', { name: t('views.projects') })
+    });
+    await pane.dispatchEvent('pointerdown');
+    await page.keyboard.press('k');
+    await expect(pane.locator('[data-card][data-cursor]')).toHaveCount(1);
+
+    await pane.dispatchEvent('pointerdown');
+    await expect(pane.locator('[data-card][data-cursor]')).toHaveCount(1);
+
+    await other.dispatchEvent('pointerdown');
+    await expect(pane.locator('[data-card][data-cursor]')).toHaveCount(0);
 });

@@ -10,9 +10,15 @@ export function focusSearch(pane: ParentNode | null): boolean {
     return true;
 }
 
+/** The selector for one card id, quoted so punctuation in an id remains data. */
+export function cardSelector(id: string): string {
+    return `[data-card=${JSON.stringify(id)}]`;
+}
+
 /** Activate the selected card's title, or its marked toggle when the title is plain. */
-export function activateCursor(pane: ParentNode | null): boolean {
-    const card = pane?.querySelector<HTMLElement>('[data-card][data-cursor]');
+export function activateCursor(pane: ParentNode | null, cursor: string | null): boolean {
+    if (cursor === null) return false;
+    const card = pane?.querySelector<HTMLElement>(cardSelector(cursor));
     const control = card?.querySelector<HTMLElement>('.title button, [data-card-toggle]');
     if (!control) return false;
     control.click();

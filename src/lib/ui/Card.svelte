@@ -9,6 +9,10 @@
     import type { Snippet } from 'svelte';
 
     type Props = {
+        /** The stable item id used by keyboard navigation. */
+        id: string;
+        /** Whether this card is the instance's current keyboard cursor. */
+        cursor: boolean;
         /** The card's own words, already translated by the view. */
         title: string;
         /** Trusted inline Markdown already rendered by the state layer. */
@@ -33,6 +37,8 @@
     };
 
     let {
+        id,
+        cursor,
         title,
         titleHtml,
         tone,
@@ -48,7 +54,14 @@
     const style = $derived(tone === undefined ? undefined : `--tone: var(--c-${tone})`);
 </script>
 
-<article class="card" class:toned={tone !== undefined} class:pinned {style} data-card>
+<article
+    class="card"
+    class:toned={tone !== undefined}
+    class:pinned
+    {style}
+    data-card={id}
+    data-cursor={cursor || undefined}
+>
     {#if tone !== undefined}
         <span class="bar"></span>
     {/if}

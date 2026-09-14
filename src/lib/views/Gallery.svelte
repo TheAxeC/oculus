@@ -32,6 +32,7 @@
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { t } from '$lib/state/text';
+    import { cardCursor } from '$lib/state/instance';
     import {
         UNKNOWN_TONE,
         chipGlyphName,
@@ -43,6 +44,7 @@
     import type { ViewProps } from './registry';
 
     let { instance }: ViewProps = $props();
+    const cursor = $derived(cardCursor(instance.state));
 
     /** How many chips the row shows, and how many rows the table gets. */
     const CHIPS = 12;
@@ -151,7 +153,7 @@
         <section>
             <h3>{t('gallery.cards')}</h3>
             <div class="cards">
-                <Card title={t('gallery.card_plain')}>
+                <Card id="plain" cursor={cursor === 'plain'} title={t('gallery.card_plain')}>
                     {#snippet meta()}
                         {#each chips.slice(0, 2) as chip (chip.key)}
                             <Chip label={chip.label} tone={chip.tone} glyph={chip.glyph} />
@@ -159,13 +161,23 @@
                     {/snippet}
                     {t('gallery.card_body')}
                 </Card>
-                <Card title={t('gallery.card_tone')} tone={rows[0]?.tone}>
+                <Card
+                    id="tone"
+                    cursor={cursor === 'tone'}
+                    title={t('gallery.card_tone')}
+                    tone={rows[0]?.tone}
+                >
                     {t('gallery.card_body')}
                     {#snippet footer()}
                         {t('gallery.card_footer')}
                     {/snippet}
                 </Card>
-                <Card title={t('gallery.card_pinned')} pinned>
+                <Card
+                    id="pinned"
+                    cursor={cursor === 'pinned'}
+                    title={t('gallery.card_pinned')}
+                    pinned
+                >
                     {t('gallery.card_body')}
                 </Card>
             </div>

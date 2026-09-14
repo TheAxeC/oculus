@@ -4,6 +4,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
     activateCursor,
+    cardSelector,
     focusSearch,
     scrollContainer,
     scrollRegion
@@ -36,15 +37,16 @@ describe('optional keyboard actions', () => {
     });
 
     it('leaves activation unhandled without a pane, cursor card, or control', () => {
-        expect(activateCursor(null)).toBe(false);
-        expect(activateCursor(element())).toBe(false);
-        expect(activateCursor(element({ '[data-card][data-cursor]': element() }))).toBe(false);
+        expect(activateCursor(null, 'one')).toBe(false);
+        expect(activateCursor(element(), null)).toBe(false);
+        expect(activateCursor(element(), 'one')).toBe(false);
+        expect(activateCursor(element({ [cardSelector('one')]: element() }), 'one')).toBe(false);
     });
 
     it('clicks the available cursor control', () => {
         const control = { click: vi.fn() };
         const card = element({ '.title button, [data-card-toggle]': control });
-        expect(activateCursor(element({ '[data-card][data-cursor]': card }))).toBe(true);
+        expect(activateCursor(element({ [cardSelector('one')]: card }), 'one')).toBe(true);
         expect(control.click).toHaveBeenCalledOnce();
     });
 

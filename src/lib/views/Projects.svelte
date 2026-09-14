@@ -60,6 +60,7 @@
         type FacetValue
     } from '$lib/state/board';
     import { board, boardPreset, boardStats, staleLag } from '$lib/state/selectors.svelte';
+    import { cardCursor } from '$lib/state/instance';
     import { lookup, t } from '$lib/state/text';
     import { chipGlyph, toneOf } from '$lib/state/tones';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
@@ -75,6 +76,7 @@
 
     const preset = $derived(boardPreset(instance.view));
     const held = $derived(parseBoardState(instanceState(instance.id), preset.labels));
+    const cursor = $derived(cardCursor(instance.state));
     const items = $derived(board(preset));
     const groups = $derived(facets(items, preset));
     const types = $derived(typeCounts(items, preset.typeOrder));
@@ -351,6 +353,7 @@
                     <Card
                         {item}
                         {now}
+                        cursor={cursor === item.id}
                         open={held.expanded.includes(item.id)}
                         label={label(item)}
                         tab={tabLabel(item)}

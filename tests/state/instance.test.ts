@@ -3,12 +3,15 @@
 import { describe, expect, it } from 'vitest';
 import {
     activePath,
+    cardCursor,
     findInstance,
     findView,
     isInstanceOf,
     newInstance,
     panes,
-    stateId
+    reconcileCardCursor,
+    stateId,
+    withCardCursor
 } from '../../src/lib/state/instance.ts';
 import { instance, pane, split, three } from './layout-fixture.ts';
 import type { Layout } from '../../src/lib/state/layout/index.ts';
@@ -61,6 +64,28 @@ describe('instance identity and lookups', () => {
         const second = newInstance('source', state);
         expect(first.id).not.toBe(second.id);
         expect(first).toMatchObject({ view: 'source', state });
+        expect(first.state).toBe(state);
         expect(newInstance('status').state).toEqual({});
+    });
+
+    it('stores the cursor only while a card is held', () => {
+        const state = { filter: 'open' };
+        expect(withCardCursor(state, null)).toBe(state);
+        expect(withCardCursor(state, 'card-two')).toEqual({ filter: 'open', cursor: 'card-two' });
+        expect(withCardCursor({ filter: 'open', cursor: 'card-two' }, null)).toEqual({
+            filter: 'open'
+        });
+    });
+
+    it('keeps a card cursor across a render and clears it when that card is gone', () => {
+        const state = { filter: 'open', cursor: 'card-two' };
+        const rerendered = reconcileCardCursor(state, ['card-two', 'card-one']);
+        expect(rerendered).toBe(state);
+        expect(cardCursor(rerendered)).toBe('card-two');
+
+        const filtered = reconcileCardCursor(rerendered, ['card-one']);
+        expect(filtered).toEqual({ filter: 'open' });
+        expect(filtered).not.toHaveProperty('cursor');
+        expect(cardCursor(filtered)).toBe(null);
     });
 });

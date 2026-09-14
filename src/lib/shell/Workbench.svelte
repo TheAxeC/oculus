@@ -112,17 +112,12 @@
     /** The page on screen: its trees are the ones drawn, and its id is what remounts them. */
     const page = $derived(currentPage());
     const activeMain = $derived(activeInstance('main'));
-    const activePanel = $derived(activeInstance('panel'));
     const navigation = $derived(
         railOrder(
             views().filter((view) => view.listed !== false),
             groups
         )
     );
-    const cursorScope = $derived(
-        `${page.id}:${activeMain?.id ?? ''}:${activePanel?.id ?? ''}:${focus?.target ?? ''}:${focus?.path.join('.') ?? ''}`
-    );
-
     const keyboard = createWorkbenchKeys({
         navigation: () => navigation,
         activeMain: () => activeMain,
@@ -134,6 +129,12 @@
         setUpdateOpen: (open) => (updateOpen = open),
         setSheetOpen: (open) => (sheetOpen = open),
         openPalette: (prefill) => openPalette(prefill)
+    });
+
+    $effect(() => {
+        currentPage();
+        keyboard.syncCards();
+        return keyboard.stopCards;
     });
 
     function openPalette(prefill: string): void {
@@ -186,11 +187,6 @@
      */
     $effect(() => {
         document.title = windowTitle(waiting, activeLabel(activeMain));
-    });
-
-    /** A page, view, or maximised-pane change invalidates the card list the DOM cursor indexed. */
-    $effect(() => {
-        if (cursorScope !== '') keyboard.clearCursor();
     });
 
     /** The space the two trees share along the dock's direction, the sash between them removed. */

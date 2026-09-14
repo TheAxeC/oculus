@@ -36,6 +36,7 @@
         type InboxState
     } from '$lib/state/inbox';
     import { t } from '$lib/state/text';
+    import { cardCursor } from '$lib/state/instance';
     import { feedIdentity } from '$lib/state/palette';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import type { ViewProps } from './registry';
@@ -44,6 +45,7 @@
 
     const data = $derived(feed('inbox'));
     const held = $derived(parseInboxState(instanceState(instance.id)));
+    const cursor = $derived(cardCursor(instance.state));
     const split = $derived(splitInbox(data?.entries ?? []));
     const replies = $derived(inboxSearch(split.replies, held.search));
     const actions = $derived(inboxSearch(split.actions, held.search));
@@ -79,7 +81,12 @@
                         wanted={held.reveal}
                         onrevealed={() => write({ reveal: '' })}
                     >
-                        <InboxCard {entry} onsaid={(words) => (said = words)} />
+                        <InboxCard
+                            {entry}
+                            id={feedIdentity('inbox', entry)}
+                            cursor={cursor === feedIdentity('inbox', entry)}
+                            onsaid={(words) => (said = words)}
+                        />
                     </Reveal>
                 {/each}
             </div>
@@ -138,7 +145,13 @@
                                     wanted={held.reveal}
                                     onrevealed={() => write({ reveal: '' })}
                                 >
-                                    <InboxCard {entry} triaged onsaid={(words) => (said = words)} />
+                                    <InboxCard
+                                        {entry}
+                                        id={feedIdentity('inbox', entry)}
+                                        cursor={cursor === feedIdentity('inbox', entry)}
+                                        triaged
+                                        onsaid={(words) => (said = words)}
+                                    />
                                 </Reveal>
                             {/each}
                         </div>

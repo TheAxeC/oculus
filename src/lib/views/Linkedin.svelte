@@ -40,6 +40,7 @@
         type SchemaField
     } from '$lib/state/linkedin';
     import { t } from '$lib/state/text';
+    import { cardCursor } from '$lib/state/instance';
     import { feedIdentity } from '$lib/state/palette';
     import { instanceState, setInstanceState } from '$lib/state/ui.svelte';
     import { addLinkedinIdea, type WriteAnswer } from '$lib/state/writes.svelte';
@@ -50,6 +51,7 @@
     const today = localDate(Date.now());
     const data = $derived(feed('linkedin'));
     const held = $derived(parseLinkedinState(instanceState(instance.id)));
+    const cursor = $derived(cardCursor(instance.state));
     const split = $derived(splitPosts(data?.entries ?? []));
     const ideas = $derived(linkedinSearch(split.ideas, held.search));
     const posts = $derived(linkedinSearch(split.posts, held.search));
@@ -168,6 +170,8 @@
                             >
                                 <PostCard
                                     {entry}
+                                    id={entry.file}
+                                    cursor={cursor === entry.file}
                                     folder={data.file}
                                     onsaid={(words) => (said = words)}
                                 />
@@ -194,6 +198,8 @@
                             >
                                 <PostCard
                                     {entry}
+                                    id={entry.file}
+                                    cursor={cursor === entry.file}
                                     folder={data.file}
                                     posted
                                     onsaid={(words) => (said = words)}

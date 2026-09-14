@@ -24,6 +24,8 @@
         item: BoardItem;
         /** Whether the expanded details are visible. */
         open: boolean;
+        /** Whether keyboard navigation has selected this project. */
+        cursor: boolean;
         /** The title shown on the card. */
         label: string;
         /** The title used when the project opens as a tab. */
@@ -42,6 +44,7 @@
     let {
         item,
         open,
+        cursor,
         label,
         tab,
         now,
@@ -214,7 +217,14 @@
 </script>
 
 <div class="slot" title={label === item.project.title ? undefined : item.project.title}>
-    <Card title={label} tone={item.tone} pinned={item.project.pin === true} ontitle={titleOpener()}>
+    <Card
+        id={item.id}
+        {cursor}
+        title={label}
+        tone={item.tone}
+        pinned={item.project.pin === true}
+        ontitle={titleOpener()}
+    >
         {#snippet meta()}
             {#if item.project.type}
                 <Chip label={item.project.type} tone={item.tone} filled />

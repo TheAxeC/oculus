@@ -565,7 +565,11 @@ describe('serialiseLayout and parseLayout', () => {
 
     it('keeps a view the registry may not know and the instance state', () => {
         const saved = bench(
-            { kind: 'pane', tabs: [{ id: 'a', view: 'from-2027', state: { at: 3 } }], active: 'a' },
+            {
+                kind: 'pane',
+                tabs: [{ id: 'a', view: 'from-2027', state: { at: 3, cursor: 'card-one' } }],
+                active: 'a'
+            },
             pane(['p'])
         );
         expect(parseWorkbench(saveBench(saved))).toEqual(saved);

@@ -21,6 +21,7 @@
     import Intro from '$lib/views/shared/Intro.svelte';
     import Reveal from '$lib/views/shared/Reveal.svelte';
     import { inlineMarkdown } from '$lib/state/collection';
+    import { cardCursor } from '$lib/state/instance';
     import { portfolio } from '$lib/state/entities.svelte';
     import { domainMembers, parseDomainsState, type DomainsState } from '$lib/state/lines';
     import { archiveDead, collectionOf, projects } from '$lib/state/selectors.svelte';
@@ -30,6 +31,7 @@
 
     let { instance }: ViewProps = $props();
     const held = $derived(parseDomainsState(instanceState(instance.id)));
+    const cursor = $derived(cardCursor(instance.state));
     const collection = $derived(collectionOf('domains'));
     const domains = $derived.by(() => {
         const entities = Object.values(portfolio()?.entities.domains ?? {});
@@ -97,6 +99,7 @@
                     >
                         <DomainCard
                             domain={item.domain}
+                            cursor={cursor === item.domain.id}
                             projects={item.projects}
                             entry={entryFor(item.domain.id)}
                             schema={collection?.schema}

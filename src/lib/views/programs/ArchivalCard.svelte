@@ -11,8 +11,8 @@
     import { inlineMarkdown } from '$lib/state/collection';
     import { t } from '$lib/state/text';
 
-    type Props = { groups: ArchiveGroup[] };
-    let { groups }: Props = $props();
+    type Props = { id: string; cursor: boolean; groups: ArchiveGroup[] };
+    let { id, cursor, groups }: Props = $props();
     let shown = $state('');
     const count = $derived(groups.reduce((sum, group) => sum + group.count, 0));
 
@@ -24,7 +24,7 @@
 </script>
 
 <div class="muted" data-program-archival>
-    <Card title={t('programs.archival')}>
+    <Card {id} {cursor} title={t('programs.archival')}>
         {#snippet meta()}
             <Glyph name="archived" />
             <Chip label={t('programs.not_active', count)} />

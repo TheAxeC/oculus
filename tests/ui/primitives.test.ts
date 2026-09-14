@@ -73,39 +73,58 @@ describe('Menu placement', () => {
 
 describe('Card', () => {
     it('draws its title at the level it was given', () => {
-        expect(html(Card, { title: 'Alpha', level: 2 })).toContain('<h2 class="title');
-        expect(html(Card, { title: 'Alpha' })).toContain('<h3 class="title');
+        expect(html(Card, { id: 'alpha', cursor: false, title: 'Alpha', level: 2 })).toContain(
+            '<h2 class="title'
+        );
+        expect(html(Card, { id: 'alpha', cursor: false, title: 'Alpha' })).toContain(
+            '<h3 class="title'
+        );
     });
 
     it('clamps a heading level no document has', () => {
-        expect(html(Card, { title: 'Alpha', level: 0 })).toContain('<h1 class="title');
-        expect(html(Card, { title: 'Alpha', level: 9 })).toContain('<h6 class="title');
+        expect(html(Card, { id: 'alpha', cursor: false, title: 'Alpha', level: 0 })).toContain(
+            '<h1 class="title'
+        );
+        expect(html(Card, { id: 'alpha', cursor: false, title: 'Alpha', level: 9 })).toContain(
+            '<h6 class="title'
+        );
     });
 
     it('puts the tone on the card as a token and draws the bar', () => {
-        const body = html(Card, { title: 'Alpha', tone: 'teal' });
+        const body = html(Card, { id: 'alpha', cursor: false, title: 'Alpha', tone: 'teal' });
         expect(body).toContain('--tone: var(--c-teal)');
         expect(body).toContain('class="bar');
     });
 
     it('draws no bar and sets no tone without one', () => {
-        const body = html(Card, { title: 'Alpha' });
+        const body = html(Card, { id: 'alpha', cursor: false, title: 'Alpha' });
         expect(body).not.toContain('class="bar');
         expect(body).not.toContain('--tone:');
     });
 
     it('marks a pinned card', () => {
-        expect(html(Card, { title: 'Alpha', pinned: true })).toContain('pinned');
+        expect(html(Card, { id: 'alpha', cursor: false, title: 'Alpha', pinned: true })).toContain(
+            'pinned'
+        );
     });
 
     it('marks every card for the shell cursor', () => {
-        expect(html(Card, { title: 'Alpha' })).toContain('data-card');
+        const body = html(Card, { id: 'alpha', cursor: true, title: 'Alpha' });
+        expect(body).toContain('data-card="alpha"');
+        expect(body).toContain('data-cursor="true"');
     });
 
     it('renders plain, HTML and clickable HTML title shapes', () => {
-        const plain = html(Card, { title: 'Plain title' });
-        const rich = html(Card, { title: 'Fallback', titleHtml: 'Rich <strong>title</strong>' });
+        const plain = html(Card, { id: 'plain', cursor: false, title: 'Plain title' });
+        const rich = html(Card, {
+            id: 'rich',
+            cursor: false,
+            title: 'Fallback',
+            titleHtml: 'Rich <strong>title</strong>'
+        });
         const clickable = html(Card, {
+            id: 'clickable',
+            cursor: false,
             title: 'Fallback',
             titleHtml: 'Open <strong>title</strong>',
             ontitle: () => {}

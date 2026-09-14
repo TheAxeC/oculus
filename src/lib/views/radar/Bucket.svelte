@@ -15,12 +15,22 @@
         entries: RadarEntry[];
         lastRun: unknown;
         projects: Record<string, Project>;
+        cursor: string | null;
         onsaid: (words: string) => void;
         reveal?: string;
         onrevealed: () => void;
     };
 
-    let { bucket, entries, lastRun, projects, onsaid, reveal = '', onrevealed }: Props = $props();
+    let {
+        bucket,
+        entries,
+        lastRun,
+        projects,
+        cursor,
+        onsaid,
+        reveal = '',
+        onrevealed
+    }: Props = $props();
     let open = $state(true);
     const ordered = $derived(sortBucket(entries));
 </script>
@@ -36,7 +46,14 @@
         <div class="cards">
             {#each ordered as entry, at (`${String(entry.title ?? '')}:${at}`)}
                 <Reveal id={feedIdentity('radar', entry)} wanted={reveal} {onrevealed}>
-                    <RadarCard {entry} {lastRun} {projects} {onsaid} />
+                    <RadarCard
+                        {entry}
+                        id={feedIdentity('radar', entry)}
+                        cursor={cursor === feedIdentity('radar', entry)}
+                        {lastRun}
+                        {projects}
+                        {onsaid}
+                    />
                 </Reveal>
             {/each}
         </div>

@@ -64,10 +64,13 @@ export {
 } from './saved.ts';
 export {
     activePath,
+    cardCursor,
     findInstance,
     findView,
     isInstanceOf,
     newInstance,
     panes,
-    stateId
+    reconcileCardCursor,
+    stateId,
+    withCardCursor
 } from '../instance.ts';

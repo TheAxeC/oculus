@@ -2,6 +2,41 @@
 
 import type { Instance, Layout, Pane, ViewId } from './layout/index.ts';
 
+/** The card id held by an instance, or null when keyboard navigation has selected none. */
+export function cardCursor(state: unknown): string | null {
+    if (typeof state !== 'object' || state === null || Array.isArray(state)) return null;
+    const cursor = (state as Record<string, unknown>).cursor;
+    return typeof cursor === 'string' && cursor !== '' ? cursor : null;
+}
+
+/** Preserve a view's own state while setting or removing its held card cursor. */
+export function withCardCursor(state: unknown, cursor: string | null): unknown {
+    if (cursor !== null) {
+        const held =
+            typeof state === 'object' && state !== null && !Array.isArray(state)
+                ? (state as Record<string, unknown>)
+                : {};
+        return { ...held, cursor };
+    }
+    if (
+        typeof state !== 'object' ||
+        state === null ||
+        Array.isArray(state) ||
+        !Object.hasOwn(state, 'cursor')
+    ) {
+        return state;
+    }
+    const held = { ...(state as Record<string, unknown>) };
+    delete held.cursor;
+    return held;
+}
+
+/** Keep a cursor across a card-list render, clearing it only when its id is no longer present. */
+export function reconcileCardCursor(state: unknown, cards: readonly string[]): unknown {
+    const cursor = cardCursor(state);
+    return cursor === null || cards.includes(cursor) ? state : withCardCursor(state, null);
+}
+
 /**
  * A fresh instance of a view, with the id every operation addresses it by. The state is the view's
  * own and is empty unless the opener has something to say: the editor is opened for one project, so

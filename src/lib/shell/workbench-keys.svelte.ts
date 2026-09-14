@@ -1,9 +1,16 @@
-// Layer 3, shell. Workbench keyboard dispatch and the DOM-backed card cursor live here because key
-// handling changes with focusable shell markup while pure key resolution does not.
+// Layer 3, shell. Workbench keyboard dispatch connects pure key actions to layout state and the
+// focused pane's ordered card ids. Views alone render the cursor held in each instance.
 
 import { dragging } from '$lib/state/drag.svelte';
-import { openView, pageShortcut, restorePanes } from '$lib/state/layout.svelte';
+import {
+    instanceLayoutState,
+    openView,
+    pageShortcut,
+    restateInstance,
+    restorePanes
+} from '$lib/state/layout.svelte';
 import type { Focus, Instance } from '$lib/state/layout';
+import { cardCursor, reconcileCardCursor, withCardCursor } from '$lib/state/layout';
 import { activateCursor, focusSearch, scrollContainer, scrollRegion } from './key-dom';
 import {
     horizontalCursor,
@@ -32,14 +39,18 @@ export type WorkbenchKeys = {
     paneFocused: (event: FocusEvent) => void;
     panePressed: (event: PointerEvent) => void;
     clearCursor: () => void;
+    syncCards: () => void;
+    stopCards: () => void;
 };
+
+type CardElement = { id: string; element: HTMLElement };
 
 /** Bind keyboard decisions to the workbench's current DOM and transient overlays. */
 export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     let keyState = initialKeyState();
-    let cursorIndex = -1;
-    let cursorPane: HTMLElement | null = null;
     let lastFocusedPane: HTMLElement | null = null;
+    let observedPane: HTMLElement | null = null;
+    let cardObserver: MutationObserver | null = null;
 
     /**
      * Dispatch one key. Escape closes overlays or restores panes unless a drag owns it;
@@ -102,7 +113,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             {
                 currentView: pane?.dataset.paneView ?? null,
                 target: pane?.dataset.paneTarget === 'panel' ? 'panel' : 'main',
-                cursorActive: cursorIndex >= 0,
+                cursorActive: cursorIn(pane) !== null,
                 typing: typingIn(event.target),
                 paletteOpen: options.paletteOpen(),
                 trayOpen: options.updateOpen(),
@@ -130,7 +141,7 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         } else if (action.kind === 'cursor') {
             return moveCursor(pane, action.direction);
         } else if (action.kind === 'activate') {
-            return activateCursor(cursorPane);
+            return activateCursor(pane, cursorIn(pane));
         } else if (action.kind === 'search') {
             return focusSearch(pane);
         } else if (action.kind === 'scroll') {
@@ -151,7 +162,6 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             const pane = element.closest<HTMLElement>('[data-pane]');
             if (pane !== null) return pane;
         }
-        if (cursorPane?.isConnected) return cursorPane;
         if (lastFocusedPane?.isConnected) return lastFocusedPane;
         if (options.focus() !== null) return document.querySelector<HTMLElement>('[data-pane]');
         const active = options.activeMain()?.id;
@@ -164,21 +174,19 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     }
 
     /** The visible cards in one pane, in DOM order for cursor movement. */
-    function cards(pane: HTMLElement | null): HTMLElement[] {
+    function cards(pane: HTMLElement | null): CardElement[] {
         if (pane === null) return [];
-        return [...pane.querySelectorAll<HTMLElement>('[data-card]')].filter(
-            (card) => card.offsetParent !== null
-        );
+        return [...pane.querySelectorAll<HTMLElement>('[data-card]')]
+            .filter((card) => card.offsetParent !== null)
+            .map((element) => ({ id: element.dataset.card ?? '', element }))
+            .filter((card) => card.id !== '');
     }
 
     function selectCard(pane: HTMLElement, index: number): boolean {
         const visible = cards(pane);
         if (index < 0 || index >= visible.length) return false;
-        clearCursor();
-        cursorPane = pane;
-        cursorIndex = index;
-        visible[index].setAttribute('data-cursor', '');
-        visible[index].scrollIntoView({ block: 'center', behavior: 'smooth' });
+        writeCursor(pane, visible[index].id);
+        visible[index].element.scrollIntoView({ block: 'center', behavior: 'smooth' });
         return true;
     }
 
@@ -188,32 +196,107 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     ): boolean {
         if (pane === null) return false;
         const visible = cards(pane);
-        const current = pane === cursorPane ? cursorIndex : -1;
+        const current = visible.findIndex((card) => card.id === cursorIn(pane));
         const next =
             direction === 'left' || direction === 'right'
                 ? horizontalCursor(current, visible.length, direction === 'left' ? -1 : 1)
                 : rowCursor(
-                      visible.map((card) => card.getBoundingClientRect()),
+                      visible.map((card) => card.element.getBoundingClientRect()),
                       current,
                       direction === 'up' ? -1 : 1
                   );
         return selectCard(pane, next);
     }
 
+    /** The active instance id carried by a rendered pane. */
+    function instanceIn(pane: HTMLElement | null): string | null {
+        const id = pane?.dataset.paneActive;
+        return id === undefined || id === '' ? null : id;
+    }
+
+    function cursorIn(pane: HTMLElement | null): string | null {
+        const id = instanceIn(pane);
+        return id === null ? null : cardCursor(instanceLayoutState(id));
+    }
+
+    function writeCursor(pane: HTMLElement | null, cursor: string | null): void {
+        if (pane === null) return;
+        const id = instanceIn(pane);
+        if (id === null) return;
+        const state = instanceLayoutState(id);
+        if (cardCursor(state) === cursor) {
+            if (cursor !== null && pane !== observedPane) observePane(pane);
+            if (cursor === null && pane === observedPane) stopCards();
+            return;
+        }
+        restateInstance(id, withCardCursor(state, cursor));
+        if (cursor === null) {
+            if (pane === observedPane) stopCards();
+        } else {
+            observePane(pane);
+        }
+    }
+
     function clearCursor(): void {
-        document.querySelectorAll('[data-card][data-cursor]').forEach((card) => {
-            card.removeAttribute('data-cursor');
+        writeCursor(focusedPaneElement(), null);
+    }
+
+    /** Clear a stored cursor when a rendered card-list snapshot no longer contains its id. */
+    function reconcilePane(pane: HTMLElement): void {
+        const id = instanceIn(pane);
+        if (id === null) return;
+        const state = instanceLayoutState(id);
+        const reconciled = reconcileCardCursor(
+            state,
+            cards(pane).map((card) => card.id)
+        );
+        if (reconciled !== state) writeCursor(pane, null);
+    }
+
+    /** Observe only the pane whose instance currently holds a cursor. */
+    function observePane(pane: HTMLElement): void {
+        stopCards();
+        if (!pane.isConnected) return;
+        reconcilePane(pane);
+        if (cursorIn(pane) === null) return;
+        observedPane = pane;
+        cardObserver = new MutationObserver(() => {
+            if (!pane.isConnected) {
+                stopCards();
+                return;
+            }
+            reconcilePane(pane);
         });
-        cursorIndex = -1;
-        cursorPane = null;
+        cardObserver.observe(pane, {
+            childList: true,
+            subtree: true,
+            attributes: true,
+            attributeFilter: ['data-card']
+        });
+    }
+
+    /** Match observation to restored layout state and stop watching panes removed by a render. */
+    function syncCards(): void {
+        if (observedPane !== null) {
+            if (!observedPane.isConnected || cursorIn(observedPane) === null) stopCards();
+            else return;
+        }
+        const pane = focusedPaneElement();
+        if (pane !== null && cursorIn(pane) !== null) observePane(pane);
+    }
+
+    function stopCards(): void {
+        cardObserver?.disconnect();
+        cardObserver = null;
+        observedPane = null;
     }
 
     function rememberPane(target: EventTarget | null): void {
         const pane =
             target instanceof HTMLElement ? target.closest<HTMLElement>('[data-pane]') : null;
         if (pane === lastFocusedPane) return;
+        writeCursor(lastFocusedPane ?? pane, null);
         lastFocusedPane = pane;
-        clearCursor();
     }
 
     function paneFocused(event: FocusEvent): void {
@@ -234,5 +317,5 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         );
     }
 
-    return { keys, paneFocused, panePressed, clearCursor };
+    return { keys, paneFocused, panePressed, clearCursor, syncCards, stopCards };
 }

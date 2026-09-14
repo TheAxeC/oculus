@@ -23,6 +23,7 @@
 
     type Props = {
         line: Program;
+        cursor: boolean;
         projects: Project[];
         venues: Venue[];
         tiers: TierRow[];
@@ -36,6 +37,7 @@
 
     let {
         line,
+        cursor,
         projects,
         venues,
         tiers,
@@ -59,7 +61,7 @@
 </script>
 
 <div class:dormant={isDormant(projects)} class:muted data-program={line.id}>
-    <Card title={line.title} titleHtml={inlineMarkdown(line.title)} {tone}>
+    <Card id={line.id} {cursor} title={line.title} titleHtml={inlineMarkdown(line.title)} {tone}>
         {#snippet meta()}
             <Chip label={`${projects.length} ${projectWord()}`} />
             {#if entry !== null && schema !== undefined}

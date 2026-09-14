@@ -13,11 +13,13 @@
 
     type Props = {
         entry: InboxEntry;
+        id: string;
+        cursor: boolean;
         triaged?: boolean;
         onsaid: (words: string) => void;
     };
 
-    let { entry, triaged = false, onsaid }: Props = $props();
+    let { entry, id, cursor, triaged = false, onsaid }: Props = $props();
     let draftOpen = $state(false);
 
     const text = (field: string): string => {
@@ -61,7 +63,7 @@
 </script>
 
 <div data-inbox={identity}>
-    <Card title={sender} titleHtml={inlineMarkdown(sender)} tone={kindTone(kind)}>
+    <Card {id} {cursor} title={sender} titleHtml={inlineMarkdown(sender)} tone={kindTone(kind)}>
         {#snippet meta()}
             <Chip label={kindLabel()} tone={kindTone(kind)} />
             {#if age !== ''}

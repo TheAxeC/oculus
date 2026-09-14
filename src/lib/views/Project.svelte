@@ -34,6 +34,7 @@
     import ProjectCard from './shared/ProjectCard.svelte';
     import type { BoardItem } from '$lib/state/board';
     import { document as docFor } from '$lib/state/docs.svelte';
+    import { cardCursor } from '$lib/state/instance';
     import { modelShort, stamp } from '$lib/state/format';
     import { select, selected } from '$lib/state/selection.svelte';
     import {
@@ -50,6 +51,7 @@
 
     /** The project this instance was opened for, from the state the card handed openView. */
     const id = $derived(readId(instance.state));
+    const cursor = $derived(cardCursor(instance.state));
     const item = $derived(id === '' ? null : boardItemOf(id));
     const folder = $derived(item === null ? '' : folderOf(item));
     const rows = $derived(folder === '' ? [] : sessionsForProject(folder));
@@ -161,6 +163,7 @@
             <ProjectCard
                 {item}
                 {now}
+                cursor={cursor === item.id}
                 open
                 deposit
                 label={item.project.title}
