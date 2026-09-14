@@ -31,8 +31,8 @@ dispatch:
   events: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R8/events.jsonl
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R8/report.md
   exit: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R8/exit.txt
-  pid: pending
-  session_id: pending
+  pid: 31747
+  session_id: 01a09e05-4751-7f11-a70c-cd6cd1f9b207
   landing: not-started
   round: 0
   notes: R8, the landing script land.sh and its test land.test.sh under the ledger folder (the worker writes those two files and nothing else there; the skill and the state file wording come back in its report for the orchestrator); dispatched at 05:46 under the 06:00 rule with the orchestrator's own stop at 06:55, after which an unlanded R8 is killed, its diff kept as a patch under agents/reviews and the block set to none, so nothing is in flight at 07:05; after it R9, R10.
