@@ -23,7 +23,7 @@ workers_at_once: 2           # R9 (Axel, 2026-09-13 22:45): two packages with di
 ```
 
 ```yaml
-dispatch:                                  # R12e alone
+dispatch:                                  # workers_at_once: 2; R12e and R12f in flight, disjoint paths
 - package: R12e
   worker: claude:opus
   worktree: .agents/worktrees/r12e
@@ -35,6 +35,18 @@ dispatch:                                  # R12e alone
   exit: none
   pid: none
   session_id: ade001335db293e82            # the Agent tool's id
+  landing: not-started
+- package: R12f
+  worker: claude:opus
+  worktree: .agents/worktrees/r12f
+  base: abce4683
+  launched: 2026-09-14T17:24:34+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R12f/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/R12f/report.md
+  exit: none
+  pid: none
+  session_id: pending                      # the Agent tool's id, written the moment it is known
   landing: not-started
 ```
 
