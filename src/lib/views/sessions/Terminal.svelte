@@ -311,7 +311,7 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={t('sessions.view_terminal')} toolbar={tools}>
+<Pane title={t('sessions.view_terminal')} toolbar={tools} tinted>
     <div class="terminal" data-instance={instance.id}>
         {#if id === null}
             <div class="start">

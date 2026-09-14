@@ -359,7 +359,7 @@
     </div>
 {/snippet}
 
-<Pane title={t('deposit.title')}>
+<Pane title={t('deposit.title')} tinted>
     <div class="deposit" data-instance={instance.id}>
         {#if id === ''}
             <Empty message={t('deposit.none')} glyph={t('deposit.none_glyph')} />

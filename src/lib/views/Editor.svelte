@@ -217,7 +217,7 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={project === null ? t('editor.title') : project.title} toolbar={tools}>
+<Pane title={project === null ? t('editor.title') : project.title} toolbar={tools} tinted>
     <div class="editor" data-instance={instance.id} data-project={id}>
         {#if id === ''}
             <Empty message={t('editor.none')} glyph={t('editor.none_glyph')} />

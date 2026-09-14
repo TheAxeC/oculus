@@ -192,7 +192,7 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={t('sessions.view_changes')} toolbar={tools}>
+<Pane title={t('sessions.view_changes')} toolbar={tools} tinted>
     <div class="changes" data-instance={instance.id}>
         {#if record === null}
             <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />

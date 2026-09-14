@@ -58,7 +58,7 @@
 </script>
 
 <!-- The pane is the frame every view has; the head inside it is the cluster's own status line. -->
-<Pane title={t('views.hpc')}>
+<Pane title={t('views.hpc')} tinted>
     <div class="hpc" data-instance={instance.id}>
         <Head {data} onrefresh={refresh} />
         {#if data?.status === 'ok'}

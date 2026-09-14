@@ -124,7 +124,7 @@
     }
 </script>
 
-<Pane title={t('sessions.view_transcript')}>
+<Pane title={t('sessions.view_transcript')} tinted>
     {#snippet toolbar()}
         <Toolbar label={t('sessions.turn_toolbar')}>
             {#if record !== null || panePin !== null}
@@ -291,9 +291,10 @@
         font-size: var(--fs-sm);
     }
 
+    /* The box this view fills carries the translucent surface over a picture, and a second one
+       inside it would read as a single nearly solid layer, so the code block paints nothing. */
     :global(body.wall) .doc :global(pre) {
-        background: color-mix(in srgb, var(--chip) var(--wall-panel), transparent);
-        backdrop-filter: blur(var(--wall-blur));
+        background: transparent;
     }
 
     .doc :global(pre) {

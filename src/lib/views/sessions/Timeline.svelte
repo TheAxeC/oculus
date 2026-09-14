@@ -129,7 +129,7 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={t('sessions.view_timeline')} toolbar={tools}>
+<Pane title={t('sessions.view_timeline')} toolbar={tools} tinted>
     <div class="timeline" bind:this={column} data-instance={instance.id}>
         {#if record === null}
             <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />

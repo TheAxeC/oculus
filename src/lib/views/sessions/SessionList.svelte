@@ -162,7 +162,7 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={t('sessions.rail_title')} toolbar={tools}>
+<Pane title={t('sessions.rail_title')} toolbar={tools} tinted>
     <div class="list" data-instance={instance.id}>
         {#if failure !== ''}
             <p class="failure">{failure}</p>

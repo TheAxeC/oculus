@@ -8,17 +8,8 @@
 
 import { expect, test } from '@playwright/test';
 import { boot, openView } from './rail.ts';
+import { alphaOf } from './style.ts';
 import { t } from './words.ts';
-
-/** The alpha of a computed colour, in either the comma form or the slash form a browser may return. */
-function alphaOf(colour: string): number {
-    const slash = colour.match(/\/\s*([\d.]+)(%?)\s*\)/);
-    if (slash !== null) {
-        return slash[2] === '%' ? Number.parseFloat(slash[1]) / 100 : Number.parseFloat(slash[1]);
-    }
-    const comma = colour.match(/rgba\(\s*[\d.]+\s*,\s*[\d.]+\s*,\s*[\d.]+\s*,\s*([\d.]+)\s*\)/);
-    return comma === null ? 1 : Number.parseFloat(comma[1]);
-}
 
 /** The alpha a locator's background is painted at. */
 async function backgroundAlpha(target: import('@playwright/test').Locator): Promise<number> {

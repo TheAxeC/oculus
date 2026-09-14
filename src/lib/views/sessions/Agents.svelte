@@ -86,7 +86,7 @@
     </Toolbar>
 {/snippet}
 
-<Pane title={t('sessions.view_agents')} toolbar={tools}>
+<Pane title={t('sessions.view_agents')} toolbar={tools} tinted>
     <div class="agents" data-instance={instance.id}>
         {#if record === null}
             <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />

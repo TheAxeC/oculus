@@ -10,14 +10,21 @@
         title: string;
         /** The controls at the right of the header, usually a Toolbar. */
         toolbar?: Snippet;
+        /**
+         * Whether the box itself carries the translucent surface over a wallpaper. A view whose
+         * content draws its text straight into the box asks for it, so the text is read off a
+         * surface rather than off the picture; a view that draws cards or frames of its own leaves
+         * it off, so its surfaces stay the one layer over the picture.
+         */
+        tinted?: boolean;
         /** The body. */
         children?: Snippet;
     };
 
-    let { title, toolbar, children }: Props = $props();
+    let { title, toolbar, tinted = false, children }: Props = $props();
 </script>
 
-<section class="pane">
+<section class="pane" class:tinted>
     <header>
         <h2 class="title">{title}</h2>
         {#if toolbar}
@@ -48,6 +55,20 @@
        the box holds directly sits on the picture itself. */
     :global(body.wall) .pane {
         background: transparent;
+    }
+
+    /* A box a view asked to tint keeps the wallpaper fraction of its own colour, so the text the
+       view draws straight into it is read off a surface instead of off the picture. */
+    :global(body.wall) .pane.tinted {
+        background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
+        backdrop-filter: blur(var(--wall-blur));
+    }
+
+    /* Inside a tinted box the terminal palettes' header strip would be a second translucent layer
+       over the first, which reads as one nearly solid one, so the strip paints nothing there. */
+    :global(body.rice.wall) .pane.tinted header {
+        background: transparent;
+        backdrop-filter: none;
     }
 
     header {
