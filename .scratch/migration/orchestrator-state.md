@@ -34,7 +34,7 @@ dispatch:                                  # K1 alone
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/K1/report.md
   exit: none
   pid: none
-  session_id: pending                      # the Agent tool's id, written at launch
+  session_id: a838f9650c308eaaa            # the Agent tool's id
   landing: not-started
 ```
 
