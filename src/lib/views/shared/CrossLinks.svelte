@@ -121,9 +121,21 @@
         margin-top: 8px;
     }
 
+    /* Every flex box on the path from the card to a title keeps its content's minimum width unless
+       told otherwise, so each is capped here; the cut then happens at the label and nowhere above. */
+    .group,
+    .members {
+        min-width: 0;
+        max-width: 100%;
+    }
+
     /* Every type of one group on its own line, the way the cockpit's cross-links nested them. */
     .kind {
         flex-basis: 100%;
+        /* A flex item keeps its content's minimum width unless told otherwise, and a row that grows
+           to a long title takes the label's ellipsis with it past the card's edge. */
+        min-width: 0;
+        overflow: hidden;
     }
 
     /* A long project title ends in an ellipsis inside the card rather than running past its edge;
@@ -133,10 +145,19 @@
         max-width: 100%;
     }
 
+    /* The label is a span inside a button inside the tooltip's wrapper; each box on that path is
+       capped at its parent's width, since a box left to size to its text is as wide as the text. */
+    .member :global(.tip),
+    .member :global(.tool) {
+        min-width: 0;
+        max-width: 100%;
+    }
+
     .member :global(.label) {
         min-width: 0;
         max-width: 100%;
         overflow: hidden;
+        white-space: nowrap;
         text-overflow: ellipsis;
     }
 

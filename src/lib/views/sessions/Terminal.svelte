@@ -16,13 +16,14 @@
     //
     // xterm.js is loaded inside the effect rather than at the top of the module: it needs a DOM, and
     // this view renders on the server like every other. The effect runs in the browser alone, so the
-    // server render is the mount point and nothing else.
+    // server render is the mount point and nothing else. Its stylesheet is loaded there too: a
+    // static import of it is folded into the route's own stylesheet, which every page then carries
+    // for a grid most readers never open.
     //
     // The grid's colours are the theme's, read off the root element with getComputedStyle. They
     // cannot be CSS: xterm paints the glyphs itself and takes its palette as strings through its own
     // API. This is the one file in the application that reads a computed token.
 
-    import '@xterm/xterm/css/xterm.css';
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Segment from '$lib/ui/Segment.svelte';
@@ -213,7 +214,8 @@
         void (async () => {
             const [xterm, addon] = await Promise.all([
                 import('@xterm/xterm'),
-                import('@xterm/addon-fit')
+                import('@xterm/addon-fit'),
+                import('@xterm/xterm/css/xterm.css')
             ]);
             if (!alive) return;
             const fit = new addon.FitAddon();

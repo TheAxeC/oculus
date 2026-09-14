@@ -25,4 +25,4 @@ text:
         unknown: The snapshot holds no project with the id {0}.
     views:
         editor: Editor
-        editor_glyph: edit
+        editor_glyph: editor

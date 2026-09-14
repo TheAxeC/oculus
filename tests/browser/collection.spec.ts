@@ -2,7 +2,9 @@
 // that reorders the file, the subtask line, and the delete behind its confirm.
 //
 // views/collection/EntryCard.svelte arms its drag on the grip (line 152) and takes it with `ondrop`
-// (line 138), which are HTML5 drag events; a pointer that only moves fires neither.
+// (line 138), which are HTML5 drag events; a pointer that only moves fires neither. The keyboard
+// path to the same reorder is the shifted cursor key of shell/keys.ts, which carries the card under
+// the cursor rather than the cursor.
 //
 // The titles and the statuses are read out of the served file rather than typed here: the file is
 // the fixture, and an entry renamed in demo/ should cost these tests nothing.
@@ -149,5 +151,36 @@ test('+ subtask adds a line and done ticks it', async ({ page }) => {
         .filter({ hasText: line })
         .getByRole('button', { name: t('project.action.del'), exact: true })
         .click();
+    await expect.poll(() => readHubFile(TASKS), { timeout: 5000 }).toBe(before);
+});
+
+test('the cursor carries an entry with K and the file follows', async ({ page }) => {
+    const before = readHubFile(TASKS);
+    const head = titleAt(0);
+    const second = titleAt(1);
+    await openTasks(page);
+    const pane = page.locator('[data-pane]', {
+        has: page.getByRole('tab', { name: t('views.tasks') })
+    });
+    await pane.locator('[data-card]').first().waitFor();
+
+    // The pane takes the keys by being pointed at, which no element can intercept.
+    await pane.dispatchEvent('pointerdown');
+    await page.keyboard.press('k');
+    await expect(pane.locator('[data-card][data-cursor]')).toHaveCount(1);
+    await page.keyboard.press('K');
+
+    await expect
+        .poll(
+            () => {
+                const text = readHubFile(TASKS);
+                return text.indexOf(second) < text.indexOf(head);
+            },
+            { timeout: 5000 }
+        )
+        .toBe(true);
+    await expect(page.locator('.cards [data-entry]').first()).toContainText(second);
+
+    await page.keyboard.press('J');
     await expect.poll(() => readHubFile(TASKS), { timeout: 5000 }).toBe(before);
 });

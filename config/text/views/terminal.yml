@@ -14,7 +14,7 @@ text:
         no_terminal: No terminal is selected. Start one, or pick one in the rail.
         start_terminal: Start a terminal
         stop_terminal: Stop this terminal
-        terminal_glyph: hpc
+        terminal_glyph: terminal
         terminal_larger: Larger terminal text
         terminal_reset: Reset terminal text size
         terminal_smaller: Smaller terminal text

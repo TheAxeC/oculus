@@ -1,0 +1,6 @@
+Disk quotas for user demo (uid 1000):
+     Filesystem   space   quota   limit   grace   files   quota   limit   grace
+      /home/demo   184G    200G    220G           41231       0       0
+---df---
+Filesystem      Size  Used Avail Use% Mounted on
+cluster:/home   200G  184G   16G  92% /home/demo

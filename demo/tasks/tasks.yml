@@ -1,7 +1,7 @@
 # Tasks & Service - standing to-dos, reviews, admin, service (FAKE example data). Dated tasks surface on the
 # Focus "This week" ticker. Edit in served mode on the Tasks & Service tab.
 title: Tasks & Service
-intro: "Standing tasks: reviews, admin, service. A `deadline:` surfaces it on the Focus ticker; a `followup:` note goes to the Follow-ups group."
+intro: "Standing tasks: reviews, admin, service. A `deadline:` surfaces it on the Focus ticker; a `followup:` note goes to the Follow-ups group. <script>alert(1)</script>"
 schema:
   - { field: title,    type: text,     required: true }
   - { field: status,   type: select,   options: [todo, doing, done, dropped], required: true }

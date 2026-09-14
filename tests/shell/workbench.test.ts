@@ -9,7 +9,7 @@
 // checked in a browser. The insertion mark below is rendered from a prop, not from a pointer.
 
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { beforeAll, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import DropLayer from '../../src/lib/shell/DropLayer.svelte';
 import Workbench, { activeLabel, windowTitle } from '../../src/lib/shell/Workbench.svelte';
@@ -95,6 +95,9 @@ function html(dock: Dock, groups: { id: string; label: string }[] = []): string 
 }
 
 const docked = html('right');
+
+/** Milliseconds the one import of every view is given, which is not what a case is measured on. */
+const IMPORT_MS = 60000;
 
 describe('the workbench', () => {
     it('uses the instance label for the active main tab title', () => {
@@ -420,11 +423,17 @@ describe('the insertion mark', () => {
 
 // The two the application registers, mounted through the same shell with the real catalog and the
 // real glyph vocabulary: a label key, a glyph key or a glyph name that did not resolve would throw
-// here. The registrations arrive by importing the route loader inside the test
-// so that the rail above still sees only the two views this file registered.
+// here. The registrations arrive by importing the route loader in this block's own setup rather than
+// in a case, so that the rail above still sees only the two views this file registered and no case
+// is timed against the cost of compiling every view.
 describe('the views the application registers', () => {
-    it('mounts status and findings with nothing yet delivered on either channel', async () => {
+    // Every view of the application is compiled here, which on a loaded machine is slower than the
+    // per-case timeout the assertions are measured against.
+    beforeAll(async () => {
         await import('../../src/routes/views.ts');
+    }, IMPORT_MS);
+
+    it('mounts status and findings with nothing yet delivered on either channel', () => {
         apply({
             main: pane('m', 'status'),
             panel: pane('p', 'findings'),

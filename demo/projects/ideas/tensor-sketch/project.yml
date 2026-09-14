@@ -1,6 +1,6 @@
 id: tensor-sketch
 type: idea
-short: Tensor-Sketch
+short: Sketched tensor decompositions for streaming data, online and out of core
 title: Sketched tensor decompositions for streaming data
 lead: A. Example
 authors: [A. Example]

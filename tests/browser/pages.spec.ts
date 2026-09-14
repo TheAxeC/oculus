@@ -20,7 +20,9 @@ test('the menu adds a page and renames it', async ({ page }) => {
 
     await strip.getByRole('button', { name: t('ui.page_menu') }).click();
     await page.getByRole('menuitem', { name: t('ui.page_rename') }).click();
+    // The box is typed into the moment it appears, so it carries the focus without being clicked.
     const box = strip.getByRole('textbox', { name: t('ui.page_rename_label') });
+    await expect(box).toBeFocused();
     await box.fill('Renamed');
     await box.press('Enter');
     await expect(strip.getByRole('tab', { name: 'Renamed' })).toBeVisible();

@@ -33,9 +33,29 @@ export const THROTTLE = 2000;
 /** Path segments whose writes never change what git reports about the working tree. */
 export const IGNORED = ['node_modules', '.svelte-kit', 'build', '__pycache__'];
 
+/** What a clock's `setTimeout` gives back: a handle its own `clearTimeout` understands. */
+export type Timer = ReturnType<typeof setTimeout> | number;
+
+/**
+ * The timer pair the throttle runs on. The window is wall-clock time, so a caller that has to know
+ * when it closes passes its own pair and closes it itself.
+ */
+export type Clock = {
+    setTimeout(run: () => void, ms: number): Timer;
+    clearTimeout(timer: Timer): void;
+};
+
+/** The globals, which is what the server runs on. */
+export const systemClock: Clock = {
+    setTimeout: (run, ms) => setTimeout(run, ms),
+    clearTimeout: (timer) => clearTimeout(timer)
+};
+
 export type GitWatchOptions = {
     /** Milliseconds one root is re-read at most once in. */
     throttle?: number;
+    /** The timer pair the throttle runs on; the globals when absent. */
+    clock?: Clock;
     /** Milliseconds one git command is given; server/git.ts's default when absent. */
     timeout?: number;
     /**
@@ -92,10 +112,11 @@ export type GitWatcher = Watcher & {
 
 export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     const throttle = options.throttle ?? THROTTLE;
+    const clock = options.clock ?? systemClock;
     const timeout = options.timeout ?? TIMEOUT_MS;
     const always = options.always ?? '';
     const handles = new Map<string, FSWatcher[]>();
-    const timers = new Map<string, ReturnType<typeof setTimeout>>();
+    const timers = new Map<string, Timer>();
     const last = new Map<string, number>();
     let state: GitPayload = {};
     let closed = false;
@@ -132,7 +153,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         const wait = since >= throttle ? 0 : throttle - since;
         timers.set(
             root,
-            setTimeout(() => {
+            clock.setTimeout(() => {
                 timers.delete(root);
                 last.set(root, Date.now());
                 reread(root);
@@ -180,7 +201,7 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         for (const handle of handles.get(root) ?? []) handle.close();
         handles.delete(root);
         const timer = timers.get(root);
-        if (timer !== undefined) clearTimeout(timer);
+        if (timer !== undefined) clock.clearTimeout(timer);
         timers.delete(root);
         last.delete(root);
         delete state[root];

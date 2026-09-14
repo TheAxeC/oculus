@@ -5,3 +5,5 @@ A synthetic research hub: ten projects over the five tiers, the five registries 
 `tests/data/demo-hub.test.ts` builds the portfolio over this folder and asserts zero findings and the counts it holds, so a value that oculus's reader rejects is caught by `npm test`.
 
 The browser specs (`npm run test:browser`) copy this folder to a temporary directory once per run and serve the copy, so the specs write, delete and reorder freely and nothing here is touched.
+
+Two folders are fixtures for what a hub does not hold. `sessions/claude/projects/` is one Claude transcript in the store layout the session layer reads, copied into the run's own home directory so the page has a session to open; `hpc/` is one cluster's answer to the two commands the Live HPC poller runs, which the run's own `ssh` prints instead of opening a connection. Neither is read when oculus serves this folder as an ordinary hub.

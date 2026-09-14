@@ -16,6 +16,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import type { Sink } from '../../../src/lib/server/channels.ts';
 import { IGNORED, relevant, rootsOf, watchGit } from '../../../src/lib/server/watch/git.ts';
+import type { Clock } from '../../../src/lib/server/watch/git.ts';
 import type { Watcher } from '../../../src/lib/server/watch/portfolio.ts';
 import type { GitPayload, Message, SessionsPayload } from '../../../src/lib/data/model.ts';
 
@@ -140,13 +141,50 @@ async function armed(root: string, got: Message[]): Promise<void> {
     }
 }
 
-/** Wait until no more git commands are run, so a count starts from a quiet point. */
-async function settled(ms = 400): Promise<void> {
-    let held = -1;
-    while (held !== ran.length) {
-        held = ran.length;
-        await sleep(ms);
+/** A clock whose window the test closes: nothing the watcher scheduled runs until fire() runs it. */
+type Manual = { clock: Clock; fire(): void; pending(): number };
+
+/**
+ * The timer pair a watcher is handed instead of the globals. A read scheduled on it waits for the
+ * test rather than for the wall clock, so a machine under load cannot end a throttle window between
+ * two writes the case makes inside it.
+ */
+function manual(): Manual {
+    const scheduled = new Map<number, () => void>();
+    let next = 0;
+    return {
+        clock: {
+            setTimeout: (run: () => void): number => {
+                next += 1;
+                scheduled.set(next, run);
+                return next;
+            },
+            clearTimeout: (timer) => {
+                scheduled.delete(timer as number);
+            }
+        },
+        fire(): void {
+            const held = [...scheduled.values()];
+            scheduled.clear();
+            for (const run of held) run();
+        },
+        pending(): number {
+            return scheduled.size;
+        }
+    };
+}
+
+/**
+ * The manual clock's arming: write an untracked file until the watcher schedules a read, which is
+ * what says the FSEvents stream of armed() above is registered and delivering.
+ */
+async function arming(root: string, clock: Manual): Promise<void> {
+    const deadline = Date.now() + WAIT;
+    while (Date.now() < deadline && clock.pending() === 0) {
+        put(root, ARM, String(Date.now()));
+        await until(() => clock.pending() > 0, 2500);
     }
+    expect(clock.pending()).toBeGreaterThan(0);
 }
 
 function recording(): { sink: Sink; got: Message[] } {
@@ -259,21 +297,22 @@ describe('watchGit', () => {
         const second = repository('two');
         const hub = new Hub();
         const client = recording();
+        const clock = manual();
         hub.subscribe(client.sink, ['git']);
         announce(hub, [first, second]);
-        watchers.push(watchGit(hub, { throttle: 300 }));
+        watchers.push(watchGit(hub, { throttle: 300, clock: clock.clock }));
         await until(() => client.got.length >= 1, WAIT);
-        await armed(first, client.got);
-        // From a quiet point: the first fs.watch of a process on darwin can deliver an event for a
-        // write made shortly before the watch was opened, which here is the repository's own.
-        await settled();
+        // The window is this test's: a read runs when fire() runs it and at no other moment, so the
+        // three writes below are inside one window whatever the machine is doing.
+        await arming(first, clock);
+        clock.fire();
 
         const before = { first: reads(first), second: reads(second) };
         put(first, 'loose.txt', 'x\n');
         put(first, 'more.txt', 'y\n');
         put(first, 'third.txt', 'z\n');
-        await until(() => latest(client.got)[first].untracked.length === 4, WAIT);
-        await settled();
+        await until(() => clock.pending() > 0, WAIT);
+        clock.fire();
 
         const payload = latest(client.got);
         expect(payload[first].untracked.map((entry) => entry.path).sort()).toEqual([
@@ -293,19 +332,23 @@ describe('watchGit', () => {
         const second = repository('two');
         const hub = new Hub();
         const client = recording();
+        const clock = manual();
         hub.subscribe(client.sink, ['git']);
         announce(hub, [first, second]);
-        watchers.push(watchGit(hub));
+        watchers.push(watchGit(hub, { clock: clock.clock }));
         await until(() => Object.keys(latest(client.got)).length === 2, WAIT);
 
         announce(hub, [first]);
         await until(() => Object.keys(latest(client.got)).length === 1, WAIT);
         expect(Object.keys(latest(client.got))).toEqual([first]);
 
-        // The dropped root is no longer watched: a write in it changes nothing on the channel.
+        // The dropped root is no longer watched: a write in it schedules nothing, and closing the
+        // window by hand publishes nothing for it.
         const before = client.got.length;
         put(second, 'loose.txt', 'x\n');
-        await sleep(2500);
+        await sleep(500);
+        expect(clock.pending()).toBe(0);
+        clock.fire();
         expect(client.got.length).toBe(before);
         expect(latest(client.got)[second]).toBe(undefined);
     });
@@ -404,16 +447,19 @@ describe('watchGit', () => {
         const first = repository('one');
         const hub = new Hub();
         const client = recording();
+        const clock = manual();
         hub.subscribe(client.sink, ['git']);
         announce(hub, [first]);
-        watchers.push(watchGit(hub));
+        watchers.push(watchGit(hub, { clock: clock.clock }));
         await until(() => client.got.length >= 1, WAIT);
 
         watchers.pop()?.close();
         const before = { messages: client.got.length, commands: reads(first) };
         put(first, 'loose.txt', 'x\n');
         announce(hub, [first]);
-        await sleep(2500);
+        await sleep(500);
+        expect(clock.pending()).toBe(0);
+        clock.fire();
 
         expect(client.got.length).toBe(before.messages);
         expect(reads(first)).toBe(before.commands);

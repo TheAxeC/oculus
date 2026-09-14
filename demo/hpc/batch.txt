@@ -1,0 +1,9 @@
+1840211|graph-bandits-sweep|main-gpu|RUNNING|1:12:04|8:00:00|1|16|gpu:a100:2|64G|4211|2026-09-14T09:12:00|node014
+1840212|tensor-sketch-eval|main-gpu|PENDING|0:00|4:00:00|1|8|gpu:a100:1|32G|3980|N/A|(Resources)
+@@oculus:squeue_rc=0
+@@oculus:sacct@@
+1840190|graph-transfer-train|COMPLETED|0:0|02:41:19|2026-09-13T22:03:11|64Gn|48123456|05:12:44|16|1|9679
+1840191|streaming-anomaly-fit|FAILED|1:0|00:04:02|2026-09-13T18:20:44|32Gn|8123456|00:11:02|8|1|242
+@@oculus:sinfo@@
+main-gpu|up|12|idle|gpu:a100:4
+main-cpu|up|40|mix|(null)

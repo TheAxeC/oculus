@@ -361,6 +361,23 @@ describe('the real registrations', () => {
         expect(COLLECTIONS.filter((key) => !railIds().includes(key))).toEqual([]);
     });
 
+    it('gives every view of the rail a glyph of its own, the collections apart', () => {
+        // The collections share the folder glyph by design; every other view is told apart by its
+        // glyph alone when the rail draws no label, so two views with one glyph read as one.
+        // The probes this file registers borrow real glyph keys and are not the application's.
+        const own = views().filter(
+            (registration) =>
+                !COLLECTIONS.includes(registration.id) && !registration.id.startsWith('probe')
+        );
+        const seen = new Map<string, string[]>();
+        for (const registration of own) {
+            const name = catalog[registration.glyph] ?? registration.glyph;
+            seen.set(name, [...(seen.get(name) ?? []), registration.id]);
+        }
+        const shared = [...seen].filter(([, ids]) => ids.length > 1);
+        expect(shared).toEqual([]);
+    });
+
     it('gives the Agents and Changes views a glyph of their own in the rail', () => {
         const of = (key: string): string => glyphs[catalog[key]];
         expect(of('sessions.agents_glyph')).toBeDefined();

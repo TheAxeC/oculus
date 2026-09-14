@@ -8,7 +8,7 @@ entries:
     title: Structured tensor methods
     goal: Compact, interpretable models from tensor structure.
   - key: graphs
-    title: Graph learning
+    title: Graph learning over evolving relational structure and streaming interaction data
     goal: Learning and decision-making on evolving graphs.
   - key: repr
     title: Representation learning

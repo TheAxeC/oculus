@@ -1,0 +1,4 @@
+{"type": "ai-title", "aiTitle": "Transcript fixture"}
+{"type": "user", "timestamp": "OCULUS_FIXTURE_WHEN", "cwd": "OCULUS_FIXTURE_CWD", "gitBranch": "work", "version": "2.0.0", "origin": {"kind": "human"}, "message": {"role": "user", "content": "Show me the summary block."}}
+{"type": "assistant", "timestamp": "OCULUS_FIXTURE_WHEN", "cwd": "OCULUS_FIXTURE_CWD", "gitBranch": "work", "version": "2.0.0", "message": {"role": "assistant", "model": "claude-opus-5", "content": [{"type": "text", "text": "The block below is what the agent wrote.\n\n<div onclick=\"alert(1)\">click the summary</div>\n\n```python\nprint(\"transcript\")\n```\n"}], "usage": {"input_tokens": 120, "output_tokens": 64}}}
+{"type": "system", "subtype": "turn_duration", "timestamp": "OCULUS_FIXTURE_WHEN", "durationMs": 1200}

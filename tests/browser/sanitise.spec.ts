@@ -4,9 +4,9 @@
 // end of demo/projects/active/graph-bandits/README.md, and every assertion here is about what Chrome
 // ended up with in the page.
 //
-// What this does NOT cover: the transcript path of views/sessions/Transcript.svelte. The demo hub
-// holds no sessions, so no assistant turn is ever drawn here; that site draws the same sanitise call
-// over marked's HTML as the project tab does, and the call is checked by tests/html-sites.test.ts.
+// The transcript path of views/sessions/Transcript.svelte is here too, over the fixture transcript
+// demo/sessions/ holds: tests/browser/serve.ts copies it into the run's own home directory, so the
+// session store the server reads is the fixture's and the page has an assistant turn to draw.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { shortOf } from './hub.ts';
@@ -14,6 +14,9 @@ import { boot, openView } from './rail.ts';
 import { t } from './words.ts';
 
 const BANDITS = 'projects/active/graph-bandits';
+
+/** The fixture session, by the title its transcript names itself with. */
+const SESSION = 'Transcript fixture';
 
 /** The words of the lead whose title carries markup, which is how the card is found. */
 const LEAD_HEAD = 'Attention';
@@ -124,4 +127,34 @@ test('an inline style is dropped and the element it was on stays', async ({ page
     const boxed = document.locator('div').filter({ hasText: 'boxed' }).first();
     await expect(boxed).toBeVisible();
     expect(await boxed.getAttribute('style')).toBeNull();
+});
+
+test('an assistant turn is drawn without its handler and keeps its fenced block', async ({
+    page
+}) => {
+    const seen = dialogs(page);
+    await boot(page);
+    await openView(page, 'session-list', t('sessions.rail_title'));
+    // The fixture session is not running, and the list keeps the ended ones behind their own head.
+    const ended = page.locator('button.ended-h');
+    await expect(ended).toHaveCount(1, { timeout: 15000 });
+    await ended.click();
+
+    const row = page.locator('.row').filter({ hasText: SESSION }).first();
+    await expect(row).toBeVisible();
+    // The row's own menu is what opens a transcript: it selects the session and opens the view.
+    await row.getByRole('button', { name: t('ui.row_menu') }).click();
+    await page.getByRole('menuitem', { name: t('sessions.transcript_open') }).click();
+
+    const turn = page.locator('.turn.assistant').first();
+    await expect(turn).toBeVisible();
+    const block = turn.locator('div').filter({ hasText: 'click the summary' }).first();
+    await expect(block).toBeVisible();
+    expect(await block.getAttribute('onclick')).toBeNull();
+    await block.click();
+
+    const code = turn.locator('pre code.language-python');
+    await expect(code).toHaveCount(1);
+    await expect(code).toContainText('print("transcript")');
+    expect(seen).toEqual([]);
 });

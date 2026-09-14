@@ -126,4 +126,4 @@ text:
         warn_glyph: warn
     views:
         focus: Focus
-        focus_glyph: now
+        focus_glyph: compass
