@@ -19,6 +19,7 @@
     import type { Arrangement } from './page-strip';
     import Palette from './Palette.svelte';
     import FoldedPane from './FoldedPane.svelte';
+    import PageLeaf from './PageLeaf.svelte';
     import PaneView from './PaneView.svelte';
     import SplitView from './SplitView.svelte';
     import UpdateTray from './UpdateTray.svelte';
@@ -161,12 +162,16 @@
     });
 </script>
 
-{#snippet paneOf(node: Layout, path: number[])}
-    <PaneView {node} {path} />
+{#snippet paneOf(node: Layout, path: number[], of: string)}
+    <PaneView {node} {path} page={of} />
 {/snippet}
 
 {#snippet foldOf(node: Layout, dir: 'row' | 'col', onexpand: () => void)}
     <FoldedPane {node} {dir} {onexpand} />
+{/snippet}
+
+{#snippet leafOf(nested: string, path: number[], of: string)}
+    <PageLeaf {nested} {path} host={of} />
 {/snippet}
 
 <svelte:window
@@ -190,14 +195,16 @@
             {#key page.id}
                 {#if zoomed !== null && focus !== null}
                     <div class="tree" style="flex: 1 1 0">
-                        <PaneView node={zoomed} path={focus.path} />
+                        <PaneView node={zoomed} path={focus.path} page={page.id} />
                     </div>
                 {:else}
                     <div class="tree" style="flex: 1 1 0">
                         <SplitView
                             layout={layout()}
+                            page={page.id}
                             pane={paneOf}
                             fold={foldOf}
+                            leaf={leafOf}
                             onresize={(path: number[], sizes: number[]) =>
                                 change((tree) => resize(tree, path, sizes))}
                             onexpand={(path: number[], index: number) => expandChild(path, index)}

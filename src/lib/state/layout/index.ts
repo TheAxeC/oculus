@@ -14,6 +14,7 @@ export {
     isRecord,
     movePage,
     newPage,
+    pageLeaf,
     samePath
 } from './model.ts';
 export type {
@@ -22,6 +23,7 @@ export type {
     Instance,
     Layout,
     Page,
+    PageLeaf,
     Pages,
     Pane,
     Split,
@@ -37,14 +39,30 @@ export {
     expandTo,
     fold,
     foldedCount,
+    insertInstance,
     isFolded,
+    leafAt,
     moveInstance,
     openInstance,
+    pageLeaves,
     paneAt,
     resize,
     restate,
+    splitLeaf,
     splitPane
 } from './tree.ts';
+export {
+    clearPage,
+    containsPage,
+    embedPage,
+    embeddable,
+    refusedLeaves,
+    settlePageLeaves,
+    showable,
+    showsPage,
+    unembedPage
+} from './nested.ts';
+export type { Refusal } from './nested.ts';
 export { focusedPane, maximise, restore, settleFocus, splitWith } from './workbench.ts';
 export {
     checkLayout,

@@ -4,8 +4,9 @@
 // and the one place it is saved.
 //
 // The saved unit is every page: each one a whole workbench (one tree and the maximised pane, if
-// there is one) with a name, and which page is on screen. Every operation below the page operations
-// acts on the current page's tree, so nothing below them knows about pages.
+// there is one) with a name, and which page is on screen. Every operation that names a path names
+// the page it addresses, and the page on screen is what it means when it names none, so a caller
+// that knows nothing of pages reads and writes the one the strip is on.
 // Every change reaches the store through apply() or savePages(), which are also what save, so
 // neither an arrangement nor a page is changed without being written down.
 // Unpinning keeps the instance in place, so two unpinned instances of one view may coexist.
@@ -15,15 +16,18 @@ import type { UiStore } from './ui.svelte.ts';
 import {
     activePath,
     activate,
+    clearPage,
     closeInstance as removeInstance,
     closePane as removePane,
     defaultPages,
+    embedPage as embedIn,
     expand,
     expandTo,
     findInstance,
     findView,
     focusedPane,
     fold,
+    insertInstance,
     panes as panesIn,
     isInstanceOf,
     maximise,
@@ -43,6 +47,9 @@ import {
     splitPane,
     splitWith,
     stateId,
+    showable,
+    showsPage,
+    unembedPage as unembedIn,
     type Edge,
     type Focus,
     type Instance,
@@ -71,13 +78,18 @@ export const PREVIOUS_KEY = 'oculus.layout.previous';
 /** What the store needs of a Storage, so a test can hand it a plain object. */
 type Storable = Pick<Storage, 'getItem' | 'setItem'>;
 
+/** What a reader given the id of a page the list does not hold is answered with. */
+const GONE: Workbench = { root: { kind: 'pane', tabs: [], active: '' } };
+
 /** The pages one client is rendering, and their persistence. */
 export type LayoutStore = {
     currentPage: () => Page;
     pages: () => Page[];
-    workbench: () => Workbench;
-    layout: () => Layout;
-    activeInstance: () => Instance | null;
+    pageOf: (id: string) => Page | null;
+    touchPane: (page: string) => void;
+    workbench: (page?: string) => Workbench;
+    layout: (page?: string) => Layout;
+    activeInstance: (page?: string) => Instance | null;
     instanceLayoutState: (id: string) => unknown;
     restateInstance: (id: string, state: unknown) => void;
     pinInstance: (id: string, session: string, label: string) => void;
@@ -90,22 +102,24 @@ export type LayoutStore = {
     movePage: (id: string, index: number) => void;
     closePage: (id: string) => void;
     pageShortcut: (index: number) => boolean;
-    apply: (next: Workbench) => void;
-    change: (edit: (tree: Layout) => Layout) => void;
-    activateInstance: (id: string) => void;
+    apply: (next: Workbench, page?: string) => void;
+    change: (edit: (tree: Layout) => Layout, page?: string) => void;
+    activateInstance: (id: string, page?: string) => void;
     closeInstancesOfView: (view: ViewId) => void;
     moveInstanceToPage: (id: string, page: string) => void;
-    closeInstance: (id: string) => void;
-    closePane: (path: number[]) => void;
-    transferInstance: (id: string, path: number[], index: number) => void;
-    splitInstance: (id: string, path: number[], edge: Edge) => void;
-    maximisePane: (path: number[]) => void;
-    restorePanes: () => void;
-    foldPane: (path: number[]) => void;
-    expandChild: (path: number[], index: number) => void;
-    focused: () => Focus | null;
-    openView: (view: ViewId, state?: unknown) => string;
-    openBeside: (view: ViewId, state?: unknown) => string;
+    closeInstance: (id: string, page?: string) => void;
+    closePane: (path: number[], page?: string) => void;
+    transferInstance: (id: string, path: number[], index: number, page?: string) => void;
+    splitInstance: (id: string, path: number[], edge: Edge, page?: string) => void;
+    embedPage: (nested: string, path: number[], edge: Edge, page?: string) => void;
+    unembedPage: (path: number[], page?: string) => void;
+    maximisePane: (path: number[], page?: string) => void;
+    restorePanes: (page?: string) => void;
+    foldPane: (path: number[], page?: string) => void;
+    expandChild: (path: number[], index: number, page?: string) => void;
+    focused: (page?: string) => Focus | null;
+    openView: (view: ViewId, state?: unknown, page?: string) => string;
+    openBeside: (view: ViewId, state?: unknown, page?: string) => string;
 };
 
 export function createLayout(ui: UiStore): LayoutStore {
@@ -127,6 +141,9 @@ export function createLayout(ui: UiStore): LayoutStore {
      */
     const lastActive: Record<string, string | null> = {};
 
+    /** The page of the pane the reader last acted in, or null when none has been acted in yet. */
+    let lastTouched: string | null = null;
+
     /** The page on screen, or the first one when the current id names none. */
     function currentPage(): Page {
         const held = store.current;
@@ -138,6 +155,55 @@ export function createLayout(ui: UiStore): LayoutStore {
         return store.current.pages;
     }
 
+    /** The page with this id, or null when the list holds none. */
+    function pageOf(id: string): Page | null {
+        return store.current.pages.find((page) => page.id === id) ?? null;
+    }
+
+    /**
+     * The page an operation addresses: the one its page argument names, the page on screen when it
+     * names none, and nothing at all when it names a page the list does not hold. An operation given
+     * an id of a page that is gone therefore changes nothing rather than acting on another page.
+     */
+    function at(page?: string): Page | null {
+        return page === undefined ? currentPage() : pageOf(page);
+    }
+
+    /**
+     * The page the reader is in: the one shown at the pane last pressed or focused, and the page on
+     * screen before any pane has been, when that pane's page is gone, or when the strip has been
+     * switched since. It is what a view opened by anything that names no page lands in, so a card
+     * pressed inside a shown page opens its tab on that page.
+     */
+    function touched(): Page {
+        const current = currentPage();
+        const held = lastTouched === null ? null : pageOf(lastTouched);
+        if (held === null) return current;
+        // A page the screen no longer draws is not where the reader is, whatever was pressed last.
+        return showsPage(store.current.pages, current.id, held.id) || held.id === current.id
+            ? held
+            : current;
+    }
+
+    /** Forget the pane last acted in unless it is on this page: what hid the rest hid it too. */
+    function forgetTouchedOutside(page: string | undefined): void {
+        const id = at(page)?.id;
+        if (lastTouched !== null && lastTouched !== id) lastTouched = null;
+    }
+
+    /** The reader acted in a pane of this page. It is not saved: a load starts from the strip. */
+    function touchPane(page: string): void {
+        if (pageOf(page) !== null) lastTouched = page;
+    }
+
+    /** The page whose tree holds an instance, or null when no page does. */
+    function holding(id: string): Page | null {
+        return (
+            store.current.pages.find((page) => findInstance(page.workbench.root, id) !== null) ??
+            null
+        );
+    }
+
     /**
      * The instance the last openBeside made on each page, and the one that was being read when the
      * pane was split off, so a second view asked for beside the one being read joins the pane the
@@ -146,51 +212,60 @@ export function createLayout(ui: UiStore): LayoutStore {
      */
     const lastBeside = new Map<string, { made: string; from: string | null }>();
 
-    /** The instance activated last on the page on screen. */
-    function active(): string | null {
-        return lastActive[currentPage().id] ?? null;
+    /** The instance activated last on a page. */
+    function active(page?: string): string | null {
+        const held = at(page);
+        return held === null ? null : (lastActive[held.id] ?? null);
     }
 
-    /** Remember which instance the page on screen was last left on. */
-    function remembered(id: string | null): void {
-        lastActive[currentPage().id] = id;
+    /** Remember which instance a page was last left on. */
+    function remembered(id: string | null, page?: string): void {
+        const held = at(page);
+        if (held !== null) lastActive[held.id] = id;
     }
 
-    /** The whole arrangement of the page on screen. */
-    function workbench(): Workbench {
-        return currentPage().workbench;
+    /** The whole arrangement of a page, and an empty one for an id naming no page. */
+    function workbench(page?: string): Workbench {
+        return at(page)?.workbench ?? GONE;
     }
 
-    /** The tree of the page on screen. */
-    function layout(): Layout {
-        return workbench().root;
+    /** The tree of a page. */
+    function layout(page?: string): Layout {
+        return workbench(page).root;
     }
 
     /** The active tab of the pane most recently activated, or of the first pane by default. */
-    function activeInstance(): Instance | null {
-        const tree = layout();
-        const pane = paneAt(tree, activePath(tree, active()));
+    function activeInstance(page?: string): Instance | null {
+        const tree = layout(page);
+        const pane = paneAt(tree, activePath(tree, active(page)));
         return pane?.tabs.find((instance) => instance.id === pane.active) ?? null;
     }
 
-    /** One layout instance's own saved state, from the current page's tree. */
+    /**
+     * One layout instance's own saved state, from whichever page's tree holds it: a tab inside a
+     * page shown in another page is held by the page it belongs to and not by the one showing it.
+     */
     function instanceLayoutState(id: string): unknown {
-        return findInstance(layout(), id)?.instance.state;
+        const page = holding(id);
+        return page === null ? undefined : findInstance(page.workbench.root, id)?.instance.state;
     }
 
     /** Replace one instance's layout state. A missing id changes nothing. */
     function restateInstance(id: string, state: unknown): void {
-        if (findInstance(layout(), id) === null) return;
-        change((tree) => restate(tree, id, state));
+        const page = holding(id);
+        if (page === null) return;
+        change((tree) => restate(tree, id, state), page.id);
     }
 
     /** Pin one instance, or activate the same view's existing pin without changing the caller. */
     function pinInstance(id: string, session: string, label: string): void {
-        const caller = findInstance(layout(), id);
+        const page = holding(id);
+        if (page === null) return;
+        const caller = findInstance(page.workbench.root, id);
         if (caller === null) return;
-        const existing = findView(layout(), caller.instance.view, session);
+        const existing = findView(page.workbench.root, caller.instance.view, session);
         if (existing !== null) {
-            activateInstance(existing.id);
+            activateInstance(existing.id, page.id);
             return;
         }
         restateInstance(id, { session, label });
@@ -283,6 +358,9 @@ export function createLayout(ui: UiStore): LayoutStore {
     /** Show a page. A page id naming none changes nothing. */
     function switchPage(id: string): void {
         if (!store.current.pages.some((page) => page.id === id)) return;
+        // The pane the reader was in belonged to the page that was on screen, so a view opened next
+        // lands in the page switched to until a pane of this one is pressed.
+        lastTouched = null;
         savePages({ ...store.current, current: id });
     }
 
@@ -320,7 +398,9 @@ export function createLayout(ui: UiStore): LayoutStore {
             store.current.current === id
                 ? left[Math.min(at, left.length - 1)].id
                 : store.current.current;
-        savePages({ pages: left, current: next });
+        // A page that is gone is shown nowhere: every leaf naming it becomes an empty pane, so no
+        // tree is left pointing at a page the strip no longer holds.
+        savePages(clearPage({ pages: left, current: next }, id));
     }
 
     /**
@@ -334,14 +414,14 @@ export function createLayout(ui: UiStore): LayoutStore {
         return true;
     }
 
-    /** Make an arrangement the current page's and save every page. */
-    function apply(next: Workbench): void {
+    /** Make an arrangement a page's and save every page. An id naming no page changes nothing. */
+    function apply(next: Workbench, page?: string): void {
         const held = store.current;
+        const id = at(page)?.id;
+        if (id === undefined) return;
         savePages({
             ...held,
-            pages: held.pages.map((page) =>
-                page.id === currentPage().id ? { ...page, workbench: next } : page
-            )
+            pages: held.pages.map((one) => (one.id === id ? { ...one, workbench: next } : one))
         });
     }
 
@@ -357,16 +437,23 @@ export function createLayout(ui: UiStore): LayoutStore {
         }
     }
 
-    /** Apply an operation to the page's tree, which is how every tree edit reaches the store. */
-    function change(edit: (tree: Layout) => Layout): void {
-        const current = workbench();
-        apply({ ...current, root: edit(current.root) });
+    /** Apply an operation to a page's tree, which is how every tree edit reaches the store. */
+    function change(edit: (tree: Layout) => Layout, page?: string): void {
+        const current = workbench(page);
+        apply({ ...current, root: edit(current.root) }, page);
     }
 
-    /** Make an instance the active tab of its pane, and its pane the tree's active one. */
-    function activateInstance(id: string): void {
-        remembered(id);
-        change((tree) => activate(tree, id));
+    /**
+     * Make an instance the active tab of its pane, and its pane its page's active one. The page is
+     * the one whose tree holds the instance, which is the page shown at the pane when that pane is
+     * inside a page leaf.
+     */
+    function activateInstance(id: string, page?: string): void {
+        const holder = holding(id) ?? at(page);
+        if (holder === null) return;
+        touchPane(holder.id);
+        remembered(id, holder.id);
+        change((tree) => activate(tree, id), holder.id);
     }
 
     /**
@@ -387,7 +474,8 @@ export function createLayout(ui: UiStore): LayoutStore {
 
     /** Close one instance wherever it is, on the current page or on another. */
     function closeInstanceAnywhere(id: string): void {
-        if (active() === id) remembered(null);
+        const holder = holding(id);
+        if (holder !== null && active(holder.id) === id) remembered(null, holder.id);
         savePages({
             ...store.current,
             pages: store.current.pages.map((page) => ({
@@ -406,14 +494,32 @@ export function createLayout(ui: UiStore): LayoutStore {
      * of the first pane of that page's tree.
      */
     function moveInstanceToPage(id: string, page: string): void {
-        const from = store.current.pages.find((one) => one.id === currentPage().id);
-        const to = store.current.pages.find((one) => one.id === page);
-        if (from === undefined || to === undefined || from.id === to.id) return;
+        const from = holding(id);
+        const to = pageOf(page);
+        if (from === null || to === null || from.id === to.id) return;
+        const landing = panesIn(to.workbench.root)[0]?.path ?? [];
+        carryToPage(id, from, to, landing, (tree, moved) => openInstance(tree, landing, moved));
+    }
+
+    /**
+     * Take an instance out of the page holding it and put it in another page, by the landing `put`
+     * makes for it. It keeps its id, so the view it mounts keeps whatever state it holds, and the
+     * pane it left is cleaned as closing its tab would clean it.
+     */
+    function carryToPage(
+        id: string,
+        from: Page,
+        to: Page,
+        path: number[],
+        put: (tree: Layout, moved: Instance) => Layout
+    ): void {
         const found = findInstance(from.workbench.root, id);
         if (found === null) return;
-        const moved = found.instance;
-        if (active() === id) remembered(null);
-        const landing = panesIn(to.workbench.root)[0]?.path ?? [];
+        const shown = reveal(path, to.id);
+        const root = put(shown.root, found.instance);
+        if (root === shown.root) return;
+        if (active(from.id) === id) remembered(null, from.id);
+        remembered(id, to.id);
         savePages({
             ...store.current,
             pages: store.current.pages.map((one) => {
@@ -427,31 +533,31 @@ export function createLayout(ui: UiStore): LayoutStore {
                     };
                 }
                 if (one.id !== to.id) return one;
-                return {
-                    ...one,
-                    workbench: {
-                        ...one.workbench,
-                        root: openInstance(one.workbench.root, landing, moved)
-                    }
-                };
+                return { ...one, workbench: settleFocus({ ...shown, root }) };
             })
         });
     }
 
-    /** Close an instance, and forget it if it was the tree's active one. */
-    function closeInstance(id: string): void {
-        if (active() === id) remembered(null);
-        apply(settleFocus({ ...workbench(), root: removeInstance(layout(), id) }));
+    /** Close an instance, and forget it if it was its page's active one. */
+    function closeInstance(id: string, page?: string): void {
+        const holder = holding(id) ?? at(page);
+        if (holder === null) return;
+        if (active(holder.id) === id) remembered(null, holder.id);
+        const current = workbench(holder.id);
+        apply(settleFocus({ ...current, root: removeInstance(current.root, id) }), holder.id);
         ui.clearInstanceState(id);
     }
 
     /** Close a whole pane, with every tab it holds. */
-    function closePane(path: number[]): void {
-        const pane = paneAt(layout(), path);
+    function closePane(path: number[], page?: string): void {
+        const id = at(page)?.id;
+        if (id === undefined) return;
+        const current = workbench(id);
+        const pane = paneAt(current.root, path);
         if (pane === null) return;
-        const held = active();
-        if (held !== null && pane.tabs.some((tab) => tab.id === held)) remembered(null);
-        apply(settleFocus({ ...workbench(), root: removePane(layout(), path) }));
+        const held = active(id);
+        if (held !== null && pane.tabs.some((tab) => tab.id === held)) remembered(null, id);
+        apply(settleFocus({ ...current, root: removePane(current.root, path) }), id);
     }
 
     /**
@@ -459,63 +565,113 @@ export function createLayout(ui: UiStore): LayoutStore {
      * the one it is landing in, and a folded ancestor hides it too. Either way the tab would be moved
      * out of sight, which is the one thing a move must not look like.
      */
-    function reveal(path: number[]): Workbench {
-        const current = workbench();
+    function reveal(path: number[], page?: string): Workbench {
+        const current = workbench(page);
         const focus = focusedPane(current);
         const shown = focus !== null && !samePath(focus.path, path) ? restore(current) : current;
         return { ...shown, root: expandTo(shown.root, path) };
     }
 
-    /** Move an instance to a pane's tab strip, from wherever in the tree it is now. */
-    function transferInstance(id: string, path: number[], index: number): void {
-        const from = reveal(path);
-        const next = { ...from, root: moveInstance(from.root, id, path, index) };
-        if (next.root === from.root) return;
-        remembered(id);
-        apply(settleFocus(next));
+    /**
+     * Move an instance to a pane's tab strip, from wherever it is now. The pane is named in the page
+     * the argument names, and the instance is taken out of whichever page holds it, so a tab dragged
+     * into a pane of a page shown nested moves between the two pages.
+     */
+    function transferInstance(id: string, path: number[], index: number, page?: string): void {
+        const to = at(page);
+        const from = holding(id);
+        if (from === null || to === null) return;
+        if (from.id !== to.id) {
+            carryToPage(id, from, to, path, (tree, moved) =>
+                insertInstance(tree, path, index, moved)
+            );
+            return;
+        }
+        const shown = reveal(path, to.id);
+        const next = { ...shown, root: moveInstance(shown.root, id, path, index) };
+        if (next.root === shown.root) return;
+        remembered(id, to.id);
+        apply(settleFocus(next), to.id);
     }
 
     /** Move an instance into a new pane on one edge of a pane, from wherever it is now. */
-    function splitInstance(id: string, path: number[], edge: Edge): void {
-        const from = reveal(path);
-        const next = splitWith(from, id, path, edge);
-        if (next === from) return;
-        remembered(id);
-        apply(next);
+    function splitInstance(id: string, path: number[], edge: Edge, page?: string): void {
+        const to = at(page);
+        const from = holding(id);
+        if (from === null || to === null) return;
+        if (from.id !== to.id) {
+            const dir: 'row' | 'col' = edge === 'left' || edge === 'right' ? 'row' : 'col';
+            const before = edge === 'left' || edge === 'top';
+            carryToPage(id, from, to, path, (tree, moved) =>
+                splitPane(tree, path, dir, moved, before)
+            );
+            return;
+        }
+        const shown = reveal(path, to.id);
+        const next = splitWith(shown, id, path, edge);
+        if (next === shown) return;
+        remembered(id, to.id);
+        apply(next, to.id);
+    }
+
+    /**
+     * Show another page at the pane or page leaf at `path`, splitting it to the named edge. Nothing
+     * changes when the page may not be shown there: the host itself, a page that shows the host, or
+     * a page already drawn somewhere on the screen the strip is on.
+     */
+    function embedPage(nested: string, path: number[], edge: Edge, page?: string): void {
+        const host = at(page);
+        if (host === null) return;
+        if (!showable(store.current.pages, currentPage().id, host.id, nested)) return;
+        const next = embedIn(store.current, host.id, path, edge, nested);
+        if (next === store.current) return;
+        savePages(next);
+    }
+
+    /** Take the page leaf at `path` out of a page's tree, its space going back to its neighbour. */
+    function unembedPage(path: number[], page?: string): void {
+        const id = at(page)?.id;
+        if (id === undefined) return;
+        const current = workbench(id);
+        const root = unembedIn(current.root, path);
+        if (root === current.root) return;
+        apply(settleFocus({ ...current, root }), id);
     }
 
     /** Show one pane alone, with the rest of the workbench put away. */
-    function maximisePane(path: number[]): void {
-        apply(maximise(workbench(), path));
+    function maximisePane(path: number[], page?: string): void {
+        forgetTouchedOutside(page);
+        apply(maximise(workbench(page), path), page);
     }
 
     /** Show every pane again. */
-    function restorePanes(): void {
-        apply(restore(workbench()));
+    function restorePanes(page?: string): void {
+        apply(restore(workbench(page)), page);
     }
 
     /**
      * Collapse a child of a split to its edge. The maximised pane is given back first when it is the
      * one being folded or sits inside it, since a pane shown alone and collapsed at once is neither.
      */
-    function foldPane(path: number[]): void {
+    function foldPane(path: number[], page?: string): void {
         if (path.length === 0) return;
-        const current = workbench();
+        const current = workbench(page);
         const folded = fold(current.root, path);
         if (folded === current.root) return;
         const focus = focusedPane(current);
-        const inside = focus !== null && path.every((step, at) => focus.path[at] === step);
-        apply({ ...(inside ? restore(current) : current), root: folded });
+        const inside = focus !== null && path.every((step, index) => focus.path[index] === step);
+        forgetTouchedOutside(page);
+        apply({ ...(inside ? restore(current) : current), root: folded }, page);
     }
 
     /** Give a folded child of the split at `path` its share back. */
-    function expandChild(path: number[], index: number): void {
-        change((tree) => expand(tree, path, index));
+    function expandChild(path: number[], index: number, page?: string): void {
+        change((tree) => expand(tree, path, index), page);
     }
 
-    /** The maximised pane, or null when every pane is shown. */
-    function focused(): Focus | null {
-        return focusedPane(workbench());
+    /** The maximised pane of a page, or null when every pane of it is shown. */
+    function focused(page?: string): Focus | null {
+        return focusedPane(workbench(page));
     }
 
     /**
@@ -530,8 +686,8 @@ export function createLayout(ui: UiStore): LayoutStore {
      * carrying neither retargets the unpinned instance, while pinned instances stay fixed. The returned
      * id names the instance activated or created, so its separate UI state can be updated by the caller.
      */
-    function openView(view: ViewId, state?: unknown): string {
-        return openInto(view, state, false);
+    function openView(view: ViewId, state?: unknown, page?: string): string {
+        return openInto(view, state, false, page);
     }
 
     /**
@@ -541,49 +697,56 @@ export function createLayout(ui: UiStore): LayoutStore {
      * five tabs. A view already open is activated where it is, exactly as openView activates it, and
      * a maximised pane takes the view itself, since a new pane beside it would be one nobody can see.
      */
-    function openBeside(view: ViewId, state?: unknown): string {
-        return openInto(view, state, true);
+    function openBeside(view: ViewId, state?: unknown, page?: string): string {
+        return openInto(view, state, true, page);
     }
 
-    /** Open or activate a view, in the pane a view lands in or in a new pane beside that one. */
-    function openInto(view: ViewId, state: unknown, beside: boolean): string {
-        const focus = focusedPane(workbench());
-        const tree = layout();
+    /**
+     * Open or activate a view, in the pane a view lands in or in a new pane beside that one. The
+     * page is the one the reader is in, which is the page shown at the pane holding the keyboard
+     * focus and the page on screen when no pane holds it.
+     */
+    function openInto(view: ViewId, state: unknown, beside: boolean, page?: string): string {
+        const held = page === undefined ? touched() : at(page);
+        if (held === null) return '';
+        const host = held.id;
+        const focus = focusedPane(workbench(host));
+        const tree = layout(host);
         const into = focus === null ? null : focus.path;
         const inside = into === null ? null : paneAt(tree, into);
         const wanted = stateId(state);
         const existing =
             inside === null ? findView(tree, view, wanted) : findIn(inside, view, wanted);
         if (existing !== null) {
-            remembered(existing.id);
+            remembered(existing.id, host);
             change((current) => {
                 const stated = state === undefined ? current : restate(current, existing.id, state);
                 return activate(expandTo(stated, activePath(stated, existing.id)), existing.id);
-            });
+            }, host);
             return existing.id;
         }
         const instance = newInstance(view, state ?? {});
-        const path = into !== null && inside !== null ? into : activePath(tree, active());
+        const path = into !== null && inside !== null ? into : activePath(tree, active(host));
         const aside = beside && inside === null;
-        const stack = aside ? besidePath(tree) : null;
+        const stack = aside ? besidePath(tree, host) : null;
         if (aside) {
             // The pane split off keeps the tab that was being read as the one it sits beside; a tab
             // stacked into that pane keeps the memory the pane was made with.
-            const held = lastBeside.get(currentPage().id);
+            const held = lastBeside.get(host);
             const from =
                 stack !== null && held !== undefined
                     ? held.from
                     : (paneAt(tree, path)?.active ?? null);
-            lastBeside.set(currentPage().id, { made: instance.id, from });
+            lastBeside.set(host, { made: instance.id, from });
         }
-        remembered(instance.id);
+        remembered(instance.id, host);
         change((current) => {
             const shown = expandTo(current, stack ?? path);
             if (!aside) return openInstance(shown, path, instance);
             return stack === null
                 ? splitPane(shown, path, 'row', instance)
                 : openInstance(shown, stack, instance);
-        });
+        }, host);
         return instance.id;
     }
 
@@ -592,8 +755,8 @@ export function createLayout(ui: UiStore): LayoutStore {
      * the pane of the instance it was opened beside: a tab dragged back into the pane being read is
      * beside nothing, so the next view asked for beside it splits again.
      */
-    function besidePath(tree: Layout): number[] | null {
-        const held = lastBeside.get(currentPage().id);
+    function besidePath(tree: Layout, page: string): number[] | null {
+        const held = lastBeside.get(page);
         if (held === undefined) return null;
         const made = findInstance(tree, held.made);
         if (made === null) return null;
@@ -615,6 +778,8 @@ export function createLayout(ui: UiStore): LayoutStore {
     return {
         currentPage,
         pages,
+        pageOf,
+        touchPane,
         workbench,
         layout,
         activeInstance,
@@ -639,6 +804,8 @@ export function createLayout(ui: UiStore): LayoutStore {
         closePane,
         transferInstance,
         splitInstance,
+        embedPage,
+        unembedPage,
         maximisePane,
         restorePanes,
         foldPane,

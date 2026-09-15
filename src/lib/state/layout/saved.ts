@@ -9,6 +9,7 @@ import {
     WORKBENCH_VERSION,
     isRecord,
     newPage,
+    pageLeaf,
     show,
     type Instance,
     type Layout,
@@ -16,17 +17,39 @@ import {
     type Pages,
     type Workbench
 } from './model.ts';
+import { refusedLeaves, settlePageLeaves, type Refusal } from './nested.ts';
 import { normaliseSizes } from './tree.ts';
 import { focusedPane, settleFocus } from './workbench.ts';
 
 const SUM_EPS = 1e-6;
 const EPS = 1e-9;
 
-/** Every violation in a tree, and an empty array for a tree the shell can render. */
-export function checkLayout(layout: Layout): string[] {
+/**
+ * Every violation in a tree, and an empty array for a tree the shell can render. Handed the page
+ * list and the id of the page whose tree it is, it also reads the page leaves: a leaf must name a
+ * page the list holds, and no leaf may make the host page show itself.
+ */
+export function checkLayout(layout: Layout, known?: Pages, host?: string): string[] {
     const problems: string[] = [];
     readNode(layout, [], problems, new Set());
+    problems.push(...checkPageLeaves(layout, known, host));
     return problems;
+}
+
+/** The words for each way a leaf can be one its page may not draw. */
+const REFUSALS: Record<Refusal, string> = {
+    unknown: 'which is not a page',
+    loop: 'which shows this page',
+    twice: 'which this page already shows'
+};
+
+/** Every page leaf of a tree that its page may not draw, in the order the tree draws them. */
+function checkPageLeaves(layout: Layout, known?: Pages, host?: string): string[] {
+    if (known === undefined || host === undefined) return [];
+    return refusedLeaves(known.pages, host, layout).map(
+        (leaf) =>
+            `node at ${show(leaf.path)}: shows ${JSON.stringify(leaf.page)}, ${REFUSALS[leaf.why]}`
+    );
 }
 
 /** Build and validate one tree node while collecting every recoverable violation. */
@@ -43,8 +66,23 @@ function readNode(
     }
     if (value.kind === 'split') return readSplit(value, path, problems, ids, where);
     if (value.kind === 'pane') return readPane(value, problems, ids, where);
-    problems.push(`${where}: kind is ${JSON.stringify(value.kind)}, not split or pane`);
+    if (value.kind === 'page') return readPageLeaf(value, problems, where);
+    problems.push(`${where}: kind is ${JSON.stringify(value.kind)}, not split, pane or page`);
     return null;
+}
+
+/** Build and validate one page leaf: it names another page and holds nothing else. */
+function readPageLeaf(
+    value: Record<string, unknown>,
+    problems: string[],
+    where: string
+): Layout | null {
+    const page = value.page;
+    if (typeof page !== 'string' || page === '') {
+        problems.push(`${where}: page is ${JSON.stringify(page)}, which names no page`);
+        return null;
+    }
+    return pageLeaf(page);
 }
 
 /** Build and validate one split node. */
@@ -171,9 +209,12 @@ function readPane(
 }
 
 /** Every violation in a whole workbench: its tree, and a focus that names no pane of it. */
-export function checkWorkbench(workbench: Workbench): string[] {
+export function checkWorkbench(workbench: Workbench, known?: Pages, host?: string): string[] {
     const problems: string[] = [];
     readTree(workbench.root, 'root', problems, new Set<string>());
+    for (const problem of checkPageLeaves(workbench.root, known, host)) {
+        problems.push(`root ${problem}`);
+    }
     const focus = workbench.focus;
     if (focus !== undefined && focusedPane(workbench) === null) {
         problems.push(`focus names ${show(focus.path)}, which is not a pane`);
@@ -190,7 +231,7 @@ export function checkPages(pages: Pages): string[] {
     for (const page of pages.pages) {
         if (ids.has(page.id)) problems.push(`page id ${JSON.stringify(page.id)} is used twice`);
         ids.add(page.id);
-        for (const problem of checkWorkbench(page.workbench)) {
+        for (const problem of checkWorkbench(page.workbench, pages, page.id)) {
             problems.push(`page ${JSON.stringify(page.label)} ${problem}`);
         }
         for (const { pane } of panes(page.workbench.root)) {
@@ -240,7 +281,9 @@ export function parseLayout(value: unknown, label: string): Pages | null {
         if (workbench === null) return null;
         pages.push({ id: entry.id, label: entry.label, workbench });
     }
-    const read: Pages = { pages, current };
+    // A leaf naming a page this envelope does not hold, or one that would make a page show itself,
+    // becomes an empty pane: the rest of the arrangement is still the one the viewer left.
+    const read: Pages = settlePageLeaves({ pages, current });
     return checkPages(read).length === 0 ? read : null;
 }
 

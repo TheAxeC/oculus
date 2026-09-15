@@ -27,6 +27,14 @@ test('the menu adds a page and renames it', async ({ page }) => {
     await box.press('Enter');
     await expect(strip.getByRole('tab', { name: 'Renamed' })).toBeVisible();
     await expect(strip.getByRole('tab', { name: t('ui.page_default', 2) })).toHaveCount(0);
+
+    // A name typed away to nothing is not a name: the page keeps the one it has.
+    await strip.getByRole('button', { name: t('ui.page_menu') }).click();
+    await page.getByRole('menuitem', { name: t('ui.page_rename') }).click();
+    const again = strip.getByRole('textbox', { name: t('ui.page_rename_label') });
+    await again.fill('   ');
+    await again.press('Enter');
+    await expect(strip.getByRole('tab', { name: 'Renamed' })).toBeVisible();
 });
 
 test('2 shows the second page and 1 the first', async ({ page }) => {

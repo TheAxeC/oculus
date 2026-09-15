@@ -47,6 +47,7 @@ type CardElement = { id: string; element: HTMLElement };
 export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     let keyState = initialKeyState();
     let lastFocusedPane: HTMLElement | null = null;
+    let lastPagePane: HTMLElement | null = null;
     let observedPane: HTMLElement | null = null;
     let cardObserver: MutationObserver | null = null;
 
@@ -118,16 +119,31 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             return;
         }
         if (event.key !== 'Escape' || event.defaultPrevented) return;
-        if (options.drag.dragging() !== null || options.focus() === null) return;
+        // The pane shown alone may be one of a page drawn inside the page on screen, so the page
+        // the reader is in is what is restored, not the one the strip is on.
+        if (options.drag.dragging() !== null) return;
+        const page = pageOf();
+        if (options.layout.focused(page) === null) return;
         event.preventDefault();
-        options.layout.restorePanes();
+        options.layout.restorePanes(page);
+    }
+
+    /**
+     * The page the reader is in: the one shown at the pane that last took the pointer or the
+     * keyboard, and the page on screen when no such pane is drawn any more. A control outside the
+     * trees, the rail above all, reads it so a view it opens lands in the page being read rather
+     * than in the one around it.
+     */
+    function pageOf(): string {
+        const page = lastPagePane?.isConnected === true ? lastPagePane.dataset.panePage : undefined;
+        return page ?? options.layout.currentPage().id;
     }
 
     /** Apply one resolved key action to shell state or the focused pane's DOM. */
     function perform(action: KeyAction, pane: HTMLElement | null): boolean {
         if (action.kind === 'open') {
             clearCursor();
-            options.layout.openView(action.view);
+            options.layout.openView(action.view, undefined, pageOf());
         } else if (action.kind === 'cursor') {
             return moveCursor(pane, action.direction);
         } else if (action.kind === 'move') {
@@ -161,11 +177,12 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
         if (raw === undefined) return false;
         const path = raw === '' ? [] : raw.split('.').map(Number);
         if (path.some((step) => !Number.isInteger(step))) return false;
-        const node = paneAt(options.layout.layout(), path) ?? undefined;
+        const page = pane?.dataset.panePage;
+        const node = paneAt(options.layout.layout(page), path) ?? undefined;
         const tab = node?.tabs.at(index - 1);
         if (tab === undefined) return false;
         clearCursor();
-        options.layout.activateInstance(tab.id);
+        options.layout.activateInstance(tab.id, page);
         return true;
     }
 
@@ -320,6 +337,9 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     function rememberPane(target: EventTarget | null): void {
         const pane =
             target instanceof HTMLElement ? target.closest<HTMLElement>('[data-pane]') : null;
+        // The page is kept when the press lands outside every pane, since a rail button pressed
+        // after reading inside a nested page is still a view asked for in that page.
+        if (pane !== null) lastPagePane = pane;
         if (pane === lastFocusedPane) return;
         writeCursor(lastFocusedPane ?? pane, null);
         lastFocusedPane = pane;

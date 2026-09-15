@@ -1,7 +1,8 @@
-// Layer 2, client state. The one tab drag in progress. A strip starts it, whatever the pointer is
-// over reports where a drop would land, and the pointer coming up performs it. There is one drag at
-// a time on the page, so this is a module and not a component's state: the strip that started the
-// drag and the pane the pointer ended over never meet.
+// Layer 2, client state. The one drag in progress, of a pane's tab or of a page carried out of the
+// page strip. A strip starts it, whatever the pointer is over reports where a drop would land, and
+// the pointer coming up performs it. There is one drag at a time on the page, so this is a module
+// and not a component's state: the strip that started the drag and the pane the pointer ended over
+// never meet.
 //
 // Nothing here reads the layout tree. A Drop names a pane's path and how the instance lands there;
 // the operation that carries it out is state/layout.svelte.ts's, and it is reached through a sink so
@@ -23,26 +24,38 @@ export type Rect = { x: number; y: number; width: number; height: number };
 /**
  * Where a dragged instance would land: at an index in a pane's tab strip, alone in a new pane on one
  * edge of a pane's body, or at the end of a pane's strip, which is what the middle of a body means.
+ * Each names the page whose tree the path is in; a drop carrying none lands in the page on screen.
  */
 export type Drop =
-    | { kind: 'strip'; path: number[]; index: number }
-    | { kind: 'centre'; path: number[] }
-    | { kind: 'edge'; path: number[]; edge: Edge };
+    | { kind: 'strip'; path: number[]; index: number; page?: string }
+    | { kind: 'centre'; path: number[]; page?: string }
+    | { kind: 'edge'; path: number[]; edge: Edge; page?: string };
 
 /** The operations a drop is performed through. The store's are the default; a test hands its own. */
 export type DragSink = {
-    transfer: (id: string, path: number[], index: number) => void;
-    split: (id: string, path: number[], edge: Edge) => void;
+    transfer: (id: string, path: number[], index: number, page?: string) => void;
+    split: (id: string, path: number[], edge: Edge, page?: string) => void;
+    embed: (nested: string, path: number[], edge: Edge, page?: string) => void;
 };
+
+/**
+ * What is being dragged: a tab of a pane, which lands in a strip, a body or an edge, or a page from
+ * the strip, which lands on an edge alone, since a page has no tab to put among another pane's.
+ */
+export type DragKind = 'tab' | 'page';
 
 /** The drag as anything drawing it sees it. */
 export type Dragging = {
+    /** Whether the id is an instance or a page, which is what says where it may land. */
+    kind: DragKind;
     id: string;
     label: string;
     point: Point;
     drop: Drop | null;
     /** The body of the pane the hovered drop is over, when the drop is an edge or a centre. */
     rect: Rect | null;
+    /** Whether what is under the pointer is a place this cannot land, which is said while it is. */
+    refused: boolean;
 };
 
 /** An index past every tab, which the pane's own clamp turns into the end of the strip. */
@@ -101,8 +114,9 @@ export type DragStore = {
     setDragSink: (next: DragSink | null) => void;
     dragging: () => Dragging | null;
     start: (id: string, label: string, point: Point) => void;
+    startPage: (id: string, label: string, point: Point) => void;
     move: (point: Point) => void;
-    hover: (drop: Drop | null, rect?: Rect | null) => void;
+    hover: (drop: Drop | null, rect?: Rect | null, refused?: boolean) => void;
     end: () => void;
     cancel: () => void;
 };
@@ -111,8 +125,9 @@ export function createDrag(layout: LayoutStore): DragStore {
     const store: { current: Held | null } = $state({ current: null });
 
     const storeSink: DragSink = {
-        transfer: (id, path, index) => layout.transferInstance(id, path, index),
-        split: (id, path, edge) => layout.splitInstance(id, path, edge)
+        transfer: (id, path, index, page) => layout.transferInstance(id, path, index, page),
+        split: (id, path, edge, page) => layout.splitInstance(id, path, edge, page),
+        embed: (nested, path, edge, page) => layout.embedPage(nested, path, edge, page)
     };
 
     let sink: DragSink = storeSink;
@@ -126,8 +141,8 @@ export function createDrag(layout: LayoutStore): DragStore {
     function dragging(): Dragging | null {
         const held = store.current;
         if (!held?.armed) return null;
-        const { id, label, point, drop, rect } = held;
-        return { id, label, point, drop, rect };
+        const { kind, id, label, point, drop, rect, refused } = held;
+        return { kind, id, label, point, drop, rect, refused };
     }
 
     /**
@@ -141,8 +156,30 @@ export function createDrag(layout: LayoutStore): DragStore {
             point,
             drop: null,
             rect: null,
+            refused: false,
+            kind: 'tab',
             origin: point,
             armed: false
+        };
+        listen(true);
+    }
+
+    /**
+     * A page is being carried out of the strip. The gesture that starts it has already crossed the
+     * threshold inside the strip, so this one is armed from the first move: the ghost is drawn where
+     * the pointer already is rather than THRESHOLD pixels further on.
+     */
+    function startPage(id: string, label: string, point: Point): void {
+        store.current = {
+            id,
+            label,
+            point,
+            drop: null,
+            rect: null,
+            refused: false,
+            kind: 'page',
+            origin: point,
+            armed: true
         };
         listen(true);
     }
@@ -159,10 +196,13 @@ export function createDrag(layout: LayoutStore): DragStore {
      * Where the drop would land now, from whatever the pointer is over, and null when it is over nothing
      * that takes one. The rect is the pane body the indicator is drawn over, for an edge or a centre.
      */
-    function hover(drop: Drop | null, rect: Rect | null = null): void {
+    function hover(drop: Drop | null, rect: Rect | null = null, refused = false): void {
         const held = store.current;
         if (held === null) return;
-        store.current = { ...held, drop, rect };
+        // A page has no tab of its own, so the only place it lands is an edge: anywhere else the
+        // pointer reports is no drop at all, and the pointer coming up there performs nothing.
+        const taken = held.kind === 'page' && drop !== null && drop.kind !== 'edge' ? null : drop;
+        store.current = { ...held, drop: taken, rect, refused: taken === null && refused };
     }
 
     /** The pointer came up: the hovered drop is performed, and nothing happens when none is hovered. */
@@ -173,9 +213,13 @@ export function createDrag(layout: LayoutStore): DragStore {
         if (!held?.armed) return;
         const drop = held.drop;
         if (drop === null) return;
-        if (drop.kind === 'strip') sink.transfer(held.id, drop.path, drop.index);
-        else if (drop.kind === 'centre') sink.transfer(held.id, drop.path, AT_END);
-        else sink.split(held.id, drop.path, drop.edge);
+        if (held.kind === 'page') {
+            if (drop.kind === 'edge') sink.embed(held.id, drop.path, drop.edge, drop.page);
+            return;
+        }
+        if (drop.kind === 'strip') sink.transfer(held.id, drop.path, drop.index, drop.page);
+        else if (drop.kind === 'centre') sink.transfer(held.id, drop.path, AT_END, drop.page);
+        else sink.split(held.id, drop.path, drop.edge, drop.page);
     }
 
     /** Escape, or anything else that calls the drag off. Nothing is performed. */
@@ -219,5 +263,5 @@ export function createDrag(layout: LayoutStore): DragStore {
         document.body.style.userSelect = '';
     }
 
-    return { setDragSink, dragging, start, move, hover, end, cancel };
+    return { setDragSink, dragging, start, startPage, move, hover, end, cancel };
 }

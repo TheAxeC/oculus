@@ -12,10 +12,15 @@ text:
         crt_title: 'CRT overlay: scanlines + vignette. Cosmetic only.'
         docs: Docs
         drag_hint: Moving {0}
+        embed_page: 'Show {0} here'
+        embed_refused: '{0} cannot be shown here'
+        embed_refused_glyph: dismiss
         move_to_page: 'Move tab to {0}'
         page_close_confirm: Close the page {0} and the {1} tabs on it?
         page_default: Page {0}
         page_from: Open {0} as a page
+        page_leaf_close: Stop showing this page here
+        page_leaf_close_glyph: dismiss
         page_menu: Page
         page_menu_glyph: expand
         page_new: New page

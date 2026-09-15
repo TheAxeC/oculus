@@ -107,6 +107,9 @@ export function panes(layout: Layout): { path: number[]; pane: Pane }[] {
             found.push({ path, pane: node });
             return;
         }
+        // A page leaf holds no pane of its own: the panes it shows are the named page's, and they
+        // are found by walking that page's tree.
+        if (node.kind !== 'split') return;
         node.children.forEach((child, index) => walk(child, [...path, index]));
     };
     walk(layout, []);

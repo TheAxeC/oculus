@@ -3,7 +3,7 @@
 
 import { findInstance } from '../instance.ts';
 import { samePath, type Edge, type Focus, type Instance, type Workbench } from './model.ts';
-import { closeInstance, paneAt, renameInstance, splitPane } from './tree.ts';
+import { closeInstance, leafAt, paneAt, renameInstance, splitPane } from './tree.ts';
 
 // ---------------------------------------------------------------------------------------------
 // Operations on the whole workbench
@@ -43,7 +43,8 @@ export function settleFocus(workbench: Workbench): Workbench {
 export function splitWith(workbench: Workbench, id: string, path: number[], edge: Edge): Workbench {
     const found = findInstance(workbench.root, id);
     if (found === null) return workbench;
-    if (paneAt(workbench.root, path) === null) return workbench;
+    // A page leaf takes a neighbour as a pane does, so a drop on its edge lands beside it.
+    if (leafAt(workbench.root, path) === null) return workbench;
     const dir: 'row' | 'col' = edge === 'left' || edge === 'right' ? 'row' : 'col';
     const before = edge === 'left' || edge === 'top';
 

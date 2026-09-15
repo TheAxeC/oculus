@@ -12,6 +12,7 @@ import {
     type Instance,
     type Layout,
     type Pane,
+    type PageLeaf,
     type Split
 } from './model.ts';
 
@@ -37,6 +38,31 @@ export function nodeAt(layout: Layout, path: number[]): Layout | null {
 export function paneAt(layout: Layout, path: number[]): Pane | null {
     const node = nodeAt(layout, path);
     return node !== null && node.kind === 'pane' ? node : null;
+}
+
+/**
+ * The leaf a path names, a pane or a page, and null when it names a split or nothing. It is what
+ * every operation that puts a node beside another asks, since a page leaf takes a neighbour exactly
+ * as a pane does.
+ */
+export function leafAt(layout: Layout, path: number[]): Pane | PageLeaf | null {
+    const node = nodeAt(layout, path);
+    return node !== null && node.kind !== 'split' ? node : null;
+}
+
+/** Every page leaf with its path, depth first, left to right. */
+export function pageLeaves(layout: Layout): { path: number[]; page: string }[] {
+    const found: { path: number[]; page: string }[] = [];
+    const walk = (node: Layout, path: number[]): void => {
+        if (node.kind === 'page') {
+            found.push({ path, page: node.page });
+            return;
+        }
+        if (node.kind !== 'split') return;
+        node.children.forEach((child, index) => walk(child, [...path, index]));
+    };
+    walk(layout, []);
+    return found;
 }
 
 /** Whether the child at `index` of a split is collapsed to the split's edge. */
@@ -119,8 +145,11 @@ function withoutChild(split: Split, at: number): Layout {
     return splitOf(split.dir, normaliseSizes(sizes), children, foldedWithout(split.folded, at));
 }
 
-/** The tree without the pane at `path`. The root pane is never removed; it is emptied instead. */
-function removePane(layout: Layout, path: number[]): Layout {
+/**
+ * The tree without the node at `path`, the split it leaves with one child collapsed into that
+ * child. A tree is always at least one node, so the root is emptied rather than removed.
+ */
+export function removeNode(layout: Layout, path: number[]): Layout {
     if (path.length === 0) return emptyPane();
     return rewrite(layout, path, () => null) ?? emptyPane();
 }
@@ -132,7 +161,7 @@ export function removeTab(layout: Layout, path: number[], index: number): Layout
     const removed = item(pane.tabs, index);
     if (removed === undefined) return layout;
     const tabs = pane.tabs.filter((_, at) => at !== index);
-    if (tabs.length === 0) return removePane(layout, path);
+    if (tabs.length === 0) return removeNode(layout, path);
     // The neighbour is the tab that took the closed one's place, or the last one when it was last.
     const neighbour = tabs[Math.min(index, tabs.length - 1)];
     const active = pane.active === removed.id ? neighbour.id : pane.active;
@@ -163,7 +192,7 @@ export function closeInstance(layout: Layout, id: string): Layout {
  */
 export function closePane(layout: Layout, path: number[]): Layout {
     if (paneAt(layout, path) === null) return layout;
-    return removePane(layout, path);
+    return removeNode(layout, path);
 }
 
 /** The tree with one instance under a different id, which is how a move keeps a path valid. */
@@ -221,11 +250,27 @@ export function moveInstance(layout: Layout, id: string, path: number[], index: 
         return rewrite(layout, path, () => ({ kind: 'pane', tabs, active: id })) ?? layout;
     }
 
+    const inserted = insertInstance(layout, path, index, instance);
+    if (inserted === layout) return layout;
+    return removeTab(inserted, found.path, found.index);
+}
+
+/**
+ * Put an instance at `index` of the pane at `path` and make it that pane's active tab. The index is
+ * clamped to the tabs the pane holds, so the end of a strip is any index past them. It is the half
+ * of a move that lands the instance, which a move from another page's tree performs on its own.
+ */
+export function insertInstance(
+    layout: Layout,
+    path: number[],
+    index: number,
+    instance: Instance
+): Layout {
+    const target = paneAt(layout, path);
+    if (target === null) return layout;
     const at = clamp(index, 0, target.tabs.length);
     const tabs = [...target.tabs.slice(0, at), instance, ...target.tabs.slice(at)];
-    const inserted = rewrite(layout, path, () => ({ kind: 'pane', tabs, active: id }));
-    if (inserted === null) return layout;
-    return removeTab(inserted, found.path, found.index);
+    return rewrite(layout, path, () => ({ kind: 'pane', tabs, active: instance.id })) ?? layout;
 }
 
 /**
@@ -244,8 +289,23 @@ export function splitPane(
     instance: Instance,
     before = false
 ): Layout {
-    if (paneAt(layout, path) === null) return layout;
     const fresh: Pane = { kind: 'pane', tabs: [instance], active: instance.id };
+    return splitLeaf(layout, path, dir, fresh, before);
+}
+
+/**
+ * Put `fresh` beside the leaf at `path`, which is a pane or a page shown there. It is splitPane over
+ * any node a leaf may be: the arithmetic of the share, the direction and the side is the same one,
+ * and only what lands beside the leaf differs.
+ */
+export function splitLeaf(
+    layout: Layout,
+    path: number[],
+    dir: 'row' | 'col',
+    fresh: Layout,
+    before = false
+): Layout {
+    if (leafAt(layout, path) === null) return layout;
     const parentPath = path.slice(0, -1);
     const parent = path.length === 0 ? null : nodeAt(layout, parentPath);
     const at = path[path.length - 1];

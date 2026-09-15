@@ -25,7 +25,15 @@ export type Split = {
     folded?: number[];
 };
 export type Pane = { kind: 'pane'; tabs: Instance[]; active: string };
-export type Layout = Split | Pane;
+
+/**
+ * Another page shown at this spot in a page's tree. It names the page by id and holds nothing of
+ * its own: the page is the same page wherever it is shown, so a tab opened in it is open in every
+ * place it shows. A page never shows itself, directly or through another page.
+ */
+export type PageLeaf = { kind: 'page'; page: string };
+
+export type Layout = Split | Pane | PageLeaf;
 
 /** The one pane shown alone while the rest of the workbench is put away. */
 export type Focus = { path: number[] };
@@ -91,6 +99,11 @@ export function samePath(left: number[], right: number[]): boolean {
 
 export function emptyPane(): Pane {
     return { kind: 'pane', tabs: [], active: '' };
+}
+
+/** A leaf showing the page with this id. */
+export function pageLeaf(page: string): PageLeaf {
+    return { kind: 'page', page };
 }
 
 export function clamp(value: number, low: number, high: number): number {

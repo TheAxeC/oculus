@@ -27,10 +27,11 @@ let hover: ClientState['drag']['hover'];
 let move: ClientState['drag']['move'];
 let setDragSink: ClientState['drag']['setDragSink'];
 let start: ClientState['drag']['start'];
+let startPage: ClientState['drag']['startPage'];
 
 beforeEach(() => {
     client = createClientState();
-    ({ cancel, dragging, end, hover, move, setDragSink, start } = client.drag);
+    ({ cancel, dragging, end, hover, move, setDragSink, start, startPage } = client.drag);
 });
 
 /** A sink that writes down what it was asked to perform, one line per call. */
@@ -40,7 +41,9 @@ function recorder(): DragSink & { calls: string[] } {
         calls,
         transfer: (id, path, index) =>
             calls.push(`transfer ${id} to [${path.join(',')}] at ${index}`),
-        split: (id, path, edge) => calls.push(`split ${id} to [${path.join(',')}] on ${edge}`)
+        split: (id, path, edge) => calls.push(`split ${id} to [${path.join(',')}] on ${edge}`),
+        embed: (nested, path, edge, page) =>
+            calls.push(`embed ${nested} in ${page} at [${path.join(',')}] on ${edge}`)
     };
 }
 
@@ -85,11 +88,13 @@ describe('the threshold', () => {
     it('carries the tab it was started with', () => {
         begin('tab-1');
         expect(dragging()).toEqual({
+            kind: 'tab',
             id: 'tab-1',
             label: 'Projects',
             point: { x: 106, y: 100 },
             drop: null,
-            rect: null
+            rect: null,
+            refused: false
         });
     });
 });
@@ -154,6 +159,51 @@ describe('performing a drop', () => {
         hover({ kind: 'strip', path: [], index: 0 });
         move({ x: 500, y: 500 });
         expect(dragging()).toBe(null);
+        end();
+        expect(sink.calls).toEqual([]);
+    });
+});
+
+describe('a page carried out of the strip', () => {
+    it('is armed at once, since the gesture that starts it already crossed the threshold', () => {
+        startPage('page-2', 'Reading', { x: 100, y: 100 });
+        expect(dragging()?.id).toBe('page-2');
+        expect(dragging()?.kind).toBe('page');
+    });
+
+    it('lands on an edge, and shows the page there', () => {
+        startPage('page-2', 'Reading', { x: 100, y: 100 });
+        hover({ kind: 'edge', path: [1, 0], edge: 'right', page: 'page-1' });
+        end();
+        expect(sink.calls).toEqual(['embed page-2 in page-1 at [1,0] on right']);
+    });
+
+    it('lands nowhere else: a page has no tab to put in a strip or at the end of one', () => {
+        startPage('page-2', 'Reading', { x: 100, y: 100 });
+        hover({ kind: 'strip', path: [], index: 0, page: 'page-1' });
+        expect(dragging()?.drop).toBe(null);
+        hover({ kind: 'centre', path: [], page: 'page-1' });
+        expect(dragging()?.drop).toBe(null);
+        end();
+        expect(sink.calls).toEqual([]);
+    });
+});
+
+describe('a place the drag cannot land', () => {
+    it('holds a refusal while the pointer is over it, and drops it when the pointer leaves', () => {
+        startPage('page-2', 'Reading', { x: 100, y: 100 });
+        hover(null, null, true);
+        expect(dragging()?.refused).toBe(true);
+        expect(dragging()?.drop).toBe(null);
+        hover(null);
+        expect(dragging()?.refused).toBe(false);
+    });
+
+    it('is never refused while a drop is hovered, and performs nothing when the pointer is up', () => {
+        startPage('page-2', 'Reading', { x: 100, y: 100 });
+        hover({ kind: 'edge', path: [], edge: 'left', page: 'page-1' }, null, true);
+        expect(dragging()?.refused).toBe(false);
+        hover(null, null, true);
         end();
         expect(sink.calls).toEqual([]);
     });

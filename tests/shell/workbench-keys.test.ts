@@ -12,6 +12,7 @@ import { paneAt } from '../../src/lib/state/layout/index.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { setCatalog } from '../../src/lib/state/text.ts';
 import { noop } from '../doubles.ts';
+import { pageLeaf } from '../../src/lib/state/layout/index.ts';
 import { fakeStorage, instance, pane, split } from '../state/layout-fixture.ts';
 import { createClientState, type ClientState } from '../client.ts';
 
@@ -24,8 +25,9 @@ class PaneStandin {
     dataset: Record<string, string>;
     isConnected = true;
 
-    constructor(path: string, active: string) {
+    constructor(path: string, active: string, page?: string) {
         this.dataset = { panePath: path, paneActive: active, paneView: 'projects' };
+        if (page !== undefined) this.dataset.panePage = page;
     }
 
     closest(): this {
@@ -37,8 +39,8 @@ class PaneStandin {
     }
 }
 
-function paneElement(path: string, active: string): HTMLElement {
-    return new PaneStandin(path, active) as unknown as HTMLElement;
+function paneElement(path: string, active: string, page?: string): HTMLElement {
+    return new PaneStandin(path, active, page) as unknown as HTMLElement;
 }
 
 /** A document holding one focused pane, which is all focusedPaneElement() reads. */
@@ -75,11 +77,14 @@ beforeEach(() => {
 });
 
 /** One key event as the handler reads one, beside the call that swallows it. */
-function keyEvent(key: string): { event: KeyboardEvent; prevented: ReturnType<typeof vi.fn> } {
+function keyEvent(
+    key: string,
+    ctrlKey = true
+): { event: KeyboardEvent; prevented: ReturnType<typeof vi.fn> } {
     const prevented = vi.fn();
     const event = {
         key,
-        ctrlKey: true,
+        ctrlKey,
         metaKey: false,
         altKey: false,
         shiftKey: false,
@@ -90,17 +95,20 @@ function keyEvent(key: string): { event: KeyboardEvent; prevented: ReturnType<ty
     return { event: event as unknown as KeyboardEvent, prevented };
 }
 
-/** The handler, with the pane at `path` focused in a document of its own. */
-function handler(path: string) {
-    const element = paneElement(path, 'b');
+/**
+ * The handler, with the pane at `path` focused in a document of its own. The focus is reported to
+ * the handler as the browser reports it, which is what tells it the page the reader is in.
+ */
+function handler(path: string, page?: string, focus: () => null = () => null) {
+    const element = paneElement(path, 'b', page);
     held.document = fakeDocument(element);
-    return createWorkbenchKeys({
+    const keys = createWorkbenchKeys({
         drag: client.drag,
         layout: client.layout,
         ui: client.ui,
         navigation: () => ({ direct: [], all: [], chords: {} }),
         activeMain: () => null,
-        focus: () => null,
+        focus,
         paletteOpen: () => false,
         updateOpen: () => false,
         sheetOpen: () => false,
@@ -109,6 +117,8 @@ function handler(path: string) {
         setSheetOpen: noop,
         openPalette: noop
     });
+    keys.paneFocused({ target: element } as unknown as FocusEvent);
+    return keys;
 }
 
 describe('the numbered tab of the focused pane', () => {
@@ -135,5 +145,40 @@ describe('the numbered tab of the focused pane', () => {
         const keys = handler('');
         keys.keys(keyEvent('2').event);
         expect(paneAt(client.layout.layout(), [])?.active).toBe('b');
+    });
+});
+
+// A pane of a page shown inside the page on screen carries that page beside its path, so the digit
+// and the Escape act on the page the reader is in and not on the one the strip is on.
+describe('a pane of a page shown inside another', () => {
+    /** Page one showing page two, the strip on page one, with two tabs in page two's pane. */
+    function nested(): string {
+        client.layout.openPage('Two');
+        const second = client.layout.currentPage().id;
+        client.layout.apply({ root: pane(['d', 'e']) }, second);
+        client.layout.switchPage(client.layout.pages()[0].id);
+        client.layout.apply({
+            root: split('row', [0.5, 0.5], [pane(['a']), pageLeaf(second)])
+        });
+        return second;
+    }
+
+    it('activates the numbered tab of the nested page, in that page tree', () => {
+        const second = nested();
+        const keys = handler('', second);
+        keys.keys(keyEvent('2').event);
+        expect(paneAt(client.layout.layout(second), [])?.active).toBe('e');
+        expect(paneAt(client.layout.layout(), [0])?.active).toBe('a');
+    });
+
+    it('restores the panes of the nested page when Escape is pressed inside it', () => {
+        const second = nested();
+        client.layout.maximisePane([], second);
+        expect(client.layout.focused(second)).not.toBe(null);
+        const keys = handler('', second);
+        const { event, prevented } = keyEvent('Escape', false);
+        keys.keys(event);
+        expect(client.layout.focused(second)).toBe(null);
+        expect(prevented).toHaveBeenCalledOnce();
     });
 });

@@ -562,7 +562,7 @@ describe('checkLayout', () => {
 
     it('reports a kind and a dir that are not the allowed words', () => {
         expect(checkLayout({ kind: 'box' } as unknown as Layout)).toEqual([
-            'node at []: kind is "box", not split or pane'
+            'node at []: kind is "box", not split, pane or page'
         ]);
         const sideways = { kind: 'split', dir: 'sideways', sizes: [0.5, 0.5], children: [] };
         expect(checkLayout(sideways as unknown as Layout)).toEqual([

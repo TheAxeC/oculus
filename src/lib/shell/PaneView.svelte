@@ -14,7 +14,7 @@
     // makes the menu the keyboard path: the opener takes focus and Menu already handles arrows and
     // Escape.
 
-    import { PAGE, foldable, pageMoveItems } from '$lib/shell/pane-view';
+    import { EMBED, PAGE, embedPageItems, foldable, pageMoveItems } from '$lib/shell/pane-view';
     import Confirm from '$lib/ui/Confirm.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu-items';
@@ -23,7 +23,7 @@
     import { edgeAt, markAt, withoutOwn } from '$lib/state/drag.svelte';
     import { t } from '$lib/state/text';
     import { badgeOf, registrationGlyph, registrationLabel } from '$lib/views/registry';
-    import type { Instance, Layout } from '$lib/state/layout';
+    import { showable, type Instance, type Layout } from '$lib/state/layout';
     import { useState } from '$lib/state/use';
 
     const client = useState();
@@ -34,6 +34,7 @@
             closeInstance,
             closePane,
             currentPage,
+            embedPage,
             focused,
             foldPane,
             layout,
@@ -41,7 +42,8 @@
             moveInstanceToPage,
             pages,
             restorePanes,
-            splitInstance
+            splitInstance,
+            touchPane
         },
         drag: { dragging, hover, start },
         registry: { viewFor }
@@ -50,11 +52,17 @@
     type Props = {
         /** The node SplitView handed the snippet. Only a pane is drawn; a split never reaches here. */
         node: Layout;
+        /**
+         * The page whose tree holds this pane, which is the page shown at a leaf when the pane is
+         * inside one and the page on screen otherwise. Every store call the pane makes names it, so
+         * a pane of a page shown inside another acts on its own page and not on the one around it.
+         */
+        page?: string;
         /** This pane's path in the page's tree, which is what a drop and every menu item name it by. */
         path?: number[];
     };
 
-    let { node, path = [] }: Props = $props();
+    let { node, page = currentPage().id, path = [] }: Props = $props();
 
     let body: HTMLDivElement | undefined = $state();
 
@@ -62,7 +70,7 @@
     const active = $derived(node.kind === 'pane' ? node.active : '');
     const shown = $derived(instances.find((instance) => instance.id === active));
     const registration = $derived(shown === undefined ? undefined : viewFor(shown.view));
-    const maximised = $derived(focused() !== null);
+    const maximised = $derived(focused(page) !== null);
 
     /**
      * A tab per instance: the registry's words and glyph, or the view's own id when it has none. An
@@ -103,7 +111,7 @@
 
     /** The mark, when the drag is over this pane's strip: back in the indices the tabs are drawn in. */
     const dropIndex = $derived(
-        held !== null && held.drop?.kind === 'strip' && here(held.drop.path)
+        held !== null && held.drop?.kind === 'strip' && here(held.drop)
             ? markAt(held.drop.index, own)
             : null
     );
@@ -111,8 +119,11 @@
     /** Whether the pane menu's close is waiting on the dialog. */
     let closing = $state(false);
 
-    /** Every page but the one on screen, as the item that moves the active tab onto it. */
-    const elsewhere = $derived<MenuItem[]>(pageMoveItems(pages(), currentPage().id, t));
+    /** Every page but this pane's own, as the item that moves the active tab onto it. */
+    const elsewhere = $derived<MenuItem[]>(pageMoveItems(pages(), page, t));
+
+    /** Every page this one may show beside the pane, which is the keyboard path to embedding. */
+    const shows = $derived<MenuItem[]>(embedPageItems(pages(), currentPage().id, page, t));
 
     const items = $derived<MenuItem[]>([
         { id: 'close', label: t('ui.pane_close') },
@@ -121,17 +132,19 @@
             : { id: 'maximise', label: t('ui.pane_maximise') },
         // The root pane is in no split, and the last open child of a split stays open, so the item
         // is offered only where a fold would change the tree.
-        ...(foldable(layout(), path) ? [{ id: 'fold', label: t('ui.pane_fold') }] : []),
+        ...(foldable(layout(page), path) ? [{ id: 'fold', label: t('ui.pane_fold') }] : []),
         ...elsewhere,
+        ...shows,
         { id: 'split_right', label: t('ui.split_right') },
         { id: 'split_down', label: t('ui.split_down') }
     ]);
 
-    /** Whether a drop's path is this pane's. */
-    function here(candidate: number[]): boolean {
+    /** Whether a drop is this pane's: the same page, and the same path inside that page's tree. */
+    function here(drop: { path: number[]; page?: string }): boolean {
+        if ((drop.page ?? currentPage().id) !== page) return false;
         return (
-            candidate.length === path.length &&
-            candidate.every((step, index) => step === path[index])
+            drop.path.length === path.length &&
+            drop.path.every((step, index) => step === path[index])
         );
     }
 
@@ -142,21 +155,37 @@
     }
 
     function stripHover(index: number | null): void {
-        if (dragging() === null) return;
+        const carried = dragging();
+        if (carried === null) return;
+        // A page has no tab to put among a pane's, so over a strip it is refused in words as well.
+        if (carried.kind === 'page') {
+            hover(null, null, true);
+            return;
+        }
         if (index === null) {
             hover(null);
             return;
         }
-        hover({ kind: 'strip', path, index: withoutOwn(index, own) });
+        hover({ kind: 'strip', path, index: withoutOwn(index, own), page });
     }
 
     /** The pointer over the body: an edge of it, or its middle, which is the end of the strip. */
     function bodyHover(event: PointerEvent): void {
-        if (dragging() === null || body === undefined) return;
+        const carried = dragging();
+        if (carried === null || body === undefined) return;
+        // A page already drawn on this screen, or one that would draw the page this pane is in, is
+        // no drop at all: nothing is drawn over the body and the ghost says why.
+        if (carried.kind === 'page' && !showable(pages(), currentPage().id, page, carried.id)) {
+            hover(null, null, true);
+            return;
+        }
         const rect = body.getBoundingClientRect();
         const point = { x: event.clientX, y: event.clientY };
         const edge = edgeAt(rect, point);
-        hover(edge === null ? { kind: 'centre', path } : { kind: 'edge', path, edge }, rect);
+        hover(
+            edge === null ? { kind: 'centre', path, page } : { kind: 'edge', path, edge, page },
+            rect
+        );
     }
 
     function bodyLeave(): void {
@@ -170,19 +199,25 @@
             // tab is the tab's own close control by another name, so it goes; more than one is asked
             // about first.
             if (tabs.length > 1) closing = true;
-            else closePane(path);
+            else closePane(path, page);
             return;
         }
         if (id === 'maximise') {
-            maximisePane(path);
+            maximisePane(path, page);
             return;
         }
         if (id === 'restore') {
-            restorePanes();
+            restorePanes(page);
             return;
         }
         if (id === 'fold') {
-            foldPane(path);
+            foldPane(path, page);
+            return;
+        }
+        // A page is shown beside the pane whether or not the pane holds a tab, so it is picked
+        // before the items that act on the active one.
+        if (id.startsWith(EMBED)) {
+            embedPage(id.slice(EMBED.length), path, 'right', page);
             return;
         }
         if (active === '') return;
@@ -190,15 +225,21 @@
             moveInstanceToPage(active, id.slice(PAGE.length));
             return;
         }
-        if (id === 'split_right') splitInstance(active, path, 'right');
-        else if (id === 'split_down') splitInstance(active, path, 'bottom');
+        if (id === 'split_right') splitInstance(active, path, 'right', page);
+        else if (id === 'split_down') splitInstance(active, path, 'bottom', page);
     }
 </script>
 
+<!-- The pointer press is taken on the way down, before the control under it takes the focus, so the
+     page a view opens into is this pane's page from the first press. -->
+<!-- svelte-ignore a11y_no_static_element_interactions -->
 <div
     class="pane"
     data-pane
     data-pane-path={path.join('.')}
+    data-pane-page={page}
+    onpointerdowncapture={() => touchPane(page)}
+    onfocusin={() => touchPane(page)}
     data-pane-active={active}
     data-pane-view={shown?.view}
 >
@@ -206,8 +247,8 @@
         {tabs}
         {active}
         {dropIndex}
-        onselect={(id: string) => activateInstance(id)}
-        onclose={(id: string) => closeInstance(id)}
+        onselect={(id: string) => activateInstance(id, page)}
+        onclose={(id: string) => closeInstance(id, page)}
         onpointerdown={press}
         onhoverindex={held === null ? undefined : stripHover}
         menu={paneMenu}
@@ -237,7 +278,7 @@
         cancel={t('ui.confirm_cancel')}
         onconfirm={() => {
             closing = false;
-            closePane(path);
+            closePane(path, page);
         }}
         oncancel={() => (closing = false)}
     />

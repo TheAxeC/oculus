@@ -7,8 +7,12 @@
     // It holds only what is being asked: the page a close is waiting on, the name being typed while
     // one is renamed, and the page drag with its insertion point. Everything else is the layout
     // store's.
+    //
+    // A page dragged within the strip is reordered here. One carried out of the strip becomes the
+    // drag store's, which is what every pane reports a drop for, so it lands on a pane's edge and is
+    // shown there.
 
-    import { type Arrangement } from '$lib/shell/page-strip';
+    import { pageName, type Arrangement } from '$lib/shell/page-strip';
     import Confirm from '$lib/ui/Confirm.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu-items';
@@ -30,7 +34,8 @@
             pages,
             renamePage,
             switchPage
-        }
+        },
+        drag: { startPage }
     } = useState();
 
     type Props = {
@@ -57,6 +62,9 @@
     /** A page press before or after it has crossed the shared drag threshold. */
     let moving: { id: string; origin: Point; armed: boolean } | null = $state(null);
 
+    /** The strip's own box, which is what says the pointer has carried a page out of it. */
+    let box: HTMLElement | undefined = $state();
+
     /**
      * The insertion index under the pointer, or null outside the strip. It is kept from the first
      * move, since the strip reports it before the document listener below has armed the drag; the
@@ -78,18 +86,9 @@
         }))
     ]);
 
-    /**
-     * What a page is called in the strip: its own name, or its position when it has none. A page
-     * carries no name only before loadLayout has run, which is the server's rendering of the first
-     * page and nothing else.
-     */
-    function name(page: Page, index: number): string {
-        return page.label === '' ? t('ui.page_default', index + 1) : page.label;
-    }
-
     /** One page as a tab, the first nine naming the shortcut that reaches them. */
     function tabOf(page: Page, index: number): Tab {
-        const label = name(page, index);
+        const label = pageName(page, index);
         if (index >= SHORTCUTS) return { id: page.id, label };
         return { id: page.id, label, hint: t('ui.page_shortcut', label, index + 1) };
     }
@@ -113,7 +112,7 @@
             return;
         }
         if (id === RENAME) {
-            draft = name(current, shown.indexOf(current));
+            draft = pageName(current, shown.indexOf(current));
             return;
         }
         const found = arrangements.find((one) => `${FROM}${one.name}` === id);
@@ -128,12 +127,44 @@
     }
 
     function pointerMove(event: PointerEvent): void {
-        if (moving === null || moving.armed) return;
-        const distance = Math.hypot(
-            event.clientX - moving.origin.x,
-            event.clientY - moving.origin.y
+        if (moving === null) return;
+        if (!moving.armed) {
+            const distance = Math.hypot(
+                event.clientX - moving.origin.x,
+                event.clientY - moving.origin.y
+            );
+            if (distance >= THRESHOLD) moving = { ...moving, armed: true };
+            return;
+        }
+        // A page carried out of the strip becomes the drag every pane reports a drop for: the
+        // reorder this was is over, and the page lands on the edge of whatever pane it is dropped
+        // on. Inside the strip the gesture stays the reorder it began as.
+        if (outside(event)) carry(event);
+    }
+
+    /** Whether the pointer has left the strip's own box, in either direction. */
+    function outside(event: PointerEvent): boolean {
+        if (box === undefined) return false;
+        const rect = box.getBoundingClientRect();
+        return (
+            event.clientX < rect.left ||
+            event.clientX > rect.right ||
+            event.clientY < rect.top ||
+            event.clientY > rect.bottom
         );
-        if (distance >= THRESHOLD) moving = { ...moving, armed: true };
+    }
+
+    /** Hand the held page to the drag store and let go of the reorder this press started as. */
+    function carry(event: PointerEvent): void {
+        const held = moving;
+        if (held === null) return;
+        const page = shown.find((one) => one.id === held.id);
+        if (page === undefined) return;
+        cancel();
+        startPage(page.id, pageName(page, shown.indexOf(page)), {
+            x: event.clientX,
+            y: event.clientY
+        });
     }
 
     function stripHover(index: number | null): void {
@@ -201,7 +232,10 @@
     /** Enter takes the name that was typed, Escape drops it; every other key is the box's own. */
     function keys(event: KeyboardEvent): void {
         if (event.key === 'Enter' && draft !== null) {
-            renamePage(current.id, draft.trim());
+            // A name typed away to nothing is not a name: the page keeps the one it has, so no page
+            // is left to be called by its position while the ones beside it carry names.
+            const typed = draft.trim();
+            if (typed !== '') renamePage(current.id, typed);
             draft = null;
         } else if (event.key === 'Escape') {
             draft = null;
@@ -215,7 +249,7 @@
 <!-- The shortcut bubbles from the tab or menu control that has focus; the region itself does not
      enter the tab order. -->
 <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
-<section class="strip" aria-label={t('ui.pages')} onkeydown={pageKeys}>
+<section class="strip" aria-label={t('ui.pages')} bind:this={box} onkeydown={pageKeys}>
     <Tabs
         {tabs}
         active={current.id}
@@ -231,7 +265,7 @@
 {#if closing !== null}
     {@const page = closing}
     <Confirm
-        message={t('ui.page_close_confirm', name(page, shown.indexOf(page)), held(page))}
+        message={t('ui.page_close_confirm', pageName(page, shown.indexOf(page)), held(page))}
         confirm={t('ui.confirm_ok')}
         cancel={t('ui.confirm_cancel')}
         onconfirm={() => {

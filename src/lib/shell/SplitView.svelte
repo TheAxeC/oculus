@@ -1,10 +1,10 @@
 <script lang="ts">
     // Layer 3, shell. Renders a layout tree: a split becomes a flex box in its direction with a
-    // sash between neighbours, a pane becomes whatever snippet the caller passes, and a child
-    // collapsed to the split's edge becomes the fold snippet in a strip of a fixed thickness. It
-    // knows no view and no registry, and it holds no state: the tree comes in as a prop and a
-    // resize or an expand goes out as a call, so the store belongs to the caller and this component
-    // can be rendered from a test.
+    // sash between neighbours, a pane becomes whatever snippet the caller passes, another page
+    // shown at a spot becomes the leaf snippet, and a child collapsed to the split's edge becomes
+    // the fold snippet in a strip of a fixed thickness. It knows no view and no registry, and it
+    // holds no state: the tree comes in as a prop and a resize or an expand goes out as a call, so
+    // the store belongs to the caller and this component can be rendered from a test.
     //
     // The sizes are fractions, so a child's flex is `<share> 1 0`: basis zero and grow by the
     // share divides the free space in exactly that proportion. The share drawn is the child's size
@@ -22,19 +22,23 @@
     type Props = {
         /** The node to render. */
         layout: Layout;
+        /** The id of the page whose tree this is, which every snippet is handed with the path. */
+        page: string;
         /** The path of this node from the root of the tree the caller holds. */
         path?: number[];
         /** How a pane is drawn: the tab strip, the mounted view, or a box with its path. */
-        pane: Snippet<[Layout, number[]]>;
+        pane: Snippet<[Layout, number[], string]>;
         /** How a collapsed child is drawn: the node, the split's direction, and how to expand it. */
         fold: Snippet<[Layout, 'row' | 'col', () => void]>;
+        /** How another page shown at this spot is drawn: the page it names, the path, the host. */
+        leaf: Snippet<[string, number[], string]>;
         /** A drag or a reset asks for these sizes on the split at this path. */
         onresize: (path: number[], sizes: number[]) => void;
         /** The strip's control asks for this child of the split at this path to be shown again. */
         onexpand: (path: number[], index: number) => void;
     };
 
-    let { layout, path = [], pane, fold, onresize, onexpand }: Props = $props();
+    let { layout, page, path = [], pane, fold, leaf, onresize, onexpand }: Props = $props();
 
     let box: HTMLDivElement | undefined = $state();
 
@@ -129,9 +133,11 @@
                 <div class="child" style="flex: {drawn(layout, index)} 1 0">
                     <SplitView
                         layout={child}
+                        {page}
                         path={[...path, index]}
                         {pane}
                         {fold}
+                        {leaf}
                         {onresize}
                         {onexpand}
                     />
@@ -139,8 +145,10 @@
             {/if}
         {/each}
     </div>
+{:else if layout.kind === 'page'}
+    {@render leaf(layout.page, path, page)}
 {:else}
-    {@render pane(layout, path)}
+    {@render pane(layout, path, page)}
 {/if}
 
 <style>

@@ -56,13 +56,19 @@ const foldSnippet = createRawSnippet<[Layout, 'row' | 'col', () => void]>((node,
     }
 }));
 
-/** The caller's pane snippet: a box naming the path it was handed and the tab it holds. */
-const paneSnippet = createRawSnippet<[Layout, number[]]>((node, path) => ({
+/** The caller's pane snippet: a box naming the path and the page it was handed and the tab it holds. */
+const paneSnippet = createRawSnippet<[Layout, number[], string]>((node, path, page) => ({
     render: () => {
         const held = node();
         const id = held.kind === 'pane' ? (held.tabs[0]?.id ?? '') : '';
-        return `<div class="probe" data-path="${path().join('.')}">${id}</div>`;
+        return `<div class="probe" data-path="${path().join('.')}" data-page="${page()}">${id}</div>`;
     }
+}));
+
+/** The caller's leaf snippet: a box naming the page shown there, its path and the page around it. */
+const leafSnippet = createRawSnippet<[string, number[], string]>((nested, path, host) => ({
+    render: () =>
+        `<div class="leaf" data-nested="${nested()}" data-leaf-path="${path().join('.')}" data-host="${host()}"></div>`
 }));
 
 function html(layout: Layout): string {
@@ -70,8 +76,10 @@ function html(layout: Layout): string {
         context: clientContext(client),
         props: {
             layout,
+            page: 'host',
             pane: paneSnippet,
             fold: foldSnippet,
+            leaf: leafSnippet,
             onresize: noop,
             onexpand: noop
         }
@@ -159,6 +167,39 @@ describe('SplitView', () => {
         // 0.3 and 0.2 of a sum of 0.5: the strip takes its thickness and these two take the rest.
         expect(body).toContain('flex: 0.6 1 0');
         expect(body).toContain('flex: 0.4 1 0');
+    });
+
+    it('hands every pane snippet the page whose tree it is drawing', () => {
+        const drawn = [...body.matchAll(/data-page="([^"]*)"/g)].map((match) => match[1]);
+        expect(drawn).toEqual(['host', 'host', 'host']);
+    });
+
+    it('draws a page leaf through the leaf snippet, with the page it shows and the host', () => {
+        const nested: Layout = {
+            kind: 'split',
+            dir: 'row',
+            sizes: [0.5, 0.5],
+            children: [pane('a'), { kind: 'page', page: 'other' }]
+        };
+        const drawn = html(nested);
+        expect(drawn).toContain('data-nested="other"');
+        expect(drawn).toContain('data-leaf-path="1"');
+        expect(drawn).toContain('data-host="host"');
+        // A page leaf holds no pane of its own: the panes it shows are the named page's.
+        expect(drawn).not.toContain('data-path="1"');
+    });
+
+    it('draws a folded page leaf as a strip, like any other child', () => {
+        const nested: Layout = {
+            kind: 'split',
+            dir: 'row',
+            sizes: [0.5, 0.5],
+            children: [pane('a'), { kind: 'page', page: 'other' }],
+            folded: [1]
+        };
+        const drawn = html(nested);
+        expect(drawn).toContain(`flex: 0 0 ${FOLD_PX}px`);
+        expect(drawn).not.toContain('data-nested="other"');
     });
 
     it('renders a bare pane as the snippet alone, with no split and no sash', () => {

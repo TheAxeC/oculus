@@ -592,3 +592,95 @@ describe('the views the application registers', () => {
         }
     });
 });
+
+// A page shown at a spot of another page's tree. The leaf draws that page's own workbench, so its
+// panes are the nested page's panes: each carries the page it belongs to beside its path in it,
+// which is the pair every store call the pane makes is named by.
+describe('a page shown inside another', () => {
+    /** Two children side by side, the shape both pages take in these cases. */
+    function split(first: Layout, second: Layout): Layout {
+        return { kind: 'split', dir: 'row', sizes: [0.5, 0.5], children: [first, second] };
+    }
+
+    /** Page 2 holding one pane, shown inside page 1 beside a pane of its own. */
+    function nested(): { host: string; shown: string; body: string } {
+        const host = currentPage().id;
+        apply(bench());
+        openPage('Page 2');
+        const shown = currentPage().id;
+        apply({ root: pane('four', 'beta') });
+        switchPage(host);
+        apply({
+            root: {
+                kind: 'split',
+                dir: 'row',
+                sizes: [0.5, 0.5],
+                children: [pane('one', 'alpha'), { kind: 'page', page: shown }]
+            }
+        });
+        const body = render(Workbench, {
+            context: clientContext(client),
+            props: { groups: [] }
+        }).body;
+        return { host, shown, body };
+    }
+
+    it('names the page in the leaf header, over the tree of that page', () => {
+        const { shown, body } = nested();
+        expect(body).toContain(`data-page-leaf="${shown}"`);
+        expect(/data-page-leaf-label[^>]*>([^<]*)</.exec(body)?.[1]).toBe('Page 2');
+        expect(body).toContain('aria-label="Stop showing this page here"');
+    });
+
+    it('carries the page of every pane beside its path in the tree of that page', () => {
+        const { host, shown, body } = nested();
+        const drawn = [
+            ...body.matchAll(/data-pane-path="([^"]*)"\s+data-pane-page="([^"]*)"/g)
+        ].map((match) => [match[1], match[2]]);
+        expect(drawn).toEqual([
+            ['0', host],
+            ['', shown]
+        ]);
+    });
+
+    it('names the page in the strip when the leaf showing it is folded', () => {
+        const { shown } = nested();
+        const root = currentPage().workbench.root;
+        apply({ root: root.kind === 'split' ? { ...root, folded: [1] } : root });
+        const body = render(Workbench, {
+            context: clientContext(client),
+            props: { groups: [] }
+        }).body;
+        expect(body).not.toContain(`data-page-leaf="${shown}"`);
+        expect(/data-fold-label[^>]*>([^<]*)</.exec(body)?.[1]).toBe('Page 2');
+    });
+
+    it('marks the drop in the one pane whose page and path the drop names', () => {
+        const { host, shown } = nested();
+        // Both pages hold a pane at [0], so only the page in the drop tells the two apart.
+        apply({ root: split(pane('four', 'beta'), pane('five', 'beta')) }, shown);
+        apply({
+            root: split(pane('one', 'alpha'), { kind: 'page', page: shown })
+        });
+        cancel();
+        start('one', 'Status', { x: 0, y: 0 });
+        move({ x: THRESHOLD, y: 0 });
+        hover({ kind: 'strip', path: [0], index: 1, page: shown });
+        const body = render(Workbench, {
+            context: clientContext(client),
+            props: { groups: [] }
+        }).body;
+        cancel();
+        const marks = [...body.matchAll(/class="mark[^"]*"/g)];
+        expect(marks).toHaveLength(1);
+        // The mark sits in the nested page's first pane, which is the one the drop named.
+        expect(body.indexOf('data-page-leaf')).toBeLessThan(marks[0].index);
+        expect(host).not.toBe(shown);
+    });
+
+    it('draws the tabs of both pages at once, the ones of the nested page among them', () => {
+        const { body } = nested();
+        expect(body).toContain('Status');
+        expect(body).toContain('Findings');
+    });
+});

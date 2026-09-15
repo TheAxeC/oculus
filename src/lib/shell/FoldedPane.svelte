@@ -6,11 +6,16 @@
 
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { activeLabel } from '$lib/shell/workbench-title';
+    import { pageNameOf } from '$lib/shell/page-strip';
     import { t } from '$lib/state/text';
     import type { Layout } from '$lib/state/layout';
     import { useState } from '$lib/state/use';
 
     const client = useState();
+
+    const {
+        layout: { pages }
+    } = client;
 
     type Props = {
         /** The collapsed child. A split has no tab to name, and shows the control alone. */
@@ -29,10 +34,14 @@
     );
 
     /**
-     * The name of the tab the collapsed pane is showing, or nothing for a collapsed split. It is
-     * the same rule the document title reads a tab by, so the strip and the title never disagree.
+     * What the strip is called: the name of the tab a collapsed pane is showing, the name of the
+     * page a collapsed page leaf shows, and nothing for a collapsed split, which is neither. A tab
+     * is read by the rule the document title reads it by, so the strip and the title never disagree.
      */
-    const label = $derived(shown === null ? '' : activeLabel(client.registry, shown));
+    const label = $derived.by(() => {
+        if (node.kind === 'page') return pageNameOf(pages(), node.page);
+        return shown === null ? '' : activeLabel(client.registry, shown);
+    });
 </script>
 
 <div class="fold {dir}" data-fold>

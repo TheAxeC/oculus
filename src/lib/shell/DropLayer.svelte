@@ -6,7 +6,12 @@
     //
     // A drop on a strip is not drawn here. The strip draws its own insertion mark, which is at the
     // place between two tabs that this layer would have to cover them to show.
+    //
+    // What the pointer is over may be a place the thing being dragged cannot land: a page already
+    // drawn on the screen, or one that would draw the page it is over. Then no rectangle is drawn
+    // and the ghost says so, which is the one place a refusal is put into words.
 
+    import Glyph from '$lib/ui/Glyph.svelte';
     import type { Rect } from '$lib/state/drag.svelte';
     import { t } from '$lib/state/text';
     import { useState } from '$lib/state/use';
@@ -18,6 +23,7 @@
     const held = $derived(dragging());
     const drop = $derived(held?.drop ?? null);
     const rect = $derived(held?.rect ?? null);
+    const refused = $derived(held?.refused === true);
 
     /** How far from the pointer the ghost sits, so the pointer itself is never under it. */
     const OFFSET = 12;
@@ -50,8 +56,17 @@
         {#if area !== null}
             <div class="target" style={area}></div>
         {/if}
-        <div class="ghost" style="left: {held.point.x + OFFSET}px; top: {held.point.y + OFFSET}px">
-            {t('ui.drag_hint', held.label)}
+        <div
+            class="ghost"
+            class:refused
+            style="left: {held.point.x + OFFSET}px; top: {held.point.y + OFFSET}px"
+        >
+            {#if refused}
+                <Glyph name={t('ui.embed_refused_glyph')} />
+                {t('ui.embed_refused', held.label)}
+            {:else}
+                {t('ui.drag_hint', held.label)}
+            {/if}
         </div>
     </div>
 {/if}
@@ -72,6 +87,12 @@
            and no contrast pair is created; opacity keeps it out of the colour rule, which reads
            the declared colour and cannot see through a colour-mix. */
         opacity: 0.25;
+    }
+
+    /* A refusal reads as one line on the filled red chip, with its glyph before the words. */
+    .ghost.refused {
+        background: var(--c-red);
+        color: var(--on-c-red);
     }
 
     .ghost {
