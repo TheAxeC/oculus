@@ -58,7 +58,7 @@ dispatch:                                  # O28b + D1 + D2, the set of three (t
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D2/report.md
   exit: none
   pid: none
-  session_id: a7a695ff13e4ff66a            # the Agent tool's id, launched 19:23; reported 19:47 (runs/D2/report.md, diff.patch 937 lines, 11 files +589 -50); checks started 19:48 (runs/D2/checks.sh); reviewer claude:opus adfb719814a1b4693 launched 19:48; checks green 19:5x except lint on main's own error (runs/D2/check-*.log); review received 19:59 (agents/reviews/D2.md, five items met), repair round sent 20:00 (runs/D2/repair-prompt.md, eight items)
+  session_id: a7a695ff13e4ff66a            # the Agent tool's id, launched 19:23; reported 19:47 (runs/D2/report.md, diff.patch 937 lines, 11 files +589 -50); checks started 19:48 (runs/D2/checks.sh); reviewer claude:opus adfb719814a1b4693 launched 19:48; checks green 19:5x except lint on main's own error (runs/D2/check-*.log); review received 19:59 (agents/reviews/D2.md, five items met), repair round sent 20:00 (runs/D2/repair-prompt.md, eight items); repair reported 20:09 (runs/D2/report-2.md, diff-2.patch 1,134 lines, delta 822), all eight inside the list so no second review (the earned-review rule); checks running (runs/D2/checks.sh)
   landing: not-started
 ```
 
