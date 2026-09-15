@@ -132,12 +132,16 @@ export function createServerContext(
         onSessionsChange: sessions.onChange
     });
     const git = make.watchGit(hub, local.hub);
+    // One map, two writers: the log action writes what a press resolved, the watcher's prewarm what
+    // it resolved behind the page, and neither replaces the other's answer.
+    const hpcLogPaths: LogPaths = new Map();
     const hpc = make.watchHpc(hub, {
         host: local.hpcHost ?? slurm.host,
         days: slurm.days,
         pollMin: slurm.pollMin,
         quotaMin: slurm.quotaMin,
-        prewarm: slurm.prewarm
+        prewarm: slurm.prewarm,
+        logPaths: hpcLogPaths
     });
 
     let closed = false;
@@ -152,7 +156,7 @@ export function createServerContext(
         token,
         local,
         config,
-        hpcLogPaths: new Map(),
+        hpcLogPaths,
         depositPlans: new Map(),
         wallpaper: wallpaperMemory(),
         close(): void {

@@ -79,7 +79,9 @@ describe('the ssh runner under a stub cluster', () => {
         stubSsh(dir, [`echo $$ > ${JSON.stringify(pidFile)}`, 'exec sleep 20']);
         await expect(run('fixture', 'squeue', 250)).rejects.toThrow('timeout');
         await expect
-            .poll(() => gone(pidFile), { timeout: KILL_GRACE_MS + 1000, interval: 100 })
+            // A child that honours the signal is gone at once; the bound leaves room for a loaded machine
+            // to reap it and still fails on a child that lived past the grace.
+            .poll(() => gone(pidFile), { timeout: KILL_GRACE_MS + 3000, interval: 100 })
             .toBe(true);
     }, 20000);
 

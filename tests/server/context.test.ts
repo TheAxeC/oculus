@@ -35,7 +35,10 @@ describe('ServerContext', () => {
             refresh: vi.fn(),
             close: closes[2]
         }));
-        const watchHpc = vi.fn(() => ({ refresh: vi.fn(noopAsync), close: closes[3] }));
+        const watchHpc = vi.fn<ContextDependencies['watchHpc']>(() => ({
+            refresh: vi.fn(noopAsync),
+            close: closes[3]
+        }));
         const watchUsageRefresh = vi.fn(() => ({
             ready: Promise.resolve(),
             refresh: vi.fn(() => Promise.resolve(true)),
@@ -100,6 +103,9 @@ describe('ServerContext', () => {
         // on the `git` channel whether or not a session names it, which is what the deposit and the
         // pin controls read.
         expect(watchGit.mock.calls[0][1]).toBe('/hub');
+        // One log-path map, two writers: the poller's prewarm fills in what a press has not asked
+        // for yet, and the route's log action reads and writes the same object.
+        expect(watchHpc.mock.calls[0][1].logPaths).toBe(context.hpcLogPaths);
 
         context.close();
         context.close();

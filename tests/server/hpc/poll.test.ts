@@ -6,6 +6,7 @@ import type { HpcPayload } from '../../../src/lib/data/model.ts';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import { SEC_RC, SEC_SACCT, SEC_SINFO } from '../../../src/lib/server/hpc/parse.ts';
 import { RETRY_MIN, watchHpc } from '../../../src/lib/server/hpc/poll.ts';
+import { PREWARM_MAX } from '../../../src/lib/server/hpc/prewarm.ts';
 import type { RunResult, Runner } from '../../../src/lib/server/hpc/ssh.ts';
 
 const options = { host: 'fixture', days: 3, pollMin: 20, quotaMin: 60, prewarm: true };
@@ -32,9 +33,16 @@ function swingingRunner(cluster: { up: boolean }): Mock<Runner> {
     );
 }
 
-/** How many times the queue command, and not the quota command, was run. */
+/** How many times the queue command, and neither the quota read nor a prewarm query, was run. */
 function queueCalls(runner: Mock<Runner>): number {
-    return runner.mock.calls.filter((call) => !call[1].startsWith('quota')).length;
+    return runner.mock.calls.filter((call) => call[1].startsWith('squeue')).length;
+}
+
+/** How many times the prewarm asked the cluster anything, over both of its queries. */
+function prewarmCalls(runner: Mock<Runner>): number {
+    return runner.mock.calls.filter(
+        (call) => call[1].startsWith('sacct') || call[1].includes('@@oculus:wd=')
+    ).length;
 }
 
 /** A promise the case settles when it chooses, so a poll can be held in flight. */
@@ -52,6 +60,314 @@ function gatedRunner(answer: Promise<RunResult>): Mock<Runner> {
         remote.startsWith('quota') ? Promise.resolve({ stdout: '', stderr: '', code: 0 }) : answer
     );
 }
+/** Two finished jobs in the queue answer, which is what the prewarm has to resolve. */
+const TWO_FINISHED = ANSWER.replace(
+    SEC_SINFO,
+    `10|z|COMPLETED|0:0|10:00|2026-09-11T09:00:00|1G|512M|1:00|1|1|600\n${SEC_SINFO}`
+);
+
+/** A queue answer whose third finished row is a job that is still finishing. */
+const WITH_COMPLETING = TWO_FINISHED.replace(
+    SEC_SINFO,
+    `11|w|COMPLETING|0:0|10:00|2026-09-11T08:00:00|1G|512M|1:00|1|1|600\n${SEC_SINFO}`
+);
+
+/** One working directory holding the jobs' logs, on the second rung. */
+const LISTING = [
+    '@@oculus:wd=/work/one@@',
+    '@@oculus:rung@@',
+    '/work/one/hpc/logs/*',
+    '@@oculus:rung@@',
+    '/work/one/logs/run-9.out',
+    '/work/one/logs/run-10.out',
+    '/work/one/logs/run-11.out',
+    '@@oculus:rung@@',
+    '@@oculus:rung@@',
+    '@@oculus:rung@@'
+].join('\n');
+
+const NOTHING: RunResult = { stdout: '', stderr: '', code: 0 };
+
+/**
+ * A runner that answers all four commands: the queue batch (whatever `cluster.up` says at the
+ * moment it is called, so a case can take the cluster down), the quota read with nothing, and the
+ * prewarm's two queries. `listing` holds the directory walk until the case settles it, which is how
+ * a case presses a refresh while a prewarm is in flight.
+ */
+function prewarmRunner(
+    listing?: Promise<RunResult>,
+    cluster = { up: true },
+    queue = TWO_FINISHED
+): Mock<Runner> {
+    return vi.fn<Runner>((_host, remote) => {
+        if (remote.startsWith('quota')) return Promise.resolve(NOTHING);
+        if (remote.startsWith('squeue'))
+            return cluster.up
+                ? Promise.resolve({ stdout: queue, stderr: '', code: 0 })
+                : Promise.reject(new Error('timeout'));
+        if (remote.startsWith('sacct'))
+            return Promise.resolve({
+                stdout: '9|/work/one\n10|/work/one\n11|/work/one',
+                stderr: '',
+                code: 0
+            });
+        return listing ?? Promise.resolve({ stdout: LISTING, stderr: '', code: 0 });
+    });
+}
+
+describe('the watcher prewarm', () => {
+    it('resolves the finished jobs it does not hold a path for, and keeps the ones it does', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const runner = prewarmRunner();
+        const logPaths = new Map([['9', '/pressed/9.out']]);
+        const watcher = watchHpc(hub, { ...options, runner, logPaths });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            expect(queueCalls(runner)).toBe(1);
+            expect(prewarmCalls(runner)).toBe(2);
+            // The path a press resolved came from scontrol and is exact, so it stands.
+            expect([...logPaths]).toEqual([
+                ['9', '/pressed/9.out'],
+                ['10', '/work/one/logs/run-10.out']
+            ]);
+            await vi.advanceTimersByTimeAsync(20 * MINUTE);
+            expect(queueCalls(runner)).toBe(2);
+            // Both ids are held now, so the second cycle asks the cluster nothing.
+            expect(prewarmCalls(runner)).toBe(2);
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+    it('starts the paths again once it holds more than it was given room for', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const runner = prewarmRunner();
+        // None of the seeded ids is one of the two being resolved, so the cycle writes its finds
+        // and only then finds the map too big.
+        const logPaths = new Map(
+            Array.from({ length: PREWARM_MAX + 1 }, (_one, at) => [`${at + 100}`, `/old/${at}.out`])
+        );
+        const watcher = watchHpc(hub, { ...options, runner, logPaths });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            expect(prewarmCalls(runner)).toBe(2);
+            expect(logPaths.size).toBe(0);
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+    it('asks the cluster nothing when the prewarm is off', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const runner = prewarmRunner();
+        const logPaths = new Map<string, string>();
+        const watcher = watchHpc(hub, { ...options, prewarm: false, runner, logPaths });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            expect(queueCalls(runner)).toBe(1);
+            expect(prewarmCalls(runner)).toBe(0);
+            expect(logPaths.size).toBe(0);
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+    it('leaves the paths and the cadence alone when the prewarm fails', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const runner = vi.fn<Runner>((_host, remote) => {
+            if (remote.startsWith('quota')) return Promise.resolve(NOTHING);
+            if (remote.startsWith('squeue'))
+                return Promise.resolve({ stdout: TWO_FINISHED, stderr: '', code: 0 });
+            return Promise.reject(new Error('timeout'));
+        });
+        const logPaths = new Map([['9', '/pressed/9.out']]);
+        const watcher = watchHpc(hub, { ...options, runner, logPaths });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            expect(prewarmCalls(runner)).toBe(1);
+            expect([...logPaths]).toEqual([['9', '/pressed/9.out']]);
+            expect(held(hub).status).toBe('ok');
+            await vi.advanceTimersByTimeAsync(20 * MINUTE);
+            expect(queueCalls(runner)).toBe(2);
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+    it('lets a press run beside the walk and starts no second prewarm while one is in flight', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const walk = gate();
+        const runner = prewarmRunner(walk.answer);
+        const logPaths = new Map<string, string>();
+        const watcher = watchHpc(hub, { ...options, runner, logPaths });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            expect(prewarmCalls(runner)).toBe(2);
+            expect(logPaths.size).toBe(0);
+            // The press opens its own connection beside the walk and answers without it.
+            await watcher.refresh();
+            expect(queueCalls(runner)).toBe(2);
+            expect(logPaths.size).toBe(0);
+            // That poll was good and asked for a prewarm of its own, which waits for this one.
+            expect(prewarmCalls(runner)).toBe(2);
+            walk.settle({ stdout: LISTING, stderr: '', code: 0 });
+            await vi.advanceTimersByTimeAsync(0);
+            expect([...logPaths]).toEqual([
+                ['9', '/work/one/logs/run-9.out'],
+                ['10', '/work/one/logs/run-10.out']
+            ]);
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+    it('runs no prewarm for the rows of a poll that failed', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const walk = gate();
+        const cluster = { up: true };
+        const runner = prewarmRunner(walk.answer, cluster);
+        const logPaths = new Map<string, string>();
+        const watcher = watchHpc(hub, { ...options, runner, logPaths });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            expect(prewarmCalls(runner)).toBe(2);
+            // A good poll while the walk runs asks for a turn, and the failed poll after it takes
+            // that turn away: the rows it would have run against are no longer the newest.
+            await vi.advanceTimersByTimeAsync(20 * MINUTE);
+            expect(queueCalls(runner)).toBe(2);
+            cluster.up = false;
+            await vi.advanceTimersByTimeAsync(20 * MINUTE);
+            expect(held(hub).status).toBe('unreachable');
+            walk.settle({ stdout: '', stderr: '', code: 0 });
+            await vi.advanceTimersByTimeAsync(0);
+            expect(prewarmCalls(runner)).toBe(2);
+            expect(logPaths.size).toBe(0);
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+    it('leaves a job that is still finishing to the press', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const runner = prewarmRunner(undefined, { up: true }, WITH_COMPLETING);
+        const logPaths = new Map<string, string>();
+        const watcher = watchHpc(hub, { ...options, runner, logPaths });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            expect(held(hub).recent.map((job) => job.id)).toEqual(['9', '10', '11']);
+            // The listing holds a file for 11 as well, and it is not taken: scontrol still answers
+            // for a job that is completing, and exactly.
+            expect([...logPaths.keys()]).toEqual(['9', '10']);
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+    it('asks about an unresolved job once, so it cannot hold a listing slot every cycle', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        // A listing that names nobody: every job stays unresolved.
+        const runner = prewarmRunner(
+            Promise.resolve({ stdout: '@@oculus:wd=/work/one@@', stderr: '', code: 0 })
+        );
+        const logPaths = new Map<string, string>();
+        const watcher = watchHpc(hub, { ...options, runner, logPaths });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            expect(prewarmCalls(runner)).toBe(2);
+            await vi.advanceTimersByTimeAsync(options.pollMin * 60000);
+            await vi.advanceTimersByTimeAsync(0);
+            expect(prewarmCalls(runner)).toBe(2);
+            expect(logPaths.size).toBe(0);
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+    it('writes nothing when the walk lands after the watcher closed', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const walk = gate();
+        const runner = prewarmRunner(walk.answer);
+        const logPaths = new Map<string, string>();
+        const watcher = watchHpc(hub, { ...options, runner, logPaths });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            watcher.close();
+            walk.settle({ stdout: LISTING, stderr: '', code: 0 });
+            await vi.advanceTimersByTimeAsync(0);
+            expect(logPaths.size).toBe(0);
+        } finally {
+            vi.useRealTimers();
+        }
+    });
+    it('runs no prewarm for a poll whose answer the parser refuses', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        let polls = 0;
+        const runner = vi.fn<Runner>((_host, remote) => {
+            if (remote.startsWith('quota')) return Promise.resolve(NOTHING);
+            if (remote.startsWith('squeue')) {
+                polls += 1;
+                return Promise.resolve({
+                    stdout: polls === 1 ? TWO_FINISHED : 'no markers here',
+                    stderr: '',
+                    code: 0
+                });
+            }
+            if (remote.startsWith('sacct'))
+                return Promise.resolve({
+                    stdout: '9|/work/one\n10|/work/one',
+                    stderr: '',
+                    code: 0
+                });
+            return Promise.resolve({ stdout: LISTING, stderr: '', code: 0 });
+        });
+        const logPaths = new Map<string, string>();
+        const watcher = watchHpc(hub, { ...options, runner, logPaths });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            expect(prewarmCalls(runner)).toBe(2);
+            logPaths.clear();
+            await vi.advanceTimersByTimeAsync(options.pollMin * 60000);
+            await vi.advanceTimersByTimeAsync(0);
+            expect(held(hub).status).toBe('unreachable');
+            expect(prewarmCalls(runner)).toBe(2);
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+    it('keeps a path a press wrote while the walk was running', async () => {
+        vi.useFakeTimers();
+        const hub = new Hub();
+        const walk = gate();
+        const runner = prewarmRunner(walk.answer);
+        const logPaths = new Map<string, string>();
+        const watcher = watchHpc(hub, { ...options, runner, logPaths });
+        try {
+            await vi.advanceTimersByTimeAsync(0);
+            logPaths.set('9', '/pressed/9.out');
+            walk.settle({ stdout: LISTING, stderr: '', code: 0 });
+            await vi.advanceTimersByTimeAsync(0);
+            expect([...logPaths]).toEqual([
+                ['9', '/pressed/9.out'],
+                ['10', '/work/one/logs/run-10.out']
+            ]);
+        } finally {
+            watcher.close();
+            vi.useRealTimers();
+        }
+    });
+});
+
 describe('watchHpc', () => {
     it('publishes starting, parsed data, refreshes, and closes timers', async () => {
         vi.useFakeTimers();

@@ -31,4 +31,19 @@ describe('HPC actions', () => {
         expect(runner.mock.calls[0][2]).toBeLessThanOrEqual(25000);
         expect(runner.mock.calls[0][2]).toBeGreaterThan(20000);
     });
+    it('feeds the remembered path to the remote script on the first press', async () => {
+        const runner = vi.fn((_host: string, _remote: string, _timeout: number) =>
+            Promise.resolve({
+                stdout: '@@oculus:logpath=/work/one/logs/run-9.out\nhello\n',
+                stderr: '',
+                code: 0
+            })
+        );
+        // What the prewarm resolved behind the page is what the first press asks the cluster about,
+        // so that press costs a tail rather than the ladder.
+        const paths = new Map([['9', '/work/one/logs/run-9.out']]);
+        const answer = await log('host', '9', paths, runner);
+        expect(answer.path).toBe('/work/one/logs/run-9.out');
+        expect(runner.mock.calls[0][1]).toContain("p='/work/one/logs/run-9.out'");
+    });
 });
