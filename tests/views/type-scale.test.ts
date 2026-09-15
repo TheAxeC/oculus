@@ -75,6 +75,7 @@ const VIEWS: Record<string, string> = {
     'Status.svelte': '.view=fs-md',
     'Venues.svelte': '.said=fs-md | .empty=fs-md',
     'collection/Coverage.svelte': '.label=fs-xxs',
+    'collection/Software.svelte': '.label=fs-xxs | .kind=fs-xxs | .none=fs-xs',
     'collection/EntryCard.svelte':
         '.grip=fs-lg | .sub=fs-md | .body=fs-md | .meta=fs-sm | .stmt=fs-md | .label=fs-xxs | .value=fs-md',
     'data/DatasetCard.svelte': '.description, .note=fs-md | .links a=fs-sm',

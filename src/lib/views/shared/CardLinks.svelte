@@ -1,10 +1,14 @@
 <script lang="ts">
-    // Layer 3, shared view. The four project cross-link tag groups live here because relationship
+    // Layer 3, shared view. The project cross-link tag groups live here because relationship
     // navigation changes independently of the project-card frame.
     //
     // Each kind that has entries is its own labelled line, so a card with many tags is read by kind
     // rather than as one wrapping run; a kind longer than SHOWN draws that many and a control that
     // draws the rest in place.
+    //
+    // The software kind is the one link between two projects, so its entries open a project tab
+    // rather than a registered view, and its label says which end of the link the card is on: a
+    // paper lists the software that implements it, and a software project lists the papers it names.
 
     import Tag from '$lib/ui/Tag.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
@@ -14,6 +18,12 @@
     import { useState } from '$lib/state/use';
 
     const client = useState();
+    const {
+        layout: { openView }
+    } = client;
+
+    /** The kind whose entries are projects, opened as a tab rather than in a view of their own. */
+    const SOFTWARE = 'software';
 
     type Props = {
         /** The joined board item whose cross-links are shown. */
@@ -53,6 +63,15 @@
             label: t('project.card.collaborations'),
             glyph: t('project.card.collaborator_glyph'),
             tags: item.collaborators
+        },
+        {
+            key: SOFTWARE,
+            label:
+                item.project.tier === 'software'
+                    ? t('project.card.software_papers')
+                    : t('project.card.software'),
+            glyph: t('project.card.software_glyph'),
+            tags: item.software
         }
     ]);
 
@@ -67,6 +86,14 @@
     function expand(key: string): void {
         opened = { id: item.id, kinds: [...expanded, key] };
     }
+
+    /** What pressing one entry does, and nothing for a kind whose entries are not cross-links. */
+    function press(kind: Kind, tag: BoardTag): (() => void) | null {
+        if (kind.key === SOFTWARE)
+            return () => openView('project', { id: tag.id, label: tag.label });
+        if (linkView(kind.key) === '') return null;
+        return () => goto(client, linkView(kind.key), tag.label);
+    }
 </script>
 
 {#if tagged}
@@ -77,14 +104,15 @@
                 <div class="taglist">
                     <span class="kind">{kind.label}</span>
                     {#each drawn as tag (tag.id)}
-                        {#if linkView(kind.key) === ''}
+                        {@const onpress = press(kind, tag)}
+                        {#if onpress === null}
                             <Tag label={tag.label} glyph={kind.glyph} />
                         {:else}
                             <button
                                 type="button"
                                 class="crosslink"
                                 title={t('project.card.open_in', kind.label)}
-                                onclick={() => goto(client, linkView(kind.key), tag.label)}
+                                onclick={onpress}
                             >
                                 <Tag label={tag.label} glyph={kind.glyph} />
                             </button>

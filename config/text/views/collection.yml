@@ -37,6 +37,10 @@ text:
         reorder_hint: drag to reorder
         save_glyph: check
         search: Search {0} ...
+        software: Software
+        software_glyph: code
+        software_none: No software projects yet. A project.yml under projects/software makes one.
+        software_papers: Papers
         status_facet: Status
         tags_hint: comma separated
         toolbar: Collection controls

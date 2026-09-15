@@ -47,7 +47,8 @@
     //
     // Two collections carry one thing of their own, and both are that collection's own file joined to
     // the projects rather than a second view: funding adds the card of the projects no scheme covers,
-    // and code adds what the portfolio says about its own code above the cards.
+    // and code adds what the portfolio says about its own code above the cards, then the software
+    // projects of its own scan tier, which the registry file does not hold.
 
     import Card from '$lib/ui/Card.svelte';
     import Tag from '$lib/ui/Tag.svelte';
@@ -57,6 +58,7 @@
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Coverage from './collection/Coverage.svelte';
+    import Software from './collection/Software.svelte';
     import EntryCard from './collection/EntryCard.svelte';
     import EntryForm from './shared/EntryForm.svelte';
     import Intro from './shared/Intro.svelte';
@@ -256,6 +258,7 @@
 
         {#if key === 'code'}
             <Coverage projects={all} dead={archiveDead()} />
+            <Software projects={all} />
         {/if}
 
         {#if shown.length === 0 && unfunded.length === 0}

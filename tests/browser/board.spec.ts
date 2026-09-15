@@ -1,6 +1,6 @@
 // The Projects board: what a card opens, what its controls write, and what the new-idea form
 // scaffolds. Every write here goes to the temporary copy of demo/ and is undone before the test
-// ends, so the board the next spec file opens holds the ten projects of the demo.
+// ends, so the board the next spec file opens holds the projects of the demo unchanged.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';

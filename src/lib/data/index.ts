@@ -48,6 +48,7 @@ function scanRules(value: unknown): ScanRule[] {
         const rule: ScanRule = { dir: item.dir };
         if (typeof item.type === 'string') rule.type = item.type;
         if (item.nested === true) rule.nested = true;
+        if (item.optional === true) rule.optional = true;
         rules.push(rule);
     }
     return rules;

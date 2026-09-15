@@ -173,7 +173,9 @@ function ghost(
  * A nested rule walks `<hub>/<dir>` to any depth, takes `type` from the manifest, and records the
  * first folder under the tier as `category`. A flat-tier folder without a project.yml is a ghost;
  * a manifest that does not parse, or parses to something other than a map, is a finding and no
- * record. Records come back sorted by `folder`, so two runs on one tree agree byte for byte.
+ * record. A missing scan directory is a finding unless the rule is `optional`, which is how a tier
+ * the hub need not have costs nothing until its folder exists. Records come back sorted by `folder`,
+ * so two runs on one tree agree byte for byte.
  */
 export function readManifests(
     hub: string,
@@ -186,7 +188,13 @@ export function readManifests(
         const base = join(hub, rule.dir);
         const tier = (rule.dir.split('/').pop() ?? rule.dir) as Tier;
         if (!isDir(base)) {
-            findings.push({ file: base, key: 'scan', message: 'scan directory does not exist' });
+            if (rule.optional !== true) {
+                findings.push({
+                    file: base,
+                    key: 'scan',
+                    message: 'scan directory does not exist'
+                });
+            }
             continue;
         }
 

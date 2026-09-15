@@ -12,6 +12,7 @@ scan:
   - { dir: projects/ideas,       type: idea,       tier: projects }
   - { dir: projects/active,      type: active,     tier: projects }
   - { dir: projects/manuscripts, type: manuscript, tier: projects }
+  - { dir: projects/software,    type: software,   tier: software, optional: true }   # optional; a hub without the folder reports nothing
   - { dir: projects/coauthor,    nested: true, tier: coauthor }   # nested; type (the outcome) read from each manifest
   - { dir: projects/archive,     nested: true, tier: archive }    # nested; type (the outcome) read from each manifest
 

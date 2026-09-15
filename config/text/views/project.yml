@@ -73,6 +73,9 @@ text:
             repro_glyph: check
             reproduced: Reproduced
             results: Results
+            software: Software
+            software_glyph: code
+            software_papers: Papers
             stale_behind: '{0}d behind'
             stale_tip: docs changed {0} | {1}d after the manifest was last touched - re-touch project.yml
             toggle_tip: expand / collapse

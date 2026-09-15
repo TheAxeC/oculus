@@ -65,6 +65,12 @@ export type BoardItem = {
     funding: BoardTag[];
     datasets: BoardTag[];
     collaborators: BoardTag[];
+    /**
+     * The other end of this project's link with the software tier: on a project of any other tier,
+     * the software projects whose `related:` names it; on a software project, the projects its own
+     * `related:` names. One field, since the relation is one edge read from either side.
+     */
+    software: BoardTag[];
     /** The authors as one line: the list joined, else the lead, else empty. */
     authors: string;
     /** The lifecycle bucket of the preset's rollup, or the empty string when none catches it. */
@@ -146,14 +152,18 @@ export type QuickFilters = {
     staleLag?: number;
 };
 
-/** The three boards and the tiers each one shows. A view id outside this map is the first board. */
+/**
+ * The three boards and the tiers each one shows. A view id outside this map is the first board, and
+ * a tier no board names has no board: a software project is reached from the Code view and its own
+ * tab rather than from a card list.
+ */
 const TIERS: Record<string, Tier[]> = {
     projects: ['ideas', 'active', 'manuscripts'],
     archive: ['archive'],
     coauthor: ['coauthor']
 };
 
-/** The board view ids, in the order presetFor knows them. A project sits on exactly one of them. */
+/** The board view ids, in the order presetFor knows them. A project of a board tier sits on one. */
 export const BOARDS = Object.keys(TIERS);
 
 /** Which `board:` column list a board takes its headings from. */

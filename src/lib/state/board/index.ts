@@ -34,7 +34,7 @@ export type {
     TypeCount,
     VenueCount
 } from './presets.ts';
-export { boardItems } from './items.ts';
+export { boardItemFor, boardItems } from './items.ts';
 export { facetValues, facets } from './facets.ts';
 export { disseminated, humanSize, stats, typeCounts, waitingLine } from './stats.ts';
 export type { Dissemination, WaitingLine } from './stats.ts';

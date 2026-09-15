@@ -14,6 +14,7 @@ import {
     SESSIONS_NONE,
     SESSIONS_RECENT,
     STALE_LAG,
+    boardItemFor,
     boardItems,
     disseminated,
     presetFor,
@@ -195,7 +196,8 @@ export function createSelectors(
      * One project as a board card shows it, whichever board holds its tier. The project view draws the
      * same card as the board does and has no board of its own, so the preset is found by the project's
      * tier rather than by a view id; a tier no board claims falls back to the first board, exactly as
-     * presetFor does with a view id it does not know.
+     * presetFor does with a view id it does not know, and its project is still joined, so a software
+     * project opens as a card in its own tab although no board lists it.
      */
     function boardItemOf(id: Id): BoardItem | null {
         const snapshot = entities.portfolio();
@@ -205,7 +207,7 @@ export function createSelectors(
         const merged = configMap();
         const view = BOARDS.find((name) => presetFor(name, merged).tiers.includes(project.tier));
         const preset = presetFor(view ?? BOARDS[0], merged);
-        return boardItems(snapshot, preset, sessionsOf).find((item) => item.id === id) ?? null;
+        return boardItemFor(snapshot, project, preset, sessionsOf);
     }
 
     /** One project of the snapshot, or null before the first one arrives and for an id it does not hold. */

@@ -637,6 +637,20 @@ describe("oculus's own config directory", () => {
         expect(loadConfig(engineDir()).findings).toEqual([]);
     });
 
+    it('names the six scan tiers, the software one flat, typed and optional', () => {
+        const { scan } = portfolioConfigFrom(loadConfig(engineDir()).config);
+        expect(scan.map((rule) => rule.dir)).toEqual([
+            'projects/ideas',
+            'projects/active',
+            'projects/manuscripts',
+            'projects/software',
+            'projects/coauthor',
+            'projects/archive'
+        ]);
+        expect(scan[3]).toEqual({ dir: 'projects/software', type: 'software', optional: true });
+        expect(scan.filter((rule) => rule.optional === true)).toHaveLength(1);
+    });
+
     it('holds the cross-link exclusions and independent collection lane tones', () => {
         const { config } = loadConfig(engineDir());
         expect(config.archive_dead).toEqual([

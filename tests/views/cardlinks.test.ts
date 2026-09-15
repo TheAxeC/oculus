@@ -42,11 +42,15 @@ const LABELS = [
     'project.card.collaborations'
 ].map(word);
 
-function project(): Project {
+/** The fifth line's two labels: the one a paper's card carries and the one a software card does. */
+const SOFTWARE = word('project.card.software');
+const PAPERS = word('project.card.software_papers');
+
+function project(tier: Project['tier'] = 'active'): Project {
     return {
         id: 'one',
         title: 'One',
-        tier: 'active',
+        tier,
         ghost: false,
         chips: [],
         results: [],
@@ -74,12 +78,21 @@ function tags(kind: string, count: number): BoardTag[] {
     }));
 }
 
-type Counts = { funding: number; programs: number; datasets: number; collaborators: number };
+type Counts = {
+    funding: number;
+    programs: number;
+    datasets: number;
+    collaborators: number;
+    /** The software cross-links, which the four-kind cases leave at none. */
+    software?: number;
+    /** The tier the card's project is on, which decides what the software line is called. */
+    tier?: Project['tier'];
+};
 
 function item(counts: Counts): BoardItem {
     return {
         id: 'one',
-        project: project(),
+        project: project(counts.tier),
         tone: '',
         domain: null,
         venue: null,
@@ -87,6 +100,7 @@ function item(counts: Counts): BoardItem {
         funding: tags('fund', counts.funding),
         datasets: tags('data', counts.datasets),
         collaborators: tags('collab', counts.collaborators),
+        software: tags('soft', counts.software ?? 0),
         authors: '',
         bucket: '',
         code: '',
@@ -190,6 +204,44 @@ describe('the card tag lines', () => {
     it('draws nothing at all for an item with no tag of any kind', () => {
         const bare = item({ funding: 0, programs: 0, datasets: 0, collaborators: 0 });
         expect(draw({ item: bare })).not.toContain('class="links');
+    });
+
+    it("calls the software line Software on a paper's card and Papers on a software project's", () => {
+        const counts = { funding: 0, programs: 0, datasets: 0, collaborators: 0, software: 2 };
+        const paper = draw({ item: item(counts) });
+        expect(labelled(paper, SOFTWARE)).toBe(true);
+        expect(labelled(paper, PAPERS)).toBe(false);
+
+        const tool = draw({ item: item({ ...counts, tier: 'software' }) });
+        expect(labelled(tool, PAPERS)).toBe(true);
+        expect(labelled(tool, SOFTWARE)).toBe(false);
+    });
+
+    it('draws the software line after the four, as buttons over its entries', () => {
+        const drawn = lines(
+            draw({
+                item: item({
+                    funding: 1,
+                    programs: 1,
+                    datasets: 1,
+                    collaborators: 1,
+                    software: 2
+                })
+            })
+        );
+        expect(drawn.map(kindOf)).toEqual([...LABELS, SOFTWARE]);
+        const software = drawn[4];
+        expect(software.match(/class="tag/g)).toHaveLength(2);
+        expect(software).toContain('class="crosslink');
+        expect(software).toContain(`title="${openIn(SOFTWARE)}"`);
+        expect(software).toContain('SOFT-1');
+    });
+
+    // A server render carries no handler, so where a software tag goes is read off the source; the
+    // press itself is in the browser suite.
+    it("opens a software cross-link as the related project's own tab", () => {
+        const source = readFileSync('src/lib/views/shared/CardLinks.svelte', 'utf8');
+        expect(source).toContain("openView('project', { id: tag.id, label: tag.label })");
     });
 });
 

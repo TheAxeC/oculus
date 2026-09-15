@@ -78,6 +78,7 @@ function item(): BoardItem {
         funding: [],
         datasets: [{ id: 'data-one', label: DATASET }],
         collaborators: [],
+        software: [],
         authors: '',
         bucket: '',
         code: 'public',

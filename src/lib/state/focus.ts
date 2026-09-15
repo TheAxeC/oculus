@@ -164,7 +164,7 @@ function laneOrder(a: Project, b: Project): number {
     return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
 }
 
-/** Everything the board speaks for: the three live tiers, which is the archive's complement. */
+/** Everything the board speaks for: the three open tiers, the ones the Projects board shows. */
 export function live(project: Project): boolean {
     return ['ideas', 'active', 'manuscripts'].includes(project.tier);
 }

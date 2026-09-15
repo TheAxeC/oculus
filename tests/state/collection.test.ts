@@ -28,6 +28,7 @@ import {
     parseRawField,
     rawFieldText,
     refusedField,
+    softwareRows,
     statusFacets,
     statusValues,
     type Entry,
@@ -620,6 +621,46 @@ describe('noFunding and coverage', () => {
             ['none', 1]
         ]);
         expect(coverage(held, []).map((group) => group.count)).toEqual([1, 0, 2]);
+    });
+});
+
+describe('softwareRows', () => {
+    const tools = [
+        project('zeta-kit', {
+            tier: 'software',
+            type: 'software',
+            title: 'Zeta kit',
+            codeAvailability: { status: 'deposited' },
+            relatedIds: ['paper', 'gone']
+        }),
+        project('alpha-kit', {
+            tier: 'software',
+            type: 'software',
+            title: 'Alpha kit',
+            relatedIds: []
+        }),
+        project('paper', { type: 'manuscript', short: 'Paper', title: 'The long paper title' }),
+        project('idea', { type: 'idea' })
+    ];
+
+    it('lists the software tier by title, with its deposit state and the papers it names', () => {
+        expect(softwareRows(tools)).toEqual([
+            { id: 'alpha-kit', label: 'Alpha kit', type: 'software', code: '', papers: [] },
+            {
+                id: 'zeta-kit',
+                label: 'Zeta kit',
+                type: 'software',
+                code: 'deposited',
+                papers: [{ id: 'paper', label: 'Paper' }]
+            }
+        ]);
+    });
+
+    it('lists no project of another tier, and nothing at all for a hub with no software', () => {
+        expect(softwareRows([project('one', { type: 'active', relatedIds: ['paper'] })])).toEqual(
+            []
+        );
+        expect(softwareRows([])).toEqual([]);
     });
 });
 

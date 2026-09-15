@@ -27,8 +27,8 @@ manifest_schema:
     "Overrides (rare)": "Overrides (rare)"
   fields:
     id:            { label: "id", type: readonly, section: Core, help: "the folder name - rename = a folder move, not a form edit" }
-    tier:          { label: "Tier", type: readonly, section: Core, help: "projects / archive / coauthor - set by the folder it lives in (a move, not a form edit)" }
-    type:          { label: "Type / outcome", type: select, from: type_order, section: Core, help: "archive/coauthor: the outcome (published, nogo, dropped, ...); projects: the folder tier (active/manuscript/idea) - don't change it here" }
+    tier:          { label: "Tier", type: readonly, section: Core, help: "projects / software / archive / coauthor - set by the folder it lives in (a move, not a form edit)" }
+    type:          { label: "Type / outcome", type: select, from: type_order, section: Core, help: "archive/coauthor: the outcome (published, nogo, dropped, ...); projects: the folder tier (active/manuscript/idea); software: software - don't change it here" }
     short:         { label: "Short handle", type: text, section: Core }
     title:         { label: "Title", type: text, section: Core }
     lead:          { label: "Lead (first author)", type: text, section: Core }

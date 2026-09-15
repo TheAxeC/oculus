@@ -650,6 +650,47 @@ export function noFunding(projects: Project[], schemes: string[]): Project[] {
     );
 }
 
+/** One row of the Code view's software list: the project, what it is, and the papers it names. */
+export type SoftwareRow = {
+    id: string;
+    label: string;
+    /** The project's own `type:`, which on this tier is `software`. */
+    type: string;
+    /** The `code_availability:` status, or the empty string when the manifest names none. */
+    code: string;
+    /** The projects the manifest's `related:` names, each drawn as a cross-link. */
+    papers: { id: string; label: string }[];
+};
+
+/**
+ * The software projects, by title, each with the papers its `related:` names.
+ *
+ * The tier is the whole of what makes a project software here, so a manifest filed under
+ * `projects/software/` is listed whether or not any paper points back at it, and a related id the
+ * portfolio does not hold is left out rather than drawn as a dead link.
+ */
+export function softwareRows(projects: Project[]): SoftwareRow[] {
+    const rows: SoftwareRow[] = [];
+    for (const project of projects) {
+        if (project.tier !== 'software') continue;
+        const papers: { id: string; label: string }[] = [];
+        for (const id of project.relatedIds) {
+            const found = projects.find((one) => one.id === id);
+            if (found === undefined) continue;
+            const short = found.short?.trim() ?? '';
+            papers.push({ id, label: short === '' ? found.title : short });
+        }
+        rows.push({
+            id: project.id,
+            label: project.title,
+            type: project.type ?? '',
+            code: project.codeAvailability?.status ?? '',
+            papers
+        });
+    }
+    return rows.sort((left, right) => left.label.localeCompare(right.label));
+}
+
 /** The three code-availability groups of the Code view, in the order the sections are drawn. */
 export const COVERAGE_GROUPS = ['deposited', 'review-anon', 'none'];
 

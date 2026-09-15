@@ -13,6 +13,7 @@ const SCAN: ScanRule[] = [
     { dir: 'projects/ideas', type: 'idea' },
     { dir: 'projects/active', type: 'active' },
     { dir: 'projects/manuscripts', type: 'manuscript' },
+    { dir: 'projects/software', type: 'software', optional: true },
     { dir: 'projects/coauthor', nested: true },
     { dir: 'projects/archive', nested: true }
 ];
@@ -30,7 +31,11 @@ function write(hub: string, rel: string, body: string): void {
     writeFileSync(full, body);
 }
 
-/** A hub with all five tiers, a flat and a nested project each, and the awkward cases. */
+/**
+ * A hub with the five tiers that always exist, a flat and a nested project each, and the awkward
+ * cases. The optional software tier is deliberately absent, since that is the hub every test but the
+ * two software ones below is read against.
+ */
 function buildHub(): string {
     const hub = scratch();
     for (const tier of ['ideas', 'active', 'manuscripts', 'coauthor', 'archive']) {
@@ -248,6 +253,47 @@ describe('readManifests', () => {
             file: join(hub, 'projects/nowhere'),
             key: 'scan',
             message: 'scan directory does not exist'
+        });
+    });
+
+    it('says nothing about an optional scan directory the hub does not have', () => {
+        const hub = buildHub();
+        const { manifests, findings } = readManifests(hub, SCAN);
+        expect(findings.some((item) => item.key === 'scan')).toBe(false);
+        expect(manifests.some((item) => item.tier === 'software')).toBe(false);
+    });
+
+    it('reads an optional tier like any other flat rule once its folder is there', () => {
+        const hub = buildHub();
+        write(
+            hub,
+            'projects/software/graphkit/project.yml',
+            'id: graphkit\ntype: software\ntitle: GraphKit\nrelated: [btfno]\n'
+        );
+        const { manifests, findings } = readManifests(hub, SCAN);
+        const tool = byId(manifests, 'graphkit');
+
+        expect(tool.tier).toBe('software');
+        expect(tool.type).toBe('software');
+        expect(tool.folder).toBe('projects/software/graphkit');
+        expect(tool.related).toEqual(['btfno']);
+        expect(findings.some((item) => item.key === 'scan')).toBe(false);
+    });
+
+    it("reports a software manifest whose own type disagrees with its tier and uses the tier's", () => {
+        const hub = buildHub();
+        write(
+            hub,
+            'projects/software/mislabelled/project.yml',
+            'id: mislabelled\ntype: manuscript\ntitle: Mislabelled\n'
+        );
+        const { manifests, findings } = readManifests(hub, SCAN);
+
+        expect(byId(manifests, 'mislabelled').type).toBe('software');
+        expect(findings).toContainEqual({
+            file: join(hub, 'projects/software/mislabelled/project.yml'),
+            key: 'type',
+            message: 'type "manuscript" is not the tier\'s software'
         });
     });
 

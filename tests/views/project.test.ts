@@ -266,3 +266,53 @@ function chosen(body: string): string {
     const found = /aria-checked="true"[\s\S]*?<span class="label">([^<]+)</.exec(segment(body));
     return found === null ? '' : found[1];
 }
+
+describe('a software project and the paper it names', () => {
+    /** A library on the software tier, its `related:` naming the paper of the fixture. */
+    function kit(): Record_ {
+        return {
+            ...project(),
+            id: 'kit',
+            tier: 'software',
+            type: 'software',
+            title: 'Kit, the toolkit',
+            short: 'Kit',
+            docs: [],
+            relatedIds: ['alpha'],
+            folder: 'projects/software/kit',
+            file: '/hub/projects/software/kit/project.yml'
+        };
+    }
+
+    /** The two projects and the one related edge between them, as the portfolio carries them. */
+    function installPair(): void {
+        const both = snapshot();
+        both.entities.projects.kit = kit();
+        both.relations = { ...EMPTY_RELATIONS, projectRelated: [['kit', 'alpha']] };
+        receive({ channel: 'portfolio', version: 2, payload: both });
+    }
+
+    beforeEach(() => {
+        installPair();
+    });
+
+    it('draws the card of a project no board holds', () => {
+        const body = html('kit');
+        expect(body).toContain('<article class="card');
+        expect(body).toContain('Kit, the toolkit');
+        expect(body).toContain('projects/software/kit');
+    });
+
+    it("names the papers on the software's own tab", () => {
+        const body = html('kit');
+        expect(body).toContain(catalog['project.card.software_papers']);
+        expect(body).toContain('Alpha, the whole title');
+        expect(body).not.toContain(catalog['project.card.software']);
+    });
+
+    it("names the software on the paper's own tab", () => {
+        const body = html('alpha');
+        expect(body).toContain(catalog['project.card.software']);
+        expect(body).toContain('>Kit<');
+    });
+});

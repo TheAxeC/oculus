@@ -3,8 +3,8 @@
 // oculus's own file, so a finding here is corrected in demo/ rather than reported and left; the real
 // hub's findings belong to the hub.
 //
-// The counts are pinned here, unlike the real hub's, because this folder does not grow: ten
-// manifests over the five tiers, the five registries, and the eleven collection files. A count that
+// The counts are pinned here, unlike the real hub's, because this folder does not grow: eleven
+// manifests over the six tiers, the five registries, and the eleven collection files. A count that
 // moves means the demo changed, which is the thing a test over a fixture is for.
 //
 // The browser layer serves a copy of this folder, so a finding it would raise is caught here, in
@@ -25,8 +25,9 @@ describe('the demo hub', () => {
         expect(snapshot.findings).toEqual([]);
     });
 
-    it('holds the ten projects of the five tiers', () => {
+    it('holds the eleven projects of the six tiers', () => {
         expect(Object.keys(snapshot.entities.projects).sort()).toEqual([
+            'demo-toolkit',
             'early-benchmark',
             'failed-quantization',
             'graph-bandits',
@@ -38,6 +39,13 @@ describe('the demo hub', () => {
             'streaming-anomaly',
             'tensor-sketch'
         ]);
+    });
+
+    it('files the software project on its own tier, with the papers it names', () => {
+        const tool = snapshot.entities.projects['demo-toolkit'];
+        expect(tool.tier).toBe('software');
+        expect(tool.type).toBe('software');
+        expect(tool.relatedIds).toEqual(['graph-bandits', 'graph-transfer']);
     });
 
     it('holds the five registries', () => {

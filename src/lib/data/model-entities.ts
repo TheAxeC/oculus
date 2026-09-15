@@ -12,8 +12,8 @@ export type Finding = {
     message: string;
 };
 
-/** The five scan tiers, the basename of each `dir` in the scan rules. */
-export type Tier = 'ideas' | 'active' | 'manuscripts' | 'coauthor' | 'archive';
+/** The six scan tiers, the basename of each `dir` in the scan rules. */
+export type Tier = 'ideas' | 'active' | 'manuscripts' | 'software' | 'coauthor' | 'archive';
 
 /** The five registries, one per file readRegistries is given. */
 export type RegistryName = 'venues' | 'datasets' | 'programs' | 'domains' | 'funding';
@@ -57,6 +57,8 @@ export type ScanRule = {
     type?: string;
     /** True for the tiers whose projects sit under free-form filing folders. */
     nested?: boolean;
+    /** True for a directory the hub need not have: absent, it is skipped rather than reported. */
+    optional?: boolean;
 };
 
 /**

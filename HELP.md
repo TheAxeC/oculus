@@ -67,7 +67,7 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `map` | Map | The portfolio as a graph of projects and what links them, filtered by project type, by research line and to the projects that still hold a line membership. |
 | `venues` | Venues | The venue catalogue with its tiers, deadlines and concentration warning. |
 | `data` | Data | The dataset registry: where each set came from and how it is recovered. |
-| `code` | Code | The repositories registry. |
+| `code` | Code | The repositories registry, what the portfolio says about its own code, and the software projects of the `projects/software` tier with the papers each one names. |
 | `statements` | Statements | The reusable boilerplate paragraphs. |
 | `files` | Files | The file browser over the hub, the engine config folder and the configured roots, with saved workspaces. |
 | `funding` | Funding | The funding schemes, their stage and the statement each grant requires. |

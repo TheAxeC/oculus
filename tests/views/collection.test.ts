@@ -198,13 +198,13 @@ const CODE_ENTRIES: Entry[] = [
     }
 ];
 
-function snapshot(): Snapshot {
+function snapshot(projects: Record<string, Project> = PROJECTS): Snapshot {
     return {
         version: 1,
         entities: {
             feeds: NO_FEEDS,
             career: null,
-            projects: PROJECTS,
+            projects,
             venues: {},
             datasets: {},
             programs: {},
@@ -252,8 +252,15 @@ function installFixture(): void {
     receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
 }
 
-/** The view as the instance of one collection's view id, with one saved state. */
-function html(view = 'events', state: Partial<CollectionState> = {}): string {
+/** The view as the instance of one collection's view id, with one saved state and its projects. */
+function html(
+    view = 'events',
+    state: Partial<CollectionState> = {},
+    projects?: Record<string, Project>
+): string {
+    if (projects !== undefined) {
+        receive({ channel: 'portfolio', version: 2, payload: snapshot(projects) });
+    }
     setInstanceState(INSTANCE, { search: '', statuses: [], hidden: [], ...state });
     const instance: Instance = { id: INSTANCE, view, state: {} };
     return render(Collection, { context: clientContext(client), props: { instance } }).body;
@@ -536,6 +543,35 @@ describe('the code view', () => {
         expect(card).toContain('class="label">active</span>');
         expect(card).toContain('aria-expanded="false"');
         expect(card).not.toContain('>Alpha</span>');
+    });
+
+    it('says the tier holds nothing while the portfolio has no software project', () => {
+        expect(body).toContain(catalog['collection.software']);
+        expect(body).toContain(catalog['collection.software_none']);
+        expect(body).not.toContain('data-software-row=');
+    });
+
+    it('draws one row per software project, with its deposit state and the papers it names', () => {
+        const withTool = html(
+            'code',
+            {},
+            {
+                ...PROJECTS,
+                kit: project('kit', {
+                    tier: 'software',
+                    type: 'software',
+                    title: 'A toolkit',
+                    codeAvailability: { status: 'deposited' },
+                    relatedIds: ['alpha']
+                })
+            }
+        );
+        expect(withTool).not.toContain(catalog['collection.software_none']);
+        expect(withTool).toContain('data-software-row="kit"');
+        expect(withTool).toContain('>A toolkit<');
+        expect(withTool).toContain(catalog['board.code_deposited']);
+        expect(withTool).toContain(catalog['collection.software_papers']);
+        expect(withTool).toContain('>Alpha<');
     });
 });
 
