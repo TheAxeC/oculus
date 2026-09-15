@@ -46,7 +46,7 @@ dispatch:                                  # O28b + D1 + D2, the set of three (t
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D3/report.md
   exit: none
   pid: none
-  session_id: pending                    # the Agent tool's id, written the moment it is known; the rolling window's first dispatch after D2's landing, the brief re-checked against 1103ab09 at 21:33 (every premise holds)
+  session_id: aeada07b172c0e7c6            # the Agent tool's id, launched 21:35; the rolling window's first dispatch after D2's landing, the brief re-checked against 1103ab09 at 21:33 (every premise holds)
   landing: not-started
 - package: D1
   worker: claude:opus
