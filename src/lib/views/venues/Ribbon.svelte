@@ -2,7 +2,7 @@
     // Layer 3, Venues view partial. The next conference deadlines and the twelve-month ribbon.
     // Timing and density are prepared by state/venues.ts; this file only assigns the catalog words.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import Tooltip from '$lib/ui/Tooltip.svelte';
     import { glyph, t } from '$lib/state/text';
@@ -61,10 +61,14 @@
 </div>
 
 <div class="legend">
-    <Chip label={t('venues.leg_deadline')} glyph="linkedin" />
-    <Chip label={t('venues.leg_held')} glyph="active" />
-    <Chip label={t('venues.leg_biennial')} glyph="refresh" />
-    <Chip label={t('venues.leg_thismonth')} glyph="current_month" />
+    <span class="deadline">
+        <Tag label={t('venues.leg_deadline')} glyph="linkedin" />
+    </span>
+    <span class="held">
+        <Tag label={t('venues.leg_held')} glyph="active" />
+    </span>
+    <Tag label={t('venues.leg_biennial')} glyph="refresh" />
+    <Tag label={t('venues.leg_thismonth')} glyph="current_month" />
     <span>{t('venues.leg_approx')}</span>
 </div>
 
@@ -80,7 +84,7 @@
             {#each month.deadlines as chip (chip.venue.id)}
                 <Tooltip text={tip(chip, t('venues.deadline'), monthLabel(month.index))}>
                     <span class="timed deadline">
-                        <Chip label={short(chip.venue)} glyph="linkedin" />
+                        <Tag label={short(chip.venue)} glyph="linkedin" />
                         {#if chip.biennial}
                             <Glyph name="refresh" />
                         {/if}
@@ -90,7 +94,7 @@
             {#each month.held as chip (chip.venue.id)}
                 <Tooltip text={tip(chip, t('venues.held'), monthLabel(month.index))}>
                     <span class="timed held">
-                        <Chip label={short(chip.venue)} glyph="active" />
+                        <Tag label={short(chip.venue)} glyph="active" />
                         {#if chip.biennial}
                             <Glyph name="refresh" />
                         {/if}
@@ -164,7 +168,7 @@
         margin-bottom: 12px;
     }
 
-    /* The column may shrink under its content, so a chip of a venue with no short name is cut at
+    /* The column may shrink under its content, so a tag of a venue with no short name is cut at
        the column's own edge with an ellipsis rather than pushed over its neighbour. */
     .month {
         min-width: 0;
@@ -198,11 +202,15 @@
         margin-top: 3px;
     }
 
-    .deadline :global(.chip) {
-        border-color: var(--c-violet);
+    /* A deadline and a conference being held are told apart by the colour of the tag's mark: the
+       icon is drawn in the text colour it inherits, so painting it through the wrapper paints the
+       mark and leaves the tag's own words muted, and the biennial marker beside the tag keeps its
+       own ink. The legend carries the same two wrappers. */
+    .deadline :global(.tag .glyph) {
+        color: var(--c-violet-txt);
     }
 
-    .held :global(.chip) {
-        border-color: var(--c-green);
+    .held :global(.tag .glyph) {
+        color: var(--c-green-txt);
     }
 </style>

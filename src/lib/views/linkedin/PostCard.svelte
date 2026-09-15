@@ -4,7 +4,7 @@
 
     import { linkedinSourcePath, openLinkedinSource } from './post-card';
     import Card from '$lib/ui/Card.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { HUB_ROOT } from '$lib/state/collection';
     import { snippet, type LinkedinEntry } from '$lib/state/linkedin';
@@ -65,9 +65,9 @@
 >
     <Card {id} {cursor} title={entry.title}>
         {#snippet meta()}
-            <Chip label={posted ? number : t('linkedin.idea_tag')} />
+            <Tag label={posted ? number : t('linkedin.idea_tag')} />
             {#if entry.category !== ''}
-                <Chip label={entry.category} />
+                <Tag label={entry.category} />
             {/if}
             {#if entry.date !== ''}
                 <span class="date">{entry.date}</span>

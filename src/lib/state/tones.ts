@@ -151,6 +151,36 @@ export function chipGlyphName(chip: string): string {
     return legend[chip]?.icon ?? '';
 }
 
+/**
+ * The hue a status legend icon carries in its name: the coloured dots and squares of the legend
+ * are named by their colour, and a line icon is the same shape for all of them, so the name is
+ * where the colour is kept. A name that is not a colour carries none.
+ */
+const ICON_HUES: Record<string, string> = {
+    red: 'red',
+    purple: 'purple',
+    green: 'green',
+    brown: 'amber',
+    yellow: 'gold',
+    blue: 'blue',
+    orange: 'orange',
+    white: 'grey',
+    black: 'slate',
+    orange_square: 'orange',
+    green_square: 'green'
+};
+
+/**
+ * The hue a status mark is drawn in: the status palette's tone when the palette names the status,
+ * and otherwise the colour its legend icon is named by, so a mark drawn as a line icon keeps the
+ * colour its dot had. The unknown tone for a status the legend does not list.
+ */
+export function statusMarkTone(chip: string): string {
+    configGeneration();
+    if (statusPalette[chip.toLowerCase()] !== undefined) return statusTone(chip);
+    return ICON_HUES[legend[chip]?.icon ?? ''] ?? UNKNOWN_TONE;
+}
+
 /** The active glyph character for a status chip, and nothing for an unlisted chip. */
 export function chipGlyph(chip: string): string {
     const name = chipGlyphName(chip);

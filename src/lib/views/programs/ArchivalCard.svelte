@@ -3,7 +3,7 @@
     // category at a time and project links inside it.
 
     import Card from '$lib/ui/Card.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import type { ArchiveGroup, Project } from '$lib/state/lines';
@@ -31,7 +31,7 @@
     <Card {id} {cursor} title={t('programs.archival')}>
         {#snippet meta()}
             <Glyph name="archived" />
-            <Chip label={t('programs.not_active', count)} />
+            <Tag label={t('programs.not_active', count)} />
         {/snippet}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
         <p>{@html inlineMarkdown(t('programs.archival_blurb'))}</p>
@@ -43,7 +43,7 @@
                         active={shown === group.type}
                         onclick={() => (shown = shown === group.type ? '' : group.type)}
                     />
-                    <Chip label={String(group.count)} />
+                    <Tag label={String(group.count)} />
                     {#if shown === group.type}
                         <div class="members">
                             {#each group.projects as project (project.id)}

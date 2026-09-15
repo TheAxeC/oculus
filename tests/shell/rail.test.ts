@@ -23,11 +23,18 @@ import {
     asciiCatalog,
     engineDir,
     glyphCatalog,
+    iconSet,
     loadConfig,
     textCatalog,
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { setAscii, setCatalog, setGlyphMode, setGlyphs } from '../../src/lib/state/text.ts';
+import {
+    setAscii,
+    setCatalog,
+    setGlyphMode,
+    setGlyphs,
+    setIcons
+} from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import { setAppearance } from '../../src/lib/state/appearance.ts';
 import { installBadges } from '../state/rail-badges-fixture.ts';
@@ -321,6 +328,11 @@ describe('a rail badge', () => {
             badge: () => '',
             badgeTone: () => 'green'
         });
+        registerView({
+            ...probe('marked', 'badge'),
+            badgeGlyph: () => 'bang',
+            badgeTone: () => 'red'
+        });
     });
 
     it('draws a toned registration badge beside its glyph and nothing at zero', () => {
@@ -333,6 +345,30 @@ describe('a rail badge', () => {
         expect(body).toContain('--badge-bg: var(--c-red)');
         expect(body).not.toContain('--badge-bg: var(--c-green)');
         expect(body).toContain('title="Status 3 5"');
+    });
+
+    it('draws a badge that is a mark as an icon, and says it in words in its title', () => {
+        setIcons(iconSet(config));
+        try {
+            const body = render(ActivityRail, {
+                context: clientContext(client),
+                props: { groups: [{ id: 'badge', label: 'Badge' }] }
+            }).body;
+            // The badge of this view, from its class to the tag that closes it around the drawing.
+            const at = body.indexOf('class="badge', body.indexOf('data-view="marked"'));
+            expect(at).toBeGreaterThan(-1);
+            const badge = body.slice(
+                body.lastIndexOf('<span', at),
+                body.indexOf('</span>', body.indexOf('</svg>', at)) + 7
+            );
+            expect(badge).toContain('<svg');
+            // Nothing is drawn as text inside the badge: the mark is the drawing and no more.
+            expect(badge.replace(/<[^>]*>/g, '').trim()).toBe('');
+            // The hover words are text, so there the mark is still its character.
+            expect(badge).toContain(`title="Status ${glyphCatalog(config).bang}"`);
+        } finally {
+            setIcons({});
+        }
     });
 
     it('puts browser identities and the rail box class on direct and bookmark buttons', () => {

@@ -1,8 +1,9 @@
-// Layer 2, client state. The text catalog, glyph vocabulary and ASCII stand-ins received from the
-// server, with the lookups components use. Nothing here touches the filesystem. Glyph tokens are
-// resolved when a string renders, so changing display mode updates catalog and configuration text.
+// Layer 2, client state. The text catalog, glyph vocabulary, ASCII stand-ins and icon drawings
+// received from the server, with the lookups components use. Nothing here touches the filesystem.
+// Glyph tokens are resolved when a string renders, so changing display mode updates catalog and
+// configuration text.
 //
-// The three maps are plain module variables, so every reader below first reads the configuration's
+// The four maps are plain module variables, so every reader below first reads the configuration's
 // generation, state/generation.svelte.ts: that is what a template's own effect depends on, and what
 // makes a string drawn before a push redraw with the string the push installed.
 
@@ -14,6 +15,7 @@ export { setGlyphMode, type GlyphMode } from './glyphmode.svelte.ts';
 let catalog: Record<string, string | undefined> = {};
 let glyphs: Record<string, string | undefined> = {};
 let ascii: Record<string, string | undefined> = {};
+let icons: Record<string, string | undefined> = {};
 
 /** Install the catalog the page was given. Called once per load, again on every push. */
 export function setCatalog(next: Record<string, string>): void {
@@ -31,6 +33,14 @@ export function setGlyphs(next: Record<string, string>): void {
  */
 export function setAscii(next: Record<string, string>): void {
     ascii = next;
+}
+
+/**
+ * Install the icon drawings the page was given, one SVG per glyph name, which the server read from
+ * the icon package for every row of config/icons.yml.
+ */
+export function setIcons(next: Record<string, string>): void {
+    icons = next;
 }
 
 /**
@@ -92,4 +102,25 @@ export function asciiOf(character: string): string {
     configGeneration();
     if (glyphMode() !== 'ascii') return character;
     return ascii[character] ?? character;
+}
+
+/**
+ * The icon a glyph name is drawn as, or nothing: while the mode is `ascii` there is no icon at all,
+ * since a terminal theme draws the stand-in text, and a name the icon map does not carry has none.
+ * A caller with nothing draws the character glyph() gives it.
+ */
+export function iconSvg(name: string): string | undefined {
+    configGeneration();
+    if (glyphMode() === 'ascii') return undefined;
+    return icons[name];
+}
+
+/**
+ * Whether the vocabulary in force draws this name as a bracketed tag, which the ASCII stand-ins of
+ * a terminal theme do and the characters never do. A caller that puts brackets of its own around a
+ * glyph leaves them off such a one, so the reader is given one pair rather than two.
+ */
+export function bracketedGlyph(name: string): boolean {
+    const drawn = glyph(name);
+    return drawn.startsWith('[') && drawn.endsWith(']');
 }

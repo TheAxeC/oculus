@@ -67,9 +67,9 @@ test('a tooltip describes the control it wraps, and not the wrapper around it', 
     expect(await page.locator('span.tip[aria-describedby]').count()).toBe(0);
 });
 
-test('a long chip value ends in an ellipsis inside its card', async ({ page }) => {
+test('a long tag value ends in an ellipsis inside its card', async ({ page }) => {
     const card = await projectCard(page);
-    const label = card.locator('.chip .label').filter({ hasText: LONG_PROGRAM }).first();
+    const label = card.locator('.tag .label').filter({ hasText: LONG_PROGRAM }).first();
     await expect(label).toBeVisible();
 
     expect(await clipped(label)).toBe(true);

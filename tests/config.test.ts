@@ -20,6 +20,9 @@ import {
     collectionKeys,
     engineDir,
     glyphCatalog,
+    iconCatalog,
+    iconFindings,
+    iconSet,
     loadConfig,
     loadLocal
 } from '../src/lib/data/sources/config.ts';
@@ -377,6 +380,7 @@ describe("oculus's own config directory", () => {
             'git'
         ],
         'glyphs.yml': ['glyphs', 'ascii'],
+        'icons.yml': ['icons'],
         'layout.yml': [
             'nav_groups',
             'direct_chord',
@@ -648,6 +652,47 @@ describe("oculus's own config directory", () => {
                 .map(([key]) => key)
         ).toEqual([]);
         expect(icons.filter((name) => !(glyphs[name] in ascii))).toEqual([]);
+    });
+
+    it('names one icon for every glyph and for nothing but a glyph', () => {
+        const { config } = loadConfig(engineDir());
+        expect(Object.keys(iconCatalog(config))).toEqual(Object.keys(glyphCatalog(config)));
+        expect(iconFindings(engineDir(), config)).toEqual([]);
+    });
+
+    it('ships a drawing for every one of them', () => {
+        const { config } = loadConfig(engineDir());
+        const icons = iconSet(config);
+        expect(Object.keys(icons)).toEqual(Object.keys(glyphCatalog(config)));
+        for (const [name, svg] of Object.entries(icons)) {
+            expect(svg, name).toContain('<svg');
+            expect(svg, name).toContain('stroke="currentColor"');
+        }
+    });
+
+    it('resolves a drawing through the package rather than through a path into node_modules', () => {
+        const source = readFileSync(
+            join(engineDir(), 'src', 'lib', 'data', 'sources', 'config.ts'),
+            'utf8'
+        );
+        // The package name is all the source says; the only mention of the folder is the comment
+        // above the resolver explaining why it does not name one.
+        expect(source.match(/node_modules/g)).toHaveLength(1);
+        expect(source).toContain('resolver.resolve(`lucide-static/icons/${icon}.svg`)');
+        expect(iconSet({ glyphs: { pin: 'P' }, icons: { pin: 'pin' } }).pin).toContain('<svg');
+    });
+
+    it('reports a glyph with no icon, a row that is no glyph, and an icon the package has not', () => {
+        const drifted = {
+            glyphs: { pin: 'P', flag: 'F' },
+            icons: { pin: 'nonesuch-icon', nothing: 'circle' }
+        };
+        expect(iconFindings(engineDir(), drifted).map((one) => one.message)).toEqual([
+            'glyph flag has no icon',
+            'the icon package ships no nonesuch-icon.svg',
+            'nothing is not a name in config/glyphs.yml'
+        ]);
+        expect(iconSet(drifted)).toEqual({});
     });
 
     it('configures one lowercase chord and a glyph on every group the rail flies out', () => {

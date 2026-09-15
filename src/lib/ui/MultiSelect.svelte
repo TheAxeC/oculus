@@ -6,7 +6,7 @@
     // `free` is what tells a field of names from a field of keys: with it, what is typed is a choice
     // of its own, which is how `authors` and `waiting-on` take a person the registries do not hold.
 
-    import Chip from './Chip.svelte';
+    import Tag from './Tag.svelte';
     import ToolButton from './ToolButton.svelte';
 
     type Choice = { id: string; label: string };
@@ -143,7 +143,7 @@
             {#if free && typed.trim() !== ''}
                 <ToolButton label={typed.trim()} active onclick={() => add(typed.trim())} />
             {:else}
-                <Chip label={none} />
+                <Tag label={none} />
             {/if}
         {/if}
     </div>

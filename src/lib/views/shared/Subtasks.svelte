@@ -12,7 +12,7 @@
     // line the reader sees change is the watcher's next push of the portfolio, about a fifth of a
     // second later, which is why nothing here edits what it was handed.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import DateInput from '$lib/ui/DateInput.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import TextInput from '$lib/ui/TextInput.svelte';
@@ -122,7 +122,7 @@
             </span>
             <span class="do">{line.do}</span>
             {#if line.deadline}
-                <Chip label={line.deadline} glyph={t('project.card.deadline_glyph')} />
+                <Tag label={line.deadline} glyph={t('project.card.deadline_glyph')} />
             {/if}
             <span class="acts">
                 {#if line.done}

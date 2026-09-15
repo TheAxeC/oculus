@@ -11,7 +11,7 @@ import type { Component } from 'svelte';
 import type { Instance, ViewId } from '$lib/state/layout';
 import type { LayoutStore } from '$lib/state/layout.svelte';
 import type { ClientState } from '$lib/state/context';
-import { lookup, t } from '$lib/state/text';
+import { glyph, lookup, t } from '$lib/state/text';
 
 /** A split cell carries a theme hue, its count and its configured label. */
 export type BadgeCell = { count: number; color: string; label: string };
@@ -19,6 +19,8 @@ export type BadgeCell = { count: number; color: string; label: string };
 /** The badge values shared by the rail and pane tabs. */
 export type RegistrationBadge = {
     text: string;
+    /** The glyph name drawn before the text, empty for a badge that is a count and nothing else. */
+    glyph: string;
     /** The text a pane tab draws: the rail's, unless the registration says its cells carry it all. */
     tabText: string;
     tone?: string;
@@ -48,6 +50,8 @@ export type Registration = {
     listed?: boolean;
     /** Live text drawn beside the rail glyph; an empty string draws no badge. */
     badge?: (state: ClientState) => string;
+    /** A glyph name drawn in the badge before its text, for a badge that is a mark, not a count. */
+    badgeGlyph?: (state: ClientState) => string;
     /** A hue name from state/tones.ts; absent keeps the rail's accent badge. */
     badgeTone?: (state: ClientState) => string;
     /** The badge's hover words, supplied by the registration's state selectors. */
@@ -77,13 +81,18 @@ export function registrationGlyph(registration: Pick<Registration, 'glyph'>): st
  */
 export function badgeOf(registration: Registration, client: ClientState): RegistrationBadge {
     const text = registration.badge?.(client) ?? '';
+    const mark = registration.badgeGlyph?.(client) ?? '';
+    // The hover words are text, so a badge that is a mark rather than a count says it with the
+    // glyph's character: an icon cannot be read out of a title attribute.
+    const said = text === '' && mark !== '' ? glyph(mark) : text;
     return {
         text,
+        glyph: mark,
         tabText: registration.badgeTabText?.(client) ?? text,
         tone: registration.badgeTone?.(client),
         title:
             registration.badgeTitle?.(client) ??
-            t('views.badge_title', registrationLabel(registration), text),
+            t('views.badge_title', registrationLabel(registration), said),
         cells: registration.badgeCells?.(client)
     };
 }

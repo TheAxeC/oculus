@@ -2,7 +2,7 @@
     // Layer 3, shared view. Working project sessions live here because live-session navigation
     // changes independently of the project-card frame.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import type { BoardItem } from '$lib/state/board';
     import { findView } from '$lib/state/layout';
     import { folderOf, type GroupedSession } from '$lib/state/selectors.svelte';
@@ -59,13 +59,13 @@
 {#if working.length > 0}
     {@const live = working.filter((entry) => entry.live).length}
     <div class="sessions">
-        <Chip
+        <Tag
             label={working.length === 1
                 ? t('sessions.card_one')
                 : t('sessions.card_n', working.length)}
         />
         {#if live > 0}
-            <Chip label={t('sessions.card_live', live)} tone="green" />
+            <Tag label={t('sessions.card_live', live)} tone="green" />
         {/if}
         {#each working as entry (entry.id)}
             <button
@@ -75,7 +75,7 @@
                 onclick={() => pick(entry)}
             >
                 <span class="dot" style={dotStyle(entry)}></span>
-                <Chip label={entry.tool} />
+                <Tag label={entry.tool} />
                 <span class="nm">{entry.title}</span>
             </button>
         {/each}

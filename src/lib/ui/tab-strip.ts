@@ -12,6 +12,8 @@ export type Tab = {
     hint?: string;
     /** Live text drawn after the label; an empty string draws no count pill. */
     badge?: string;
+    /** A glyph name drawn in the badge before its text. */
+    badgeGlyph?: string;
     /** A hue name from state/tones.ts; absent uses the accent pair. */
     badgeTone?: string;
     /** Hover text shared by the count badge and its split strip. */

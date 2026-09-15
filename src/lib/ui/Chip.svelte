@@ -1,7 +1,8 @@
 <script lang="ts">
-    // Layer 3, primitive. An inline label in a hue: the status chips, the type pills, anything a
-    // view wants to say in one word. Outline is the default and the filled form is for the one chip
-    // that has to carry a row.
+    // Layer 3, primitive. An inline label in a hue: a status word and the project type, and nothing
+    // else. The capsule is what marks a status out of the run of words on a card, so every other
+    // tag a view lists is ui/Tag.svelte instead. Outline is the default and the filled form is for
+    // the one chip that has to carry a row.
     //
     // The hue reaches the CSS as three custom properties the component sets from the tone, so the
     // rules below name only tokens: the tinted form paints `--c-<tone>-txt` on `--chip` and the
@@ -9,7 +10,7 @@
     // measures under every theme.
 
     import Glyph from './Glyph.svelte';
-    import { glyph as glyphOf } from '$lib/state/text';
+    import { bracketedGlyph } from '$lib/state/text';
 
     type Props = {
         /** The chip's words, already translated by the view. */
@@ -35,11 +36,7 @@
      * terminal theme do. The chip's own brackets are left off such a chip so the reader is given
      * one pair rather than two.
      */
-    const bracketed = $derived.by(() => {
-        if (glyph === undefined || glyph === '') return false;
-        const drawn = glyphOf(glyph);
-        return drawn.startsWith('[') && drawn.endsWith(']');
-    });
+    const bracketed = $derived(glyph !== undefined && glyph !== '' && bracketedGlyph(glyph));
 </script>
 
 <span class="chip" class:toned={tone !== undefined} class:filled class:bracketed {style}>

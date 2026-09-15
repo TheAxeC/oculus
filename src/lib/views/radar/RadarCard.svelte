@@ -3,7 +3,7 @@
     // It receives the feed entry and project map and keeps only the optional idea form locally.
 
     import Card from '$lib/ui/Card.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import NewIdeaForm from '$lib/views/shared/NewIdeaForm.svelte';
@@ -72,10 +72,10 @@
 <Card {id} {cursor} {title} titleHtml={inlineMarkdown(title)} tone={relevanceTone(relevance)}>
     {#snippet meta()}
         {#if isNew(entry, lastRun)}
-            <Chip label={t('radar.new')} filled tone="violet" />
+            <Tag label={t('radar.new')} tone="violet" />
         {/if}
         {#if relevance !== ''}
-            <Chip label={relevance} tone={relevanceTone(relevance)} />
+            <Tag label={relevance} tone={relevanceTone(relevance)} />
         {/if}
         {#if found !== ''}
             <span class="date">{found}</span>
@@ -116,7 +116,7 @@
     {/if}
     {#if motif !== ''}
         <div class="row">
-            <Chip label={motif} />
+            <Tag label={motif} />
         </div>
     {/if}
     {#if note !== ''}
@@ -140,7 +140,7 @@
                 />
             {/each}
             {#if text('maps_to') === 'new-idea-candidate'}
-                <Chip label={t('radar.new_idea_candidate')} glyph="spark" />
+                <Tag label={t('radar.new_idea_candidate')} glyph="spark" />
             {/if}
         </div>
     {/if}

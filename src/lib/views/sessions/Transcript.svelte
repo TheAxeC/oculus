@@ -22,7 +22,7 @@
     // turn is what an agent wrote into a file on disk, so the markup is filtered to that profile
     // before it reaches the page. A user turn keeps its own line breaks and is never rendered.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
@@ -117,12 +117,13 @@
         return t('sessions.turn_tool');
     }
 
-    /** The chip on a tool turn: how the call ended, or that it is still out. */
+    /** The tag on a tool turn: how the call ended, or that it is still out. */
     function okLabel(ok: boolean | null): string {
         if (ok === null) return t('sessions.turn_running');
         return ok ? t('sessions.turn_ok') : t('sessions.turn_error');
     }
 
+    /** The hue of that outcome: green for a call that came back, red for one that failed. */
     function okTone(ok: boolean | null): string | undefined {
         if (ok === null) return undefined;
         return ok ? 'green' : 'red';
@@ -174,7 +175,7 @@
                         {#if turn.tool !== null}
                             <span class="name">{turn.tool.name}</span>
                             <span class="sum" title={turn.tool.summary}>{turn.tool.summary}</span>
-                            <Chip label={okLabel(turn.tool.ok)} tone={okTone(turn.tool.ok)} />
+                            <Tag label={okLabel(turn.tool.ok)} tone={okTone(turn.tool.ok)} />
                         {/if}
                     </div>
                     {#if turn.role === 'assistant'}

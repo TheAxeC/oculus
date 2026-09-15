@@ -3,7 +3,7 @@
     // The project list is already restricted to real users, and concentration arrives as a flag.
 
     import Card from '$lib/ui/Card.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Tooltip from '$lib/ui/Tooltip.svelte';
@@ -62,15 +62,15 @@
     <Card id={venue.id} {cursor} title={venue.name} titleHtml={inlineMarkdown(venue.name)}>
         {#snippet meta()}
             {#if venue.quartile}
-                <Chip label={venue.quartile} tone={quartileTone(venue.quartile)} />
+                <Tag label={venue.quartile} tone={quartileTone(venue.quartile)} />
             {/if}
             {#if concentrated}
                 <Tooltip text={t('venues.conc_tip')} focusable>
-                    <Chip label={t('venues.conc')} tone="violet" />
+                    <Tag label={t('venues.conc')} tone="violet" />
                 </Tooltip>
             {/if}
             {#if venue.free}
-                <Chip label={venue.free} tone={freeTone(venue.free)} />
+                <Tag label={venue.free} tone={freeTone(venue.free)} />
             {/if}
             {#if entry !== null && schema !== undefined}
                 <ToolButton
@@ -129,7 +129,7 @@
         {#if venue.themes.length > 0}
             <div class="themes">
                 {#each venue.themes as theme (theme)}
-                    <Chip label={theme} />
+                    <Tag label={theme} />
                 {/each}
             </div>
         {/if}

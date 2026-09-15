@@ -2,7 +2,7 @@
     // Layer 3, sessions view partial. Terminal rows live here because their stop and pin controls
     // change independently of transcript-backed session rows.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import { stamp } from '$lib/state/format';
@@ -49,7 +49,7 @@
         >
             <span class="top"
                 ><Glyph name={kindGlyph(entry.kind)} />
-                <Chip label={entry.kind} />
+                <Tag label={entry.kind} />
                 <span class="nm">{entry.name}</span></span
             >
             <span class="meta"

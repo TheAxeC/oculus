@@ -35,6 +35,7 @@
     // views/shared/ProjectCard.svelte, since views/Project.svelte draws the same one.
 
     import Empty from '$lib/ui/Empty.svelte';
+    import Glyph from '$lib/ui/Glyph.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu-items';
     import Pane from '$lib/ui/Pane.svelte';
@@ -42,6 +43,7 @@
     import Segment from '$lib/ui/Segment.svelte';
     import type { SegmentItem } from '$lib/ui/segment-items';
     import Table from '$lib/ui/Table.svelte';
+    import { type Column, cellText } from '$lib/ui/table-rows';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Card from './shared/ProjectCard.svelte';
@@ -62,7 +64,7 @@
     } from '$lib/state/board';
     import { cardCursor } from '$lib/state/instance';
     import { lookup, t } from '$lib/state/text';
-    import { chipGlyph, toneOf } from '$lib/state/tones';
+    import { chipGlyphName, chipLabel, statusMarkTone, toneOf } from '$lib/state/tones';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
@@ -246,6 +248,17 @@
         return short === undefined || short === '' ? item.project.title : short;
     }
 
+    /**
+     * The status keys one row's marks are drawn for. They ride beside the row's sortable words
+     * rather than in them, since a mark is a component and a cell's value is text; each is drawn
+     * in its own hue with its words as the title, as a lane draws it.
+     */
+    function statusMarks(row: Record<string, unknown>): string[] {
+        const marks = row.statusMarks;
+        if (!Array.isArray(marks)) return [];
+        return marks.filter((chip): chip is string => typeof chip === 'string');
+    }
+
     /** One row of the list mode. Every column key of both presets is filled here. */
     function row(item: BoardItem): Record<string, unknown> {
         const next = item.project.next;
@@ -254,7 +267,8 @@
             title: label(item),
             authors: item.authors,
             venue: item.venue?.short ?? '',
-            status: item.chips.map((chip) => chipGlyph(chip)).join(''),
+            status: item.chips.map((chip) => chipLabel(chip)).join(' '),
+            statusMarks: item.chips.filter((chip) => chipGlyphName(chip) !== ''),
             focus: item.project.focus ?? '',
             next: next === undefined ? '' : firstSentence(next, ROW_NEXT),
             domain: item.domain?.label ?? '',
@@ -263,6 +277,22 @@
         };
     }
 </script>
+
+{#snippet statusCell(row: Record<string, unknown>, column: Column)}
+    {#if column.key === 'status'}
+        {#each statusMarks(row) as chip (chip)}
+            <span
+                class="mark"
+                title={chipLabel(chip)}
+                style={`--mark: var(--c-${statusMarkTone(chip)}-txt)`}
+            >
+                <Glyph name={chipGlyphName(chip)} />
+            </span>
+        {/each}
+    {:else}
+        {cellText(row[column.key])}
+    {/if}
+{/snippet}
 
 {#snippet tools()}
     <Toolbar label={t('board.toolbar')}>
@@ -355,7 +385,7 @@
         {#if shown.length === 0}
             <Empty message={t('board.empty')} glyph={t('board.empty_glyph')} />
         {:else if held.mode === 'list'}
-            <Table columns={preset.columns} {rows} rowKey="id" sortable />
+            <Table columns={preset.columns} {rows} rowKey="id" sortable cell={statusCell} />
         {:else}
             <div class="cards">
                 {#each shown as item (item.id)}
@@ -377,6 +407,11 @@
 </Pane>
 
 <style>
+    /* A status mark is a line icon, so it is drawn in the hue of its own status. */
+    .mark {
+        color: var(--mark, var(--muted-txt));
+    }
+
     .cards {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));

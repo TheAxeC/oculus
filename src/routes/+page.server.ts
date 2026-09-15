@@ -15,6 +15,10 @@ import type { PageServerLoad } from './$types';
 // A finding from the same read is reported in hooks.server.ts, which runs for every request, so it
 // is said once and not once per load function.
 //
+// The icon drawings are the exception: they are files rather than config keys, so the server reads
+// them once when its context is built and again on every config push, and this hands the page what
+// is held rather than reading a hundred files per request.
+//
 // The collection keys ride with them for the same reason: the page registers the collection view
 // once per key before it renders, and the registry is filled in the page's script body rather than
 // from a fetch, so the rail draws every collection on the first frame.
@@ -27,6 +31,7 @@ export const load: PageServerLoad = ({ locals }) => {
     return {
         text: textCatalog(config),
         glyphs: glyphCatalog(config),
+        icons: locals.server.icons.set,
         ascii: asciiCatalog(config),
         vocab: vocabCatalog(config),
         collections: collectionKeys(config),

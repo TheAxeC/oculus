@@ -6,7 +6,7 @@
     // The grouping is coverage() of state/collection.ts; what is left here is the markup and the
     // words. A project's name opens that project's own tab, exactly as a cross-link does.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { coverage, type Project } from '$lib/state/collection';
     import { t } from '$lib/state/text';
@@ -46,7 +46,7 @@
                 active={shown === group.group}
                 onclick={() => (shown = shown === group.group ? '' : group.group)}
             />
-            <Chip label={String(group.count)} />
+            <Tag label={String(group.count)} />
             {#if shown === group.group}
                 <div class="members">
                     {#each group.members as member (member.id)}

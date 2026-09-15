@@ -1,6 +1,6 @@
 <script lang="ts">
     // Layer 3, view partial. Finished jobs stay collapsed and show memory and CPU efficiency tones with an on-demand log action.
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Table from '$lib/ui/Table.svelte';
     import { type Column, cellText } from '$lib/ui/table-rows';
     import ToolButton from '$lib/ui/ToolButton.svelte';
@@ -40,7 +40,7 @@
 
 {#snippet cell(row: Record<string, unknown>, column: Column)}
     {#if column.key === 'state'}
-        <Chip
+        <Tag
             label={String(row.state)}
             tone={String(row.state) === 'COMPLETED'
                 ? 'green'
@@ -49,7 +49,7 @@
                   : 'red'}
         />
     {:else if column.key === 'mem'}
-        <Chip
+        <Tag
             label={row.memPct === null
                 ? t('hpc.none')
                 : t(
@@ -61,7 +61,7 @@
             tone={efficiencyTone(row.memPct as number | null)}
         />
     {:else if column.key === 'cpu'}
-        <Chip
+        <Tag
             label={row.cpuPct === null ? t('hpc.none') : t('hpc.percent', Number(row.cpuPct))}
             tone={efficiencyTone(row.cpuPct as number | null)}
         />

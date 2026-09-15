@@ -14,7 +14,7 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { feedsFixture } from '../feeds-fixture.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
-import { setVocab } from '../../src/lib/state/tones.ts';
+import { setVocab, toneOf } from '../../src/lib/state/tones.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { noop } from '../doubles.ts';
@@ -141,6 +141,39 @@ describe('the Lit Watch view', () => {
         expect(body).toContain(catalog['radar.idea']);
         expect(body).toContain(`${catalog['radar.dismissed_sec']} (1)`);
         expect(body).not.toContain('Dismissed paper');
+    });
+
+    // The bucket glyphs are colour names in the vocabulary, and a line icon carries no colour, so
+    // each heading's mark is drawn in the bucket's own hue instead.
+    it('draws each bucket heading mark in the bucket colour, one hue per bucket', () => {
+        const snapshot = {
+            version: 302,
+            entities: { projects: {} }
+        } as unknown as Snapshot;
+        receive({ channel: 'portfolio', version: 302, payload: snapshot });
+        serve({
+            ok: true,
+            kind: 'radar',
+            file: 'feeds/literature-radar.yml',
+            meta: { last_run: '2026-09-11' },
+            entries
+        });
+        const body = render(Radar, {
+            context: clientContext(client),
+            props: { instance: instance('radar-tones') }
+        }).body;
+
+        const marks = [...body.matchAll(/--bucket-txt: var\(--c-([a-z-]+)-txt\)/g)].map(
+            (found) => found[1]
+        );
+        const buckets = config.radar_buckets as { color: string }[];
+        expect(marks).toEqual(buckets.map((bucket) => toneOf(bucket.color)));
+        expect(new Set(marks).size).toBe(marks.length);
+        // The rule paints the icon of the heading control alone, which is the tooltip span sitting
+        // directly under the section, so the markup has to keep that shape for the colour to land.
+        expect(body).toMatch(
+            /<section[^>]*--bucket-txt[^>]*>(?:<!--[^>]*-->)*\s*<span class="tip[^"]*"><button[^>]*class="tool[^"]*"[^>]*>(?:<!--[^>]*-->)*<span class="glyph/
+        );
     });
 
     it('draws the empty and missing-file states', () => {

@@ -21,7 +21,7 @@
     // this view's own and which nothing else may import. What is left here is the composition, the
     // awaiting-a-response strip, and the one line that says what the last write answered.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import Pane from '$lib/ui/Pane.svelte';
@@ -112,7 +112,7 @@
         <span class="seg">
             <span class="seg-lbl">{label}</span>
             {#each names as name, at (`${at}:${name}`)}
-                <Chip label={name} />
+                <Tag label={name} />
             {/each}
         </span>
     {/if}
@@ -144,7 +144,7 @@
                     <span class="seg">
                         <span class="seg-lbl">{t('focus.wait_people')}</span>
                         {#each strip.people as one (one.label)}
-                            <Chip label={t('focus.command.venue_count', one.label, one.count)} />
+                            <Tag label={t('focus.command.venue_count', one.label, one.count)} />
                         {/each}
                     </span>
                 {/if}
@@ -152,7 +152,7 @@
                     <span class="seg">
                         <span class="seg-lbl">{t('focus.wait_review')}</span>
                         {#each strip.venues as one (one.label)}
-                            <Chip
+                            <Tag
                                 label={t(
                                     'focus.command.venue_count',
                                     one.label === '' ? t('focus.venue_unset') : one.label,
@@ -172,7 +172,7 @@
                 {#if strip.blocked > 0}
                     <span class="seg">
                         <span class="seg-lbl">{t('focus.wait_blocked')}</span>
-                        <Chip label={String(strip.blocked)} tone="red" />
+                        <Tag label={String(strip.blocked)} tone="red" />
                     </span>
                 {/if}
             </section>

@@ -39,7 +39,9 @@
     const ordered = $derived(sortBucket(entries));
 </script>
 
-<section style={`--bucket-tone: var(--c-${toneOf(bucket.color)})`}>
+<section
+    style={`--bucket-tone: var(--c-${toneOf(bucket.color)}); --bucket-txt: var(--c-${toneOf(bucket.color)}-txt)`}
+>
     <ToolButton
         label={t('radar.count', bucket.label, entries.length)}
         glyph={bucket.glyph}
@@ -69,6 +71,12 @@
     section {
         padding-left: 8px;
         border-left: 3px solid var(--bucket-tone);
+    }
+
+    /* The bucket glyphs are colour names in the vocabulary, and a line icon carries no colour, so
+       the heading's mark is drawn in the bucket's own hue. The cards below keep their own. */
+    section > :global(.tip .tool .glyph) {
+        color: var(--bucket-txt);
     }
 
     .cards {

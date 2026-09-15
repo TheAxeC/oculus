@@ -16,7 +16,7 @@
 
     import Pane from '$lib/ui/Pane.svelte';
     import Search from '$lib/ui/Search.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Tooltip from '$lib/ui/Tooltip.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
@@ -116,7 +116,7 @@
 
         <Facets {facets} off={held.off} ontoggle={toggleTheme}>
             <Tooltip text={t('venues.conc_tip')} focusable>
-                <Chip label={t('venues.conc')} tone="violet" />
+                <Tag label={t('venues.conc')} tone="violet" />
             </Tooltip>
         </Facets>
 

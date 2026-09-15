@@ -3,7 +3,7 @@
     // group nesting its members under their own project type, and each member opening its tab.
 
     import { byType } from './cross-links';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Disclosure from '$lib/ui/Disclosure.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
@@ -73,7 +73,7 @@
                 <div class="members">
                     {#each byType(group) as kind (kind.type)}
                         <div class="kind" data-project-kind={kind.type}>
-                            <Chip label={kind.type} />
+                            <Tag label={kind.type} />
                             {#each kind.members as member (member.id)}
                                 <span class="member">
                                     <ToolButton

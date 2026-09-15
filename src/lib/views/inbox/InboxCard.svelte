@@ -3,7 +3,7 @@
     // draft and Gmail link, plus the one triage or restore write allowed for its section.
 
     import Card from '$lib/ui/Card.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
@@ -70,7 +70,7 @@
 <div data-inbox={identity}>
     <Card {id} {cursor} title={sender} titleHtml={inlineMarkdown(sender)} tone={kindTone(kind)}>
         {#snippet meta()}
-            <Chip label={kindLabel()} tone={kindTone(kind)} />
+            <Tag label={kindLabel()} tone={kindTone(kind)} />
             {#if age !== ''}
                 <span class="age">{age}</span>
             {/if}

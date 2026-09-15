@@ -4,6 +4,9 @@
 
 import type { IncomingMessage } from 'node:http';
 import {
+    iconFindings,
+    iconSet,
+    type IconMemory,
     loadConfig,
     loadLocal,
     slurmSettings,
@@ -11,7 +14,7 @@ import {
     usageTiers,
     type LocalConfig
 } from '../data/sources/config.ts';
-import type { Snapshot } from '../data/model.ts';
+import type { Finding, Snapshot } from '../data/model.ts';
 import { mintToken } from './auth.ts';
 import { Hub } from './channels.ts';
 import { RateLimiter, notifyConfig, type HookTarget } from './hooks.ts';
@@ -51,8 +54,20 @@ export type ServerContext = {
     depositPlans: Map<string, Plan>;
     /** The wallpaper pick and the refused directories. */
     wallpaper: WallpaperMemory;
+    /**
+     * The drawing of every icon config/icons.yml names, read once here and again whenever the
+     * watcher publishes a config push, so a page load reads what is held rather than the disk.
+     */
+    icons: IconMemory;
     close(): void;
 };
+
+/** One finding on stderr, in the one format every config finding is said in. */
+export function reportFindings(findings: Finding[]): void {
+    for (const finding of findings) {
+        console.error(`config: ${finding.file} [${finding.key}] ${finding.message}`);
+    }
+}
 
 /** The Node request type used as the context carrier by both server entry points. */
 export type OculusRequest = IncomingMessage & { oculus?: ServerContext };
@@ -63,7 +78,10 @@ export type ContextDependencies = {
     mintToken: typeof mintToken;
     createHub: () => Hub;
     createTerminals: (hub: Hub) => Terminals;
-    watchPortfolio: (hub: Hub, paths: { hub: string; engine: string }) => Watcher;
+    watchPortfolio: (
+        hub: Hub,
+        paths: { hub: string; engine: string; icons: IconMemory }
+    ) => Watcher;
     watchSessions: typeof watchSessions;
     watchGit: (hub: Hub, root: string) => GitWatcher;
     watchHpc: (hub: Hub, options: HpcOptions) => HpcWatcher;
@@ -108,7 +126,12 @@ export function createServerContext(
         stopMessage: textCatalog(config)['notify.stop'],
         recordFor: (session) => sessionRecord(hub, session)
     };
-    const portfolio = make.watchPortfolio(hub, { hub: local.hub, engine });
+    // The icon map is read once here and by the watcher on every config push; a page load takes
+    // what is held. The drift between the map and the glyph vocabulary is a fact about this
+    // install, so it is said once at startup rather than once per request.
+    const icons: IconMemory = { set: iconSet(config) };
+    reportFindings(iconFindings(engine, config));
+    const portfolio = make.watchPortfolio(hub, { hub: local.hub, engine, icons });
 
     const folders = (): ProjectFolder[] => {
         const message = hub.latest('portfolio');
@@ -166,6 +189,7 @@ export function createServerContext(
         hpcLogPaths,
         depositPlans: new Map(),
         wallpaper: wallpaperMemory(),
+        icons,
         close(): void {
             if (closed) return;
             closed = true;

@@ -19,6 +19,7 @@ import {
     chipKeys,
     chipLabel,
     setVocab,
+    statusMarkTone,
     statusTone,
     domainTone,
     toneOf,
@@ -129,6 +130,35 @@ describe('the tone of a status, a type and a research domain', () => {
         expect(statusTone('broken')).toBe(UNKNOWN_TONE);
         expect(statusTone('withdrawn')).toBe(UNKNOWN_TONE);
         expect(domainTone('blank')).toBe(UNKNOWN_TONE);
+    });
+});
+
+describe('the hue of a status mark', () => {
+    it('takes the palette tone where the palette names the status, and the icon colour elsewhere', () => {
+        setVocab(vocabCatalog(REAL_CONFIG));
+        // The palette names these, so the mark wears the chip's own tone.
+        expect(statusMarkTone('submitted')).toBe(statusTone('submitted'));
+        expect(statusMarkTone('revision')).toBe(statusTone('revision'));
+        // The palette does not name these; their legend icons are named by their colour.
+        expect(statusTone('blocked')).toBe(UNKNOWN_TONE);
+        expect(statusMarkTone('blocked')).toBe('purple');
+        expect(statusMarkTone('ai-tells')).toBe('red');
+        expect(statusMarkTone('submit-ready')).toBe('green');
+        expect(statusMarkTone('numbers-pending')).toBe('blue');
+        expect(statusMarkTone('admin-prep')).toBe('gold');
+        expect(statusMarkTone('parked')).toBe('slate');
+        expect(statusMarkTone('results-positive')).toBe('grey');
+        // A legend icon that is a shape rather than a colour carries no hue of its own.
+        expect(statusMarkTone('lead')).toBe(UNKNOWN_TONE);
+        expect(statusMarkTone('nonesuch')).toBe(UNKNOWN_TONE);
+    });
+
+    it('gives every coloured legend icon a hue, so no two colour names collapse by accident', () => {
+        setVocab(vocabCatalog(REAL_CONFIG));
+        const coloured = ['ai-tells', 'blocked', 'submit-ready', 'numbers-pending', 'exploring'];
+        const hues = coloured.map((chip) => statusMarkTone(chip));
+        expect(hues).not.toContain(UNKNOWN_TONE);
+        expect(new Set(hues).size).toBe(hues.length);
     });
 });
 

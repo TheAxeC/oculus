@@ -27,7 +27,7 @@
     // HTML is a file on disk turned into markup by marked, so it is drawn through ui/html.ts's
     // sanitise and holds only what that profile allows.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Segment from '$lib/ui/Segment.svelte';
@@ -133,7 +133,7 @@
             onclick={() => select(entry.id)}
         >
             <span class="top">
-                <Chip label={entry.tool} />
+                <Tag label={entry.tool} />
                 <span class="nm">{entry.title}</span>
             </span>
             <span class="meta">

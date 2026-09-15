@@ -8,7 +8,7 @@
     // left on screen. A venue at or over `venue_conc_warn` is marked: that is the config's own
     // threshold for too much of one board on one venue.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import { t } from '$lib/state/text';
     import type { BoardStats } from '$lib/state/board';
@@ -33,12 +33,12 @@
             <Glyph name={t('board.venue_dist_glyph')} />
             {#each stats.venues as venue (venue.id)}
                 <span title={t('board.stat_venue_tip', venue.name, venue.count)}>
-                    <Chip
+                    <Tag
                         label={venue.count > 1
                             ? `${venue.short} ${t('board.stat_venue_count', venue.count)}`
                             : venue.short}
-                        tone={venue.warn ? 'amber' : undefined}
                         glyph={venue.warn ? t('board.warn_glyph') : undefined}
+                        tone={venue.warn ? 'amber' : undefined}
                     />
                 </span>
             {/each}

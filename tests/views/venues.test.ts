@@ -1,6 +1,7 @@
 // The Venues view rendered on the server over journals, timed and untimed conferences and projects.
 // Pure click behaviour is covered in state/venues.test.ts; this checks every visible acceptance item.
 
+import { readFileSync } from 'node:fs';
 import { render } from 'svelte/server';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
@@ -241,9 +242,8 @@ describe('the journal section and venue card', () => {
         expect(body).toContain('Clinical <strong>methods</strong>.');
         const journal = venueCard(body, 'journal');
         expect(journal).toMatch(/class="slot [^"]*concentrated"/);
-        expect(journal).toMatch(/class="chip [^"]*toned"/);
-        expect(journal).toContain('--tone: var(--c-violet)');
-        expect(journal).toContain('--tone: var(--c-green)');
+        expect(journal).toMatch(/class="tag /);
+        expect(journal).not.toContain('--tone: var(--c-');
         expect(journal).toContain(catalog['venues.conc']);
         expect(journal).toContain(catalog['venues.conc_tip']);
         expect(journal).toContain('class="label">active</span>');
@@ -260,7 +260,7 @@ describe('the journal section and venue card', () => {
         const legend = body.slice(0, firstCard);
         expect(legend).toContain(catalog['venues.conc']);
         expect(legend).toContain(catalog['venues.conc_tip']);
-        expect(legend).toContain('--tone: var(--c-violet)');
+        expect(legend).toMatch(/class="tag /);
         expect(legend).toContain('tabindex="0"');
     });
 
@@ -275,6 +275,15 @@ describe('the conference section and ribbon', () => {
         expect(body).toContain(catalog['venues.conferences'].replace('{0}', '3'));
         expect(body).toContain(catalog['venues.next']);
         expect(body).toContain(catalog['venues.leg_deadline']);
+        // A deadline's mark is violet and a held conference's green, painted on the tag's own
+        // glyph so the biennial marker beside the tag keeps its ink.
+        const source = readFileSync('src/lib/views/venues/Ribbon.svelte', 'utf8');
+        expect(source).toMatch(
+            /\.deadline :global\(\.tag \.glyph\) \{\s*color: var\(--c-violet-txt\);/
+        );
+        expect(source).toMatch(/\.held :global\(\.tag \.glyph\) \{\s*color: var\(--c-green-txt\);/);
+        expect(body).toMatch(/class="timed deadline[ "]/);
+        expect(body).toMatch(/class="timed held[ "]/);
         expect(body).toContain(catalog['venues.leg_held']);
         expect(body).toContain(catalog['venues.leg_biennial']);
         expect(body).toContain(catalog['venues.leg_approx']);

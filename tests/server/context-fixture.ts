@@ -72,6 +72,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         hpcLogPaths: new Map(),
         depositPlans: new Map(),
         wallpaper: wallpaperMemory(),
+        icons: { set: {} },
         close: () => {
             if (closed) return;
             closed = true;

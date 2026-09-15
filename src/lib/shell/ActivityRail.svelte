@@ -12,6 +12,7 @@
         arrange,
         documentState
     } from '$lib/shell/rail';
+    import Glyph from '$lib/ui/Glyph.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu-items';
     import ToolButton from '$lib/ui/ToolButton.svelte';
@@ -90,6 +91,7 @@
                 label: registrationLabel(view),
                 glyph: registrationGlyph(view),
                 badge: badge.text,
+                badgeGlyph: badge.glyph,
                 badgeTone: badge.tone,
                 badgeTitle: badge.text === '' ? undefined : badge.title
             };
@@ -150,7 +152,16 @@
                             stacked
                             onclick={(event: MouseEvent) => open(view.id, event)}
                         />
-                        {#if badge.text !== ''}
+                        {#if badge.glyph !== ''}
+                            <span
+                                class="badge"
+                                style={badgeStyle(badge.tone)}
+                                title={badge.title}
+                                aria-hidden="true"
+                            >
+                                <Glyph name={badge.glyph} />{badge.text}
+                            </span>
+                        {:else if badge.text !== ''}
                             <span
                                 class="badge"
                                 style={badgeStyle(badge.tone)}

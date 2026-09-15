@@ -16,7 +16,7 @@
     // Layer 3, view. Inbox reads its socket feed, groups live cards by action kind, and keeps
     // search plus the triaged-section disclosure in this view instance's state.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import Pane from '$lib/ui/Pane.svelte';
@@ -113,7 +113,7 @@
             <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
         {:else}
             <Intro>
-                <Chip label={`${t('inbox.triaged')} ${run}`} tone="teal" />
+                <Tag label={`${t('inbox.triaged')} ${run}`} tone="teal" />
                 {#if split.triaged.length > 0}
                     <span>{t('inbox.triaged_suffix', split.triaged.length)}</span>
                 {/if}

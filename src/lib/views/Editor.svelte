@@ -22,7 +22,7 @@
     // The page sees its own write when the watcher pushes the rebuilt snapshot, at which point the
     // edits equal the values and the form is clean again.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Checkbox from '$lib/ui/Checkbox.svelte';
     import DateInput from '$lib/ui/DateInput.svelte';
     import Empty from '$lib/ui/Empty.svelte';
@@ -210,7 +210,7 @@
 
 {#snippet tools()}
     <Toolbar label={t('editor.toolbar')}>
-        <Chip label={pending() ? t('editor.saving') : summary()} />
+        <Tag label={pending() ? t('editor.saving') : summary()} />
         <ToolButton
             label={t('editor.save')}
             glyph={t('editor.save_glyph')}

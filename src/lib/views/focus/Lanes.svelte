@@ -12,7 +12,7 @@
     // It carries `data-card` and `data-cursor` all the same, which is what the workbench's keyboard
     // cursor moves over, so a lane card is reachable by key like every card the primitive draws.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import { waitingLabel } from '$lib/state/waiting';
     import Empty from '$lib/ui/Empty.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
@@ -36,7 +36,7 @@
         type Venue
     } from '$lib/state/focus';
     import { t } from '$lib/state/text';
-    import { chipGlyph, chipLabel } from '$lib/state/tones';
+    import { chipGlyphName, chipLabel, statusMarkTone } from '$lib/state/tones';
     import { useState } from '$lib/state/use';
 
     const {
@@ -250,17 +250,26 @@
                 </button>
             {/if}
             {#each project.chips.slice(0, CARD_CHIPS) as chip (chip)}
-                <span class="chipicon" title={chipLabel(chip)}>{chipGlyph(chip)}</span>
+                {@const icon = chipGlyphName(chip)}
+                <span
+                    class="chipicon"
+                    title={chipLabel(chip)}
+                    style={`--mark: var(--c-${statusMarkTone(chip)}-txt)`}
+                >
+                    {#if icon !== ''}
+                        <Glyph name={icon} />
+                    {/if}
+                </span>
             {/each}
             <button type="button" class="name" onclick={() => openMissing(project)}>
                 {labelOf(project)}
             </button>
             {#if due}
                 <span class="due">
-                    <Chip
+                    <Tag
                         label={due.label}
-                        tone={due.tone}
                         glyph={t('project.card.deadline_glyph')}
+                        tone={due.tone}
                     />
                 </span>
             {/if}
@@ -517,8 +526,11 @@
         opacity: 0.6;
     }
 
+    /* A status mark is a line icon, so each one is drawn in the hue of the status it stands for
+       and a lane's row still reads at a glance; a mark given no hue keeps the card's ink. */
     .chipicon {
         flex: 0 0 auto;
+        color: var(--mark, inherit);
         font-size: var(--fs-xs);
         line-height: 1;
     }

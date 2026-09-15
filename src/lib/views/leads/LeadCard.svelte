@@ -3,7 +3,7 @@
     // posting, status writes, and confirmed deletion. Feed rules stay in state and server modules.
 
     import Card from '$lib/ui/Card.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Confirm from '$lib/ui/Confirm.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
@@ -94,9 +94,9 @@
         tone={expired ? 'grey' : tone}
     >
         {#snippet meta()}
-            <Chip label={key ?? t('leads.fit_none')} {tone} />
+            <Tag label={key ?? t('leads.fit_none')} {tone} />
             {#if expired}
-                <Chip label={status || t('leads.expired')} tone="grey" />
+                <Tag label={status || t('leads.expired')} tone="grey" />
             {/if}
             {#if deadline !== '' || expired}
                 <span class="deadline">
@@ -159,10 +159,10 @@
         {#if country !== '' || type !== ''}
             <div class="chips">
                 {#if country !== ''}
-                    <Chip label={country} />
+                    <Tag label={country} />
                 {/if}
                 {#if type !== ''}
-                    <Chip label={type} />
+                    <Tag label={type} />
                 {/if}
             </div>
         {/if}

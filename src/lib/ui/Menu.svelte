@@ -194,9 +194,21 @@
                         <Glyph name={item.glyph} />
                     {/if}
                     <span class="label">{item.label}</span>
-                    {#if item.badge}
-                        <!-- Hidden from the accessible name: the item keeps its label as its name,
-                             which is what a menuitem lookup by name and the browser suite rely on. -->
+                    <!-- Hidden from the accessible name: the item keeps its label as its name,
+                         which is what a menuitem lookup by name and the browser suite rely on. The
+                         two forms are written out because a block inside the span would put the
+                         renderer's markers between the span and its count, which every reader of a
+                         count badge takes as one text node. -->
+                    {#if (item.badgeGlyph ?? '') !== ''}
+                        <span
+                            class="item-badge"
+                            style={badgeStyle(item.badgeTone)}
+                            title={item.badgeTitle}
+                            aria-hidden="true"
+                        >
+                            <Glyph name={item.badgeGlyph ?? ''} />{item.badge}
+                        </span>
+                    {:else if item.badge}
                         <span
                             class="item-badge"
                             style={badgeStyle(item.badgeTone)}

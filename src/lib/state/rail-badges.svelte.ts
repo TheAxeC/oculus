@@ -7,7 +7,7 @@ import type { FeedsStore } from './feeds.svelte.ts';
 import type { HpcStore } from './hpc.svelte.ts';
 import type { SelectorsStore } from './selectors.svelte.ts';
 import { splitPosts } from './linkedin.ts';
-import { glyph, t } from './text.ts';
+import { t } from './text.ts';
 import { statusTone, toneOf, UNKNOWN_TONE } from './tones.ts';
 import { isMap } from '../data/guards.ts';
 import {
@@ -51,7 +51,7 @@ export type RailBadgesStore = {
     collectionBadgeTitle: (key: string) => string;
     inboxBadge: () => string;
     leadsBadge: () => string;
-    linkedinBadge: () => string;
+    linkedinBadgeGlyph: () => string;
     applicationsBadge: () => string;
     boardCells: (view: string) => BadgeCell[];
     queueCells: () => BadgeCell[];
@@ -117,8 +117,8 @@ export function createRailBadges(
         );
     }
 
-    /** A red mark when the newest LinkedIn post is beyond `linkedin_cadence_days`. */
-    function linkedinBadge(): string {
+    /** The glyph name of a red mark when the newest LinkedIn post is beyond `linkedin_cadence_days`. */
+    function linkedinBadgeGlyph(): string {
         const fetched = feeds.feed('linkedin');
         const lastPost = available(fetched)
             ? (splitPosts(fetched.entries).posts[0]?.date ?? null)
@@ -128,7 +128,7 @@ export function createRailBadges(
             numericSetting(selectors.configMap(), 'linkedin_cadence_days'),
             Date.now()
         )
-            ? glyph('bang')
+            ? 'bang'
             : '';
     }
 
@@ -209,7 +209,7 @@ export function createRailBadges(
         collectionBadgeTitle,
         inboxBadge,
         leadsBadge,
-        linkedinBadge,
+        linkedinBadgeGlyph,
         applicationsBadge,
         boardCells,
         queueCells,

@@ -2,7 +2,7 @@
     // Layer 3, sessions view partial. Workspace, area and session rows live here because their
     // selection, resume and dismissal controls change independently of the session-list frame.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import { clock, modelShort, stamp } from '$lib/state/format';
@@ -91,7 +91,7 @@
             <span class="top">
                 <span class="dot" class:observed={entry.kind === 'observed'} style={dotStyle(entry)}
                 ></span>
-                <Chip label={entry.tool} />
+                <Tag label={entry.tool} />
                 <span class="nm">{entry.title}</span>
                 {#if entry.pinned}
                     <span class="pin" title={t('sessions.pin_mark')}
@@ -100,10 +100,10 @@
                 {/if}
                 {#if entry.hook?.event === 'notification' && entry.hook.kind === 'permission_prompt'}
                     <span class="hook" title={entry.hook.message ?? ''}
-                        ><Chip label={t('notify.permission_chip')} tone="amber" /></span
+                        ><Tag label={t('notify.permission_chip')} tone="amber" /></span
                     >
                 {:else if entry.hook?.event === 'notification' && entry.hook.kind === 'idle_prompt'}
-                    <Chip label={t('notify.idle_chip')} />
+                    <Tag label={t('notify.idle_chip')} />
                 {/if}
             </span>
             <span class="meta">
@@ -121,7 +121,7 @@
                     <span class="stopped">{t('sessions.stopped_at', clock(entry.hook.at))}</span>
                 {/if}
                 {#each entry.secondaryAreas as area (area.key)}
-                    <Chip label={area.short === '' ? area.key : area.short} />
+                    <Tag label={area.short === '' ? area.key : area.short} />
                 {/each}
             </span>
         </button>

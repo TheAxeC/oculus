@@ -26,10 +26,11 @@ import Beta from './fixtures/Beta.svelte';
 import {
     engineDir,
     glyphCatalog,
+    iconSet,
     loadConfig,
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
+import { setCatalog, setGlyphs, setIcons } from '../../src/lib/state/text.ts';
 import { installBadges } from '../state/rail-badges-fixture.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import type { Layout, Workbench as Bench } from '../../src/lib/state/layout/index.ts';
@@ -435,6 +436,31 @@ describe('the insertion mark', () => {
         // A 210 px strip has a 170 px viewport while its two controls take 40 px.
         expect(tabScrollState(190, 170, 0, 210).overflowing).toBe(false);
         expect(tabScrollState(230, 170, 0, 210).overflowing).toBe(true);
+    });
+
+    it('draws a badge that is a mark as an icon inside the tab badge', () => {
+        setIcons(iconSet(config));
+        try {
+            const body = render(Tabs, {
+                context: clientContext(client),
+                props: {
+                    tabs: [{ id: 'one', label: 'One', badgeGlyph: 'bang', badgeTone: 'red' }],
+                    active: 'one',
+                    onselect: noop,
+                    onclose: noop
+                }
+            }).body;
+            const at = body.indexOf('class="tab-badge');
+            expect(at).toBeGreaterThan(-1);
+            const badge = body.slice(
+                body.lastIndexOf('<span', at),
+                body.indexOf('</span>', body.indexOf('</svg>', at)) + 7
+            );
+            expect(badge).toContain('<svg');
+            expect(badge.replace(/<[^>]*>/g, '').trim()).toBe('');
+        } finally {
+            setIcons({});
+        }
     });
 
     it('draws an aria-hidden badge and split cells without changing the tab name', () => {

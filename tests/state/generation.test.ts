@@ -40,6 +40,7 @@ function push(title: string, token: string, theme: string): ConfigPayload {
             themes: [{ name: theme, class: '', label: theme }]
         },
         text: { 'app.title': title },
+        icons: {},
         findings: []
     };
 }
@@ -66,6 +67,10 @@ describe('a config push', () => {
             get config() {
                 seen.push(configGeneration());
                 return { palette: {}, themes: [{ name: 'amber', class: '', label: 'amber' }] };
+            },
+            get icons() {
+                seen.push(configGeneration());
+                return {};
             },
             findings: []
         };

@@ -2,7 +2,7 @@
     // Layer 3, shared view. Expanded manifest fields and related documents live here because the
     // expanded card section changes independently of its collapsed frame.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import type { BoardItem } from '$lib/state/board';
     import { t } from '$lib/state/text';
     import { goto } from './card';
@@ -84,11 +84,11 @@
                 {#each shows as entry (`${entry.collection}:${entry.id}`)}
                     <button
                         type="button"
-                        class="tag"
+                        class="crosslink"
                         title={t('project.card.open_in', entry.collection)}
                         onclick={() => goto(client, entry.collection, entry.title)}
                     >
-                        <Chip label={entry.title} />
+                        <Tag label={entry.title} />
                     </button>
                 {/each}
             </div>
@@ -139,7 +139,7 @@
         margin-top: 6px;
     }
 
-    .tag {
+    .crosslink {
         display: inline-flex;
         align-items: center;
         gap: 4px;
@@ -155,7 +155,7 @@
         text-align: left;
     }
 
-    .tag:hover {
+    .crosslink:hover {
         background: var(--chip);
     }
 </style>

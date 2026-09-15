@@ -29,7 +29,9 @@ describe('ServerContext', () => {
         const terminals = new Terminals(hub, { driver: driver(closes[6]), poll: 0 });
         const createHub = vi.fn(() => hub);
         const createTerminals = vi.fn(() => terminals);
-        const watchPortfolio = vi.fn(() => ({ close: closes[0] }));
+        const watchPortfolio = vi.fn<ContextDependencies['watchPortfolio']>(() => ({
+            close: closes[0]
+        }));
         const watchSessions = vi.fn(() => ({ onChange: vi.fn(() => noop), close: closes[1] }));
         const watchGit = vi.fn((_hub: Hub, _root: string) => ({
             refresh: vi.fn(),
@@ -71,7 +73,9 @@ describe('ServerContext', () => {
                     },
                     usage_tiers: {},
                     usage_refresh_min: 5,
-                    usage_refresh_model: 'model'
+                    usage_refresh_model: 'model',
+                    glyphs: { pin: 'P' },
+                    icons: { pin: 'pin' }
                 },
                 findings: []
             })),
@@ -106,6 +110,11 @@ describe('ServerContext', () => {
         // One log-path map, two writers: the poller's prewarm fills in what a press has not asked
         // for yet, and the route's log action reads and writes the same object.
         expect(watchHpc.mock.calls[0][1].logPaths).toBe(context.hpcLogPaths);
+        // The icon drawings are read once here, from the config this context was built with, and
+        // the watcher is handed the same holder, so a config push replaces what a page load reads.
+        expect(Object.keys(context.icons.set)).toEqual(['pin']);
+        expect(context.icons.set.pin).toContain('<svg');
+        expect(watchPortfolio.mock.calls[0][1].icons).toBe(context.icons);
 
         context.close();
         context.close();

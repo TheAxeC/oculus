@@ -91,6 +91,7 @@
                 glyph: registrationGlyph(found),
                 hint: own === null ? undefined : registrationLabel(found),
                 badge: badge.tabText,
+                badgeGlyph: badge.glyph,
                 badgeTone: badge.tone,
                 badgeTitle: badge.title,
                 cells: badge.text === '' ? undefined : badge.cells

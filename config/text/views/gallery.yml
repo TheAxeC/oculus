@@ -28,6 +28,7 @@ text:
         reset_glyph: refresh
         search: Filter the table
         table: Table
+        tags: Tags
         ticker: Ticker
         ticker_tail: in 6d
         title: Gallery

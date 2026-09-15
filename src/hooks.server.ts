@@ -1,6 +1,6 @@
 import { engineDir, loadConfig, textCatalog } from '$lib/data/sources/config';
 import { byKey } from '$lib/data/guards';
-import { serverContext } from '$lib/server/context';
+import { reportFindings, serverContext } from '$lib/server/context';
 import type { Handle } from '@sveltejs/kit';
 
 // The route renders in the browser, so the served HTML is a shell. The document title is the one
@@ -12,9 +12,7 @@ export const handle: Handle = ({ event, resolve }) => {
     event.locals.server = context;
     event.locals.token = context.token;
     const { config, findings } = loadConfig(engineDir());
-    for (const finding of findings) {
-        console.error(`config: ${finding.file} [${finding.key}] ${finding.message}`);
-    }
+    reportFindings(findings);
 
     const catalog = textCatalog(config);
     // The lookup t() gives a component, in the one place that runs before the catalog reaches the

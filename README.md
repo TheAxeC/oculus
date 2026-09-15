@@ -8,6 +8,8 @@ Develop with `npm run dev`, which hot-reloads and serves on 127.0.0.1 at the por
 
 Machine-local values live in `tools/oculus/local.yml`, which is gitignored and optional: `hub` is the absolute path of the research hub, defaulting to two directories above this one; `port` is an integer, defaulting to 8790; and `claude_bin` names the Claude CLI used by update tasks, defaulting to `claude` on PATH. `OCULUS_LOCAL` may name another local configuration file for a server over a test hub; no other environment variable is read.
 
+The runtime dependencies, with their licences: `dompurify` (MPL-2.0 or Apache-2.0) filters every piece of HTML the app draws, `marked` (MIT) renders a Markdown field, `yaml` (ISC) reads the configuration and the hub's files, `ws` (MIT) is the socket, `@xterm/xterm` and `@xterm/addon-fit` (MIT) are the terminal grid, and `lucide-static` (ISC) ships the line icons `config/icons.yml` names, which the server reads off disk and pushes with the configuration.
+
 The four verification commands are `npm test` (vitest), `npm run check` (svelte-check), `npm run build` and `npm run format:check` (Prettier, four-space indentation; `npm run format` applies it).
 
 ## Two Claude accounts

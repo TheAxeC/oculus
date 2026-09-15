@@ -5,10 +5,12 @@
     // and that narrative is what the slide draws.
 
     import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Equation from './Equation.svelte';
     import Panel from './Panel.svelte';
     import Words from './Words.svelte';
     import { hasSlideContent } from '$lib/state/present';
+    import { typeTone } from '$lib/state/tones';
     import { t } from '$lib/state/text';
     import type { DeckTheme, PresentSlide, Project } from '$lib/state/present';
 
@@ -30,13 +32,13 @@
 <section class="slide" data-slide-kind="project" data-slide={slide.id} {style}>
     <div class="top">
         {#if theme !== undefined}
-            <Chip label={theme.label} tone={theme.tone} filled />
+            <Tag label={theme.label} tone={theme.tone} />
         {/if}
         {#if project.type !== undefined}
-            <Chip label={project.type} />
+            <Chip label={project.type} tone={typeTone(project.type)} filled />
         {/if}
         {#if slide.tag?.text !== undefined && slide.tag.text !== ''}
-            <Chip label={slide.tag.text} tone={tagTone} />
+            <Tag label={slide.tag.text} tone={tagTone} />
         {/if}
     </div>
     <h3 class="headline"><Words text={slide.title ?? project.title} /></h3>

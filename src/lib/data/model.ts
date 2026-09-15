@@ -175,10 +175,15 @@ export type Subscription = {
     token?: string;
 };
 
-/** The payload of the `config` channel: the merged map, the flat catalog, and what was wrong. */
+/**
+ * The payload of the `config` channel: the merged map, the flat catalog, the drawing of every glyph
+ * the icon map names, and what was wrong. The icons ride here rather than being fetched by the page
+ * because they are read from the config the same way every other vocabulary is.
+ */
 export type ConfigPayload = {
     config: Record<string, unknown>;
     text: Record<string, string>;
+    icons: Record<string, string>;
     findings: Finding[];
 };
 

@@ -7,6 +7,7 @@
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
@@ -400,6 +401,82 @@ export function glyphCatalog(config: Record<string, unknown>): Record<string, st
  */
 export function asciiCatalog(config: Record<string, unknown>): Record<string, string> {
     return stringMap(config.ascii);
+}
+
+/**
+ * The icon map held in the merged config's `icons` key: one icon name per glyph name, flat. It is
+ * the names alone; iconSet() is what turns them into the drawing the page is given.
+ */
+export function iconCatalog(config: Record<string, unknown>): Record<string, string> {
+    return stringMap(config.icons);
+}
+
+/**
+ * The file the icon package ships for one icon name, or nothing when it ships none. The package is
+ * resolved the way an import of it would be, so a hoisted install and a nested one both answer and
+ * no path into node_modules is written here.
+ */
+const resolver = createRequire(import.meta.url);
+
+/** The shape of an icon name in the package: lowercase words joined by hyphens, and no path. */
+const ICON_NAME = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+
+function iconFile(icon: string): string | null {
+    if (!ICON_NAME.test(icon)) return null;
+    try {
+        return resolver.resolve(`lucide-static/icons/${icon}.svg`);
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Every way the icon map and the glyph vocabulary can drift apart, as findings: a glyph name with
+ * no row, a row naming something that is not a glyph name, and a row naming an icon the package
+ * does not ship. The package is a fact about this machine's install rather than about the merged
+ * files, which is why this is separate from loadConfig and takes the engine directory.
+ */
+export function iconFindings(engine: string, config: Record<string, unknown>): Finding[] {
+    const file = join(engine, 'config', 'icons.yml');
+    const map = iconCatalog(config);
+    const glyphs = glyphCatalog(config);
+    const findings: Finding[] = [];
+    for (const name of Object.keys(glyphs)) {
+        if (name in map) continue;
+        findings.push({ file, key: name, message: `glyph ${name} has no icon` });
+    }
+    for (const [name, icon] of Object.entries(map)) {
+        if (!(name in glyphs)) {
+            findings.push({
+                file,
+                key: name,
+                message: `${name} is not a name in config/glyphs.yml`
+            });
+        } else if (iconFile(icon) === null) {
+            findings.push({ file, key: name, message: `the icon package ships no ${icon}.svg` });
+        }
+    }
+    return findings;
+}
+
+/** The icon drawings in force, in a holder whose contents the config watcher replaces. */
+export type IconMemory = { set: Record<string, string> };
+
+/**
+ * The drawing of every mapped icon, by glyph name, read once per config load and shipped with the
+ * glyph vocabulary so the page never fetches an icon file of its own. A row the findings above
+ * report is left out, and the primitive draws the glyph character for a name that is not here.
+ */
+export function iconSet(config: Record<string, unknown>): Record<string, string> {
+    const glyphs = glyphCatalog(config);
+    const icons: Record<string, string> = {};
+    for (const [name, icon] of Object.entries(iconCatalog(config))) {
+        if (!(name in glyphs)) continue;
+        const file = iconFile(icon);
+        if (file === null) continue;
+        icons[name] = readFileSync(file, 'utf8').trim();
+    }
+    return icons;
 }
 
 /** A map of strings out of a config key, dropping anything that is not one. */

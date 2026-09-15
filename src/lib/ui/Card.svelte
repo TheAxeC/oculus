@@ -171,7 +171,8 @@
         margin-top: 6px;
     }
 
-    .meta :global(.chip) {
+    .meta :global(.chip),
+    .meta :global(.tag) {
         font-size: var(--fs-xs);
     }
 

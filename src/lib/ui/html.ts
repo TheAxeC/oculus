@@ -166,6 +166,80 @@ export function sanitiseDiagram(html: string): string {
 }
 
 /**
+ * The elements a line icon is drawn out of: the root and the shapes a stroke is laid along. No
+ * `image`, no `foreignObject`, no `use`, no `script` and no animation element, so an icon file can
+ * carry a drawing and nothing else.
+ */
+export const SVG_TAGS = [
+    'svg',
+    'circle',
+    'ellipse',
+    'g',
+    'line',
+    'path',
+    'polygon',
+    'polyline',
+    'rect'
+];
+
+/**
+ * The attributes those elements carry: the box the drawing is laid out in, the geometry of each
+ * shape, and how the stroke is painted. `stroke="currentColor"` is what makes an icon take the
+ * colour of the text beside it, so the stroke attributes are part of the drawing and stay.
+ */
+export const SVG_ATTR = [
+    'class',
+    'cx',
+    'cy',
+    'd',
+    'fill',
+    'fill-rule',
+    'height',
+    'points',
+    'r',
+    'rx',
+    'ry',
+    'stroke',
+    'stroke-linecap',
+    'stroke-linejoin',
+    'stroke-width',
+    // Spelled lowercase because that is how the filter matches an attribute name; the drawing's
+    // own `viewBox` keeps its capital in the page, which is what an SVG element is read with.
+    'viewbox',
+    'width',
+    'x',
+    'x1',
+    'x2',
+    'y',
+    'y1',
+    'y2'
+];
+
+// The filter lowercases the lists a profile hands it, in place, so these two are frozen: what this
+// file exports stays what it declares however often an icon is drawn.
+Object.freeze(SVG_TAGS);
+Object.freeze(SVG_ATTR);
+
+/** The filter for an icon: the drawing's own elements, and nothing a document's profile allows. */
+export const SVG_PROFILE = {
+    ALLOWED_TAGS: SVG_TAGS,
+    ALLOWED_ATTR: SVG_ATTR,
+    ALLOW_DATA_ATTR: false,
+    ALLOW_ARIA_ATTR: false,
+    ALLOW_UNKNOWN_PROTOCOLS: false
+};
+
+/**
+ * One icon as the profile above allows it to be drawn. The file is read from the icon package by
+ * the server rather than authored here, and it still passes the filter: what reaches the page is a
+ * drawing whatever the package ships.
+ */
+export function sanitiseSvg(svg: string): string {
+    if (purifier === null) return svg;
+    return purifier.sanitize(svg, SVG_PROFILE);
+}
+
+/**
  * One field of Markdown as the HTML a card draws it with. The intro, the note and the funding
  * statement are one paragraph and a link or two in the hub's files, so this is the inline renderer:
  * a block renderer would only wrap each of them in a `<p>` the card's own markup already gives

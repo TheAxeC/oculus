@@ -174,7 +174,7 @@ describe('the LinkedIn view', () => {
         expect(body).toContain(catalog['linkedin.form_category_help']);
     });
 
-    it('draws neither a category chip nor a date on a post whose front matter names neither', () => {
+    it('draws neither a category tag nor a date on a post whose front matter names neither', () => {
         const bare = [
             {
                 file: '03-bare.md',
@@ -188,10 +188,10 @@ describe('the LinkedIn view', () => {
         const drawn = card(draw('linkedin-bare', bare), '03-bare.md');
         expect(drawn).toContain('Bare post');
         expect(drawn).not.toContain('class="date"');
-        // The number chip is the only one left; a card with a category draws a second one.
-        expect(drawn.match(/class="chip/g)?.length ?? 0).toBe(1);
+        // The number tag is the only one left; a card with a category draws a second one.
+        expect(drawn.match(/class="tag/g)?.length ?? 0).toBe(1);
         const withCategory = card(draw('linkedin-category-chip', entries), 'xx-alpha.md');
-        expect(withCategory.match(/class="chip/g)?.length ?? 0).toBe(2);
+        expect(withCategory.match(/class="tag/g)?.length ?? 0).toBe(2);
     });
 
     it('searches title, category, and body without drawing an unrelated card', () => {

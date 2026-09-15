@@ -68,7 +68,7 @@ export function applyThemeFacets(venues: Venue[], off: string[]): Venue[] {
     return venues.filter((venue) => venue.themes.some((theme) => !off.includes(theme)));
 }
 
-/** Tone of the venue rank chip. */
+/** Tone of a venue's rank, kept for the card's hue although the rank is drawn as a plain tag. */
 export function quartileTone(value: string | undefined): string {
     const word = (value ?? '').toLowerCase();
     if (word.includes('q1') || word.includes('a*') || word.includes('prestige')) return 'violet';
@@ -76,7 +76,7 @@ export function quartileTone(value: string | undefined): string {
     return 'grey';
 }
 
-/** Tone of the venue cost chip. */
+/** Tone of a venue's cost, kept for the card's hue although the cost is drawn as a plain tag. */
 export function freeTone(value: string | undefined): string {
     const word = (value ?? '').toLowerCase();
     if (word.includes('free')) return 'green';

@@ -3,7 +3,7 @@
     // independently of the project-card frame.
 
     import Empty from '$lib/ui/Empty.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Search from '$lib/ui/Search.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { humanSize, type BoardItem } from '$lib/state/board';
@@ -61,7 +61,7 @@
                         />
                     </span>
                 {:else}
-                    <Chip label={doc.label} />
+                    <Tag label={doc.label} />
                 {/if}
             {/each}
         </div>

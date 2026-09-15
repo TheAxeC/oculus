@@ -3,7 +3,7 @@
     // and edit form. The server supplies the recovery command and working directory.
 
     import Card from '$lib/ui/Card.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Tooltip from '$lib/ui/Tooltip.svelte';
@@ -72,7 +72,7 @@
     >
         {#snippet meta()}
             {#if dataset.access}
-                <Chip label={dataset.access} tone={accessTone(dataset.access)} />
+                <Tag label={dataset.access} tone={accessTone(dataset.access)} />
             {/if}
             {#if entry !== null && schema !== undefined}
                 <ToolButton
@@ -104,19 +104,19 @@
                 {#if dataset.size}
                     {@const words = `${t('data.size')} ${dataset.size}`}
                     <Tooltip text={words}>
-                        <Chip label={words} />
+                        <Tag label={words} />
                     </Tooltip>
                 {/if}
                 {#if dataset.hpcPath}
                     {@const words = `${t('data.hpc')} ${dataset.hpcPath}`}
                     <Tooltip text={words}>
-                        <Chip label={words} />
+                        <Tag label={words} />
                     </Tooltip>
                 {/if}
                 {#if method}
                     {@const words = `${t('data.fetch')} ${method}`}
                     <Tooltip text={words}>
-                        <Chip label={words} />
+                        <Tag label={words} />
                     </Tooltip>
                 {/if}
             </div>
@@ -124,7 +124,7 @@
 
         {#if dataset.modality}
             <div class="tags">
-                <Chip label={dataset.modality} />
+                <Tag label={dataset.modality} />
             </div>
         {/if}
 

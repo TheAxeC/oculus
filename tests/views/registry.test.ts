@@ -359,10 +359,14 @@ describe('the real registrations', () => {
     });
 
     it('registers every configured rail count and its urgency tone', () => {
-        for (const id of ['leads', 'inbox', 'linkedin']) {
+        for (const id of ['leads', 'inbox']) {
             expect(typeof viewFor(id)?.badge).toBe('function');
             expect(typeof viewFor(id)?.badgeTone).toBe('function');
         }
+        // LinkedIn's badge is a mark rather than a count, so it registers a glyph name instead.
+        expect(typeof viewFor('linkedin')?.badgeGlyph).toBe('function');
+        expect(viewFor('linkedin')?.badge).toBe(undefined);
+        expect(typeof viewFor('linkedin')?.badgeTone).toBe('function');
         expect(viewFor('leads')?.badgeTone?.(client)).toBe('amber');
         expect(viewFor('inbox')?.badgeTone?.(client)).toBe('red');
         expect(viewFor('linkedin')?.badgeTone?.(client)).toBe('red');

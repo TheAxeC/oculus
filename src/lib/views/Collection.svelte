@@ -50,7 +50,7 @@
     // and code adds what the portfolio says about its own code above the cards.
 
     import Card from '$lib/ui/Card.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Search from '$lib/ui/Search.svelte';
@@ -291,7 +291,7 @@
                             title={t('collection.no_funding')}
                         >
                             {#snippet meta()}
-                                <Chip label={String(unfunded.length)} />
+                                <Tag label={String(unfunded.length)} />
                             {/snippet}
                             <p class="sub">{t('collection.no_funding_sub')}</p>
                             <div class="row">

@@ -14,12 +14,13 @@ import Projects from '../../src/lib/views/Projects.svelte';
 import {
     engineDir,
     glyphCatalog,
+    iconSet,
     loadConfig,
     textCatalog,
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
-import { setVocab } from '../../src/lib/state/tones.ts';
+import { setCatalog, setGlyphs, setIcons } from '../../src/lib/state/text.ts';
+import { chipGlyphName, chipLabel, setVocab, statusMarkTone } from '../../src/lib/state/tones.ts';
 import { emptyBoardState, type BoardState } from '../../src/lib/state/board/index.ts';
 import { area, payload, record, workspace } from '../sessions-fixture.ts';
 import type {
@@ -432,6 +433,33 @@ describe('the list mode', () => {
         expect(body).toContain('Faes, Someone');
         expect(body).toContain('>BSPC<');
         expect(body).toContain('Run the sweep.');
+    });
+
+    it('draws the status column as one icon per status, not as characters', () => {
+        // The two projects of this board carry one status chip each, so each row's status cell
+        // holds exactly one mark and no other cell holds a drawing at all.
+        const marks = ['lead', 'revision'].map((chip) => chipGlyphName(chip));
+        expect(marks.filter((name) => name === '')).toEqual([]);
+        setIcons(iconSet(config));
+        try {
+            const body = html('projects', { mode: 'list' });
+            const drawn = [...body.matchAll(/<td[^>]*>((?:(?!<\/td>)[\s\S])*)<\/td>/g)]
+                .map((found) => found[1])
+                .filter((cell) => cell.includes('<svg'));
+            expect(drawn).toHaveLength(2);
+            for (const cell of drawn) expect(cell.match(/<svg/g)).toHaveLength(1);
+            for (const name of marks) {
+                expect(body).not.toContain(glyphCatalog(config)[name]);
+            }
+            // Each mark is drawn in its own status's hue with its words as the title, so the
+            // column reads as the coloured dots did.
+            for (const chip of ['lead', 'revision']) {
+                expect(body).toContain(`--mark: var(--c-${statusMarkTone(chip)}-txt)`);
+                expect(body).toContain(`title="${chipLabel(chip)}"`);
+            }
+        } finally {
+            setIcons({});
+        }
     });
 });
 

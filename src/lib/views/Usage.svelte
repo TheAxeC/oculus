@@ -14,7 +14,7 @@
     // Layer 3, view. Show each configured Claude or Codex subscription, its current windows, live Claude sessions and seven-day token totals.
 
     import Card from '$lib/ui/Card.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Meter from '$lib/ui/Meter.svelte';
     import Pane from '$lib/ui/Pane.svelte';
@@ -169,18 +169,18 @@
                         level={3}
                     >
                         {#snippet meta()}
-                            <Chip label={account.tool} />
+                            <Tag label={account.tool} />
                             {#if account.email}
-                                <Chip label={account.email} />
+                                <Tag label={account.email} />
                             {/if}
                             {#if account.organisation}
-                                <Chip label={account.organisation} />
+                                <Tag label={account.organisation} />
                             {/if}
                             {#if account.tierLabel}
-                                <Chip label={account.tierLabel} tone="teal" />
+                                <Tag label={account.tierLabel} tone="teal" />
                             {/if}
                             {#if account.billing}
-                                <Chip label={account.billing} />
+                                <Tag label={account.billing} />
                             {/if}
                             {#if account.tool === 'claude'}
                                 <ToolButton

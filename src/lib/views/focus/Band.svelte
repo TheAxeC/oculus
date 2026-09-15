@@ -6,11 +6,11 @@
     // Every card opens its collection tab and sets that tab's transient reveal id, so the exact
     // entry scrolls into view and flashes after the view opens.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { daysUntil, firstSentence } from '$lib/state/board';
-    import { daysTone } from '$lib/state/ticker';
     import { collectionLanes, type BandItem } from '$lib/state/focus-lanes';
+    import { daysTone } from '$lib/state/ticker';
     import { toneOf } from '$lib/state/tones';
     import { t } from '$lib/state/text';
     import { useState } from '$lib/state/use';
@@ -72,10 +72,10 @@
             </span>
             {#if days !== null}
                 <span class="badge">
-                    <Chip
+                    <Tag
                         label={days < 0 ? t('focus.days_ago', -days) : t('focus.in_days', days)}
-                        tone={daysTone(days)}
                         glyph={t('project.card.deadline_glyph')}
+                        tone={daysTone(days)}
                     />
                 </span>
             {/if}

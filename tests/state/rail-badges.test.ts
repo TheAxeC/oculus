@@ -32,13 +32,13 @@ let client: ClientState;
 let applicationsBadge: ClientState['railBadges']['applicationsBadge'];
 let inboxBadge: ClientState['railBadges']['inboxBadge'];
 let leadsBadge: ClientState['railBadges']['leadsBadge'];
-let linkedinBadge: ClientState['railBadges']['linkedinBadge'];
+let linkedinBadgeGlyph: ClientState['railBadges']['linkedinBadgeGlyph'];
 let receive: ClientState['entities']['receive'];
 let viewFor: ClientState['registry']['viewFor'];
 
 beforeEach(() => {
     client = createClientState();
-    ({ applicationsBadge, inboxBadge, leadsBadge, linkedinBadge } = client.railBadges);
+    ({ applicationsBadge, inboxBadge, leadsBadge, linkedinBadgeGlyph } = client.railBadges);
     ({ receive } = client.entities);
     ({ viewFor } = client.registry);
     registerAll(client.registry);
@@ -105,6 +105,7 @@ describe('rail badge counts', () => {
         const badge = badgeOf(present(viewFor('hpc'), 'hpc view'), client);
         expect(badge).toEqual({
             text: '2 1',
+            glyph: '',
             tabText: '',
             title: 'running: 2 | pending: 1',
             cells: [
@@ -243,10 +244,10 @@ describe('rail badge counts', () => {
             }
         });
 
-        expect([inboxBadge(), leadsBadge(), linkedinBadge(), applicationsBadge()]).toEqual([
+        expect([inboxBadge(), leadsBadge(), linkedinBadgeGlyph(), applicationsBadge()]).toEqual([
             '4',
             '1',
-            glyphCatalog(config).bang,
+            'bang',
             '2'
         ]);
 
@@ -291,7 +292,7 @@ describe('rail badge counts', () => {
                 }
             }
         });
-        expect([inboxBadge(), leadsBadge(), linkedinBadge()]).toEqual(['1', '2', '']);
+        expect([inboxBadge(), leadsBadge(), linkedinBadgeGlyph()]).toEqual(['1', '2', '']);
 
         receive({
             channel: 'feeds',
@@ -310,11 +311,7 @@ describe('rail badge counts', () => {
                 ])
             )
         });
-        expect([inboxBadge(), leadsBadge(), linkedinBadge()]).toEqual([
-            '4',
-            '1',
-            glyphCatalog(config).bang
-        ]);
+        expect([inboxBadge(), leadsBadge(), linkedinBadgeGlyph()]).toEqual(['4', '1', 'bang']);
     });
 });
 
@@ -356,6 +353,7 @@ describe('registered board badge descriptors', () => {
             installBadges(client, config);
             expect(badgeOf(present(viewFor(id), `${id} view`), client)).toEqual({
                 ...expected[id],
+                glyph: '',
                 tabText: expected[id].text,
                 tone: undefined
             });

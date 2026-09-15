@@ -2,6 +2,7 @@
     // Layer 3, shared view. The project-card frame, header and status chips live here because card
     // framing changes independently of its documents, links, sessions and expanded details.
     import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Card from '$lib/ui/Card.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
@@ -235,14 +236,14 @@
                 <Chip label={item.project.type} tone={item.tone} filled />
             {/if}
             {#if item.domain}
-                <Chip label={item.domain.label} tone={item.domain.tone} />
+                <Tag label={item.domain.label} tone={item.domain.tone} />
             {/if}
             {#if due}
-                <Chip label={due.label} tone={due.tone} glyph={t('project.card.deadline_glyph')} />
+                <Tag label={due.label} glyph={t('project.card.deadline_glyph')} tone={due.tone} />
             {/if}
             {#if stale}
                 <span title={t('project.card.stale_tip', newestDoc(), item.project.staleDays ?? 0)}>
-                    <Chip
+                    <Tag
                         label={t('project.card.stale_behind', item.project.staleDays ?? 0)}
                         glyph={t('board.stale_glyph')}
                         tone="amber"
@@ -251,7 +252,7 @@
             {/if}
             {#if item.project.ghost}
                 <span title={t('project.card.ghost_badge_tip')}>
-                    <Chip
+                    <Tag
                         label={t('project.card.no_manifest')}
                         glyph={t('board.warn_glyph')}
                         tone="amber"
@@ -285,21 +286,21 @@
         <div class="folder">{item.project.folder}</div>
         <div class="row">
             {#if item.project.focus}
-                <Chip label={item.project.focus} />
+                <Tag label={item.project.focus} />
             {/if}
             {#each item.chips as chip (chip)}
                 <Chip label={chipLabel(chip)} glyph={chipGlyphName(chip)} tone={statusTone(chip)} />
             {/each}
             {#if item.code !== ''}
-                <Chip label={codeLabel(item.code, t)} glyph={t('project.card.code_glyph')} />
+                <Tag label={codeLabel(item.code, t)} glyph={t('project.card.code_glyph')} />
             {/if}
             {#if item.reproduced}
-                <Chip label={t('board.repro_yes')} glyph={t('project.card.repro_glyph')} />
+                <Tag label={t('board.repro_yes')} glyph={t('project.card.repro_glyph')} />
             {/if}
             {#if item.compute === 'hpc'}
-                <Chip label={t('project.card.hpc_label')} glyph={t('project.card.hpc_glyph')} />
+                <Tag label={t('project.card.hpc_label')} glyph={t('project.card.hpc_glyph')} />
             {:else if item.compute === 'local'}
-                <Chip label={t('project.card.local_label')} />
+                <Tag label={t('project.card.local_label')} />
             {/if}
             {#if item.venue}
                 <span class="venue">{item.venue.text}</span>

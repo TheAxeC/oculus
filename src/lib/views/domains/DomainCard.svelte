@@ -3,7 +3,7 @@
     // grouped project links and schema-driven edit form.
 
     import Card from '$lib/ui/Card.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
@@ -39,7 +39,7 @@
         tone={domainTone(domain.id)}
     >
         {#snippet meta()}
-            <Chip label={`${projects.length} ${projectWord()}`} />
+            <Tag label={`${projects.length} ${projectWord()}`} />
             {#if entry !== null && schema !== undefined}
                 <ToolButton
                     label={t('collection.form_edit_title')}

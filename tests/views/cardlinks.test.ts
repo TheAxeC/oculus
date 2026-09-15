@@ -134,26 +134,26 @@ describe('the card tag lines', () => {
         );
         expect(drawn.map(kindOf)).toEqual(LABELS);
         const [funding, programs, datasets, collaborations] = drawn;
-        expect(funding.match(/class="chip/g)).toHaveLength(SHOWN);
+        expect(funding.match(/class="tag/g)).toHaveLength(SHOWN);
         expect(funding).toContain(`>${more(2)}<`);
-        expect(datasets.match(/class="chip/g)).toHaveLength(SHOWN);
+        expect(datasets.match(/class="tag/g)).toHaveLength(SHOWN);
         expect(datasets).toContain(`>${more(1)}<`);
-        expect(programs.match(/class="chip/g)).toHaveLength(2);
+        expect(programs.match(/class="tag/g)).toHaveLength(2);
         expect(programs).not.toContain('class="tool');
-        expect(collaborations.match(/class="chip/g)).toHaveLength(1);
+        expect(collaborations.match(/class="tag/g)).toHaveLength(1);
         expect(collaborations).not.toContain('class="tool');
     });
 
-    it('draws the cross-link kinds as buttons naming their kind and the rest as plain chips', () => {
+    it('draws the cross-link kinds as buttons naming their kind and the rest as plain tags', () => {
         const [funding, programs, datasets, collaborations] = lines(
             draw({ item: item({ funding: 1, programs: 1, datasets: 1, collaborators: 1 }) })
         );
         expect(funding).toContain(`title="${openIn(LABELS[0])}"`);
-        expect(funding).toContain('class="tag');
+        expect(funding).toContain('class="crosslink');
         expect(collaborations).toContain(`title="${openIn(LABELS[3])}"`);
-        expect(collaborations).toContain('class="tag');
-        expect(programs).not.toContain('class="tag');
-        expect(datasets).not.toContain('class="tag');
+        expect(collaborations).toContain('class="crosslink');
+        expect(programs).not.toContain('class="crosslink');
+        expect(datasets).not.toContain('class="crosslink');
     });
 
     it('draws a labelled line per kind that has entries and none for a kind that has none', () => {
@@ -167,7 +167,7 @@ describe('the card tag lines', () => {
 
     it('cuts a kind longer than SHOWN to that many entries and offers the rest', () => {
         const [funding] = lines(draw({ item: FIVE_FUNDING_TWO_DATASETS }));
-        expect(funding.match(/class="chip/g)).toHaveLength(SHOWN);
+        expect(funding.match(/class="tag/g)).toHaveLength(SHOWN);
         expect(funding).toContain('FUND-2');
         expect(funding).not.toContain('FUND-3');
         expect(funding).toContain(`>${more(2)}<`);
@@ -175,7 +175,7 @@ describe('the card tag lines', () => {
 
     it('draws a kind no longer than SHOWN whole and offers no control', () => {
         const datasets = lines(draw({ item: FIVE_FUNDING_TWO_DATASETS })).at(1) ?? '';
-        expect(datasets.match(/class="chip/g)).toHaveLength(2);
+        expect(datasets.match(/class="tag/g)).toHaveLength(2);
         expect(datasets).toContain('DATA-1');
         expect(datasets).not.toContain('class="tool');
     });

@@ -158,7 +158,7 @@ const VIEWS: Record<string, string> = {
 
 const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/Card.svelte':
-        '.title=fs-xl | .meta :global(.chip)=fs-xs | .body=fs-md | .footer=fs-sm | :global(body.rice) .title=fs-md',
+        '.title=fs-xl | .meta :global(.chip), .meta :global(.tag)=fs-xs | .body=fs-md | .footer=fs-sm | :global(body.rice) .title=fs-md',
     'src/lib/ui/Chip.svelte': '.chip=fs-sm',
     'src/lib/ui/Disclosure.svelte': '.disclosure=fs-sm',
     'src/lib/views/shared/Intro.svelte': '.intro=fs-md',

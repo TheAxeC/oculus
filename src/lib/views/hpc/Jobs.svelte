@@ -1,6 +1,6 @@
 <script lang="ts">
     // Layer 3, view partial. The queue exposes every squeue field, with cancellation behind Confirm and logs limited to running jobs.
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Confirm from '$lib/ui/Confirm.svelte';
     import Meter from '$lib/ui/Meter.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
@@ -48,7 +48,7 @@
             ><tbody>
                 {#each rows as row (row.id)}{@const fraction = walltimeFraction(row)}<tr>
                         <td>{row.id}</td><td>{row.name}</td><td>{row.partition}</td><td
-                            ><Chip label={row.state} tone={stateTone(row.state)} /></td
+                            ><Tag label={row.state} tone={stateTone(row.state)} /></td
                         ><td>{row.time}</td><td>{row.limit}</td>
                         <td
                             >{#if fraction !== null}<Meter

@@ -28,6 +28,7 @@
     import Search from '$lib/ui/Search.svelte';
     import Segment from '$lib/ui/Segment.svelte';
     import Table from '$lib/ui/Table.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import { type Column, cellText } from '$lib/ui/table-rows';
     import Ticker from '$lib/ui/Ticker.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
@@ -117,6 +118,14 @@
     }
 </script>
 
+{#snippet tagRow()}
+    <div class="row">
+        {#each chips as chip (chip.key)}
+            <Tag label={chip.label} glyph={chip.glyph} />
+        {/each}
+    </div>
+{/snippet}
+
 {#snippet chipRow(filled: boolean)}
     <div class="row">
         {#each chips as chip (chip.key)}
@@ -195,6 +204,14 @@
                 <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
                 {@render chipRow(true)}
             {/if}
+        </section>
+
+        <section>
+            <h3>{t('gallery.tags')}</h3>
+            <!-- The same words without the capsule and without a hue, which is what everything a
+                 surface lists that is not a status word is drawn as. -->
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render tagRow()}
         </section>
 
         <section>

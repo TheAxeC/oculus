@@ -3,7 +3,7 @@
     // confirmation when every real project names a registry line.
 
     import Card from '$lib/ui/Card.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
@@ -27,7 +27,7 @@
         {#snippet meta()}
             <Glyph name={projects.length > 0 ? 'warn' : 'check'} />
             {#if projects.length > 0}
-                <Chip label={t('programs.untagged', projects.length)} />
+                <Tag label={t('programs.untagged', projects.length)} />
             {/if}
         {/snippet}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->

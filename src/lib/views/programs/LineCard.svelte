@@ -3,7 +3,7 @@
     // project cross-links and the shared schema-driven edit form.
 
     import Card from '$lib/ui/Card.svelte';
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
@@ -64,7 +64,7 @@
 <div class:dormant={isDormant(projects)} class:muted data-program={line.id}>
     <Card id={line.id} {cursor} title={line.title} titleHtml={inlineMarkdown(line.title)} {tone}>
         {#snippet meta()}
-            <Chip label={`${projects.length} ${projectWord()}`} />
+            <Tag label={`${projects.length} ${projectWord()}`} />
             {#if entry !== null && schema !== undefined}
                 <ToolButton
                     label={t('collection.form_edit_title')}
@@ -81,7 +81,7 @@
                 <strong>{flight.length} {t('programs.in_flight')}</strong>
                 <span class="total">{projects.length} {t('programs.total')}</span>
                 {#each strip as tier (tier.key)}
-                    <Chip
+                    <Tag
                         label={`${tier.count} ${tier.label}`}
                         tone={tier.color === undefined ? undefined : toneOf(tier.color)}
                     />

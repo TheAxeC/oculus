@@ -20,7 +20,7 @@
     // reader is left where they are: a push arriving while somebody is reading upwards must not
     // yank the column back down.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
@@ -40,7 +40,7 @@
 
     let { instance }: ViewProps = $props();
 
-    /** The kinds with a hue of their own; anything else prints itself in the muted chip. */
+    /** The kinds with a hue of their own; anything else prints itself muted. */
     const TONES: Record<string, string> = {
         prompt: 'blue',
         tool: 'teal',
@@ -77,7 +77,7 @@
         return box.scrollTop + box.clientHeight >= box.scrollHeight - SLACK;
     }
 
-    /** The chip's word. The five known kinds have one; anything else says what it calls itself. */
+    /** The tag's word. The five known kinds have one; anything else says what it calls itself. */
     function kindLabel(kind: string): string {
         if (kind === 'prompt') return t('sessions.ev_k_prompt');
         if (kind === 'tool') return t('sessions.ev_k_tool');
@@ -145,7 +145,7 @@
             {#each events as event, at (`${at}:${event.ts ?? ''}`)}
                 <div class="event">
                     <span class="ts">{clock(event.ts)}</span>
-                    <Chip label={kindLabel(event.kind)} tone={TONES[event.kind]} />
+                    <Tag label={kindLabel(event.kind)} tone={TONES[event.kind]} />
                     <span class="tx" title={tip(event)}>{text(event)}</span>
                 </div>
             {/each}

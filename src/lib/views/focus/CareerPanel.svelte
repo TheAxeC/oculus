@@ -6,7 +6,7 @@
     // Collapsed by default, so the lanes stay the top of the board. It draws nothing when the hub
     // holds no career file, which is the ordinary case for a hub that keeps no career plan.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import {
         hostStatuses,
@@ -144,7 +144,7 @@
                                             class="score"
                                             title={t('focus.career_score_tip', dim.label, value)}
                                         >
-                                            <Chip
+                                            <Tag
                                                 label={`${dim.badge} ${value}`}
                                                 tone={TIER_TONE[scoreTier(value)]}
                                             />
@@ -153,11 +153,10 @@
                                 {/each}
                                 {#if own !== null}
                                     <span class="own"
-                                        ><Chip
+                                        ><Tag
                                             label={own.label}
                                             glyph={own.glyph}
                                             tone={own.tone}
-                                            filled
                                         /></span
                                     >
                                 {/if}
@@ -196,7 +195,7 @@
                     {@render section(t('focus.not_hosts'))}
                     <div class="chips">
                         {#each career.notHosts as one (one.who)}
-                            <Chip
+                            <Tag
                                 label={one.why === undefined ? one.who : `${one.who} (${one.why})`}
                             />
                         {/each}
@@ -211,7 +210,7 @@
                     <p class="sub">{t('focus.career_shots')}</p>
                     <div class="chips">
                         {#each career.eligibility.shots as shot, at (`${at}:${shot}`)}
-                            <Chip
+                            <Tag
                                 label={shot}
                                 glyph={t('project.card.deadline_glyph')}
                                 tone="orange"
@@ -223,7 +222,7 @@
                     <p class="sub">{t('focus.career_rules')}</p>
                     <div class="chips">
                         {#each career.eligibility.rule as rule, at (`${at}:${rule}`)}
-                            <Chip label={rule} />
+                            <Tag label={rule} />
                         {/each}
                     </div>
                 {/if}
@@ -241,7 +240,7 @@
                 {@render section(t('focus.dropped'))}
                 <div class="chips">
                     {#each career.dropped as one (one.what)}
-                        <Chip
+                        <Tag
                             label={one.why === undefined ? one.what : `${one.what} (${one.why})`}
                         />
                     {/each}

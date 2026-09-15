@@ -184,7 +184,16 @@
                             <Glyph name={tab.glyph} />
                         {/if}
                         <span class="label">{tab.label}</span>
-                        {#if tab.badge !== undefined && tab.badge !== ''}
+                        {#if (tab.badgeGlyph ?? '') !== ''}
+                            <span
+                                class="tab-badge"
+                                style={badgeStyle(tab.badgeTone)}
+                                title={tab.badgeTitle}
+                                aria-hidden="true"
+                            >
+                                <Glyph name={tab.badgeGlyph ?? ''} />{tab.badge}
+                            </span>
+                        {:else if (tab.badge ?? '') !== ''}
                             <span
                                 class="tab-badge"
                                 style={badgeStyle(tab.badgeTone)}

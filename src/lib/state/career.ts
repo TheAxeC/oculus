@@ -71,9 +71,8 @@ export function scoreDims(config: Record<string, unknown>): ScoreDim[] {
 }
 
 /**
- * Which tier a score value falls in, which is what its chip is toned by. The values are the file's
- * own words ("Strong", "Med-high", "Weak clinic"), so the rule reads them rather than enumerating
- * every string the file may write.
+ * Which tier a score value falls in. The values are the file's own words ("Strong", "Med-high",
+ * "Weak clinic"), so the rule reads them rather than enumerating every string the file may write.
  */
 export function scoreTier(value: unknown): string {
     const text = scalar(value).trim().toLowerCase();

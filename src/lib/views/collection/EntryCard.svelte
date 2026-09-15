@@ -9,6 +9,7 @@
 
     import Card from '$lib/ui/Card.svelte';
     import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
@@ -209,13 +210,13 @@
                     <div class="row">
                         <span class="label">{drawn.label}</span>
                         {#each drawn.values as one, at (`${at}:${one}`)}
-                            <Chip label={one} />
+                            <Tag label={one} />
                         {/each}
                     </div>
                 {:else if drawn.kind === 'chips'}
                     <div class="row">
                         {#each drawn.values as one, at (`${at}:${one}`)}
-                            <Chip label={one} />
+                            <Tag label={one} />
                         {/each}
                     </div>
                 {:else if drawn.kind === 'body'}

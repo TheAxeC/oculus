@@ -3,7 +3,7 @@
     // writes each one's colour and the state layer resolves it to a palette hue, so the chip is the
     // app's own chip in one of the app's own hues.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import type { DeckChip } from '$lib/state/present';
 
     type Props = { chips: DeckChip[] };
@@ -14,7 +14,7 @@
 {#if chips.length > 0}
     <div class="legend">
         {#each chips as chip (chip.label)}
-            <Chip label={chip.label} tone={chip.tone} filled />
+            <Tag label={chip.label} tone={chip.tone} />
         {/each}
     </div>
 {/if}

@@ -6,7 +6,7 @@
     // rather than as one wrapping run; a kind longer than SHOWN draws that many and a control that
     // draws the rest in place.
 
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import type { BoardItem, BoardTag } from '$lib/state/board';
     import { t } from '$lib/state/text';
@@ -78,15 +78,15 @@
                     <span class="kind">{kind.label}</span>
                     {#each drawn as tag (tag.id)}
                         {#if linkView(kind.key) === ''}
-                            <Chip label={tag.label} glyph={kind.glyph} />
+                            <Tag label={tag.label} glyph={kind.glyph} />
                         {:else}
                             <button
                                 type="button"
-                                class="tag"
+                                class="crosslink"
                                 title={t('project.card.open_in', kind.label)}
                                 onclick={() => goto(client, linkView(kind.key), tag.label)}
                             >
-                                <Chip label={tag.label} glyph={kind.glyph} />
+                                <Tag label={tag.label} glyph={kind.glyph} />
                             </button>
                         {/if}
                     {/each}
@@ -126,7 +126,7 @@
         color: var(--muted-txt, var(--muted));
     }
 
-    .tag {
+    .crosslink {
         display: inline-flex;
         align-items: center;
         gap: 4px;
@@ -142,7 +142,7 @@
         text-align: left;
     }
 
-    .tag:hover {
+    .crosslink:hover {
         background: var(--chip);
     }
 </style>

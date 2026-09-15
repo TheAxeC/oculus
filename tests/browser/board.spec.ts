@@ -66,10 +66,10 @@ test('a card labels each kind of tag and draws the rest of a long kind in place'
         .first();
     const line = card.locator('.taglist').filter({ hasText: t('board.facet_dataset') });
     await expect(line.locator('.kind')).toHaveText(t('board.facet_dataset'));
-    await expect(line.locator('.chip .label')).toHaveText(shown);
+    await expect(line.locator('.tag .label')).toHaveText(shown);
 
     await line.getByRole('button', { name: t('project.card.more_tags', held.length) }).click();
-    await expect(line.locator('.chip .label')).toHaveText(keys);
+    await expect(line.locator('.tag .label')).toHaveText(keys);
 });
 
 test('the pin control writes pin: true, moves the card first, and unpin restores it', async ({

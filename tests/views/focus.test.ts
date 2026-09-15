@@ -24,7 +24,13 @@ import {
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
-import { chipLabel, setVocab } from '../../src/lib/state/tones.ts';
+import {
+    chipLabel,
+    statusMarkTone,
+    statusTone,
+    UNKNOWN_TONE,
+    setVocab
+} from '../../src/lib/state/tones.ts';
 import type {
     Career,
     Collection,
@@ -419,6 +425,21 @@ describe('a card', () => {
     it('draws the status chips and the button that opens the move menu', () => {
         expect(body).toContain(chipLabel('lead'));
         expect(body).toContain(catalog['focus.move_to']);
+    });
+
+    // A status mark is a line icon, so each one is drawn in the hue of the status it stands for;
+    // without it a lane's row of marks would be one grey run.
+    it('draws each status mark in the hue of its own status', () => {
+        const marks = [...body.matchAll(/class="chipicon[^"]*"[^>]*style="([^"]*)"/g)].map(
+            (found) => found[1]
+        );
+        expect(marks).toEqual([
+            `--mark: var(--c-${statusMarkTone('lead')}-txt)`,
+            `--mark: var(--c-${statusMarkTone('submitted')}-txt)`
+        ]);
+        // The two differ, and the one the palette names is a hue rather than the neutral.
+        expect(statusTone('submitted')).not.toBe(statusTone('lead'));
+        expect(statusTone('submitted')).not.toBe(UNKNOWN_TONE);
     });
 
     it('says what a card is waiting on', () => {

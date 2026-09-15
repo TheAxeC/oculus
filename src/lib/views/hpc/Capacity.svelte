@@ -1,6 +1,6 @@
 <script lang="ts">
     // Layer 3, view partial. Partition rows aggregate sinfo into idle, mixed, and allocated segments while retaining the full source table.
-    import Chip from '$lib/ui/Chip.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import Table from '$lib/ui/Table.svelte';
     import type { Column } from '$lib/ui/table-rows';
     import { partitionMeters, type HpcPartition } from '$lib/state/hpc';
@@ -25,7 +25,7 @@
     {#each meters as meter (meter.name)}
         <div class="meter">
             <span>{meter.name}</span>
-            {#if meter.gpu}<Chip label={t('hpc.gpu')} tone="violet" />{/if}
+            {#if meter.gpu}<Tag label={t('hpc.gpu')} tone="violet" />{/if}
             <span class="bar" aria-label={t('hpc.capacity_label', meter.name)}>
                 <i class="idle" style={`flex:${meter.idle}`}></i>
                 <i class="mixed" style={`flex:${meter.mixed}`}></i>

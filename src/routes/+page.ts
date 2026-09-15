@@ -1,4 +1,4 @@
-import { setAscii, setCatalog, setGlyphs } from '$lib/state/text';
+import { setAscii, setCatalog, setGlyphs, setIcons } from '$lib/state/text';
 import { setAppearance } from '$lib/state/appearance';
 import { setVocab } from '$lib/state/tones';
 import { configInstalled } from '$lib/state/generation.svelte';
@@ -22,6 +22,7 @@ export const load: PageLoad = ({ data }) => {
     setCatalog(data.text);
     setGlyphs(data.glyphs);
     setAscii(data.ascii);
+    setIcons(data.icons);
     setVocab(data.vocab);
     setAppearance(data.vocab);
     configInstalled();

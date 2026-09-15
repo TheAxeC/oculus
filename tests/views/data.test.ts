@@ -1,4 +1,4 @@
-// The Data view rendered on the server over every access tone, labelled facets, project links and
+// The Data view rendered on the server over every access word, labelled facets, project links and
 // an editable collection. Pure filtering and recovery-command rules are covered by state tests.
 
 import { render } from 'svelte/server';
@@ -172,6 +172,14 @@ function instance(): Instance {
     return { id: INSTANCE, view: 'data', state: {} };
 }
 
+/** The words of every tag in a rendering: one piece per tag, each read for its own label. */
+function tagLabels(html: string): string[] {
+    return html
+        .split('class="tag')
+        .slice(1)
+        .map((piece) => /class="label[^"]*">([^<]*)</.exec(piece)?.[1] ?? '');
+}
+
 describe('the Data view', () => {
     it('draws the intro, controls, facets and every dataset card in file order', () => {
         receive({ channel: 'portfolio', version: 25, payload: snapshot(DATASETS) });
@@ -197,7 +205,7 @@ describe('the Data view', () => {
         );
     });
 
-    it('draws Markdown, access tones, metadata, notes, projects, source and recovery', () => {
+    it('draws Markdown, access words, metadata, notes, projects, source and recovery', () => {
         receive({ channel: 'portfolio', version: 26, payload: snapshot(DATASETS) });
         const html = render(Data, {
             context: clientContext(client),
@@ -206,11 +214,17 @@ describe('the Data view', () => {
 
         expect(html).toContain('Open <strong>ECG</strong>');
         expect(html).toContain('A <strong>signal</strong> dataset.');
-        expect(html).toContain('--tone: var(--c-green)');
-        expect(html).toContain('--tone: var(--c-amber)');
-        expect(html).toContain('--tone: var(--c-red)');
-        expect(html).toContain('--tone: var(--c-slate)');
-        expect(html).toContain('--tone: var(--c-grey)');
+        const tags = tagLabels(html);
+        expect(tags).toContain('open');
+        expect(tags).toContain('registration');
+        expect(tags).toContain('private');
+        expect(tags).toContain('credentialed');
+        expect(tags).toContain('public');
+        expect(html).not.toContain('--tone: var(--c-');
+        // Each access word keeps the hue its chip had, on the tag's own custom property.
+        for (const hue of ['green', 'amber', 'red', 'slate', 'grey']) {
+            expect(html).toContain(`--tone-txt: var(--c-${hue}-txt)`);
+        }
         expect(html).toContain('Size 2 GB');
         expect(html).toContain('HPC ~/data/open');
         expect(html).toContain('Fetch wget');

@@ -11,7 +11,7 @@ import { handleWrite } from '../../src/lib/server/writes.ts';
 import { handleSource } from '../../src/lib/server/source.ts';
 import { mintToken } from '../../src/lib/server/auth.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
-import { loadConfig } from '../../src/lib/data/sources/config.ts';
+import { loadConfig, type IconMemory } from '../../src/lib/data/sources/config.ts';
 import type { Sink } from '../../src/lib/server/channels.ts';
 import {
     namedByConfig,
@@ -162,10 +162,14 @@ async function quiet(got: Message[], ms = 400): Promise<number> {
 }
 
 /** A started watcher over a fresh hub and engine, subscribed before the starting publications. */
-function start(prepare?: (hub: string, engine: string) => void): {
+function start(
+    prepare?: (hub: string, engine: string) => void,
+    icons: IconMemory = { set: {} }
+): {
     hub: string;
     engine: string;
     got: Message[];
+    icons: IconMemory;
 } {
     const hub = buildHub();
     const engine = buildEngine();
@@ -173,8 +177,8 @@ function start(prepare?: (hub: string, engine: string) => void): {
     const channels = new Hub();
     const client = recording();
     channels.subscribe(client.sink, ['portfolio', 'config', 'feeds']);
-    watchers.push(watchPortfolio(channels, { hub, engine }));
-    return { hub, engine, got: client.got };
+    watchers.push(watchPortfolio(channels, { hub, engine, icons }));
+    return { hub, engine, got: client.got, icons };
 }
 
 describe('relevant', () => {
@@ -474,6 +478,21 @@ describe('watchPortfolio', () => {
         expect(payload.findings).toEqual([]);
         expect(payload.config.venues_file).toBe('registries/venues.yml');
         expect((feeds[0].payload as FeedsPayload).linkedin.entries[0].title).toBe('Start');
+    });
+
+    it('replaces the held icon drawings with the ones it publishes', async () => {
+        const held: IconMemory = { set: { stale: 'a drawing that is no longer named' } };
+        const started = start((_hub, engine) => {
+            write(engine, 'config/glyphs.yml', 'glyphs:\n  pin: "P"\n');
+            write(engine, 'config/icons.yml', 'icons:\n  pin: pin\n');
+        }, held);
+        await until(() => on(started.got, 'config').length >= 1, 2000);
+
+        const payload = on(started.got, 'config')[0].payload as ConfigPayload;
+        expect(Object.keys(held.set)).toEqual(['pin']);
+        expect(held.set.pin).toContain('<svg');
+        // The page is handed what is held, so the push and the load carry the same drawings.
+        expect(payload.icons).toStrictEqual(held.set);
     });
 
     it('republishes feeds beside portfolio when a YAML feed changes', async () => {

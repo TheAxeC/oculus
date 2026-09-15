@@ -7,7 +7,7 @@
         glyph: 'views.linkedin_glyph',
         group: 'feeds',
         order: 3,
-        badge: (client) => client.railBadges.linkedinBadge(),
+        badgeGlyph: (client) => client.railBadges.linkedinBadgeGlyph(),
         badgeTone: () => 'red'
     };
 </script>

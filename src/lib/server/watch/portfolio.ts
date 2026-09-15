@@ -23,7 +23,13 @@ import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
 import { buildPortfolio, portfolioConfigFrom } from '../../data/index.ts';
-import { loadConfig, textCatalog } from '../../data/sources/config.ts';
+import {
+    iconFindings,
+    iconSet,
+    loadConfig,
+    textCatalog,
+    type IconMemory
+} from '../../data/sources/config.ts';
 import { MANIFEST } from '../../data/sources/manifests.ts';
 import { PRESENT_DOC } from '../../data/sources/present.ts';
 import { readRoots, rootsFile } from '../files.ts';
@@ -36,6 +42,8 @@ export type WatchPaths = {
     hub: string;
     /** Absolute path of the oculus engine directory, whose `config/` is watched with the hub. */
     engine: string;
+    /** The icon drawings the server holds, replaced by every config push published here. */
+    icons: IconMemory;
 };
 
 export type WatchOptions = {
@@ -229,13 +237,20 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
         try {
             const { config, findings } = loadConfig(paths.engine);
             if (withConfig) {
-                // The roots of sources.yml are checked here rather than in loadConfig, which merges
-                // files and never touches the disk: a root whose directory is not on this machine is
-                // a fact about the machine, and it belongs on the same channel as the rest.
+                // The roots of sources.yml and the icon map are checked here rather than in
+                // loadConfig, which merges files and never touches the disk: a root whose directory
+                // is not on this machine, and an icon the installed package does not ship, are both
+                // facts about the machine, and they belong on the same channel as the rest.
+                paths.icons.set = iconSet(config);
                 const payload: ConfigPayload = {
                     config,
                     text: textCatalog(config),
-                    findings: [...findings, ...readRoots(config, rootsFile(paths.engine)).findings]
+                    icons: paths.icons.set,
+                    findings: [
+                        ...findings,
+                        ...iconFindings(paths.engine, config),
+                        ...readRoots(config, rootsFile(paths.engine)).findings
+                    ]
                 };
                 hub.publish('config', payload);
             }

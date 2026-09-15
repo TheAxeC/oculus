@@ -118,9 +118,9 @@ const SOLID: Record<string, string> = {
         'a hover response, saying which row the pointer is on',
     'src/lib/views/sessions/TerminalRows.svelte .pick:hover, .hide:hover':
         'a hover response, saying which row the pointer is on',
-    'src/lib/views/shared/CardDetails.svelte .tag:hover':
+    'src/lib/views/shared/CardDetails.svelte .crosslink:hover':
         'a hover response, saying which tag the pointer is on',
-    'src/lib/views/shared/CardLinks.svelte .tag:hover':
+    'src/lib/views/shared/CardLinks.svelte .crosslink:hover':
         'a hover response, saying which link the pointer is on',
     'src/lib/views/shared/CardSessions.svelte .session:hover':
         'a hover response, saying which session the pointer is on'
