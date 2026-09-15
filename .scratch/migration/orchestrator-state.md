@@ -48,7 +48,7 @@ dispatch:                                  # Q17 + O27a + P1, the set of three
   exit: none
   pid: none
   session_id: a770870931a7f7284            # the Agent tool's id
-  round: 1                                   # repair round sent 2026-09-15T15:35+0200 over the review (twenty items, runs/O27a/repair-prompt.md; review in agents/reviews/O27a.md); reported 16:12 (runs/O27a/report-2.md, diff-2.patch, repair-read.patch 3,129 lines); checks running (runs/O27a/checks.sh); second reviewer claude:opus aada08b0a4d105027 launched 16:14
+  round: 1                                   # repair round sent 2026-09-15T15:35+0200 over the review (twenty items, runs/O27a/repair-prompt.md; review in agents/reviews/O27a.md); reported 16:12 (runs/O27a/report-2.md, diff-2.patch, repair-read.patch 3,129 lines); checks running (runs/O27a/checks.sh); second reviewer claude:opus aada08b0a4d105027 launched 16:14; repaired diff's checks green (164 files, 2,569 tests; browser 65 alone after a port collision, runs/O27a/check-*.log); PDF probe 16:18 with the installed Chrome headless (scratchpad/pdfprobe/probe.mjs): a PDF in a frame with sandbox="" or allow-same-origin allow-scripts is net::ERR_BLOCKED_BY_CLIENT and the frame lands on chrome-error, with no sandbox attribute Chrome's viewer draws it; fix at landing: no sandbox on the PDF frame
   landing: not-started
 - package: P1
   worker: claude:opus
@@ -61,7 +61,7 @@ dispatch:                                  # Q17 + O27a + P1, the set of three
   exit: none
   pid: none
   session_id: a911f959f0f08fd92            # the Agent tool's id; reported 2026-09-15T15:36+0200; checks green on the first diff (162 files, 2535 tests, browser 66, runs/P1/check-*.log); review in agents/reviews/P1.md
-  round: 1                                   # repair round sent 2026-09-15T15:53+0200 (fourteen items, runs/P1/repair-prompt.md; items 15 to 17, the order semantics, the DESIGN.md clause and the umlaut, sent 15:59 on Axel's ruling)
+  round: 1                                   # repair round sent 2026-09-15T15:53+0200 (fourteen items, runs/P1/repair-prompt.md; items 15 to 17, the order semantics, the DESIGN.md clause and the umlaut, sent 15:59 on Axel's ruling); reported 16:17 (runs/P1/report-2.md, diff-2.patch, repair-read.patch 3,937 lines); checks running (runs/P1/checks.sh); second reviewer claude:opus ab3e2e4d0bd03230e launched 16:19
   landing: not-started
 ```
 
