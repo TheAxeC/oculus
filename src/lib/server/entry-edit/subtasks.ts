@@ -88,6 +88,28 @@ export function subtaskLines(source: string, range: LineRange | null): SubtaskBl
     return host === null ? null : blockOf(source, host.node);
 }
 
+/**
+ * Every subtask line of one host as its own map, keyed the way the block keys it: the index as text
+ * for a list, the name for a map. The change log reads the text before an edit and the text the edit
+ * produced through this one reader, so the value it records as written and the value the file will
+ * hold cannot disagree.
+ */
+export function subtaskValues(
+    source: string,
+    range: LineRange | null
+): Record<string, Record<string, FieldValue>> {
+    const host = hostAt(source, range);
+    if (host === null) return {};
+    const block = blockOf(source, host.node);
+    const lines = source.split('\n');
+    const values: Record<string, Record<string, FieldValue>> = {};
+    for (const item of block.items) {
+        const split = flowLine(lines[item.line]);
+        if (split !== null) values[item.key] = split.held;
+    }
+    return values;
+}
+
 /** The path one subtask line sits at in the parsed document. */
 function subtaskPath(host: Host, block: SubtaskBlock, key: string): (string | number)[] {
     return [...host.path, SUBTASKS, block.map ? key : Number(key)];

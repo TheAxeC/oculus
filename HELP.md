@@ -95,6 +95,7 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `usage` | Usage | What each agent account has spent. |
 | `help` | Help | This manual. |
 | `config` | Config | The files the configuration is merged from, each with its text and an edit control. |
+| `history` | History | Every write oculus made on this machine, newest first, with what each field held before it and a control that puts it back. |
 
 Four views are opened for something rather than listed in the rail: `project` (one project as its own tab), `editor` (its manifest form), `deposit` (its public code deposit) and `doc` (one Markdown document of the hub, from a group of the rail). Three more open from a file: `document` (a local HTML file in a frame), `file` (one file drawn by what its name says it is) and `source` (one text file, edited and saved).
 
@@ -117,7 +118,7 @@ The files below sit in the `config/` folder of the engine, `tools/oculus/config/
 
 Every user-facing word lives under `config/text/`, one file per surface, and is read by its dotted key. Those files merge with the rest, so a word is changed there and nowhere else.
 
-`local.yml` sits beside the `config/` folder and is this machine's own. Its keys are `hub`, the absolute path of the research hub; `port`, the port the server listens on; `hpc_host`, the ssh alias the Live HPC view uses; `claude_bin`, the Claude command an unattended terminal runs; `accounts`, the agent account folders the Usage view reads; and `sessions_cache`, `sessions_overrides`, `workspaces`, `bookmarks` and `notes`, the places the session cache, the per-session overrides, the saved workspaces, the reader's own bookmarks and the scratch notes are kept in. Every key has a default, so a machine that sets only `hub` works. The file is not tracked and is not served to the page, so no machine path is ever in the repository.
+`local.yml` sits beside the `config/` folder and is this machine's own. Its keys are `hub`, the absolute path of the research hub; `port`, the port the server listens on; `hpc_host`, the ssh alias the Live HPC view uses; `claude_bin`, the Claude command an unattended terminal runs; `accounts`, the agent account folders the Usage view reads; and `sessions_cache`, `sessions_overrides`, `workspaces`, `bookmarks`, `notes` and `changes`, the places the session cache, the per-session overrides, the saved workspaces, the reader's own bookmarks, the scratch notes and the change log are kept in. Every key has a default, so a machine that sets only `hub` works. The file is not tracked and is not served to the page, so no machine path is ever in the repository.
 
 ## Where the data comes from
 
@@ -128,6 +129,8 @@ Nothing is copied into a database. The server reads the files, builds one snapsh
 Three things outside the hub are read as well, all of them this machine's own. The agent sessions are read from the folders `accounts` names, `~/.claude/projects` and `~/.codex/sessions` for the transcripts and `~/.claude/sessions` for which Claude session is alive. The session cache, the per-session overrides, the saved workspaces, the reader's own bookmarks and the scratch notes are read and written under `~/.oculus`, or wherever `local.yml` puts each of them. The engine's own `config/` folder is read on every load and written when a file of it is saved from a source tab.
 
 Writes into the hub go back to the files they came from: a manifest field from the editor, a collection entry from a card, a text file from a source tab. Every write is a POST carrying the page's own token, and nothing outside the hub, the engine config folder, the machine-local files under `~/.oculus` and the configured roots is ever written; what is read beyond those is the agent account folders above, and the workspace a session names when its git state or its terminal is opened.
+
+Every write through the write endpoint that changed something is recorded in the change log, `~/.oculus/changes.jsonl`: when it was made, which file it wrote, what it addressed, and the value that file held before it against the value it holds after. That is the manifest fields, the collection entries, the subtasks, the feeds, the deck and the per-session overrides, and a scaffolded idea and the two LinkedIn writes, which are recorded and cannot be taken back; a text file saved from a source tab and a scratch note go through their own endpoints and are not recorded. The History view draws the log newest first, and the control on a row puts the earlier value back through the writer the change came from, refusing when the file has changed since. `changes.keep` in `behavior.yml` is how many changes the file holds.
 
 ## Running it and checking it
 

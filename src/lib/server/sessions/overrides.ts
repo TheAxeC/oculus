@@ -10,7 +10,9 @@
 
 import { homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
+import { plain } from '../changes.ts';
 import { isMap, readJson, writeJsonAtomic } from './json.ts';
+import type { ChangeRecord } from '../changes.ts';
 
 /** What one session's entry may hold. Any other key the file carries is kept but not read. */
 export type Override = {
@@ -45,12 +47,28 @@ export function hiddenIds(path?: string): Set<string> {
     return ids;
 }
 
+/** What one refusal says: the field that was not written, and why it was not. */
+export type OverrideRefusal = { field: string; reason: string };
+
+/** The two fields a pin write carries. An absent field is left exactly as the file has it. */
+export type OverrideFields = { area?: string; title?: string };
+
+/**
+ * What a write of this file did: the keys whose value changed, the ones that were refused, and what
+ * the change log records of each key it changed.
+ */
+export type OverrideResult = {
+    changed: string[];
+    refused: OverrideRefusal[];
+    records: ChangeRecord[];
+};
+
 /**
  * Dismiss one session, or restore it. Every other key in the file, and every other key on this
  * session's own entry, is preserved; a restore that empties an entry removes the entry rather than
- * leaving a shell behind. Returns the flag that was written.
+ * leaving a shell behind. Nothing is written when the flag is already what it is being set to.
  */
-export function setHidden(sessionId: unknown, hidden: boolean, path?: string): boolean {
+export function setHidden(sessionId: unknown, hidden: boolean, path?: string): OverrideResult {
     if (typeof sessionId !== 'string' || sessionId.trim() === '') {
         throw new Error('a session id is required');
     }
@@ -61,6 +79,8 @@ export function setHidden(sessionId: unknown, hidden: boolean, path?: string): b
     const sessions: Record<string, unknown> = isMap(data.sessions) ? { ...data.sessions } : {};
     const existing = sessions[ident];
     const entry: Record<string, unknown> = isMap(existing) ? { ...existing } : {};
+    const before = entry.hidden;
+    if (hidden === (before === true)) return { changed: [], refused: [], records: [] };
     if (hidden) entry.hidden = true;
     else delete entry.hidden;
     if (Object.keys(entry).length > 0) sessions[ident] = entry;
@@ -68,17 +88,23 @@ export function setHidden(sessionId: unknown, hidden: boolean, path?: string): b
     else delete sessions[ident];
     data.sessions = sessions;
     writeJsonAtomic(file, data);
-    return hidden;
+    return {
+        changed: ['hidden'],
+        refused: [],
+        records: [
+            {
+                file,
+                key: ident,
+                field: 'hidden',
+                before: plain(before),
+                // A restore deletes the key rather than writing `false`, so the record says the
+                // field holds nothing: it is what the file has, and it is what an undo checks.
+                after: hidden ? true : null,
+                undo: 'field'
+            }
+        ]
+    };
 }
-
-/** What one refusal says: the field that was not written, and why it was not. */
-export type OverrideRefusal = { field: string; reason: string };
-
-/** The two fields a pin write carries. An absent field is left exactly as the file has it. */
-export type OverrideFields = { area?: string; title?: string };
-
-/** What a pin write did: the keys whose value changed, and the ones that were refused. */
-export type OverrideResult = { changed: string[]; refused: OverrideRefusal[] };
 
 /**
  * Pin one session to an area, rename it, or clear either. Only the fields named are touched: every
@@ -104,6 +130,7 @@ export function setOverride(
     const entry: Record<string, unknown> = isMap(existing) ? { ...existing } : {};
     const changed: string[] = [];
     const refused: OverrideRefusal[] = [];
+    const records: ChangeRecord[] = [];
 
     for (const key of ['area', 'title'] as const) {
         const value = fields[key];
@@ -123,13 +150,21 @@ export function setOverride(
             entry[key] = wanted;
         }
         changed.push(key);
+        records.push({
+            file,
+            key: ident,
+            field: key,
+            before: plain(before),
+            after: wanted === '' ? null : wanted,
+            undo: 'field'
+        });
     }
 
-    if (changed.length === 0) return { changed, refused };
+    if (changed.length === 0) return { changed, refused, records };
     if (Object.keys(entry).length > 0) sessions[ident] = entry;
     // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
     else delete sessions[ident];
     data.sessions = sessions;
     writeJsonAtomic(file, data);
-    return { changed, refused };
+    return { changed, refused, records };
 }

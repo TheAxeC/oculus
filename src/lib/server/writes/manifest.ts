@@ -13,7 +13,9 @@ import { parse } from 'yaml';
 import { isMap } from '../../data/guards.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
 import { fieldNames } from '../../data/validate.ts';
+import { plain } from '../changes.ts';
 import { renderScalar, setFields } from '../yaml-edit.ts';
+import type { ChangeRecord } from '../changes.ts';
 import type { FieldValue, Refusal } from '../yaml-edit.ts';
 import type { PortfolioConfig } from '../../data/model.ts';
 import type { WriteOutcome } from '../writes.ts';
@@ -93,12 +95,30 @@ export function coerce(type: string, raw: unknown, current: unknown): Coerced {
 }
 
 /** The value a dotted field currently holds in a manifest record, or undefined. */
-function currentOf(manifest: Record<string, unknown>, field: string): unknown {
+export function currentOf(manifest: Record<string, unknown>, field: string): unknown {
     const dot = field.indexOf('.');
     if (dot < 0) return manifest[field];
     const parent = manifest[field.slice(0, dot)];
     if (!isMap(parent)) return undefined;
     return parent[field.slice(dot + 1)];
+}
+
+/**
+ * The value one manifest field holds now, and whether the hub still has that project at all. It is
+ * what an undo checks before it writes: a field the reader has since edited by hand is not written
+ * over by taking an older change back.
+ */
+export function manifestValue(
+    hub: string,
+    config: PortfolioConfig,
+    id: string,
+    field: string
+): { found: boolean; value: unknown } {
+    const { manifests } = readManifests(hub, config.scan);
+    const manifest = manifests.find((one) => one.id === id);
+    if (manifest === undefined) return { found: false, value: null };
+    const value = currentOf(manifest, field);
+    return { found: true, value: value === undefined ? null : value };
 }
 
 /** Whether a path is a manifest inside one of the hub's own scan directories. */
@@ -176,7 +196,22 @@ export function writeManifest(
 
     const edit = setFields(source, wanted);
     if (edit.changed.length > 0) writeFileSync(manifest.file, edit.text, 'utf8');
-    return { found: true, changed: edit.changed, refused: [...refused, ...edit.refused] };
+    // The value each field had is read off the manifest the edit was computed against, so the record
+    // is made where both halves are in hand rather than by reading the file again.
+    const records: ChangeRecord[] = edit.changed.map((field) => ({
+        file: manifest.file,
+        key: id,
+        field,
+        before: plain(currentOf(manifest, field)),
+        after: plain(wanted[field]),
+        undo: 'field'
+    }));
+    return {
+        found: true,
+        changed: edit.changed,
+        refused: [...refused, ...edit.refused],
+        records
+    };
 }
 
 /** Where a new idea is scaffolded, and what an idea id may be. */
@@ -260,6 +295,18 @@ export function createIdea(hub: string, fields: Record<string, unknown>): WriteO
     return {
         found: true,
         changed: [`${IDEA_DIR}/${id}/project.yml`, `${IDEA_DIR}/${id}/README.md`],
-        refused: []
+        refused: [],
+        // A scaffolded folder has no inverse writer, so the record says what was made and offers no
+        // way back: deleting a project folder is the researcher's own act, not a control of a list.
+        records: [
+            {
+                file: join(folder, MANIFEST),
+                key: id,
+                field: 'entries',
+                before: null,
+                after: parsed,
+                undo: 'none'
+            }
+        ]
     };
 }

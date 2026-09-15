@@ -9,7 +9,7 @@ export {
     setEntryFields,
     startEntries
 } from './entries.ts';
-export { addSubtask, deleteSubtask, setSubtask, subtaskLines } from './subtasks.ts';
+export { addSubtask, deleteSubtask, setSubtask, subtaskLines, subtaskValues } from './subtasks.ts';
 export { setHostStatus } from './host-status.ts';
 export { entryRange } from './lines.ts';
 export type { LineRange, SubtaskBlock, SubtaskLine } from './lines.ts';

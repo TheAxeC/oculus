@@ -286,6 +286,16 @@ export function deckWrite(body: unknown): DeckWrite | null {
     return { kind: 'deck', selection, order };
 }
 
+/** One recorded change taken back, addressed by the moment the log stamped it. */
+export type UndoWrite = { kind: 'undo'; at: string };
+
+/** The body as an undo, or null when it is not one. */
+export function undoWrite(body: unknown): UndoWrite | null {
+    if (!isMap(body) || body.kind !== 'undo') return null;
+    if (typeof body.at !== 'string' || body.at === '') return null;
+    return { kind: 'undo', at: body.at };
+}
+
 /** The body as a new idea, or null when it is not one. */
 export function newIdea(body: unknown): NewIdeaWrite | null {
     if (!isMap(body) || body.kind !== 'new-idea') return null;

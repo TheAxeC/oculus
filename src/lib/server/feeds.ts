@@ -16,9 +16,17 @@ import { localDate } from '../data/dates.ts';
 import { isMap, scalar } from '../data/guards.ts';
 import { collectionSchema } from '../data/normalise.ts';
 import { fieldNames } from '../data/validate.ts';
-import { appendEntry, deleteEntry, renderEntry, setEntryFields } from './entry-edit/index.ts';
+import { plain } from './changes.ts';
+import {
+    appendEntry,
+    deleteEntry,
+    renderEntry,
+    setEntryFields,
+    startEntries
+} from './entry-edit/index.ts';
 import { saved } from './writes/entries.ts';
 import { NOT_A_FIELD_VALUE, asFieldValue } from './yaml-edit.ts';
+import type { ChangeRecord } from './changes.ts';
 import type { FieldValue, Refusal } from './yaml-edit.ts';
 import type { FeedData, FeedKind, FeedsPayload, PortfolioConfig } from '../data/model.ts';
 import type { WriteOutcome } from './writes.ts';
@@ -232,7 +240,21 @@ export function addLinkedinIdea(
         ''
     ].join('\n');
     writeFileSync(join(folder, file), source, 'utf8');
-    return outcome(['file']);
+    // A scaffolded Markdown file has no inverse writer: deleting a post is done in the folder, not
+    // from a list, so the record says what was made and offers no way back.
+    return {
+        ...outcome(['file']),
+        records: [
+            {
+                file: join(folder, file),
+                key: file,
+                field: 'entries',
+                before: null,
+                after: { title, category },
+                undo: 'none'
+            }
+        ]
+    };
 }
 
 /** Rename an idea and each same-basename sidecar to the next numbered post basename. */
@@ -271,7 +293,21 @@ export function markLinkedinPosted(
         );
     }
     moving.forEach((name, at) => renameSync(join(folder, name), join(folder, targets[at])));
-    return outcome(['file']);
+    // A promotion renames the idea and its sidecars; there is no writer that renames them back, so
+    // the record names both lists and offers no way back.
+    return {
+        ...outcome(['file']),
+        records: [
+            {
+                file: join(folder, targets[moving.indexOf(file)]),
+                key: file,
+                field: 'entries',
+                before: moving,
+                after: targets,
+                undo: 'none'
+            }
+        ]
+    };
 }
 
 /** Append one position lead in the order of the feed file's own schema. */
@@ -329,6 +365,77 @@ export function addLead(
     }
     const block = renderEntry(fieldNames(schema), 'title', values);
     const out = saved(full, source, appendEntry(source, 'entries', block));
+    const records: ChangeRecord[] =
+        out.changed.length === 0
+            ? []
+            : [
+                  {
+                      file: full,
+                      key: title,
+                      field: 'entries',
+                      before: null,
+                      after: values,
+                      undo: 'create'
+                  }
+              ];
+    return { ...out, refused: [...refused, ...out.refused], records };
+}
+
+/**
+ * Put one recorded feed entry back exactly as it was recorded: every field it held, in the order the
+ * file's own schema names them, and nothing derived. It is what an undo of a deletion goes through,
+ * since addLead fills a missing status and today's date for an entry the reader is adding and an
+ * entry that is coming back needs neither.
+ *
+ * A feed whose last entry was deleted keeps its `entries:` key with nothing under it, which is not a
+ * list to append to; the entry is then written under that key the way a first entry is.
+ */
+export function restoreFeedEntry(
+    hub: string,
+    config: PortfolioConfig,
+    feed: FeedKind,
+    fields: Record<string, unknown>
+): WriteOutcome {
+    const full = feedFile(hub, config, feed);
+    if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
+    const source = readFileSync(full, 'utf8');
+    const parsed = readFeedFile(hub, config, feed);
+    if (parsed === null) return { found: false, changed: [], refused: [] };
+    const ident = FEED_RULES[feed].identity;
+    const value = scalar(fields[ident]).trim();
+    if (value === '') {
+        return outcome([], [{ field: ident, reason: `an entry needs a ${ident}` }]);
+    }
+    if (parsed.entries.some((one) => scalar(one[ident]).trim() === value)) {
+        return outcome(
+            [],
+            [{ field: ident, reason: `an entry with that ${ident} is in the file` }]
+        );
+    }
+    const values: Record<string, FieldValue> = {};
+    const refused: Refusal[] = [];
+    for (const [field, given] of Object.entries(fields)) {
+        const held = asFieldValue(given);
+        if (held === undefined) {
+            refused.push({ field, reason: NOT_A_FIELD_VALUE });
+            continue;
+        }
+        values[field] = held;
+    }
+    const block = renderEntry(fieldNames(parsed.schema), ident, values);
+    if (block === '')
+        return outcome([], [...refused, { field: ident, reason: 'nothing to write' }]);
+    let held: unknown;
+    try {
+        held = parse(source);
+    } catch {
+        return outcome([], [...refused, { field: 'entries', reason: 'the file does not parse' }]);
+    }
+    const list = isMap(held) ? held.entries : undefined;
+    const edit = Array.isArray(list)
+        ? appendEntry(source, 'entries', block)
+        : startEntries(source, 'entries', block);
+    const out = saved(full, source, edit);
     return { ...out, refused: [...refused, ...out.refused] };
 }
 
@@ -353,10 +460,23 @@ export function writeFeedField(
     if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
     const source = readFileSync(full, 'utf8');
     const parsed = readFeedFile(hub, config, feed);
-    if (!parsed?.entries.some((entry) => scalar(entry[rule.identity]) === id)) {
-        return { found: false, changed: [], refused: [] };
-    }
-    return saved(full, source, setEntryFields(source, rule.identity, id, { [field]: value }));
+    const entry = parsed?.entries.find((one) => scalar(one[rule.identity]) === id);
+    if (entry === undefined) return { found: false, changed: [], refused: [] };
+    const out = saved(full, source, setEntryFields(source, rule.identity, id, { [field]: value }));
+    if (out.changed.length === 0) return out;
+    return {
+        ...out,
+        records: [
+            {
+                file: full,
+                key: id,
+                field,
+                before: plain(entry[field]),
+                after: plain(value),
+                undo: 'field'
+            }
+        ]
+    };
 }
 
 /** Delete one lead; the other feed histories are append-only and return a field refusal. */
@@ -378,8 +498,14 @@ export function deleteFeedEntry(
     if (full === null || !existsSync(full)) return { found: false, changed: [], refused: [] };
     const source = readFileSync(full, 'utf8');
     const parsed = readFeedFile(hub, config, feed);
-    if (!parsed?.entries.some((entry) => scalar(entry[rule.identity]) === id)) {
-        return { found: false, changed: [], refused: [] };
-    }
-    return saved(full, source, deleteEntry(source, rule.identity, id));
+    const entry = parsed?.entries.find((one) => scalar(one[rule.identity]) === id);
+    if (entry === undefined) return { found: false, changed: [], refused: [] };
+    const out = saved(full, source, deleteEntry(source, rule.identity, id));
+    if (out.changed.length === 0) return out;
+    return {
+        ...out,
+        records: [
+            { file: full, key: id, field: 'entries', before: entry, after: null, undo: 'delete' }
+        ]
+    };
 }

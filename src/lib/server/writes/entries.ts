@@ -30,8 +30,10 @@ import {
     setEntryFields,
     startEntries
 } from '../entry-edit/index.ts';
+import { plain } from '../changes.ts';
 import { BOOKMARKS, ensureBookmarksFile } from '../fs/bookmarks.ts';
 import { NOT_A_FIELD_VALUE, asFieldValue } from '../yaml-edit.ts';
+import type { ChangeRecord } from '../changes.ts';
 import type { EditResult, FieldValue, Refusal } from '../yaml-edit.ts';
 import type { PortfolioConfig, SchemaField } from '../../data/model.ts';
 import type { WriteOutcome } from '../writes.ts';
@@ -240,6 +242,32 @@ export function identityOf(collection: Collection, id: string): string | null {
     return null;
 }
 
+/** The entry one identity value names, or undefined when the file holds none with it. */
+export function entryOf(
+    collection: Collection,
+    value: string
+): Record<string, unknown> | undefined {
+    return collection.items.find((one) => scalar(one[collection.ident]) === value);
+}
+
+/**
+ * The id the reader gives the entry one identity value names, which is what every write addresses an
+ * entry by. It is identityOf read the other way round, and an undo needs it: what a change records
+ * is the identity value the file is keyed by.
+ */
+export function idOfIdentity(collection: Collection, value: string): string | null {
+    const entry = entryOf(collection, value);
+    return entry === undefined ? null : entryId(entry, collection.ident);
+}
+
+/** Every entry's identity value, in the order the file lists them. */
+export function identityOrder(collection: Collection): string[] {
+    return collection.items.flatMap((one) => {
+        const value = one[collection.ident];
+        return typeof value === 'string' || typeof value === 'number' ? [String(value)] : [];
+    });
+}
+
 /**
  * The file's first identity value that two entries share, or the empty string when every entry has
  * its own. A write is refused while one exists: an edit addressed by that value reaches the first
@@ -326,12 +354,25 @@ export function writeEntry(
             };
         }
     }
+    const entry = entryOf(held, value);
+    const writing = normaliseMetalists(held.schema, wanted);
     const out = saved(
         held.file,
         held.source,
-        setEntryFields(held.source, held.ident, value, normaliseMetalists(held.schema, wanted))
+        setEntryFields(held.source, held.ident, value, writing)
     );
-    return { ...out, refused: [...typed, ...out.refused] };
+    // The entry the edit was computed against is the value before it, and `writing` is the value the
+    // edit put there, so the record is made where both halves are in hand rather than by reading the
+    // file again.
+    const records: ChangeRecord[] = out.changed.map((field) => ({
+        file: held.file,
+        key: value,
+        field,
+        before: plain(entry?.[field]),
+        after: plain(writing[field]),
+        undo: 'field'
+    }));
+    return { ...out, refused: [...typed, ...out.refused], records };
 }
 
 /**
@@ -349,7 +390,22 @@ export function reorderCollection(
     if (held === null) return { found: false, changed: [], refused: [] };
     const shared = duplicate(held);
     if (shared !== null) return shared;
-    return saved(held.file, held.source, reorderEntries(held.source, held.ident, order));
+    const before = identityOrder(held);
+    const out = saved(held.file, held.source, reorderEntries(held.source, held.ident, order));
+    if (out.changed.length === 0) return out;
+    return {
+        ...out,
+        records: [
+            {
+                file: held.file,
+                key: collection,
+                field: 'entries',
+                before,
+                after: order,
+                undo: 'reorder'
+            }
+        ]
+    };
 }
 
 /** Take one entry out of its collection file, found by the id the reader gave it. */
@@ -366,7 +422,22 @@ export function removeEntry(
     if (shared !== null) return shared;
     const value = identityOf(held, id);
     if (value === null) return { found: false, changed: [], refused: [] };
-    return saved(held.file, held.source, deleteEntry(held.source, held.ident, value));
+    const entry = entryOf(held, value);
+    const out = saved(held.file, held.source, deleteEntry(held.source, held.ident, value));
+    if (out.changed.length === 0) return out;
+    return {
+        ...out,
+        records: [
+            {
+                file: held.file,
+                key: value,
+                field: 'entries',
+                before: plain(entry),
+                after: null,
+                undo: 'delete'
+            }
+        ]
+    };
 }
 
 /** Add one entry to a collection, rendered from the file's own schema. */
@@ -463,5 +534,18 @@ export function createEntry(
             ? startEntries(held.source, FIRST_LIST, block)
             : appendEntry(held.source, held.list, block);
     const out = saved(held.file, held.source, edit);
-    return { ...out, refused: [...refused, ...out.refused] };
+    const records: ChangeRecord[] =
+        out.changed.length === 0
+            ? []
+            : [
+                  {
+                      file: held.file,
+                      key: value,
+                      field: 'entries',
+                      before: null,
+                      after: values,
+                      undo: 'create'
+                  }
+              ];
+    return { ...out, refused: [...refused, ...out.refused], records };
 }

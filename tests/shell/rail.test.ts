@@ -591,7 +591,8 @@ describe('the groups of the real config', () => {
             'hpc',
             'usage',
             'help',
-            'config'
+            'config',
+            'history'
         ]);
         expect(isFlyout(system)).toBe(true);
     });
@@ -701,7 +702,8 @@ describe('the groups of the real config', () => {
             'hpc',
             'usage',
             'help',
-            'config'
+            'config',
+            'history'
         ]);
         expect(Object.keys(order.chords).sort()).toEqual(['c', 'm', 's', 'v', 'y']);
     });

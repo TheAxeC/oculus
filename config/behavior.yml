@@ -94,6 +94,14 @@ notes:
   autosave_ms: 800
 
 
+# === The change log =========================================================
+# Every write that changed something is recorded in ~/.oculus/changes.jsonl, or wherever local.yml's
+# `changes` key puts it. `keep` is how many changes the file holds; it is rewritten down to that
+# number once it has grown past twice it.
+changes:
+  keep: 500
+
+
 # === The git panel ==========================================================
 # The Changes view asks this model for a suggested commit message. Empty uses the command-line default.
 git:

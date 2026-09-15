@@ -19,10 +19,14 @@ import {
     deleteSubtask,
     entryRange,
     setHostStatus,
-    setSubtask
+    setSubtask,
+    subtaskValues
 } from '../entry-edit/index.ts';
+import { plain } from '../changes.ts';
 import { insideHub } from './manifest.ts';
 import { identityOf, readCollection, saved } from './entries.ts';
+import type { ChangeRecord } from '../changes.ts';
+import type { EditResult } from '../yaml-edit.ts';
 import type { LineRange } from '../entry-edit/index.ts';
 import type { PortfolioConfig } from '../../data/model.ts';
 import type { WriteOutcome } from '../writes.ts';
@@ -33,7 +37,7 @@ export type SubtaskTarget = { id: string; collection?: string };
 /** The file a subtask write edits, and the lines of the entry inside it when it is an entry's. */
 type SubtaskHost = { file: string; source: string; range: LineRange | null };
 
-function subtaskHost(
+export function subtaskHost(
     hub: string,
     config: PortfolioConfig,
     target: SubtaskTarget
@@ -57,6 +61,37 @@ function subtaskHost(
     }
 }
 
+/**
+ * What one subtask edit changed, read from the text the writer holds on either side of it: the line
+ * as the file had it and the line as the edit leaves it, through the one reader, so the record and
+ * the file cannot disagree.
+ */
+function subtaskRecord(
+    host: SubtaskHost,
+    edit: EditResult,
+    key: string,
+    target: SubtaskTarget
+): ChangeRecord[] {
+    if (edit.changed.length === 0) return [];
+    const before = subtaskValues(host.source, host.range);
+    const after = subtaskValues(edit.text, host.range);
+    const line = key === '' ? Object.keys(after).find((one) => !(one in before)) : key;
+    if (line === undefined) return [];
+    const had = line in before;
+    const has = line in after;
+    const undo: ChangeRecord['undo'] = !had ? 'create' : !has ? 'delete' : 'field';
+    return [
+        {
+            file: host.file,
+            key: target.id,
+            field: line,
+            before: had ? before[line] : null,
+            after: has ? after[line] : null,
+            undo
+        }
+    ];
+}
+
 /** What one subtask button does to its line. */
 export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete';
 
@@ -77,7 +112,32 @@ export function writeSubtask(
             : action === 'snooze'
               ? setSubtask(host.source, host.range, key, { snooze: value ?? null })
               : setSubtask(host.source, host.range, key, { done: action === 'done' });
-    return saved(host.file, host.source, edit);
+    const out = saved(host.file, host.source, edit);
+    return { ...out, records: subtaskRecord(host, edit, key, target) };
+}
+
+/**
+ * Put one subtask line back as a change recorded it: every field the line carries now and every
+ * field the earlier value carried is set to the earlier value, and a field the earlier value did not
+ * carry is cleared. It is what an undo of a tick, a reopen or a snooze goes through.
+ */
+export function restoreSubtask(
+    hub: string,
+    config: PortfolioConfig,
+    target: SubtaskTarget,
+    key: string,
+    before: Record<string, unknown>
+): WriteOutcome {
+    const host = subtaskHost(hub, config, target);
+    if (host === null) return { found: false, changed: [], refused: [] };
+    const now = subtaskValues(host.source, host.range)[key] ?? {};
+    const fields: Record<string, unknown> = {};
+    for (const field of new Set([...Object.keys(now), ...Object.keys(before)])) {
+        fields[field] = before[field] ?? null;
+    }
+    const edit = setSubtask(host.source, host.range, key, fields);
+    const out = saved(host.file, host.source, edit);
+    return { ...out, records: subtaskRecord(host, edit, key, target) };
 }
 
 /** Add one subtask line to a manifest or to a collection entry. */
@@ -89,15 +149,48 @@ export function writeSubtaskAdd(
 ): WriteOutcome {
     const host = subtaskHost(hub, config, target);
     if (host === null) return { found: false, changed: [], refused: [] };
-    return saved(host.file, host.source, addSubtask(host.source, host.range, fields));
+    const edit = addSubtask(host.source, host.range, fields);
+    const out = saved(host.file, host.source, edit);
+    // The key the new line took is the one the edit added, which is why the record is asked for it
+    // by the empty name rather than being told one this writer does not choose.
+    return { ...out, records: subtaskRecord(host, edit, '', target) };
 }
 
 /** The career file and the host statuses, read out of the same merged config every reader reads. */
-function careerRules(): { file: string; statuses: string[] } {
+export function careerRules(): { file: string; statuses: string[] } {
     const merged = loadConfig(engineDir()).config;
     const file = typeof merged.career_file === 'string' ? merged.career_file : 'CAREER.yml';
     const held = merged.career_host_status;
     return { file, statuses: isMap(held) ? Object.keys(held) : [] };
+}
+
+/** The value one subtask line holds now, or null when the host or the line is no longer there. */
+export function subtaskValue(
+    hub: string,
+    config: PortfolioConfig,
+    target: SubtaskTarget,
+    key: string
+): { found: boolean; value: unknown } {
+    const host = subtaskHost(hub, config, target);
+    if (host === null) return { found: false, value: null };
+    const values = subtaskValues(host.source, host.range);
+    return { found: true, value: key in values ? values[key] : null };
+}
+
+/** The status one career host holds now, or nothing when CAREER.yml no longer names it. */
+export function hostStatus(hub: string, name: string): { found: boolean; value: unknown } {
+    const file = resolve(join(hub, careerRules().file));
+    if (!file.startsWith(resolve(hub) + sep)) return { found: false, value: null };
+    let data: unknown;
+    try {
+        data = parse(readFileSync(file, 'utf8'));
+    } catch {
+        return { found: false, value: null };
+    }
+    const hosts: unknown[] = isMap(data) && Array.isArray(data.hosts) ? data.hosts : [];
+    const host = hosts.find((one) => isMap(one) && one.name === name);
+    if (!isMap(host)) return { found: false, value: null };
+    return { found: true, value: plain(host.status) };
 }
 
 /** Set one host's status in CAREER.yml. A status outside the vocabulary is refused, never written. */
@@ -132,5 +225,20 @@ export function writeHost(hub: string, name: string, status: string): WriteOutco
             refused: [{ field: 'status', reason: `${status} is not a career host status` }]
         };
     }
-    return saved(file, source, setHostStatus(source, name, status));
+    const host: unknown = hosts.find((one) => isMap(one) && one.name === name);
+    const out = saved(file, source, setHostStatus(source, name, status));
+    if (out.changed.length === 0) return out;
+    return {
+        ...out,
+        records: [
+            {
+                file,
+                key: name,
+                field: 'status',
+                before: plain(isMap(host) ? host.status : null),
+                after: status,
+                undo: 'field'
+            }
+        ]
+    };
 }

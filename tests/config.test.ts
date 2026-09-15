@@ -523,6 +523,7 @@ describe("oculus's own config directory", () => {
             'chat',
             'notify',
             'notes',
+            'changes',
             'git'
         ],
         'glyphs.yml': ['glyphs', 'ascii'],
@@ -608,6 +609,7 @@ describe("oculus's own config directory", () => {
         'views/focus.yml',
         'views/gallery.yml',
         'views/help.yml',
+        'views/history.yml',
         'views/hpc.yml',
         'views/inbox.yml',
         'views/leads.yml',

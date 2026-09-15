@@ -1,0 +1,47 @@
+# Oculus text owned by the history view.
+text:
+    views:
+        history: History
+        history_glyph: note_back
+    history:
+        toolbar: History controls
+        filter: Filter by file, key or field
+        loading: Reading the change log...
+        failed: 'The change log could not be read: {0}'
+        none: No writes are recorded yet.
+        none_glyph: note_back
+        named: '{0} / {1}'
+        before: Before
+        after: After
+        items: values
+        nothing_there: nothing
+        older: Load older
+        undo: Undo
+        undo_glyph: note_back
+        undo_tip: Put back what {0} held before this write
+        undoing: 'Putting {0} back...'
+        undone: '{0} is back.'
+        undone_partly: '{0} is back, except {1} field(s) the file would not take.'
+        moved: The file has changed since this write, so it was left alone.
+        gone: What this write addressed is no longer in the hub.
+        unknown: The change log no longer holds this write.
+        nothing: This write cannot be taken back.
+        refused_write: The file would not take the earlier value back, so it was left alone.
+        refused: 'The undo was refused: {0}'
+        # One word per kind of write, so a row says what happened rather than the word the wire uses.
+        kind_manifest: project field
+        kind_session: session
+        kind_entry: entry field
+        kind_subtask: subtask
+        kind_subtask_add: subtask added
+        kind_host: career host
+        kind_new_entry: entry added
+        kind_reorder: order
+        kind_delete_entry: entry removed
+        kind_feed_field: feed field
+        kind_feed_delete: feed entry removed
+        kind_lead_add: lead added
+        kind_linkedin_idea: LinkedIn idea
+        kind_linkedin_post: LinkedIn post
+        kind_deck: deck
+        kind_new_idea: idea scaffolded

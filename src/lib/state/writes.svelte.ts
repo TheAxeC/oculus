@@ -90,6 +90,8 @@ export type WritesStore = {
         domain?: string;
         eli5?: string;
     }) => Promise<WriteAnswer>;
+    /** Take one recorded change back, by the moment the change log stamped it. */
+    undoWrite: (at: string) => Promise<WriteAnswer>;
     writeGit: (
         action: string,
         root: string,
@@ -286,6 +288,15 @@ export function createWrites(): WritesStore {
     }
 
     /**
+     * Take one recorded change back. The server checks that the file still holds what the change
+     * wrote before it writes the earlier value, and answers `moved` when it does not, so an undo
+     * never writes over an edit made since.
+     */
+    async function undoWrite(at: string): Promise<WriteAnswer> {
+        return send({ kind: 'undo', at });
+    }
+
+    /**
      * One git action on one workspace: staging, a commit, a push, a branch, or the suggested message.
      * The endpoint is /api/git rather than /api/write, and the answer's `output` is what git said or the
      * message that was suggested; everything else, the token and the one retry above all, is the same.
@@ -384,6 +395,7 @@ export function createWrites(): WritesStore {
         newEntry,
         writeDeck,
         newIdea,
+        undoWrite,
         writeGit,
         writeDeposit,
         send

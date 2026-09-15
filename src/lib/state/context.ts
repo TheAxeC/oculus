@@ -14,6 +14,7 @@
 
 import { createRegistry, type RegistryStore } from '../views/registry.ts';
 import { createTipIds, type TipIds } from '../ui/tip-ids.ts';
+import { createChanges, type ChangesStore } from './changes.svelte.ts';
 import { createClock, type ClockStore } from './clock.svelte.ts';
 import { createDeposit, type DepositStore } from './deposit.svelte.ts';
 import { createDocs, type DocsStore } from './docs.svelte.ts';
@@ -46,6 +47,7 @@ export type ClientState = {
     layout: LayoutStore;
     drag: DragStore;
     clock: ClockStore;
+    changes: ChangesStore;
     selection: SelectionStore;
     terminals: TerminalsStore;
     files: FilesStore;
@@ -78,6 +80,7 @@ export function createClientState(): ClientState {
     const layout = createLayout(ui);
     const drag = createDrag(layout);
     const clock = createClock();
+    const changes = createChanges();
     const selection = createSelection();
     const terminals = createTerminals(entities, socket, writes);
     const files = createFiles(entities);
@@ -103,6 +106,7 @@ export function createClientState(): ClientState {
         layout,
         drag,
         clock,
+        changes,
         selection,
         terminals,
         files,

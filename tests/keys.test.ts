@@ -14,6 +14,7 @@ import {
 } from '../src/lib/data/sources/config.ts';
 import { descriptionKey } from '../src/lib/views/config/files.ts';
 import { registerAll, registerCollections } from '../src/routes/views.ts';
+import { recordedKinds } from './kinds.ts';
 import { createClientState, type ClientState } from './client.ts';
 
 let client: ClientState;
@@ -61,6 +62,13 @@ const COMPUTED_PREFIXES = [
             readdirSync(join(engineDir(), 'config'))
                 .filter((name) => name.endsWith('.yml'))
                 .map((name) => descriptionKey(name))
+    },
+    {
+        // One word per kind of write the change log records, keyed by the body kind itself, so a
+        // kind added to writes/bodies.ts without a word fails here rather than drawing the wire word.
+        file: 'lib/views/History.svelte',
+        start: 't(`history.kind_${row.kind',
+        keys: () => recordedKinds().map((kind) => `history.kind_${kind.replaceAll('-', '_')}`)
     }
 ] as const;
 

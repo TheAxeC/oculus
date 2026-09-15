@@ -413,7 +413,21 @@ describe("the reader's own bookmarks", () => {
             { label: 'manual', root: 'hub', path: 'docs/manual.md' },
             file
         );
-        expect(added).toEqual({ found: true, changed: ['entries'], refused: [] });
+        expect(added).toEqual({
+            found: true,
+            changed: ['entries'],
+            refused: [],
+            records: [
+                {
+                    file,
+                    key: 'manual',
+                    field: 'entries',
+                    before: null,
+                    after: { label: 'manual', root: 'hub', path: 'docs/manual.md' },
+                    undo: 'create'
+                }
+            ]
+        });
         expect(readBookmarks(file).entries.map((one) => one.fields)).toEqual([
             { label: 'manual', root: 'hub', path: 'docs/manual.md' }
         ]);
@@ -426,7 +440,21 @@ describe("the reader's own bookmarks", () => {
             { label: 'notes', root: 'hub', path: 'n.md' },
             file
         );
-        expect(second).toEqual({ found: true, changed: ['entries'], refused: [] });
+        expect(second).toEqual({
+            found: true,
+            changed: ['entries'],
+            refused: [],
+            records: [
+                {
+                    file,
+                    key: 'notes',
+                    field: 'entries',
+                    before: null,
+                    after: { label: 'notes', root: 'hub', path: 'n.md' },
+                    undo: 'create'
+                }
+            ]
+        });
         expect(readBookmarks(file).entries.map((one) => one.id)).toEqual(['manual', 'notes']);
 
         const edited = writeEntry(
@@ -461,7 +489,21 @@ describe("the reader's own bookmarks", () => {
             file
         );
 
-        expect(again).toEqual({ found: true, changed: ['entries'], refused: [] });
+        expect(again).toEqual({
+            found: true,
+            changed: ['entries'],
+            refused: [],
+            records: [
+                {
+                    file,
+                    key: 'other',
+                    field: 'entries',
+                    before: null,
+                    after: { label: 'other', root: 'hub', path: 'b.md' },
+                    undo: 'create'
+                }
+            ]
+        });
         expect(readBookmarks(file).entries.map((one) => one.id)).toEqual(['other']);
     });
 

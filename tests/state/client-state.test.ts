@@ -15,6 +15,7 @@ const STORES: (keyof ClientState)[] = [
     'ui',
     'layout',
     'drag',
+    'changes',
     'clock',
     'selection',
     'terminals',

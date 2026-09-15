@@ -55,6 +55,8 @@ const VIEWS: Record<string, string> = {
     'Focus.svelte': '.said=fs-md | .wait-head, .seg-lbl=fs-xs',
     'Gallery.svelte': 'h3=fs-xs',
     'Help.svelte': '',
+    'History.svelte':
+        '.when=fs-sm | .kind=fs-xs | .file, .lbl=fs-sm | .what, .value=fs-md | .empty, .said=fs-md | .raw=fs-sm',
     'Hpc.svelte': 'footer=fs-sm',
     'Usage.svelte':
         '.window-name, .live-row=fs-sm | .refresher=fs-xs | .live h3, .history h2=fs-sm | .session=fs-xs',

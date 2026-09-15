@@ -29,13 +29,52 @@ function held(path: string): unknown {
     return existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : null;
 }
 
+/** The change-log record one field of one session's entry makes. */
+function record(path: string, field: string, before: unknown, after: unknown): unknown {
+    return { file: path, key: ID, field, before, after, undo: 'field' };
+}
+
+describe('setHidden', () => {
+    it('dismisses a session and restores it, recording each', () => {
+        const path = file();
+        expect(setHidden(ID, true, path)).toEqual({
+            changed: ['hidden'],
+            refused: [],
+            records: [record(path, 'hidden', null, true)]
+        });
+        expect(held(path)).toEqual({ sessions: { [ID]: { hidden: true } } });
+        expect(setHidden(ID, false, path)).toEqual({
+            changed: ['hidden'],
+            refused: [],
+            records: [record(path, 'hidden', true, null)]
+        });
+        expect(held(path)).toEqual({ sessions: {} });
+    });
+
+    it('writes nothing when the flag is already what it is being set to', () => {
+        const path = file({ sessions: { [ID]: { hidden: true } } });
+        writeFileSync(path, JSON.stringify({ sessions: { [ID]: { hidden: true } } }) + '\n');
+        expect(setHidden(ID, true, path)).toEqual({ changed: [], refused: [], records: [] });
+        // The trailing newline is still there, so the file was not rewritten.
+        expect(readFileSync(path, 'utf8').endsWith('\n')).toBe(true);
+    });
+});
+
 describe('setOverride', () => {
     it('pins a session to an area, and unpins it', () => {
         const path = file();
-        expect(setOverride(ID, { area: AREA }, path)).toEqual({ changed: ['area'], refused: [] });
+        expect(setOverride(ID, { area: AREA }, path)).toEqual({
+            changed: ['area'],
+            refused: [],
+            records: [record(path, 'area', null, AREA)]
+        });
         expect(held(path)).toEqual({ sessions: { [ID]: { area: AREA } } });
 
-        expect(setOverride(ID, { area: '' }, path)).toEqual({ changed: ['area'], refused: [] });
+        expect(setOverride(ID, { area: '' }, path)).toEqual({
+            changed: ['area'],
+            refused: [],
+            records: [record(path, 'area', AREA, null)]
+        });
         expect(held(path)).toEqual({ sessions: {} });
     });
 
@@ -43,11 +82,16 @@ describe('setOverride', () => {
         const path = file();
         expect(setOverride(ID, { title: 'my name' }, path)).toEqual({
             changed: ['title'],
-            refused: []
+            refused: [],
+            records: [record(path, 'title', null, 'my name')]
         });
         expect(held(path)).toEqual({ sessions: { [ID]: { title: 'my name' } } });
 
-        expect(setOverride(ID, { title: '' }, path)).toEqual({ changed: ['title'], refused: [] });
+        expect(setOverride(ID, { title: '' }, path)).toEqual({
+            changed: ['title'],
+            refused: [],
+            records: [record(path, 'title', 'my name', null)]
+        });
         expect(held(path)).toEqual({ sessions: {} });
     });
 
@@ -55,7 +99,8 @@ describe('setOverride', () => {
         const path = file();
         expect(setOverride(ID, { area: AREA, title: 'my name' }, path)).toEqual({
             changed: ['area', 'title'],
-            refused: []
+            refused: [],
+            records: [record(path, 'area', null, AREA), record(path, 'title', null, 'my name')]
         });
         expect(held(path)).toEqual({ sessions: { [ID]: { area: AREA, title: 'my name' } } });
     });
@@ -93,7 +138,11 @@ describe('setOverride', () => {
         const path = file();
         setHidden(ID, true, path);
         setOverride(ID, { area: AREA }, path);
-        expect(setOverride(ID, { area: '' }, path)).toEqual({ changed: ['area'], refused: [] });
+        expect(setOverride(ID, { area: '' }, path)).toEqual({
+            changed: ['area'],
+            refused: [],
+            records: [record(path, 'area', AREA, null)]
+        });
         expect(held(path)).toEqual({ sessions: { [ID]: { hidden: true } } });
     });
 
@@ -101,7 +150,8 @@ describe('setOverride', () => {
         const path = file();
         expect(setOverride(ID, { area: 'projects/alpha' }, path)).toEqual({
             changed: [],
-            refused: [{ field: 'area', reason: 'the area must be an absolute path' }]
+            refused: [{ field: 'area', reason: 'the area must be an absolute path' }],
+            records: []
         });
         expect(held(path)).toBe(null);
     });
@@ -119,7 +169,11 @@ describe('setOverride', () => {
     it('writes nothing when the value is already what the file holds', () => {
         const path = file({ sessions: { [ID]: { area: AREA } } });
         writeFileSync(path, JSON.stringify({ sessions: { [ID]: { area: AREA } } }) + '\n');
-        expect(setOverride(ID, { area: AREA }, path)).toEqual({ changed: [], refused: [] });
+        expect(setOverride(ID, { area: AREA }, path)).toEqual({
+            changed: [],
+            refused: [],
+            records: []
+        });
         // The trailing newline is still there, so the file was not rewritten.
         expect(readFileSync(path, 'utf8').endsWith('\n')).toBe(true);
     });

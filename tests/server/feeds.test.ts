@@ -230,12 +230,23 @@ describe('feed files', () => {
 describe('feed writes', () => {
     it('adds a dated LinkedIn idea with a safe slug and numbered collision suffix', () => {
         const into = fixture();
+        const made = join(into.hub, FILES.linkedin, 'xx-easy-problems-2.md');
         expect(addLinkedinIdea(into.hub, into.config, 'Easy problems', 'research')).toEqual({
             found: true,
             changed: ['file'],
-            refused: []
+            refused: [],
+            records: [
+                {
+                    file: made,
+                    key: 'xx-easy-problems-2.md',
+                    field: 'entries',
+                    before: null,
+                    after: { title: 'Easy problems', category: 'research' },
+                    undo: 'none'
+                }
+            ]
         });
-        const file = join(into.hub, FILES.linkedin, 'xx-easy-problems-2.md');
+        const file = made;
         expect(readFileSync(file, 'utf8')).toBe(
             `---\nlayout: post\ntitle: "Easy problems"\ncategory: "research"\npublish: True\ndate: ${localDate(Date.now())}\n---\n\n`
         );
@@ -264,12 +275,22 @@ describe('feed writes', () => {
 
     it('promotes an idea past 01-A and moves its same-basename sidecar', () => {
         const into = fixture();
+        const folder = join(into.hub, FILES.linkedin);
         expect(markLinkedinPosted(into.hub, into.config, 'xx-easy-problems.md')).toEqual({
             found: true,
             changed: ['file'],
-            refused: []
+            refused: [],
+            records: [
+                {
+                    file: join(folder, '02-easy-problems.md'),
+                    key: 'xx-easy-problems.md',
+                    field: 'entries',
+                    before: ['xx-easy-problems.jpeg', 'xx-easy-problems.md'],
+                    after: ['02-easy-problems.jpeg', '02-easy-problems.md'],
+                    undo: 'none'
+                }
+            ]
         });
-        const folder = join(into.hub, FILES.linkedin);
         expect(existsSync(join(folder, '02-easy-problems.md'))).toBe(true);
         expect(existsSync(join(folder, '02-easy-problems.jpeg'))).toBe(true);
         expect(existsSync(join(folder, 'xx-easy-problems.md'))).toBe(false);
@@ -303,7 +324,27 @@ describe('feed writes', () => {
                 date: null,
                 status: ''
             })
-        ).toEqual({ found: true, changed: ['entries'], refused: [] });
+        ).toEqual({
+            found: true,
+            changed: ['entries'],
+            refused: [],
+            records: [
+                {
+                    file: join(into.hub, FILES.leads),
+                    key: 'New role',
+                    field: 'entries',
+                    before: null,
+                    after: {
+                        title: 'New role',
+                        country: 'Belgium',
+                        focus: 'Clinical AI',
+                        status: 'open',
+                        date: localDate(Date.now())
+                    },
+                    undo: 'create'
+                }
+            ]
+        });
         const source = readFileSync(join(into.hub, FILES.leads), 'utf8');
         expect(source).toContain(
             `  - title: New role\n    country: Belgium\n    focus: Clinical AI\n    status: open\n    date: ${localDate(Date.now())}`

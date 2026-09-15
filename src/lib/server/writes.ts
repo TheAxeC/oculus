@@ -23,8 +23,10 @@
 // export that this file exported before the split is re-exported here, so an importer names either.
 
 import { portfolioConfigFrom } from '../data/index.ts';
-import { engineDir, loadConfig, loadLocal } from '../data/sources/config.ts';
+import { changesKeep, engineDir, loadConfig, loadLocal } from '../data/sources/config.ts';
 import { hasToken, sameOrigin } from './auth.ts';
+import { changeAt, defaultChangesPath, logChanges, pathOf } from './changes.ts';
+import { undoChange } from './writes/undo.ts';
 import { defaultBookmarksPath } from './fs/bookmarks.ts';
 import { setHidden, setOverride } from './sessions/overrides.ts';
 import { projects as projectsOf } from './sessions/hooks.ts';
@@ -57,8 +59,11 @@ import {
     reorderWrite,
     sessionWrite,
     subtaskAdd,
-    subtaskWrite
+    subtaskWrite,
+    undoWrite
 } from './writes/bodies.ts';
+import type { ChangeLog, ChangeRecord } from './changes.ts';
+import type { FsWrites } from './fs.ts';
 import type { Refusal } from './yaml-edit.ts';
 import type { SubtaskTarget } from './writes/subtasks.ts';
 import type { PortfolioConfig, Project } from '../data/model.ts';
@@ -84,6 +89,11 @@ export type WriteTarget = {
      */
     projects: () => Project[];
     bookmarks: string;
+    /**
+     * Where this machine's change log is, how much of it is kept, and the chain an append waits
+     * behind. A caller with no server in hand holds none, and then a write records nothing.
+     */
+    changes?: ChangeLog;
 };
 
 export type WriteOutcome = {
@@ -91,6 +101,11 @@ export type WriteOutcome = {
     found: boolean;
     changed: string[];
     refused: Refusal[];
+    /**
+     * What the change log records of this write: the value the file held and the value written, at
+     * the one point the writer has both. A write that changed nothing carries none.
+     */
+    records?: ChangeRecord[];
 };
 
 // The writers and the parsers, under the name this file gave them before the split.
@@ -122,8 +137,10 @@ export {
     reorderWrite,
     sessionWrite,
     subtaskAdd,
-    subtaskWrite
+    subtaskWrite,
+    undoWrite
 } from './writes/bodies.ts';
+export { undoChange, valueNow } from './writes/undo.ts';
 
 function json(status: number, body: unknown): Response {
     return new Response(JSON.stringify(body), {
@@ -140,15 +157,24 @@ function json(status: number, body: unknown): Response {
  * caller with no server in hand (a document read, a deposit action) names no projects, and only the
  * deck write depends on them.
  */
-export function target(server?: { hub: HubLike }): WriteTarget {
+export function target(server?: { hub: HubLike; fsWrites: FsWrites }): WriteTarget {
     const engine = engineDir();
     const local = loadLocal(engine);
+    const merged = loadConfig(engine).config;
     return {
         hub: local.hub,
-        config: portfolioConfigFrom(loadConfig(engine).config),
+        config: portfolioConfigFrom(merged),
         overrides: local.sessionsOverrides,
         projects: () => (server === undefined ? [] : projectsOf(server.hub)),
-        bookmarks: local.bookmarks ?? defaultBookmarksPath()
+        bookmarks: local.bookmarks ?? defaultBookmarksPath(),
+        changes:
+            server === undefined
+                ? undefined
+                : {
+                      file: local.changes ?? defaultChangesPath(),
+                      keep: changesKeep(merged),
+                      writes: server.fsWrites
+                  }
     };
 }
 
@@ -177,10 +203,12 @@ export async function handleWrite(
     if (session !== null) {
         const changed: string[] = [];
         const refused: Refusal[] = [];
+        const records: ChangeRecord[] = [];
         try {
             if (session.hidden !== undefined) {
-                setHidden(session.id, session.hidden, into.overrides);
-                changed.push('hidden');
+                const outcome = setHidden(session.id, session.hidden, into.overrides);
+                changed.push(...outcome.changed);
+                records.push(...outcome.records);
             }
             if (session.area !== undefined || session.title !== undefined) {
                 const outcome = setOverride(
@@ -190,19 +218,20 @@ export async function handleWrite(
                 );
                 changed.push(...outcome.changed);
                 refused.push(...outcome.refused);
+                records.push(...outcome.records);
             }
         } catch (error) {
             const reason = error instanceof Error ? error.message : String(error);
             return json(500, { error: `the session write could not be saved: ${reason}` });
         }
-        return json(200, { ok: true, changed, refused });
+        return answer({ found: true, changed, refused, records }, 'session', into);
     }
 
     const write = manifestWrite(body);
     if (write !== null) {
         const outcome = writeManifest(into.hub, into.config, write.id, write.fields);
         if (!outcome.found) return json(404, { error: `no project with the id ${write.id}` });
-        return answer(outcome);
+        return answer(outcome, 'manifest', into);
     }
 
     const entry = entryWrite(body);
@@ -218,7 +247,7 @@ export async function handleWrite(
         if (!outcome.found) {
             return json(404, { error: `no entry ${entry.id} in ${entry.collection}` });
         }
-        return answer(outcome);
+        return answer(outcome, 'entry', into);
     }
 
     const subtask = subtaskWrite(body);
@@ -232,21 +261,21 @@ export async function handleWrite(
             subtask.value
         );
         if (!outcome.found) return json(404, { error: notFound(subtask.target) });
-        return answer(outcome);
+        return answer(outcome, 'subtask', into);
     }
 
     const added = subtaskAdd(body);
     if (added !== null) {
         const outcome = writeSubtaskAdd(into.hub, into.config, added.target, added.fields);
         if (!outcome.found) return json(404, { error: notFound(added.target) });
-        return answer(outcome);
+        return answer(outcome, 'subtask-add', into);
     }
 
     const host = hostWrite(body);
     if (host !== null) {
         const outcome = writeHost(into.hub, host.name, host.status);
         if (!outcome.found) return json(404, { error: `no host named ${host.name}` });
-        return answer(outcome);
+        return answer(outcome, 'host', into);
     }
 
     const fresh = newEntry(body);
@@ -259,7 +288,7 @@ export async function handleWrite(
             into.bookmarks
         );
         if (!outcome.found) return json(404, { error: `no collection ${fresh.collection}` });
-        return answer(outcome);
+        return answer(outcome, 'new-entry', into);
     }
 
     const order = reorderWrite(body);
@@ -272,7 +301,7 @@ export async function handleWrite(
             into.bookmarks
         );
         if (!outcome.found) return json(404, { error: `no collection ${order.collection}` });
-        return answer(outcome);
+        return answer(outcome, 'reorder', into);
     }
 
     const removal = deleteEntryWrite(body);
@@ -287,7 +316,7 @@ export async function handleWrite(
         if (!outcome.found) {
             return json(404, { error: `no entry ${removal.id} in ${removal.collection}` });
         }
-        return answer(outcome);
+        return answer(outcome, 'delete-entry', into);
     }
 
     const feedField = feedFieldWrite(body);
@@ -305,7 +334,7 @@ export async function handleWrite(
         if (!outcome.found) {
             return json(404, { error: `no entry ${feedField.id} in ${feedField.feed}` });
         }
-        return answer(outcome);
+        return answer(outcome, 'feed-field', into);
     }
 
     const feedDelete = feedDeleteWrite(body);
@@ -316,14 +345,14 @@ export async function handleWrite(
         if (!outcome.found) {
             return json(404, { error: `no entry ${feedDelete.id} in ${feedDelete.feed}` });
         }
-        return answer(outcome);
+        return answer(outcome, 'feed-delete', into);
     }
 
     const lead = leadAddWrite(body);
     if (lead !== null) {
         const outcome = addLead(into.hub, into.config, lead.fields);
         if (!outcome.found) return json(404, { error: 'the leads feed is not on this hub' });
-        return answer(outcome);
+        return answer(outcome, 'lead-add', into);
     }
 
     const linkedinIdea = linkedinIdeaWrite(body);
@@ -335,7 +364,7 @@ export async function handleWrite(
             linkedinIdea.category
         );
         if (!outcome.found) return json(404, { error: 'the LinkedIn folder is not on this hub' });
-        return answer(outcome);
+        return answer(outcome, 'linkedin-idea', into);
     }
 
     const linkedinPost = linkedinPostWrite(body);
@@ -343,7 +372,7 @@ export async function handleWrite(
         const outcome = markLinkedinPosted(into.hub, into.config, linkedinPost.file);
         if (!outcome.found)
             return json(404, { error: 'the LinkedIn idea file is not on this hub' });
-        return answer(outcome);
+        return answer(outcome, 'linkedin-post', into);
     }
 
     const deck = deckWrite(body);
@@ -359,17 +388,48 @@ export async function handleWrite(
         if ('error' in outcome) {
             return json(outcome.error === 'unwritable' ? 500 : 400, { error: outcome.error });
         }
-        return answer({ found: true, ...outcome });
+        return answer({ found: true, ...outcome }, 'deck', into);
     }
 
     const idea = newIdea(body);
-    if (idea !== null) return answer(createIdea(into.hub, idea.fields));
+    if (idea !== null) return answer(createIdea(into.hub, idea.fields), 'new-idea', into);
+
+    const undo = undoWrite(body);
+    if (undo !== null) {
+        if (into.changes === undefined) return json(404, { error: 'unknown' });
+        const change = changeAt(into.changes, undo.at);
+        if (change === undefined) return json(404, { error: 'unknown' });
+        const outcome = undoChange(into, change);
+        if ('error' in outcome) {
+            if (outcome.error === 'refused') {
+                return json(400, { error: outcome.error, refused: outcome.refused });
+            }
+            return json(outcome.error === 'moved' ? 409 : 404, { error: outcome.error });
+        }
+        // The undo is a write like any other and is recorded like one, by the writer it went
+        // through, so taking it back again is the row above it in the log.
+        return answer(outcome, change.kind, into, change.at);
+    }
 
     return json(400, { error: 'the body is not a write this route knows' });
 }
 
-/** What every write answers with when it was asked something this route knows. */
-function answer(outcome: WriteOutcome): Response {
+/**
+ * What every write answers with when it was asked something this route knows, and the one place the
+ * change log is written: the records the writer made are stamped with this kind and appended before
+ * the page is answered, so a page that has seen its own write can read the log and find it.
+ */
+async function answer(
+    outcome: WriteOutcome,
+    kind: string,
+    into: WriteTarget,
+    undoes?: string
+): Promise<Response> {
+    const records = outcome.records?.map((record) => ({
+        ...record,
+        file: pathOf(into.hub, record.file)
+    }));
+    await logChanges(into.changes, kind, records, undoes);
     return json(200, { ok: true, changed: outcome.changed, refused: outcome.refused });
 }
 

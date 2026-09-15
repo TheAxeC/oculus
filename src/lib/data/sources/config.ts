@@ -45,6 +45,11 @@ export type LocalConfig = {
      * file browser then uses ~/.oculus/notes.
      */
     notes?: string;
+    /**
+     * Where the change log lives, `changes` in the file. Absent unless the machine sets it, and the
+     * write path then uses ~/.oculus/changes.jsonl.
+     */
+    changes?: string;
     /** Absolute or PATH-resolved Claude CLI used by unattended update-task terminals. */
     claudeBin: string;
     /** Claude and Codex config folders shown by the Usage view. */
@@ -63,6 +68,7 @@ const LOCAL_KEYS = [
     'workspaces',
     'bookmarks',
     'notes',
+    'changes',
     'claude_bin',
     'accounts'
 ];
@@ -210,7 +216,8 @@ export function loadLocal(engine: string): LocalConfig {
         ['sessions_overrides', 'sessionsOverrides'],
         ['workspaces', 'workspaces'],
         ['bookmarks', 'bookmarks'],
-        ['notes', 'notes']
+        ['notes', 'notes'],
+        ['changes', 'changes']
     ] as const) {
         if (record[key] === undefined) continue;
         if (typeof record[key] !== 'string' || record[key] === '') {
@@ -555,6 +562,19 @@ export function slurmSettings(config: Record<string, unknown>): SlurmSettings {
         quotaMin: number('quota_min'),
         prewarm: slurm.prewarm
     };
+}
+
+/** Read `changes.keep`, how many change-log lines are kept, or throw naming what is wrong. */
+export function changesKeep(config: Record<string, unknown>): number {
+    const held = config.changes;
+    if (typeof held !== 'object' || held === null || Array.isArray(held)) {
+        throw new Error('config/behavior.yml: changes must be a map');
+    }
+    const keep = (held as Record<string, unknown>).keep;
+    if (typeof keep !== 'number' || !Number.isInteger(keep) || keep <= 0) {
+        throw new Error('config/behavior.yml: changes.keep must be a whole number above zero');
+    }
+    return keep;
 }
 
 /** Read `usage_tiers:`, a map of plan id to label, or throw. */

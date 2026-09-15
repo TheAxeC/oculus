@@ -207,11 +207,38 @@ describe('what a form value becomes', () => {
     });
 });
 
+/** One change-log record, as a writer of this suite makes it. */
+function record(
+    file: string,
+    key: string,
+    field: string,
+    before: unknown,
+    after: unknown,
+    undo = 'field'
+): unknown {
+    return { file, key, field, before, after, undo };
+}
+
+/** The manifest file of the one project every hub of this suite holds. */
+function manifestPath(root: string): string {
+    return join(root, 'projects', 'manuscripts', 'alpha', 'project.yml');
+}
+
+/** The tasks collection file of a hub of this suite. */
+function tasksPath(root: string): string {
+    return join(root, 'tasks', 'tasks.yml');
+}
+
 describe('the file itself', () => {
     it('writes the changed field and nothing else', () => {
         const root = hub();
         const out = writeManifest(root, configFor(), 'alpha', { 'status.line': 'a new line' });
-        expect(out).toEqual({ found: true, changed: ['status.line'], refused: [] });
+        expect(out).toEqual({
+            found: true,
+            changed: ['status.line'],
+            refused: [],
+            records: [record(manifestPath(root), 'alpha', 'status.line', 'the line', 'a new line')]
+        });
         expect(manifestOf(root)).toBe(MANIFEST.replace('"the line"', '"a new line"'));
     });
 
@@ -232,7 +259,7 @@ describe('the file itself', () => {
             'status.chips': ['submitted', 'lead']
         });
         const after = statSync(join(root, 'projects', 'manuscripts', 'alpha', 'project.yml'));
-        expect(out).toEqual({ found: true, changed: [], refused: [] });
+        expect(out).toEqual({ found: true, changed: [], refused: [], records: [] });
         expect(after.mtimeMs).toBe(before.mtimeMs);
     });
 });
@@ -300,7 +327,12 @@ describe('writing one collection entry', () => {
         const out = writeEntry(root, configFor(), 'tasks', 'Review the draft', {
             status: 'done'
         });
-        expect(out).toEqual({ found: true, changed: ['status'], refused: [] });
+        expect(out).toEqual({
+            found: true,
+            changed: ['status'],
+            refused: [],
+            records: [record(tasksPath(root), 'Review the draft', 'status', 'open', 'done')]
+        });
         expect(tasksOf(root)).toBe(TASKS.replace('status: open', 'status: done'));
     });
 
@@ -324,7 +356,16 @@ describe('writing one collection entry', () => {
         const out = writeEntry(root, configFor(), 'tasks', 'Review the draft', {
             meta: [{ label: 'Owner', value: 'Axel' }]
         });
-        expect(out).toEqual({ found: true, changed: ['meta'], refused: [] });
+        expect(out).toEqual({
+            found: true,
+            changed: ['meta'],
+            refused: [],
+            records: [
+                record(tasksPath(root), 'Review the draft', 'meta', null, [
+                    { label: 'Owner', value: 'Axel' }
+                ])
+            ]
+        });
         expect(tasksOf(root)).toContain('    meta:\n      - { label: Owner, value: "Axel" }');
     });
 
@@ -335,7 +376,14 @@ describe('writing one collection entry', () => {
             TASKS.replace('    status: open\n', '    status: open\n    meta: []\n')
         );
         const out = writeEntry(root, configFor(), 'tasks', 'Review the draft', { meta: [] });
-        expect(out).toEqual({ found: true, changed: ['meta'], refused: [] });
+        // The empty list is written as the field's removal, which is what the record says was put
+        // there: an empty metalist and an absent one are one thing in the file.
+        expect(out).toEqual({
+            found: true,
+            changed: ['meta'],
+            refused: [],
+            records: [record(tasksPath(root), 'Review the draft', 'meta', [], null)]
+        });
         expect(tasksOf(root)).toBe(TASKS);
     });
 });
@@ -368,12 +416,14 @@ describe('a collection entry write against the schema of its own file', () => {
         expect(writeEntry(root, configFor(), 'tasks', 'One', { title: ['a', 'b'] })).toEqual({
             found: true,
             changed: [],
-            refused: [{ field: 'title', reason: 'title takes text' }]
+            refused: [{ field: 'title', reason: 'title takes text' }],
+            records: []
         });
         expect(writeEntry(root, configFor(), 'tasks', 'One', { note: { a: 1 } })).toEqual({
             found: true,
             changed: [],
-            refused: [{ field: 'note', reason: 'note takes text' }]
+            refused: [{ field: 'note', reason: 'note takes text' }],
+            records: []
         });
         expect(tasksOf(root)).toBe(TYPED);
     });
@@ -383,13 +433,15 @@ describe('a collection entry write against the schema of its own file', () => {
         expect(writeEntry(root, configFor(), 'tasks', 'One', { status: 'nonesuch' })).toEqual({
             found: true,
             changed: [],
-            refused: [{ field: 'status', reason: 'status takes one of open, done' }]
+            refused: [{ field: 'status', reason: 'status takes one of open, done' }],
+            records: []
         });
         expect(tasksOf(root)).toBe(TYPED);
         expect(writeEntry(root, configFor(), 'tasks', 'One', { status: 'done' })).toEqual({
             found: true,
             changed: ['status'],
-            refused: []
+            refused: [],
+            records: [record(tasksPath(root), 'One', 'status', 'open', 'done')]
         });
         expect(tasksOf(root)).toContain('status: done');
     });
@@ -399,11 +451,17 @@ describe('a collection entry write against the schema of its own file', () => {
         expect(writeEntry(root, configFor(), 'tasks', 'One', { deadline: '1 Jan' })).toEqual({
             found: true,
             changed: [],
-            refused: [{ field: 'deadline', reason: 'deadline takes a date written YYYY-MM-DD' }]
+            refused: [{ field: 'deadline', reason: 'deadline takes a date written YYYY-MM-DD' }],
+            records: []
         });
         expect(tasksOf(root)).toBe(TYPED);
         const out = writeEntry(root, configFor(), 'tasks', 'One', { deadline: '2026-09-14' });
-        expect(out).toEqual({ found: true, changed: ['deadline'], refused: [] });
+        expect(out).toEqual({
+            found: true,
+            changed: ['deadline'],
+            refused: [],
+            records: [record(tasksPath(root), 'One', 'deadline', null, '2026-09-14')]
+        });
         expect(tasksOf(root)).toContain('deadline: 2026-09-14');
     });
 
@@ -412,13 +470,15 @@ describe('a collection entry write against the schema of its own file', () => {
         expect(writeEntry(root, configFor(), 'tasks', 'One', { pin: 'yes' })).toEqual({
             found: true,
             changed: [],
-            refused: [{ field: 'pin', reason: 'pin takes true or false' }]
+            refused: [{ field: 'pin', reason: 'pin takes true or false' }],
+            records: []
         });
         expect(tasksOf(root)).toBe(TYPED);
         expect(writeEntry(root, configFor(), 'tasks', 'One', { pin: true })).toEqual({
             found: true,
             changed: ['pin'],
-            refused: []
+            refused: [],
+            records: [record(tasksPath(root), 'One', 'pin', null, true)]
         });
         expect(tasksOf(root)).toContain('pin: true');
     });
@@ -426,7 +486,12 @@ describe('a collection entry write against the schema of its own file', () => {
     it('clears a field of any type with an empty value', () => {
         const root = typed();
         const out = writeEntry(root, configFor(), 'tasks', 'One', { status: null });
-        expect(out).toEqual({ found: true, changed: ['status'], refused: [] });
+        expect(out).toEqual({
+            found: true,
+            changed: ['status'],
+            refused: [],
+            records: [record(tasksPath(root), 'One', 'status', 'open', null)]
+        });
         expect(tasksOf(root)).not.toContain('status: open');
     });
 
@@ -439,7 +504,8 @@ describe('a collection entry write against the schema of its own file', () => {
         expect(out).toEqual({
             found: true,
             changed: ['note'],
-            refused: [{ field: 'status', reason: 'status takes one of open, done' }]
+            refused: [{ field: 'status', reason: 'status takes one of open, done' }],
+            records: [record(tasksPath(root), 'One', 'note', null, 'a line worth keeping')]
         });
         expect(tasksOf(root)).toContain('note: a line worth keeping');
         expect(tasksOf(root)).toContain('status: open');
@@ -591,7 +657,12 @@ describe('writing one career host', () => {
     it('sets a status of the vocabulary and refuses one outside it', () => {
         const root = wider();
         const out = writeHost(root, 'Naesens', 'candidate');
-        expect(out).toEqual({ found: true, changed: ['status'], refused: [] });
+        expect(out).toEqual({
+            found: true,
+            changed: ['status'],
+            refused: [],
+            records: [record(join(root, 'CAREER.yml'), 'Naesens', 'status', 'warm', 'candidate')]
+        });
         expect(readFileSync(join(root, 'CAREER.yml'), 'utf8')).toBe(
             CAREER.replace('status: "warm"', 'status: "candidate"')
         );
@@ -619,7 +690,24 @@ describe('adding an entry and an idea', () => {
             title: 'A new task',
             status: 'open'
         });
-        expect(out).toEqual({ found: true, changed: ['entries'], refused: [] });
+        expect(out).toEqual({
+            found: true,
+            changed: ['entries'],
+            refused: [],
+            records: [
+                record(
+                    tasksPath(root),
+                    'A new task',
+                    'entries',
+                    null,
+                    {
+                        title: 'A new task',
+                        status: 'open'
+                    },
+                    'create'
+                )
+            ]
+        });
         expect(tasksOf(root)).toBe(`${TASKS}\n  - title: A new task\n    status: open\n`);
     });
 
@@ -629,7 +717,24 @@ describe('adding an entry and an idea', () => {
             title: 'A metalist task',
             meta: [{ label: 'Owner', value: 'Axel' }]
         });
-        expect(out).toEqual({ found: true, changed: ['entries'], refused: [] });
+        expect(out).toEqual({
+            found: true,
+            changed: ['entries'],
+            refused: [],
+            records: [
+                record(
+                    tasksPath(root),
+                    'A metalist task',
+                    'entries',
+                    null,
+                    {
+                        title: 'A metalist task',
+                        meta: [{ label: 'Owner', value: 'Axel' }]
+                    },
+                    'create'
+                )
+            ]
+        });
         expect(tasksOf(root)).toContain(
             '  - title: A metalist task\n    meta:\n      - { label: Owner, value: "Axel" }'
         );
@@ -652,7 +757,8 @@ describe('adding an entry and an idea', () => {
         expect(writeEntry(root, configFor(), 'venues', 'second', { id: 'second' })).toEqual({
             found: true,
             changed: [],
-            refused: []
+            refused: [],
+            records: []
         });
         const moved = writeEntry(root, configFor(), 'venues', 'second', { id: 'renamed' });
         expect(moved.refused).toEqual([]);
@@ -687,7 +793,21 @@ describe('adding an entry and an idea', () => {
                 name: 'Fresh Venue',
                 id: 'fresh'
             })
-        ).toEqual({ found: true, changed: ['venues'], refused: [] });
+        ).toEqual({
+            found: true,
+            changed: ['venues'],
+            refused: [],
+            records: [
+                record(
+                    join(freshRoot, 'registries', 'venues.yml'),
+                    'Fresh Venue',
+                    'entries',
+                    null,
+                    { name: 'Fresh Venue', id: 'fresh' },
+                    'create'
+                )
+            ]
+        });
         expect(venuesOf(freshRoot)).toContain('  - name: Fresh Venue\n    id: fresh');
     });
 
