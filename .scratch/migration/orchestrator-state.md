@@ -34,7 +34,7 @@ dispatch:                                  # P2 + O27b + O28a, the set of three 
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/P2/report.md
   exit: none
   pid: none
-  session_id: a58adb3cf3cca5050            # the Agent tool's id; reported 17:46 (runs/P2/report.md, diff.patch); checks queued behind the shared port (runs/P2/checks.sh); reviewer claude:opus afd237ac30023dd86 launched 17:47
+  session_id: a58adb3cf3cca5050            # the Agent tool's id; reported 17:46 (runs/P2/report.md, diff.patch); checks queued behind the shared port (runs/P2/checks.sh); reviewer claude:opus afd237ac30023dd86 launched 17:47; checks green 18:03 except format:check, red only on the reviewer's own temporary probe file, since removed (re-run due); review received 18:04 (agents/reviews/P2.md), repair round due
   landing: not-started
 - package: O27b
   worker: claude:opus
@@ -46,7 +46,7 @@ dispatch:                                  # P2 + O27b + O28a, the set of three 
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O27b/report.md
   exit: none
   pid: none
-  session_id: af993ace45f2c71ee            # the Agent tool's id
+  session_id: af993ace45f2c71ee            # the Agent tool's id; reported 18:04 (runs/O27b/report.md, diff.patch 3,785 lines); checks running (runs/O27b/checks.sh, started 18:05); reviewer claude:opus afbd3d7408dfb734f launched 18:05
   landing: not-started
 - package: O28a
   worker: claude:opus
@@ -58,7 +58,7 @@ dispatch:                                  # P2 + O27b + O28a, the set of three 
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O28a/report.md
   exit: none
   pid: none
-  session_id: a9f4b8bcfd8a4417b            # the Agent tool's id; reported 17:45 (runs/O28a/report.md, diff.patch); checks queued behind the shared port (runs/O28a/checks.sh); reviewer claude:opus a571ac965721199ea launched 17:47
+  session_id: a9f4b8bcfd8a4417b            # the Agent tool's id; reported 17:45 (runs/O28a/report.md, diff.patch); checks queued behind the shared port (runs/O28a/checks.sh); reviewer claude:opus a571ac965721199ea launched 17:47; checks green 18:00 (browser 77); review received 18:02 (agents/reviews/O28a.md), repair round sent 18:04 (runs/O28a/repair-prompt.md, nine items)
   landing: not-started
 ```
 
@@ -102,6 +102,11 @@ dispatch:                                  # P2 + O27b + O28a, the set of three 
 - O28a, two `api/docs` query shapes (raised 2026-09-15 17:45 by O28a's report): `?hub=<path>` for a hub document (`.md`, inside the hub, symlinks out refused) and `?manual=1` for `tools/oculus/HELP.md`, beside the project form. Recommended: keep. Booked for Axel.
 - P2, the `OCULUS_CONFIG` environment variable (raised 2026-09-15 17:46 by P2's report): names the engine's config directory, the companion of `OCULUS_LOCAL`, so the browser suite can point a run at a copy of `config/` and its Save never edits the tracked `config/present.yml`; a stray value on a machine would redirect every config read. Recommended: keep, since the deck write and the browser suite need a redirectable config folder and the local file already has the same knob. Booked for Axel.
 - P2, `data/deck.ts` and the boundary table (raised 2026-09-15 17:46 by P2's report): the deck's placement rule moved from `state/present.ts` to `src/lib/data/deck.ts` so the server's write can check a save against it, and the state row of the boundary table (`tests/boundaries.test.ts`, DESIGN.md) gained `data/deck` beside `data/model`, `data/guards`, `data/dates`. Recommended: keep, a rule the server and the client both apply belongs in the layer both may import. Booked for Axel.
+- P2, the `changed` answer of a deck write (raised 2026-09-15 18:06 by P2's review): the write answers `changed: ['deck']` when the file moved and `changed: []` when the asked lists already stood, the rule `src/lib/server/writes.ts` line 9 states for every write, where the brief's literal was `changed: ['deck']` always; `'deck'` is a new token in that vocabulary. Recommended: keep.
+- P2, `project.no_documents` reworded (raised 2026-09-15 18:06 by P2's review): the project view's empty line was "This project has none of the four Markdown documents." and is now "This project has no Markdown document.", since PRESENT.md joins the four; a user-visible string outside the brief. Recommended: keep.
+- P2, `slides.keep_one` (raised 2026-09-15 18:06 by P2's review): the brief named `slides.empty` as the empty-selection refusal; as built `slides.empty` says the deck holds no slides to choose from and a new key `slides.keep_one` carries the refusal ("Keep at least one slide ticked."). Recommended: keep, two states need two sentences.
+- O27b, five shapes beyond the brief (raised 2026-09-15 18:06 by O27b's report): `GET /api/fs?note=<id>` reads one note's text (without it a listed note could be deleted but never reopened); a note's file is `<title>\n<body>` under `~/.oculus/notes/<YYYYMMDD-HHMMSS-mmm>.md`, a newline typed into the title becoming a space; the Files view gains a Bookmarks section under the tree (the rail has nowhere to put the edit form); the bookmarks schema's `root` is a select with no options of its own, the Files view filling it from the roots in force; two glyph names `star` (lucide `star`, ASCII `[*]`) and `note` (lucide `sticky-note`, `[n]`). Recommended: keep all five.
+- O27b, the Files pane no longer tinted (raised 2026-09-15 18:06 by O27b's report): `tests/views/tinted.test.ts` holds that a view drawing the shared entry form, which paints its own surface, does not also tint its box; over a wallpaper the Files pane now looks like Collection. Recommended: keep.
 - The Command Center split (raised 2026-09-14 17:28): closed 2026-09-14 17:39, Axel chose (a), a Tasks section on the Focus board; booked as Q18.
 - R12c edge 2, the `waiting-on` finding: closed 2026-09-14 17:20, Axel ruled: a collaborator key or a project id, never a free name, a finding otherwise; the manifest's `BTFNO` is `btfno`; booked as R12f beside R12e.
 - R12c edge 8, `Entry.id` identity-first: closed 2026-09-14 17:28, Axel agreed: a wrong premise, no change; the entry id stays the `id:` line, then `key:`, then the schema's identity field.
