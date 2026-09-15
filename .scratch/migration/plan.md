@@ -166,6 +166,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - O22 to O28 with each other once O10 has landed.
 
 ## Rulings (2026-09-10)
+- 2026-09-15 17:33, Axel: the System group's `chord: y` and `glyph: audit` and the Sessions group's `glyph: live` stay as O27a landed them; O28a's `engine` root (the engine's `config/` folder served as a fixed root for the file route, the source route and the file browser) stays.
 - 2026-09-15 15:57, Axel, yes to all six open items (1 of 3): Q17's status marks keep their hue through a toned `Tag`; O27a's Sources group stays a flyout and the file view keeps its "Open in a browser tab" control.
 - 2026-09-15 15:57, Axel (2 of 3): a P1 deck `order:` entry naming a project slide the mounted hub lacks places nothing and is not a finding (framing and summary refs still are), so the shipped order carries the cockpit's interleaving.
 - 2026-09-15 15:57, Axel (3 of 3): the front-matter-less PRESENT.md narrative stays in the snapshot and DESIGN.md's "Documents are not in it" line names PRESENT.md as the exception; the deck writes Linköping with its umlaut and the ASCII gate lets accented Latin letters through under `config/` (spec amendment of the same time).
