@@ -166,7 +166,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - O22 to O28 with each other once O10 has landed.
 
 ## Rulings (2026-09-10)
-- 2026-09-15 14:42, Axel: the Present view's five shapes as `briefs/P1-present.md` names them: a `slides:` list beside `present:` in the PRESENT.md front matter with ids `<project>/<slug>`; the deck as `config/present.yml`; a listed `present` view in Academic life with left/right keys and the `O` overview; KaTeX as the one new dependency; figures through the file route and `diagram_html` through the sanitiser.
+- 2026-09-15 14:42, Axel: the Present view's five shapes as `briefs/P1-present.md` names them: a `slides:` list beside `present:` in PRESENT.md with ids `<project>/<slug>`; the deck as `config/present.yml`; a listed `present` view in Academic life with left/right keys and the `O` overview; KaTeX as the one new dependency; figures through the file route, `diagram_html` through the sanitiser.
 - 2026-09-15 14:29, Axel: the rail badge stays empty on a failed HPC poll while the view keeps the last good rows (as Q15 landed); HPC access is available again, so Q15's and Q15b's live checks run now.
 - 2026-09-15 00:49, Axel: the rail stays at 98 px and a label that does not fit wraps to a second line (Q19), which replaces the cut label of the 2026-09-13 13:00 ruling.
 - 2026-09-15 00:47, Axel: L1's openBeside stands; the log-path prewarm is ported as Q15b after Q15, its live check once he is on the UT network; Q15 keeps the last good rows under the stale mark; Q17's icons are Lucide; H1's FWO-PhD statement text given.
