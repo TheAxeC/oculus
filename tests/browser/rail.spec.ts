@@ -149,3 +149,23 @@ test('a tooltip inside an overlay is drawn over it', async ({ page }) => {
 
     expect((await bubbleShape(page)).inside).toBe(true);
 });
+
+test('a bookmark label the rail cannot hold on one line wraps to a second and is read whole', async ({
+    page
+}) => {
+    await boot(page);
+    const long = page
+        .locator('nav button[data-bookmark]')
+        .filter({ hasText: 'game-engine manual' });
+    await expect(long).toHaveCount(1);
+    const label = long.locator('.label');
+    const box = await label.evaluate((el) => {
+        const style = getComputedStyle(el);
+        return {
+            lines: Math.round(el.getBoundingClientRect().height / parseFloat(style.lineHeight)),
+            clipped: el.scrollHeight > el.clientHeight + 1 || el.scrollWidth > el.clientWidth + 1
+        };
+    });
+    expect(box.lines).toBe(2);
+    expect(box.clipped).toBe(false);
+});

@@ -126,10 +126,11 @@
         padding: 3px 5px;
     }
 
+    /* The rail's height is a floor, not a size: a stacked label that wraps makes its button taller. */
     .tool.rail-control {
         justify-content: center;
         width: 100%;
-        height: 34px;
+        min-height: 34px;
         box-sizing: border-box;
         background: none;
         color: var(--ink-txt, var(--ink));
@@ -142,17 +143,23 @@
         gap: 1px;
     }
 
+    /* A label the rail's width cannot hold on one line wraps to a second, and only a third is cut:
+       the rail stays its width and a long bookmark name is still read whole. */
     .tool.stacked :global(.label) {
-        display: block;
+        display: -webkit-box;
+        -webkit-box-orient: vertical;
+        -webkit-line-clamp: 2;
+        line-clamp: 2;
         width: 100%;
         min-width: 0;
         max-width: 100%;
         overflow: hidden;
+        overflow-wrap: anywhere;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-3xs);
-        line-height: 1;
+        line-height: 1.1;
         text-overflow: ellipsis;
-        white-space: nowrap;
+        white-space: normal;
     }
 
     .tool:hover:not(:disabled) {
@@ -202,7 +209,7 @@
     }
 
     :global(body.rice) .tool.rail-control {
-        height: 34px;
+        min-height: 34px;
         padding: 0;
     }
 </style>
