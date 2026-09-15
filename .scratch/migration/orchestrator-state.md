@@ -35,7 +35,7 @@ dispatch:                                  # Q15 + Q16, two workers on disjoint 
   exit: none
   pid: none
   session_id: a5dbd4d25aa6f1f4f            # the Agent tool's id
-  round: 1                                   # repair round sent 2026-09-15T03:50+0200 over the review and the orchestrator read (seven items, runs/Q15/repair-prompt.md)
+  round: 1                                   # repair round sent 2026-09-15T03:49+0200 over the review and the orchestrator read (seven items, runs/Q15/repair-prompt.md)
   landing: not-started
 - package: Q16
   worker: claude:opus
@@ -76,6 +76,7 @@ dispatch:                                  # Q15 + Q16, two workers on disjoint 
 - L1's `openBeside` (raised in the L1 brief on 2026-09-15 00:17: a view that opened in the docked panel, shift-click on the rail and the pinned open, opens in a new pane split to the right of the active one): closed 2026-09-15 00:47, Axel agreed.
 - H1's FWO-PhD statement (raised 2026-09-15 00:33 in H1's brief facts): closed 2026-09-15 00:47, Axel gave the text, in H1's brief file. The rail width and attachable live sessions were named to him as open at 00:40 by mistake: both were closed on 2026-09-13 (the rail at 98 px is fine, 13:00; sessions stay observed).
 - The rail label cut at 98 px (the bookmark "game-engine manual"): closed 2026-09-15 00:49, Axel agreed the wrap to a second line at 98 px; booked as Q19, a fix of delivered work, inline when nothing is in flight.
+- Live HPC, the rail badge on a failed poll (raised 2026-09-15 03:49 by Q15's review): with Axel's yes of 00:47 the view keeps the last good rows under the stale mark while the rail's badge and pill empty on the same payload (`src/lib/state/hpc.svelte.ts` gates them on `status === 'ok'`), since the rail has no way to mark a count stale. Recommended: leave the rail empty (a count with nothing marking it stale would read as live); the other shape is the last count with a muted tone. Q15 lands with the rail empty; Axel's to reverse.
 - The Command Center split (raised 2026-09-14 17:28): closed 2026-09-14 17:39, Axel chose (a), a Tasks section on the Focus board; booked as Q18.
 - R12c edge 2, the `waiting-on` finding: closed 2026-09-14 17:20, Axel ruled: a collaborator key or a project id, never a free name, a finding otherwise; the manifest's `BTFNO` is `btfno`; booked as R12f beside R12e.
 - R12c edge 8, `Entry.id` identity-first: closed 2026-09-14 17:28, Axel agreed: a wrong premise, no change; the entry id stays the `id:` line, then `key:`, then the schema's identity field.
