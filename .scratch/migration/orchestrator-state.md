@@ -23,7 +23,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch: none                             # Q20 landed 2026-09-16 01:10; the next set (Q21 + D4 + D21) is dispatched next
+dispatch:                                  # D4 + D21 + Q23, the set of three cut at 8757baa8 plus the preparation commit; Q21 waits for D4 (both edit context.ts, pty/routes.ts, files.ts)
 ```
 
 ## The standing demands (from Axel, in force)
@@ -351,6 +351,7 @@ No night log is running. Nothing has been left for Axel to read here.
 ## Rulings in full (the plan.md lines before the trim of 2026-09-13, kept whole)
 
 - The queue line before 2026-09-16 00:41: The queue, in order: Q15 + Q16 + H1, then Q15b; Q17 + P1 + O27a; P2 + O27b + O28a; O28b + D1 + D2; D3; Q20; Q21; Q22; D6 + D4; D5 + D7; D8 + D12 + D9; D16 + D11 + D13; D14 + D15 + D17; D18 + D20 + O31.
+- The queue line before 2026-09-16 01:20: The queue, in order (rewritten 2026-09-16 00:41 after Axel's rulings; the sets before it landed): Q20; D6; Q21 + D4 + D21; D5 + D7 + Q23; M1 + Q24 + Q25; M2 + Q26 + Q27; D8 + D12 + D9; D16 + D11 + D13; D14 + D15 + D17; D18 + D20 + M3; O31; then R2, O29, O30, X2.
 - R6 before 2026-09-14 00:50: R6 simplicity: the card cursor becomes pane state the views render, not a DOM attribute the shell sets; the usage refresher's success is read from the account file's fetch time, not from words on a tmux screen (Axel 2026-09-13 22:30; brief at dispatch).
 
 - O16: no longer blocked. The `Notification` and `Stop` hooks exist since 2026-09-10 in the hub's `.claude/settings.local.json` and, Axel said the same day, in cathedra's and game-engine's local settings too, written by Axel: `curl -s -m 1 -X POST http://127.0.0.1:8790/api/hook -d @- || true`, timeout 5, verified by parsing the file. Project scope, so they fire only for sessions started in the research hub; sessions in other repositories show registry state, not hook state, until the same block is in `~/.claude/settings.json`. Whether to move it there is Axel's call. O16 itself now needs only the endpoint and the `osascript` push; nothing blocks it after O13.
