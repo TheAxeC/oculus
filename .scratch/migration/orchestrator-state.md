@@ -46,7 +46,7 @@ dispatch:                                  # O28b + D1 + D2, the set of three (t
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D3/report.md
   exit: none
   pid: none
-  session_id: aeada07b172c0e7c6            # the Agent tool's id, launched 21:35; the rolling window's first dispatch after D2's landing, the brief re-checked against 1103ab09 at 21:33 (every premise holds)
+  session_id: aeada07b172c0e7c6            # the Agent tool's id, launched 21:35; reported 22:11 (runs/D3/report.md, diff.patch 1,303 lines, 33 files +747 -32); checks started 22:11 (runs/D3/checks.sh); reviewer dispatched 22:12 (Agent id a201916dbcee31ee5); the orchestrator's read done 22:16 (runs/D3/read-notes.md: the type drawn as a plain tag, a double blank line in DESIGN.md, the stale focus.ts comment; three small fixes for landing); the rolling window's first dispatch after D2's landing, the brief re-checked against 1103ab09 at 21:33 (every premise holds)
   landing: not-started
 - package: D1
   worker: claude:opus
