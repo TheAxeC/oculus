@@ -166,6 +166,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - O22 to O28 with each other once O10 has landed.
 
 ## Rulings (2026-09-10)
+- 2026-09-15 14:29, Axel: the rail badge stays empty on a failed HPC poll while the view keeps the last good rows (as Q15 landed); HPC access is available again, so Q15's and Q15b's live checks run now.
 - 2026-09-15 00:49, Axel: the rail stays at 98 px and a label that does not fit wraps to a second line (Q19), which replaces the cut label of the 2026-09-13 13:00 ruling.
 - 2026-09-15 00:47, Axel: L1's openBeside stands; the log-path prewarm is ported as Q15b after Q15, its live check once he is on the UT network; Q15 keeps the last good rows under the stale mark; Q17's icons are Lucide; H1's FWO-PhD statement text given.
 - 2026-09-14 20:29, Axel: pages and panels become one model, booked as L1 and L2 after R17; a nested page is the same page, never a copy; the keys are his option (d), booked as K1; a pause once R13b lands (20:27).
