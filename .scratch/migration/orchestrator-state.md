@@ -49,7 +49,7 @@ dispatch:                                  # Q17 + O27a + P1, the set of three
   pid: none
   session_id: a770870931a7f7284            # the Agent tool's id
   round: 1                                   # repair round sent 2026-09-15T15:35+0200 over the review (twenty items, runs/O27a/repair-prompt.md; review in agents/reviews/O27a.md); reported 16:12 (runs/O27a/report-2.md, diff-2.patch, repair-read.patch 3,129 lines); checks running (runs/O27a/checks.sh); second reviewer claude:opus aada08b0a4d105027 launched 16:14; repaired diff's checks green (164 files, 2,569 tests; browser 65 alone after a port collision, runs/O27a/check-*.log); PDF probe 16:18 with the installed Chrome headless (scratchpad/pdfprobe/probe.mjs): a PDF in a frame with sandbox="" or allow-same-origin allow-scripts is net::ERR_BLOCKED_BY_CLIENT and the frame lands on chrome-error, with no sandbox attribute Chrome's viewer draws it; fix at landing: no sandbox on the PDF frame
-  landing: cherry-picking                   # 2026-09-15T16:32+0200, land.sh o27a d27fbe16, fixes at landing in the worktree first (PDF frame sandbox, default root beside the hub, failures over drawn rows, two test titles, multi-byte cut case, File view comment)
+  landing: cherry-picking                   # 2026-09-15T16:31+0200, land.sh o27a d27fbe16, fixes at landing in the worktree first (PDF frame sandbox, default root beside the hub, failures over drawn rows, two test titles, multi-byte cut case, File view comment)
 - package: P1
   worker: claude:opus
   worktree: .agents/worktrees/p1
