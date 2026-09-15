@@ -34,7 +34,7 @@ dispatch:                                  # Q15 + Q16, two workers on disjoint 
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q15/report.md
   exit: none
   pid: none
-  session_id: pending                        # the Agent tool's id, written the moment it is known
+  session_id: a5dbd4d25aa6f1f4f            # the Agent tool's id
   landing: not-started
 - package: Q16
   worker: claude:opus
@@ -46,7 +46,7 @@ dispatch:                                  # Q15 + Q16, two workers on disjoint 
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q16/report.md
   exit: none
   pid: none
-  session_id: pending                        # the Agent tool's id, written the moment it is known
+  session_id: ad5e57510aed2ea59            # the Agent tool's id
   landing: not-started
 ```
 
