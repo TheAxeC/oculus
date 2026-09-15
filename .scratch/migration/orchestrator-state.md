@@ -58,7 +58,7 @@ dispatch:                                  # O28b + D1 + D2, the set of three (t
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q20/report.md
   exit: none
   pid: none
-  session_id: ada8bb82d7854d4f8            # the Agent tool's id, launched 22:23; the rolling window's dispatch after D1's landing, the brief re-checked at 22:22
+  session_id: ada8bb82d7854d4f8            # the Agent tool's id, launched 22:23; the rolling window's dispatch after D1's landing, the brief re-checked at 22:22; reported 23:04 (runs/Q20/report.md, diff.patch 1,199 lines, 21 files +451 -193); checks started 23:04 (runs/Q20/checks.sh); reviewer dispatched 23:04 (Agent id a7a6d86acbfb7e200); the orchestrator's read done 23:06 (runs/Q20/read-notes.md: nothing against the brief; the engineRoot change is a needed fix; the checkout's own local.yml moves at landing)
   landing: not-started
 ```
 
