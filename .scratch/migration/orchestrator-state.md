@@ -49,7 +49,7 @@ dispatch:                                  # Q17 + P1, O27a landed
   pid: none
   session_id: a911f959f0f08fd92            # the Agent tool's id; reported 2026-09-15T15:36+0200; checks green on the first diff (162 files, 2535 tests, browser 66, runs/P1/check-*.log); review in agents/reviews/P1.md
   round: 1                                   # repair round sent 2026-09-15T15:53+0200 (fourteen items, runs/P1/repair-prompt.md; items 15 to 17, the order semantics, the DESIGN.md clause and the umlaut, sent 15:59 on Axel's ruling); reported 16:17 (runs/P1/report-2.md, diff-2.patch, repair-read.patch 3,937 lines); repaired diff's checks green 16:23 (163 files, 2,564 tests, check, lint, build, format, the narrowed ASCII gate, browser 68; runs/P1/check-*.log); second reviewer claude:opus ab3e2e4d0bd03230e launched 16:19
-  landing: not-started
+  landing: cherry-picking                   # 2026-09-15T16:39+0200, land.sh p1 95e37db6, six fixes at landing in the worktree first (the focus guard, the overview's shell cursor, the html-sites reason line, the integrity floor over front-matter slides, a diagram profile case, two comments)
 ```
 
 ## The standing demands (from Axel, in force)
