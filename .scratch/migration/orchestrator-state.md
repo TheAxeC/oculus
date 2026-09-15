@@ -58,7 +58,7 @@ dispatch:                                  # O28b + D1 + D2, the set of three (t
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D1/report.md
   exit: none
   pid: none
-  session_id: a40c18420b38580f7            # the Agent tool's id, launched 19:23; reported 20:21 (runs/D1/report.md, diff.patch 4,619 lines, 41 files +3,244 -295); checks started 20:21 (runs/D1/checks.sh); checks green 20:25 (check 1000 files, 2,982 tests, browser 88; runs/D1/check-*.log); the orchestrator's read done (runs/D1/read-notes.md: an undo of a session unhide refused as moved, a DESIGN.md blank line); reviewer dispatched 21:33 at the lift (Agent id aa11a274b2fe06d1f, claude:opus), the repair round follows its report
+  session_id: a40c18420b38580f7            # the Agent tool's id, launched 19:23; reported 20:21 (runs/D1/report.md, diff.patch 4,619 lines, 41 files +3,244 -295); checks started 20:21 (runs/D1/checks.sh); checks green 20:25 (check 1000 files, 2,982 tests, browser 88; runs/D1/check-*.log); the orchestrator's read done (runs/D1/read-notes.md: an undo of a session unhide refused as moved, a DESIGN.md blank line); review saved 21:44 (agents/reviews/D1.md; failed the bar: the unhide undo, a refused undo answered as success, the kind word drawn raw, the page against keep, six missing cases); repair round of nine items sent 21:45 (runs/D1/repair-prompt.md), a second review follows since the round goes beyond the reviewer's list
   landing: not-started
 ```
 
