@@ -20,13 +20,20 @@ let loadSourceDraft: ClientState['source']['loadSourceDraft'];
 let editSourceDraft: ClientState['source']['editSourceDraft'];
 let saveSourceDraft: ClientState['source']['saveSourceDraft'];
 let sourceDraft: ClientState['source']['sourceDraft'];
+let toggleSourcePreview: ClientState['source']['toggleSourcePreview'];
 let setToken: ClientState['writes']['setToken'];
 let loadUi: ClientState['ui']['loadUi'];
 
 beforeEach(() => {
     client = createClientState();
-    ({ saveSource, loadSourceDraft, editSourceDraft, saveSourceDraft, sourceDraft } =
-        client.source);
+    ({
+        saveSource,
+        loadSourceDraft,
+        editSourceDraft,
+        saveSourceDraft,
+        sourceDraft,
+        toggleSourcePreview
+    } = client.source);
     ({ setToken } = client.writes);
     ({ loadUi } = client.ui);
 });
@@ -129,6 +136,22 @@ describe('source tab state', () => {
             refused
         });
         expect(fetcher).toHaveBeenCalledTimes(1);
+    });
+
+    it('keeps the rendered half per instance, on until the toggle says otherwise', () => {
+        expect(sourceDraft('one').preview).toBe(true);
+
+        toggleSourcePreview('one');
+        expect(sourceDraft('one').preview).toBe(false);
+        // The other tab knows nothing of it, which is what per instance means.
+        expect(sourceDraft('two').preview).toBe(true);
+
+        // Typing and reverting are the draft's other writes, and neither touches the toggle.
+        editSourceDraft('one', 'typed');
+        expect(sourceDraft('one')).toMatchObject({ text: 'typed', preview: false });
+
+        toggleSourcePreview('one');
+        expect(sourceDraft('one').preview).toBe(true);
     });
 
     it('loads complete text through the existing file route', async () => {

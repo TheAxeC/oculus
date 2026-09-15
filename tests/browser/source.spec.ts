@@ -32,3 +32,41 @@ test('the edit-source bar opens the feed file and an unsaved edit survives a tab
     );
     // Nothing is saved: the demo hub's feed file stays as it was.
 });
+
+// The rendered half beside the editor, which is the one place the sanitiser runs over what a reader
+// typed: the node suite has no document, so what a script tag in the text comes to is checked here.
+test('a Markdown file opens for editing and the preview follows what is typed', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    await page.locator('[data-fs-row="hub:"]').getByRole('button').first().click();
+    await page.locator('[data-fs-row="hub:README.md"]').getByRole('button').first().click();
+
+    // The file window is read only, and its control hands the same file to the source tab.
+    await page.getByRole('button', { name: t('file.edit'), exact: true }).click();
+    const editor = page.locator('[data-source-editor="README.md"]');
+    await expect(editor).toBeVisible();
+    const preview = page.locator('[data-source-preview="README.md"]');
+    await expect(preview).toBeVisible();
+
+    // What is typed is rendered without a save and without a request: the working copy is the source.
+    const area = editor.getByRole('textbox');
+    await area.fill('## Typed in the spec\n\nA line of it.\n');
+    await expect(preview.locator('h2')).toHaveText('Typed in the spec');
+    await expect(preview.locator('p')).toHaveText('A line of it.');
+
+    // A script the file carries is markup somebody else wrote, so the filter takes it out.
+    await area.fill('# Heading\n\n<script>window.specScriptRan = true;</' + 'script>\n');
+    await expect(preview.locator('h1')).toHaveText('Heading');
+    await expect(preview.locator('script')).toHaveCount(0);
+    expect(await page.evaluate(() => 'specScriptRan' in window)).toBe(false);
+
+    // The toggle takes the half away and gives it back, and the editor stays as it was.
+    await page.getByRole('button', { name: t('source.preview'), exact: true }).click();
+    await expect(preview).toHaveCount(0);
+    await page.getByRole('button', { name: t('source.preview'), exact: true }).click();
+    await expect(preview.locator('h1')).toHaveText('Heading');
+
+    // Nothing is saved: the hub copy's README.md stays as it was.
+});

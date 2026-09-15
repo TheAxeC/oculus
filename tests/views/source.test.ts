@@ -1,5 +1,11 @@
 // The source editor rendered on the server: escaped highlight mirror, editable and read-only
-// controls, and the save status words from the catalog.
+// controls, the save status words from the catalog, and the rendered half a Markdown tab draws
+// beside the editor.
+//
+// What this does NOT cover: what the sanitiser does to markup a file carries. The suite runs in
+// node, where DOMPurify has no document and ui/html.ts hands the text back, which its own head
+// comment says; the filtering is exercised in Chrome, by the preview case of
+// tests/browser/source.spec.ts and by tests/browser/sanitise.spec.ts.
 
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -24,13 +30,15 @@ let revertSourceDraft: ClientState['source']['revertSourceDraft'];
 let editSourceDraft: ClientState['source']['editSourceDraft'];
 let loadSourceDraft: ClientState['source']['loadSourceDraft'];
 let saveSourceDraft: ClientState['source']['saveSourceDraft'];
+let toggleSourcePreview: ClientState['source']['toggleSourcePreview'];
 let setToken: ClientState['writes']['setToken'];
 
 beforeEach(() => {
     client = createClientState();
     ({ receive } = client.entities);
     ({ loadUi, instanceState } = client.ui);
-    ({ revertSourceDraft, editSourceDraft, loadSourceDraft, saveSourceDraft } = client.source);
+    ({ revertSourceDraft, editSourceDraft, loadSourceDraft, saveSourceDraft, toggleSourcePreview } =
+        client.source);
     ({ setToken } = client.writes);
     installFixture();
 });
@@ -47,7 +55,7 @@ function installFixture(): void {
 beforeEach(() => loadUi({ getItem: () => null, setItem: noop }));
 afterEach(() => vi.unstubAllGlobals());
 
-const actions = { oninput: noop, onsave: noop, onrevert: noop };
+const actions = { oninput: noop, onsave: noop, onrevert: noop, onpreview: noop };
 
 describe('the source editor', () => {
     it('restores the working and saved copies when Source is rendered again after another tab', async () => {
@@ -142,6 +150,61 @@ describe('the source editor', () => {
         expect(body).toContain(glyphCatalog(config)[catalog['editor.revert_glyph']]);
         expect(body).toContain(catalog['source.saved']);
         expect(body).not.toContain('readonly');
+    });
+
+    it('draws the rendered half beside a Markdown file and nothing beside a YAML one', () => {
+        const drawn = (path: string): string =>
+            render(Editor, {
+                context: clientContext(client),
+                props: { path, text: '# A heading\n\ntext of it\n', editable: true, ...actions }
+            }).body;
+
+        const markdown = drawn('notes.md');
+        expect(markdown).toContain('data-source-preview="notes.md"');
+        expect(markdown).toContain('<h1>A heading</h1>');
+        expect(markdown).toContain(`>${catalog['source.preview']}</span>`);
+
+        const yaml = drawn('notes.yml');
+        expect(yaml).not.toContain('data-source-preview');
+        expect(yaml).not.toContain(`>${catalog['source.preview']}</span>`);
+    });
+
+    it('leaves a front matter block out of the rendered half and a relative image as written', () => {
+        const body = render(Editor, {
+            context: clientContext(client),
+            props: {
+                path: 'PRESENT.md',
+                text: '---\ntitle: A deck\nlevel: 2\n---\n\n# Prose\n\n![fig](figures/a.png)\n',
+                editable: true,
+                ...actions
+            }
+        }).body;
+        const preview = body.slice(body.indexOf('data-source-preview'));
+        expect(preview).toContain('<h1>Prose</h1>');
+        expect(preview).not.toContain('title: A deck');
+        expect(preview).not.toContain('<hr');
+        expect(preview).toContain('src="figures/a.png"');
+    });
+
+    it('takes the rendered half away when the instance state says the toggle is off', async () => {
+        vi.stubGlobal(
+            'fetch',
+            vi.fn(() => Promise.resolve(new Response('# A heading\n')))
+        );
+        const instance = {
+            id: 'source-preview',
+            view: 'source',
+            state: sourceTabState('hub', 'notes.md')
+        };
+        await loadSourceDraft(instance.id, 'hub', 'notes.md');
+        const shown = render(Source, { context: clientContext(client), props: { instance } }).body;
+        expect(shown).toContain('<h1>A heading</h1>');
+
+        toggleSourcePreview(instance.id);
+        expect(instanceState(instance.id)).toMatchObject({ preview: false });
+        const hidden = render(Source, { context: clientContext(client), props: { instance } }).body;
+        expect(hidden).not.toContain('data-source-preview');
+        expect(hidden).toContain(catalog['source.preview']);
     });
 
     it('draws a read-only textarea without Save', () => {

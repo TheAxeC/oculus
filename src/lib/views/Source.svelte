@@ -32,6 +32,7 @@
             editSourceDraft,
             loadSourceDraft,
             saveSourceDraft,
+            toggleSourcePreview,
             sourceDraft
         }
     } = useState();
@@ -79,9 +80,11 @@
                 text={draft.text}
                 editable={access === 'editable'}
                 message={draft.message}
+                preview={draft.preview}
                 oninput={(value: string) => editSourceDraft(instance.id, value)}
                 onsave={save}
                 onrevert={() => revertSourceDraft(instance.id)}
+                onpreview={() => toggleSourcePreview(instance.id)}
             />
         {/if}
     </div>

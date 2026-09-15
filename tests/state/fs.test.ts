@@ -57,9 +57,13 @@ describe('what a name says a file is', () => {
         expect(typeOfFile('notes.txt')).toEqual({ kind: 'text', language: 'plaintext' });
     });
 
+    it('reads a language off a whole name for a file that carries no extension', () => {
+        expect(typeOfFile('Makefile')).toEqual({ kind: 'text', language: 'makefile' });
+        expect(typeOfFile('code/makefile')).toEqual({ kind: 'text', language: 'makefile' });
+    });
+
     it('leaves anything else as a name, a size and a link', () => {
         expect(typeOfFile('archive.tar.gz').kind).toBe('other');
-        expect(typeOfFile('Makefile').kind).toBe('other');
         expect(typeOfFile('data.npz').kind).toBe('other');
     });
 

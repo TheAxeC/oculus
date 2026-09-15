@@ -99,7 +99,7 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `memories` | Memories | The photo wall, with a control that adds a picture and a click that enlarges one. |
 | `history` | History | Every write oculus made on this machine, newest first, with what each field held before it and a control that puts it back. |
 
-Four views are opened for something rather than listed in the rail: `project` (one project as its own tab), `editor` (its manifest form), `deposit` (its public code deposit) and `doc` (one Markdown document of the hub, from a group of the rail). Three more open from a file: `document` (a local HTML file in a frame), `file` (one file drawn by what its name says it is) and `source` (one text file, edited and saved).
+Four views are opened for something rather than listed in the rail: `project` (one project as its own tab), `editor` (its manifest form), `deposit` (its public code deposit) and `doc` (one Markdown document of the hub, from a group of the rail). Three more open from a file: `document` (a local HTML file in a frame), `file` (one file drawn by what its name says it is, with a control that opens a text file the source tab may save in that tab) and `source` (one text file, edited and saved, a Markdown file beside the rendered document its text makes, which a control in the bar takes away).
 
 ## The configuration
 

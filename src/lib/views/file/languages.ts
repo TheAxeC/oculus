@@ -2,9 +2,13 @@
 // languages this window draws registered by name, and the one call that paints a file's text.
 //
 // The core build rather than the whole package, which carries close to two hundred languages against
-// the eleven a research tree actually holds. The registration runs once at load and is never written
-// after, because the library keeps its own registry and there is nothing per reader about which
-// languages exist.
+// the eighteen a research tree actually holds. The registration runs once at load and is never
+// written after, because the library keeps its own registry and there is nothing per reader about
+// which languages exist.
+//
+// There is no Svelte grammar in the package, so a component file is painted as xml: its markup and
+// its style block colour, a `<script>` block without a `lang` attribute colours as JavaScript, and the
+// `<script lang="ts">` block every component here writes does not.
 //
 // The text is escaped by highlight.js before any span is emitted, which is what lets the code window
 // put the result in the document; nothing else here touches the file's bytes.
@@ -13,12 +17,19 @@ import hljs from 'highlight.js/lib/core';
 import type { LanguageFn } from 'highlight.js';
 import bash from 'highlight.js/lib/languages/bash';
 import css from 'highlight.js/lib/languages/css';
+import ini from 'highlight.js/lib/languages/ini';
 import javascript from 'highlight.js/lib/languages/javascript';
 import json from 'highlight.js/lib/languages/json';
+import julia from 'highlight.js/lib/languages/julia';
 import latex from 'highlight.js/lib/languages/latex';
+import lisp from 'highlight.js/lib/languages/lisp';
+import makefile from 'highlight.js/lib/languages/makefile';
 import markdown from 'highlight.js/lib/languages/markdown';
+import matlab from 'highlight.js/lib/languages/matlab';
+import ocaml from 'highlight.js/lib/languages/ocaml';
 import plaintext from 'highlight.js/lib/languages/plaintext';
 import python from 'highlight.js/lib/languages/python';
+import r from 'highlight.js/lib/languages/r';
 import typescript from 'highlight.js/lib/languages/typescript';
 import xml from 'highlight.js/lib/languages/xml';
 import yaml from 'highlight.js/lib/languages/yaml';
@@ -30,12 +41,19 @@ const PLAIN = 'plaintext';
 const REGISTERED: Record<string, LanguageFn> = {
     bash,
     css,
+    ini,
     javascript,
     json,
+    julia,
     latex,
+    lisp,
+    makefile,
     markdown,
+    matlab,
+    ocaml,
     plaintext,
     python,
+    r,
     typescript,
     xml,
     yaml

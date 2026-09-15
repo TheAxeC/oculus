@@ -17,6 +17,8 @@ export type SourceDraft = {
     readIn?: string;
     error: string;
     message: string;
+    /** Whether the rendered half is drawn beside the editor, for a file that has one. */
+    preview: boolean;
 };
 
 /** One token per page lifetime: a draft carrying it was read from disk since the page loaded. */
@@ -76,6 +78,7 @@ export type SourceStore = {
     editSourceDraft: (id: string, text: string) => void;
     revertSourceDraft: (id: string) => void;
     saveSourceDraft: (id: string, root: string, path: string) => Promise<void>;
+    toggleSourcePreview: (id: string) => void;
     saveSource: (root: string, path: string, content: string) => Promise<WriteAnswer>;
 };
 
@@ -94,7 +97,10 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
             loaded: held.loaded === true,
             readIn: typeof held.readIn === 'string' ? held.readIn : undefined,
             error: typeof held.error === 'string' ? held.error : '',
-            message: typeof held.message === 'string' ? held.message : ''
+            message: typeof held.message === 'string' ? held.message : '',
+            // A tab that has never been told otherwise shows the rendered half, so opening a
+            // Markdown file reads as the document it is without a control being found first.
+            preview: held.preview !== false
         };
     }
 
@@ -144,6 +150,11 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
         updateDraft(id, { text: sourceDraft(id).saved, message: '' });
     }
 
+    /** Show or hide the rendered half. It belongs to the instance, as the working copy does. */
+    function toggleSourcePreview(id: string): void {
+        updateDraft(id, { preview: !sourceDraft(id).preview });
+    }
+
     /** A save acknowledges the exact sent copy, even if more typing follows while it is pending. */
     async function saveSourceDraft(id: string, root: string, path: string): Promise<void> {
         const content = sourceDraft(id).text;
@@ -174,6 +185,7 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
         editSourceDraft,
         revertSourceDraft,
         saveSourceDraft,
+        toggleSourcePreview,
         saveSource
     };
 }

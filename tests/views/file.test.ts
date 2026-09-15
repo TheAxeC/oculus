@@ -9,7 +9,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
 import File from '../../src/lib/views/File.svelte';
 import Code from '../../src/lib/views/file/Code.svelte';
-import { codeHtml, lineNumbers } from '../../src/lib/views/file/languages.ts';
+import { codeHtml, lineNumbers, registered } from '../../src/lib/views/file/languages.ts';
+import { typeOfFile } from '../../src/lib/state/fs.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -128,6 +129,75 @@ describe('the code window', () => {
 
     it('draws a language it has none for as plain escaped text', () => {
         expect(codeHtml('a < b\n', 'klingon')).toBe('a &lt; b\n');
+    });
+});
+
+// What a name of the research tree resolves to, and what the grammars beyond the first set paint.
+// The extension map and the highlighter's registry are two files, so each pair is checked in both.
+describe('the languages a research tree asks for', () => {
+    /** One name per extension the tree holds, with the language the code window paints it as. */
+    const NAMED: [string, string][] = [
+        ['core.lisp', 'lisp'],
+        ['macros.el', 'lisp'],
+        ['boot.scm', 'lisp'],
+        ['solver.ml', 'ocaml'],
+        ['solver.mli', 'ocaml'],
+        ['fit.R', 'r'],
+        ['fit.r', 'r'],
+        ['filter.m', 'matlab'],
+        ['sweep.jl', 'julia'],
+        ['pyproject.toml', 'ini'],
+        ['setup.ini', 'ini'],
+        ['Makefile', 'makefile'],
+        ['code/Makefile', 'makefile'],
+        ['job.slurm', 'bash'],
+        ['refs.bib', 'latex'],
+        ['run.ipynb', 'json'],
+        ['View.svelte', 'xml']
+    ];
+
+    it('opens each of them in the code window under a language the highlighter has registered', () => {
+        for (const [name, language] of NAMED) {
+            expect([name, typeOfFile(name)]).toEqual([name, { kind: 'text', language }]);
+            expect([name, registered().includes(language)]).toEqual([name, true]);
+        }
+    });
+
+    it('paints a Lisp, an OCaml, an R and a MATLAB snippet with the highlighter classes', () => {
+        expect(codeHtml('(defun add (a b) (+ a b))\n', 'lisp')).toContain('hljs-name');
+        expect(codeHtml('let add a b = a + b\n', 'ocaml')).toContain('hljs-keyword');
+        expect(codeHtml('fit <- lm(y ~ x, data = frame)\n', 'r')).toContain('hljs-operator');
+        expect(codeHtml('function y = scale(x)\ny = x * 2;\nend\n', 'matlab')).toContain(
+            'hljs-keyword'
+        );
+    });
+
+    it('paints the three that carry a research tree to its build and its settings', () => {
+        expect(codeHtml('function add(a, b)\nend\n', 'julia')).toContain('hljs-keyword');
+        expect(codeHtml('name = "oculus"\n', 'ini')).toContain('hljs-attr');
+        expect(codeHtml('all:\n\techo one\n', 'makefile')).toContain('hljs-section');
+    });
+});
+
+// The control that hands a file to a source tab is drawn only for a file the configuration lets that
+// tab open; a picture, a PDF, a blocked extension and an empty path draw none.
+describe('the control that opens a source tab', () => {
+    const word = textCatalog(config)['file.edit'];
+
+    it('is drawn for a file the source tab may save, and for nothing else', () => {
+        // The lists of extensions are the configuration's, so the client is handed the real one.
+        client.entities.receive({
+            channel: 'config',
+            version: 1,
+            payload: { config, text: textCatalog(config), findings: [] }
+        });
+        expect(drawn({ root: 'hub', path: 'README.md', label: 'README.md' })).toContain(word);
+        // A file the source tab could only show read-only gets no control: the file view already shows it.
+        expect(drawn({ root: 'hub', path: 'code/run.py', label: 'run.py' })).not.toContain(word);
+        expect(drawn({ root: 'hub', path: 'figure.png', label: 'figure.png' })).not.toContain(word);
+        expect(drawn({ root: 'hub', path: 'paper.pdf', label: 'paper.pdf' })).not.toContain(word);
+        expect(drawn({ root: 'hub', path: 'data.npz', label: 'data.npz' })).not.toContain(word);
+        expect(drawn({ root: 'hub', path: '', label: '' })).not.toContain(word);
     });
 });
 

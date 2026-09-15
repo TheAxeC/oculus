@@ -31,22 +31,31 @@
     // The star in the toolbar is the reader's own bookmarks over this file: it is set when a
     // bookmark names this root and this path, and pressing it adds one under the file's own name or
     // takes that one out again. The rail draws them, and the Files view is where one is renamed.
+    //
+    // The window itself is read only. A file whose extension `editable_extensions` lists is handed to
+    // a source tab by the control beside the star, which is the same handing-on the Config view's
+    // cards make of the engine's own YAML; a file the source tab could only show read only gets no
+    // control, since this window already shows it.
 
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import Code from './file/Code.svelte';
+    import { openSourceFile } from './shared/edit-bar';
     import { humanSize } from '$lib/state/board';
     import { fileBytesUrl } from '$lib/state/fs.svelte';
     import { extensionOf, nameOf, typeOfFile } from '$lib/state/fs';
+    import { sourceAccess } from '$lib/state/source.svelte';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
+    const client = useState();
     const {
-        fs: { addBookmark, bookmarks, fileText, removeBookmark }
-    } = useState();
+        fs: { addBookmark, bookmarks, fileText, removeBookmark },
+        selectors: { configMap }
+    } = client;
 
     let { instance }: ViewProps = $props();
 
@@ -60,6 +69,10 @@
     const held = $derived(type.kind === 'text' ? fileText(root, path) : null);
     /** What the tree knew the file's size to be, which is what an undrawn type reports. */
     const size = $derived(humanSize(number(instance.state, 'size')));
+    /** Whether the configuration lets the source tab open this file at all, to edit or to read. */
+    const openable = $derived(
+        type.kind === 'text' && path !== '' && sourceAccess(path, configMap()) === 'editable'
+    );
 
     /** The bookmark over this very file, or null when the reader has not made one. */
     const marked = $derived(
@@ -80,6 +93,12 @@
         if (typeof state !== 'object' || state === null || Array.isArray(state)) return 0;
         const value = (state as Record<string, unknown>)[key];
         return typeof value === 'number' ? value : 0;
+    }
+
+    /** Hand this file on to the source tab, which is where it is edited and saved. */
+    function edit(): void {
+        if (!openable) return;
+        openSourceFile(client, { root, path, label: nameOf(path) });
     }
 
     /** The same address in a browser tab of its own, which is also how the file is saved. */
@@ -114,6 +133,9 @@
             active={marked !== null}
             onclick={() => void mark()}
         />
+        {#if openable}
+            <ToolButton label={t('file.edit')} glyph={t('file.edit_glyph')} onclick={edit} />
+        {/if}
         <ToolButton label={t('file.open_outside')} onclick={outside} />
     </Toolbar>
 {/snippet}

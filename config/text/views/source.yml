@@ -4,6 +4,8 @@ text:
         cannot_open: 'Cannot open: {0}'
         edit: edit
         failed: failed
+        preview: Preview
+        preview_glyph: page
         save_failed: save failed
         saved: saved
         saving: saving...

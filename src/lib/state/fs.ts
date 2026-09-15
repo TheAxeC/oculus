@@ -50,35 +50,33 @@ const LANGUAGES: Record<string, string[]> = {
     javascript: ['.js', '.jsx', '.mjs', '.cjs'],
     python: ['.py'],
     yaml: ['.yml', '.yaml'],
-    json: ['.json'],
+    json: ['.json', '.ipynb'],
     bash: ['.sh', '.bash', '.zsh', '.slurm'],
     markdown: ['.md'],
     latex: ['.tex', '.bib', '.sty', '.cls'],
     css: ['.css'],
-    xml: ['.xml', '.svelte']
+    xml: ['.xml', '.svelte'],
+    lisp: ['.lisp', '.el', '.scm'],
+    ocaml: ['.ml', '.mli'],
+    r: ['.r'],
+    matlab: ['.m'],
+    julia: ['.jl'],
+    ini: ['.toml', '.ini']
+};
+
+/**
+ * The whole names a language claims, for a file that carries no extension to be read from. The name
+ * is compared lowercased, which is what makes `Makefile` and `makefile` the same file to a reader.
+ */
+const NAMES: Record<string, string[]> = {
+    makefile: ['makefile']
 };
 
 /** What the highlighter calls a file it has no language for. */
 const PLAIN = 'plaintext';
 
 /** The extensions that open in the code window, over and above the ones a language claims. */
-const TEXT = [
-    '.txt',
-    '.csv',
-    '.tsv',
-    '.log',
-    '.toml',
-    '.ini',
-    '.cfg',
-    '.conf',
-    '.c',
-    '.h',
-    '.cpp',
-    '.hpp',
-    '.r',
-    '.m',
-    '.sql'
-];
+const TEXT = ['.txt', '.csv', '.tsv', '.log', '.cfg', '.conf', '.c', '.h', '.cpp', '.hpp', '.sql'];
 
 /** The extensions drawn as a picture. */
 const IMAGES = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'];
@@ -119,13 +117,17 @@ export function typeOfFile(name: string): FileType {
     for (const [language, list] of Object.entries(LANGUAGES)) {
         if (list.includes(suffix)) return { kind: 'text', language };
     }
+    const bare = nameOf(name).toLowerCase();
+    for (const [language, list] of Object.entries(NAMES)) {
+        if (list.includes(bare)) return { kind: 'text', language };
+    }
     if (TEXT.includes(suffix)) return { kind: 'text', language: PLAIN };
     return { kind: 'other', language: PLAIN };
 }
 
 /** Every language the code window registers, which is every one a name can resolve to. */
 export function languages(): string[] {
-    return Object.keys(LANGUAGES);
+    return [...new Set([...Object.keys(LANGUAGES), ...Object.keys(NAMES)])];
 }
 
 /** How one open folder is addressed in the set of open folders, and in a listing's own cache. */
