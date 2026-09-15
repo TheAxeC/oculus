@@ -18,6 +18,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { boot, openView } from './rail.ts';
+import { alphaOf } from './style.ts';
 import { t } from './words.ts';
 
 /** The smallest PDF with a drawable page, so the type and not the size is what is exercised. */
@@ -41,6 +42,11 @@ function scratch(): string {
     writeFileSync(join(dir, 'paper.pdf'), PDF);
     writeFileSync(join(dir, 'notes.md'), '# notes\n');
     return dir;
+}
+
+/** The alpha a locator's background is painted at. */
+async function backgroundAlpha(target: ReturnType<Page['locator']>): Promise<number> {
+    return alphaOf(await target.evaluate((el) => getComputedStyle(el).backgroundColor));
 }
 
 /** The one row of the tree a root or a path is drawn as. */
@@ -172,9 +178,8 @@ test('a note is opened from the toolbar, typed into, saved on its own, and delet
     const body = page.getByRole('textbox', { name: t('note.body_label') });
     await expect(body).toBeVisible();
 
-    // Typing saves on its own, after the wait config/behavior.yml names. What proves it is the file
-    // the server reads back, not the line in the toolbar: the note's file was made by the control
-    // above, so that line says "saved" before a word is typed.
+    // Typing saves on its own: the first keystroke writes the file and the ones after it go behind
+    // the wait config/behavior.yml names. What proves it is the file the server reads back.
     await page.getByRole('textbox', { name: t('note.title_label') }).fill('a browser note');
     await body.fill('the body of it\n');
     await expect
@@ -220,25 +225,60 @@ test('a note is opened from the toolbar, typed into, saved on its own, and delet
         .toBe(0);
 });
 
-test('a note nothing was typed into is not kept', async ({ page }) => {
+/** How many notes the server holds now. */
+async function noteCount(page: Page): Promise<number> {
+    return page.evaluate(async () => {
+        const answer = await fetch('/api/fs?notes=1');
+        const held = (await answer.json()) as { notes: unknown[] };
+        return held.notes.length;
+    });
+}
+
+test("a note's file is made by the first keystroke, and the tab stays until then", async ({
+    page
+}) => {
     await boot(page);
     await openView(page, 'files', t('views.files'));
 
-    // The control writes the file before the tab is there, so a note opened and left is a name in
-    // the folder for a note that was never used.
+    // The control makes no file, so a tab left with nothing typed into it leaves nothing on the
+    // disk. The tab is still open, and the reader is the one who closes it.
     await page.getByRole('button', { name: t('files.add_note'), exact: true }).click();
-    await expect(page.getByRole('textbox', { name: t('note.body_label') })).toBeVisible();
+    const body = page.getByRole('textbox', { name: t('note.body_label') });
+    await expect(body).toBeVisible();
     await page.getByRole('tab', { name: t('views.files') }).click();
 
     await expect(page.locator('[data-fs-note]')).toHaveCount(0);
-    await expect(page.getByRole('tab', { name: t('views.note') })).toHaveCount(0);
-    expect(
-        await page.evaluate(async () => {
-            const answer = await fetch('/api/fs?notes=1');
-            const held = (await answer.json()) as { notes: unknown[] };
-            return held.notes.length;
-        })
-    ).toBe(0);
+    await expect(page.getByRole('tab', { name: t('views.note') })).toBeVisible();
+    expect(await noteCount(page)).toBe(0);
+
+    // One character is a note, and the file is there for it.
+    await page.getByRole('tab', { name: t('views.note') }).click();
+    await body.fill('a');
+    await expect.poll(() => noteCount(page), { timeout: 10_000 }).toBe(1);
+    await page.getByRole('tab', { name: t('views.files') }).click();
+    await expect(page.locator('[data-fs-note]')).toHaveCount(1);
+});
+
+test('the file browser tints its box over a wallpaper and its form paints nothing', async ({
+    page
+}) => {
+    await boot(page);
+    await page.getByRole('button', { name: t('ui.theme') }).click();
+    await page.getByRole('menuitem', { name: /mocha/ }).click();
+    await expect(page.locator('.wallpaper')).toHaveCount(1);
+    await openView(page, 'files', t('views.files'));
+
+    // The view draws its tree and its lists straight into the box, so the box carries the surface.
+    const box = page.locator('[data-pane][data-pane-view="files"] .pane').first();
+    await expect.poll(() => backgroundAlpha(box)).toBeGreaterThan(0);
+    expect(await backgroundAlpha(box)).toBeLessThan(1);
+
+    // The form inside it paints nothing, so it is not a second translucent layer over the first.
+    // Not an exact name: a terminal theme draws a control's word inside brackets.
+    await page.getByRole('button', { name: t('files.add_bookmark') }).click();
+    const form = page.locator('[data-form="add"]');
+    await expect(form).toBeVisible();
+    expect(await backgroundAlpha(form)).toBe(0);
 });
 
 test('the first bookmark is made from the form, and an HTML one is one tab from either place', async ({

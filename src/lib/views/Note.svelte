@@ -23,6 +23,10 @@
     // every keystroke (state/notes.ts), so typing a paragraph is one write and not one per letter,
     // and the toolbar says when the last one landed.
     //
+    // A note's file is made by its first keystroke and not by the control that opened the tab, so a
+    // tab left with nothing typed into it leaves nothing on the disk and nothing has to be cleaned
+    // up behind the reader. Nothing here deletes a note; the Files list's own control does that.
+    //
     // The note never leaves this machine: the endpoint writes it into the folder the server's own
     // configuration names and reads it back from there, and nothing else is told about it.
 
@@ -33,30 +37,40 @@
     import TextInput from '$lib/ui/TextInput.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import {
-        abandoned,
         autosaveMs,
         browserTimer,
         debounce,
         stamp,
-        titleOf
+        titleOf,
+        writesNow
     } from '$lib/state/notes';
-    import { NOTE_GONE } from '$lib/state/fs.svelte';
+    import { NOTE_GONE, type NoteState } from '$lib/state/fs.svelte';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
     const {
-        fs: { deleteNote, note, noteDeleted, saveNote },
-        layout: { closeRecord, restateInstance },
+        fs: { note, noteDeleted, saveNote },
+        layout: { restateInstance },
         selectors: { configMap }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
+    /** What a note whose file is not written yet reads as, so nothing asks the server for it. */
+    const BLANK: NoteState = {
+        id: '',
+        title: '',
+        body: '',
+        modified: 0,
+        error: '',
+        loading: false
+    };
+
     const id = $derived(read(instance.state, 'id'));
-    const held = $derived(note(id));
-    /** Whether this tab was opened for a note nothing has been written to: its file is empty. */
+    /** Whether this tab's note has no file yet: nothing has been typed into it. */
     const fresh = $derived(flag(instance.state, 'fresh'));
+    const held = $derived(fresh ? BLANK : note(id));
 
     /** What the reader has typed, and which note it belongs to. */
     let draft: { id: string; title: string; body: string } = $state({
@@ -72,6 +86,13 @@
     let savedAt = $state('');
     /** What the last save failed with, in the endpoint's own word. */
     let failed = $state('');
+    /**
+     * The tab this note is drawn in and the label that tab carries. The `instance` prop is a live
+     * reference to whatever the pane is drawing, so a save landing after the pane moved to another
+     * tab would name that tab instead of this one; both are read while the reader is typing here.
+     */
+    let tab = '';
+    let named = '';
 
     /** How tall the text area opens. A note is prose, so it takes the pane rather than three lines. */
     const ROWS = 20;
@@ -103,6 +124,8 @@
         touched = false;
         savedAt = '';
         failed = '';
+        tab = '';
+        named = '';
         draft = { id: '', title: '', body: '' };
     }
 
@@ -118,8 +141,8 @@
     // The file is read into the draft once per note. A later answer for the same note, which is what
     // a save asks for again, leaves it alone; so does an answer for a note the reader has already
     // typed into, which is what a fresh note's first keystrokes are while its file is still coming.
-    // A note opened for the first time is empty by construction and is seeded without waiting, so
-    // what the tab knows about its note does not depend on a round trip having landed.
+    // A note with no file yet is empty by construction and is seeded without waiting, so what the
+    // tab knows about its note does not depend on a round trip having landed.
     $effect(() => {
         if (id === '' || seeded === id) return;
         if (touched && draft.id === id) {
@@ -150,56 +173,58 @@
     }
 
     /**
-     * Whether one note holds nothing and nothing was typed into it. The file has to have been read
-     * into the draft first: a tab closed before its note arrived knows nothing about what is in it,
-     * and what it does not know it does not delete.
-     */
-    function empty(which: string): boolean {
-        return seeded === which && abandoned(draft.title, draft.body, touched);
-    }
-
-    /**
      * What leaving a note does, which is the tab closing or the pane switching to another note. A
      * wait still running is run now rather than dropped, so what was typed in the last moment is
-     * written and not lost; a note that is already gone is not written back; and a note nothing was
-     * ever typed into is taken off the disk and its tab with it, since "+ note" made its file before
-     * the tab was opened and what is left is a name in the folder for a note that was never used.
+     * written and not lost. Nothing is deleted and no tab is closed here: a note with nothing in it
+     * has no file to take away, and the list's own delete control is the one thing that removes one.
+     * A note nothing was typed into holds no wait and may have no file, so it is left untouched.
      */
     function leave(which: string): void {
-        if (which === '' || vanished(which)) {
+        if (which === '' || tab === '' || vanished(which)) {
             autosave.cancel();
-            return;
-        }
-        if (empty(which)) {
-            autosave.cancel();
-            void deleteNote(which);
-            closeRecord('note', which);
             return;
         }
         autosave.flush();
     }
 
-    /** One keystroke: the draft takes it and the note's id, and the wait starts again. */
+    /**
+     * One keystroke: the draft takes it and the note's id. The first keystroke into a note with no
+     * file writes it at once, so the words are on the disk the moment there are any and a reload
+     * inside the wait cannot lose them; every keystroke after it starts the wait again.
+     */
     function typed(part: 'title' | 'body', value: string): void {
+        const first = writesNow(fresh, touched);
+        if (tab === '') {
+            tab = instance.id;
+            named = read(instance.state, 'label');
+        }
         draft = { ...draft, id, [part]: value };
         touched = true;
+        if (first) {
+            void save(true);
+            return;
+        }
         autosave.poke();
     }
 
     /**
      * Write the draft to its file, under the title the note is written as, and name the tab by that
      * title: the strip draws an instance's `label`, so two open notes read as two names rather than
-     * as "Note" twice.
+     * as "Note" twice. The write that makes the file also takes the tab's `fresh` flag off, since the
+     * file is there from now on and a reload reads it rather than opening on an empty draft.
      */
-    async function save(): Promise<void> {
-        if (draft.id === '') return;
+    async function save(made = false): Promise<void> {
+        if (draft.id === '' || tab === '') return;
         const answer = await saveNote(draft.id, written, draft.body);
         failed = answer.ok ? '' : (answer.error ?? '');
         if (!answer.ok) return;
         savedAt = stamp(Date.now());
-        if (read(instance.state, 'label') !== written) {
-            restateInstance(instance.id, { id: draft.id, label: written });
-        }
+        // The tab is restated when its label moved and whenever it still carries `fresh`: a first
+        // write that failed leaves the flag on, and the retry that lands must take it off even
+        // when the title is still empty, or a reload would draw a blank over a file that is there.
+        if (!made && !fresh && named === written) return;
+        named = written;
+        restateInstance(tab, { id: draft.id, label: written });
     }
 </script>
 

@@ -84,6 +84,20 @@ describe('the file browser as a tab', () => {
     });
 });
 
+// Pressing the control is a DOM event no server render fires, so what it does is read off the source.
+describe('the control that opens a note', () => {
+    const source = readFileSync('src/lib/views/Files.svelte', 'utf8');
+
+    it('opens the tab and writes no file, so a note nothing was typed into leaves nothing', () => {
+        const from = source.slice(source.indexOf('function addNote('));
+        const body = from.slice(0, from.indexOf('\n    }'));
+
+        expect(body).toContain("openView('note', { id: noteId(new Date()), fresh: true })");
+        expect(body).not.toContain('saveNote');
+        expect(source).not.toContain('saveNote');
+    });
+});
+
 describe('the tree', () => {
     it('draws one line per root and the first level of the one that is open', () => {
         const { body } = render(Tree, {

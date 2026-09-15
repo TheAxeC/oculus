@@ -64,13 +64,13 @@ export function autosaveMs(config: Record<string, unknown>): number {
 }
 
 /**
- * Whether a note's tab is closing on nothing: no title, no body, and nothing typed into it. The
- * control that opens a note writes its file before the tab is there, so a note this is true of was
- * made and never used, and closing the tab takes it off the disk rather than leaving an untitled
- * empty note in the folder for good.
+ * Whether one keystroke writes its note now rather than behind the wait: the first one into a note
+ * whose file is not there yet. The control that opens a note writes nothing, so the file is made the
+ * moment the note holds anything, and a reload or a crash inside the wait cannot lose its first
+ * words. Every keystroke after that goes through the wait like any other.
  */
-export function abandoned(title: string, body: string, touched: boolean): boolean {
-    return !touched && title.trim() === '' && body === '';
+export function writesNow(fresh: boolean, touched: boolean): boolean {
+    return fresh && !touched;
 }
 
 /** The two timer calls a scheduler is given, so a case hands it a clock of its own. */

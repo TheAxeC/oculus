@@ -69,7 +69,7 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `data` | Data | The dataset registry: where each set came from and how it is recovered. |
 | `code` | Code | The repositories registry, what the portfolio says about its own code, and the software projects of the `projects/software` tier with the papers each one names. |
 | `statements` | Statements | The reusable boilerplate paragraphs. |
-| `files` | Files | The file browser over the hub, the engine config folder and the configured roots, with saved workspaces. |
+| `files` | Files | The file browser over the hub, the engine config folder and the configured roots, with saved workspaces. A scratch note's file is made by the first keystroke typed into it, and the delete control in the Notes list is the one thing that takes a note away. |
 | `funding` | Funding | The funding schemes, their stage and the statement each grant requires. |
 | `events` | Talks & Events | Talks, events and what is coming. |
 | `education` | Education & Service | Teaching and service entries. |

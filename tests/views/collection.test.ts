@@ -577,7 +577,7 @@ describe('the code view', () => {
 
 describe('the entry form', () => {
     /** The form as the card opens it: over one entry to edit, and over none to add. */
-    function form(entry: Entry | null): string {
+    function form(entry: Entry | null, props: Record<string, unknown> = {}): string {
         return render(EntryForm, {
             context: clientContext(client),
             props: {
@@ -585,9 +585,15 @@ describe('the entry form', () => {
                 schema: FUNDING_SCHEMA,
                 entry,
                 onclose: noop,
-                onsaid: noop
+                onsaid: noop,
+                ...props
             }
         }).body;
+    }
+
+    /** The classes on the form's own box, which is what carries its surface. */
+    function box(body: string): string[] {
+        return (/<div class="([^"]*)" data-form=/.exec(body)?.[1] ?? '').split(' ');
     }
 
     it("draws one control per schema field, in the file's order", () => {
@@ -627,6 +633,14 @@ describe('the entry form', () => {
         expect(body).toContain('value="Where"');
         expect(body).toContain(catalog['collection.meta_add']);
         expect(body).toContain(catalog['collection.meta_remove']);
+    });
+
+    it('paints a box of its own, and none for a caller that asks for no surface', () => {
+        // The border and the padding are the same either way; only the fill goes, so a caller whose
+        // own box already carries the surface does not draw a second one inside it.
+        expect(box(form(null))).toContain('surface');
+        expect(box(form(null, { surface: false }))).not.toContain('surface');
+        expect(form(null, { surface: false })).toContain('data-form="add"');
     });
 
     it("pre-fills a raw textarea with the entry map's JSON", () => {

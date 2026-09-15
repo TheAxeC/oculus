@@ -28,7 +28,8 @@
     // A bookmark is a collection entry, so it is added and edited by the form every other collection
     // is edited by, over the schema its own file carries; the one thing this view supplies is the
     // list of roots a bookmark may name, since that is what the workspace in force says and not what
-    // the file said when it was written. A note is a file in a folder of its own and opens as a tab.
+    // the file said when it was written. A note opens as a tab and is a file in a folder of its own,
+    // written by the first keystroke typed into it.
 
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
@@ -68,7 +69,6 @@
             listing,
             notes,
             removeRoot,
-            saveNote,
             saveWorkspace,
             selectWorkspace,
             workspaces
@@ -213,18 +213,12 @@
         note = answer.ok ? '' : refusal(answer.error ?? '');
     }
 
-    /** Make one note, so its file is there before its tab is, and open it. */
-    async function addNote(): Promise<void> {
-        const id = noteId(new Date());
-        const answer = await saveNote(id, '', '');
-        if (!answer.ok) {
-            note = refusal(answer.error ?? '');
-            return;
-        }
+    /** Open one note. Its file is written by the first keystroke, so nothing is made here. */
+    function addNote(): void {
         note = '';
-        // The tab is told the note is new, so it knows its note is empty without a round trip and a
-        // tab closed at once does not leave an untouched note in the folder.
-        openView('note', { id, fresh: true });
+        // The tab is told its note has no file yet, so it knows the note is empty without a round
+        // trip and asks the server for nothing that is not there.
+        openView('note', { id: noteId(new Date()), fresh: true });
     }
 
     /** Open one note as its own tab, under the title it carries now. */
@@ -297,12 +291,12 @@
         <ToolButton
             label={t('files.add_note')}
             title={t('files.add_note_title')}
-            onclick={() => void addNote()}
+            onclick={addNote}
         />
     </Toolbar>
 {/snippet}
 
-<Pane title={t('views.files')} toolbar={tools}>
+<Pane title={t('views.files')} toolbar={tools} tinted>
     <div class="files" data-instance={instance.id}>
         {#if form === 'root' || form === 'workspace'}
             <RootForm
@@ -328,6 +322,7 @@
                 schema={markSchema}
                 entry={editedMark}
                 initial={{ root: current.roots[0]?.key ?? '' }}
+                surface={false}
                 onadd={addBookmark}
                 onclose={closeForm}
                 onsaid={(answer: string) => {

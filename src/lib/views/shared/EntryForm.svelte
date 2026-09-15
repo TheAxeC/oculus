@@ -49,6 +49,13 @@
         entry: Entry | null;
         /** What the controls of a form that adds an entry open holding, by field. */
         initial?: Record<string, unknown>;
+        /**
+         * Whether the form paints a surface of its own. A caller that draws it inside a card or a
+         * list leaves it on, so the fields sit on their own box; a caller whose own box already
+         * carries the surface turns it off, so the form is not a second translucent layer over a
+         * wallpaper. The border and the padding stay either way, so the fields read as one block.
+         */
+        surface?: boolean;
         /** A dedicated add write for a schema-driven file that is not a collection. */
         onadd?: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
         onclose: () => void;
@@ -61,6 +68,7 @@
         schema,
         entry,
         initial: opening = {},
+        surface = true,
         onadd,
         onclose,
         onsaid
@@ -220,7 +228,7 @@
     }
 </script>
 
-<div class="form" data-form={entry === null ? 'add' : 'edit'}>
+<div class="form" class:surface data-form={entry === null ? 'add' : 'edit'}>
     <div class="head">
         <span class="label">
             {entry === null ? t('collection.form_add_title') : t('collection.form_edit_title')}
@@ -337,10 +345,15 @@
         padding: 6px;
         border: 1px solid var(--line);
         border-radius: var(--radius-sm);
+    }
+
+    /* The box of a form the caller asked to paint one. A caller that says no gets the border and the
+       padding alone, so the fields still read as one block on whatever is behind them. */
+    .form.surface {
         background: var(--panel);
     }
 
-    :global(body.wall) .form {
+    :global(body.wall) .form.surface {
         background: color-mix(in srgb, var(--panel) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
     }

@@ -1,6 +1,6 @@
 // The pure half of the scratch notes: what a note is filed under, what it is called when it carries
-// no title, when it says it was saved, how long it waits before saving, and that the wait is one
-// save however long the typing goes on.
+// no title, when it says it was saved, how long it waits before saving, that the wait is one save
+// however long the typing goes on, and which keystroke writes its note without waiting at all.
 //
 // The wait is driven by a clock of this file's own rather than by real time: the scheduler takes the
 // two timer calls, so a case runs the wait forward by hand and nothing here sleeps.
@@ -10,12 +10,12 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-    abandoned,
     autosaveMs,
     debounce,
     noteId,
     stamp,
     titleOf,
+    writesNow,
     type Timer
 } from '../../src/lib/state/notes.ts';
 
@@ -240,15 +240,17 @@ describe('a wait its caller is going away from', () => {
     });
 });
 
-describe('a note nothing was ever put in', () => {
-    it('is one nothing was typed into that holds no title and no body', () => {
-        expect(abandoned('', '', false)).toBe(true);
-        expect(abandoned('   ', '', false)).toBe(true);
+describe('the keystroke that writes its note at once', () => {
+    it('is the first one into a note whose file is not there yet', () => {
+        expect(writesNow(true, false)).toBe(true);
     });
 
-    it('is not one that holds something, or one the reader typed in and cleared', () => {
-        expect(abandoned('a title', '', false)).toBe(false);
-        expect(abandoned('', 'a body', false)).toBe(false);
-        expect(abandoned('', '', true)).toBe(false);
+    it('is not the ones after it, which go through the wait like any other', () => {
+        expect(writesNow(true, true)).toBe(false);
+    });
+
+    it('is not any keystroke into a note that has a file already', () => {
+        expect(writesNow(false, false)).toBe(false);
+        expect(writesNow(false, true)).toBe(false);
     });
 });
