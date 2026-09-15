@@ -27,6 +27,10 @@
     // The PDF frame carries no sandbox: Chrome refuses to run its own PDF viewer inside a sandboxed
     // frame and draws an error page instead, and what the frame shows is a file this server serves
     // from a root it checked, so the frame is as trusted as the page around it.
+    //
+    // The star in the toolbar is the reader's own bookmarks over this file: it is set when a
+    // bookmark names this root and this path, and pressing it adds one under the file's own name or
+    // takes that one out again. The rail draws them, and the Files view is where one is renamed.
 
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
@@ -41,7 +45,7 @@
     import { useState } from '$lib/state/use';
 
     const {
-        fs: { fileText }
+        fs: { addBookmark, bookmarks, fileText, removeBookmark }
     } = useState();
 
     let { instance }: ViewProps = $props();
@@ -56,6 +60,15 @@
     const held = $derived(type.kind === 'text' ? fileText(root, path) : null);
     /** What the tree knew the file's size to be, which is what an undrawn type reports. */
     const size = $derived(humanSize(number(instance.state, 'size')));
+
+    /** The bookmark over this very file, or null when the reader has not made one. */
+    const marked = $derived(
+        bookmarks().entries.find((one) => one.fields.root === root && one.fields.path === path) ??
+            null
+    );
+
+    /** What the last bookmark write failed with, in the endpoint's own words. */
+    let failed = $state('');
 
     function read(state: unknown, key: string): string {
         if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
@@ -74,16 +87,42 @@
         if (src === '') return;
         window.open(src, '_blank', 'noopener');
     }
+
+    /**
+     * Bookmark this file under its own name, or take the bookmark over it out again. A label another
+     * bookmark already holds is refused rather than written over, which the endpoint says in words
+     * and the line under the toolbar repeats; the Files view is where that one is renamed.
+     */
+    async function mark(): Promise<void> {
+        if (root === '' || path === '') return;
+        const answer =
+            marked === null
+                ? await addBookmark({ label: nameOf(path), root, path })
+                : await removeBookmark(marked.id);
+        failed = answer.ok
+            ? answer.refused.map((one) => one.reason).join('; ')
+            : (answer.error ?? '');
+    }
 </script>
 
 {#snippet tools()}
     <Toolbar label={t('file.toolbar')}>
+        <ToolButton
+            label={marked === null ? t('file.bookmark') : t('file.unbookmark')}
+            glyph={t('file.bookmark_glyph')}
+            pressed={marked !== null}
+            active={marked !== null}
+            onclick={() => void mark()}
+        />
         <ToolButton label={t('file.open_outside')} onclick={outside} />
     </Toolbar>
 {/snippet}
 
 <Pane {title} toolbar={tools}>
     <div class="file" data-instance={instance.id} data-root={root} data-path={path}>
+        {#if failed !== ''}
+            <p class="failed" aria-live="polite">{t('file.bookmark_failed', failed)}</p>
+        {/if}
         {#if src === ''}
             <Empty message={t('file.none')} glyph={t('file.none_glyph')} />
         {:else if type.kind === 'image'}
@@ -161,6 +200,12 @@
     .note {
         margin: 0;
         color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
+    }
+
+    .failed {
+        margin: 0;
+        color: var(--c-red-txt);
         font-size: var(--fs-sm);
     }
 </style>

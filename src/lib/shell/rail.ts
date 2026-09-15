@@ -10,29 +10,27 @@ import type { RailOrder } from './keys';
 export type NavGroup = { id: string; label: string; glyph?: string; chord?: string };
 
 /**
- * One entry of the rail's Docs section, as `bookmarks` in the config: a local file under one of
- * the roots of sources.yml, which the `document` view opens as a tab of its own.
+ * One entry of the rail's Docs section: a local file under one of the roots of sources.yml, either
+ * from `bookmarks` in the config or from the reader's own file.
+ *
+ * `view` is which view opens it. A page is a document of its own so that its stylesheets and
+ * relative assets resolve, and anything else is the file view; which is which is a question about a
+ * file name, which the state layer answers, so the page decides it and the rail is told. A bookmark
+ * that does not say is a document, which is what every configured one is.
  */
-export type Bookmark = { label: string; root: string; path: string };
-
-/**
- * What openView is handed for a bookmark. The `id` is what makes two bookmarks two tabs: a state
- * carrying one names which instance is wanted, so a second click on the same bookmark activates
- * the tab it already has and a click on the other one opens a second tab beside it.
- */
-export function documentState(mark: Bookmark): {
-    id: string;
+export type Bookmark = {
+    label: string;
     root: string;
     path: string;
-    label: string;
-} {
-    return {
-        id: `${mark.root}/${mark.path}`,
-        root: mark.root,
-        path: mark.path,
-        label: mark.label
-    };
-}
+    view?: 'document' | 'file';
+};
+
+/**
+ * What openView is handed for a bookmark. It is state/instance.ts's, since the file browser opens a
+ * bookmark as well and the same document opened from the two places is one tab; the rail re-exports
+ * it under the name its own readers know it by.
+ */
+export { documentState } from '$lib/state/layout';
 
 /**
  * One entry of the `docs:` list of config/layout.yml: a Markdown document of the hub, drawn inside

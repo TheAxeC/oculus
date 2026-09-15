@@ -25,6 +25,7 @@ icons:
     arrow_to: arrow-right
     bullet: dot
     edit: pencil
+    star: star
     draft: pen-line
     chat: message-square
     clear: eraser
@@ -74,6 +75,7 @@ icons:
     compass: compass
     editor: square-pen
     settings: settings
+    note: sticky-note
     live: zap
     inbox: inbox
     memories: images

@@ -93,6 +93,59 @@ export function setEntryFields(
 }
 
 /**
+ * Write a collection's entry list with one rendered entry under it, for a file whose list holds
+ * nothing. YAML has no empty block list, so such a file is in one of two states: it carries no list
+ * key at all, which is a file nothing has ever been written to, or it carries the key with nothing
+ * under it, which is what deleting the last entry leaves. The first gets the key at the end of the
+ * file, the second gets the block under the key it already has, and a file whose list holds an entry
+ * is left alone, since appendEntry is what grows one.
+ *
+ * The result is verified the way an append is: the file parses, the key is a list of exactly the one
+ * entry, and every other key is what it was.
+ */
+export function startEntries(source: string, listKey: string, block: string): EditResult {
+    const doc = document(source);
+    if (doc === null) return refuseAll(source, [listKey], 'the file does not parse');
+    const pair = pairOf(doc.contents as YAMLMap, listKey);
+    // A key with nothing written under it parses as a scalar holding null rather than as no value,
+    // which is what the file deleting its last entry left behind.
+    const dangling =
+        pair !== undefined &&
+        (pair.value === null || (isScalar(pair.value) && pair.value.value === null));
+    if (pair !== undefined && !dangling) {
+        return refuseAll(source, [listKey], `the file already has a ${listKey} key`);
+    }
+    let text: string;
+    if (pair === undefined) {
+        text = `${source.replace(/\n*$/, '\n')}\n${listKey}:\n${block}\n`;
+    } else {
+        const key = rangeOf(pair.key);
+        if (key === null) return refuseAll(source, [listKey], 'the key has no place in the file');
+        const lines = source.split('\n');
+        lines.splice(lineAt(source, key[0]) + 1, 0, ...block.split('\n'));
+        text = lines.join('\n');
+    }
+
+    const before = asJs(source);
+    const after = asJs(text);
+    if (!isRecord(before) || !isRecord(after)) {
+        return refuseAll(source, [listKey], 'the edit did not verify; nothing was written');
+    }
+    const has = after[listKey];
+    const without = (held: Record<string, unknown>): Record<string, unknown> =>
+        Object.fromEntries(Object.entries(held).filter(([key]) => key !== listKey));
+    if (
+        !Array.isArray(has) ||
+        has.length !== 1 ||
+        (before[listKey] ?? null) !== null ||
+        !deepEqual(without(after), without(before))
+    ) {
+        return refuseAll(source, [listKey], 'the edit did not verify; nothing was written');
+    }
+    return { text, changed: [listKey], refused: [] };
+}
+
+/**
  * Append one rendered entry to a collection's list, at the end of the list and before whatever the
  * file holds after it. The block is the entry's own lines, the first of them opening with `- `.
  */

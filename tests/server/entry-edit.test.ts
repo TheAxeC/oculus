@@ -26,6 +26,7 @@ import {
     renderFlowMap,
     reorderEntries,
     setEntryFields,
+    startEntries,
     setHostStatus,
     setSubtask,
     subtaskLines
@@ -781,5 +782,83 @@ describe('renderFlowMap', () => {
         expect(parse(list)).toEqual({ tags: ['a', 'b, c'] });
         const map = renderFlowMap({ where: { host: 'utwente', note: 'a, b' } });
         expect(parse(map)).toEqual({ where: { host: 'utwente', note: 'a, b' } });
+    });
+});
+
+// The list key a collection file gets its first time. YAML writes no empty block list, so a file
+// with no entries yet carries no list key at all and this is what adds one.
+describe('the first entry of a file that has none', () => {
+    const HEAD = ['title: Bookmarks', '', 'schema:', '  - { field: label, type: text }', ''].join(
+        '\n'
+    );
+
+    const BLOCK = '  - label: the manual\n    root: hub\n    path: docs/manual.md';
+
+    it('writes the key with the one entry under it, and leaves every other key as it was', () => {
+        const out = startEntries(HEAD, 'entries', BLOCK);
+
+        expect(out.changed).toEqual(['entries']);
+        expect(out.refused).toEqual([]);
+        expect(parse(out.text)).toEqual({
+            title: 'Bookmarks',
+            schema: [{ field: 'label', type: 'text' }],
+            entries: [{ label: 'the manual', root: 'hub', path: 'docs/manual.md' }]
+        });
+        // The text above the key is the text that was there, byte for byte.
+        expect(out.text.startsWith(HEAD.replace(/\n*$/, '\n'))).toBe(true);
+    });
+
+    it("refuses a file whose list holds an entry, which is appendEntry's to grow", () => {
+        const held = `${HEAD}\nentries:\n  - label: one\n`;
+        const out = startEntries(held, 'entries', BLOCK);
+
+        expect(out.changed).toEqual([]);
+        expect(out.refused).toEqual([
+            { field: 'entries', reason: 'the file already has a entries key' }
+        ]);
+        expect(out.text).toBe(held);
+    });
+
+    it('writes under the key a file already carries when nothing is under it', () => {
+        // What deleting the last entry leaves: the key is there and its list is gone.
+        const emptied = `${HEAD}\nentries:\n`;
+        const out = startEntries(emptied, 'entries', BLOCK);
+
+        expect(out.changed).toEqual(['entries']);
+        expect(parse(out.text)).toEqual({
+            title: 'Bookmarks',
+            schema: [{ field: 'label', type: 'text' }],
+            entries: [{ label: 'the manual', root: 'hub', path: 'docs/manual.md' }]
+        });
+        // The key keeps its place; nothing is appended below what follows it.
+        expect(out.text.indexOf('entries:')).toBe(emptied.indexOf('entries:'));
+    });
+
+    it('writes under an emptied key that is not the last one in the file', () => {
+        const emptied = `entries:\n\n${HEAD}`;
+        const out = startEntries(emptied, 'entries', BLOCK);
+
+        expect(out.changed).toEqual(['entries']);
+        expect(parse(out.text)).toEqual({
+            entries: [{ label: 'the manual', root: 'hub', path: 'docs/manual.md' }],
+            title: 'Bookmarks',
+            schema: [{ field: 'label', type: 'text' }]
+        });
+    });
+
+    it('refuses a file that does not parse, and writes nothing', () => {
+        const broken = 'title: [unclosed\n';
+        const out = startEntries(broken, 'entries', BLOCK);
+
+        expect(out.changed).toEqual([]);
+        expect(out.refused).toEqual([{ field: 'entries', reason: 'the file does not parse' }]);
+        expect(out.text).toBe(broken);
+    });
+
+    it('refuses a block that is not one entry, rather than writing a file it cannot verify', () => {
+        const two = `${BLOCK}\n  - label: another\n    root: hub\n    path: b.md`;
+
+        expect(startEntries(HEAD, 'entries', two).changed).toEqual([]);
+        expect(startEntries(HEAD, 'entries', two).refused[0].reason).toContain('did not verify');
     });
 });

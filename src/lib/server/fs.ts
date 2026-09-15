@@ -1,5 +1,11 @@
-// Layer 2, server. The file browser's two server concerns: the entries of one directory under a
-// named root, and the workspaces the reader saved on this machine.
+// Layer 2, server. The file browser's server concerns: the entries of one directory under a named
+// root, the workspaces the reader saved on this machine, and the two things the reader keeps beside
+// them, their own bookmarks and their scratch notes.
+//
+// The bookmarks and the notes are read here and written through this route because they are the file
+// browser's: a bookmark is a file under a root and a note is a file in a folder. What each one is
+// kept in is its own module, fs/bookmarks.ts and fs/notes.ts; a bookmark is written by the collection
+// write path instead, since it is a collection file and the entry form edits it.
 //
 // A listing is one level deep and read at the call. The tree asks for a folder when the folder is
 // opened, so nothing walks a root: a home directory with a hundred thousand files under it costs one
@@ -27,6 +33,8 @@ import { homedir } from 'node:os';
 import { basename, isAbsolute, join, sep } from 'node:path';
 import { hasToken, sameOrigin } from './auth.ts';
 import { expandHome, HUB_ROOT, resolveRootPath, type Root } from './files.ts';
+import { readBookmarks } from './fs/bookmarks.ts';
+import { deleteNote, listNotes, readNote, saveNote } from './fs/notes.ts';
 import { isMap, readJson, writeJsonAtomic } from './sessions/json.ts';
 
 /** One entry of one directory, as the tree draws it. */
@@ -73,10 +81,14 @@ export function fsWrites(): FsWrites {
     return { chain: Promise.resolve() };
 }
 
-/** What one request needs: the file to read and write, the roots no workspace may touch, and the chain. */
+/** What one request needs: the files to read and write, the roots no workspace may touch, and the chain. */
 export type FsTarget = {
     /** The workspaces file this request reads and writes. */
     file: string;
+    /** The reader's own bookmarks file, which this request reads and the write path writes. */
+    bookmarks: string;
+    /** The folder the scratch notes live in. */
+    notes: string;
     /** The hub and the configured roots, resolved once for this request. */
     fixed: Root[];
     /** The process's write chain. */
@@ -289,15 +301,25 @@ export function workspacesAnswer(into: FsTarget, saved: Saved): WorkspacesAnswer
 }
 
 /**
- * GET /api/fs: the entries of the directory a root and a path name, or, with no root named, the
- * workspaces. A read, so it carries no token; it is still refused to another origin, since any page
- * open in the browser can address this server. The file is read once, whichever answer is given.
+ * GET /api/fs: one of five reads, chosen by what the query names. `bookmarks` answers the reader's
+ * own bookmarks and their schema, `notes` every scratch note, `note` one note's own text, a root and
+ * a path the entries of that directory, and nothing at all the workspaces.
+ *
+ * A read, so it carries no token; it is still refused to another origin, since any page open in the
+ * browser can address this server. One file is read, whichever answer is given.
  */
 export function handleFs(request: Request, into: FsTarget): Response {
     if (!sameOrigin(request, request.headers.get('host') ?? '')) {
         return json(403, { error: 'origin' });
     }
     const url = new URL(request.url);
+    if (url.searchParams.get('bookmarks') !== null) return json(200, readBookmarks(into.bookmarks));
+    if (url.searchParams.get('notes') !== null) return json(200, { notes: listNotes(into.notes) });
+    const one = url.searchParams.get('note');
+    if (one !== null) {
+        const note = readNote(into.notes, one);
+        return note === null ? json(404, { error: 'no-such-note' }) : json(200, note);
+    }
     const key = url.searchParams.get('root') ?? '';
     const path = url.searchParams.get('path') ?? '';
     const saved = readSaved(into.file, reservedKeys(into.fixed));
@@ -308,7 +330,14 @@ export function handleFs(request: Request, into: FsTarget): Response {
 }
 
 /** Every action POST /api/fs knows. */
-export const ACTIONS = ['add-root', 'remove-root', 'save-workspace', 'select-workspace'];
+export const ACTIONS = [
+    'add-root',
+    'remove-root',
+    'save-workspace',
+    'select-workspace',
+    'note-save',
+    'note-delete'
+];
 
 /**
  * The workspace a write lands in. The default workspace holds no roots of its own until one is
@@ -384,8 +413,25 @@ function selectWorkspace(saved: Saved, fields: Record<string, unknown>, into: Fs
     return written(saved, into);
 }
 
+/** Write one note, which is a file of its own rather than a change to the workspaces file. */
+function writeNote(fields: Record<string, unknown>, into: FsTarget): Response {
+    const id = text(fields.id).trim();
+    const row = saveNote(into.notes, id, text(fields.title), text(fields.body));
+    if (row === null) return json(400, { error: 'no-such-note' });
+    return json(200, { ok: true, changed: ['note'], refused: [], note: row });
+}
+
+/** Take one note off the disk. */
+function removeNote(fields: Record<string, unknown>, into: FsTarget): Response {
+    const id = text(fields.id).trim();
+    if (!deleteNote(into.notes, id)) return json(400, { error: 'no-such-note' });
+    return json(200, { ok: true, changed: ['note'], refused: [] });
+}
+
 /** One action, read and written behind the process's chain so no change is lost to another's write. */
 function act(action: string, fields: Record<string, unknown>, into: FsTarget): Response {
+    if (action === 'note-save') return writeNote(fields, into);
+    if (action === 'note-delete') return removeNote(fields, into);
     const saved = readSaved(into.file, reservedKeys(into.fixed));
     if (action === 'add-root') return addRoot(saved, fields, into);
     if (action === 'remove-root') return removeRoot(saved, fields, into);

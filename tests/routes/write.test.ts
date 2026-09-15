@@ -81,11 +81,16 @@ function target(): WriteTarget {
     // can never reach ~/.oculus/sessions.json.
     const overrides = join(dir, 'sessions.json');
     expect(resolve(overrides).startsWith(resolve(dir) + sep)).toBe(true);
+    // The bookmarks file is inside it too, so a collection write in this suite can never reach
+    // ~/.oculus/bookmarks.yml.
+    const bookmarks = join(dir, 'bookmarks.yml');
+    expect(resolve(bookmarks).startsWith(resolve(dir) + sep)).toBe(true);
     return {
         hub: dir,
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
         overrides,
-        projects: () => []
+        projects: () => [],
+        bookmarks
     };
 }
 
@@ -670,7 +675,8 @@ function deckTarget(): WriteTarget {
     return {
         hub: dir,
         config: { ...real, deck: deckMapOf(DECK), deckFile: file },
-        projects: () => [slideProject('alpha', 'active'), slideProject('gamma', 'archive')]
+        projects: () => [slideProject('alpha', 'active'), slideProject('gamma', 'archive')],
+        bookmarks: join(dir, 'bookmarks.yml')
     };
 }
 

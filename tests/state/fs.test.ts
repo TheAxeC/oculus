@@ -20,7 +20,7 @@ import {
     type FsEntry,
     type FsRoot
 } from '../../src/lib/state/fs.ts';
-import { fileBytesUrl, listingUrl } from '../../src/lib/state/fs.svelte.ts';
+import { fileBytesUrl, listingUrl, FS_PATH, NOTE_GONE } from '../../src/lib/state/fs.svelte.ts';
 import { registered } from '../../src/lib/views/file/languages.ts';
 import { createClientState, type ClientState } from '../client.ts';
 
@@ -487,5 +487,172 @@ describe('the store reading the endpoints', () => {
         late.land(new Response('after\n', { status: 200 }));
         await settle();
         expect(client.fs.fileText(ENGINE_ROOT, 'layout.yml').text).toBe('after\n');
+    });
+
+    /** One JSON answer, which is what every read but a file's bytes comes back as. */
+    function answering(body: unknown): Response {
+        return new Response(JSON.stringify(body), {
+            status: 200,
+            headers: { 'content-type': 'application/json' }
+        });
+    }
+
+    it("asks once a round for the reader's own bookmarks and holds what came back", async () => {
+        serving(() =>
+            answering({
+                entries: [
+                    {
+                        id: 'manual',
+                        title: 'manual',
+                        fields: { label: 'manual' },
+                        file: '',
+                        index: 0
+                    }
+                ],
+                schema: [{ field: 'label', type: 'text' }]
+            })
+        );
+
+        expect(client.fs.bookmarks().loading).toBe(true);
+        await settle();
+
+        const held = client.fs.bookmarks();
+        expect(held.entries.map((one) => one.id)).toEqual(['manual']);
+        expect(held.schema.map((one) => one.field)).toEqual(['label']);
+        expect(held.loading).toBe(false);
+        expect(asked.filter((url) => url.includes('bookmarks=1'))).toHaveLength(1);
+
+        // A second read of the same round reads what is held rather than asking again.
+        client.fs.bookmarks();
+        await settle();
+        expect(asked.filter((url) => url.includes('bookmarks=1'))).toHaveLength(1);
+    });
+
+    it('asks again for the bookmarks once a write has moved the round on', async () => {
+        serving(() => answering({ entries: [], schema: [] }));
+        client.fs.bookmarks();
+        await settle();
+
+        client.fs.invalidate();
+        client.fs.bookmarks();
+        await settle();
+
+        expect(asked.filter((url) => url.includes('bookmarks=1'))).toHaveLength(2);
+    });
+
+    it('keeps the bookmarks drawn and says why when the server refuses the read', async () => {
+        serving(
+            () =>
+                new Response(JSON.stringify({ error: 'origin' }), {
+                    status: 403,
+                    headers: { 'content-type': 'application/json' }
+                })
+        );
+
+        client.fs.bookmarks();
+        await settle();
+
+        expect(client.fs.bookmarks()).toMatchObject({
+            entries: [],
+            error: 'origin',
+            loading: false
+        });
+    });
+
+    it('holds the notes and one note, each asked for once a round', async () => {
+        serving((url) =>
+            url.includes('notes=1')
+                ? answering({ notes: [{ id: 'n1', title: 'a title', modified: 5 }] })
+                : answering({ id: 'n1', title: 'a title', body: 'the body', modified: 5 })
+        );
+
+        client.fs.notes();
+        client.fs.note('n1');
+        await settle();
+
+        expect(client.fs.notes().notes.map((one) => one.title)).toEqual(['a title']);
+        expect(client.fs.note('n1')).toMatchObject({ title: 'a title', body: 'the body' });
+        expect(asked.filter((url) => url.includes('note=n1'))).toHaveLength(1);
+    });
+
+    it('asks for no note at all when the instance names none', () => {
+        serving(() => answering({}));
+
+        expect(client.fs.note('')).toMatchObject({ id: '', loading: false });
+        expect(asked).toEqual([]);
+    });
+
+    it('sends nothing when a note this page deleted is saved again', async () => {
+        serving(() => answering({ ok: true, changed: ['note'], refused: [] }));
+        await client.fs.deleteNote('n1');
+        const sent = asked.length;
+
+        const answer = await client.fs.saveNote('n1', 'back again', 'body');
+
+        expect(answer.ok).toBe(false);
+        expect(answer.error).toBe(NOTE_GONE);
+        expect(client.fs.noteDeleted('n1')).toBe(true);
+        expect(asked.length).toBe(sent);
+    });
+
+    it('asks for a deleted note no more, whatever moves the round on', async () => {
+        serving(() => answering({ ok: true, changed: ['note'], refused: [] }));
+        await client.fs.deleteNote('n1');
+        asked.length = 0;
+
+        client.fs.note('n1');
+        client.fs.invalidate();
+        client.fs.note('n1');
+        await settle();
+
+        expect(asked.filter((url) => url.includes('note=n1'))).toEqual([]);
+    });
+
+    it('holds what a save just wrote, before the re-read of the note lands', async () => {
+        serving((url) =>
+            url.includes('note=n1')
+                ? answering({ id: 'n1', title: 'old', body: 'old body', modified: 5 })
+                : answering({ ok: true, changed: ['note'], refused: [] })
+        );
+        client.fs.note('n1');
+        await settle();
+        expect(client.fs.note('n1').body).toBe('old body');
+
+        await client.fs.saveNote('n1', 'new', 'new body');
+
+        expect(client.fs.note('n1')).toMatchObject({ title: 'new', body: 'new body' });
+    });
+
+    it('asks the notes again after a note write, and every other held answer not at all', async () => {
+        // The POST of the write goes to the same address the workspaces are read from, so this
+        // case records the method as well and counts the reads alone.
+        const reads: string[] = [];
+        vi.stubGlobal('fetch', (url: string, init?: { method?: string }) => {
+            if (init?.method !== 'POST') reads.push(url);
+            if (url.startsWith('/api/file/')) return Promise.resolve(new Response('one line\n'));
+            return Promise.resolve(
+                answering({ ok: true, changed: ['note'], refused: [], notes: [], entries: [] })
+            );
+        });
+        const held = (): void => {
+            client.fs.listing('hub', '');
+            client.fs.fileText('hub', 'a.txt');
+            client.fs.workspaces();
+            client.fs.bookmarks();
+            client.fs.notes();
+        };
+        held();
+        await settle();
+        reads.length = 0;
+
+        await client.fs.saveNote('n1', 'a title', 'body');
+        held();
+        await settle();
+
+        expect(reads.filter((url) => url.includes('notes=1'))).toHaveLength(1);
+        expect(reads.filter((url) => url.includes('root=hub'))).toEqual([]);
+        expect(reads.filter((url) => url.startsWith('/api/file/'))).toEqual([]);
+        expect(reads.filter((url) => url.includes('bookmarks=1'))).toEqual([]);
+        expect(reads.filter((url) => url === FS_PATH)).toEqual([]);
     });
 });

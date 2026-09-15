@@ -50,6 +50,12 @@
         bookmarks?: Bookmark[];
         /** The `docs` list of the merged config: the hub documents drawn inside their groups. */
         docs?: DocEntry[];
+        /**
+         * The reader's own bookmarks, from their own file rather than the configuration; the page
+         * reads them off the fs store and passes them on, and they are drawn after the configured
+         * ones under the same heading.
+         */
+        saved?: Bookmark[];
         /** Open the workbench search overlay. */
         onsearch?: () => void;
         /** Open the update-task tray. */
@@ -65,9 +71,35 @@
         groups = [],
         bookmarks = [],
         docs = [],
+        saved = [],
         onsearch = ignore,
         onupdate = ignore
     }: Props = $props();
+
+    /**
+     * Every bookmark the Docs section draws: the configured ones first, then the reader's own. A
+     * saved one naming a file a configured one already names is left out, since the two would be one
+     * button pressed twice; the configured one wins, as it does everywhere else.
+     */
+    const marks = $derived([
+        ...bookmarks,
+        ...saved.filter(
+            (one) => !bookmarks.some((held) => held.root === one.root && held.path === one.path)
+        )
+    ]);
+
+    /**
+     * What one bookmark opens as, which the bookmark itself says. The file view is given the root,
+     * the path and the label and no id of its own, so a file opened from here and the same file
+     * opened from the tree are the one tab.
+     */
+    function openMark(mark: Bookmark): void {
+        if (mark.view === 'file') {
+            openView('file', { root: mark.root, path: mark.path, label: mark.label });
+            return;
+        }
+        openView('document', documentState(mark));
+    }
 
     /* A view registered as not listed (the editor, a project, a document) is opened from a card or a
        bookmark and has nothing to show when opened bare, so the rail draws no button for it. */
@@ -241,12 +273,15 @@
             {/if}
         {/each}
 
-        <!-- The bookmarks of config/layout.yml, each a local HTML file under a configured root.
-             They name no group, so they sit under a heading of their own rather than in a section
+        <!-- The documents of config/layout.yml and the reader's own bookmarks after them. They are
+             not registrations, so they sit under a heading of their own rather than in a section
              arrange() built. -->
-        {#if bookmarks.length > 0}
+        {#if marks.length > 0}
             <p class="group">{t('ui.docs')}</p>
-            {#each bookmarks as mark (`${mark.root}/${mark.path}`)}
+            <!-- Keyed by position, as the sections above are: two of the reader's own bookmarks may
+                 name one file under two labels, and a duplicate key would be an error rather than a
+                 second button. -->
+            {#each marks as mark, at (at)}
                 <div class="control">
                     <ToolButton
                         label={mark.label}
@@ -255,7 +290,7 @@
                         compact
                         rail
                         stacked
-                        onclick={() => openView('document', documentState(mark))}
+                        onclick={() => openMark(mark)}
                     />
                 </div>
             {/each}

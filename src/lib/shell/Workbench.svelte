@@ -50,6 +50,11 @@
         bookmarks?: Bookmark[];
         /** The `docs` list of the merged config: the hub documents the rail draws in their groups. */
         docs?: DocEntry[];
+        /**
+         * The reader's own bookmarks, for the same section after the configured ones. The page reads
+         * them off the fs store and hands them on, since the shell may not read that store itself.
+         */
+        saved?: Bookmark[];
         /** The `arrangements:` of the merged config, for the page strip's menu. */
         arrangements?: Arrangement[];
         /** The `direct_chord` of the merged config: the letter a digit after it counts into the rail. */
@@ -65,6 +70,7 @@
         groups = [],
         bookmarks = [],
         docs = [],
+        saved = [],
         arrangements = [],
         directChord,
         waiting = 0
@@ -194,6 +200,7 @@
         {groups}
         {bookmarks}
         {docs}
+        {saved}
         onsearch={() => openPalette('')}
         onupdate={openUpdate}
     />

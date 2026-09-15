@@ -27,8 +27,10 @@ import {
     deleteEntry,
     renderEntry,
     reorderEntries,
-    setEntryFields
+    setEntryFields,
+    startEntries
 } from '../entry-edit/index.ts';
+import { BOOKMARKS, ensureBookmarksFile } from '../fs/bookmarks.ts';
 import { NOT_A_FIELD_VALUE, asFieldValue } from '../yaml-edit.ts';
 import type { EditResult, FieldValue, Refusal } from '../yaml-edit.ts';
 import type { PortfolioConfig, SchemaField } from '../../data/model.ts';
@@ -43,8 +45,23 @@ export function saved(file: string, source: string, edit: EditResult): WriteOutc
     return { found: true, changed: edit.changed, refused: edit.refused };
 }
 
-/** The file one collection key names, or null when sources.yml does not name it inside the hub. */
-export function collectionFile(hub: string, config: PortfolioConfig, key: string): string | null {
+/**
+ * The file one collection key names, or null when sources.yml does not name it inside the hub.
+ *
+ * `own` is the reader's own bookmarks file, which is a collection edited by the same form and the
+ * same writers while living outside the hub, under ~/.oculus. It is resolved before the hub's own
+ * list so that a hub file keyed `bookmarks` could never take the reader's machine-local one over.
+ */
+export function collectionFile(
+    hub: string,
+    config: PortfolioConfig,
+    key: string,
+    own?: string
+): string | null {
+    if (own !== undefined && key === BOOKMARKS) {
+        ensureBookmarksFile(own);
+        return own;
+    }
     const named = config.collections.find((one) => one.key === key)?.file;
     if (named === undefined) return null;
     const path = resolve(join(hub, named));
@@ -134,13 +151,19 @@ function normaliseMetalists(
     );
 }
 
-/** The id the reader gives an entry, normalise.ts line 323: its `key`, or its `title` without one. */
-function entryId(entry: Record<string, unknown>): string {
+/**
+ * The id the reader gives an entry, as normalise.ts's entry() builds it: its `id`, its `key`, its
+ * `title`, and for a file whose records carry none of the three the value of its own identity field.
+ */
+function entryId(entry: Record<string, unknown>, ident: string): string {
     const id = entry.id;
     if (typeof id === 'string' && id !== '') return id;
     const key = entry.key;
     if (typeof key === 'string' && key !== '') return key;
-    return typeof entry.title === 'string' ? entry.title : '';
+    const title = entry.title;
+    if (typeof title === 'string' && title !== '') return title;
+    const held = entry[ident];
+    return typeof held === 'string' || typeof held === 'number' ? String(held) : '';
 }
 
 /** The entry list of a parsed collection file: `entries:`, or the first list of maps beside it. */
@@ -158,17 +181,22 @@ export type Collection = {
     file: string;
     source: string;
     schema: unknown;
+    /** The key the entries are listed under, and the empty string for a file with no list yet. */
     list: string;
     items: Record<string, unknown>[];
     ident: string;
 };
 
+/** The key a collection file with no list yet is given its first entry under. */
+const FIRST_LIST = 'entries';
+
 export function readCollection(
     hub: string,
     config: PortfolioConfig,
-    key: string
+    key: string,
+    own?: string
 ): Collection | null {
-    const file = collectionFile(hub, config, key);
+    const file = collectionFile(hub, config, key, own);
     if (file === null) return null;
     let source: string;
     try {
@@ -184,13 +212,15 @@ export function readCollection(
     }
     if (!isMap(data)) return null;
     const list = listOf(data);
-    if (list === null) return null;
+    // A file the reader's own writes made carries no list key until the first entry, since YAML
+    // writes no empty block list. A hub file without one is malformed and is still refused.
+    if (list === null && file !== own) return null;
     return {
         file,
         source,
         schema: data.schema,
-        list: list.key,
-        items: list.items.filter(isMap),
+        list: list?.key ?? '',
+        items: (list?.items ?? []).filter(isMap),
         ident: identityField(data.schema)
     };
 }
@@ -202,7 +232,7 @@ export function readCollection(
  */
 export function identityOf(collection: Collection, id: string): string | null {
     for (const item of collection.items) {
-        if (entryId(item) !== id) continue;
+        if (entryId(item, collection.ident) !== id) continue;
         const held = item[collection.ident];
         if (typeof held !== 'string' && typeof held !== 'number') return null;
         return String(held);
@@ -250,9 +280,10 @@ export function writeEntry(
     config: PortfolioConfig,
     collection: string,
     id: string,
-    fields: Record<string, unknown>
+    fields: Record<string, unknown>,
+    own?: string
 ): WriteOutcome {
-    const held = readCollection(hub, config, collection);
+    const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
     const shared = duplicate(held);
     if (shared !== null) return shared;
@@ -311,9 +342,10 @@ export function reorderCollection(
     hub: string,
     config: PortfolioConfig,
     collection: string,
-    order: string[]
+    order: string[],
+    own?: string
 ): WriteOutcome {
-    const held = readCollection(hub, config, collection);
+    const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
     const shared = duplicate(held);
     if (shared !== null) return shared;
@@ -325,9 +357,10 @@ export function removeEntry(
     hub: string,
     config: PortfolioConfig,
     collection: string,
-    id: string
+    id: string,
+    own?: string
 ): WriteOutcome {
-    const held = readCollection(hub, config, collection);
+    const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
     const shared = duplicate(held);
     if (shared !== null) return shared;
@@ -341,9 +374,10 @@ export function createEntry(
     hub: string,
     config: PortfolioConfig,
     collection: string,
-    fields: Record<string, unknown>
+    fields: Record<string, unknown>,
+    own?: string
 ): WriteOutcome {
-    const held = readCollection(hub, config, collection);
+    const held = readCollection(hub, config, collection, own);
     if (held === null) return { found: false, changed: [], refused: [] };
     const shared = duplicate(held);
     if (shared !== null) return shared;
@@ -423,6 +457,11 @@ export function createEntry(
             refused: [...refused, { field: ident, reason: 'nothing to write' }]
         };
     }
-    const out = saved(held.file, held.source, appendEntry(held.source, held.list, block));
+    // A file with no list yet is given one with this entry under it; every later add appends.
+    const edit =
+        held.list === ''
+            ? startEntries(held.source, FIRST_LIST, block)
+            : appendEntry(held.source, held.list, block);
+    const out = saved(held.file, held.source, edit);
     return { ...out, refused: [...refused, ...out.refused] };
 }

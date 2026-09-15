@@ -2,8 +2,18 @@
 text:
     files:
         add: add
+        add_bookmark: + bookmark
+        add_bookmark_title: Bookmark a file under one of these roots
+        add_note: + note
+        add_note_title: Open a scratch note of your own
         add_root: + root
         add_root_title: Add a folder on this machine to this workspace
+        bookmark_edit: edit
+        bookmark_edit_title: Change the bookmark {0}
+        bookmark_glyph: star
+        bookmark_open_title: Open {0}
+        bookmarks: Bookmarks
+        bookmarks_failed: 'The bookmarks could not be read: {0}'
         cancel: cancel
         collapse_title: Close {0}
         expand_title: Open {0}
@@ -15,12 +25,21 @@ text:
         loading: Reading...
         none: No roots yet. Add a folder to this workspace.
         none_glyph: info
+        note_delete: delete
+        note_delete_confirm: Delete this note? Its file goes off this machine.
+        note_delete_title: Delete the note {0}
+        note_glyph: note
+        note_open_title: Open the note {0}
+        note_untitled: Untitled note
+        notes: Notes
+        notes_failed: 'The notes could not be read: {0}'
         open_title: Open {0} as a tab
         read_failed: 'The roots could not be read: {0}'
         refused_name_held: A workspace already carries that name.
         refused_no_dir: Type the path of a folder.
         refused_no_name: Type a name for the workspace.
         refused_no_such_dir: There is no folder at that path.
+        refused_no_such_note: That note is not on this machine.
         refused_no_such_root: This workspace has no such root.
         refused_no_such_workspace: There is no workspace of that name.
         refused_not_a_directory: That path is a file, not a folder.

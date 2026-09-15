@@ -1,6 +1,9 @@
 # Oculus text owned by the file view: one file of a root drawn by what its name says it is.
 text:
     file:
+        bookmark: Bookmark this file
+        bookmark_failed: 'The bookmark could not be written: {0}'
+        bookmark_glyph: star
         code: '{0}, read only'
         download: Download the file
         error: 'The file could not be read: {0}'
@@ -13,6 +16,7 @@ text:
         other_glyph: paper
         toolbar: File controls
         truncated: This file is longer than the window draws; its first 2 MB are shown.
+        unbookmark: Take this bookmark out
     views:
         file: File
         file_glyph: page

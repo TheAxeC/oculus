@@ -39,6 +39,28 @@ export function reconcileCardCursor(state: unknown, cards: readonly string[]): u
 }
 
 /**
+ * The state a bookmarked document is opened with. The `id` is what makes two bookmarks two tabs: a
+ * state carrying one names which instance is wanted, so a second press on the same bookmark
+ * activates the tab it already has and a press on another one opens a second tab beside it.
+ *
+ * It lives here rather than beside the rail because the rail and the file browser both open a
+ * bookmark, and the same document opened from the two would otherwise be two tabs.
+ */
+export function documentState(mark: { label: string; root: string; path: string }): {
+    id: string;
+    root: string;
+    path: string;
+    label: string;
+} {
+    return {
+        id: `${mark.root}/${mark.path}`,
+        root: mark.root,
+        path: mark.path,
+        label: mark.label
+    };
+}
+
+/**
  * A fresh instance of a view, with the id every operation addresses it by. The state is the view's
  * own and is empty unless the opener has something to say: the editor is opened for one project, so
  * the card that opens it hands over which.

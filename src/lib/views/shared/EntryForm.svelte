@@ -47,6 +47,8 @@
         schema: SchemaField[] | undefined;
         /** The entry the form edits, or null when the form adds one. */
         entry: Entry | null;
+        /** What the controls of a form that adds an entry open holding, by field. */
+        initial?: Record<string, unknown>;
         /** A dedicated add write for a schema-driven file that is not a collection. */
         onadd?: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
         onclose: () => void;
@@ -54,7 +56,15 @@
         onsaid: (said: string) => void;
     };
 
-    let { collection, schema, entry, onadd, onclose, onsaid }: Props = $props();
+    let {
+        collection,
+        schema,
+        entry,
+        initial: opening = {},
+        onadd,
+        onclose,
+        onsaid
+    }: Props = $props();
 
     type MetaRow = { label: string; value: string };
     type Draft = string | boolean | MetaRow[];
@@ -63,7 +73,7 @@
 
     /** One field of the entry as the control for it holds it: a list is a line of commas. */
     function held(field: string, kind: string): Draft {
-        const value = entry === null ? undefined : entry.fields[field];
+        const value = entry === null ? opening[field] : entry.fields[field];
         if (kind === 'checkbox') return value === true;
         if (kind === 'metalist' && Array.isArray(value)) {
             return value

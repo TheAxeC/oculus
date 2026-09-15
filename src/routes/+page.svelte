@@ -10,6 +10,7 @@
     import type { Arrangement } from '$lib/shell/page-strip';
     import { configGeneration } from '$lib/state/generation.svelte';
     import { collectionKeys } from '$lib/data/normalise';
+    import { typeOfFile } from '$lib/state/fs';
     import { t } from '$lib/state/text';
     import { createClientState } from '$lib/state/context';
     import { provideState } from '$lib/state/use';
@@ -26,6 +27,7 @@
     provideTipIds(client.tipIds);
     const {
         entities: { config },
+        fs: { bookmarks: savedBookmarks },
         layout: { loadLayout },
         selectors: { waitingCount },
         socket: { connect, disconnect },
@@ -86,6 +88,37 @@
      * view opens it. An entry that is not three strings is dropped rather than drawn half-formed.
      */
     const bookmarks = $derived<Bookmark[]>(readBookmarks(config()?.config.bookmarks));
+
+    /**
+     * The reader's own bookmarks, from ~/.oculus/bookmarks.yml through the fs store. They are read
+     * here rather than in the rail because the shell's row of the boundary table does not name that
+     * store; the rail is handed what to draw, as it is handed the configured ones. Which view opens
+     * one is a question about a file name, which state/fs.ts answers.
+     */
+    const saved = $derived<Bookmark[]>(
+        savedBookmarks().entries.flatMap((entry) => {
+            // An entry with no root or no path names no file, so it is dropped rather than drawn as
+            // a button on nothing, as a configured bookmark of that shape is.
+            const root = entry.fields.root;
+            const path = entry.fields.path;
+            if (
+                typeof root !== 'string' ||
+                root === '' ||
+                typeof path !== 'string' ||
+                path === ''
+            ) {
+                return [];
+            }
+            return [
+                {
+                    label: entry.title,
+                    root,
+                    path,
+                    view: typeOfFile(path).kind === 'html' ? 'document' : 'file'
+                } as Bookmark
+            ];
+        })
+    );
 
     function readBookmarks(raw: unknown): Bookmark[] {
         if (!Array.isArray(raw)) return [];
@@ -166,4 +199,12 @@
     });
 </script>
 
-<Workbench {groups} {bookmarks} {docs} {arrangements} {directChord} waiting={waitingCount()} />
+<Workbench
+    {groups}
+    {bookmarks}
+    {docs}
+    {saved}
+    {arrangements}
+    {directChord}
+    waiting={waitingCount()}
+/>

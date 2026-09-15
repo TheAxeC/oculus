@@ -127,3 +127,160 @@ test('a root added in the page serves its own files, each in the view its name a
         page.locator('[data-fs-row="hub:"]').getByRole('button', { name: t('files.remove_root') })
     ).toHaveCount(0);
 });
+
+test("a file is bookmarked from its own tab, and the rail draws the reader's own bookmark", async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    await row(page, 'hub').click();
+    await row(page, 'hub', 'README.md').click();
+
+    // The star writes ~/.oculus/bookmarks.yml under this run's own HOME, creating the file.
+    await page.getByRole('button', { name: t('file.bookmark'), exact: true }).click();
+    await expect(
+        page.getByRole('button', { name: t('file.unbookmark'), exact: true })
+    ).toBeVisible();
+
+    // The rail draws it after the configured documents, and it opens the file as its own tab: a
+    // markdown file is the file view, as it is when the tree opens one. The identity is on the
+    // button itself, which is what shell/ActivityRail.svelte hands ToolButton.
+    const mark = page.locator('nav button[data-bookmark="hub/README.md"]');
+    await expect(mark).toBeVisible();
+    await page.getByRole('tab', { name: t('views.files') }).click();
+    await expect(page.locator('[data-fs-code="README.md"]')).toBeHidden();
+    await mark.click();
+    await expect(page.locator('[data-fs-code="README.md"]')).toBeVisible();
+
+    // The Files view lists it too, which is where it is renamed.
+    await page.getByRole('tab', { name: t('views.files') }).click();
+    await expect(page.locator('[data-fs-bookmark="README.md"]')).toBeVisible();
+
+    // Taking it out again empties both.
+    await page.getByRole('tab', { name: 'README.md' }).click();
+    await page.getByRole('button', { name: t('file.unbookmark'), exact: true }).click();
+    await expect(page.locator('nav button[data-bookmark="hub/README.md"]')).toHaveCount(0);
+});
+
+test('a note is opened from the toolbar, typed into, saved on its own, and deleted', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+
+    await page.getByRole('button', { name: t('files.add_note'), exact: true }).click();
+    const body = page.getByRole('textbox', { name: t('note.body_label') });
+    await expect(body).toBeVisible();
+
+    // Typing saves on its own, after the wait config/behavior.yml names. What proves it is the file
+    // the server reads back, not the line in the toolbar: the note's file was made by the control
+    // above, so that line says "saved" before a word is typed.
+    await page.getByRole('textbox', { name: t('note.title_label') }).fill('a browser note');
+    await body.fill('the body of it\n');
+    await expect
+        .poll(
+            async () =>
+                page.evaluate(async () => {
+                    const answer = await fetch('/api/fs?notes=1');
+                    const held = (await answer.json()) as { notes: { title: string }[] };
+                    return held.notes.map((one) => one.title).join('|');
+                }),
+            { timeout: 10_000 }
+        )
+        .toContain('a browser note');
+
+    // The tab carries what was typed, so two open notes read as two names.
+    await expect(page.getByRole('tab', { name: 'a browser note' })).toBeVisible();
+
+    // The Files view lists it, and the confirm is what takes it away. The note's own tab is still
+    // open, and the removal takes that with it rather than leaving a tab over a file that is gone.
+    await page.getByRole('tab', { name: t('views.files') }).click();
+    const listed = page.locator('[data-fs-note]').filter({ hasText: 'a browser note' });
+    await expect(listed).toBeVisible();
+    await listed.getByRole('button', { name: t('files.note_delete') }).click();
+    await page
+        .getByRole('button', { name: t('files.note_delete'), exact: true })
+        .last()
+        .click();
+    await expect(page.locator('[data-fs-note]')).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: 'a browser note' })).toHaveCount(0);
+
+    // The note's own tab was closed while a save could still have been waiting on it. It stays
+    // deleted: nothing writes it back once the wait would have run.
+    await expect
+        .poll(
+            async () =>
+                page.evaluate(async () => {
+                    const answer = await fetch('/api/fs?notes=1');
+                    const held = (await answer.json()) as { notes: { title: string }[] };
+                    return held.notes.length;
+                }),
+            { timeout: 5000, intervals: [400, 800, 1600] }
+        )
+        .toBe(0);
+});
+
+test('a note nothing was typed into is not kept', async ({ page }) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+
+    // The control writes the file before the tab is there, so a note opened and left is a name in
+    // the folder for a note that was never used.
+    await page.getByRole('button', { name: t('files.add_note'), exact: true }).click();
+    await expect(page.getByRole('textbox', { name: t('note.body_label') })).toBeVisible();
+    await page.getByRole('tab', { name: t('views.files') }).click();
+
+    await expect(page.locator('[data-fs-note]')).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: t('views.note') })).toHaveCount(0);
+    expect(
+        await page.evaluate(async () => {
+            const answer = await fetch('/api/fs?notes=1');
+            const held = (await answer.json()) as { notes: unknown[] };
+            return held.notes.length;
+        })
+    ).toBe(0);
+});
+
+test('the first bookmark is made from the form, and an HTML one is one tab from either place', async ({
+    page
+}) => {
+    const dir = scratch();
+    const key = dir.split(sep).at(-1) ?? '';
+
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
+    await page.getByRole('textbox', { name: t('files.root_dir') }).fill(dir);
+    await page.getByRole('button', { name: t('files.add'), exact: true }).click();
+    await expect(row(page, key)).toBeVisible();
+
+    // The page has no bookmarks file yet, and the form still draws the three controls the file it
+    // will make carries, with a root already chosen.
+    await page.getByRole('button', { name: t('files.add_bookmark'), exact: true }).click();
+    const form = page.locator('[data-form="add"]');
+    await expect(form).toBeVisible();
+    await expect(form.getByRole('combobox', { name: 'Root' })).toHaveValue(/.+/);
+    await form.getByRole('textbox', { name: 'Label' }).fill('the spec page');
+    await form.getByRole('combobox', { name: 'Root' }).selectOption(key);
+    await form.getByRole('textbox', { name: 'Path' }).fill('page.html');
+    await form.getByRole('button', { name: t('collection.form_save') }).click();
+
+    // The rail draws it and the Files view lists it, both off the file the save made.
+    await expect(page.locator(`nav button[data-bookmark="${key}/page.html"]`)).toBeVisible();
+    await expect(page.locator('[data-fs-bookmark="the spec page"]')).toBeVisible();
+
+    // The tree opens the page as a document, and the rail's bookmark on the same file activates that
+    // tab rather than opening a second one. What it is called then is the bookmark's own label, which
+    // is the state the activation carries.
+    await row(page, key).click();
+    await row(page, key, 'page.html').click();
+    const frame = page.locator(`iframe[src="/api/file/${key}/page.html"]`);
+    await expect(frame).toHaveCount(1);
+    await expect(page.getByRole('tab', { name: 'page.html' })).toBeVisible();
+
+    await page.getByRole('tab', { name: t('views.files') }).click();
+    await page.locator(`nav button[data-bookmark="${key}/page.html"]`).click();
+    await expect(frame).toHaveCount(1);
+    await expect(page.getByRole('tab', { name: 'the spec page' })).toBeVisible();
+    await expect(page.getByRole('tab', { name: 'page.html' })).toHaveCount(0);
+});

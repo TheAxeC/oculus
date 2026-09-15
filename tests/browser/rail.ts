@@ -12,11 +12,23 @@
 import { expect, type Page } from '@playwright/test';
 import { t } from './words.ts';
 
-/** Open the application and wait until the socket is up and the first snapshot is in. */
+/**
+ * Open the application and wait until the socket is up, the first snapshot is in, and the rail is
+ * the one the reader ends up with.
+ *
+ * The groups come from the configuration the socket pushes, so until that push lands the rail has no
+ * groups at all and draws every view as its own button. The push then puts the large groups into
+ * flyouts, which takes those buttons out of the page; a click that started on one is a click on an
+ * element the retry finds detached. So the wait is for `data-group` to exist, which the rail draws
+ * only after the push and only for a group of more than GROUP_MAX views: config/layout.yml's
+ * `nav_groups` has several such groups, and a configuration whose groups were all small would leave
+ * this waiting, since there would then be no flyout to wait for.
+ */
 export async function boot(page: Page): Promise<void> {
     await page.goto('/');
     await expect(page.getByText(t('app.socket', t('app.socket_open')))).toBeVisible();
     await expect(page.locator('nav button[data-view]').first()).toBeVisible();
+    await expect(page.locator('nav [data-group]').first()).toBeVisible();
 }
 
 /** Open a registered view in the pane a view lands in, by its id and the words the rail calls it. */

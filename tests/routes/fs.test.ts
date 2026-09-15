@@ -7,7 +7,14 @@
 // every path written is asserted to be inside it first. What this does NOT cover: the route module
 // reading the machine's own local.yml, which is exercised by the browser layer.
 
-import { mkdirSync, mkdtempSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
+import {
+    existsSync,
+    mkdirSync,
+    mkdtempSync,
+    realpathSync,
+    symlinkSync,
+    writeFileSync
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -20,6 +27,10 @@ import {
     type FsTarget
 } from '../../src/lib/server/fs.ts';
 import { ENGINE_ROOT, engineRoot } from '../../src/lib/server/files.ts';
+import { BOOKMARKS } from '../../src/lib/server/fs/bookmarks.ts';
+import { createEntry } from '../../src/lib/server/writes/entries.ts';
+import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
+import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { Root } from '../../src/lib/server/files.ts';
 
 const HOST = '127.0.0.1:8791';
@@ -45,13 +56,24 @@ function folder(files: Record<string, string> = {}, dirs: string[] = []): string
     return realpathSync(dir);
 }
 
-/** One target: a hub root holding two entries, and a workspaces file of its own. */
+/**
+ * One target: a hub root holding two entries, and the three files and folders the reader's own
+ * writes land in, every one of them inside a fresh temporary directory. Nothing here names
+ * ~/.oculus.
+ */
 function target(): FsTarget & { hub: string } {
     const hub = folder({ 'README.md': '# hub\n' }, ['code']);
     const store = mkdtempSync(join(tmpdir(), 'oculus-fsstore-'));
     expect(resolve(store).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const fixed: Root[] = [{ key: 'hub', dir: hub }];
-    return { hub, file: join(store, 'workspaces.json'), fixed, writes: fsWrites() };
+    return {
+        hub,
+        file: join(store, 'workspaces.json'),
+        bookmarks: join(store, 'bookmarks.yml'),
+        notes: join(store, 'notes'),
+        fixed,
+        writes: fsWrites()
+    };
 }
 
 /** The roots the file route would serve for this target right now. */
@@ -336,5 +358,87 @@ describe('the fs route, writing', () => {
         const unknown = await handleFsWrite(post({ action: 'drop-everything' }), TOKEN, into);
         expect(unknown.status).toBe(400);
         expect((await read(unknown)).error).toBe('not-an-action');
+    });
+});
+
+describe("the fs route, the reader's own bookmarks and notes", () => {
+    it("answers no bookmarks and the scaffold's schema, and writes no file to do it", async () => {
+        const into = target();
+        const body = await read(handleFs(get('?bookmarks=1'), into));
+
+        // The form that adds the first bookmark is drawn from this schema, so the reader has the
+        // three controls before anything is on the disk; the file is made by the first write alone.
+        expect(body.entries).toEqual([]);
+        expect((body.schema as { field: string }[]).map((one) => one.field)).toEqual([
+            'label',
+            'root',
+            'path'
+        ]);
+        expect(existsSync(into.bookmarks)).toBe(false);
+    });
+
+    it('answers the bookmarks a write left in the file, with their schema', async () => {
+        const into = target();
+        const config = portfolioConfigFrom(loadConfig(engineDir()).config);
+        createEntry(
+            into.hub,
+            config,
+            BOOKMARKS,
+            { label: 'manual', root: 'hub', path: 'README.md' },
+            into.bookmarks
+        );
+        const body = await read(handleFs(get('?bookmarks=1'), into));
+
+        const entries = body.entries as { id: string; fields: Record<string, unknown> }[];
+        expect(entries.map((one) => one.id)).toEqual(['manual']);
+        expect(entries[0].fields).toEqual({ label: 'manual', root: 'hub', path: 'README.md' });
+        expect((body.schema as { field: string }[]).map((one) => one.field)).toEqual([
+            'label',
+            'root',
+            'path'
+        ]);
+    });
+
+    it('writes one note, lists it, reads it back and takes it away again', async () => {
+        const into = target();
+        const id = '20260915-120000-001';
+
+        const written = await handleFsWrite(
+            post({ action: 'note-save', id, title: 'a title', body: 'the body\n' }),
+            TOKEN,
+            into
+        );
+        expect(written.status).toBe(200);
+        expect((await read(written)).changed).toEqual(['note']);
+
+        const listed = (await read(handleFs(get('?notes=1'), into))).notes as { id: string }[];
+        expect(listed.map((one) => one.id)).toEqual([id]);
+
+        const one = await read(handleFs(get(`?note=${id}`), into));
+        expect(one).toMatchObject({ id, title: 'a title', body: 'the body\n' });
+
+        const gone = await handleFsWrite(post({ action: 'note-delete', id }), TOKEN, into);
+        expect(gone.status).toBe(200);
+        expect((await read(handleFs(get('?notes=1'), into))).notes).toEqual([]);
+        expect(handleFs(get(`?note=${id}`), into).status).toBe(404);
+    });
+
+    it('refuses a note id that would leave the folder, and writes nothing', async () => {
+        const into = target();
+        const say = async (id: string): Promise<unknown> =>
+            (await read(await handleFsWrite(post({ action: 'note-save', id }), TOKEN, into))).error;
+
+        expect(await say('../away')).toBe('no-such-note');
+        expect(await say('sub/deep')).toBe('no-such-note');
+        expect(await say('')).toBe('no-such-note');
+        expect(existsSync(into.notes)).toBe(false);
+    });
+
+    it('refuses a bookmarks read from another origin, as every other read is refused', async () => {
+        const into = target();
+        const response = handleFs(get('?bookmarks=1', { origin: 'https://elsewhere.test' }), into);
+
+        expect(response.status).toBe(403);
+        expect((await read(response)).error).toBe('origin');
     });
 });

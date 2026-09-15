@@ -409,7 +409,12 @@ describe('watchPortfolio', () => {
                 })
             }),
             token,
-            { hub: started.hub, config, projects: () => [] }
+            {
+                hub: started.hub,
+                config,
+                projects: () => [],
+                bookmarks: join(started.hub, 'bookmarks.yml')
+            }
         );
         expect(response.status).toBe(200);
         expect(await response.json()).toMatchObject({

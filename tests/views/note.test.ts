@@ -1,0 +1,137 @@
+// One scratch note as its own tab, rendered to HTML on the server: the two controls, the title the
+// pane draws, and what the toolbar says about the last save.
+//
+// The catalog and the glyphs are the real config; the note's own text comes from the fs store, whose
+// `fetch` is a stub. What this does NOT cover: the typing itself and the wait before the save, which
+// need a DOM and are tests/state/notes.test.ts for the wait and the browser layer for the typing.
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { render } from 'svelte/server';
+import Note from '../../src/lib/views/Note.svelte';
+import {
+    engineDir,
+    glyphCatalog,
+    loadConfig,
+    textCatalog
+} from '../../src/lib/data/sources/config.ts';
+import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
+import { findView, type Instance } from '../../src/lib/state/layout/index.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+let client: ClientState;
+
+beforeEach(() => {
+    client = createClientState();
+});
+
+afterEach(() => {
+    vi.unstubAllGlobals();
+});
+
+const { config } = loadConfig(engineDir());
+setCatalog(textCatalog(config));
+setGlyphs(glyphCatalog(config));
+
+function instance(state: unknown): Instance {
+    return { id: 'note-one', view: 'note', state };
+}
+
+async function settle(): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/** A client whose store answers one note read with this body. */
+async function answering(body: unknown, status = 200): Promise<ClientState> {
+    vi.stubGlobal('window', {});
+    vi.stubGlobal('fetch', () =>
+        Promise.resolve(
+            new Response(JSON.stringify(body), {
+                status,
+                headers: { 'content-type': 'application/json' }
+            })
+        )
+    );
+    const fresh = createClientState();
+    fresh.fs.note('20260915-120000-001');
+    await settle();
+    return fresh;
+}
+
+function drawn(fresh: ClientState, state: unknown): string {
+    return render(Note, { context: clientContext(fresh), props: { instance: instance(state) } })
+        .body;
+}
+
+describe('one note as its own tab', () => {
+    it('says so and draws no controls when the instance names no note', () => {
+        const body = drawn(client, {});
+
+        expect(body).toContain('No note chosen.');
+        expect(body).not.toContain('<textarea');
+    });
+
+    it('draws the title line and the text area for a note it names', () => {
+        const body = drawn(client, { id: '20260915-120000-001' });
+
+        expect(body).toContain('data-note="20260915-120000-001"');
+        expect(body).toContain('aria-label="Title"');
+        expect(body).toContain('aria-label="Note"');
+        expect(body).toContain('<textarea');
+    });
+
+    it('says the note has not been saved yet before anything has been written', () => {
+        expect(drawn(client, { id: '20260915-120000-001' })).toContain('Not saved yet');
+    });
+
+    it('says why the note could not be read rather than offering an empty one', async () => {
+        const fresh = await answering({ error: 'no-such-note' }, 404);
+        const body = drawn(fresh, { id: '20260915-120000-001' });
+
+        expect(body).toContain('The note could not be read: no-such-note');
+        expect(body).not.toContain('<textarea');
+    });
+
+    it('is one instance per note, so opening the same note twice is one tab', () => {
+        const { openView } = client.layout;
+        const first = openView('note', { id: '20260915-120000-001' });
+        const again = openView('note', { id: '20260915-120000-001' });
+        const other = openView('note', { id: '20260915-120000-002' });
+
+        expect(first).not.toBe('');
+        expect(again).toBe(first);
+        expect(other).not.toBe(first);
+    });
+
+    it('names the pane for the note, which is what a tab with no label of its own draws', () => {
+        const body = drawn(client, { id: '20260915-120000-001' });
+
+        // Nothing is typed and nothing has been read, so it is the words for a note with no title.
+        expect(body).toContain('Untitled note');
+    });
+});
+
+// What the removal of a note does to the tab drawing it. The layout store is this case's own, so
+// nothing here renders: the rule is that the instance opened for one note goes with that note.
+describe("a deleted note's tab", () => {
+    it('is closed by the removal, so no tab is left drawing a note that is gone', () => {
+        const { closeRecord, layout, openView } = client.layout;
+        const first = openView('note', { id: '20260915-120000-001' });
+        const second = openView('note', { id: '20260915-120000-002' });
+        expect(first).not.toBe('');
+
+        closeRecord('note', '20260915-120000-001');
+
+        const open = findView(layout(), 'note', '20260915-120000-001');
+        expect(open).toBe(null);
+        expect(findView(layout(), 'note', '20260915-120000-002')?.id).toBe(second);
+    });
+
+    it('leaves every other view alone, including one opened for another record', () => {
+        const { closeRecord, layout, openView } = client.layout;
+        const file = openView('file', { root: 'hub', path: 'code/run.py', label: 'run.py' });
+
+        closeRecord('note', '20260915-120000-001');
+
+        expect(findView(layout(), 'file')?.id).toBe(file);
+    });
+});

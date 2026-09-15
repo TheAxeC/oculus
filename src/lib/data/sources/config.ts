@@ -35,6 +35,16 @@ export type LocalConfig = {
      * machine sets it, and the file browser then uses ~/.oculus/workspaces.json.
      */
     workspaces?: string;
+    /**
+     * Where the reader's own bookmarks live, `bookmarks` in the file. Absent unless the machine sets
+     * it, and the file browser then uses ~/.oculus/bookmarks.yml.
+     */
+    bookmarks?: string;
+    /**
+     * Where the scratch notes live, `notes` in the file. Absent unless the machine sets it, and the
+     * file browser then uses ~/.oculus/notes.
+     */
+    notes?: string;
     /** Absolute or PATH-resolved Claude CLI used by unattended update-task terminals. */
     claudeBin: string;
     /** Claude and Codex config folders shown by the Usage view. */
@@ -51,6 +61,8 @@ const LOCAL_KEYS = [
     'sessions_cache',
     'sessions_overrides',
     'workspaces',
+    'bookmarks',
+    'notes',
     'claude_bin',
     'accounts'
 ];
@@ -191,12 +203,14 @@ export function loadLocal(engine: string): LocalConfig {
         config.claudeBin = record.claude_bin;
     }
     if (record.accounts !== undefined) config.accounts = usageAccounts(record.accounts, file, base);
-    // The three machine-local state paths are absent unless the machine names them, so a config
-    // that says nothing about them leaves the defaults to the modules that own them.
+    // The machine-local state paths are absent unless the machine names them, so a config that says
+    // nothing about them leaves the defaults to the modules that own them.
     for (const [key, field] of [
         ['sessions_cache', 'sessionsCache'],
         ['sessions_overrides', 'sessionsOverrides'],
-        ['workspaces', 'workspaces']
+        ['workspaces', 'workspaces'],
+        ['bookmarks', 'bookmarks'],
+        ['notes', 'notes']
     ] as const) {
         if (record[key] === undefined) continue;
         if (typeof record[key] !== 'string' || record[key] === '') {

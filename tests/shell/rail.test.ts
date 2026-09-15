@@ -20,6 +20,7 @@ import {
     railOrder,
     sectionSize,
     type DocEntry,
+    type Bookmark,
     type NavGroup
 } from '../../src/lib/shell/rail.ts';
 import {
@@ -769,5 +770,70 @@ describe('a bookmark opened as a document tab', () => {
         expect(one.id).not.toBe(two.id);
         expect(one.label).toBe('One');
         expect(two.label).toBe('Two');
+    });
+});
+
+describe("the reader's own bookmarks in the Docs section", () => {
+    /** The rail with the configured bookmarks and the reader's own. */
+    function drawn(bookmarks: Bookmark[], saved: Bookmark[]): string {
+        return render(ActivityRail, {
+            context: clientContext(client),
+            props: { groups: [], bookmarks, saved }
+        }).body;
+    }
+
+    /** The bookmark identities the Docs section drew, in the order it drew them. */
+    function order(body: string): string[] {
+        return [...body.matchAll(/data-bookmark="([^"]+)"/g)].map((found) => found[1]);
+    }
+
+    const CONFIGURED = [{ label: 'Manual', root: 'docs', path: 'manual.html' }];
+
+    it("draws the reader's own after the configured ones, under the one heading", () => {
+        const body = drawn(CONFIGURED, [
+            { label: 'run.py', root: 'hub', path: 'code/run.py', view: 'file' }
+        ]);
+
+        expect(order(body)).toEqual(['docs/manual.html', 'hub/code/run.py']);
+        expect(body.match(/>Docs</g)).toHaveLength(1);
+        expect(body).toContain('run.py');
+    });
+
+    it("draws the reader's own alone when the configuration names none", () => {
+        const body = drawn(
+            [],
+            [{ label: 'run.py', root: 'hub', path: 'code/run.py', view: 'file' }]
+        );
+
+        expect(order(body)).toEqual(['hub/code/run.py']);
+        expect(body).toContain('>Docs<');
+    });
+
+    it('draws no heading at all when there is neither', () => {
+        expect(drawn([], [])).not.toContain('>Docs<');
+    });
+
+    it("draws two of the reader's own on one file as two buttons, under their two labels", () => {
+        const body = drawn(
+            [],
+            [
+                { label: 'first', root: 'hub', path: 'x.md', view: 'file' },
+                { label: 'second', root: 'hub', path: 'x.md', view: 'file' }
+            ]
+        );
+
+        expect(order(body)).toEqual(['hub/x.md', 'hub/x.md']);
+        expect(body).toContain('first');
+        expect(body).toContain('second');
+    });
+
+    it('draws one naming a configured document once, under the configured label', () => {
+        const body = drawn(CONFIGURED, [
+            { label: 'mine', root: 'docs', path: 'manual.html', view: 'document' }
+        ]);
+
+        expect(order(body)).toEqual(['docs/manual.html']);
+        expect(body).toContain('Manual');
+        expect(body).not.toContain('mine');
     });
 });

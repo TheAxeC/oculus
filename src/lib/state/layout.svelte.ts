@@ -106,6 +106,7 @@ export type LayoutStore = {
     change: (edit: (tree: Layout) => Layout, page?: string) => void;
     activateInstance: (id: string, page?: string) => void;
     closeInstancesOfView: (view: ViewId) => void;
+    closeRecord: (view: ViewId, id: string) => void;
     moveInstanceToPage: (id: string, page: string) => void;
     closeInstance: (id: string, page?: string) => void;
     closePane: (path: number[], page?: string) => void;
@@ -472,6 +473,22 @@ export function createLayout(ui: UiStore): LayoutStore {
         }
     }
 
+    /**
+     * Close the instance a view was opened for one record with, wherever it is. It is what a record
+     * going away means for the arrangement: a note deleted from the Files view leaves no tab drawing
+     * a file that is not there.
+     */
+    function closeRecord(view: ViewId, id: string): void {
+        for (const page of store.current.pages) {
+            for (const { pane } of panesIn(page.workbench.root)) {
+                for (const tab of pane.tabs) {
+                    if (!isInstanceOf(tab, view, id)) continue;
+                    closeInstanceAnywhere(tab.id);
+                }
+            }
+        }
+    }
+
     /** Close one instance wherever it is, on the current page or on another. */
     function closeInstanceAnywhere(id: string): void {
         const holder = holding(id);
@@ -799,6 +816,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         change,
         activateInstance,
         closeInstancesOfView,
+        closeRecord,
         moveInstanceToPage,
         closeInstance,
         closePane,

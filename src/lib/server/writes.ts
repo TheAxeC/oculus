@@ -25,6 +25,7 @@
 import { portfolioConfigFrom } from '../data/index.ts';
 import { engineDir, loadConfig, loadLocal } from '../data/sources/config.ts';
 import { hasToken, sameOrigin } from './auth.ts';
+import { defaultBookmarksPath } from './fs/bookmarks.ts';
 import { setHidden, setOverride } from './sessions/overrides.ts';
 import { projects as projectsOf } from './sessions/hooks.ts';
 import type { HubLike } from './sessions/hooks.ts';
@@ -63,9 +64,13 @@ import type { SubtaskTarget } from './writes/subtasks.ts';
 import type { PortfolioConfig, Project } from '../data/model.ts';
 
 /**
- * What a write needs to know: which hub to write in, what its manifests are checked against, and
- * where the per-session overrides file is. The overrides path is absent on a machine that has not
- * set `sessions_overrides` in local.yml, and `defaultOverridesPath()` is used then.
+ * What a write needs to know: which hub to write in, what its manifests are checked against, where
+ * the per-session overrides file is, and where the reader's own bookmarks are. The overrides path is
+ * absent on a machine that has not set `sessions_overrides` in local.yml, and
+ * `defaultOverridesPath()` is used then.
+ *
+ * `bookmarks` is a collection of the reader's own that lives outside the hub, so the four entry
+ * writes are given it and resolve the key `bookmarks` to that file rather than to a hub one.
  */
 export type WriteTarget = {
     hub: string;
@@ -78,6 +83,7 @@ export type WriteTarget = {
      * published no portfolio yet names no projects, and the write refuses with a reason.
      */
     projects: () => Project[];
+    bookmarks: string;
 };
 
 export type WriteOutcome = {
@@ -141,7 +147,8 @@ export function target(server?: { hub: HubLike }): WriteTarget {
         hub: local.hub,
         config: portfolioConfigFrom(loadConfig(engine).config),
         overrides: local.sessionsOverrides,
-        projects: () => (server === undefined ? [] : projectsOf(server.hub))
+        projects: () => (server === undefined ? [] : projectsOf(server.hub)),
+        bookmarks: local.bookmarks ?? defaultBookmarksPath()
     };
 }
 
@@ -200,7 +207,14 @@ export async function handleWrite(
 
     const entry = entryWrite(body);
     if (entry !== null) {
-        const outcome = writeEntry(into.hub, into.config, entry.collection, entry.id, entry.fields);
+        const outcome = writeEntry(
+            into.hub,
+            into.config,
+            entry.collection,
+            entry.id,
+            entry.fields,
+            into.bookmarks
+        );
         if (!outcome.found) {
             return json(404, { error: `no entry ${entry.id} in ${entry.collection}` });
         }
@@ -237,21 +251,39 @@ export async function handleWrite(
 
     const fresh = newEntry(body);
     if (fresh !== null) {
-        const outcome = createEntry(into.hub, into.config, fresh.collection, fresh.fields);
+        const outcome = createEntry(
+            into.hub,
+            into.config,
+            fresh.collection,
+            fresh.fields,
+            into.bookmarks
+        );
         if (!outcome.found) return json(404, { error: `no collection ${fresh.collection}` });
         return answer(outcome);
     }
 
     const order = reorderWrite(body);
     if (order !== null) {
-        const outcome = reorderCollection(into.hub, into.config, order.collection, order.order);
+        const outcome = reorderCollection(
+            into.hub,
+            into.config,
+            order.collection,
+            order.order,
+            into.bookmarks
+        );
         if (!outcome.found) return json(404, { error: `no collection ${order.collection}` });
         return answer(outcome);
     }
 
     const removal = deleteEntryWrite(body);
     if (removal !== null) {
-        const outcome = removeEntry(into.hub, into.config, removal.collection, removal.id);
+        const outcome = removeEntry(
+            into.hub,
+            into.config,
+            removal.collection,
+            removal.id,
+            into.bookmarks
+        );
         if (!outcome.found) {
             return json(404, { error: `no entry ${removal.id} in ${removal.collection}` });
         }

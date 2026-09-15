@@ -5,7 +5,7 @@
 // NOT cover: the fetch state/fs.svelte.ts makes for a text file, which needs a server and is
 // exercised by tests/browser/files.spec.ts, so the text cases here render the code window directly.
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
 import File from '../../src/lib/views/File.svelte';
 import Code from '../../src/lib/views/file/Code.svelte';
@@ -128,5 +128,109 @@ describe('the code window', () => {
 
     it('draws a language it has none for as plain escaped text', () => {
         expect(codeHtml('a < b\n', 'klingon')).toBe('a &lt; b\n');
+    });
+});
+
+// The star over the open file, which is the reader's own bookmarks read through the fs store.
+// `fetch` and `window` are stubs; nothing here reaches a server.
+describe('the star on the open file', () => {
+    async function settle(): Promise<void> {
+        await new Promise((resolve) => setTimeout(resolve, 0));
+    }
+
+    /** A client whose bookmarks hold the entries named. */
+    async function holding(entries: Record<string, unknown>[]): Promise<ClientState> {
+        vi.stubGlobal('window', {});
+        vi.stubGlobal('fetch', () =>
+            Promise.resolve(
+                new Response(JSON.stringify({ entries, schema: [] }), {
+                    status: 200,
+                    headers: { 'content-type': 'application/json' }
+                })
+            )
+        );
+        const fresh = createClientState();
+        fresh.fs.bookmarks();
+        await settle();
+        return fresh;
+    }
+
+    function mark(root: string, path: string): Record<string, unknown> {
+        return { id: path, title: path, fields: { label: path, root, path }, file: '', index: 0 };
+    }
+
+    function shown(fresh: ClientState, state: unknown): string {
+        return render(File, {
+            context: clientContext(fresh),
+            props: { instance: instance(state) }
+        }).body;
+    }
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('offers to bookmark a file no bookmark names', async () => {
+        const fresh = await holding([mark('hub', 'other.md')]);
+        const body = shown(fresh, { root: 'hub', path: 'code/run.py', label: 'run.py' });
+
+        expect(body).toContain('Bookmark this file');
+        expect(body).not.toContain('Take this bookmark out');
+    });
+
+    it('offers to take it out again, and says it is set, for a file one names', async () => {
+        const fresh = await holding([mark('hub', 'code/run.py')]);
+        const body = shown(fresh, { root: 'hub', path: 'code/run.py', label: 'run.py' });
+
+        expect(body).toContain('Take this bookmark out');
+        expect(body).not.toContain('Bookmark this file');
+        expect(body).toContain('aria-pressed="true"');
+    });
+
+    it('reads the root as well as the path, so the same path under two roots is two files', async () => {
+        const fresh = await holding([mark('notes', 'code/run.py')]);
+        const body = shown(fresh, { root: 'hub', path: 'code/run.py', label: 'run.py' });
+
+        expect(body).toContain('Bookmark this file');
+    });
+});
+
+// What a refused bookmark write says. The store answers, so the refusal is the one the endpoint
+// gives a label the file already holds.
+describe('a bookmark the endpoint refused', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('carries the reason through the store answer rather than dropping it', async () => {
+        vi.stubGlobal('window', {});
+        vi.stubGlobal('fetch', (url: string) =>
+            Promise.resolve(
+                new Response(
+                    JSON.stringify(
+                        url.includes('bookmarks=1')
+                            ? { entries: [], schema: [] }
+                            : {
+                                  ok: true,
+                                  changed: [],
+                                  refused: [
+                                      {
+                                          field: 'label',
+                                          reason: 'an entry with that label is already in the file'
+                                      }
+                                  ]
+                              }
+                    ),
+                    { status: 200, headers: { 'content-type': 'application/json' } }
+                )
+            )
+        );
+        const fresh = createClientState();
+        const answer = await fresh.fs.addBookmark({ label: 'README.md', root: 'hub', path: 'a' });
+
+        expect(answer.ok).toBe(true);
+        expect(answer.refused.map((one) => one.reason)).toEqual([
+            'an entry with that label is already in the file'
+        ]);
     });
 });

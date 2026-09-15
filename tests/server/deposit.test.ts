@@ -233,7 +233,8 @@ beforeAll(() => {
         hub,
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
         overrides: join(dir, 'sessions.json'),
-        projects: () => []
+        projects: () => [],
+        bookmarks: join(dir, 'bookmarks.yml')
     };
 });
 

@@ -88,6 +88,12 @@ notify:
   quiet_seconds: 3
 
 
+# === Scratch notes ==========================================================
+# How long a note waits after the last keystroke before it is written, in milliseconds.
+notes:
+  autosave_ms: 800
+
+
 # === The git panel ==========================================================
 # The Changes view asks this model for a suggested commit message. Empty uses the command-line default.
 git:

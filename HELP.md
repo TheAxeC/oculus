@@ -12,7 +12,7 @@ The rail draws one button per view, under the heading of the group the view belo
 
 A click opens the view where views land, which is the pane whose tab was activated last; a view already open is activated where it is rather than opened twice. A shift-click opens it in a new pane to the right of that one, and the next shift-click joins that pane as a tab while it is still open.
 
-A group also carries the hub documents the `docs` key gives it, drawn after its views and opened as a tab each. Under all the groups sit the bookmarks, a local HTML file under a configured root opened as a tab of its own, and at the foot of the rail the appearance controls: the theme list, the two text-size steps and the reset, the CRT overlay, the wallpaper where the theme has one, and the toggle between the glyph vocabulary and its ASCII stand-ins.
+A group also carries the hub documents the `docs` key gives it, drawn after its views and opened as a tab each. Under all the groups sit the bookmarks, the configured ones (a local HTML file under a configured root) and the reader's own from the Files view, each opened as a tab of its own, and at the foot of the rail the appearance controls: the theme list, the two text-size steps and the reset, the CRT overlay, the wallpaper where the theme has one, and the toggle between the glyph vocabulary and its ASCII stand-ins.
 
 ### Pages and the pane tree
 
@@ -117,7 +117,7 @@ The files below sit in the `config/` folder of the engine, `tools/oculus/config/
 
 Every user-facing word lives under `config/text/`, one file per surface, and is read by its dotted key. Those files merge with the rest, so a word is changed there and nowhere else.
 
-`local.yml` sits beside the `config/` folder and is this machine's own. Its keys are `hub`, the absolute path of the research hub; `port`, the port the server listens on; `hpc_host`, the ssh alias the Live HPC view uses; `claude_bin`, the Claude command an unattended terminal runs; `accounts`, the agent account folders the Usage view reads; and `sessions_cache`, `sessions_overrides` and `workspaces`, the three files the session cache, the per-session overrides and the saved workspaces are kept in. Every key has a default, so a machine that sets only `hub` works. The file is not tracked and is not served to the page, so no machine path is ever in the repository.
+`local.yml` sits beside the `config/` folder and is this machine's own. Its keys are `hub`, the absolute path of the research hub; `port`, the port the server listens on; `hpc_host`, the ssh alias the Live HPC view uses; `claude_bin`, the Claude command an unattended terminal runs; `accounts`, the agent account folders the Usage view reads; and `sessions_cache`, `sessions_overrides`, `workspaces`, `bookmarks` and `notes`, the places the session cache, the per-session overrides, the saved workspaces, the reader's own bookmarks and the scratch notes are kept in. Every key has a default, so a machine that sets only `hub` works. The file is not tracked and is not served to the page, so no machine path is ever in the repository.
 
 ## Where the data comes from
 
@@ -125,7 +125,7 @@ Everything on the boards is read from the research hub, whose absolute path is t
 
 Nothing is copied into a database. The server reads the files, builds one snapshot of entities and relations, and pushes it over a WebSocket; it watches the hub and the config folder, so a file edited anywhere reaches the page in the same second. The long documents stay out of that snapshot and are fetched one at a time when a tab shows one.
 
-Three things outside the hub are read as well, all of them this machine's own. The agent sessions are read from the folders `accounts` names, `~/.claude/projects` and `~/.codex/sessions` for the transcripts and `~/.claude/sessions` for which Claude session is alive. The session cache, the per-session overrides and the saved workspaces are read and written under `~/.oculus`, or wherever `local.yml` puts each of them. The engine's own `config/` folder is read on every load and written when a file of it is saved from a source tab.
+Three things outside the hub are read as well, all of them this machine's own. The agent sessions are read from the folders `accounts` names, `~/.claude/projects` and `~/.codex/sessions` for the transcripts and `~/.claude/sessions` for which Claude session is alive. The session cache, the per-session overrides, the saved workspaces, the reader's own bookmarks and the scratch notes are read and written under `~/.oculus`, or wherever `local.yml` puts each of them. The engine's own `config/` folder is read on every load and written when a file of it is saved from a source tab.
 
 Writes into the hub go back to the files they came from: a manifest field from the editor, a collection entry from a card, a text file from a source tab. Every write is a POST carrying the page's own token, and nothing outside the hub, the engine config folder, the machine-local files under `~/.oculus` and the configured roots is ever written; what is read beyond those is the agent account folders above, and the workspace a session names when its git state or its terminal is opened.
 

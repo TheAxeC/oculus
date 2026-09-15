@@ -75,6 +75,7 @@ export {
 export {
     activePath,
     cardCursor,
+    documentState,
     findInstance,
     findView,
     isInstanceOf,

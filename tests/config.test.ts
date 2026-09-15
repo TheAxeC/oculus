@@ -522,6 +522,7 @@ describe("oculus's own config directory", () => {
             'slurm',
             'chat',
             'notify',
+            'notes',
             'git'
         ],
         'glyphs.yml': ['glyphs', 'ascii'],
@@ -612,6 +613,7 @@ describe("oculus's own config directory", () => {
         'views/leads.yml',
         'views/linkedin.yml',
         'views/map.yml',
+        'views/note.yml',
         'views/present.yml',
         'views/programs.yml',
         'views/project.yml',
@@ -656,6 +658,8 @@ describe("oculus's own config directory", () => {
         });
         expect(config.usage_refresh_min).toBe(10);
         expect(config.usage_refresh_model).toBe('haiku');
+        // The wait between the last keystroke in a note and the save that follows it.
+        expect(config.notes).toEqual({ autosave_ms: 800 });
     });
 
     it('configures the editable source extensions and their viewable superset', () => {
