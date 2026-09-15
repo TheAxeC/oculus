@@ -171,6 +171,8 @@ Independent of each other; two may run side by side under R9's rule when their b
 - O22 to O28 with each other once O10 has landed.
 
 ## Rulings (2026-09-10)
+- 2026-09-15 23:30, Axel (1 of 2): D7 as recommended (people.yml a registry of persons, collaboration entries point at one with `person:`, manifests unchanged); the audit messages reworded to the prose rule; a same-named upload refused; the shapes D1, O28b and D3 add as built.
+- 2026-09-15 23:30, Axel (2 of 2): D4's three shapes and D5's main-file rule explained again, his yes still open; D10 stays gated on a second person unless he lifts it.
 - 2026-09-15 20:15, Axel: Q20, Q21 and Q22 agreed as booked; then "let the current agents finish and then pause" (the pause's terms in the state file's standing demands).
 - 2026-09-15 20:12, Axel, on the fifteen open items (1 of 2): 2, 3, 4, 5, 7, 8, 9, 10, 11, 13 and 15 agreed as recommended; 1: `local.yml` moves into `config/` (Q20); 6: no environment variables, `OCULUS_CONFIG` and `OCULUS_LOCAL` go (Q21).
 - 2026-09-15 20:12, Axel (2 of 2): 12 and 14 named by the orchestrator as the lazy options at Axel's question and left unlocked: the Files pane tinted again with a form that paints no surface, and a note written at the first keystroke (Q22); 15's one-shape alternative offered, not ruled.
