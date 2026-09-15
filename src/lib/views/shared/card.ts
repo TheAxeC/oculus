@@ -1,11 +1,26 @@
 // Layer 3, view helpers. Project-card path, label and deadline calculations live here because pure
 // display rules change independently of Svelte markup.
 
-import { DEADLINE_SOON, daysUntil, type BoardItem } from '$lib/state/board';
+import { DEADLINE_SOON, daysUntil, type BoardItem, type BoardTag } from '$lib/state/board';
 import type { ClientState } from '$lib/state/context';
 
 export type FileRow = { path: string; size: number; mtime: number };
 export type Translate = (key: string, ...args: (string | number)[]) => string;
+
+/** How many entries of one tag kind a collapsed card draws before the rest need its own control. */
+export const SHOWN = 3;
+
+/** What one tag kind draws: every entry while that kind is expanded, the first SHOWN otherwise. */
+export function shownTags(tags: BoardTag[], expanded: boolean): BoardTag[] {
+    return expanded ? tags : tags.slice(0, SHOWN);
+}
+
+/** The view one tag kind's entries open, and the empty string for a kind that is not a cross-link. */
+export function linkView(kind: string): string {
+    if (kind === 'funding') return 'funding';
+    if (kind === 'collaborators') return 'collaborations';
+    return '';
+}
 
 /** The file rows whose folder-relative path contains the case-insensitive query. */
 export function matching(all: FileRow[], needle: string): FileRow[] {

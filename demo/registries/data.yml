@@ -25,3 +25,15 @@ datasets:
     used_by:
     - robust-embeddings
     - sparse-attention
+  - key: probe-logs
+    name: Node probe logs
+    modality: graphs
+    access: open
+    used_by:
+    - graph-bandits
+  - key: node-traces
+    name: Node arrival traces
+    modality: timeseries
+    access: registration
+    used_by:
+    - graph-bandits

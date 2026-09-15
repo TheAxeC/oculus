@@ -10,7 +10,7 @@ status:
   line: Method drafted, ablations running.
 domain: graphs
 program: [graphs]
-datasets: [synthgraph, stream-bench]
+datasets: [synthgraph, stream-bench, probe-logs, node-traces]
 related: [tensor-sketch, graph-transfer]
 eli5: Pick the most informative node to probe next when the graph keeps changing under you.
 results:

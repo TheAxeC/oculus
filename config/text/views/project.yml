@@ -57,6 +57,8 @@ text:
             ideas: Ideas / avenues
             latest: Latest
             local_label: local
+            more_tags: '+{0}'
+            more_tags_tip: show the rest of {0}
             next: Next
             no_manifest: no manifest
             open_in: open in {0}

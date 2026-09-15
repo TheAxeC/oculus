@@ -114,7 +114,7 @@ const VIEWS: Record<string, string> = {
     'shared/CrossLinks.svelte': '',
     'shared/CardDetails.svelte': '.field .value=fs-md | .label=fs-xxs | .statusline=fs-sm',
     'shared/CardDocs.svelte': '.label=fs-xxs | .frow=fs-md | .capped=fs-xs',
-    'shared/CardLinks.svelte': '',
+    'shared/CardLinks.svelte': '.kind=fs-xxs',
     'shared/CardSessions.svelte': '.session=fs-sm',
     'shared/EditBar.svelte': '.edit-bar=fs-sm',
     'shared/EntryForm.svelte': '.label=fs-xs | .said=fs-md',
