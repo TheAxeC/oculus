@@ -35,6 +35,7 @@ dispatch:                                  # Q17 + O27a + P1, the set of three
   exit: none
   pid: none
   session_id: ab8df68c6d98c4cc5            # the Agent tool's id
+  round: 1                                   # repair round sent 2026-09-15T15:23+0200 over the review and the orchestrator read (twelve items, runs/Q17/repair-prompt.md)
   landing: not-started
 - package: O27a
   worker: claude:opus
