@@ -34,7 +34,7 @@ dispatch:                                  # P2 + O27b + O28a, the set of three 
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/P2/report.md
   exit: none
   pid: none
-  session_id: pending                      # the Agent tool's id, written at launch
+  session_id: a58adb3cf3cca5050            # the Agent tool's id
   landing: not-started
 - package: O27b
   worker: claude:opus
@@ -46,7 +46,7 @@ dispatch:                                  # P2 + O27b + O28a, the set of three 
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O27b/report.md
   exit: none
   pid: none
-  session_id: pending                      # the Agent tool's id, written at launch
+  session_id: af993ace45f2c71ee            # the Agent tool's id
   landing: not-started
 - package: O28a
   worker: claude:opus
@@ -58,7 +58,7 @@ dispatch:                                  # P2 + O27b + O28a, the set of three 
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O28a/report.md
   exit: none
   pid: none
-  session_id: pending                      # the Agent tool's id, written at launch
+  session_id: a9f4b8bcfd8a4417b            # the Agent tool's id
   landing: not-started
 ```
 
