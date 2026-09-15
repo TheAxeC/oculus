@@ -46,7 +46,7 @@ dispatch:                                  # P2 + O27b + O28a, the set of three 
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O27b/report.md
   exit: none
   pid: none
-  session_id: af993ace45f2c71ee            # the Agent tool's id; reported 18:04 (runs/O27b/report.md, diff.patch 3,785 lines); checks running (runs/O27b/checks.sh, started 18:05); reviewer claude:opus afbd3d7408dfb734f launched 18:05
+  session_id: af993ace45f2c71ee            # the Agent tool's id; reported 18:04 (runs/O27b/report.md, diff.patch 3,785 lines); checks running (runs/O27b/checks.sh, started 18:05); reviewer claude:opus afbd3d7408dfb734f launched 18:05; checks green 18:16 (browser 75); review received 18:17 (agents/reviews/O27b.md), repair round sent 18:20 (runs/O27b/repair-prompt.md, eleven items)
   landing: not-started
 - package: O28a
   worker: claude:opus
@@ -107,6 +107,7 @@ dispatch:                                  # P2 + O27b + O28a, the set of three 
 - P2, `slides.keep_one` (raised 2026-09-15 18:06 by P2's review): the brief named `slides.empty` as the empty-selection refusal; as built `slides.empty` says the deck holds no slides to choose from and a new key `slides.keep_one` carries the refusal ("Keep at least one slide ticked."). Recommended: keep, two states need two sentences.
 - O27b, five shapes beyond the brief (raised 2026-09-15 18:06 by O27b's report): `GET /api/fs?note=<id>` reads one note's text (without it a listed note could be deleted but never reopened); a note's file is `<title>\n<body>` under `~/.oculus/notes/<YYYYMMDD-HHMMSS-mmm>.md`, a newline typed into the title becoming a space; the Files view gains a Bookmarks section under the tree (the rail has nowhere to put the edit form); the bookmarks schema's `root` is a select with no options of its own, the Files view filling it from the roots in force; two glyph names `star` (lucide `star`, ASCII `[*]`) and `note` (lucide `sticky-note`, `[n]`). Recommended: keep all five.
 - O27b, the Files pane no longer tinted (raised 2026-09-15 18:06 by O27b's report): `tests/views/tinted.test.ts` holds that a view drawing the shared entry form, which paints its own surface, does not also tint its box; over a wallpaper the Files pane now looks like Collection. Recommended: keep.
+- O27b, the shapes its brief named (raised 2026-09-15 18:20 by O27b's review, which asked for them to be booked): `config/behavior.yml` `notes: { autosave_ms: 800 }`; `local.yml`'s optional `bookmarks` and `notes` paths; `~/.oculus/bookmarks.yml` and `~/.oculus/notes/`; `GET /api/fs?bookmarks=1` and `?notes=1`; `POST /api/fs` actions `note-save` and `note-delete`. Recommended: keep.
 - The Command Center split (raised 2026-09-14 17:28): closed 2026-09-14 17:39, Axel chose (a), a Tasks section on the Focus board; booked as Q18.
 - R12c edge 2, the `waiting-on` finding: closed 2026-09-14 17:20, Axel ruled: a collaborator key or a project id, never a free name, a finding otherwise; the manifest's `BTFNO` is `btfno`; booked as R12f beside R12e.
 - R12c edge 8, `Entry.id` identity-first: closed 2026-09-14 17:28, Axel agreed: a wrong premise, no change; the entry id stays the `id:` line, then `key:`, then the schema's identity field.
