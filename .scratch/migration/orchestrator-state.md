@@ -48,7 +48,7 @@ dispatch:                                  # Q15 + Q16, two workers on disjoint 
   exit: none
   pid: none
   session_id: ad5e57510aed2ea59            # the Agent tool's id
-  round: 1                                   # repair round sent 2026-09-15T03:57+0200 over the review (four test items, runs/Q16/repair-prompt.md)
+  round: 1                                   # repair round sent 2026-09-15T03:56+0200 over the review (four test items, runs/Q16/repair-prompt.md)
   landing: not-started
 ```
 
