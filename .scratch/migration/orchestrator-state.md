@@ -35,6 +35,7 @@ dispatch:                                  # Q15 + Q16, two workers on disjoint 
   exit: none
   pid: none
   session_id: a5dbd4d25aa6f1f4f            # the Agent tool's id
+  round: 1                                   # repair round sent 2026-09-15T03:50+0200 over the review and the orchestrator read (seven items, runs/Q15/repair-prompt.md)
   landing: not-started
 - package: Q16
   worker: claude:opus
