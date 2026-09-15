@@ -6,13 +6,17 @@ import {
     bestLayout,
     buildGraph,
     crossings,
+    filterGraph,
     layoutKey,
     optimize,
     placeInit,
     physics,
+    presentFilter,
     score,
     seededRandom,
-    settle
+    settle,
+    toggleFilter,
+    typeCounts
 } from '../../src/lib/state/graph.ts';
 import type { GraphEdge, PointNode } from '../../src/lib/state/graph.ts';
 import type { Project, Snapshot } from '../../src/lib/data/model.ts';
@@ -115,6 +119,14 @@ function point(id: string, x: number, y: number, velocity = 0): PointNode {
     };
 }
 
+/** The ids of one kind of node in a graph, sorted, which is what a filter is read off. */
+function ids(graph: { nodes: { id: string; kind: string }[] }, kind: string): string[] {
+    return graph.nodes
+        .filter((node) => node.kind === kind)
+        .map((node) => node.id)
+        .sort();
+}
+
 function edge(id: string, source: string, target: string): GraphEdge {
     return {
         id,
@@ -142,6 +154,129 @@ describe('relationship graph', () => {
             'Person Name'
         );
         expect(expanded.edges.some((edge) => edge.source === 'project::old')).toBe(true);
+    });
+
+    it('draws only the types named, and takes a line no drawn project is a member of with them', () => {
+        const data = snapshot();
+        data.entities.projects.beta.type = 'idea';
+        const whole = buildGraph(data, { collaborators: true });
+        expect(ids(whole, 'project')).toEqual([
+            'project::alpha',
+            'project::beta',
+            'project::gamma'
+        ]);
+
+        const typed = filterGraph(whole, { types: ['idea'] });
+        expect(ids(typed, 'project')).toEqual(['project::beta']);
+        expect(ids(typed, 'line')).toEqual([]);
+        expect(ids(typed, 'collaborator')).toEqual([]);
+        expect(buildGraph(data, { collaborators: true, types: ['idea'] })).toEqual(typed);
+    });
+
+    it('draws only the lines named, keeps their projects, and drops the membership edges of the rest', () => {
+        const whole = buildGraph(snapshot());
+        const lined = filterGraph(whole, { lines: ['one'] });
+        expect(ids(lined, 'line')).toEqual(['line::one']);
+        expect(lined.edges.map((edge) => edge.id)).not.toContain('membership::alpha::two');
+        expect(lined.edges.map((edge) => edge.id)).toContain('membership::alpha::one');
+        expect(ids(lined, 'project')).toEqual([
+            'project::alpha',
+            'project::beta',
+            'project::gamma'
+        ]);
+        const before = whole.nodes.find((node) => node.id === 'project::alpha')?.degree ?? 0;
+        expect(before).toBeGreaterThan(0);
+        expect(lined.nodes.find((node) => node.id === 'project::alpha')?.degree).toBe(before - 1);
+    });
+
+    it('drops a project with no membership of a drawn line, and the collaborator left behind', () => {
+        const data = snapshot();
+        data.entities.projects.alpha.programIds = ['one'];
+        data.entities.projects.gamma.programIds = ['two'];
+        const whole = buildGraph(data, { collaborators: true });
+        expect(ids(whole, 'collaborator')).toEqual(['collaborator::person']);
+
+        const joined = filterGraph(whole, { connected: true });
+        expect(ids(joined, 'project')).toEqual(['project::alpha', 'project::gamma']);
+        expect(ids(joined, 'collaborator')).toEqual(['collaborator::person']);
+
+        const narrowed = filterGraph(whole, { lines: ['two'], connected: true });
+        expect(ids(narrowed, 'project')).toEqual(['project::gamma']);
+        expect(ids(narrowed, 'collaborator')).toEqual([]);
+        expect(narrowed.edges.map((edge) => edge.id)).toEqual(['membership::gamma::two']);
+    });
+
+    it('draws the whole graph for an empty list, which is what a state naming no filter holds', () => {
+        const whole = buildGraph(snapshot(), { collaborators: true });
+        expect(filterGraph(whole, {})).toEqual(whole);
+        expect(filterGraph(whole, { types: [], lines: [], connected: false })).toEqual(whole);
+    });
+
+    it('leaves a project whose manifest names no type outside the type filter', () => {
+        const data = snapshot();
+        delete data.entities.projects.gamma.type;
+        data.entities.projects.beta.type = 'idea';
+        const whole = buildGraph(data);
+        expect(ids(filterGraph(whole, { types: ['idea'] }), 'project')).toEqual([
+            'project::beta',
+            'project::gamma'
+        ]);
+        expect(typeCounts(whole)).toEqual({ active: 1, idea: 1 });
+    });
+
+    it('keeps a collaborator two projects share when one of them goes, at the degree it has left', () => {
+        const data = snapshot();
+        data.entities.projects.beta.collaborators = ['person'];
+        data.entities.projects.beta.type = 'idea';
+        const whole = buildGraph(data, { collaborators: true });
+        expect(whole.nodes.find((node) => node.id === 'collaborator::person')?.degree).toBe(2);
+
+        const typed = filterGraph(whole, { types: ['idea'] });
+        expect(ids(typed, 'collaborator')).toEqual(['collaborator::person']);
+        expect(typed.nodes.find((node) => node.id === 'collaborator::person')?.degree).toBe(1);
+        expect(typed.edges.map((edge) => edge.id)).toEqual(['collaborator::beta::person']);
+    });
+
+    it('drops a related edge whose other end the filter took out', () => {
+        const data = snapshot();
+        data.entities.projects.beta.type = 'idea';
+        const whole = buildGraph(data);
+        expect(whole.edges.map((edge) => edge.id)).toContain('related::alpha::beta');
+
+        const typed = filterGraph(whole, { types: ['idea'] });
+        expect(typed.edges.map((edge) => edge.id)).not.toContain('related::alpha::beta');
+        expect(ids(typed, 'project')).toEqual(['project::beta']);
+    });
+
+    it('narrows a saved filter to what the graph holds, and an emptied list filters nothing', () => {
+        const whole = buildGraph(snapshot());
+        expect(presentFilter(whole, { types: ['gone'], lines: ['nowhere'] })).toEqual({
+            types: [],
+            lines: [],
+            connected: false
+        });
+        expect(
+            presentFilter(whole, { types: ['active', 'gone'], lines: ['one'], connected: true })
+        ).toEqual({ types: ['active'], lines: ['one'], connected: true });
+        const narrowed = presentFilter(whole, { types: ['gone'] });
+        expect(filterGraph(whole, narrowed)).toEqual(whole);
+    });
+
+    it('narrows the first press to the one pressed, then adds and removes', () => {
+        expect(toggleFilter([], 'idea')).toEqual(['idea']);
+        expect(toggleFilter(['idea'], 'active')).toEqual(['idea', 'active']);
+        expect(toggleFilter(['idea', 'active'], 'idea')).toEqual(['active']);
+        expect(toggleFilter(['active'], 'active')).toEqual([]);
+    });
+
+    it('keys a filtered layout by the nodes it left, so two filters do not share one layout', () => {
+        const data = snapshot();
+        data.entities.projects.beta.type = 'idea';
+        const whole = buildGraph(data);
+        const ideas = layoutKey(filterGraph(whole, { types: ['idea'] }).nodes);
+        const active = layoutKey(filterGraph(whole, { types: ['active'] }).nodes);
+        expect(ideas).not.toBe(active);
+        expect(layoutKey(filterGraph(whole, {}).nodes)).toBe(layoutKey(whole.nodes));
     });
 
     it('falls back from an empty short name to the full title', () => {

@@ -20,7 +20,10 @@ beforeEach(() => {
 
 const INSTANCE = 'map-one';
 
-function html(empty = false): string {
+/** Each render installs its own portfolio version, so a later one is not taken for a stale push. */
+let version = 2404;
+
+function html(empty = false, state: Record<string, unknown> = {}): string {
     const snapshot = fixture();
     snapshot.entities.projects.alpha.relatedIds = ['old'];
     snapshot.entities.projects.alpha.collaborators = ['person'];
@@ -39,8 +42,9 @@ function html(empty = false): string {
             project.relatedIds = [];
         }
     }
-    install(client, snapshot, empty ? 2405 : 2404);
-    setInstanceState(INSTANCE, {});
+    version += 1;
+    install(client, snapshot, version);
+    setInstanceState(INSTANCE, state);
     const instance: Instance = { id: INSTANCE, view: 'map', state: {} };
     return render(MapView, { context: clientContext(client), props: { instance } }).body;
 }
@@ -64,6 +68,35 @@ function graphFixture() {
 
 function edgeTag(body: string, id: string): string {
     return new RegExp(`<line[^>]*data-edge="${id}"[^>]*>`).exec(body)?.[0] ?? '';
+}
+
+/** One filter's words: what it filters by, and how many projects of it the graph holds now. */
+function counted(name: string, count: number): string {
+    return catalog['map.count'].replace('{0}', name).replace('{1}', String(count));
+}
+
+/** The opening tag of the control carrying those words, which is where its state is written. */
+function control(body: string, words: string): string {
+    const at = body.indexOf(`>${words}<`);
+    expect(at, words).toBeGreaterThan(-1);
+    const open = body.lastIndexOf('<button', at);
+    expect(open, words).toBeGreaterThan(-1);
+    return body.slice(open, at);
+}
+
+/** What the control carrying those words says its own state is. */
+function pressed(body: string, words: string): string {
+    return /aria-pressed="(true|false)"/.exec(control(body, words))?.[1] ?? '';
+}
+
+/** The classes of that control, which is where a toolbar control says it is the one in force. */
+function classes(body: string, words: string): string[] {
+    return (/class="([^"]*)"/.exec(control(body, words))?.[1] ?? '').split(/\s+/);
+}
+
+/** How many nodes the drawn graph holds, which is what a filter takes down. */
+function nodes(body: string): number {
+    return (body.match(/data-node="/g) ?? []).length;
 }
 
 describe('the Map view', () => {
@@ -119,6 +152,74 @@ describe('the Map view', () => {
         expect(mutual).toContain('marker-start="url(#map-arrow-map-markers)"');
     });
 
+    it('draws one filter for every type and every line the graph holds, each with its count', () => {
+        const body = html();
+        expect(body).toContain(catalog['map.types']);
+        expect(body).toContain(catalog['map.lines']);
+        expect(body).toContain(catalog['map.connected']);
+        expect(body).toContain(catalog['map.all']);
+        // The two active projects of the fixture, its one idea and its one manuscript; the three
+        // lines an unarchived project is a member of, each with that one project.
+        expect(body).toContain(counted('active', 2));
+        expect(body).toContain(counted('idea', 1));
+        expect(body).toContain(counted('manuscript', 1));
+        expect(body).toContain(counted('pillar', 1));
+        expect(body).toContain(counted('candidate', 1));
+        expect(body).toContain(counted('outside', 1));
+        // `dormant` is the archived project's line, which an unfiltered map does not draw.
+        expect(body).not.toContain(counted('dormant', 0));
+    });
+
+    it('presses the filters the state names, recounts the rest, and draws fewer nodes', () => {
+        const whole = html();
+        const filtered = html(false, { types: ['idea'] });
+        expect(pressed(filtered, counted('idea', 1))).toBe('true');
+        expect(pressed(filtered, counted('active', 0))).toBe('false');
+        expect(pressed(whole, counted('idea', 1))).toBe('true');
+        expect(pressed(whole, counted('active', 2))).toBe('true');
+        expect(nodes(filtered)).toBeLessThan(nodes(whole));
+        expect(filtered).toContain('data-node="project::candidate-project"');
+        expect(filtered).not.toContain('data-node="project::alpha"');
+    });
+
+    it('draws a line filter as a pressed toolbar control carrying the line title', () => {
+        const body = html(false, { lines: ['pillar'] });
+        expect(body).toContain('Pillar **One**');
+        expect(body).toContain('data-node="line::pillar"');
+        expect(body).not.toContain('data-node="line::outside"');
+        expect(body).toContain('data-node="project::outside-project"');
+
+        const joined = html(false, { lines: ['pillar'], connected: true });
+        expect(joined).not.toContain('data-node="project::outside-project"');
+        expect(joined).toContain('data-node="project::alpha"');
+    });
+
+    it('draws the whole graph for a saved filter naming a type the portfolio no longer holds', () => {
+        const whole = html();
+        const stale = html(false, { types: ['gone'], lines: ['vanished'] });
+        expect(nodes(stale)).toBe(nodes(whole));
+        expect(pressed(stale, counted('active', 2))).toBe('true');
+        expect(pressed(stale, counted('idea', 1))).toBe('true');
+        expect(pressed(stale, counted('pillar', 1))).toBe('true');
+    });
+
+    it('says so in place of the canvas when the filters leave nothing, and keeps the row', () => {
+        const body = html(false, { types: ['idea'], lines: ['pillar'], connected: true });
+        expect(body).toContain(catalog['map.empty_filtered']);
+        expect(body).not.toContain('data-map-graph');
+        expect(body).toContain('data-map-filters');
+        expect(body).toContain(catalog['map.all']);
+        expect(html()).not.toContain(catalog['map.empty_filtered']);
+    });
+
+    it('leaves a line another filter emptied pressed, and not drawn as the one in force', () => {
+        const body = html(false, { types: ['idea'] });
+        expect(classes(body, counted('candidate', 1))).toContain('active');
+        expect(pressed(body, counted('candidate', 1))).toBe('true');
+        expect(classes(body, counted('pillar', 0))).not.toContain('active');
+        expect(pressed(body, counted('pillar', 0))).toBe('true');
+    });
+
     it('draws a collaborator only when the graph option is on', () => {
         const snapshot = graphFixture();
         const hidden = render(Graph, {
@@ -144,27 +245,47 @@ describe('the Map view', () => {
 });
 
 describe('the Map instance state', () => {
-    it('reads the three toggles back, so a reopened tab is the tab as it was left', () => {
+    const OFF = {
+        collaborators: false,
+        enabled: [],
+        linkMode: false,
+        types: [],
+        lines: [],
+        connected: false
+    };
+
+    it('reads every toggle back, so a reopened tab is the tab as it was left', () => {
         expect(
-            parseMapState({ collaborators: true, enabled: ['published'], linkMode: true })
-        ).toEqual({ collaborators: true, enabled: ['published'], linkMode: true });
+            parseMapState({
+                collaborators: true,
+                enabled: ['published'],
+                linkMode: true,
+                types: ['idea'],
+                lines: ['pillar'],
+                connected: true
+            })
+        ).toEqual({
+            collaborators: true,
+            enabled: ['published'],
+            linkMode: true,
+            types: ['idea'],
+            lines: ['pillar'],
+            connected: true
+        });
     });
 
-    it('gives a state that carries nothing the toggles off', () => {
-        expect(parseMapState(null)).toEqual({
-            collaborators: false,
-            enabled: [],
-            linkMode: false
-        });
-        expect(parseMapState({ enabled: 'published' })).toEqual({
-            collaborators: false,
-            enabled: [],
-            linkMode: false
-        });
+    it('gives a state that carries nothing the toggles off and every filter empty', () => {
+        expect(parseMapState(null)).toEqual(OFF);
+        expect(parseMapState({ enabled: 'published' })).toEqual(OFF);
+        expect(parseMapState({ types: 'idea', lines: 3, connected: 'yes' })).toEqual(OFF);
         expect(parseMapState({ enabled: ['published', 7] })).toEqual({
-            collaborators: false,
-            enabled: ['published'],
-            linkMode: false
+            ...OFF,
+            enabled: ['published']
+        });
+        expect(parseMapState({ types: ['idea', null], lines: ['pillar'] })).toEqual({
+            ...OFF,
+            types: ['idea'],
+            lines: ['pillar']
         });
     });
 

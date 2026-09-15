@@ -21,9 +21,13 @@
         glyph?: string;
         /** Fill the chip with its hue instead of tinting the text. */
         filled?: boolean;
+        /** Makes the chip a toggle the reader presses. A chip given none is a mark and not a control. */
+        onclick?: (event: MouseEvent) => void;
+        /** A toggle chip's own state, which is what a reader is told it is pressing. */
+        pressed?: boolean;
     };
 
-    let { label, tone, glyph, filled = false }: Props = $props();
+    let { label, tone, glyph, filled = false, onclick, pressed }: Props = $props();
 
     const style = $derived(
         tone === undefined
@@ -39,12 +43,30 @@
     const bracketed = $derived(glyph !== undefined && glyph !== '' && bracketedGlyph(glyph));
 </script>
 
-<span class="chip" class:toned={tone !== undefined} class:filled class:bracketed {style}>
-    {#if glyph !== undefined && glyph !== ''}
-        <Glyph name={glyph} />
-    {/if}
-    <span class="label">{label}</span>
-</span>
+{#if onclick === undefined}
+    <span class="chip" class:toned={tone !== undefined} class:filled class:bracketed {style}>
+        {#if glyph !== undefined && glyph !== ''}
+            <Glyph name={glyph} />
+        {/if}
+        <span class="label">{label}</span>
+    </span>
+{:else}
+    <button
+        type="button"
+        class="chip pressable"
+        class:toned={tone !== undefined}
+        class:filled
+        class:bracketed
+        aria-pressed={pressed}
+        {style}
+        {onclick}
+    >
+        {#if glyph !== undefined && glyph !== ''}
+            <Glyph name={glyph} />
+        {/if}
+        <span class="label">{label}</span>
+    </button>
+{/if}
 
 <style>
     .chip {
@@ -72,6 +94,22 @@
 
     .chip.toned {
         color: var(--tone-txt, var(--muted-txt));
+    }
+
+    /* A chip the reader presses is the same capsule with a button's behaviour: the words keep the
+       page's own font, and the hue says which state it is in. */
+    .chip.pressable {
+        font-family: inherit;
+        cursor: pointer;
+    }
+
+    .chip.pressable:hover {
+        border-color: var(--accent);
+    }
+
+    .chip.pressable:focus-visible {
+        outline: 2px solid var(--accent);
+        outline-offset: 1px;
     }
 
     .chip.filled {

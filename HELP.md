@@ -64,7 +64,7 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `archive` | Archive | The same board over finished work and dead ends. |
 | `programs` | Pillars | The research programmes and which projects sit under each. |
 | `domains` | Domains | The application domains and the projects in each. |
-| `map` | Map | The portfolio as a graph of projects and what links them. |
+| `map` | Map | The portfolio as a graph of projects and what links them, filtered by project type, by research line and to the projects that still hold a line membership. |
 | `venues` | Venues | The venue catalogue with its tiers, deadlines and concentration warning. |
 | `data` | Data | The dataset registry: where each set came from and how it is recovered. |
 | `code` | Code | The repositories registry. |

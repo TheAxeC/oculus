@@ -99,7 +99,7 @@ const VIEWS: Record<string, string> = {
     'inbox/InboxCard.svelte': '.age=fs-sm | .sub=fs-md',
     'leads/LeadCard.svelte': '.deadline=fs-sm | .sub=fs-md',
     'linkedin/PostCard.svelte': '.date=fs-sm',
-    'map/Controls.svelte': '.controls=fs-sm',
+    'map/Controls.svelte': '.controls=fs-sm | .filters=fs-sm',
     'map/Graph.svelte': 'text=fs-xs | text.line-label=fs-sm',
     'present/Closing.svelte': '.kicker=fs-sm | .headline=fs-3xl | .lede=fs-xl | .hint=fs-sm',
     'present/Dot.svelte': '',

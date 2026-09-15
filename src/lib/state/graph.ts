@@ -30,7 +30,21 @@ export type GraphEdge = {
 };
 
 export type Graph = { nodes: GraphNode[]; edges: GraphEdge[] };
-export type GraphOptions = {
+
+/**
+ * Which part of a built graph is drawn. An empty or absent list means every one of its kind, so a
+ * saved Map state that names no filter draws the whole graph.
+ */
+export type GraphFilter = {
+    /** The project types drawn. */
+    types?: string[];
+    /** The research lines drawn, by their registry key. */
+    lines?: string[];
+    /** Drop a project with no membership edge to a line that is still drawn. */
+    connected?: boolean;
+};
+
+export type GraphOptions = GraphFilter & {
     archived?: string[];
     collaborators?: boolean;
     labelMode?: string;
@@ -174,17 +188,127 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Grap
         });
     }
 
-    const byId = new Map(nodes.map((node) => [node.id, node]));
+    return filterGraph({ nodes, edges }, options);
+}
+
+/**
+ * The degree and the drawn size of every node, from the edges that reached it. A node is copied
+ * rather than written to, so measuring a graph leaves the one it was given as it was.
+ */
+function measure(nodes: GraphNode[], edges: GraphEdge[]): Graph {
+    const degrees = new Map(nodes.map((node) => [node.id, 0]));
     for (const edge of edges) {
-        const source = byId.get(edge.source);
-        const target = byId.get(edge.target);
-        if (source !== undefined) source.degree += 1;
-        if (target !== undefined) target.degree += 1;
+        for (const end of [edge.source, edge.target]) {
+            const held = degrees.get(end);
+            if (held !== undefined) degrees.set(end, held + 1);
+        }
     }
-    for (const node of nodes) {
-        node.radius = (node.kind === 'project' ? 7 : 11) + Math.min(4, node.degree);
+    return {
+        nodes: nodes.map((node) => {
+            const degree = degrees.get(node.id) ?? 0;
+            return {
+                ...node,
+                degree,
+                radius: (node.kind === 'project' ? 7 : 11) + Math.min(4, degree)
+            };
+        }),
+        edges
+    };
+}
+
+/** The nodes of a graph, as the set of their ids. */
+function idsOf(nodes: GraphNode[]): Set<string> {
+    return new Set(nodes.map((node) => node.id));
+}
+
+/** The edges whose two ends are both in a set of nodes. */
+function joining(edges: GraphEdge[], kept: Set<string>): GraphEdge[] {
+    return edges.filter((edge) => kept.has(edge.source) && kept.has(edge.target));
+}
+
+/**
+ * The part of a graph one Map instance draws, as a pure function over the whole of it. The three
+ * rules run in order: the types and the lines take their own nodes out, `connected` then takes out
+ * a project left with no membership edge, and a line or a collaborator whose projects have all gone
+ * leaves with them, since such a node is in the graph only to carry a project's edge.
+ */
+export function filterGraph(graph: Graph, filter: GraphFilter = {}): Graph {
+    const types = new Set(filter.types ?? []);
+    const lines = new Set(filter.lines ?? []);
+    let nodes = graph.nodes.filter((node) => {
+        // A project whose manifest names no type is outside the type filter rather than under it:
+        // the row carries no chip for it, so a filter that dropped it could not bring it back.
+        if (node.kind === 'project') {
+            return types.size === 0 || node.type === undefined || types.has(node.type);
+        }
+        if (node.kind === 'line') return lines.size === 0 || lines.has(node.entityId);
+        return true;
+    });
+    let edges = joining(graph.edges, idsOf(nodes));
+    if (filter.connected === true) {
+        const joined = new Set(
+            edges.filter((edge) => edge.kind === 'membership').map((edge) => edge.source)
+        );
+        nodes = nodes.filter((node) => node.kind !== 'project' || joined.has(node.id));
+        edges = joining(edges, idsOf(nodes));
     }
-    return { nodes, edges };
+    const ends = new Set(edges.flatMap((edge) => [edge.source, edge.target]));
+    nodes = nodes.filter((node) => node.kind === 'project' || ends.has(node.id));
+    return measure(nodes, edges);
+}
+
+/**
+ * A saved filter narrowed to what one graph holds: a type or a line the graph no longer draws is
+ * dropped from its list, and a list left empty by that is nothing filtered, so a map saved against
+ * a portfolio that has since changed opens on the whole graph rather than on an empty canvas.
+ */
+export function presentFilter(graph: Graph, filter: GraphFilter = {}): Required<GraphFilter> {
+    const types = new Set<string>();
+    const lines = new Set<string>();
+    for (const node of graph.nodes) {
+        if (node.kind === 'project' && node.type !== undefined) types.add(node.type);
+        if (node.kind === 'line') lines.add(node.entityId);
+    }
+    return {
+        types: (filter.types ?? []).filter((type) => types.has(type)),
+        lines: (filter.lines ?? []).filter((id) => lines.has(id)),
+        connected: filter.connected === true
+    };
+}
+
+/**
+ * One press of a filter control. Nothing filtered is every one of its kind drawn, so the first
+ * press narrows to the one pressed; after that a press adds or removes, and taking the last one out
+ * is nothing filtered again rather than an empty map.
+ */
+export function toggleFilter(list: string[], id: string): string[] {
+    if (list.length === 0) return [id];
+    return list.includes(id) ? list.filter((one) => one !== id) : [...list, id];
+}
+
+/** How many projects of each type a graph draws, which is the count one filter carries. */
+export function typeCounts(graph: Graph): Record<string, number> {
+    const counted: Record<string, number> = {};
+    for (const node of graph.nodes) {
+        if (node.kind !== 'project' || node.type === undefined) continue;
+        counted[node.type] = (counted[node.type] ?? 0) + 1;
+    }
+    return counted;
+}
+
+/** How many projects each line holds a membership edge from, by the line's registry key. */
+export function lineCounts(graph: Graph): Record<string, number> {
+    const keys = new Map(
+        graph.nodes.filter((node) => node.kind === 'line').map((node) => [node.id, node.entityId])
+    );
+    const counted: Record<string, number> = {};
+    for (const edge of graph.edges) {
+        if (edge.kind !== 'membership') continue;
+        const id = keys.get(edge.target);
+        if (id === undefined) continue;
+        counted[id] = (counted[id] ?? 0) + 1;
+    }
+    return counted;
 }
 
 /** Stable localStorage suffix for one visible node set. */
@@ -476,14 +600,25 @@ export function optimize(
 }
 
 /** What one Map instance holds of its own: which nodes it shows and whether links are being drawn. */
-export type MapState = {
+export type MapState = GraphFilter & {
     /** Whether collaboration nodes join the graph. */
     collaborators: boolean;
     /** The archive types whose projects are shown, by their own status word. */
     enabled: string[];
     /** Whether a click starts a link rather than selecting. */
     linkMode: boolean;
+    /** The project types drawn. Empty is every type, which is what an unfiltered map holds. */
+    types: string[];
+    /** The research lines drawn, by their registry key. Empty is every line. */
+    lines: string[];
+    /** Whether a project with no membership edge to a line still drawn is dropped. */
+    connected: boolean;
 };
+
+/** The strings of a saved list, and an empty list for anything that was not one. */
+function stringList(raw: unknown): string[] {
+    return Array.isArray(raw) ? raw.filter((one): one is string => typeof one === 'string') : [];
+}
 
 /** The saved state of one Map instance, with anything that is not the shape above replaced by it. */
 export function parseMapState(raw: unknown): MapState {
@@ -493,9 +628,10 @@ export function parseMapState(raw: unknown): MapState {
             : {};
     return {
         collaborators: held.collaborators === true,
-        enabled: Array.isArray(held.enabled)
-            ? held.enabled.filter((one): one is string => typeof one === 'string')
-            : [],
-        linkMode: held.linkMode === true
+        enabled: stringList(held.enabled),
+        linkMode: held.linkMode === true,
+        types: stringList(held.types),
+        lines: stringList(held.lines),
+        connected: held.connected === true
     };
 }

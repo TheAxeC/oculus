@@ -213,6 +213,37 @@ describe('Chip', () => {
         expect(html(Chip, { label: 'a', glyph: 'code' })).not.toContain('bracketed');
         expect(html(Chip, { label: 'a' })).not.toContain('bracketed');
     });
+
+    it('is a mark and not a control when it is given no press', () => {
+        const body = html(Chip, { label: 'a', tone: 'teal' });
+        expect(body).toContain('<span class="chip');
+        expect(body).not.toContain('<button');
+        expect(body).not.toContain('aria-pressed');
+    });
+
+    it('is a button reporting its own state when it is given a press', () => {
+        const on = html(Chip, { label: 'a', tone: 'teal', onclick: noop, pressed: true });
+        expect(on).toContain('<button type="button"');
+        expect(on).toContain('aria-pressed="true"');
+        const off = html(Chip, { label: 'a', tone: 'teal', onclick: noop, pressed: false });
+        expect(off).toContain('aria-pressed="false"');
+    });
+
+    it('wears the same tone in both forms, so a pressed chip is the chip beside it', () => {
+        const mark = html(Chip, { label: 'a', tone: 'teal', filled: true });
+        const control = html(Chip, {
+            label: 'a',
+            tone: 'teal',
+            filled: true,
+            onclick: noop,
+            pressed: true
+        });
+        for (const written of ['toned', 'filled', '--tone: var(--c-teal)']) {
+            expect(mark, written).toContain(written);
+            expect(control, written).toContain(written);
+        }
+        expect(control).toContain('pressable');
+    });
 });
 
 describe('Meter', () => {
