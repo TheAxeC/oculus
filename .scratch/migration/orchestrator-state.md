@@ -28,13 +28,13 @@ dispatch:                                  # O28b + D1 + D2, the set of three (t
   worker: claude:opus
   worktree: .agents/worktrees/d6
   base: 1b4fc206
-  launched: 2026-09-15T22:47+0200
+  launched: 2026-09-15T22:46+0200
   prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D6/prompt.md
   events: none
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D6/report.md
   exit: none
   pid: none
-  session_id: pending                    # the Agent tool's id, written the moment it is known; the rolling window's dispatch after O28b's landing (Q21 waits for Q20), the brief re-checked at 22:46
+  session_id: a7615cda00a72c647            # the Agent tool's id, launched 22:46; the rolling window's dispatch after O28b's landing (Q21 waits for Q20), the brief re-checked at 22:46
   landing: not-started
 - package: Q22
   worker: claude:opus
