@@ -440,6 +440,37 @@ function checkFundingIdentity(raw: RawPortfolio, findings: Finding[]): void {
     });
 }
 
+/** The statuses of a funding entry that a manuscript may have to acknowledge. */
+const ACKNOWLEDGED = new Set(['awarded', 'contributing']);
+
+/**
+ * An awarded or contributing funding entry is one a manifest tags and a manuscript acknowledges, so
+ * it needs a `key` the tag can name and a `statement` the manuscript pastes. An application gets
+ * both when it is granted; until then neither is asked for.
+ */
+function checkFundingStatements(raw: RawPortfolio, findings: Finding[]): void {
+    raw.registries.funding.entries.forEach((entry, index) => {
+        const status = typeof entry.status === 'string' ? entry.status : '';
+        if (!ACKNOWLEDGED.has(status)) return;
+        const name = entry.key.length > 0 ? entry.key : String(entry.title ?? '');
+        const statement = entry.statement;
+        if (entry.key.length === 0) {
+            findings.push({
+                file: entry.file,
+                key: `entries[${index}]`,
+                message: `funding entry ${name} is ${status} and has no key`
+            });
+        }
+        if (typeof statement !== 'string' || statement.trim().length === 0) {
+            findings.push({
+                file: entry.file,
+                key: `entries[${index}]`,
+                message: `funding entry ${name} is ${status} and has no statement`
+            });
+        }
+    });
+}
+
 /** Which ids exist, by kind. A project is known by its folder name, which is the reader's `id`. */
 function idSets(raw: RawPortfolio): IdSets {
     const of = (name: 'venues' | 'datasets' | 'programs' | 'domains' | 'funding'): Set<string> =>
@@ -511,6 +542,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     }
     checkFolderNames(raw, findings);
     checkFundingIdentity(raw, findings);
+    checkFundingStatements(raw, findings);
     checkEntryStatus(raw, vocab.statuses, findings);
     checkEntryIdentity(raw, findings);
     checkCollectionSchema(raw, findings);

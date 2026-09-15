@@ -330,6 +330,52 @@ describe('validate', () => {
         ]);
     });
 
+    it('reports an awarded or contributing funding entry without a key or a statement', () => {
+        const raw = portfolio({
+            registries: {
+                ...portfolio().registries,
+                funding: {
+                    entries: [
+                        {
+                            registry: 'funding',
+                            key: '',
+                            file: '/hub/funding.yml',
+                            title: 'A grant',
+                            status: 'awarded'
+                        },
+                        {
+                            registry: 'funding',
+                            key: 'FAIR',
+                            file: '/hub/funding.yml',
+                            status: 'contributing',
+                            statement: 'This work was supported by FAIR.'
+                        },
+                        {
+                            registry: 'funding',
+                            key: '',
+                            file: '/hub/funding.yml',
+                            title: 'An application',
+                            status: 'planned'
+                        }
+                    ],
+                    meta: {}
+                }
+            }
+        });
+        expect(validate(raw, RULES)).toEqual([
+            {
+                file: '/hub/funding.yml',
+                key: 'entries[0]',
+                message: 'funding entry A grant is awarded and has no key'
+            },
+            {
+                file: '/hub/funding.yml',
+                key: 'entries[0]',
+                message: 'funding entry A grant is awarded and has no statement'
+            }
+        ]);
+    });
+
     it('reports a collection file whose schema is not a list of field maps', () => {
         const raw = portfolio();
         raw.collections.collaborations.meta.schema = 'title, status';
