@@ -1,0 +1,24 @@
+# Oculus text owned by the config view: one card per file of the engine's config folder.
+text:
+    config:
+        desc_appearance: 'The UI theme list, the wallpaper behind the panels, the CRT default and the terminal text size.'
+        desc_behavior: 'Thresholds, horizons and cadences: read limits, stale days, the context window, the Live HPC settings, git and chat.'
+        desc_glyphs: 'The glyph vocabulary, one character per name, and the ASCII stand-in a terminal theme draws instead.'
+        desc_icons: 'The line icon each glyph name is drawn as, one row per name in the glyph vocabulary.'
+        desc_layout: 'How things are arranged: the rail groups, the hub documents, the board chrome, the tab rollups, the live badges and the saved arrangements.'
+        desc_manifest_schema: 'The project.yml edit form as data: its sections, its fields, the widget each field is edited by, and where a widget takes its choices from.'
+        desc_meta: 'The tool identity: the title and the subtitle the window carries.'
+        desc_present: 'The public deck the Present view draws: the deck slides, the domain themes, the tag tones and the order.'
+        desc_sources: 'What the portfolio reads: the scan paths, the registry and collection files, the feeds, the roots a local file is served from, and the extensions a source tab may open and save.'
+        desc_vocab: 'Words and their colours: the palette, the research domains, the status legend, the focus lanes, the venue tiers and the radar buckets.'
+        edit: Edit
+        edit_tip: 'Open {0} in a source tab'
+        failed: 'This file could not be read: {0}'
+        intro: 'The files the configuration is merged from, in the config folder of the engine. Each one is read on every load, and an edit saved here reaches the page as soon as it lands. The machine-local values, the hub path, the port and the account folders, live beside them in local.yml, which is not served here.'
+        lines: lines
+        loading: 'Reading...'
+        none: 'No configuration file was read. The config folder of the engine answered nothing.'
+        none_glyph: settings
+    views:
+        config: Config
+        config_glyph: settings

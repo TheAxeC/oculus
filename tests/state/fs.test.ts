@@ -15,6 +15,7 @@ import {
     treeKey,
     treeRows,
     typeOfFile,
+    ENGINE_ROOT,
     TEXT_LIMIT,
     type FsEntry,
     type FsRoot
@@ -420,5 +421,71 @@ describe('the store reading the endpoints', () => {
             truncated: false,
             error: ''
         });
+    });
+
+    it('asks again for one root alone when a version says that root changed', async () => {
+        let body = 'before\n';
+        serving((url) =>
+            url.startsWith('/api/fs')
+                ? listingOf(['layout.yml'])
+                : new Response(body, { status: 200 })
+        );
+
+        client.fs.listing(ENGINE_ROOT, '');
+        client.fs.fileText(ENGINE_ROOT, 'layout.yml');
+        client.fs.fileText('hub', 'README.md');
+        await settle();
+        expect(client.fs.fileText(ENGINE_ROOT, 'layout.yml').text).toBe('before\n');
+        const before = asked.length;
+
+        // The watcher's push moves the config channel's version; the Config view hands it on.
+        body = 'after\n';
+        client.fs.refresh(ENGINE_ROOT, 7);
+        client.fs.listing(ENGINE_ROOT, '');
+        client.fs.fileText(ENGINE_ROOT, 'layout.yml');
+        client.fs.fileText('hub', 'README.md');
+        await settle();
+
+        expect(client.fs.fileText(ENGINE_ROOT, 'layout.yml').text).toBe('after\n');
+        expect(asked.slice(before)).toEqual([
+            '/api/fs?root=engine&path=',
+            '/api/file/engine/layout.yml'
+        ]);
+    });
+
+    it('asks for nothing again at a version it has already refreshed at', async () => {
+        serving(() => new Response('one\n', { status: 200 }));
+
+        client.fs.refresh(ENGINE_ROOT, 4);
+        client.fs.fileText(ENGINE_ROOT, 'layout.yml');
+        await settle();
+        const before = asked.length;
+
+        client.fs.refresh(ENGINE_ROOT, 4);
+        client.fs.fileText(ENGINE_ROOT, 'layout.yml');
+        await settle();
+
+        expect(asked.length).toBe(before);
+    });
+
+    it('keeps the held text drawn until the fresh one lands', async () => {
+        const late = deferred();
+        let first = true;
+        serving(() => {
+            if (!first) return late.promise;
+            first = false;
+            return new Response('before\n', { status: 200 });
+        });
+
+        client.fs.fileText(ENGINE_ROOT, 'layout.yml');
+        await settle();
+        client.fs.refresh(ENGINE_ROOT, 2);
+        client.fs.fileText(ENGINE_ROOT, 'layout.yml');
+        await settle();
+
+        expect(client.fs.fileText(ENGINE_ROOT, 'layout.yml').text).toBe('before\n');
+        late.land(new Response('after\n', { status: 200 }));
+        await settle();
+        expect(client.fs.fileText(ENGINE_ROOT, 'layout.yml').text).toBe('after\n');
     });
 });

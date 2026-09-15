@@ -18,7 +18,11 @@ export const GET: RequestHandler = ({ params, request, locals }) => {
         return new Response(null, { status: 403 });
     }
     const { server } = locals;
-    const fixed = rootsFrom(configuredRootsOf(server.config, server.engine), server.local.hub);
+    const fixed = rootsFrom(
+        configuredRootsOf(server.config, server.engine),
+        server.local.hub,
+        server.engine
+    );
     const file = server.local.workspaces ?? defaultWorkspacesPath();
     const saved = readSaved(
         file,

@@ -11,7 +11,17 @@ import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { expandHome, readRoots, serveFile, typeOf, withHub } from '../../src/lib/server/files.ts';
+import {
+    ENGINE_ROOT,
+    engineRoot,
+    expandHome,
+    readRoots,
+    rootsFrom,
+    serveFile,
+    typeOf,
+    withFixed
+} from '../../src/lib/server/files.ts';
+import { ENGINE_ROOT as CLIENT_ENGINE_ROOT } from '../../src/lib/state/fs.ts';
 import type { Root } from '../../src/lib/server/files.ts';
 
 const HOST = '127.0.0.1:8791';
@@ -136,18 +146,64 @@ describe('serving a file under a root', () => {
     });
 });
 
-describe('the hub as a root', () => {
-    it('is served under the key hub in front of the configured roots', () => {
-        const found = withHub([{ key: 'docs', dir: '/elsewhere' }], '/the/hub');
+describe('the two fixed roots', () => {
+    it('serves the hub and the engine config folder in front of the configured roots', () => {
+        const found = withFixed([{ key: 'docs', dir: '/elsewhere' }], '/the/hub', '/the/engine');
         expect(found).toEqual([
             { key: 'hub', dir: '/the/hub' },
+            { key: 'engine', dir: join('/the/engine', 'config') },
             { key: 'docs', dir: '/elsewhere' }
         ]);
     });
 
-    it('yields to a root the config names hub itself', () => {
-        const own = [{ key: 'hub', dir: '/their/own' }];
-        expect(withHub(own, '/the/hub')).toEqual(own);
+    it('yields to a root the config names hub or engine itself', () => {
+        const own = [
+            { key: 'hub', dir: '/their/own' },
+            { key: ENGINE_ROOT, dir: '/their/config' }
+        ];
+        expect(withFixed(own, '/the/hub', '/the/engine')).toEqual(own);
+    });
+
+    it('is the config folder of the engine and nothing above it', () => {
+        expect(engineRoot('/the/engine')).toEqual({
+            key: ENGINE_ROOT,
+            dir: join('/the/engine', 'config')
+        });
+    });
+
+    it('reserves both keys against a root a saved workspace added', () => {
+        const added = [
+            { key: ENGINE_ROOT, dir: '/somewhere/else' },
+            { key: 'notes', dir: '/notes' }
+        ];
+        const found = rootsFrom([], '/the/hub', '/the/engine', added);
+        expect(found).toEqual([
+            { key: 'hub', dir: '/the/hub' },
+            { key: ENGINE_ROOT, dir: join('/the/engine', 'config') },
+            { key: 'notes', dir: '/notes' }
+        ]);
+    });
+
+    it('is the same key on the client, which cannot import the server module', () => {
+        expect(CLIENT_ENGINE_ROOT).toBe(ENGINE_ROOT);
+    });
+
+    it('serves a file of the engine config folder and refuses one above it', () => {
+        const engine = folder({
+            'config/layout.yml': 'nav_groups: {}\n',
+            'local.yml': 'hub: /elsewhere\n'
+        });
+        const list = withFixed([], '/the/hub', engine);
+        const asked = (path: string): Request =>
+            new Request(`http://${HOST}/api/file/${ENGINE_ROOT}/${path}`, {
+                headers: {
+                    host: HOST,
+                    origin: `http://${HOST}`,
+                    'sec-fetch-site': 'same-origin'
+                }
+            });
+        expect(serveFile(asked('layout.yml'), list, ENGINE_ROOT, 'layout.yml').status).toBe(200);
+        expect(serveFile(asked('local.yml'), list, ENGINE_ROOT, '../local.yml').status).toBe(404);
     });
 });
 

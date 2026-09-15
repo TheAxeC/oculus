@@ -6,7 +6,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { expect, test } from '@playwright/test';
-import { hubFileExists, readHubFile, readHubYaml, removeHubDir, shortOf } from './hub.ts';
+import { hubFileExists, readHubFile, readHubYaml, removeFromHub, shortOf } from './hub.ts';
 import { boot, openView } from './rail.ts';
 import { t } from './words.ts';
 
@@ -121,7 +121,7 @@ test('the new-idea form scaffolds a manifest and a README and the card appears',
     expect(readHubFile(`projects/ideas/${IDEA}/project.yml`)).toContain(`id: ${IDEA}`);
     await expect(page.locator('.slot').filter({ hasText: IDEA_TITLE })).toHaveCount(1);
 
-    removeHubDir(`projects/ideas/${IDEA}`);
+    removeFromHub(`projects/ideas/${IDEA}`);
     await expect(page.locator('.slot').filter({ hasText: IDEA_TITLE })).toHaveCount(0);
 });
 

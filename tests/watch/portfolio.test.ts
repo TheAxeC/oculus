@@ -2,7 +2,7 @@
 // outside them is read or written, every write asserts its path is inside first, and every watcher
 // is closed when the test ends.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -10,6 +10,7 @@ import { Hub } from '../../src/lib/server/channels.ts';
 import { handleWrite } from '../../src/lib/server/writes.ts';
 import { handleSource } from '../../src/lib/server/source.ts';
 import { mintToken } from '../../src/lib/server/auth.ts';
+import { ENGINE_ROOT, engineRoot } from '../../src/lib/server/files.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { loadConfig, type IconMemory } from '../../src/lib/data/sources/config.ts';
 import type { Sink } from '../../src/lib/server/channels.ts';
@@ -478,6 +479,60 @@ describe('watchPortfolio', () => {
         expect(payload.findings).toEqual([]);
         expect(payload.config.venues_file).toBe('registries/venues.yml');
         expect((feeds[0].payload as FeedsPayload).linkedin.entries[0].title).toBe('Start');
+    });
+
+    it('reports a configured document with no file at its path, and none for one that is there', async () => {
+        const started = start((hub, engine) => {
+            write(hub, 'THERE.md', '# There\n');
+            write(
+                engine,
+                'config/layout.yml',
+                [
+                    LAYOUT,
+                    'docs:',
+                    '  - { label: There, path: THERE.md, group: personal }',
+                    '  - { label: Gone, path: GONE.md, group: personal }',
+                    ''
+                ].join('\n')
+            );
+        });
+        await until(() => on(started.got, 'config').length >= 1, 2000);
+
+        const payload = on(started.got, 'config')[0].payload as ConfigPayload;
+        expect(payload.findings.map((finding) => finding.key)).toEqual(['Gone']);
+        expect(payload.findings[0].message).toContain('GONE.md; this document draws nothing');
+        expect(payload.findings[0].file).toBe(join(started.engine, 'config', 'layout.yml'));
+    });
+
+    it('republishes the config after a config file is saved through handleSource', async () => {
+        const started = start();
+        await quiet(started.got);
+        const before = on(started.got, 'config').length;
+        const token = mintToken();
+        const file = join(started.engine, 'config', 'vocab.yml');
+        expect(resolve(file).startsWith(resolve(started.engine) + sep)).toBe(true);
+        const body = ['type_color:', '  idea: violet', '  active: blue', ''].join('\n');
+        const response = await handleSource(
+            new Request('http://localhost/api/source', {
+                method: 'POST',
+                headers: {
+                    host: 'localhost',
+                    origin: 'http://localhost',
+                    'content-type': 'application/json',
+                    'x-oculus-token': token
+                },
+                body: JSON.stringify({ root: ENGINE_ROOT, path: 'vocab.yml', content: body })
+            }),
+            token,
+            [engineRoot(started.engine)],
+            ['.yml']
+        );
+        expect(response.status).toBe(200);
+        expect(readFileSync(file, 'utf8')).toBe(body);
+
+        await until(() => on(started.got, 'config').length > before, 2000);
+        const payload = on(started.got, 'config').at(-1)?.payload as ConfigPayload;
+        expect((payload.config.type_color as Record<string, string>).idea).toBe('violet');
     });
 
     it('replaces the held icon drawings with the ones it publishes', async () => {

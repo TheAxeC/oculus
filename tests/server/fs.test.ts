@@ -29,6 +29,7 @@ import {
     writeSaved,
     type Saved
 } from '../../src/lib/server/fs.ts';
+import { ENGINE_ROOT, engineRoot } from '../../src/lib/server/files.ts';
 import type { Root } from '../../src/lib/server/files.ts';
 
 /** A directory under the temporary directory, with a file written at each of the paths named. */
@@ -289,6 +290,22 @@ describe('the fold from a saved file to the roots on screen', () => {
         ]);
         const held = saved('', [{ name: '', roots: [{ key: 'own', dir: '/tmp/own' }] }]);
         expect(workspaceRoots(HUB, held, '').map((one) => one.key)).toEqual(['hub', 'own']);
+    });
+
+    it('shows the engine config folder as a fixed root and refuses a saved one on its key', () => {
+        const fixed: Root[] = [...HUB, engineRoot('/tmp/engine')];
+        expect(workspaceRoots(fixed, saved(''), '')).toEqual([
+            { key: 'hub', dir: '/tmp/hub', fixed: true },
+            { key: ENGINE_ROOT, dir: join('/tmp/engine', 'config'), fixed: true }
+        ]);
+        const held = saved('', [
+            { name: '', roots: [{ key: ENGINE_ROOT, dir: '/tmp/elsewhere' }] }
+        ]);
+        expect(workspaceRoots(fixed, held, '')).toEqual([
+            { key: 'hub', dir: '/tmp/hub', fixed: true },
+            { key: ENGINE_ROOT, dir: join('/tmp/engine', 'config'), fixed: true }
+        ]);
+        expect(addedRoots(fixed, held)).toEqual([]);
     });
 
     it('hands the file route the roots to add, the default folder among them', () => {

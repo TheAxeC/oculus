@@ -32,6 +32,7 @@ import {
 } from '../../data/sources/config.ts';
 import { MANIFEST } from '../../data/sources/manifests.ts';
 import { PRESENT_DOC } from '../../data/sources/present.ts';
+import { docFindings, layoutFile } from '../docs.ts';
 import { readRoots, rootsFile } from '../files.ts';
 import { buildFeeds, isLinkedinFile } from '../feeds.ts';
 import type { ConfigPayload, PortfolioConfig } from '../../data/model.ts';
@@ -237,10 +238,11 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
         try {
             const { config, findings } = loadConfig(paths.engine);
             if (withConfig) {
-                // The roots of sources.yml and the icon map are checked here rather than in
-                // loadConfig, which merges files and never touches the disk: a root whose directory
-                // is not on this machine, and an icon the installed package does not ship, are both
-                // facts about the machine, and they belong on the same channel as the rest.
+                // The roots of sources.yml, the documents of layout.yml and the icon map are
+                // checked here rather than in loadConfig, which merges files and never touches the
+                // disk: a root whose directory is not on this machine, a document with no file at
+                // its path, and an icon the installed package does not ship are all facts about the
+                // machine, and they belong on the same channel as the rest.
                 paths.icons.set = iconSet(config);
                 const payload: ConfigPayload = {
                     config,
@@ -249,7 +251,8 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                     findings: [
                         ...findings,
                         ...iconFindings(paths.engine, config),
-                        ...readRoots(config, rootsFile(paths.engine)).findings
+                        ...readRoots(config, rootsFile(paths.engine)).findings,
+                        ...docFindings(config, paths.hub, layoutFile(paths.engine))
                     ]
                 };
                 hub.publish('config', payload);

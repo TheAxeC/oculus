@@ -19,6 +19,7 @@ import {
     readSaved,
     type FsTarget
 } from '../../src/lib/server/fs.ts';
+import { ENGINE_ROOT, engineRoot } from '../../src/lib/server/files.ts';
 import type { Root } from '../../src/lib/server/files.ts';
 
 const HOST = '127.0.0.1:8791';
@@ -98,6 +99,25 @@ describe('the fs route, reading', () => {
         expect(body.root).toBe('hub');
         const entries = body.entries as { name: string; kind: string }[];
         expect(entries.map((entry) => entry.name)).toEqual(['code', 'README.md']);
+    });
+
+    it('answers the config folder of the engine under the engine root, and nothing above it', async () => {
+        const engine = folder(
+            { 'config/layout.yml': 'nav_groups: {}\n', 'local.yml': 'hub: /elsewhere\n' },
+            ['config/text']
+        );
+        const into = target();
+        into.fixed = [...into.fixed, engineRoot(engine)];
+
+        const response = handleFs(get(`?root=${ENGINE_ROOT}&path=`), into);
+        const body = await read(response);
+        expect(response.status).toBe(200);
+        const entries = body.entries as { name: string; kind: string }[];
+        expect(entries.map((entry) => `${entry.kind}:${entry.name}`)).toEqual([
+            'dir:text',
+            'file:layout.yml'
+        ]);
+        expect(handleFs(get(`?root=${ENGINE_ROOT}&path=..`), into).status).toBe(404);
     });
 
     it('answers 404 for a path outside the root and for a root nothing names', () => {

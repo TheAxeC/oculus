@@ -12,7 +12,7 @@
 
     import { activeLabel, windowTitle } from '$lib/shell/workbench-title';
     import ActivityRail from './ActivityRail.svelte';
-    import { railOrder, type Bookmark, type NavGroup } from './rail';
+    import { railOrder, type Bookmark, type DocEntry, type NavGroup } from './rail';
     import DropLayer from './DropLayer.svelte';
     import { createWorkbenchKeys } from './workbench-keys.svelte';
     import PageStrip from './PageStrip.svelte';
@@ -48,6 +48,8 @@
         groups?: NavGroup[];
         /** The `bookmarks` list of the merged config, for the rail's Docs section. */
         bookmarks?: Bookmark[];
+        /** The `docs` list of the merged config: the hub documents the rail draws in their groups. */
+        docs?: DocEntry[];
         /** The `arrangements:` of the merged config, for the page strip's menu. */
         arrangements?: Arrangement[];
         /** The `direct_chord` of the merged config: the letter a digit after it counts into the rail. */
@@ -62,6 +64,7 @@
     let {
         groups = [],
         bookmarks = [],
+        docs = [],
         arrangements = [],
         directChord,
         waiting = 0
@@ -84,7 +87,8 @@
         railOrder(
             views().filter((view) => view.listed !== false),
             groups,
-            directChord
+            directChord,
+            docs
         )
     );
     const keyboard = createWorkbenchKeys({
@@ -186,7 +190,13 @@
              negative depth paints over the page's own background and under every panel. -->
         <div class="wallpaper" style={image}></div>
     {/if}
-    <ActivityRail {groups} {bookmarks} onsearch={() => openPalette('')} onupdate={openUpdate} />
+    <ActivityRail
+        {groups}
+        {bookmarks}
+        {docs}
+        onsearch={() => openPalette('')}
+        onupdate={openUpdate}
+    />
     <div class="column">
         <PageStrip {arrangements} />
         <div class="area">

@@ -13,6 +13,11 @@
 // on disk is re-read by closing it and opening it, since a poller over an open tree would read the
 // disk for a reader who is looking at one line of it.
 //
+// One root alone is re-read by refresh(root, version): the round a key belongs to is the shared
+// round plus the version that root was last refreshed at, so a view watching a channel (the Config
+// view watching the config one) asks again for that root's listings and texts and for nothing under
+// any other root. A refresh at a version already seen writes the same value and moves nothing.
+//
 // The file text is read through the file route and stopped at the window's limit: the reader is
 // cancelled once the limit is in, so a forty-megabyte file costs two megabytes of transfer and not
 // forty.
@@ -72,6 +77,8 @@ export type FsStore = {
     entries: (root: string, path: string) => FsEntry[];
     workspaces: () => WorkspacesState;
     fileText: (root: string, path: string) => FileText;
+    /** Ask again for what is held under one root, at the version of whatever said it had changed. */
+    refresh: (root: string, version: number) => void;
     addRoot: (dir: string) => Promise<WriteAnswer>;
     removeRoot: (key: string) => Promise<WriteAnswer>;
     saveWorkspace: (name: string) => Promise<WriteAnswer>;
@@ -149,6 +156,17 @@ export function createFs(writes: WritesStore): FsStore {
     const clock: { round: number } = $state({ round: 0 });
 
     /**
+     * The version one root was last refreshed at, by root key. A rune for the same reason the clock
+     * is one: a read of it happens inside the derived that asks for a listing or a text.
+     */
+    const refreshed: Record<string, number | undefined> = $state({});
+
+    /** The round one root's answers belong to: the shared round, and what refresh() added to it. */
+    function roundOf(root: string): number {
+        return clock.round + (refreshed[root] ?? 0);
+    }
+
+    /**
      * Whether this runs where a fetch is the page's own. A server rendering has a global fetch in
      * Node but no page to resolve a relative address against, so it asks for nothing and every
      * answer stays pending until the browser's first render.
@@ -167,8 +185,13 @@ export function createFs(writes: WritesStore): FsStore {
         });
     }
 
-    /** Whether an answer from round `at` may still be written in. */
-    function current(at: number): boolean {
+    /** Whether an answer from round `at` may still be written in, for the root it was asked of. */
+    function current(at: number, root: string): boolean {
+        return at === roundOf(root);
+    }
+
+    /** The same for the workspaces, which belong to no root and ride the shared round alone. */
+    function currentShared(at: number): boolean {
         return at === clock.round;
     }
 
@@ -177,7 +200,7 @@ export function createFs(writes: WritesStore): FsStore {
         if (root === '') return { entries: [], error: '', loading: false };
         const key = treeKey(root, path);
         const found = listings[key];
-        const at = clock.round;
+        const at = roundOf(root);
         if (found === undefined || rounds[key] !== at) {
             schedule(key, at, () => loadListing(root, path, at));
         }
@@ -194,7 +217,7 @@ export function createFs(writes: WritesStore): FsStore {
         try {
             const response = await fetch(listingUrl(root, path));
             const body = (await response.json()) as { entries?: unknown; error?: unknown };
-            if (!current(at)) return;
+            if (!current(at, root)) return;
             rounds[key] = at;
             if (!response.ok) {
                 listings[key] = {
@@ -210,7 +233,7 @@ export function createFs(writes: WritesStore): FsStore {
                 loading: false
             };
         } catch (error) {
-            if (!current(at)) return;
+            if (!current(at, root)) return;
             rounds[key] = at;
             listings[key] = { entries: [], error: reasonOf(error), loading: false };
         }
@@ -234,7 +257,7 @@ export function createFs(writes: WritesStore): FsStore {
                 dropped?: unknown;
                 error?: unknown;
             };
-            if (!current(at)) return;
+            if (!currentShared(at)) return;
             rounds[WORKSPACES] = at;
             if (!response.ok) {
                 held.workspaces = {
@@ -254,7 +277,7 @@ export function createFs(writes: WritesStore): FsStore {
                 loading: false
             };
         } catch (error) {
-            if (!current(at)) return;
+            if (!currentShared(at)) return;
             rounds[WORKSPACES] = at;
             held.workspaces = { ...NO_WORKSPACES, error: reasonOf(error), loading: false };
         }
@@ -265,7 +288,7 @@ export function createFs(writes: WritesStore): FsStore {
         if (root === '' || path === '') return { ...NO_TEXT, loading: false };
         const key = treeKey(root, path);
         const found = texts[key];
-        const at = clock.round;
+        const at = roundOf(root);
         if (found === undefined || rounds[`text:${key}`] !== at) {
             schedule(`text:${key}`, at, () => loadText(root, path, at));
         }
@@ -277,17 +300,17 @@ export function createFs(writes: WritesStore): FsStore {
         try {
             const response = await fetch(fileBytesUrl(root, path));
             if (!response.ok) {
-                if (!current(at)) return;
+                if (!current(at, root)) return;
                 rounds[`text:${key}`] = at;
                 texts[key] = { ...NO_TEXT, error: String(response.status), loading: false };
                 return;
             }
             const body = await readCapped(response, TEXT_LIMIT);
-            if (!current(at)) return;
+            if (!current(at, root)) return;
             rounds[`text:${key}`] = at;
             texts[key] = { ...body, error: '', loading: false };
         } catch (error) {
-            if (!current(at)) return;
+            if (!current(at, root)) return;
             rounds[`text:${key}`] = at;
             texts[key] = { ...NO_TEXT, error: reasonOf(error), loading: false };
         }
@@ -306,6 +329,18 @@ export function createFs(writes: WritesStore): FsStore {
         clock.round += 1;
     }
 
+    /**
+     * Ask again for the listings and the texts held under one root, and for nothing under any other.
+     * The version is whatever said the root had changed, the config channel's for the engine's own
+     * folder; a version already refreshed at writes the same value and asks for nothing again. The
+     * version never moves backwards: the round is the shared round plus this one, and a lower value
+     * would let an older answer in over a newer one.
+     */
+    function refresh(root: string, version: number): void {
+        if (root === '' || refreshed[root] === version) return;
+        refreshed[root] = version;
+    }
+
     /** One workspace action, behind the same token every other write carries. */
     async function act(fields: Record<string, unknown>): Promise<WriteAnswer> {
         const answer = await writes.send(fields, FS_PATH);
@@ -318,6 +353,7 @@ export function createFs(writes: WritesStore): FsStore {
         entries,
         workspaces,
         fileText,
+        refresh,
         addRoot: (dir: string) => act({ action: 'add-root', dir }),
         removeRoot: (key: string) => act({ action: 'remove-root', key }),
         saveWorkspace: (name: string) => act({ action: 'save-workspace', name }),

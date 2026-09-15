@@ -6,11 +6,13 @@
 
     import {
         type Bookmark,
-        GROUP_MAX,
+        type DocEntry,
         type NavGroup,
         type Section,
         arrange,
-        documentState
+        docState,
+        documentState,
+        isFlyout
     } from '$lib/shell/rail';
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu from '$lib/ui/Menu.svelte';
@@ -46,6 +48,8 @@
         groups?: NavGroup[];
         /** The `bookmarks` list of the merged config; the page reads it and passes it on. */
         bookmarks?: Bookmark[];
+        /** The `docs` list of the merged config: the hub documents drawn inside their groups. */
+        docs?: DocEntry[];
         /** Open the workbench search overlay. */
         onsearch?: () => void;
         /** Open the update-task tray. */
@@ -57,14 +61,21 @@
         // A rail without a search or update owner still draws its buttons.
     }
 
-    let { groups = [], bookmarks = [], onsearch = ignore, onupdate = ignore }: Props = $props();
+    let {
+        groups = [],
+        bookmarks = [],
+        docs = [],
+        onsearch = ignore,
+        onupdate = ignore
+    }: Props = $props();
 
     /* A view registered as not listed (the editor, a project, a document) is opened from a card or a
        bookmark and has nothing to show when opened bare, so the rail draws no button for it. */
     const sections = $derived(
         arrange(
             views().filter((view) => view.listed !== false),
-            groups
+            groups,
+            docs
         )
     );
 
@@ -82,9 +93,35 @@
         else openView(view);
     }
 
-    /** The views of one group as the choices of its list, each with its own glyph and words. */
+    /** The view a configured hub document opens in, one instance per path. */
+    const DOC_VIEW = 'doc';
+
+    /** What a document's choice is identified by inside a group's list, told from a view's id. */
+    const DOC_PICK = 'doc:';
+
+    /** The same two paths for a document: where a view lands, or in a pane beside it. */
+    function openDoc(entry: DocEntry, event: MouseEvent): void {
+        if (event.shiftKey) openBeside(DOC_VIEW, docState(entry));
+        else openView(DOC_VIEW, docState(entry));
+    }
+
+    /** What picking one choice of a group's list means: a document by its path, or a view by its id. */
+    function pick(section: Section, id: string, event: MouseEvent): void {
+        if (!id.startsWith(DOC_PICK)) {
+            open(id, event);
+            return;
+        }
+        const path = id.slice(DOC_PICK.length);
+        const entry = section.docs.find((one) => one.path === path);
+        if (entry !== undefined) openDoc(entry, event);
+    }
+
+    /**
+     * The entries of one group as the choices of its list: its views with their own glyph and words,
+     * then its documents, which carry the document glyph and no badge.
+     */
     function groupItems(section: Section): MenuItem[] {
-        return section.items.map((view) => {
+        const items: MenuItem[] = section.items.map((view) => {
             const badge = badgeOf(view, client);
             return {
                 id: view.id,
@@ -96,11 +133,24 @@
                 badgeTitle: badge.text === '' ? undefined : badge.title
             };
         });
+        return [
+            ...items,
+            ...section.docs.map((entry) => ({
+                id: `${DOC_PICK}${entry.path}`,
+                label: entry.label,
+                glyph: t('views.doc_glyph')
+            }))
+        ];
     }
 
-    /** The glyph a group's button carries: the group's own, or its first view's when it has none. */
+    /**
+     * The glyph a group's button carries: the group's own, or its first view's when it has none. A
+     * group holding documents alone carries the document glyph.
+     */
     function groupGlyph(section: Section): string {
-        return section.glyph ?? registrationGlyph(section.items[0]);
+        if (section.glyph !== undefined) return section.glyph;
+        if (section.items.length === 0) return t('views.doc_glyph');
+        return registrationGlyph(section.items[0]);
     }
 
     /** The status pair for a registration's badge; absent leaves the accent pair in the stylesheet. */
@@ -123,7 +173,7 @@
             <!-- A large group is one button with a list beside it, so the rail does not grow an
                  icon per view; a small one stays a heading over its buttons. The list opens where
                  the theme menu at the foot does, since `compact` is what fixes it beside the rail. -->
-            {#if label !== null && section.items.length > GROUP_MAX}
+            {#if label !== null && isFlyout(section)}
                 <div class="flyout" data-group={label} data-chord={section.chord}>
                     <p class="group">{label}</p>
                     <Menu
@@ -133,7 +183,7 @@
                         rail
                         stacked
                         items={groupItems(section)}
-                        onpick={(id: string, event: MouseEvent) => open(id, event)}
+                        onpick={(id: string, event: MouseEvent) => pick(section, id, event)}
                     />
                 </div>
             {:else}
@@ -173,11 +223,27 @@
                         {/if}
                     </div>
                 {/each}
+                <!-- The group's documents, after its views: a configured hub document is not a
+                     registration, so it is drawn here rather than by the loop above. -->
+                {#each section.docs as entry (entry.path)}
+                    <div class="control">
+                        <ToolButton
+                            label={entry.label}
+                            glyph={t('views.doc_glyph')}
+                            dataDoc={entry.path}
+                            compact
+                            rail
+                            stacked
+                            onclick={(event: MouseEvent) => openDoc(entry, event)}
+                        />
+                    </div>
+                {/each}
             {/if}
         {/each}
 
-        <!-- The documents of config/layout.yml. They are not registrations, so they sit under a
-             heading of their own rather than in a section arrange() built. -->
+        <!-- The bookmarks of config/layout.yml, each a local HTML file under a configured root.
+             They name no group, so they sit under a heading of their own rather than in a section
+             arrange() built. -->
         {#if bookmarks.length > 0}
             <p class="group">{t('ui.docs')}</p>
             {#each bookmarks as mark (`${mark.root}/${mark.path}`)}

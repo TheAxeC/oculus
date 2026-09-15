@@ -8,6 +8,14 @@
 // A file's type is read from its name alone. The server sends no type with a listing: the same
 // answer has to serve a tree drawn before anything is opened, and a name is what the reader picks by.
 
+/**
+ * The key the engine's own `config/` folder is served under, which is what the Config view lists and
+ * opens a file of. It is the client's half of the key lib/server/files.ts serves that folder under,
+ * since nothing client-side may import a server module; tests/routes/file.test.ts holds the two to
+ * one another.
+ */
+export const ENGINE_ROOT = 'engine';
+
 /** How a file opens: an HTML document, a code window, an image, a PDF, or a name and a link. */
 export type FileKind = 'html' | 'text' | 'image' | 'pdf' | 'other';
 

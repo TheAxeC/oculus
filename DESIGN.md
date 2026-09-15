@@ -39,12 +39,13 @@ The rule that keeps this honest is an import-graph test (`tests/boundaries.test.
 tools/oculus/
   DESIGN.md                    this file
   README.md                    how to run it
+  HELP.md                      the manual, which the Help view draws through api/docs
   .scratch/migration/          the migration's ledger (plan.md), state file (orchestrator-state.md) and agent material (agents/); tracked; deleted at step 8
   config/                      the interface described as data, one concern per file; no link back
     meta.yml                   the tool's own identity
     sources.yml                what the portfolio reads: scan paths, registries, collections, docs, feeds
     vocab.yml                  words and their colours: palette, domains, statuses, lanes, tiers
-    layout.yml                 how things are arranged: rail groups, board chrome, rollups, label modes
+    layout.yml                 how things are arranged: rail groups, hub documents, board chrome, rollups, label modes
     behavior.yml               thresholds and horizons
     appearance.yml             the UI theme list, the wallpaper, the CRT default
     glyphs.yml                 the glyph vocabulary and its ASCII stand-ins
@@ -96,7 +97,7 @@ tools/oculus/
       shell/                   LAYER 3, the workbench, view-blind
         Workbench.svelte ActivityRail.svelte Panel.svelte SplitView.svelte
       views/                   LAYER 3, domain-aware, layout-blind; one file per surface
-        Focus.svelte Projects.svelte Archive.svelte Venues.svelte Funding.svelte Present.svelte ...
+        Focus.svelte Projects.svelte Archive.svelte Venues.svelte Funding.svelte Present.svelte Help.svelte Config.svelte Doc.svelte ...
         present/
           Title.svelte Framing.svelte Project.svelte Summary.svelte Ideas.svelte Closing.svelte
         sessions/
@@ -287,6 +288,7 @@ Each step names what "done" means. Nothing visual before step 3.
 - 2026-09-13, Axel: the chip capsule stays on the status words and the project type alone, and every other tag a surface draws becomes plain text with its glyph; the cross-links keep their click. A tighter radius and a single accent stay unallowed.
 - 2026-09-15, Axel: a status mark keeps its hue. A tag that replaced a toned chip is drawn in that same tone, its words and its icon; a tag that replaced an untoned one is muted.
 - 2026-09-15, Axel: one icon set, Lucide through the `lucide-static` package (ISC, one stroke weight), the glyph name to icon name map in `config/icons.yml`, the glyph primitive inlining the drawing, the ASCII mode kept.
+- 2026-09-15, the manual, the configuration and the hub's own documents. `HELP.md` sits beside this file and is oculus's own manual; the `help` view draws it through `api/docs`, which serves that one path of the engine directory and nothing around it. The `config` view is one card per `.yml` of the engine's `config/` folder: its name, its line count, the one line from the catalog saying what it holds, its raw text under a disclosure, and a control that opens it in a source tab; for that the folder is a fixed root, `engine`, beside `hub`, served by the file route, the source route and the file browser, so a config edit is an ordinary write under a root and the watcher pushes the reread config like any other. `local.yml` sits outside that folder and is served nowhere. The hub's own documents are the `docs:` list of `layout.yml`, each `{ label, path, group }`, drawn in that rail group after the group's views and opened by the unlisted `doc` view over `api/docs`, one instance per path, with a figure beside a document addressed under the `hub` root so the file route draws it. Package O28a.
 
 ## Still undecided, and not needed yet
 

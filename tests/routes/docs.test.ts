@@ -9,8 +9,12 @@
 // The project a request names is read from the portfolio the server holds, which the route takes
 // from its own locals; the case below passes that reader itself, and the ones that pass none
 // exercise the fallback that finds the folder under the scan rules.
+//
+// The other two shapes the route answers are here as well: a Markdown document of the hub, which is
+// what the `docs:` list of config/layout.yml offers in the rail, and the manual, which is the one
+// path of the engine directory this route opens.
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
@@ -50,8 +54,21 @@ function target(docs: Record<string, string> = { 'README.md': README }): DocTarg
     const real = portfolioConfigFrom(loadConfig(engineDir()).config);
     return {
         hub: dir,
+        engine: engineDir(),
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] }
     };
+}
+
+/** A hub holding the files named at its own top level, which is where a hub document sits. */
+function hubWith(files: Record<string, string>): DocTarget {
+    const into = target();
+    for (const [name, body] of Object.entries(files)) {
+        const path = join(into.hub, name);
+        expect(resolve(path).startsWith(resolve(into.hub) + sep)).toBe(true);
+        mkdirSync(join(path, '..'), { recursive: true });
+        writeFileSync(path, body);
+    }
+    return into;
 }
 
 /** A request as the page makes it, with whatever headers a case wants instead. */
@@ -146,6 +163,7 @@ describe('the document endpoint', () => {
         const real = portfolioConfigFrom(loadConfig(engineDir()).config);
         const into: DocTarget = {
             hub: dir,
+            engine: engineDir(),
             config: { ...real, scan: [{ dir: 'projects/coauthor', nested: true }] }
         };
         const response = handleDocs(request('project=alpha&name=README.md'), into);
@@ -162,6 +180,31 @@ describe('the document endpoint', () => {
         expect(fields(await response.json()).error).toBe('no project with the id ../alpha');
     });
 
+    it('draws a figure beside a README through the file route', async () => {
+        const response = handleDocs(
+            request('project=alpha&name=README.md'),
+            target({ 'README.md': '![one](figures/one.png)\n' })
+        );
+        expect(response.status).toBe(200);
+        expect(fields(await response.json()).html).toContain(
+            'src="/api/file/hub/projects/manuscripts/alpha/figures/one.png"'
+        );
+    });
+
+    it('refuses a project document reached through a link out of the hub', () => {
+        const into = target();
+        const outside = mkdtempSync(join(tmpdir(), 'oculus-docs-outside-'));
+        expect(resolve(outside).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        writeFileSync(join(outside, 'secret.md'), '# Secret\n');
+        const folder = join(into.hub, 'projects', 'manuscripts', 'alpha');
+        rmSync(join(folder, 'README.md'), { force: true });
+        symlinkSync(join(outside, 'secret.md'), join(folder, 'README.md'));
+
+        const response = handleDocs(request('project=alpha&name=README.md'), into);
+        expect(response.status).toBe(404);
+        rmSync(outside, { recursive: true, force: true });
+    });
+
     it('refuses a request from another origin', async () => {
         const response = handleDocs(
             request('project=alpha&name=README.md', {
@@ -172,5 +215,106 @@ describe('the document endpoint', () => {
         );
         expect(response.status).toBe(403);
         expect(fields(await response.json()).error).toBe('the request did not come from this page');
+    });
+});
+
+describe('a document of the hub', () => {
+    const DOC = '# Approach\n\nA paragraph.\n';
+
+    it('renders the Markdown the path names', async () => {
+        const into = hubWith({ 'RESEARCH-APPROACH.md': DOC });
+        const response = handleDocs(request('hub=RESEARCH-APPROACH.md'), into);
+        expect(response.status).toBe(200);
+        expect(response.headers.get('cache-control')).toBe('no-store');
+        expect(fields(await response.json()).html).toContain('<h1>Approach</h1>');
+    });
+
+    it('draws a figure beside it through the file route, under the hub root', async () => {
+        const into = hubWith({ 'notes/one.md': '![a](pictures/one.png)\n' });
+        const response = handleDocs(request(`hub=${encodeURIComponent('notes/one.md')}`), into);
+        expect(fields(await response.json()).html).toContain(
+            'src="/api/file/hub/notes/pictures/one.png"'
+        );
+    });
+
+    it('leaves a figure source that climbs out of the hub as the author wrote it', async () => {
+        const into = hubWith({ 'one.md': '![a](../x.png)\n' });
+        const response = handleDocs(request('hub=one.md'), into);
+        const html = String(fields(await response.json()).html);
+        expect(html).toContain('src="../x.png"');
+        expect(html).not.toContain('/api/file/');
+    });
+
+    it('resolves a figure beside a document in a folder, whatever it climbs on the way', async () => {
+        const into = hubWith({ 'notes/deep/one.md': '![a](../pictures/one.png)\n' });
+        const response = handleDocs(
+            request(`hub=${encodeURIComponent('notes/deep/one.md')}`),
+            into
+        );
+        expect(fields(await response.json()).html).toContain(
+            'src="/api/file/hub/notes/pictures/one.png"'
+        );
+    });
+
+    it('leaves an address the browser resolves itself alone', async () => {
+        const into = hubWith({ 'one.md': '![a](https://example.test/one.png)\n' });
+        const response = handleDocs(request('hub=one.md'), into);
+        expect(fields(await response.json()).html).toContain('src="https://example.test/one.png"');
+    });
+
+    it('answers 404 for a path that climbs out of the hub', async () => {
+        const response = handleDocs(
+            request(`hub=${encodeURIComponent('../elsewhere.md')}`),
+            target()
+        );
+        expect(response.status).toBe(404);
+        expect(fields(await response.json()).error).toBe('the document is not inside the hub');
+    });
+
+    it('refuses a document the hub reaches only through a link out of it', () => {
+        const into = hubWith({});
+        const outside = mkdtempSync(join(tmpdir(), 'oculus-docs-outside-'));
+        expect(resolve(outside).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        writeFileSync(join(outside, 'secret.md'), '# Secret\n');
+        const link = join(into.hub, 'linked.md');
+        expect(resolve(link).startsWith(resolve(into.hub) + sep)).toBe(true);
+        symlinkSync(join(outside, 'secret.md'), link);
+
+        const response = handleDocs(request('hub=linked.md'), into);
+        expect(response.status).toBe(404);
+        rmSync(outside, { recursive: true, force: true });
+    });
+
+    it('answers 404 for a file that is not Markdown, and for one that is not there', () => {
+        const into = hubWith({ 'local.yml': 'hub: /elsewhere\n' });
+        expect(handleDocs(request('hub=local.yml'), into).status).toBe(404);
+        expect(handleDocs(request('hub=nothing.md'), into).status).toBe(404);
+    });
+});
+
+describe('the manual', () => {
+    it('is the HELP.md of the engine directory, rendered', async () => {
+        const response = handleDocs(request('manual=1'), target());
+        expect(response.status).toBe(200);
+        const body = fields(await response.json());
+        expect(typeof body.html).toBe('string');
+        expect(body.html).toContain('<h1>Oculus</h1>');
+    });
+
+    it('takes no path, so a path beside it changes nothing', async () => {
+        const response = handleDocs(
+            request(`manual=1&hub=${encodeURIComponent('../elsewhere.md')}`),
+            target()
+        );
+        expect(response.status).toBe(200);
+        expect(fields(await response.json()).html).toContain('<h1>Oculus</h1>');
+    });
+
+    it('refuses a request from another origin', () => {
+        const response = handleDocs(
+            request('manual=1', { origin: 'http://example.test', 'sec-fetch-site': 'cross-site' }),
+            target()
+        );
+        expect(response.status).toBe(403);
     });
 });

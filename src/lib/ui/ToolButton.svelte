@@ -44,6 +44,8 @@
         dataView?: string;
         /** A configured bookmark identity, rendered on the button for browser navigation. */
         dataBookmark?: string;
+        /** A configured hub document's path, rendered on the button for browser navigation. */
+        dataDoc?: string;
         /** Marks the project-card control the keyboard cursor activates when its title is plain. */
         dataCardToggle?: boolean;
     };
@@ -63,6 +65,7 @@
         stacked = false,
         dataView,
         dataBookmark,
+        dataDoc,
         dataCardToggle = false
     }: Props = $props();
 
@@ -93,6 +96,7 @@
         aria-label={iconOnly ? label : undefined}
         data-view={dataView}
         data-bookmark={dataBookmark}
+        data-doc={dataDoc}
         data-card-toggle={dataCardToggle || undefined}
         {disabled}
         {onclick}

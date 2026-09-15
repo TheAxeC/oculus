@@ -49,12 +49,8 @@ collections:
   - { key: code,           title: "Code",                icon: code, file: "registries/repos.yml" }
 
 
-# Full-markdown tabs (each may concatenate several files; missing files flagged).
-docs:
-  - { key: inbox,     title: "Inbox",  after_map: true, paths: ["feeds/inbox.yml"] }   # private email that never leaves this repo
-  - { key: hpc,       title: "HPC - UTwente",   paths: ["HPC-UTwente-howto.md"] }
-  - { key: approach,  title: "Research Approach", paths: ["RESEARCH-APPROACH.md"] }   # private research strategy prose
-  - { key: agents,    title: "Agent Approach",    paths: ["AGENT-APPROACH.md"] }       # private agent workflow prose
+# Inbox view: the private email triage feed, which never leaves this repo. The hub documents the rail offers are the `docs:` list of layout.yml, which names each one's group.
+inbox_file: feeds/inbox.yml
 
 
 # Auto-index tabs - a searchable file listing from a folder scan (no curation, no YAML).

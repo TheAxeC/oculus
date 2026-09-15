@@ -1,7 +1,7 @@
 // Layer 3, shell. What the activity rail is made of and how it is grouped: a configured group, a
-// docs bookmark and the state that opens one, and the two folds that put the registrations under
-// their groups and turn them into key order. Apart from the component so the grouping can be read
-// without a rendering.
+// docs bookmark and a configured hub document with the state that opens each, and the two folds that
+// put the registrations and the documents under their groups and turn them into key order. Apart
+// from the component so the grouping can be read without a rendering.
 
 import type { Registration } from '$lib/views/registry';
 import type { RailOrder } from './keys';
@@ -34,27 +34,66 @@ export function documentState(mark: Bookmark): {
     };
 }
 
-/** The rail as it is drawn: a group's registrations, or the ungrouped ones under no heading. */
+/**
+ * One entry of the `docs:` list of config/layout.yml: a Markdown document of the hub, drawn inside
+ * the group it names and opened by the `doc` view over api/docs.
+ */
+export type DocEntry = { label: string; path: string; group: string };
+
+/**
+ * What openView is handed for a document. The `id` is the path, so a second click on one document
+ * activates the tab it already has and another document opens a tab of its own beside it.
+ */
+export function docState(entry: DocEntry): { id: string; path: string; label: string } {
+    return { id: entry.path, path: entry.path, label: entry.label };
+}
+
+/**
+ * The rail as it is drawn: a group's registrations and its documents, or the ungrouped ones under no
+ * heading. The documents follow the views, since a group is its views first.
+ */
 export type Section = {
     label: string | null;
     items: Registration[];
+    docs: DocEntry[];
     glyph?: string;
     chord?: string;
 };
 
+/** How many entries a group draws: its views and the documents after them. */
+export function sectionSize(section: Section): number {
+    return section.items.length + section.docs.length;
+}
+
 /**
- * How many views a group may hold and still be drawn as a heading over one button per view. A
- * larger group is drawn as one button with a list beside it. The ungrouped trailing section has
- * no heading to name such a button and stays as buttons however many it holds.
+ * Whether a group is drawn as one button with a list beside it rather than as a heading over one
+ * button per entry. The ungrouped trailing section has no heading to name such a button and stays as
+ * buttons however many it holds.
+ */
+export function isFlyout(section: Section): boolean {
+    return section.label !== null && sectionSize(section) > GROUP_MAX;
+}
+
+/**
+ * How many entries a group may hold and still be drawn as a heading over one button per entry. Its
+ * views and its documents both count. A larger group is drawn as one button with a list beside it,
+ * which is reached by the letter the group configures and by no other, so a group that crosses this
+ * needs a `chord:`. The ungrouped trailing section has no heading to name such a button and stays as
+ * buttons however many it holds.
  */
 export const GROUP_MAX = 4;
 
 /**
- * The registrations under their configured groups, sorted by their own order and then id. A
- * group with no matching registration is not drawn; registrations with no configured group
- * trail without a heading.
+ * The registrations and the configured documents under their groups, the registrations sorted by
+ * their own order and then id and the documents in the order the config lists them. A group with
+ * neither is not drawn; registrations and documents with no configured group trail without a
+ * heading.
  */
-export function arrange(registrations: Registration[], groups: NavGroup[]): Section[] {
+export function arrange(
+    registrations: Registration[],
+    groups: NavGroup[],
+    docs: DocEntry[] = []
+): Section[] {
     const sections: Section[] = [];
     const ranked = (items: Registration[]): Registration[] =>
         [...items].sort(
@@ -63,14 +102,18 @@ export function arrange(registrations: Registration[], groups: NavGroup[]): Sect
     const configured = new Set(groups.map((group) => group.id));
     for (const group of groups) {
         const items = ranked(registrations.filter((view) => view.group === group.id));
-        if (items.length === 0) continue;
-        const section: Section = { label: group.label, items };
+        const inside = docs.filter((entry) => entry.group === group.id);
+        if (items.length === 0 && inside.length === 0) continue;
+        const section: Section = { label: group.label, items, docs: inside };
         if (group.glyph !== undefined) section.glyph = group.glyph;
         if (group.chord !== undefined) section.chord = group.chord;
         sections.push(section);
     }
     const rest = ranked(registrations.filter((view) => !configured.has(view.group)));
-    if (rest.length > 0) sections.push({ label: null, items: rest });
+    const loose = docs.filter((entry) => !configured.has(entry.group));
+    if (rest.length > 0 || loose.length > 0) {
+        sections.push({ label: null, items: rest, docs: loose });
+    }
     return sections;
 }
 
@@ -83,17 +126,18 @@ export function arrange(registrations: Registration[], groups: NavGroup[]): Sect
 export function railOrder(
     registrations: Registration[],
     groups: NavGroup[],
-    directChord?: string
+    directChord?: string,
+    docs: DocEntry[] = []
 ): RailOrder {
-    const sections = arrange(registrations, groups);
+    const sections = arrange(registrations, groups, docs);
     const direct = sections
-        .filter((section) => section.label === null || section.items.length <= GROUP_MAX)
+        .filter((section) => !isFlyout(section))
         .flatMap((section) => section.items.map((view) => view.id));
     const all = sections.flatMap((section) => section.items.map((view) => view.id));
     const chords: Record<string, string[]> = {};
     if (directChord !== undefined && direct.length > 0) chords[directChord] = direct;
     for (const section of sections) {
-        if (section.items.length <= GROUP_MAX || section.chord === undefined) continue;
+        if (!isFlyout(section) || section.chord === undefined) continue;
         chords[section.chord] = section.items.map((view) => view.id);
     }
     return { direct, all, chords };

@@ -12,7 +12,11 @@ import type { RequestHandler } from './$types';
 
 const target = (server: App.Locals['server']): FsTarget => ({
     file: server.local.workspaces ?? defaultWorkspacesPath(),
-    fixed: rootsFrom(configuredRootsOf(server.config, server.engine), server.local.hub),
+    fixed: rootsFrom(
+        configuredRootsOf(server.config, server.engine),
+        server.local.hub,
+        server.engine
+    ),
     writes: server.fsWrites
 });
 

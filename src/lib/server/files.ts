@@ -223,6 +223,19 @@ export function rootsFile(engine: string = engineDir()): string {
 /** The key the hub itself is served under, so a collection's `link` to a file in the hub opens. */
 export const HUB_ROOT = 'hub';
 
+/**
+ * The key the engine's own `config/` folder is served under. The Config view lists that folder, shows
+ * each file and opens one in a source tab, and an edit saved there is an ordinary write under a root,
+ * which the config watcher sees like any other. Nothing above the folder is served: the root is the
+ * folder itself, so `local.yml` and the rest of the engine directory stay outside every route.
+ */
+export const ENGINE_ROOT = 'engine';
+
+/** The engine's config folder as a root, which is the directory loadConfig merges its files from. */
+export function engineRoot(engine: string): Root {
+    return { key: ENGINE_ROOT, dir: join(engine, 'config') };
+}
+
 /** The roots config/sources.yml names, without the hub in front of them, out of a config already read. */
 export function configuredRootsOf(config: Record<string, unknown>, engine: string): Root[] {
     return readRoots(config, rootsFile(engine)).roots;
@@ -235,27 +248,35 @@ export function configuredRoots(): Root[] {
 }
 
 /**
- * The configured roots with the hub in front of them under the key `hub`, unless the config names
- * that key itself, in which case the config's entry stands. The hub is where `local.yml` says it
- * is, so the tracked config never carries it twice.
+ * The configured roots with the two fixed ones in front of them, the hub under `hub` and the engine's
+ * config folder under `engine`, unless the config names that key itself, in which case the config's
+ * entry stands. The hub is where `local.yml` says it is, so the tracked config never carries it twice.
  */
-export function withHub(list: Root[], hub: string): Root[] {
-    if (list.some((one) => one.key === HUB_ROOT)) return list;
-    return [{ key: HUB_ROOT, dir: hub }, ...list];
+export function withFixed(list: Root[], hub: string, engine: string): Root[] {
+    const fixed: Root[] = [];
+    if (!list.some((one) => one.key === HUB_ROOT)) fixed.push({ key: HUB_ROOT, dir: hub });
+    if (!list.some((one) => one.key === ENGINE_ROOT)) fixed.push(engineRoot(engine));
+    return [...fixed, ...list];
 }
 
 /**
- * The roots api/file serves: the hub, the configured ones, and the ones `added` names.
+ * The roots api/file serves: the hub, the engine's config folder, the configured ones, and the ones
+ * `added` names.
  *
  * `added` is the current workspace's own roots, so a folder the reader added in the file browser is
- * served exactly as a configured one is. The hub key and every configured key win over an added
- * root carrying the same key, so a saved workspace can only ever add a root and never redirect one
+ * served exactly as a configured one is. The two fixed keys and every configured key win over an
+ * added root carrying the same key, so a saved workspace can only ever add a root and never redirect one
  * the rest of the application reads; the inside-root check is the same for both.
  */
-export function rootsFrom(configured: Root[], hub: string, added: Root[] = []): Root[] {
-    const taken = new Set([HUB_ROOT, ...configured.map((one) => one.key)]);
+export function rootsFrom(
+    configured: Root[],
+    hub: string,
+    engine: string,
+    added: Root[] = []
+): Root[] {
+    const taken = new Set([HUB_ROOT, ENGINE_ROOT, ...configured.map((one) => one.key)]);
     const extra = added.filter((one) => !taken.has(one.key));
-    return withHub([...configured, ...extra], hub);
+    return withFixed([...configured, ...extra], hub, engine);
 }
 
 /**
@@ -264,5 +285,5 @@ export function rootsFrom(configured: Root[], hub: string, added: Root[] = []): 
  */
 export function roots(added: Root[] = []): Root[] {
     const engine = engineDir();
-    return rootsFrom(configuredRoots(), loadLocal(engine).hub, added);
+    return rootsFrom(configuredRoots(), loadLocal(engine).hub, engine, added);
 }

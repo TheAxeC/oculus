@@ -6,7 +6,7 @@
 
     import { onMount, untrack } from 'svelte';
     import Workbench from '$lib/shell/Workbench.svelte';
-    import type { Bookmark, NavGroup } from '$lib/shell/rail';
+    import type { Bookmark, DocEntry, NavGroup } from '$lib/shell/rail';
     import type { Arrangement } from '$lib/shell/page-strip';
     import { configGeneration } from '$lib/state/generation.svelte';
     import { collectionKeys } from '$lib/data/normalise';
@@ -101,6 +101,28 @@
     }
 
     /**
+     * The `docs` list of config/layout.yml, in order: one Markdown document of the hub per entry,
+     * drawn in the group it names. An entry that is not three strings, or whose label, path or group
+     * is empty, is dropped rather than drawn half-formed, exactly as a bookmark is; the server reports
+     * it as a finding.
+     */
+    const docs = $derived<DocEntry[]>(readDocs(config()?.config.docs));
+
+    function readDocs(raw: unknown): DocEntry[] {
+        if (!Array.isArray(raw)) return [];
+        const found: DocEntry[] = [];
+        for (const entry of raw) {
+            if (typeof entry !== 'object' || entry === null || Array.isArray(entry)) continue;
+            const doc = entry as { label?: unknown; path?: unknown; group?: unknown };
+            if (typeof doc.label !== 'string' || doc.label === '') continue;
+            if (typeof doc.path !== 'string' || doc.path === '') continue;
+            if (typeof doc.group !== 'string' || doc.group === '') continue;
+            found.push({ label: doc.label, path: doc.path, group: doc.group });
+        }
+        return found;
+    }
+
+    /**
      * The `arrangements:` of config/layout.yml, each with the words a page opened from it carries.
      * The node itself is handed on untouched: state/layout.ts reads its shape and refuses one that
      * does not add up, so nothing here knows what is in it.
@@ -144,4 +166,4 @@
     });
 </script>
 
-<Workbench {groups} {bookmarks} {arrangements} {directChord} waiting={waitingCount()} />
+<Workbench {groups} {bookmarks} {docs} {arrangements} {directChord} waiting={waitingCount()} />

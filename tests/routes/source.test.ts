@@ -16,6 +16,7 @@ import { join, resolve, sep } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mintToken, TOKEN_HEADER } from '../../src/lib/server/auth.ts';
 import { handleSource } from '../../src/lib/server/source.ts';
+import { ENGINE_ROOT, engineRoot } from '../../src/lib/server/files.ts';
 import type { Root } from '../../src/lib/server/files.ts';
 
 const EDITABLE = ['.md', '.yml'];
@@ -166,5 +167,55 @@ describe('POST /api/source', () => {
         expect(
             readdirSync(one.root.dir).filter((name) => name.startsWith('.oculus-write-'))
         ).toEqual([]);
+    });
+});
+
+describe('a config file of the engine', () => {
+    /** An engine directory with its config folder, which is what the `engine` root serves. */
+    function engineFixture(): { engine: string; file: string } {
+        const dir = mkdtempSync(join(tmpdir(), 'oculus-source-engine-'));
+        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        temporary.push(dir);
+        const folder = join(dir, 'config');
+        mkdirSync(folder);
+        const file = join(folder, 'layout.yml');
+        expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
+        writeFileSync(file, 'nav_groups: {}\n');
+        writeFileSync(join(dir, 'local.yml'), 'hub: /elsewhere\n');
+        return { engine: dir, file };
+    }
+
+    it('is written into the config folder through the engine root', async () => {
+        const one = engineFixture();
+        const token = mintToken();
+        const body = {
+            root: ENGINE_ROOT,
+            path: 'layout.yml',
+            content: 'nav_groups:\n  boards: { label: "Boards" }\n'
+        };
+        const answer = await handleSource(
+            request(token, body),
+            token,
+            [engineRoot(one.engine)],
+            EDITABLE
+        );
+
+        expect(answer.status).toBe(200);
+        expect(await answer.json()).toEqual({ ok: true });
+        expect(readFileSync(one.file, 'utf8')).toBe(body.content);
+    });
+
+    it('refuses a path that climbs to the machine-local file beside that folder', async () => {
+        const one = engineFixture();
+        const token = mintToken();
+        const answer = await handleSource(
+            request(token, { root: ENGINE_ROOT, path: '../local.yml', content: 'hub: /taken\n' }),
+            token,
+            [engineRoot(one.engine)],
+            EDITABLE
+        );
+
+        expect(answer.status).toBe(403);
+        expect(readFileSync(join(one.engine, 'local.yml'), 'utf8')).toBe('hub: /elsewhere\n');
     });
 });

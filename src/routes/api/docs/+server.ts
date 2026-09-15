@@ -13,6 +13,7 @@ export const GET: RequestHandler = ({ request, locals }) => {
     const into = target();
     return handleDocs(request, {
         hub: into.hub,
+        engine: locals.server.engine,
         config: into.config,
         project: (id) => project(locals.server.hub, id)
     });

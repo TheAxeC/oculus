@@ -166,6 +166,9 @@ describe('the real registrations', () => {
                 'usage',
                 'status',
                 'findings',
+                'help',
+                'config',
+                'doc',
                 'gallery',
                 'venues',
                 'data',
@@ -212,8 +215,10 @@ describe('the real registrations', () => {
             coauthor: { group: 'boards', order: 2 },
             code: { group: 'sources', order: 2 },
             collaborations: { group: 'academic', order: 4 },
+            config: { group: 'system', order: 6 },
             data: { group: 'sources', order: 1 },
             deposit: { group: '', order: 0 },
+            doc: { group: '', order: 0 },
             document: { group: '', order: 0 },
             domains: { group: 'structure', order: 1 },
             editor: { group: '', order: 0 },
@@ -225,6 +230,7 @@ describe('the real registrations', () => {
             focus: { group: 'boards', order: 0 },
             funding: { group: 'academic', order: 0 },
             gallery: { group: 'system', order: 2 },
+            help: { group: 'system', order: 5 },
             hpc: { group: 'system', order: 3 },
             inbox: { group: 'feeds', order: 2 },
             leads: { group: 'feeds', order: 1 },
@@ -292,6 +298,28 @@ describe('the real registrations', () => {
             id: 'linkedin',
             label: 'views.linkedin',
             glyph: 'views.linkedin_glyph'
+        });
+    });
+
+    it('registers the manual, the configuration and a hub document with their catalog keys', () => {
+        expect(viewFor('help')).toMatchObject({
+            id: 'help',
+            label: 'views.help',
+            glyph: 'views.help_glyph',
+            group: 'system'
+        });
+        expect(viewFor('config')).toMatchObject({
+            id: 'config',
+            label: 'views.config',
+            glyph: 'views.config_glyph',
+            group: 'system'
+        });
+        // A hub document is opened for one path, so it is not offered bare in the rail.
+        expect(viewFor('doc')).toMatchObject({
+            id: 'doc',
+            label: 'views.doc',
+            glyph: 'views.doc_glyph',
+            listed: false
         });
     });
 

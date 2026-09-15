@@ -78,19 +78,6 @@ const FEED_FILES: FeedFiles = {
     linkedin: 'theaxec.github.io/_linkedin'
 };
 
-/**
- * The first path of one `docs:` entry. The inbox feed is named there rather than in a key of its
- * own, because the cockpit renders it as a markdown tab as well as counting it.
- */
-function docPath(value: unknown, key: string): string | null {
-    for (const item of list(value)) {
-        if (!isMap(item) || item.key !== key) continue;
-        const paths = list(item.paths).filter((one): one is string => typeof one === 'string');
-        if (paths.length > 0) return paths[0];
-    }
-    return null;
-}
-
 /** The `key` of every entry of a keyed vocabulary list, `status_legend` being the one that matters. */
 function vocabKeys(value: unknown): string[] {
     const keys: string[] = [];
@@ -141,7 +128,7 @@ export function portfolioConfigFrom(
     }
 
     const feeds: FeedFiles = {
-        inbox: docPath(merged.docs, 'inbox') ?? FEED_FILES.inbox,
+        inbox: path('inbox_file', FEED_FILES.inbox),
         leads: path('leads_file', FEED_FILES.leads),
         radar: path('radar_file', FEED_FILES.radar),
         linkedin: path('linkedin_dir', FEED_FILES.linkedin)

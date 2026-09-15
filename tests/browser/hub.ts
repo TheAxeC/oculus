@@ -2,7 +2,7 @@
 // writes that path here; a spec that asserts on a file reads it back through readHubFile, so a
 // write the DOM says happened is checked against the bytes on disk.
 
-import { existsSync, readFileSync, rmSync } from 'node:fs';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -39,10 +39,22 @@ export function readHubYaml(relative: string): Record<string, unknown> {
 }
 
 /**
- * Remove a folder a spec scaffolded, so the hub the next spec file serves is the demo again. The
- * path is resolved and asserted to be inside the temporary hub before anything is removed.
+ * Write a file into that hub, for a spec whose subject is a document no control of the page makes.
+ * The path is resolved and asserted to be inside the temporary hub before anything is written.
  */
-export function removeHubDir(relative: string): void {
+export function writeHubFile(relative: string, body: string): void {
+    const root = hubDir();
+    const full = resolve(join(root, relative));
+    if (!full.startsWith(resolve(root) + sep)) throw new Error(`${full} is not inside ${root}`);
+    writeFileSync(full, body);
+}
+
+/**
+ * Remove a file or a folder a spec scaffolded, so the hub the next spec file serves is the demo
+ * again. The path is resolved and asserted to be inside the temporary hub before anything is
+ * removed.
+ */
+export function removeFromHub(relative: string): void {
     const root = hubDir();
     const full = resolve(join(root, relative));
     if (!full.startsWith(resolve(root) + sep)) throw new Error(`${full} is not inside ${root}`);

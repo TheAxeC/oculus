@@ -14,8 +14,12 @@ import ActivityRail from '../../src/lib/shell/ActivityRail.svelte';
 import {
     GROUP_MAX,
     arrange,
+    docState,
     documentState,
+    isFlyout,
     railOrder,
+    sectionSize,
+    type DocEntry,
     type NavGroup
 } from '../../src/lib/shell/rail.ts';
 import {
@@ -92,6 +96,11 @@ function buttonWith(body: string, attribute: string): string | undefined {
         .find((button) => button.includes(attribute));
 }
 
+/** A configured hub document, the shape of one entry of the `docs:` list of layout.yml. */
+function doc(path: string, group: string, label = path): DocEntry {
+    return { label, path, group };
+}
+
 describe('arrange', () => {
     it("puts a group's views in the group's own key order, and the rest at the end", () => {
         const found = arrange(
@@ -113,8 +122,46 @@ describe('arrange', () => {
 
     it('draws no group for keys no registration answers', () => {
         expect(arrange([probe('a')], [{ id: 'none', label: 'None' }])).toEqual([
-            { label: null, items: [probe('a')] }
+            { label: null, items: [probe('a')], docs: [] }
         ]);
+    });
+
+    it("puts a group's documents after its views, in the order the config lists them", () => {
+        const found = arrange(
+            [probe('b', 'one', 1), probe('a', 'one', 0)],
+            [{ id: 'one', label: 'One' }],
+            [doc('SECOND.md', 'one'), doc('FIRST.md', 'one')]
+        );
+        expect(found).toHaveLength(1);
+        expect(found[0].items.map((view) => view.id)).toEqual(['a', 'b']);
+        expect(found[0].docs.map((entry) => entry.path)).toEqual(['SECOND.md', 'FIRST.md']);
+        expect(sectionSize(found[0])).toBe(4);
+    });
+
+    it('draws a group whose documents are all it has', () => {
+        const found = arrange([], [{ id: 'one', label: 'One' }], [doc('ONE.md', 'one')]);
+        expect(found.map((section) => section.label)).toEqual(['One']);
+        expect(found[0].items).toEqual([]);
+        expect(found[0].docs.map((entry) => entry.path)).toEqual(['ONE.md']);
+    });
+
+    it('trails a document whose group nothing configures, with the ungrouped views', () => {
+        const found = arrange([probe('a')], [{ id: 'one', label: 'One' }], [doc('ONE.md', 'gone')]);
+        expect(found.map((section) => section.label)).toEqual([null]);
+        expect(found[0].docs.map((entry) => entry.path)).toEqual(['ONE.md']);
+    });
+
+    it('counts a document towards the size that makes a group a list', () => {
+        const views = [probe('a', 'one', 0), probe('b', 'one', 1), probe('c', 'one', 2)];
+        const small = arrange(views, [{ id: 'one', label: 'One' }], [doc('ONE.md', 'one')]);
+        expect(isFlyout(small[0])).toBe(false);
+        const large = arrange(
+            views,
+            [{ id: 'one', label: 'One' }],
+            [doc('ONE.md', 'one'), doc('TWO.md', 'one')]
+        );
+        expect(sectionSize(large[0])).toBe(GROUP_MAX + 1);
+        expect(isFlyout(large[0])).toBe(true);
     });
 
     it("carries the group's glyph when it has one, and leaves it off when it has none", () => {
@@ -448,6 +495,59 @@ describe('a rail badge', () => {
     });
 });
 
+describe('the documents in the rail', () => {
+    it("draws a group's document after its views, as a button carrying the path", () => {
+        registerView(probe('first', 'one', 0));
+        const body = render(ActivityRail, {
+            context: clientContext(client),
+            props: {
+                groups: [{ id: 'one', label: 'One' }],
+                docs: [doc('NOTES.md', 'one', 'Notes')]
+            }
+        }).body;
+        const button = buttonWith(body, 'data-doc="NOTES.md"');
+        expect(button).toBeDefined();
+        expect(button).toMatch(/class="[^"]*rail-control/);
+        expect(body.indexOf('data-view="first"')).toBeLessThan(body.indexOf('data-doc='));
+        expect(body).toContain('Notes');
+    });
+
+    it('draws a group of documents alone under its own heading', () => {
+        const body = render(ActivityRail, {
+            context: clientContext(client),
+            props: {
+                groups: [{ id: 'papers', label: 'Papers' }],
+                docs: [doc('ONE.md', 'papers'), doc('TWO.md', 'papers')]
+            }
+        }).body;
+        expect(body).toContain('>Papers</p>');
+        expect(buttonWith(body, 'data-doc="ONE.md"')).toBeDefined();
+        expect(buttonWith(body, 'data-doc="TWO.md"')).toBeDefined();
+    });
+
+    it("holds a large group's documents in its list rather than beside it", () => {
+        const ids = ['flyout-1', 'flyout-2', 'flyout-3', 'flyout-4'];
+        for (const [order, id] of ids.entries()) registerView(probe(id, 'flyout', order));
+        const body = render(ActivityRail, {
+            context: clientContext(client),
+            props: {
+                groups: [{ id: 'flyout', label: 'Flyout', glyph: 'chat' }],
+                docs: [doc('ONE.md', 'flyout')]
+            }
+        }).body;
+        expect(body).toContain('data-group="Flyout"');
+        // The list is closed in a rendering with no DOM, so neither its views nor its documents
+        // are drawn as buttons of the rail.
+        expect(buttonWith(body, 'data-doc="ONE.md"')).toBeUndefined();
+        expect(buttonWith(body, 'data-view="flyout-1"')).toBeUndefined();
+    });
+
+    it('is a tab of its own per path, so two documents are two tabs', () => {
+        expect(docState(doc('ONE.md', 'one')).id).toBe('ONE.md');
+        expect(docState(doc('TWO.md', 'one')).id).toBe('TWO.md');
+    });
+});
+
 describe('the groups of the real config', () => {
     /** The `nav_groups` mapping of config/layout.yml, as the page reads it. */
     function realGroups(): NavGroup[] {
@@ -455,18 +555,45 @@ describe('the groups of the real config', () => {
         return Object.entries(raw).map(([id, group]) => ({ id, ...group }));
     }
 
+    /** The `docs` list of config/layout.yml, as the page reads it. */
+    function realDocs(): DocEntry[] {
+        return config.docs as DocEntry[];
+    }
+
     let sections: ReturnType<typeof arrange>;
 
     beforeEach(() => {
         sections = arrange(
             views().filter((view) => view.listed !== false),
-            realGroups()
+            realGroups(),
+            realDocs()
         );
     });
 
     function section(label: string): Registration[] {
         return sections.find((found) => found.label === label)?.items ?? [];
     }
+
+    it('draws Personal for its two documents alone, and puts the third in System', () => {
+        const personal = sections.find((found) => found.label === 'Personal');
+        expect(personal?.items).toEqual([]);
+        expect(personal?.docs.map((entry) => entry.path)).toEqual([
+            'RESEARCH-APPROACH.md',
+            'AGENT-APPROACH.md'
+        ]);
+        const [system] = sections.filter((found) => found.label === 'System');
+        expect(system.docs.map((entry) => entry.path)).toEqual(['HPC-UTwente-howto.md']);
+        expect(system.items.map((view) => view.id)).toEqual([
+            'status',
+            'findings',
+            'gallery',
+            'hpc',
+            'usage',
+            'help',
+            'config'
+        ]);
+        expect(isFlyout(system)).toBe(true);
+    });
 
     it('registers the eight collections of sources.yml', () => {
         expect(COLLECTIONS).toEqual([
@@ -526,9 +653,26 @@ describe('the groups of the real config', () => {
     it('exposes the real rail order and the four configured flyout chords', () => {
         const order = railOrder(
             views().filter((view) => view.listed !== false),
-            realGroups()
+            realGroups(),
+            config.direct_chord as string,
+            realDocs()
         );
-        expect(order.direct.slice(0, 4)).toEqual(['focus', 'projects', 'coauthor', 'archive']);
+        // The direct list is what a digit after the direct chord counts into, so it is pinned whole:
+        // a group that grows past the group maximum leaves it, which is a keyboard change.
+        expect(order.direct).toEqual([
+            'focus',
+            'projects',
+            'coauthor',
+            'archive',
+            'programs',
+            'domains',
+            'map',
+            'radar',
+            'leads',
+            'inbox',
+            'linkedin'
+        ]);
+        expect(order.chords[config.direct_chord as string]).toEqual(order.direct);
         expect(order.all).toContain('funding');
         expect(order.chords.c).toEqual([
             'funding',
@@ -549,10 +693,16 @@ describe('the groups of the real config', () => {
             'agents'
         ]);
         expect(order.chords.s).toEqual(['venues', 'data', 'code', 'statements', 'files']);
-        expect(order.chords.y).toHaveLength(5);
-        expect(order.chords.y).toContain('status');
-        expect(order.chords.y).toContain('hpc');
-        expect(Object.keys(order.chords).sort()).toEqual(['c', 'm', 's', 'y']);
+        expect(order.chords.y).toEqual([
+            'status',
+            'findings',
+            'gallery',
+            'hpc',
+            'usage',
+            'help',
+            'config'
+        ]);
+        expect(Object.keys(order.chords).sort()).toEqual(['c', 'm', 's', 'v', 'y']);
     });
 
     it('puts the other two collections, Venues and Data under Sources', () => {

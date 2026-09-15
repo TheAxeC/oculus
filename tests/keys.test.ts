@@ -12,6 +12,7 @@ import {
     loadConfig,
     textCatalog
 } from '../src/lib/data/sources/config.ts';
+import { descriptionKey } from '../src/lib/views/config/files.ts';
 import { registerAll, registerCollections } from '../src/routes/views.ts';
 import { createClientState, type ClientState } from './client.ts';
 
@@ -40,17 +41,26 @@ const INDEX =
 /** The first argument when it is a plain string literal, and nothing when it is not. */
 const LITERAL = /^\s*(?:'([^'\\]*)'|"([^"\\]*)")\s*[,)]/;
 
-/** The two computed prefixes, with the file that computes each and the registered ids it covers. */
+/** The computed prefixes, with the file that computes each and the catalog keys it covers. */
 const COMPUTED_PREFIXES = [
     {
         file: 'lib/views/Collection.svelte',
         start: 'lookup(`views.${instance.view}`',
-        ids: () => collectionKeys(loadConfig(engineDir()).config)
+        keys: () => collectionKeys(loadConfig(engineDir()).config).map((id) => `views.${id}`)
     },
     {
         file: 'lib/views/Projects.svelte',
         start: 'lookup(`views.${preset.id}`',
-        ids: () => ['projects', 'coauthor', 'archive']
+        keys: () => ['projects', 'coauthor', 'archive'].map((id) => `views.${id}`)
+    },
+    {
+        // One description per file of the engine's config folder, keyed by the file's own name.
+        file: 'lib/views/Config.svelte',
+        start: 'lookup(descriptionKey(',
+        keys: () =>
+            readdirSync(join(engineDir(), 'config'))
+                .filter((name) => name.endsWith('.yml'))
+                .map((name) => descriptionKey(name))
     }
 ] as const;
 
@@ -165,7 +175,7 @@ describe('text keys', () => {
             allowed.add(registration.glyph);
         }
         for (const entry of COMPUTED_PREFIXES) {
-            for (const id of entry.ids()) allowed.add(`views.${id}`);
+            for (const key of entry.keys()) allowed.add(key);
         }
         const orphaned = Object.keys(catalog).filter((key) => !allowed.has(key));
         expect(orphaned).toEqual([]);

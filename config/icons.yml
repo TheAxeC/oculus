@@ -73,6 +73,7 @@ icons:
     detail: clipboard-list
     compass: compass
     editor: square-pen
+    settings: settings
     live: zap
     inbox: inbox
     memories: images

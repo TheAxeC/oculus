@@ -16,6 +16,7 @@ import {
 } from '../data/sources/config.ts';
 import type { Finding, Snapshot } from '../data/model.ts';
 import { mintToken } from './auth.ts';
+import { docFindings, layoutFile } from './docs.ts';
 import { Hub } from './channels.ts';
 import { RateLimiter, notifyConfig, type HookTarget } from './hooks.ts';
 import type { LogPaths } from './hpc/actions.ts';
@@ -130,7 +131,10 @@ export function createServerContext(
     // what is held. The drift between the map and the glyph vocabulary is a fact about this
     // install, so it is said once at startup rather than once per request.
     const icons: IconMemory = { set: iconSet(config) };
-    reportFindings(iconFindings(engine, config));
+    reportFindings([
+        ...iconFindings(engine, config),
+        ...docFindings(config, local.hub, layoutFile(engine))
+    ]);
     const portfolio = make.watchPortfolio(hub, { hub: local.hub, engine, icons });
 
     const folders = (): ProjectFolder[] => {

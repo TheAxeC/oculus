@@ -24,10 +24,13 @@ import {
     iconFindings,
     iconSet,
     loadConfig,
-    loadLocal
+    loadLocal,
+    textCatalog
 } from '../src/lib/data/sources/config.ts';
 import { readRoots, rootsFile } from '../src/lib/server/files.ts';
-import { GROUP_MAX, arrange, type NavGroup } from '../src/lib/shell/rail.ts';
+import { docFindings } from '../src/lib/server/docs.ts';
+import { descriptionKey } from '../src/lib/views/config/files.ts';
+import { arrange, isFlyout, type DocEntry, type NavGroup } from '../src/lib/shell/rail.ts';
 // Importing the route loader registers views; collection registrations use sources.yml keys.
 import { registerAll, registerCollections } from '../src/routes/views.ts';
 import { noop } from './doubles.ts';
@@ -53,6 +56,9 @@ function writeLocal(dir: string, body: string): void {
     writeFileSync(file, body);
 }
 
+/** Every description key opens with this, which is what makes an orphan one findable. */
+const DESC_PREFIX = 'config.desc_';
+
 const DEFAULT_ACCOUNTS = [
     { tool: 'claude', dir: join(homedir(), '.claude'), label: 'claude' },
     { tool: 'codex', dir: join(homedir(), '.codex'), label: 'codex' }
@@ -67,6 +73,110 @@ function writeConfig(engine: string, name: string, body: string): string {
     writeFileSync(file, body);
     return file;
 }
+
+describe('the documents of layout.yml against the disk', () => {
+    const FILE = '/engine/config/layout.yml';
+
+    /** A hub holding the files named, under the temporary directory. */
+    function hubWith(names: string[]): string {
+        const dir = scratch();
+        for (const name of names) {
+            const file = join(dir, name);
+            expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
+            mkdirSync(join(file, '..'), { recursive: true });
+            writeFileSync(file, '# One\n');
+        }
+        return dir;
+    }
+
+    it('reports nothing for a list whose every file is there, and nothing for no list at all', () => {
+        const hub = hubWith(['ONE.md', 'notes/two.md']);
+        const config = {
+            docs: [
+                { label: 'One', path: 'ONE.md', group: 'personal' },
+                { label: 'Two', path: 'notes/two.md', group: 'system' }
+            ]
+        };
+        expect(docFindings(config, hub, FILE)).toEqual([]);
+        expect(docFindings({}, hub, FILE)).toEqual([]);
+    });
+
+    it('reports a path with no file at it, naming the document and the file it is configured in', () => {
+        const hub = hubWith([]);
+        const found = docFindings(
+            { docs: [{ label: 'Gone', path: 'GONE.md', group: 'personal' }] },
+            hub,
+            FILE
+        );
+        expect(found).toHaveLength(1);
+        expect(found[0].file).toBe(FILE);
+        expect(found[0].key).toBe('Gone');
+        expect(found[0].message).toContain('this document draws nothing');
+    });
+
+    it('reports a path that leaves the hub rather than reading it', () => {
+        const hub = hubWith([]);
+        const found = docFindings(
+            { docs: [{ label: 'Out', path: '../elsewhere.md', group: 'personal' }] },
+            hub,
+            FILE
+        );
+        expect(found.map((finding) => finding.message)).toEqual([
+            'the path ../elsewhere.md is not inside the hub'
+        ]);
+    });
+
+    it('reports a group nav_groups does not name, a path that is not Markdown, and a directory', () => {
+        const hub = hubWith(['ONE.md', 'ONE.yml', 'notes/two.md']);
+        const groups = { nav_groups: { personal: { label: 'Personal' } } };
+        expect(
+            docFindings(
+                { ...groups, docs: [{ label: 'One', path: 'ONE.md', group: 'nowhere' }] },
+                hub,
+                FILE
+            ).map((one) => one.message)
+        ).toEqual(['nav_groups names no group nowhere; this document trails the groups']);
+        expect(
+            docFindings(
+                { ...groups, docs: [{ label: 'One', path: 'ONE.md', group: 'personal' }] },
+                hub,
+                FILE
+            )
+        ).toEqual([]);
+        expect(
+            docFindings(
+                { docs: [{ label: 'Yaml', path: 'ONE.yml', group: 'personal' }] },
+                hub,
+                FILE
+            )
+                .filter((one) => one.message.includes('Markdown'))
+                .map((one) => one.message)
+        ).toEqual(['ONE.yml is not a Markdown file; this document draws nothing']);
+        expect(
+            docFindings({ docs: [{ label: 'Dir', path: 'notes', group: 'personal' }] }, hub, FILE)
+                .filter((one) => one.message.includes('directory'))
+                .map((one) => one.message)
+        ).toEqual([`${join(hub, 'notes')} is a directory; this document draws nothing`]);
+    });
+
+    it('reports an entry that is not a list, a map, or three strings', () => {
+        const hub = hubWith([]);
+        expect(docFindings({ docs: 'ONE.md' }, hub, FILE).map((one) => one.message)).toEqual([
+            'docs is not a list'
+        ]);
+        expect(docFindings({ docs: ['ONE.md'] }, hub, FILE).map((one) => one.message)).toEqual([
+            'a document is not a map of label, path and group'
+        ]);
+        expect(
+            docFindings({ docs: [{ path: 'ONE.md' }] }, hub, FILE).map((one) => one.message)
+        ).toEqual(['a document names no label or no group']);
+        expect(
+            docFindings({ docs: [{ label: 'One', group: 'personal' }] }, hub, FILE).map(
+                (one) => one.message
+            )
+        ).toEqual(['the document names no path']);
+    });
+});
 
 describe('loadLocal', () => {
     let warn: MockInstance<typeof console.warn>;
@@ -390,6 +500,7 @@ describe("oculus's own config directory", () => {
             'tab_rollup',
             'nav_live',
             'bookmarks',
+            'docs',
             'focus_label_mode',
             'project_label_mode',
             'archive_label_mode',
@@ -406,7 +517,7 @@ describe("oculus's own config directory", () => {
             'programs_file',
             'domains_file',
             'collections',
-            'docs',
+            'inbox_file',
             'indexes',
             'leads_file',
             'radar_file',
@@ -448,8 +559,10 @@ describe("oculus's own config directory", () => {
         'views/agents.yml',
         'views/changes.yml',
         'views/collection.yml',
+        'views/config.yml',
         'views/data.yml',
         'views/deposit.yml',
+        'views/doc.yml',
         'views/document.yml',
         'views/domains.yml',
         'views/editor.yml',
@@ -458,6 +571,7 @@ describe("oculus's own config directory", () => {
         'views/findings.yml',
         'views/focus.yml',
         'views/gallery.yml',
+        'views/help.yml',
         'views/hpc.yml',
         'views/inbox.yml',
         'views/leads.yml',
@@ -608,6 +722,39 @@ describe("oculus's own config directory", () => {
         }
     });
 
+    it('names a group of its own and a path under the hub for every document', () => {
+        const { config } = loadConfig(engineDir());
+        const groups = Object.keys(config.nav_groups as Record<string, unknown>);
+        const docs = config.docs as { label: string; path: string; group: string }[];
+        expect(docs.map((entry) => entry.path)).toEqual([
+            'RESEARCH-APPROACH.md',
+            'AGENT-APPROACH.md',
+            'HPC-UTwente-howto.md'
+        ]);
+        for (const entry of docs) {
+            expect(groups).toContain(entry.group);
+            expect(entry.path.startsWith('/')).toBe(false);
+            expect(entry.path.includes('..')).toBe(false);
+            expect(entry.path.endsWith('.md')).toBe(true);
+            expect(entry.label.length).toBeGreaterThan(0);
+        }
+    });
+
+    it('writes one description for every config file and none for a file that is not there', () => {
+        const { config } = loadConfig(engineDir());
+        const catalog = textCatalog(config);
+        const dir = join(engineDir(), 'config');
+        const files = readdirSync(dir)
+            .filter((name) => name.endsWith('.yml'))
+            .sort();
+        const missing = files.filter((name) => !(descriptionKey(name) in catalog));
+        expect(missing).toEqual([]);
+        const described = Object.keys(catalog)
+            .filter((key) => key.startsWith(DESC_PREFIX))
+            .sort();
+        expect(described).toEqual(files.map((name) => descriptionKey(name)).sort());
+    });
+
     it('keeps boards separate from the configured Pillars group', () => {
         const { config } = loadConfig(engineDir());
         const groups = config.nav_groups as Record<string, { label: string; glyph?: string }>;
@@ -703,13 +850,14 @@ describe("oculus's own config directory", () => {
         const groups = Object.entries(raw).map(([id, group]) => ({ id, ...group }));
         const sections = arrange(
             views().filter((view) => view.listed !== false),
-            groups
+            groups,
+            config.docs as DocEntry[]
         );
-        // A group of more than GROUP_MAX views is one button with a list beside it, so it needs a
-        // mark of its own and a letter to reach it by; this holds for whichever groups those are.
-        const flyouts = sections.filter(
-            (section) => section.label !== null && section.items.length > GROUP_MAX
-        );
+        // A group of more entries than the group maximum, its documents counted, is one button with a list
+        // beside it, so it needs a mark of its own and a letter to reach it by: a group drawn as
+        // buttons is reached through the direct chord, and one drawn as a list is reached only
+        // through its own. This holds for whichever groups those are.
+        const flyouts = sections.filter(isFlyout);
         expect(flyouts.map((section) => section.label)).toEqual([
             'Sessions',
             'Academic life',

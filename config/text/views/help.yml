@@ -1,0 +1,8 @@
+# Oculus text owned by the help view: the tool's own manual, tools/oculus/HELP.md.
+text:
+    help:
+        failed: 'The manual could not be read: {0}'
+        loading: Reading the manual...
+    views:
+        help: Help
+        help_glyph: question

@@ -1,5 +1,5 @@
-// The documents the project view reads: one request per project and name, what is held between
-// renders, and what a new version on the `files` channel does to it.
+// The documents the views read: one request per project and name, per hub path and for the manual,
+// what is held between renders, and what a new version on the `files` channel does to it.
 //
 // Nothing here touches the network or the real hub: `fetch` is a stub that records the URL it was
 // given and answers what the case wants. What this does NOT cover: the endpoint itself, which is
@@ -10,12 +10,14 @@ import { createClientState, type ClientState } from '../client.ts';
 
 let client: ClientState;
 let document: ClientState['docs']['document'];
+let hubDocument: ClientState['docs']['hubDocument'];
+let manual: ClientState['docs']['manual'];
 let invalidate: ClientState['docs']['invalidate'];
 let receive: ClientState['entities']['receive'];
 
 beforeEach(() => {
     client = createClientState();
-    ({ document, invalidate } = client.docs);
+    ({ document, hubDocument, invalidate, manual } = client.docs);
     ({ receive } = client.entities);
 });
 
@@ -107,5 +109,65 @@ describe('the documents of a project', () => {
         expect(document('foxtrot', '').loading).toBe(false);
         await settle();
         expect(asked).toEqual([]);
+    });
+});
+
+describe('the documents that belong to no project', () => {
+    it('asks for one hub document by its path and holds the answer', async () => {
+        serving({ status: 200, body: { html: '<h1>Approach</h1>', frontmatter: null } });
+        receive({ channel: 'files', version: 1, payload: { root: '/hub' } });
+
+        expect(hubDocument('RESEARCH-APPROACH.md').loading).toBe(true);
+        await settle();
+
+        expect(hubDocument('RESEARCH-APPROACH.md').html).toBe('<h1>Approach</h1>');
+        expect(asked).toEqual(['/api/docs?hub=RESEARCH-APPROACH.md']);
+    });
+
+    it("keeps a hub document apart from a project whose id is hub, and survives that project's invalidation", async () => {
+        serving({ status: 200, body: { html: '<p>held</p>', frontmatter: null } });
+        document('hub', 'README.md');
+        hubDocument('README.md');
+        await settle();
+        expect(asked).toEqual(['/api/docs?project=hub&name=README.md', '/api/docs?hub=README.md']);
+
+        invalidate('hub');
+        expect(document('hub', 'README.md').loading).toBe(true);
+        expect(hubDocument('README.md').html).toBe('<p>held</p>');
+    });
+
+    it('escapes a path with a separator in it, and asks once for it', async () => {
+        serving({ status: 200, body: { html: '<h1>Notes</h1>', frontmatter: null } });
+        hubDocument('notes/one.md');
+        await settle();
+        hubDocument('notes/one.md');
+        await settle();
+
+        expect(asked).toEqual(['/api/docs?hub=notes%2Fone.md']);
+    });
+
+    it('asks nothing for an empty path', () => {
+        serving({ status: 200, body: { html: '', frontmatter: null } });
+        expect(hubDocument('').loading).toBe(false);
+        expect(asked).toEqual([]);
+    });
+
+    it('asks for the manual without a path, and holds it apart from the hub documents', async () => {
+        serving({ status: 200, body: { html: '<h1>Oculus</h1>', frontmatter: null } });
+        expect(manual().loading).toBe(true);
+        await settle();
+
+        expect(manual().html).toBe('<h1>Oculus</h1>');
+        expect(asked).toEqual(['/api/docs?manual=1']);
+    });
+
+    it('says what a refused read failed with', async () => {
+        serving({ status: 404, body: { error: 'document does not exist' } });
+        hubDocument('nothing.md');
+        await settle();
+
+        const held = hubDocument('nothing.md');
+        expect(held.error).toBe('document does not exist');
+        expect(held.loading).toBe(false);
     });
 });

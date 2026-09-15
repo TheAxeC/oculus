@@ -34,9 +34,11 @@ function typeRules(file: string): string {
 
 const VIEWS: Record<string, string> = {
     'Collection.svelte': '.label=fs-xxs | .said=fs-md | .sub=fs-md',
+    'Config.svelte': '.intro, .desc=fs-md | .raw=fs-sm',
     'Data.svelte': '.said, .empty=fs-md',
     'Deposit.svelte':
         '.lb=fs-xs | .mt=fs-sm | .grp-h=fs-xs | .none=fs-md | .warn=fs-md | .outcome=fs-md',
+    'Doc.svelte': '',
     'Document.svelte': '',
     'File.svelte': '.download=fs-sm | .note=fs-sm',
     'Files.svelte': '.note=fs-sm',
@@ -49,6 +51,7 @@ const VIEWS: Record<string, string> = {
     'Findings.svelte': '.view=fs-md | .file, .key=fs-sm',
     'Focus.svelte': '.said=fs-md | .wait-head, .seg-lbl=fs-xs',
     'Gallery.svelte': 'h3=fs-xs',
+    'Help.svelte': '',
     'Hpc.svelte': 'footer=fs-sm',
     'Usage.svelte':
         '.window-name, .live-row=fs-sm | .refresher=fs-xs | .live h3, .history h2=fs-sm | .session=fs-xs',
@@ -143,6 +146,8 @@ const VIEWS: Record<string, string> = {
     'shared/EditBar.svelte': '.edit-bar=fs-sm',
     'shared/EntryForm.svelte': '.label=fs-xs | .said=fs-md',
     'shared/Intro.svelte': '.intro=fs-md',
+    'shared/Markdown.svelte':
+        '.note=fs-md | .doc=fs-md | .doc :global(h1)=fs-3xl | .doc :global(h2)=fs-2xl | .doc :global(h3)=fs-xl | .doc :global(h4)=fs-md | .doc :global(code)=fs-sm | .doc :global(table)=fs-md',
     'shared/NewIdeaForm.svelte': '',
     'shared/ProjectCard.svelte':
         '.folder=fs-xs | .venue, .authors=fs-sm | .eli5 p=fs-md | .next, .waiting, .ghostmsg=fs-sm | .label=fs-xxs',

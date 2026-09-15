@@ -6,7 +6,7 @@
 # ===========================================================================
 
 
-# The rail's groups are drawn in this order. A view names its group and position in its registration. A group with no registered views is not drawn. A group holding more than four views is one labelled button with a flyout. `glyph` is the flyout button's glyph name, and `chord` is its optional one-letter keyboard prefix.
+# The rail's groups are drawn in this order. A view names its group and position in its registration. A group with no registered views is not drawn. A group holding more than four entries, its views and its documents together, is one labelled button with a flyout, reached only by its `chord`. `glyph` is the flyout button's glyph name, and `chord` is its optional one-letter keyboard prefix.
 nav_groups:
   boards: { label: "Boards" }
   structure: { label: "Pillars", glyph: program }
@@ -110,3 +110,10 @@ map_label_mode: short        # Map tab nodes
 bookmarks:
   - { label: "cathedra manual",    root: cathedra,    path: docs/user/manual.html }
   - { label: "game-engine manual", root: game-engine, path: docs/user/manual.html }
+
+
+# Hub documents in the rail - one button inside its group, drawn after the group's views, opening the `doc` view over api/docs. `path` is relative to the research hub, `group` is a key of `nav_groups` above, and `label` is the tab's words. A path with no file there draws the view's own missing line.
+docs:
+  - { label: "Research approach", path: RESEARCH-APPROACH.md, group: personal }
+  - { label: "Agent approach",    path: AGENT-APPROACH.md,    group: personal }
+  - { label: "HPC how-to",        path: HPC-UTwente-howto.md, group: system }

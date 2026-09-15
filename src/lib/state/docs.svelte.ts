@@ -1,10 +1,12 @@
-// Layer 2, client state. The documents the project view shows, one entry per project and name.
+// Layer 2, client state. The documents the views draw: a project's, one of the hub's own, and the
+// manual, each held under a key of its own.
 //
 // DESIGN.md's wire model keeps documents out of the snapshot, so a document is fetched rather than
 // selected: document(id, name) asks api/docs the first time a pair is wanted and holds the answer,
-// and every later call for that pair reads what is held. The fetch is scheduled on a microtask
-// rather than run inside the call, so reading this from a $derived never writes state while a
-// derived is running.
+// and every later call for that pair reads what is held. hubDocument(path) and manual() are the same
+// rule over the other two shapes the endpoint answers. The fetch is scheduled on a microtask rather
+// than run inside the call, so reading this from a $derived never writes state while a derived is
+// running.
 //
 // The `files` channel's version is what makes a document stale: the git watcher publishes on it
 // each time it re-reads a root, which is every write under a folder it watches, so an edited README
@@ -33,8 +35,19 @@ const NOTHING: DocState = { html: '', frontmatter: null, error: '', loading: fal
 /** One rendered document per project and name, held for one client. */
 export type DocsStore = {
     document: (id: string, name: string) => DocState;
+    /** One Markdown document of the hub, by its path relative to the hub. */
+    hubDocument: (path: string) => DocState;
+    /** Oculus's own manual, which the server reads from the engine directory. */
+    manual: () => DocState;
     invalidate: (id: string) => void;
 };
+
+/** The endpoint every document is read at. */
+const DOCS = '/api/docs';
+
+/** What the two documents that are not a project's are held under; a project id holds no bar. */
+const HUB = 'hub';
+const MANUAL = 'manual';
 
 export function createDocs(entities: EntitiesStore): DocsStore {
     const held: Record<string, DocState | undefined> = $state({});
@@ -45,9 +58,19 @@ export function createDocs(entities: EntitiesStore): DocsStore {
     /** The pairs with a request in flight, so a second render does not send a second request. */
     const inflight = new Set<string>();
 
-    /** A project id is a folder basename and a name is one of four literals, so neither holds a bar. */
+    /**
+     * What one document is held under. A project id is a folder basename and a name is one of four
+     * literals, so neither holds a bar. The hub's documents and the manual are held under a key that
+     * opens with a bar, which no project's key does since an id is never empty, so a project folder
+     * named `hub` or `manual` is a different key and invalidating it leaves them alone.
+     */
     function keyOf(id: string, name: string): string {
         return `${id}|${name}`;
+    }
+
+    /** The key of a document that belongs to no project. */
+    function ownKey(kind: string, name: string): string {
+        return `|${kind}|${name}`;
     }
 
     /** The version of the `files` channel, or 0 before a write has been seen under any watched root. */
@@ -61,10 +84,28 @@ export function createDocs(entities: EntitiesStore): DocsStore {
      */
     function document(id: string, name: string): DocState {
         if (id === '' || name === '') return NOTHING;
-        const key = keyOf(id, name);
+        return reading(
+            keyOf(id, name),
+            `${DOCS}?project=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}`
+        );
+    }
+
+    /** One Markdown document of the hub, by the path the rail's `docs:` entry names. */
+    function hubDocument(path: string): DocState {
+        if (path === '') return NOTHING;
+        return reading(ownKey(HUB, path), `${DOCS}?hub=${encodeURIComponent(path)}`);
+    }
+
+    /** The manual, which is one document and takes no path. */
+    function manual(): DocState {
+        return reading(ownKey(MANUAL, MANUAL), `${DOCS}?${MANUAL}=1`);
+    }
+
+    /** What is held for one address, asking for it when nothing is held or the version moved. */
+    function reading(key: string, url: string): DocState {
         const doc = held[key];
         const at = version();
-        if (doc === undefined || versions[key] !== at) request(id, name, at);
+        if (doc === undefined || versions[key] !== at) request(key, url, at);
         return doc ?? PENDING;
     }
 
@@ -82,26 +123,24 @@ export function createDocs(entities: EntitiesStore): DocsStore {
     }
 
     /** Schedule one fetch, off the caller's stack so no state is written inside a derived. */
-    function request(id: string, name: string, at: number): void {
-        const key = keyOf(id, name);
+    function request(key: string, url: string, at: number): void {
         if (inflight.has(key)) return;
         inflight.add(key);
         queueMicrotask(() => {
-            void load(id, name, at);
+            void load(key, url, at);
         });
     }
 
-    async function load(id: string, name: string, at: number): Promise<void> {
-        const key = keyOf(id, name);
+    async function load(key: string, url: string, at: number): Promise<void> {
         try {
             // A version that moved is the project's documents changing, not this pair's alone: the
             // snapshot says nothing about which file was written.
+            const id = key.slice(0, key.indexOf('|'));
             if (versions[key] !== undefined && versions[key] !== at) invalidate(id);
             versions[key] = at;
             // There is no fetch while the page is rendered on the server, and nothing to show there
             // either: the pair stays pending and the browser asks for it on the first client render.
             if (typeof fetch !== 'function') return;
-            const url = `/api/docs?project=${encodeURIComponent(id)}&name=${encodeURIComponent(name)}`;
             const response = await fetch(url);
             const body = (await response.json()) as {
                 html?: string;
@@ -135,5 +174,5 @@ export function createDocs(entities: EntitiesStore): DocsStore {
         return value as Record<string, unknown>;
     }
 
-    return { document, invalidate };
+    return { document, hubDocument, manual, invalidate };
 }
