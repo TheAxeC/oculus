@@ -24,6 +24,42 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 
 ```yaml
 dispatch:                                  # D4 + D21 + Q23, the set of three cut at 8757baa8 plus the preparation commit; Q21 waits for D4 (both edit context.ts, pty/routes.ts, files.ts)
+- package: D4
+  worker: claude:opus
+  worktree: .agents/worktrees/d4
+  base: 542d0895
+  launched: 2026-09-16T01:17+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D4/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D4/report.md
+  exit: none
+  pid: none
+  session_id: pending                    # the Agent tool's id, written the moment it is returned
+  landing: not-started
+- package: D21
+  worker: claude:opus
+  worktree: .agents/worktrees/d21
+  base: 542d0895
+  launched: 2026-09-16T01:17+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D21/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D21/report.md
+  exit: none
+  pid: none
+  session_id: pending                    # the Agent tool's id, written the moment it is returned
+  landing: not-started
+- package: Q23
+  worker: claude:opus
+  worktree: .agents/worktrees/q23
+  base: 542d0895
+  launched: 2026-09-16T01:17+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q23/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q23/report.md
+  exit: none
+  pid: none
+  session_id: pending                    # the Agent tool's id, written the moment it is returned
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
