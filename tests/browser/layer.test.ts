@@ -1,5 +1,6 @@
-// The two facts tests/browser/layer.ts holds for the browser layer, over a tree made in a temporary
-// directory: a build that no longer describes its source is refused, and what a run made is removed.
+// The facts tests/browser/layer.ts holds for the browser layer, over a tree made in a temporary
+// directory: a build that no longer describes its source is refused, the copy of the config folder
+// carries no machine-local file, and what a run made is removed.
 //
 // This is a vitest file rather than a spec: Playwright's testMatch is `*.spec.ts`, so the browser
 // layer never collects it and it never starts a server.
@@ -17,12 +18,14 @@ import { join, resolve, sep } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
     buildState,
+    copyConfig,
     newest,
     removeLeftovers,
     removeOnExit,
     removePaths,
     takeLock
 } from './layer.ts';
+import { LOCAL_NAME } from '../../src/lib/data/sources/config.ts';
 
 let dir = '';
 
@@ -73,6 +76,21 @@ describe('buildState', () => {
         put('src/node_modules/late/index.js', 1_000_900);
         expect(buildState(dir).current).toBe(true);
         expect(newest(join(dir, 'src')).at).toBe(0);
+    });
+});
+
+describe('the config copy', () => {
+    it('copies the folder whole and leaves the machine own file behind', () => {
+        put('config/layout.yml', 1_000_000);
+        put('config/text/app.yml', 1_000_000);
+        put(`config/${LOCAL_NAME}`, 1_000_000);
+        const into = join(dir, 'copy');
+
+        copyConfig(join(dir, 'config'), into);
+
+        expect(existsSync(join(into, 'layout.yml'))).toBe(true);
+        expect(existsSync(join(into, 'text', 'app.yml'))).toBe(true);
+        expect(existsSync(join(into, LOCAL_NAME))).toBe(false);
     });
 });
 

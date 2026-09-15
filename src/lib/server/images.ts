@@ -13,7 +13,7 @@ import { createReadStream, readdirSync, statSync } from 'node:fs';
 import { extname, join, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
 import { byKey } from '../data/guards.ts';
-import { loadConfig, loadLocal } from '../data/sources/config.ts';
+import { loadConfig, loadLocalOrDefaults } from '../data/sources/config.ts';
 import { allowedOrigin } from './auth.ts';
 
 /** The extensions a picture folder is filtered to, and the type each one is served as. */
@@ -100,7 +100,7 @@ export function folderOf(
     if (typeof block !== 'object' || block === null || Array.isArray(block)) return null;
     const held = block as Record<string, unknown>;
     if (typeof held.dir !== 'string' || held.dir === '') return null;
-    const hub = loadLocal(engine).hub;
+    const hub = loadLocalOrDefaults(engine).hub;
     const dir = resolve(hub, held.dir);
     if (!inside(dir, hub)) {
         const key = `directory:${dir}`;

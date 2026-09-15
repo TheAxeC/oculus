@@ -144,6 +144,10 @@ describe('the manual itself', () => {
         expect(paragraph).toHaveLength(1);
         const missing = keys.filter((key) => !paragraph[0].includes(`\`${key}\``));
         expect(missing).toEqual([]);
+        // Where the file is, and which keys a running server would have to be restarted to pick up.
+        expect(paragraph[0]).toContain('`config/` folder');
+        expect(paragraph[0]).toContain('read once when the server starts');
+        expect(paragraph[0]).toContain('read again on every write');
     });
 
     it('names the machine-local file, the checks and where the hub comes from', () => {

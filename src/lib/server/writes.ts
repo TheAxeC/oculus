@@ -29,7 +29,7 @@ import {
     configDir,
     engineDir,
     loadConfig,
-    loadLocal
+    loadLocalOrDefaults
 } from '../data/sources/config.ts';
 import { hasToken, sameOrigin } from './auth.ts';
 import { changeAt, defaultChangesPath, logChanges, pathOf } from './changes.ts';
@@ -179,7 +179,7 @@ function json(status: number, body: unknown): Response {
  */
 export function target(server?: { hub: HubLike; fsWrites: FsWrites }): WriteTarget {
     const engine = engineDir();
-    const local = loadLocal(engine);
+    const local = loadLocalOrDefaults(engine);
     const merged = loadConfig(engine).config;
     return {
         hub: local.hub,

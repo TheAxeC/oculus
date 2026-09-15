@@ -1,50 +1,23 @@
-// loadLocal and loadConfig against synthetic files in a temporary directory.
+// loadLocal, checkLocal and loadConfig against synthetic files in a temporary directory. The config
+// folder oculus ships is read by tests/config-folder.test.ts.
 
-import {
-    existsSync,
-    mkdirSync,
-    mkdtempSync,
-    readFileSync,
-    readdirSync,
-    rmSync,
-    writeFileSync
-} from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { parse } from 'yaml';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockInstance } from 'vitest';
 import {
     DEFAULT_PORT,
-    asciiCatalog,
-    collectionKeys,
+    LOCAL_NAME,
+    checkLocal,
     configDir,
-    engineDir,
-    glyphCatalog,
-    iconCatalog,
-    iconFindings,
-    iconSet,
     loadConfig,
-    loadLocal,
-    textCatalog
+    loadLocal
 } from '../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../src/lib/data/index.ts';
-import { readRoots, rootsFile } from '../src/lib/server/files.ts';
-import { docFindings } from '../src/lib/server/docs.ts';
-import { descriptionKey } from '../src/lib/views/config/files.ts';
-import { arrange, isFlyout, type DocEntry, type NavGroup } from '../src/lib/shell/rail.ts';
-// Importing the route loader registers views; collection registrations use sources.yml keys.
-import { registerAll, registerCollections } from '../src/routes/views.ts';
+import { ENGINE_ROOT, engineRoot, rootsFile } from '../src/lib/server/files.ts';
+import { layoutFile } from '../src/lib/server/docs.ts';
 import { noop } from './doubles.ts';
-import { createClientState, type ClientState } from './client.ts';
-
-let client: ClientState;
-let views: ClientState['registry']['views'];
-
-beforeEach(() => {
-    client = createClientState();
-    ({ views } = client.registry);
-});
 
 function scratch(): string {
     const dir = mkdtempSync(join(tmpdir(), 'oculus-config-'));
@@ -52,14 +25,14 @@ function scratch(): string {
     return dir;
 }
 
+/** The machine's own file where loadLocal reads it by default: inside the engine's config folder. */
 function writeLocal(dir: string, body: string): void {
-    const file = join(dir, 'local.yml');
+    const folder = join(dir, 'config');
+    const file = join(folder, LOCAL_NAME);
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
+    mkdirSync(folder, { recursive: true });
     writeFileSync(file, body);
 }
-
-/** Every description key opens with this, which is what makes an orphan one findable. */
-const DESC_PREFIX = 'config.desc_';
 
 const DEFAULT_ACCOUNTS = [
     { tool: 'claude', dir: join(homedir(), '.claude'), label: 'claude' },
@@ -75,110 +48,6 @@ function writeConfig(engine: string, name: string, body: string): string {
     writeFileSync(file, body);
     return file;
 }
-
-describe('the documents of layout.yml against the disk', () => {
-    const FILE = '/engine/config/layout.yml';
-
-    /** A hub holding the files named, under the temporary directory. */
-    function hubWith(names: string[]): string {
-        const dir = scratch();
-        for (const name of names) {
-            const file = join(dir, name);
-            expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
-            mkdirSync(join(file, '..'), { recursive: true });
-            writeFileSync(file, '# One\n');
-        }
-        return dir;
-    }
-
-    it('reports nothing for a list whose every file is there, and nothing for no list at all', () => {
-        const hub = hubWith(['ONE.md', 'notes/two.md']);
-        const config = {
-            docs: [
-                { label: 'One', path: 'ONE.md', group: 'personal' },
-                { label: 'Two', path: 'notes/two.md', group: 'system' }
-            ]
-        };
-        expect(docFindings(config, hub, FILE)).toEqual([]);
-        expect(docFindings({}, hub, FILE)).toEqual([]);
-    });
-
-    it('reports a path with no file at it, naming the document and the file it is configured in', () => {
-        const hub = hubWith([]);
-        const found = docFindings(
-            { docs: [{ label: 'Gone', path: 'GONE.md', group: 'personal' }] },
-            hub,
-            FILE
-        );
-        expect(found).toHaveLength(1);
-        expect(found[0].file).toBe(FILE);
-        expect(found[0].key).toBe('Gone');
-        expect(found[0].message).toContain('this document draws nothing');
-    });
-
-    it('reports a path that leaves the hub rather than reading it', () => {
-        const hub = hubWith([]);
-        const found = docFindings(
-            { docs: [{ label: 'Out', path: '../elsewhere.md', group: 'personal' }] },
-            hub,
-            FILE
-        );
-        expect(found.map((finding) => finding.message)).toEqual([
-            'the path ../elsewhere.md is not inside the hub'
-        ]);
-    });
-
-    it('reports a group nav_groups does not name, a path that is not Markdown, and a directory', () => {
-        const hub = hubWith(['ONE.md', 'ONE.yml', 'notes/two.md']);
-        const groups = { nav_groups: { personal: { label: 'Personal' } } };
-        expect(
-            docFindings(
-                { ...groups, docs: [{ label: 'One', path: 'ONE.md', group: 'nowhere' }] },
-                hub,
-                FILE
-            ).map((one) => one.message)
-        ).toEqual(['nav_groups names no group nowhere; this document trails the groups']);
-        expect(
-            docFindings(
-                { ...groups, docs: [{ label: 'One', path: 'ONE.md', group: 'personal' }] },
-                hub,
-                FILE
-            )
-        ).toEqual([]);
-        expect(
-            docFindings(
-                { docs: [{ label: 'Yaml', path: 'ONE.yml', group: 'personal' }] },
-                hub,
-                FILE
-            )
-                .filter((one) => one.message.includes('Markdown'))
-                .map((one) => one.message)
-        ).toEqual(['ONE.yml is not a Markdown file; this document draws nothing']);
-        expect(
-            docFindings({ docs: [{ label: 'Dir', path: 'notes', group: 'personal' }] }, hub, FILE)
-                .filter((one) => one.message.includes('directory'))
-                .map((one) => one.message)
-        ).toEqual([`${join(hub, 'notes')} is a directory; this document draws nothing`]);
-    });
-
-    it('reports an entry that is not a list, a map, or three strings', () => {
-        const hub = hubWith([]);
-        expect(docFindings({ docs: 'ONE.md' }, hub, FILE).map((one) => one.message)).toEqual([
-            'docs is not a list'
-        ]);
-        expect(docFindings({ docs: ['ONE.md'] }, hub, FILE).map((one) => one.message)).toEqual([
-            'a document is not a map of label, path and group'
-        ]);
-        expect(
-            docFindings({ docs: [{ path: 'ONE.md' }] }, hub, FILE).map((one) => one.message)
-        ).toEqual(['a document names no label or no group']);
-        expect(
-            docFindings({ docs: [{ label: 'One', group: 'personal' }] }, hub, FILE).map(
-                (one) => one.message
-            )
-        ).toEqual(['the document names no path']);
-    });
-});
 
 describe('loadLocal', () => {
     let warn: MockInstance<typeof console.warn>;
@@ -211,6 +80,19 @@ describe('loadLocal', () => {
             claudeBin: 'claude',
             accounts: DEFAULT_ACCOUNTS
         });
+    });
+
+    it('reads the file inside the config folder and not one beside it', () => {
+        const dir = scratch();
+        writeLocal(dir, 'hub: /srv/in-the-config-folder\n');
+        writeFileSync(join(dir, LOCAL_NAME), 'hub: /srv/beside-the-config-folder\n');
+        expect(loadLocal(dir).hub).toBe('/srv/in-the-config-folder');
+    });
+
+    it('resolves a relative hub against the engine directory rather than the config folder', () => {
+        const dir = scratch();
+        writeLocal(dir, 'hub: demo\n');
+        expect(loadLocal(dir).hub).toBe(join(dir, 'demo'));
     });
 
     it('reports an unknown key once and ignores it', () => {
@@ -368,6 +250,102 @@ describe('loadLocal', () => {
     });
 });
 
+// The check the source endpoint makes before it writes the machine's own file. Every rule loadLocal
+// has is one case here, since a body this accepts is a body the next read must accept.
+describe('checkLocal', () => {
+    let warn: MockInstance<typeof console.warn>;
+
+    beforeEach(() => {
+        warn = vi.spyOn(console, 'warn').mockImplementation(noop);
+    });
+
+    afterEach(() => {
+        warn.mockRestore();
+    });
+
+    it('accepts a body the reader would read, and says nothing about an unknown key', () => {
+        expect(checkLocal('')).toBeNull();
+        expect(checkLocal('# only a comment\n')).toBeNull();
+        expect(
+            checkLocal(
+                [
+                    'hub: /srv/research-hub',
+                    'port: 8791',
+                    'hpc_host: cluster',
+                    'claude_bin: /opt/claude',
+                    'sessions_cache: /tmp/cache.json',
+                    'sessions_overrides: overrides.json',
+                    'workspaces: /tmp/workspaces.json',
+                    'bookmarks: /tmp/bookmarks.yml',
+                    'notes: /tmp/notes',
+                    'changes: /tmp/changes.jsonl',
+                    'accounts:',
+                    '  - { tool: claude, dir: ~/.claude, label: Work }',
+                    '  - { tool: codex, dir: /tmp/codex, label: Codex }',
+                    ''
+                ].join('\n')
+            )
+        ).toBeNull();
+        expect(checkLocal('colour: teal\n')).toBeNull();
+        expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('names the file and the rule for every value the reader would throw over', () => {
+        const cases: [string, RegExp][] = [
+            ['- one\n- two\n', /expected a map of keys/],
+            ['hub: 4\n', /hub must be a path/],
+            ["hub: ''\n", /hub must be a path/],
+            ['port: eight\n', /port must be an integer/],
+            ['port: 8790.5\n', /port must be an integer/],
+            ['hpc_host: 0\n', /hpc_host must be a non-empty string/],
+            ['claude_bin: 0\n', /claude_bin must be a non-empty string/],
+            ['sessions_cache: 1\n', /sessions_cache must be a path/],
+            ['sessions_overrides: 1\n', /sessions_overrides must be a path/],
+            ['workspaces: 1\n', /workspaces must be a path/],
+            ['bookmarks: 1\n', /bookmarks must be a path/],
+            ['notes: 1\n', /notes must be a path/],
+            ['changes: 1\n', /changes must be a path/],
+            ['accounts: 1\n', /accounts must be a list/],
+            ['accounts: [one]\n', /accounts\[0\] must be a map/],
+            ['accounts: [{ tool: gemini, dir: a, label: b }]\n', /tool must be claude or codex/],
+            ['accounts: [{ tool: claude, label: b }]\n', /dir must be a path/],
+            ['accounts: [{ tool: claude, dir: a }]\n', /label must be words/],
+            [
+                'accounts: [{ tool: claude, dir: a, label: Work }, { tool: claude, dir: b, label: work }]\n',
+                /duplicates a Claude label/
+            ]
+        ];
+        for (const [body, rule] of cases) {
+            // A body the check accepts answers null, which is the empty string here and matches
+            // neither, so an accepted body fails the case rather than skipping it.
+            const sentence = checkLocal(body) ?? '';
+            expect(sentence, body).toMatch(rule);
+            expect(sentence, body).toContain(`${LOCAL_NAME}: `);
+        }
+        expect(warn).not.toHaveBeenCalled();
+    });
+
+    it('gives a body that is not YAML by one line, and takes the name it is asked for', () => {
+        const sentence = checkLocal('hub: "unterminated\n  - [\n') ?? '';
+        expect(sentence).not.toBe('');
+        expect(sentence.includes('\n')).toBe(false);
+        expect(checkLocal('port: eight\n', 'config/local.yml')).toMatch(
+            /^config\/local\.yml: port must be an integer/
+        );
+    });
+
+    it('is the rule loadLocal reads by, so an accepted body is read and a refused one throws', () => {
+        const dir = scratch();
+        writeLocal(dir, 'port: 8791\n');
+        expect(checkLocal('port: 8791\n')).toBeNull();
+        expect(loadLocal(dir).port).toBe(8791);
+
+        writeLocal(dir, 'port: eight\n');
+        expect(checkLocal('port: eight\n')).not.toBeNull();
+        expect(() => loadLocal(dir)).toThrow(/port must be an integer/);
+    });
+});
+
 describe('OCULUS_CONFIG', () => {
     afterEach(() => {
         delete process.env.OCULUS_CONFIG;
@@ -392,6 +370,18 @@ describe('OCULUS_CONFIG', () => {
         expect(portfolioConfigFrom(loadConfig(engine).config, engine).deckFile).toBe(
             join(named, 'present.yml')
         );
+    });
+
+    it('is the folder the engine root serves and the file a root finding names', () => {
+        // The page lists and saves through that root, so a run pointed at a copy never reaches the
+        // checkout's own folder, and the machine's own local.yml it lists is the one loadLocal read.
+        const engine = scratch();
+        const named = join(scratch(), 'config');
+        mkdirSync(named, { recursive: true });
+        process.env.OCULUS_CONFIG = named;
+        expect(engineRoot(engine)).toEqual({ key: ENGINE_ROOT, dir: named });
+        expect(rootsFile(engine)).toBe(join(named, 'sources.yml'));
+        expect(layoutFile(engine)).toBe(join(named, 'layout.yml'));
     });
 
     it('resolves a relative directory against the engine', () => {
@@ -481,6 +471,25 @@ describe('loadConfig', () => {
         ]);
     });
 
+    it('leaves the machine own file out of the merge, clashing key and all', () => {
+        const engine = scratch();
+        writeConfig(engine, 'behavior.yml', 'stale_days: 30\n');
+        writeConfig(engine, LOCAL_NAME, 'hub: /srv/research-hub\nstale_days: 7\n');
+
+        const { config, findings } = loadConfig(engine);
+        expect(Object.keys(config)).toEqual(['stale_days']);
+        expect(config.stale_days).toBe(30);
+        expect(findings).toEqual([]);
+        // The same file is the one loadLocal reads, so nothing about it is unreadable, only unmerged.
+        // It warns about the merged key it carries, which is this case's own doing and is not printed.
+        const warn = vi.spyOn(console, 'warn').mockImplementation(noop);
+        try {
+            expect(loadLocal(engine).hub).toBe('/srv/research-hub');
+        } finally {
+            warn.mockRestore();
+        }
+    });
+
     it('reports a missing config directory and returns an empty map', () => {
         const engine = scratch();
         const { config, findings } = loadConfig(engine);
@@ -497,479 +506,3 @@ describe('loadConfig', () => {
 });
 
 // The root files and owner catalog fragments that ship with the tool, read as the server reads them.
-describe("oculus's own config directory", () => {
-    /** Every non-text top-level key, by its root config file. */
-    const EXPECTED: Record<string, string[]> = {
-        'appearance.yml': ['themes', 'wallpaper', 'memories', 'crt', 'terminal'],
-        'present.yml': ['deck'],
-        'behavior.yml': [
-            'read_limits',
-            'stale_days',
-            'context_window',
-            'usage_tiers',
-            'usage_refresh_min',
-            'usage_refresh_model',
-            'data_domains',
-            'waiting_status',
-            'audit_ignore',
-            'stale_lag_days',
-            'refresh_stale_days',
-            'deadline_horizon_days',
-            'leads_horizon_days',
-            'conf_horizon_months',
-            'leads_badge_days',
-            'venue_conc_warn',
-            'linkedin_cadence_days',
-            'file_index',
-            'slurm',
-            'chat',
-            'notify',
-            'notes',
-            'changes',
-            'git'
-        ],
-        'glyphs.yml': ['glyphs', 'ascii'],
-        'icons.yml': ['icons'],
-        'layout.yml': [
-            'nav_groups',
-            'direct_chord',
-            'arrangements',
-            'board',
-            'tab_split',
-            'tab_rollup',
-            'nav_live',
-            'bookmarks',
-            'docs',
-            'focus_label_mode',
-            'project_label_mode',
-            'archive_label_mode',
-            'map_label_mode'
-        ],
-        'manifest-schema.yml': ['manifest_schema'],
-        'meta.yml': ['meta'],
-        'sources.yml': [
-            'editable_extensions',
-            'viewable_extensions',
-            'scan',
-            'venues_file',
-            'datasets_file',
-            'programs_file',
-            'domains_file',
-            'collections',
-            'inbox_file',
-            'indexes',
-            'leads_file',
-            'radar_file',
-            'publications_file',
-            'linkedin_dir',
-            'career_file',
-            'roots'
-        ],
-        'vocab.yml': [
-            'palette',
-            'domains',
-            'type_color',
-            'type_order',
-            'status_legend',
-            'status_palette',
-            'focus_lanes',
-            'holding_color',
-            'priority_levels',
-            'fund_stages',
-            'focus_lane_tones',
-            'career_host_status',
-            'career_score_dims',
-            'archive_categories',
-            'archive_dead',
-            'leads_fit',
-            'lifecycle',
-            'arch_color',
-            'data_access',
-            'venue_categories',
-            'venue_tiers',
-            'radar_buckets'
-        ]
-    };
-
-    const CATALOG_FILES = [
-        'app.yml',
-        'server.yml',
-        'ui.yml',
-        'views/agents.yml',
-        'views/audit.yml',
-        'views/changes.yml',
-        'views/collection.yml',
-        'views/config.yml',
-        'views/data.yml',
-        'views/deposit.yml',
-        'views/doc.yml',
-        'views/document.yml',
-        'views/domains.yml',
-        'views/editor.yml',
-        'views/file.yml',
-        'views/files.yml',
-        'views/findings.yml',
-        'views/focus.yml',
-        'views/gallery.yml',
-        'views/help.yml',
-        'views/history.yml',
-        'views/hpc.yml',
-        'views/inbox.yml',
-        'views/leads.yml',
-        'views/linkedin.yml',
-        'views/map.yml',
-        'views/memories.yml',
-        'views/note.yml',
-        'views/present.yml',
-        'views/programs.yml',
-        'views/project.yml',
-        'views/projects.yml',
-        'views/radar.yml',
-        'views/session-detail.yml',
-        'views/session-list.yml',
-        'views/slides.yml',
-        'views/source.yml',
-        'views/status.yml',
-        'views/terminal.yml',
-        'views/timeline.yml',
-        'views/transcript.yml',
-        'views/usage.yml',
-        'views/venues.yml'
-    ];
-
-    it('merges without a finding, so no key is defined in two files', () => {
-        expect(loadConfig(engineDir()).findings).toEqual([]);
-    });
-
-    it('names the six scan tiers, the software one flat, typed and optional', () => {
-        const { scan } = portfolioConfigFrom(loadConfig(engineDir()).config);
-        expect(scan.map((rule) => rule.dir)).toEqual([
-            'projects/ideas',
-            'projects/active',
-            'projects/manuscripts',
-            'projects/software',
-            'projects/coauthor',
-            'projects/archive'
-        ]);
-        expect(scan[3]).toEqual({ dir: 'projects/software', type: 'software', optional: true });
-        expect(scan.filter((rule) => rule.optional === true)).toHaveLength(1);
-    });
-
-    it('holds the cross-link exclusions and independent collection lane tones', () => {
-        const { config } = loadConfig(engineDir());
-        expect(config.archive_dead).toEqual([
-            'nogo',
-            'dropped',
-            'disproved',
-            'abandoned',
-            'parked'
-        ]);
-        expect(config.focus_lane_tones).toEqual({
-            funding: 'gold',
-            jobs: 'violet',
-            teaching: 'teal'
-        });
-        expect(typeof config.stale_lag_days).toBe('number');
-        expect(config.usage_tiers).toEqual({
-            default_claude_max_20x: 'Max 20x',
-            default_claude_max_5x: 'Max 5x',
-            default_claude_pro: 'Pro',
-            prolite: 'Plus'
-        });
-        expect(config.usage_refresh_min).toBe(10);
-        expect(config.usage_refresh_model).toBe('haiku');
-        // The wait between the last keystroke in a note and the save that follows it.
-        expect(config.notes).toEqual({ autosave_ms: 800 });
-    });
-
-    it('configures the editable source extensions and their viewable superset', () => {
-        const { config } = loadConfig(engineDir());
-        expect(config.editable_extensions).toEqual([
-            '.md',
-            '.yml',
-            '.yaml',
-            '.tex',
-            '.bib',
-            '.txt'
-        ]);
-        expect(config.viewable_extensions).toEqual([
-            '.md',
-            '.yml',
-            '.yaml',
-            '.tex',
-            '.bib',
-            '.txt',
-            '.py',
-            '.sh',
-            '.slurm',
-            '.json',
-            '.csv',
-            '.r',
-            '.m',
-            '.cpp',
-            '.h',
-            '.c',
-            '.hpp',
-            '.js',
-            '.css',
-            '.html',
-            '.toml',
-            '.cfg',
-            '.ini',
-            '.log'
-        ]);
-    });
-
-    it('holds exactly the expected top-level keys, and no more', () => {
-        const { config } = loadConfig(engineDir());
-        const expected = [...new Set([...Object.values(EXPECTED).flat(), 'text'])].sort();
-        expect(Object.keys(config).sort()).toEqual(expected);
-    });
-
-    it('reads one catalog file per owner and no legacy catalog file', () => {
-        const { config } = loadConfig(engineDir());
-        const dir = join(engineDir(), 'config', 'text');
-        const names = [
-            ...readdirSync(dir).filter((name) => name.endsWith('.yml')),
-            ...readdirSync(join(dir, 'views'))
-                .filter((name) => name.endsWith('.yml'))
-                .map((name) => `views/${name}`)
-        ].sort();
-        expect(names).toEqual(CATALOG_FILES);
-        expect(existsSync(join(engineDir(), 'config', 'text.yml'))).toBe(false);
-        expect(existsSync(join(engineDir(), 'config', 'text-oculus.yml'))).toBe(false);
-        for (const name of names) {
-            const file = join(dir, name);
-            const source = readFileSync(file, 'utf8');
-            expect(source.startsWith('# Oculus text owned by ')).toBe(true);
-            expect(Object.keys(parse(source) as Record<string, unknown>)).toEqual(['text']);
-        }
-        const text = config.text as Record<string, string>;
-        expect(text['server.chat.chat_instruction']).toContain('The hub root is `{0}`');
-        expect(text['server.chat.chat_focus_note']).toContain('`{2}` (absolute)');
-        expect(text['server.chat.chat_index_note']).toBe(
-            'The portfolio index is the file {0}; read it first.'
-        );
-        expect(text['app.chat']).toBe('Chat');
-    });
-
-    // The two roots of sources.yml sit under the home directory of whoever runs this, and a
-    // checkout on a machine without those two repositories has neither. The check is skipped there
-    // with the directories named, rather than failing over a fact about the machine.
-    const ROOTS = readRoots(loadConfig(engineDir()).config, rootsFile()).roots;
-    const MISSING = ROOTS.filter((root) => !existsSync(root.dir));
-    if (MISSING.length > 0) {
-        console.log(
-            `config.test.ts: skipping the roots check; no directory at ${MISSING.map((root) => root.dir).join(', ')}`
-        );
-    }
-
-    it.skipIf(MISSING.length > 0)('names roots that are on this machine', () => {
-        expect(ROOTS.map((root) => root.key)).toEqual(['cathedra', 'game-engine']);
-        expect(readRoots(loadConfig(engineDir()).config, rootsFile()).findings).toEqual([]);
-    });
-
-    it('names a root of its own for every bookmark, and a path under it', () => {
-        const { config } = loadConfig(engineDir());
-        const keys = ROOTS.map((root) => root.key);
-        const bookmarks = config.bookmarks as { label: string; root: string; path: string }[];
-        expect(bookmarks.map((mark) => mark.root)).toEqual(['cathedra', 'game-engine']);
-        for (const mark of bookmarks) {
-            expect(keys).toContain(mark.root);
-            expect(mark.path.startsWith('/')).toBe(false);
-            expect(mark.path.includes('..')).toBe(false);
-            expect(mark.label.length).toBeGreaterThan(0);
-        }
-    });
-
-    it('names a group of its own and a path under the hub for every document', () => {
-        const { config } = loadConfig(engineDir());
-        const groups = Object.keys(config.nav_groups as Record<string, unknown>);
-        const docs = config.docs as { label: string; path: string; group: string }[];
-        expect(docs.map((entry) => entry.path)).toEqual([
-            'RESEARCH-APPROACH.md',
-            'AGENT-APPROACH.md',
-            'HPC-UTwente-howto.md'
-        ]);
-        for (const entry of docs) {
-            expect(groups).toContain(entry.group);
-            expect(entry.path.startsWith('/')).toBe(false);
-            expect(entry.path.includes('..')).toBe(false);
-            expect(entry.path.endsWith('.md')).toBe(true);
-            expect(entry.label.length).toBeGreaterThan(0);
-        }
-    });
-
-    it('writes one description for every config file and none for a file that is not there', () => {
-        const { config } = loadConfig(engineDir());
-        const catalog = textCatalog(config);
-        const dir = join(engineDir(), 'config');
-        const files = readdirSync(dir)
-            .filter((name) => name.endsWith('.yml'))
-            .sort();
-        const missing = files.filter((name) => !(descriptionKey(name) in catalog));
-        expect(missing).toEqual([]);
-        const described = Object.keys(catalog)
-            .filter((key) => key.startsWith(DESC_PREFIX))
-            .sort();
-        expect(described).toEqual(files.map((name) => descriptionKey(name)).sort());
-    });
-
-    it('keeps boards separate from the configured Pillars group', () => {
-        const { config } = loadConfig(engineDir());
-        const groups = config.nav_groups as Record<string, { label: string; glyph?: string }>;
-        expect(groups.boards).toEqual({ label: 'Boards' });
-        expect(groups.structure).toEqual({ label: 'Pillars', glyph: 'program' });
-        expect(Object.keys(groups).indexOf('structure')).toBe(
-            Object.keys(groups).indexOf('boards') + 1
-        );
-    });
-
-    it('keeps view lists out of every navigation group', () => {
-        const { config } = loadConfig(engineDir());
-        const groups = Object.values(config.nav_groups as Record<string, Record<string, unknown>>);
-        for (const group of groups) expect(group).not.toHaveProperty('keys');
-    });
-
-    it('names the wallpaper directory owned by oculus', () => {
-        const { config } = loadConfig(engineDir());
-        expect(config.wallpaper).toMatchObject({ dir: 'tools/oculus/assets/wallpaper' });
-    });
-
-    it('uses glyph names with ASCII stand-ins for every configured icon', () => {
-        const { config } = loadConfig(engineDir());
-        const glyphs = glyphCatalog(config);
-        const ascii = asciiCatalog(config);
-        const collections = config.collections as { key: string; icon?: string }[];
-        const hosts = config.career_host_status as Record<string, { icon: string }>;
-        const statuses = config.status_legend as { key: string; icon: string }[];
-        const icons = [
-            ...collections.flatMap((entry) => (entry.icon === undefined ? [] : [entry.icon])),
-            ...Object.values(hosts).map((entry) => entry.icon),
-            ...statuses.map((entry) => entry.icon)
-        ];
-        expect(
-            collections
-                .filter((entry) => entry.icon !== undefined && !(entry.icon in glyphs))
-                .map((entry) => entry.key)
-        ).toEqual([]);
-        expect(
-            Object.entries(hosts)
-                .filter(([, entry]) => !(entry.icon in glyphs))
-                .map(([key]) => key)
-        ).toEqual([]);
-        expect(icons.filter((name) => !(glyphs[name] in ascii))).toEqual([]);
-    });
-
-    it('names one icon for every glyph and for nothing but a glyph', () => {
-        const { config } = loadConfig(engineDir());
-        expect(Object.keys(iconCatalog(config))).toEqual(Object.keys(glyphCatalog(config)));
-        expect(iconFindings(engineDir(), config)).toEqual([]);
-    });
-
-    it('ships a drawing for every one of them', () => {
-        const { config } = loadConfig(engineDir());
-        const icons = iconSet(config);
-        expect(Object.keys(icons)).toEqual(Object.keys(glyphCatalog(config)));
-        for (const [name, svg] of Object.entries(icons)) {
-            expect(svg, name).toContain('<svg');
-            expect(svg, name).toContain('stroke="currentColor"');
-        }
-    });
-
-    it('resolves a drawing through the package rather than through a path into node_modules', () => {
-        const source = readFileSync(
-            join(engineDir(), 'src', 'lib', 'data', 'sources', 'config.ts'),
-            'utf8'
-        );
-        // The package name is all the source says; the only mention of the folder is the comment
-        // above the resolver explaining why it does not name one.
-        expect(source.match(/node_modules/g)).toHaveLength(1);
-        expect(source).toContain('resolver.resolve(`lucide-static/icons/${icon}.svg`)');
-        expect(iconSet({ glyphs: { pin: 'P' }, icons: { pin: 'pin' } }).pin).toContain('<svg');
-    });
-
-    it('reports a glyph with no icon, a row that is no glyph, and an icon the package has not', () => {
-        const drifted = {
-            glyphs: { pin: 'P', flag: 'F' },
-            icons: { pin: 'nonesuch-icon', nothing: 'circle' }
-        };
-        expect(iconFindings(engineDir(), drifted).map((one) => one.message)).toEqual([
-            'glyph flag has no icon',
-            'the icon package ships no nonesuch-icon.svg',
-            'nothing is not a name in config/glyphs.yml'
-        ]);
-        expect(iconSet(drifted)).toEqual({});
-    });
-
-    it('configures one lowercase chord and a glyph on every group the rail flies out', () => {
-        const { config } = loadConfig(engineDir());
-        registerAll(client.registry);
-        registerCollections(client.registry, collectionKeys(config));
-        const raw = config.nav_groups as Record<string, Omit<NavGroup, 'id'>>;
-        const groups = Object.entries(raw).map(([id, group]) => ({ id, ...group }));
-        const sections = arrange(
-            views().filter((view) => view.listed !== false),
-            groups,
-            config.docs as DocEntry[]
-        );
-        // A group of more entries than the group maximum, its documents counted, is one button with a list
-        // beside it, so it needs a mark of its own and a letter to reach it by: a group drawn as
-        // buttons is reached through the direct chord, and one drawn as a list is reached only
-        // through its own. This holds for whichever groups those are.
-        const flyouts = sections.filter(isFlyout);
-        expect(flyouts.map((section) => section.label)).toEqual([
-            'Sessions',
-            'Academic life',
-            'Sources',
-            'System'
-        ]);
-        expect(flyouts.filter((section) => section.glyph === undefined)).toEqual([]);
-        expect(flyouts.map((section) => section.chord)).toEqual(['m', 'c', 's', 'y']);
-        for (const group of groups) {
-            if (group.chord !== undefined) expect(group.chord).toMatch(/^[a-z]$/);
-        }
-        // One letter reaches one thing: the direct chord and every group's are all distinct.
-        const letters = [
-            config.direct_chord as string,
-            ...groups.map((group) => group.chord).filter((chord) => chord !== undefined)
-        ];
-        expect(new Set(letters).size).toBe(letters.length);
-    });
-
-    it('names a configured group and a nonnegative order in every listed registration', () => {
-        const { config } = loadConfig(engineDir());
-        registerAll(client.registry);
-        registerCollections(client.registry, collectionKeys(config));
-        const groups = new Set(Object.keys(config.nav_groups as Record<string, unknown>));
-        const invalid = views()
-            .filter((view) => view.listed !== false)
-            .filter((view) => !groups.has(view.group) || view.order < 0);
-        expect(invalid.map((view) => view.id)).toEqual([]);
-    });
-
-    it('reads each file on its own and finds its own keys there and nowhere else', () => {
-        const dir = join(engineDir(), 'config');
-        const seen: Record<string, string> = {};
-        for (const [name, keys] of Object.entries(EXPECTED)) {
-            const parsed = parse(readFileSync(join(dir, name), 'utf8')) as Record<string, unknown>;
-            expect(Object.keys(parsed).sort()).toEqual([...keys].sort());
-            for (const key of keys) {
-                expect(seen[key]).toBe(undefined);
-                seen[key] = name;
-            }
-        }
-        expect(
-            readdirSync(dir)
-                .filter((name) => name.endsWith('.yml'))
-                .sort()
-        ).toEqual(Object.keys(EXPECTED).sort());
-        for (const name of CATALOG_FILES) {
-            const parsed = parse(readFileSync(join(dir, 'text', name), 'utf8')) as Record<
-                string,
-                unknown
-            >;
-            expect(Object.keys(parsed)).toEqual(['text']);
-        }
-    });
-});

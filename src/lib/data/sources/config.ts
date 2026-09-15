@@ -2,8 +2,10 @@
 // Server side only: it reads the filesystem and no client module may import it.
 // A caller passes the engine directory, and engineDir() derives it from this module's own location
 // so dev and the built server agree. One environment variable is read, OCULUS_LOCAL, and only by
-// loadLocal(): it names the machine-local file instead of <engine>/local.yml, which is how a test
-// server is pointed at a hub in a temporary directory without writing into the checkout.
+// loadLocal(): it names the machine-local file instead of local.yml of the config directory, which
+// is how a test server is pointed at a hub in a temporary directory without writing into the
+// checkout. That file sits in the config directory with the tracked YAML and is read by loadLocal
+// alone: loadConfig leaves it out, so a machine's own keys never join the merged map.
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -58,6 +60,9 @@ export type LocalConfig = {
 
 /** The default development port; the reserved port 8787 is never used. */
 export const DEFAULT_PORT = 8790;
+
+/** The name of the machine-local file inside the config directory, which loadConfig never merges. */
+export const LOCAL_NAME = 'local.yml';
 
 const LOCAL_KEYS = [
     'hub',
@@ -146,45 +151,43 @@ function usageAccounts(value: unknown, file: string, base: string): UsageAccount
 /**
  * Which file loadLocal reads, and the directory a relative path in it resolves against.
  *
- * Without OCULUS_LOCAL that is <engine>/local.yml and the engine, which is the whole of what the
- * machine's own configuration is. With it, the named file and its own folder: the browser specs
- * stand a server up over a hub in a temporary directory, and writing local.yml into the checkout to
- * do that would make a tracked file a test fixture. A relative OCULUS_LOCAL resolves against the
- * engine, so a path typed on the command line means what it looks like from tools/oculus.
+ * Without OCULUS_LOCAL that is local.yml of the config directory, which is the whole of what the
+ * machine's own configuration is, and the base is the engine directory rather than the file's own
+ * folder, so a relative `hub` is read from tools/oculus as it always was. With it, the named file
+ * and its own folder: the browser specs stand a server up over a hub in a temporary directory, and
+ * writing local.yml into the checkout to do that would make the machine's own file a test fixture.
+ * A relative OCULUS_LOCAL resolves against the engine, so a path typed on the command line means
+ * what it looks like from tools/oculus.
  */
 function localFile(engine: string): { file: string; base: string; required: boolean } {
     const named = process.env.OCULUS_LOCAL;
     if (named === undefined || named === '') {
-        return { file: join(engine, 'local.yml'), base: engine, required: false };
+        return { file: join(configDir(engine), LOCAL_NAME), base: engine, required: false };
     }
     const file = isAbsolute(named) ? named : resolve(engine, named);
     return { file, base: dirname(file), required: true };
 }
 
 /**
- * Read <engine>/local.yml, or the file OCULUS_LOCAL names. A missing file means the defaults,
- * except when OCULUS_LOCAL named it: a run told to read a file that is not there is an error rather
- * than a silent fall back to the machine's own hub. An unknown key is reported once on stderr and
- * ignored. A key of the wrong type is an error naming the file and the key.
+ * Apply one machine-local file's text onto the defaults, throwing the sentence a caller shows. The
+ * reader and the check the source endpoint makes before it writes that file run this one function,
+ * so a body the check accepts is a body the next read accepts.
  */
-export function loadLocal(engine: string): LocalConfig {
-    const { file, base, required } = localFile(engine);
-    const config = localDefaults(engine);
-    if (!existsSync(file)) {
-        if (required) throw new Error(`${file}: OCULUS_LOCAL names a file that does not exist`);
-        return config;
-    }
-
-    const raw: unknown = parse(readFileSync(file, 'utf8')) ?? {};
+function applyLocal(
+    text: string,
+    file: string,
+    base: string,
+    config: LocalConfig,
+    onUnknown?: (keys: string[]) => void
+): LocalConfig {
+    const raw: unknown = parse(text) ?? {};
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
         throw new Error(`${file}: expected a map of keys`);
     }
     const record = raw as Record<string, unknown>;
 
     const unknown = Object.keys(record).filter((key) => !LOCAL_KEYS.includes(key));
-    if (unknown.length > 0) {
-        console.warn(`${file}: ignoring unknown key(s) ${unknown.join(', ')}`);
-    }
+    if (unknown.length > 0) onUnknown?.(unknown);
 
     if (record.hub !== undefined) {
         if (typeof record.hub !== 'string' || record.hub.length === 0) {
@@ -229,6 +232,64 @@ export function loadLocal(engine: string): LocalConfig {
     return config;
 }
 
+/**
+ * Read local.yml of the config directory, or the file OCULUS_LOCAL names. A missing file means the
+ * defaults, except when OCULUS_LOCAL named it: a run told to read a file that is not there is an
+ * error rather than a silent fall back to the machine's own hub. An unknown key is reported on
+ * stderr and ignored. A key of the wrong type is an error naming the file and the key, which is what
+ * a start reads: a machine whose own file is malformed is told at once rather than served wrongly.
+ */
+export function loadLocal(engine: string): LocalConfig {
+    const { file, base, required } = localFile(engine);
+    const config = localDefaults(engine);
+    if (!existsSync(file)) {
+        if (required) throw new Error(`${file}: OCULUS_LOCAL names a file that does not exist`);
+        return config;
+    }
+    return applyLocal(readFileSync(file, 'utf8'), file, base, config, (keys) =>
+        console.warn(`${file}: ignoring unknown key(s) ${keys.join(', ')}`)
+    );
+}
+
+/** Sentences already printed by loadLocalOrDefaults, so a bad file is named once and not per call. */
+const reportedLocal = new Set<string>();
+
+/**
+ * The machine's own values for a reader that runs on a request, with the defaults in place of a file
+ * that does not read. The file is the one of the config folder whose bad content would otherwise be
+ * fatal: a request would answer 500 rather than a page, and the request that saves the file back
+ * would be one of them. The sentence is printed once and the start keeps throwing, so a malformed
+ * file is still seen and is still repairable from the source tab.
+ */
+export function loadLocalOrDefaults(engine: string): LocalConfig {
+    try {
+        return loadLocal(engine);
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        if (!reportedLocal.has(message)) {
+            reportedLocal.add(message);
+            console.error(`the machine's own configuration is not read: ${message}`);
+        }
+        return localDefaults(engine);
+    }
+}
+
+/**
+ * The sentence loadLocal would throw over this text, or null when it would read it. The source
+ * endpoint checks a save of the machine's own file with it, so a body that would stop the next start
+ * is refused with that sentence rather than written. A file name makes the sentence the reader's own
+ * ("local.yml: port must be an integer"); a parse error is given by its first line.
+ */
+export function checkLocal(text: string, file: string = LOCAL_NAME): string | null {
+    try {
+        applyLocal(text, file, dirname(file), localDefaults(dirname(file)));
+        return null;
+    } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        return message.split('\n')[0];
+    }
+}
+
 /** The one top-level key more than one file may carry. Catalog fragments merge by dotted leaf. */
 export const TEXT_KEY = 'text';
 
@@ -267,10 +328,15 @@ function mergeText(
     }
 }
 
-/** Root config files plus every catalog fragment, all named relative to config and sorted. */
+/**
+ * Root config files plus every catalog fragment, all named relative to config and sorted.
+ *
+ * local.yml is left out by name: it is the machine's own and loadLocal reads it, so a key it carries
+ * is never merged into the map and never reported as defined in two files.
+ */
 function configNames(dir: string): string[] {
     const names = readdirSync(dir)
-        .filter((name) => name.endsWith('.yml'))
+        .filter((name) => name.endsWith('.yml') && name !== LOCAL_NAME)
         .map((name) => join(dir, name));
     const collect = (folder: string): void => {
         let entries;
@@ -289,18 +355,12 @@ function configNames(dir: string): string[] {
     return names.map((file) => relative(dir, file)).sort();
 }
 
-/**
- * Merge root config files and catalog fragments into one map. Files are read in name order. A
- * duplicate top-level key or catalog leaf is a finding and the later file wins. Invalid files are
- * findings and contribute nothing; a missing config directory is a finding and an empty map.
- */
-
 /** The pure reader of the `collections:` keys lives with the registry keys it excludes, client-safe. */
 export { collectionKeys } from '../normalise.ts';
 
 /**
  * The directory the engine's YAML is read from and written to: `<engine>/config`, or the directory
- * OCULUS_CONFIG names.
+ * OCULUS_CONFIG names. The machine's own local.yml sits in it beside the tracked files.
  *
  * The override is the companion of OCULUS_LOCAL and is there for the same reason: the browser layer
  * stands a server up and presses controls that write, the Slides view's Save among them, and the
@@ -314,6 +374,12 @@ export function configDir(engine: string): string {
     return isAbsolute(named) ? named : resolve(engine, named);
 }
 
+/**
+ * Merge root config files and catalog fragments into one map. Files are read in name order and
+ * local.yml is not one of them. A duplicate top-level key or catalog leaf is a finding and the later
+ * file wins. Invalid files are findings and contribute nothing; a missing config directory is a
+ * finding and an empty map.
+ */
 export function loadConfig(engine: string): {
     config: Record<string, unknown>;
     findings: Finding[];

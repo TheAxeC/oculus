@@ -10,17 +10,20 @@
 import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
     ENGINE_ROOT,
+    HUB_ROOT,
     engineRoot,
     expandHome,
     readRoots,
+    roots,
     rootsFrom,
     serveFile,
     typeOf,
     withFixed
 } from '../../src/lib/server/files.ts';
+import { engineDir } from '../../src/lib/data/sources/config.ts';
 import { ENGINE_ROOT as CLIENT_ENGINE_ROOT } from '../../src/lib/state/fs.ts';
 import type { Root } from '../../src/lib/server/files.ts';
 
@@ -188,10 +191,11 @@ describe('the two fixed roots', () => {
         expect(CLIENT_ENGINE_ROOT).toBe(ENGINE_ROOT);
     });
 
-    it('serves a file of the engine config folder and refuses one above it', () => {
+    it('serves a file of the engine config folder, the machine own one too, and refuses one above it', () => {
         const engine = folder({
             'config/layout.yml': 'nav_groups: {}\n',
-            'local.yml': 'hub: /elsewhere\n'
+            'config/local.yml': 'hub: /elsewhere\n',
+            'local.yml': 'hub: /above\n'
         });
         const list = withFixed([], '/the/hub', engine);
         const asked = (path: string): Request =>
@@ -203,7 +207,35 @@ describe('the two fixed roots', () => {
                 }
             });
         expect(serveFile(asked('layout.yml'), list, ENGINE_ROOT, 'layout.yml').status).toBe(200);
+        expect(serveFile(asked('local.yml'), list, ENGINE_ROOT, 'local.yml').status).toBe(200);
         expect(serveFile(asked('local.yml'), list, ENGINE_ROOT, '../local.yml').status).toBe(404);
+    });
+});
+
+// roots() runs on a request, so a machine file that does not read must not take the request with it:
+// the source save that would put the file back is one of those requests.
+describe('the roots over a machine file that does not read', () => {
+    afterEach(() => {
+        delete process.env.OCULUS_LOCAL;
+    });
+
+    it('answers the default hub and says once what is wrong, rather than throwing', () => {
+        const dir = folder({ 'local.yml': 'port: eight\n' });
+        process.env.OCULUS_LOCAL = join(dir, 'local.yml');
+        const printed = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+        try {
+            const list = roots();
+            const hub = list.find((one) => one.key === HUB_ROOT);
+            expect(hub?.dir).toBe(resolve(engineDir(), '..', '..'));
+            expect(list.some((one) => one.key === ENGINE_ROOT)).toBe(true);
+            expect(printed).toHaveBeenCalledTimes(1);
+            expect(String(printed.mock.calls[0][0])).toContain('port must be an integer');
+            // The second call over the same file says nothing more and answers the same.
+            expect(roots().find((one) => one.key === HUB_ROOT)?.dir).toBe(hub?.dir);
+            expect(printed).toHaveBeenCalledTimes(1);
+        } finally {
+            printed.mockRestore();
+        }
     });
 });
 

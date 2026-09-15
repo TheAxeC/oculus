@@ -2,8 +2,17 @@
 // afterwards. Both live here rather than in serve.ts because serve.ts is a process Playwright starts:
 // importing it starts a server, so nothing in it can be held by a unit test.
 
-import { existsSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+    cpSync,
+    existsSync,
+    readFileSync,
+    readdirSync,
+    rmSync,
+    statSync,
+    writeFileSync
+} from 'node:fs';
 import { join } from 'node:path';
+import { LOCAL_NAME } from '../../src/lib/data/sources/config.ts';
 
 /** Folders whose contents are not what a build is made from, and are skipped when it is dated. */
 export const SKIPPED = ['node_modules', '.svelte-kit', 'build', '.hub'];
@@ -33,6 +42,17 @@ export function newest(dir: string): { at: number; path: string } {
         }
     }
     return found;
+}
+
+/**
+ * Copy the engine's config folder for one run, leaving the machine's own local.yml behind. The run
+ * writes its own in the copy: without the filter the owner's hub and port would be copied in with
+ * the tracked YAML, and the copy is what OCULUS_CONFIG names, so every run would read them. The name
+ * is the loader's own, so the filter cannot drift from the file the server reads.
+ */
+export function copyConfig(from: string, into: string): void {
+    const own = join(from, LOCAL_NAME);
+    cpSync(from, into, { recursive: true, filter: (path) => path !== own });
 }
 
 /** Whether `build/` still describes the tree, and what to do about it when it does not. */

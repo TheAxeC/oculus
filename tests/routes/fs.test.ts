@@ -5,7 +5,7 @@
 //
 // Every root and every workspaces file here is synthetic, under the system temporary directory, and
 // every path written is asserted to be inside it first. What this does NOT cover: the route module
-// reading the machine's own local.yml, which is exercised by the browser layer.
+// reading the machine's own config/local.yml, which is exercised by the browser layer.
 
 import {
     existsSync,
@@ -124,8 +124,14 @@ describe('the fs route, reading', () => {
     });
 
     it('answers the config folder of the engine under the engine root, and nothing above it', async () => {
+        // The machine's own file is one of that folder and is listed; the one above the folder is
+        // outside the root and is reached by nothing.
         const engine = folder(
-            { 'config/layout.yml': 'nav_groups: {}\n', 'local.yml': 'hub: /elsewhere\n' },
+            {
+                'config/layout.yml': 'nav_groups: {}\n',
+                'config/local.yml': 'hub: /elsewhere\n',
+                'local.yml': 'hub: /above\n'
+            },
             ['config/text']
         );
         const into = target();
@@ -137,7 +143,8 @@ describe('the fs route, reading', () => {
         const entries = body.entries as { name: string; kind: string }[];
         expect(entries.map((entry) => `${entry.kind}:${entry.name}`)).toEqual([
             'dir:text',
-            'file:layout.yml'
+            'file:layout.yml',
+            'file:local.yml'
         ]);
         expect(handleFs(get(`?root=${ENGINE_ROOT}&path=..`), into).status).toBe(404);
     });

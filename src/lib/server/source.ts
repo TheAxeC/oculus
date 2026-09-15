@@ -3,9 +3,9 @@
 // its text through a temporary neighbour and atomic rename.
 
 import { extname } from 'node:path';
-import { engineDir, loadConfig } from '../data/sources/config.ts';
+import { LOCAL_NAME, checkLocal, engineDir, loadConfig } from '../data/sources/config.ts';
 import { hasToken, sameOrigin } from './auth.ts';
-import { resolveRootFileResult, roots, type Root } from './files.ts';
+import { ENGINE_ROOT, resolveRootFileResult, resolveRootPath, roots, type Root } from './files.ts';
 import { writeTextAtomic } from './sessions/json.ts';
 
 export type SourceBody = { root: string; path: string; content: string };
@@ -53,6 +53,19 @@ export function sourceBody(value: unknown): SourceBody | null {
     return { root: held.root, path: held.path, content: held.content };
 }
 
+/**
+ * The sentence a save of the machine's own file is refused with, or null for any other file and for
+ * a body that reads. That one file of the config folder is read by its own rules rather than merged,
+ * and a malformed value in it throws: saved, it would take the source route down with it, this
+ * endpoint included, so the file could not be put back from the page it was broken on. The path is
+ * resolved through the same resolver the request went through, so the two strings are comparable.
+ */
+function localRefusal(list: Root[], path: string, content: string): string | null {
+    const own = resolveRootPath(list, ENGINE_ROOT, LOCAL_NAME);
+    if ('error' in own || own.path !== path) return null;
+    return checkLocal(content, LOCAL_NAME);
+}
+
 /** Refuse a source write or replace its complete text and answer in the write route's shape. */
 export async function handleSource(
     request: Request,
@@ -87,6 +100,8 @@ export async function handleSource(
     if (!editable.includes(extname(resolved.path).toLowerCase())) {
         return refuse('the extension is not editable');
     }
+    const refusal = localRefusal(rootList, resolved.path, body.content);
+    if (refusal !== null) return json(400, { ok: false, error: refusal });
     try {
         writeTextAtomic(resolved.path, body.content);
     } catch (error) {

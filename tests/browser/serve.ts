@@ -7,11 +7,12 @@
 // copy's path is asserted to be inside that directory before anything is written into it.
 //
 // The run reaches nothing of the machine's own, and every one of the four ways is a setting the
-// server already reads. OCULUS_LOCAL names the hub copy, which is loadLocal()'s override in
-// src/lib/data/sources/config.ts. OCULUS_CONFIG names a copy of the engine's own config/, which is
-// configDir()'s override there, so a spec that presses Save in the Slides view writes that copy's
-// present.yml and never the checkout's. HOME names a home directory this run made, so the session
-// stores, the session registry and the byte-offset cache are the fixture's rather than the owner's.
+// server already reads. OCULUS_LOCAL names this run's own local.yml, written into the config copy,
+// which is loadLocal()'s override in src/lib/data/sources/config.ts. OCULUS_CONFIG names that copy
+// of the engine's own config/, which is configDir()'s override there, so a spec that presses Save in
+// the Slides view writes the copy's present.yml and never the checkout's. HOME names a home
+// directory this run made, so the session stores, the session registry and the byte-offset cache are
+// the fixture's rather than the owner's.
 // PATH puts this run's own `ssh` and `tmux` in front: the Live HPC poller's ssh answers from
 // demo/hpc/ instead of opening a connection, and tmux fails, so no terminal and no usage refresh
 // starts a process on the machine.
@@ -24,7 +25,8 @@ import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSyn
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildState, removeLeftovers, removeOnExit, takeLock } from './layer.ts';
+import { buildState, copyConfig, removeLeftovers, removeOnExit, takeLock } from './layer.ts';
+import { LOCAL_NAME } from '../../src/lib/data/sources/config.ts';
 
 /** The port the browser layer serves on. 8787 is the cockpit's and 8790 the machine's own oculus. */
 const PORT = 8792;
@@ -78,13 +80,15 @@ const hub = inside(join(temp, 'demo'), tmpdir());
 const engineConfig = inside(join(temp, 'config'), tmpdir());
 const home = inside(join(temp, 'home'), tmpdir());
 const bin = inside(join(temp, 'bin'), tmpdir());
-const local = inside(join(temp, 'local.yml'), tmpdir());
+const local = inside(join(engineConfig, LOCAL_NAME), tmpdir());
 const marker = inside(join(here, '.hub'), engine);
 
 cpSync(join(engine, 'demo'), hub, { recursive: true });
 // The engine's own YAML, copied so that a write from the page lands here. The Slides view's Save
-// rewrites present.yml, and the watcher watching this directory is what pushes the deck back.
-cpSync(join(engine, 'config'), engineConfig, { recursive: true });
+// rewrites present.yml, and the watcher watching this directory is what pushes the deck back. The
+// machine's own local.yml is a file of that folder and is left out of the copy, since this run
+// writes its own there and the owner's hub and port are no part of it.
+copyConfig(join(engine, 'config'), engineConfig);
 // The Focus board draws a position lead only inside `leads_horizon_days` of today, so the demo's
 // dated lead is moved to a week from now in the copy: the spec that clicks its line holds on any day.
 const leads = inside(join(hub, 'feeds', 'position-leads.yml'), tmpdir());

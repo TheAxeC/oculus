@@ -18,7 +18,7 @@ import { createReadStream, realpathSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, extname, isAbsolute, join, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
-import { engineDir, loadConfig, loadLocal } from '../data/sources/config.ts';
+import { configDir, engineDir, loadConfig, loadLocalOrDefaults } from '../data/sources/config.ts';
 import { sameOrigin } from './auth.ts';
 import type { Finding } from '../data/model.ts';
 
@@ -217,7 +217,7 @@ export function serveFile(request: Request, list: Root[], key: string, path: str
 
 /** The file config/sources.yml sits in, which is what a root's finding names. */
 export function rootsFile(engine: string = engineDir()): string {
-    return join(engine, 'config', 'sources.yml');
+    return join(configDir(engine), 'sources.yml');
 }
 
 /** The key the hub itself is served under, so a collection's `link` to a file in the hub opens. */
@@ -226,14 +226,19 @@ export const HUB_ROOT = 'hub';
 /**
  * The key the engine's own `config/` folder is served under. The Config view lists that folder, shows
  * each file and opens one in a source tab, and an edit saved there is an ordinary write under a root,
- * which the config watcher sees like any other. Nothing above the folder is served: the root is the
- * folder itself, so `local.yml` and the rest of the engine directory stay outside every route.
+ * which the config watcher sees like any other. `local.yml` is a file of that folder and is served,
+ * read and saved like the tracked ones. Nothing above the folder is served: the root is the folder
+ * itself, so the rest of the engine directory stays outside every route.
  */
 export const ENGINE_ROOT = 'engine';
 
-/** The engine's config folder as a root, which is the directory loadConfig merges its files from. */
+/**
+ * The engine's config folder as a root, which is the directory loadConfig merges its files from and
+ * loadLocal reads local.yml in, OCULUS_CONFIG included: the folder the page lists and saves into is
+ * the folder the server reads, so a run pointed at a copy never writes the checkout.
+ */
 export function engineRoot(engine: string): Root {
-    return { key: ENGINE_ROOT, dir: join(engine, 'config') };
+    return { key: ENGINE_ROOT, dir: configDir(engine) };
 }
 
 /** The roots config/sources.yml names, without the hub in front of them, out of a config already read. */
@@ -285,5 +290,5 @@ export function rootsFrom(
  */
 export function roots(added: Root[] = []): Root[] {
     const engine = engineDir();
-    return rootsFrom(configuredRoots(), loadLocal(engine).hub, engine, added);
+    return rootsFrom(configuredRoots(), loadLocalOrDefaults(engine).hub, engine, added);
 }

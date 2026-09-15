@@ -26,6 +26,7 @@
 import { existsSync, readdirSync, realpathSync, statSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { Marked } from 'marked';
+import { configDir } from '../data/sources/config.ts';
 import { PROJECT_DOCS, isFinding, readDoc } from '../data/sources/docs.ts';
 import { PRESENT_DOC } from '../data/sources/present.ts';
 import { sameOrigin } from './auth.ts';
@@ -271,9 +272,12 @@ export function renderHubDoc(into: DocTarget, path: string): Response {
     return answer(full, { root: HUB_ROOT, folder: dirname(path) });
 }
 
-/** The file config/layout.yml sits in, which is what a document's finding names. */
+/**
+ * The file config/layout.yml sits in, which is what a document's finding names. The config directory
+ * rather than the engine's own folder, so a run pointed at a copy names the file it read.
+ */
 export function layoutFile(engine: string): string {
-    return join(engine, 'config', 'layout.yml');
+    return join(configDir(engine), 'layout.yml');
 }
 
 /**

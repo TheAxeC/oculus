@@ -1,7 +1,7 @@
 node_modules/
 .svelte-kit/
 build/
-local.yml
+config/local.yml
 tests/browser/.hub
 test-results/
 playwright-report/

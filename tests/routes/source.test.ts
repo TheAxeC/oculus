@@ -181,7 +181,8 @@ describe('a config file of the engine', () => {
         const file = join(folder, 'layout.yml');
         expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
         writeFileSync(file, 'nav_groups: {}\n');
-        writeFileSync(join(dir, 'local.yml'), 'hub: /elsewhere\n');
+        writeFileSync(join(folder, 'local.yml'), 'hub: /elsewhere\n');
+        writeFileSync(join(dir, 'local.yml'), 'hub: /above\n');
         return { engine: dir, file };
     }
 
@@ -205,7 +206,57 @@ describe('a config file of the engine', () => {
         expect(readFileSync(one.file, 'utf8')).toBe(body.content);
     });
 
-    it('refuses a path that climbs to the machine-local file beside that folder', async () => {
+    it('writes the machine own file of that folder like any other', async () => {
+        const one = engineFixture();
+        const token = mintToken();
+        const body = { root: ENGINE_ROOT, path: 'local.yml', content: 'hub: /srv/research-hub\n' };
+        const answer = await handleSource(
+            request(token, body),
+            token,
+            [engineRoot(one.engine)],
+            EDITABLE
+        );
+
+        expect(answer.status).toBe(200);
+        expect(await answer.json()).toEqual({ ok: true });
+        expect(readFileSync(join(one.engine, 'config', 'local.yml'), 'utf8')).toBe(body.content);
+    });
+
+    it('refuses a machine own file the next read would throw over, and writes nothing', async () => {
+        const one = engineFixture();
+        const own = join(one.engine, 'config', 'local.yml');
+        const before = readFileSync(own, 'utf8');
+        const token = mintToken();
+        const answer = await handleSource(
+            request(token, { root: ENGINE_ROOT, path: 'local.yml', content: 'port: eight\n' }),
+            token,
+            [engineRoot(one.engine)],
+            EDITABLE
+        );
+
+        expect(answer.status).toBe(400);
+        expect(await answer.json()).toEqual({
+            ok: false,
+            error: 'local.yml: port must be an integer'
+        });
+        expect(readFileSync(own, 'utf8')).toBe(before);
+    });
+
+    it('checks that one file, so the same text saved into a tracked file is written', async () => {
+        const one = engineFixture();
+        const token = mintToken();
+        const answer = await handleSource(
+            request(token, { root: ENGINE_ROOT, path: 'layout.yml', content: 'port: eight\n' }),
+            token,
+            [engineRoot(one.engine)],
+            EDITABLE
+        );
+
+        expect(answer.status).toBe(200);
+        expect(readFileSync(one.file, 'utf8')).toBe('port: eight\n');
+    });
+
+    it('refuses a path that climbs above that folder', async () => {
         const one = engineFixture();
         const token = mintToken();
         const answer = await handleSource(
@@ -216,6 +267,6 @@ describe('a config file of the engine', () => {
         );
 
         expect(answer.status).toBe(403);
-        expect(readFileSync(join(one.engine, 'local.yml'), 'utf8')).toBe('hub: /elsewhere\n');
+        expect(readFileSync(join(one.engine, 'local.yml'), 'utf8')).toBe('hub: /above\n');
     });
 });

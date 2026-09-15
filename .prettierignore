@@ -25,3 +25,7 @@ config/sources.yml
 config/text.yml
 config/text-oculus.yml
 config/vocab.yml
+
+# The machine's own file is not the tool's source: it is written by hand on the machine it belongs to
+# and is never tracked, so a formatter has no say over it and a check must not go red over it.
+config/local.yml

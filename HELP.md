@@ -103,7 +103,7 @@ Four views are opened for something rather than listed in the rail: `project` (o
 
 ## The configuration
 
-The files below sit in the `config/` folder of the engine, `tools/oculus/config/`. Every one is read on every load and merged into one map by its top-level keys, so a key moves between files without a reader noticing. The Config view shows the same list, each file with its text and a control that opens it for editing; an edit saved there is picked up and pushed to the page without a reload.
+The files below sit in the `config/` folder of the engine, `tools/oculus/config/`. Every one but `local.yml`, which is this machine's own, is read on every load and merged into one map by its top-level keys, so a key moves between files without a reader noticing. The Config view shows the same list, each file with its text and a control that opens it for editing; an edit saved there is picked up and pushed to the page without a reload.
 
 | File | What it holds |
 |---|---|
@@ -117,10 +117,11 @@ The files below sit in the `config/` folder of the engine, `tools/oculus/config/
 | `present.yml` | The public deck the Present view draws: the deck slides, the domain themes, the tag tones and the order. |
 | `sources.yml` | What the portfolio reads: the scan paths, the registry and collection files, the feeds, the roots a local file is served from, and the extensions a source tab may open and save. |
 | `vocab.yml` | Words and their colours: the palette, the research domains, the status legend, the focus lanes, the venue tiers and the radar buckets. |
+| `local.yml` | This machine's own values, read on their own and never merged into the configuration: the hub path, the port, the ssh alias of the cluster, the Claude command, the account folders and where the machine-local state is kept. |
 
 Every user-facing word lives under `config/text/`, one file per surface, and is read by its dotted key. Those files merge with the rest, so a word is changed there and nowhere else.
 
-`local.yml` sits beside the `config/` folder and is this machine's own. Its keys are `hub`, the absolute path of the research hub; `port`, the port the server listens on; `hpc_host`, the ssh alias the Live HPC view uses; `claude_bin`, the Claude command an unattended terminal runs; `accounts`, the agent account folders the Usage view reads; and `sessions_cache`, `sessions_overrides`, `workspaces`, `bookmarks`, `notes` and `changes`, the places the session cache, the per-session overrides, the saved workspaces, the reader's own bookmarks, the scratch notes and the change log are kept in. Every key has a default, so a machine that sets only `hub` works. The file is not tracked and is not served to the page, so no machine path is ever in the repository.
+`local.yml` sits in the same `config/` folder, last in the list, and is this machine's own. Its keys are `hub`, the absolute path of the research hub; `port`, the port the server listens on; `hpc_host`, the ssh alias the Live HPC view uses; `claude_bin`, the Claude command an unattended terminal runs; `accounts`, the agent account folders the Usage view reads; and `sessions_cache`, `sessions_overrides`, `workspaces`, `bookmarks`, `notes` and `changes`, the places the session cache, the per-session overrides, the saved workspaces, the reader's own bookmarks, the scratch notes and the change log are kept in. Every key has a default, so a machine that sets only `hub` works. The whole file is read once when the server starts, and `hub`, `sessions_overrides`, `bookmarks` and `changes` are read again on every write, every wallpaper request and every file opened outside the browser, so an edit to one of those four holds from the next such call and an edit to `port`, `hpc_host`, `sessions_cache`, `workspaces`, `notes`, `claude_bin` or `accounts` holds from the next start. The file is not tracked, so no machine path is ever in the repository, and it is served and edited like the files above it: the Config view cards it with a tag saying it is this machine's own. It is the one file of the folder whose keys are checked before a save: a body the server could not read back is refused with the reason, and the file is left as it was.
 
 ## Where the data comes from
 

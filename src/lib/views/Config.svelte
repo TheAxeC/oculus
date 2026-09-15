@@ -12,7 +12,7 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The files the configuration is merged from, one card each: the name, how many
+    // Layer 3, view. The files of the engine's config folder, one card each: the name, how many
     // lines it holds, the one line saying what is in it, the raw text under a disclosure, and the
     // control that opens it in a source tab.
     //
@@ -24,15 +24,17 @@
     // the file browser's store, which asks again for this root's listing and texts and for nothing
     // under any other root, so a saved edit shows here without a reload.
     //
-    // The machine-local file beside that folder, local.yml, is not served here: it carries this
-    // machine's own paths, and the root is the config folder alone. The intro line says where it is.
+    // The machine-local file, local.yml, is a file of that folder like the tracked ones, so it is
+    // listed, read and saved the same way; it is drawn last and carries a tag saying it is this
+    // machine's own, since its keys are read by loadLocal and never merged into the configuration.
 
     import Card from '$lib/ui/Card.svelte';
     import Disclosure from '$lib/ui/Disclosure.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
+    import Tag from '$lib/ui/Tag.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { configFiles, descriptionKey, lineCount } from './config/files';
+    import { configFiles, descriptionKey, isLocalFile, lineCount } from './config/files';
     import { ENGINE_ROOT } from '$lib/state/fs';
     import { sourceTabState } from '$lib/state/source.svelte';
     import { lookup, t } from '$lib/state/text';
@@ -57,7 +59,7 @@
         refresh(ENGINE_ROOT, pushed);
     });
 
-    /** The folder's own YAML, in name order. Nothing under `text/` is a card; the browser has it. */
+    /** The folder's own YAML, the machine's own file last. Nothing under `text/` is a card. */
     const names = $derived(configFiles(entries(ENGINE_ROOT, '')));
 
     /** Which previews the tab was left showing, so a tab switch does not close them. */
@@ -94,6 +96,9 @@
                 {@const lines = lineCount(held.text)}
                 <Card id={name} cursor={false} title={name} level={3}>
                     {#snippet meta()}
+                        {#if isLocalFile(name)}
+                            <Tag label={t('config.local_tag')} />
+                        {/if}
                         <ToolButton
                             label={t('config.edit')}
                             glyph="edit"

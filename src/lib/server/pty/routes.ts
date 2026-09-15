@@ -17,7 +17,7 @@
 
 import { scalar } from '../../data/guards.ts';
 import { hasToken, sameOrigin } from '../auth.ts';
-import { engineDir, loadLocal } from '../../data/sources/config.ts';
+import { engineDir, loadLocalOrDefaults } from '../../data/sources/config.ts';
 import { startChat, type ChatOptions } from './chat.ts';
 import {
     KINDS,
@@ -139,7 +139,7 @@ async function recoverDataset(
     if (!known.includes(key)) {
         return json(400, { error: 'key is not a dataset in the current portfolio' });
     }
-    const cwd = options.hubFor?.() ?? loadLocal(engineDir()).hub;
+    const cwd = options.hubFor?.() ?? loadLocalOrDefaults(engineDir()).hub;
     const terminal = await startTerminal(
         {
             kind: 'shell',
@@ -180,7 +180,7 @@ async function startTask(
     if (typeof kind !== 'string' || !TASKS.includes(kind as TaskKind)) {
         return json(400, { error: `kind must be one of ${TASKS.join(', ')}` });
     }
-    const local = options.localFor?.() ?? loadLocal(engineDir());
+    const local = options.localFor?.() ?? loadLocalOrDefaults(engineDir());
     const terminal = await startTerminal(
         {
             kind: 'claude',

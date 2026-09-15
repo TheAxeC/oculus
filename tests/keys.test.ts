@@ -12,7 +12,7 @@ import {
     loadConfig,
     textCatalog
 } from '../src/lib/data/sources/config.ts';
-import { descriptionKey } from '../src/lib/views/config/files.ts';
+import { LOCAL_NAME, descriptionKey } from '../src/lib/views/config/files.ts';
 import { registerAll, registerCollections } from '../src/routes/views.ts';
 import { recordedKinds } from './kinds.ts';
 import { createClientState, type ClientState } from './client.ts';
@@ -55,13 +55,17 @@ const COMPUTED_PREFIXES = [
         keys: () => ['projects', 'coauthor', 'archive'].map((id) => `views.${id}`)
     },
     {
-        // One description per file of the engine's config folder, keyed by the file's own name.
+        // One description per file of the engine's config folder, keyed by the file's own name. The
+        // machine's own file is named whether or not this checkout holds one, since it is described
+        // for every machine and a clone that has not made one still reads the key.
         file: 'lib/views/Config.svelte',
         start: 'lookup(descriptionKey(',
-        keys: () =>
-            readdirSync(join(engineDir(), 'config'))
-                .filter((name) => name.endsWith('.yml'))
-                .map((name) => descriptionKey(name))
+        keys: () => {
+            const names = readdirSync(join(engineDir(), 'config')).filter((name) =>
+                name.endsWith('.yml')
+            );
+            return [...new Set([...names, LOCAL_NAME])].map((name) => descriptionKey(name));
+        }
     },
     {
         // The audit's collector words every finding from the sentence its rule named by key; the

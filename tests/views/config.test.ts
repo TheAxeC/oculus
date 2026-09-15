@@ -14,10 +14,17 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Config from '../../src/lib/views/Config.svelte';
 import Source from '../../src/lib/views/Source.svelte';
-import { configFiles, descriptionKey, lineCount } from '../../src/lib/views/config/files.ts';
+import {
+    LOCAL_NAME,
+    configFiles,
+    descriptionKey,
+    isLocalFile,
+    lineCount
+} from '../../src/lib/views/config/files.ts';
 import { ENGINE_ROOT, type FsEntry } from '../../src/lib/state/fs.ts';
 import { sourceTabState } from '../../src/lib/state/source.svelte.ts';
 import {
+    LOCAL_NAME as SERVER_LOCAL_NAME,
     engineDir,
     glyphCatalog,
     loadConfig,
@@ -84,6 +91,19 @@ describe('which files the view cards', () => {
                 file('layout.yml')
             ])
         ).toEqual(['appearance.yml', 'layout.yml', 'vocab.yml']);
+    });
+
+    it('puts the machine own file last, after the tracked ones', () => {
+        expect(configFiles([file('local.yml'), file('vocab.yml'), file('appearance.yml')])).toEqual(
+            ['appearance.yml', 'vocab.yml', 'local.yml']
+        );
+        expect(configFiles([file('vocab.yml')])).toEqual(['vocab.yml']);
+        expect(isLocalFile('local.yml')).toBe(true);
+        expect(isLocalFile('layout.yml')).toBe(false);
+    });
+
+    it('names the machine own file as the server module does, which it cannot import', () => {
+        expect(LOCAL_NAME).toBe(SERVER_LOCAL_NAME);
     });
 
     it('keys a description by the file name, with a hyphen written as an underscore', () => {
@@ -208,7 +228,28 @@ describe('the Config view', () => {
         expect(drawn([])).toContain('No configuration file was read.');
     });
 
-    it('draws the intro naming the machine-local file, which it does not serve', () => {
-        expect(drawn([file('layout.yml')])).toContain('local.yml');
+    it('draws the intro naming the machine-local file, where it sits and whose it is', () => {
+        const body = drawn([file('layout.yml')]);
+        expect(body).toContain('local.yml');
+        // The words themselves, so an intro that goes back to saying the file is not served fails.
+        expect(body).toContain('in local.yml of the same folder');
+        expect(body).toContain("which is this machine's own");
+        expect(body).not.toContain('not served here');
+    });
+
+    it('cards the machine own file with its tag and its line, and nothing when it is not there', () => {
+        const body = drawn([file('layout.yml'), file('local.yml')]);
+
+        expect(body).toContain('data-card="local.yml"');
+        expect(body).toContain(catalog['config.local_tag']);
+        expect(body).toContain(catalog['config.desc_local']);
+        // The tag marks that one card and no other, and a folder without the file draws neither.
+        expect(body.indexOf('data-card="layout.yml"')).toBeLessThan(
+            body.indexOf('data-card="local.yml"')
+        );
+        const without = drawn([file('layout.yml')]);
+        expect(without).not.toContain('data-card="local.yml"');
+        expect(without).not.toContain(catalog['config.local_tag']);
+        expect(without).not.toContain(catalog['config.desc_local']);
     });
 });

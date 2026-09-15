@@ -8,7 +8,7 @@ import { byKey } from '../../data/guards.ts';
 import {
     engineDir,
     loadConfig,
-    loadLocal,
+    loadLocalOrDefaults,
     textCatalog,
     type LocalConfig
 } from '../../data/sources/config.ts';
@@ -109,7 +109,7 @@ export async function startChat(
         throw new Error('id must be a project id or null');
     }
     const engine = engineDir();
-    const local = options.localFor?.() ?? loadLocal(engine);
+    const local = options.localFor?.() ?? loadLocalOrDefaults(engine);
     const config = options.configFor?.() ?? loadConfig(engine).config;
     const catalog = textCatalog(config);
     const project = typeof id === 'string' ? (options.projectFor ?? (() => null))(id) : null;
