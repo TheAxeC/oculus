@@ -17,6 +17,7 @@ import { Hub } from './channels.ts';
 import { RateLimiter, notifyConfig, type HookTarget } from './hooks.ts';
 import type { LogPaths } from './hpc/actions.ts';
 import type { Plan } from './deposit.ts';
+import { fsWrites, type FsWrites } from './fs.ts';
 import { wallpaperMemory, type WallpaperMemory } from './wallpaper.ts';
 import { watchHpc, type HpcOptions, type HpcWatcher } from './hpc/poll.ts';
 import { Terminals } from './pty/channel.ts';
@@ -40,6 +41,10 @@ export type ServerContext = {
     token: string;
     local: LocalConfig;
     config: Record<string, unknown>;
+    /** The directory the configuration was read from, so a route names a config file without a walk. */
+    engine: string;
+    /** The write chain of the workspaces file, so two POSTs cannot lose one another's change. */
+    fsWrites: FsWrites;
     /** The log path found per HPC job id. */
     hpcLogPaths: LogPaths;
     /** The last deposit plan per project. */
@@ -156,6 +161,8 @@ export function createServerContext(
         token,
         local,
         config,
+        engine,
+        fsWrites: fsWrites(),
         hpcLogPaths,
         depositPlans: new Map(),
         wallpaper: wallpaperMemory(),

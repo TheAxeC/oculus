@@ -48,6 +48,15 @@
     --c-slate: #475569;
     --c-grey: #9ca3af;
     --c-grey-d: #6b7280;
+    /* code window: one hue per role the highlighter marks, so the window is re-coloured here and
+       never in the component. They are palette entries so derive.ts mints their `-txt` against each
+       theme's own surfaces, which is what keeps the code readable in all seventeen. */
+    --c-code-keyword: #7c5cff;
+    --c-code-string: #16a34a;
+    --c-code-number: #ea580c;
+    --c-code-name: #2563eb;
+    --c-code-meta: #0891b2;
+    --c-code-comment: #6b7280;
     --map-line: #475569;
     --map-collab: #0891b2;
     --map-edge: #94a3b8;

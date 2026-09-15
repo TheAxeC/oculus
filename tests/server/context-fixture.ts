@@ -7,6 +7,7 @@ import type { ServerContext } from '../../src/lib/server/context.ts';
 import { RateLimiter, notifyConfig } from '../../src/lib/server/hooks.ts';
 import { Terminals, type TerminalDriver } from '../../src/lib/server/pty/channel.ts';
 import { HookStore, sessionRecord } from '../../src/lib/server/sessions/hooks.ts';
+import { fsWrites } from '../../src/lib/server/fs.ts';
 import { wallpaperMemory } from '../../src/lib/server/wallpaper.ts';
 import { noop } from '../doubles.ts';
 
@@ -66,6 +67,8 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         token: ROUTE_TOKEN,
         local,
         config,
+        engine: overrides.engine ?? '/fixture/engine',
+        fsWrites: overrides.fsWrites ?? fsWrites(),
         hpcLogPaths: new Map(),
         depositPlans: new Map(),
         wallpaper: wallpaperMemory(),

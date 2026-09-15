@@ -24,6 +24,7 @@ import {
     loadLocal
 } from '../src/lib/data/sources/config.ts';
 import { readRoots, rootsFile } from '../src/lib/server/files.ts';
+import { GROUP_MAX, arrange, type NavGroup } from '../src/lib/shell/rail.ts';
 // Importing the route loader registers views; collection registrations use sources.yml keys.
 import { registerAll, registerCollections } from '../src/routes/views.ts';
 import { noop } from './doubles.ts';
@@ -447,6 +448,8 @@ describe("oculus's own config directory", () => {
         'views/document.yml',
         'views/domains.yml',
         'views/editor.yml',
+        'views/file.yml',
+        'views/files.yml',
         'views/findings.yml',
         'views/focus.yml',
         'views/gallery.yml',
@@ -645,22 +648,38 @@ describe("oculus's own config directory", () => {
         expect(icons.filter((name) => !(glyphs[name] in ascii))).toEqual([]);
     });
 
-    it('configures one lowercase chord on each flyout with a keyboard prefix', () => {
+    it('configures one lowercase chord and a glyph on every group the rail flies out', () => {
         const { config } = loadConfig(engineDir());
-        const groups = Object.values(
-            config.nav_groups as Record<string, { label: string; glyph?: string; chord?: string }>
-        );
-        expect(
+        registerAll(client.registry);
+        registerCollections(client.registry, collectionKeys(config));
+        const raw = config.nav_groups as Record<string, Omit<NavGroup, 'id'>>;
+        const groups = Object.entries(raw).map(([id, group]) => ({ id, ...group }));
+        const sections = arrange(
+            views().filter((view) => view.listed !== false),
             groups
-                .filter((group) => group.chord !== undefined)
-                .map((group) => [group.label, group.chord])
-        ).toEqual([
-            ['Sessions', 'm'],
-            ['Academic life', 'c']
+        );
+        // A group of more than GROUP_MAX views is one button with a list beside it, so it needs a
+        // mark of its own and a letter to reach it by; this holds for whichever groups those are.
+        const flyouts = sections.filter(
+            (section) => section.label !== null && section.items.length > GROUP_MAX
+        );
+        expect(flyouts.map((section) => section.label)).toEqual([
+            'Sessions',
+            'Academic life',
+            'Sources',
+            'System'
         ]);
+        expect(flyouts.filter((section) => section.glyph === undefined)).toEqual([]);
+        expect(flyouts.map((section) => section.chord)).toEqual(['m', 'c', 's', 'y']);
         for (const group of groups) {
             if (group.chord !== undefined) expect(group.chord).toMatch(/^[a-z]$/);
         }
+        // One letter reaches one thing: the direct chord and every group's are all distinct.
+        const letters = [
+            config.direct_chord as string,
+            ...groups.map((group) => group.chord).filter((chord) => chord !== undefined)
+        ];
+        expect(new Set(letters).size).toBe(letters.length);
     });
 
     it('names a configured group and a nonnegative order in every listed registration', () => {

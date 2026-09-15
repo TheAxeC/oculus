@@ -457,24 +457,36 @@ describe('the groups of the real config', () => {
         expect(section('Academic life').length).toBeGreaterThan(GROUP_MAX);
     });
 
-    it('draws headings above the Sessions and Academic life flyout openers', () => {
+    it('draws a heading, a chord and a mark above every flyout opener', () => {
         const body = render(ActivityRail, {
             context: clientContext(client),
             props: { groups: realGroups() }
         }).body;
-        for (const [label, chord] of [
-            ['Sessions', 'm'],
-            ['Academic life', 'c']
-        ]) {
+        const glyphs = glyphCatalog(config);
+        // Every group the rail flies out, with the letter and the mark its configuration names.
+        for (const section of sections) {
+            if (section.label === null || section.items.length <= GROUP_MAX) continue;
+            const { label, chord, glyph } = section;
             expect(body).toContain(`data-group="${label}"`);
             expect(body).toContain(`data-chord="${chord}"`);
+            expect(glyph === undefined ? '' : glyphs[glyph]).not.toBe('');
             expect(body).toMatch(
                 new RegExp(`<p class="group[^"]*">${label}<\\/p>[\\s\\S]*?aria-label="${label}"`)
             );
         }
+        expect(
+            sections
+                .filter((one) => one.label !== null && one.items.length > GROUP_MAX)
+                .map((one) => `${one.label ?? ''}:${one.chord ?? ''}:${one.glyph ?? ''}`)
+        ).toEqual([
+            'Sessions:m:live',
+            'Academic life:c:scout',
+            'Sources:s:folder',
+            'System:y:audit'
+        ]);
     });
 
-    it('exposes the real rail order and the two configured flyout chords', () => {
+    it('exposes the real rail order and the four configured flyout chords', () => {
         const order = railOrder(
             views().filter((view) => view.listed !== false),
             realGroups()
@@ -498,6 +510,11 @@ describe('the groups of the real config', () => {
             'changes',
             'agents'
         ]);
+        expect(order.chords.s).toEqual(['venues', 'data', 'code', 'statements', 'files']);
+        expect(order.chords.y).toHaveLength(5);
+        expect(order.chords.y).toContain('status');
+        expect(order.chords.y).toContain('hpc');
+        expect(Object.keys(order.chords).sort()).toEqual(['c', 'm', 's', 'y']);
     });
 
     it('puts the other two collections, Venues and Data under Sources', () => {
@@ -505,9 +522,13 @@ describe('the groups of the real config', () => {
             'venues',
             'data',
             'code',
-            'statements'
+            'statements',
+            'files'
         ]);
-        expect(section('Sources').length).toBeLessThanOrEqual(GROUP_MAX);
+        // Five views, so the rail draws Sources as one labelled button with a list beside it, the
+        // shape Sessions and Academic life already have.
+        expect(section('Sources').length).toBeGreaterThan(GROUP_MAX);
+        expect(section('Sources').map((view) => view.id)).not.toContain('projects');
     });
 
     it('leaves every collection in a group, so none of them trails at the end', () => {

@@ -38,6 +38,12 @@ const VIEWS: Record<string, string> = {
     'Deposit.svelte':
         '.lb=fs-xs | .mt=fs-sm | .grp-h=fs-xs | .none=fs-md | .warn=fs-md | .outcome=fs-md',
     'Document.svelte': '',
+    'File.svelte': '.download=fs-sm | .note=fs-sm',
+    'Files.svelte': '.note=fs-sm',
+    'file/Code.svelte': '.gutter, .text=fs-sm',
+    'files/RootForm.svelte': '',
+    'files/Tree.svelte': '',
+    'files/Workspaces.svelte': '',
     'Domains.svelte': '.empty, .said=fs-md',
     'Editor.svelte': '.heading=fs-sm | .result=fs-md',
     'Findings.svelte': '.view=fs-md | .file, .key=fs-sm',

@@ -16,7 +16,7 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import type { ViewProps } from '../../src/lib/views/registry.ts';
-import { railOrder } from '../../src/lib/shell/rail.ts';
+import { GROUP_MAX, arrange, railOrder, type NavGroup } from '../../src/lib/shell/rail.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import type { Component } from 'svelte';
 // Importing the route loader registers real views; collections use the keys of sources.yml.
@@ -180,6 +180,8 @@ describe('the real registrations', () => {
                 'editor',
                 'deposit',
                 'document',
+                'files',
+                'file',
                 'source',
                 'session-list',
                 'session-detail',
@@ -214,6 +216,8 @@ describe('the real registrations', () => {
             document: { group: '', order: 0 },
             domains: { group: 'structure', order: 1 },
             editor: { group: '', order: 0 },
+            file: { group: '', order: 0 },
+            files: { group: 'sources', order: 4 },
             education: { group: 'academic', order: 2 },
             events: { group: 'academic', order: 1 },
             findings: { group: 'system', order: 1 },
@@ -417,6 +421,30 @@ describe('the real registrations', () => {
         }
         const shared = [...seen].filter(([, ids]) => ids.length > 1);
         expect(shared).toEqual([]);
+    });
+
+    it('gives every flyout group a glyph no view inside it carries', () => {
+        // The opener of a group and the entries in its list are drawn together, so a group wearing
+        // one of its own views' marks reads as that view rather than as the group.
+        const raw = loadConfig(engineDir()).config.nav_groups as Record<
+            string,
+            Omit<NavGroup, 'id'>
+        >;
+        const groups = Object.entries(raw).map(([id, group]) => ({ id, ...group }));
+        const sections = arrange(
+            views().filter((view) => view.listed !== false),
+            groups
+        );
+        // Only a flyout draws a group glyph: a small group is a heading over one button per view,
+        // and shell/ActivityRail.svelte reads section.glyph nowhere else.
+        const clashes = sections
+            .filter((section) => section.items.length > GROUP_MAX)
+            .filter((section) => section.glyph !== undefined)
+            .filter((section) =>
+                section.items.some((view) => (catalog[view.glyph] ?? view.glyph) === section.glyph)
+            )
+            .map((section) => `${section.label}: ${section.glyph}`);
+        expect(clashes).toEqual([]);
     });
 
     it('gives the Agents and Changes views a glyph of their own in the rail', () => {

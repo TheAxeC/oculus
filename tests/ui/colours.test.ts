@@ -500,6 +500,40 @@ describe('the surfaces a component may fill and paint on', () => {
     });
 });
 
+describe('the code window palette', () => {
+    const root = parseBlocks(readFileSync(join(SRC, 'lib', 'themes', 'tokens.css'), 'utf8'))[
+        ':root'
+    ];
+    const tokens = Object.keys(root)
+        .filter((name) => name.startsWith('--c-code-'))
+        .sort();
+
+    it('names one hue per role the highlighter marks', () => {
+        expect(tokens).toEqual([
+            '--c-code-comment',
+            '--c-code-keyword',
+            '--c-code-meta',
+            '--c-code-name',
+            '--c-code-number',
+            '--c-code-string'
+        ]);
+    });
+
+    // Each is an authored hue of the palette, which is what makes derive.ts mint its `-txt` against
+    // every theme's own surfaces and tests/contrast.test.ts measure the pair.
+    it('gives each one a colour of its own rather than a reference to another token', () => {
+        expect(tokens.filter((name) => !/^#[0-9a-f]{6}$/i.test(root[name]))).toEqual([]);
+    });
+
+    it('paints the code window through those six and nothing else', () => {
+        const source = readFileSync(join(SRC, 'lib', 'views', 'file', 'Code.svelte'), 'utf8');
+        const painted = [...source.matchAll(/color:\s*var\((--c-code-[a-z-]+)-txt\)/g)].map(
+            (found) => found[1]
+        );
+        expect([...new Set(painted)].sort()).toEqual(tokens);
+    });
+});
+
 describe('the colour rule', () => {
     it('holds in every component under ui, shell, views and routes', () => {
         expect(findColourViolations(SRC, ROOTS)).toEqual([]);

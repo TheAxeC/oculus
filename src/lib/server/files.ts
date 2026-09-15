@@ -84,6 +84,27 @@ export function resolveRootFileResult(
     key: string,
     path: string
 ): { path: string } | { error: 'outside' | 'missing' } {
+    const found = resolveRootPath(list, key, path);
+    if ('error' in found) return found;
+    try {
+        return statSync(found.path).isFile() ? found : { error: 'missing' };
+    } catch {
+        return { error: 'missing' };
+    }
+}
+
+/**
+ * The real path a root's key and a relative path name, whatever is there: a file, a directory or
+ * nothing. Both ends go through realpath first, so a symbolic link pointing out of the root is
+ * refused rather than followed, and the result is then required to be the root itself or something
+ * under it. The file route and the directory listing share this, so neither can drift from the
+ * other on what is inside a root.
+ */
+export function resolveRootPath(
+    list: Root[],
+    key: string,
+    path: string
+): { path: string } | { error: 'outside' | 'missing' } {
     const root = list.find((one) => one.key === key);
     if (root === undefined) return { error: 'outside' };
     const dir = real(root.dir);
@@ -104,11 +125,7 @@ export function resolveRootFileResult(
         return { error: 'missing' };
     }
     if (!inside(full, dir)) return { error: 'outside' };
-    try {
-        return statSync(full).isFile() ? { path: full } : { error: 'missing' };
-    } catch {
-        return { error: 'missing' };
-    }
+    return { path: full };
 }
 
 /**
@@ -206,6 +223,17 @@ export function rootsFile(engine: string = engineDir()): string {
 /** The key the hub itself is served under, so a collection's `link` to a file in the hub opens. */
 export const HUB_ROOT = 'hub';
 
+/** The roots config/sources.yml names, without the hub in front of them, out of a config already read. */
+export function configuredRootsOf(config: Record<string, unknown>, engine: string): Root[] {
+    return readRoots(config, rootsFile(engine)).roots;
+}
+
+/** The same, for a caller with no request to take the config off. */
+export function configuredRoots(): Root[] {
+    const engine = engineDir();
+    return configuredRootsOf(loadConfig(engine).config, engine);
+}
+
 /**
  * The configured roots with the hub in front of them under the key `hub`, unless the config names
  * that key itself, in which case the config's entry stands. The hub is where `local.yml` says it
@@ -217,12 +245,24 @@ export function withHub(list: Root[], hub: string): Root[] {
 }
 
 /**
- * The roots api/file serves: the hub, then the configured ones. The config is read per request as
- * everything else in this release is, so an edit shows on a reload; the findings are published on
- * the config channel by the watcher, which is where the Findings view reads them from.
+ * The roots api/file serves: the hub, the configured ones, and the ones `added` names.
+ *
+ * `added` is the current workspace's own roots, so a folder the reader added in the file browser is
+ * served exactly as a configured one is. The hub key and every configured key win over an added
+ * root carrying the same key, so a saved workspace can only ever add a root and never redirect one
+ * the rest of the application reads; the inside-root check is the same for both.
  */
-export function roots(): Root[] {
+export function rootsFrom(configured: Root[], hub: string, added: Root[] = []): Root[] {
+    const taken = new Set([HUB_ROOT, ...configured.map((one) => one.key)]);
+    const extra = added.filter((one) => !taken.has(one.key));
+    return withHub([...configured, ...extra], hub);
+}
+
+/**
+ * The same, reading the config and local itself, for a caller with no request to take them off. A
+ * request carries both on its ServerContext and uses rootsFrom, so one request reads each file once.
+ */
+export function roots(added: Root[] = []): Root[] {
     const engine = engineDir();
-    const configured = readRoots(loadConfig(engine).config, rootsFile(engine)).roots;
-    return withHub(configured, loadLocal(engine).hub);
+    return rootsFrom(configuredRoots(), loadLocal(engine).hub, added);
 }

@@ -29,6 +29,8 @@ const ALLOWED: Record<string, string> = {
         'drawn() sanitises unless the caller marked the content trusted, and the trusted Intro sites are checked one by one below: each must hand over a catalog line with literal arguments, so a hub value never reaches this site unfiltered.',
     'views/shared/Intro.svelte:drawn(line)':
         'drawn() sanitises unless the caller marked the content trusted, and the trusted Intro sites are checked one by one below: each must hand over a catalog line with literal arguments, so a hub value never reaches this site unfiltered.',
+    'views/file/Code.svelte:painted':
+        'highlight.js escapes every & < > of the file text before it emits its own fixed span classes, so the code window holds no markup the file could put there.',
     'views/source/Editor.svelte:painted':
         'state/highlight.ts escapes every & < > of the file text before it emits its own fixed span classes, so the mirror holds no markup the file could put there.'
 };

@@ -19,6 +19,7 @@ const STORES: (keyof ClientState)[] = [
     'selection',
     'terminals',
     'files',
+    'fs',
     'docs',
     'deposit',
     'transcripts',

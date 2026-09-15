@@ -29,6 +29,11 @@ export type LocalConfig = {
      * machine sets it, and the sessions layer then uses ~/.oculus/sessions.json.
      */
     sessionsOverrides?: string;
+    /**
+     * Where the file browser's saved workspaces live, `workspaces` in the file. Absent unless the
+     * machine sets it, and the file browser then uses ~/.oculus/workspaces.json.
+     */
+    workspaces?: string;
     /** Absolute or PATH-resolved Claude CLI used by unattended update-task terminals. */
     claudeBin: string;
     /** Claude and Codex config folders shown by the Usage view. */
@@ -44,6 +49,7 @@ const LOCAL_KEYS = [
     'hpc_host',
     'sessions_cache',
     'sessions_overrides',
+    'workspaces',
     'claude_bin',
     'accounts'
 ];
@@ -184,11 +190,12 @@ export function loadLocal(engine: string): LocalConfig {
         config.claudeBin = record.claude_bin;
     }
     if (record.accounts !== undefined) config.accounts = usageAccounts(record.accounts, file, base);
-    // The two session paths are absent unless the machine names them, so a config that says
-    // nothing about sessions leaves the defaults to the module that owns them.
+    // The three machine-local state paths are absent unless the machine names them, so a config
+    // that says nothing about them leaves the defaults to the modules that own them.
     for (const [key, field] of [
         ['sessions_cache', 'sessionsCache'],
-        ['sessions_overrides', 'sessionsOverrides']
+        ['sessions_overrides', 'sessionsOverrides'],
+        ['workspaces', 'workspaces']
     ] as const) {
         if (record[key] === undefined) continue;
         if (typeof record[key] !== 'string' || record[key] === '') {

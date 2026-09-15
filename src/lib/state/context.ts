@@ -21,6 +21,7 @@ import { createDrag, type DragStore } from './drag.svelte.ts';
 import { createEntities, type EntitiesStore } from './entities.svelte.ts';
 import { createFeeds, type FeedsStore } from './feeds.svelte.ts';
 import { createFiles, type FilesStore } from './files.svelte.ts';
+import { createFs, type FsStore } from './fs.svelte.ts';
 import { createHpc, type HpcStore } from './hpc.svelte.ts';
 import { createLayout, type LayoutStore } from './layout.svelte.ts';
 import { createPaletteSource, type PaletteSourceStore } from './palette-source.svelte.ts';
@@ -47,6 +48,7 @@ export type ClientState = {
     selection: SelectionStore;
     terminals: TerminalsStore;
     files: FilesStore;
+    fs: FsStore;
     docs: DocsStore;
     deposit: DepositStore;
     transcripts: TranscriptsStore;
@@ -77,6 +79,7 @@ export function createClientState(): ClientState {
     const selection = createSelection();
     const terminals = createTerminals(entities, socket, writes);
     const files = createFiles(entities);
+    const fs = createFs(writes);
     const docs = createDocs(entities);
     const deposit = createDeposit();
     const transcripts = createTranscripts();
@@ -100,6 +103,7 @@ export function createClientState(): ClientState {
         selection,
         terminals,
         files,
+        fs,
         docs,
         deposit,
         transcripts,

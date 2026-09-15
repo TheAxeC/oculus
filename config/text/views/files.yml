@@ -1,0 +1,46 @@
+# Oculus text owned by the file browser: the tree, its toolbar, and what a refused workspace write says.
+text:
+    files:
+        add: add
+        add_root: + root
+        add_root_title: Add a folder on this machine to this workspace
+        cancel: cancel
+        collapse_title: Close {0}
+        expand_title: Open {0}
+        file_glyph: paper
+        folder_glyph: folder
+        html_glyph: page
+        image_glyph: memories
+        listing_failed: '{0} could not be read: {1}'
+        loading: Reading...
+        none: No roots yet. Add a folder to this workspace.
+        none_glyph: info
+        open_title: Open {0} as a tab
+        read_failed: 'The roots could not be read: {0}'
+        refused_name_held: A workspace already carries that name.
+        refused_no_dir: Type the path of a folder.
+        refused_no_name: Type a name for the workspace.
+        refused_no_such_dir: There is no folder at that path.
+        refused_no_such_root: This workspace has no such root.
+        refused_no_such_workspace: There is no workspace of that name.
+        refused_not_a_directory: That path is a file, not a folder.
+        refused_not_absolute: A root is an absolute path, or one starting with ~/.
+        refused_other: 'The server refused that: {0}'
+        refused_root_fixed: A configured root is in every workspace and cannot be removed.
+        refused_root_held: That folder is already a root of this workspace.
+        remove_root: remove
+        remove_root_title: Take {0} out of this workspace
+        reserved: 'Left out of this workspace, since the configuration owns the name: {0}'
+        root_dir: Folder path
+        root_dir_help: An absolute path, or one starting with ~/
+        save: save
+        save_as: save as
+        save_as_title: Save these roots as a workspace of their own
+        toolbar: File browser controls
+        tree: Roots and folders
+        workspace: Workspace
+        workspace_default: Configured roots
+        workspace_name: Name for the workspace
+    views:
+        files: Files
+        files_glyph: applications
