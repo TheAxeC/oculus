@@ -90,7 +90,7 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `agents` | Agents | The agents a session has running under it. |
 | `status` | Status | Whether the socket is up, which snapshot the page holds and how much is in it. |
 | `findings` | Findings | Every problem the data layer found in the hub's files, each naming its file and key. |
-| `gallery` | Gallery | The images the hub carries. |
+| `gallery` | Gallery | Every primitive with sample data in one pane, the living style sheet, opened under each theme to see what a card, a chip, a meter and a table look like there. |
 | `hpc` | Live HPC | The cluster queue: what is running, what is pending and the quota. |
 | `usage` | Usage | What each agent account has spent. |
 | `help` | Help | This manual. |
