@@ -84,6 +84,13 @@ export type FeedDeleteWrite = { kind: 'feed-delete'; feed: string; id: string };
 /** One position lead appended from the feed file's own form schema. */
 export type LeadAddWrite = { kind: 'lead-add'; fields: Record<string, unknown> };
 
+/**
+ * The public deck's saved lists: which slides it shows, and where every slide of the catalog sits.
+ * `order` carries the whole catalog, shown or not, so a slide unchecked and checked again comes back
+ * where the reader left it.
+ */
+export type DeckWrite = { kind: 'deck'; selection: string[]; order: string[] };
+
 /** One LinkedIn idea stub and one idea promoted to a numbered post. */
 export type LinkedinIdeaWrite = { kind: 'linkedin-idea'; title: string; category: string };
 export type LinkedinPostWrite = { kind: 'linkedin-post'; file: string };
@@ -258,6 +265,25 @@ export function linkedinIdeaWrite(body: unknown): LinkedinIdeaWrite | null {
 export function linkedinPostWrite(body: unknown): LinkedinPostWrite | null {
     if (!isMap(body) || body.kind !== 'linkedin-post' || typeof body.file !== 'string') return null;
     return { kind: 'linkedin-post', file: body.file };
+}
+
+/** A list of words, which is what both halves of a deck write are. */
+function keyList(value: unknown): string[] | null {
+    if (!Array.isArray(value)) return null;
+    return value.every((one) => typeof one === 'string' && one !== '') ? (value as string[]) : null;
+}
+
+/**
+ * The body as a deck write, or null when it is not one. An empty selection is a list of the right
+ * shape and reaches the writer, which is where it is refused: the refusal names what was wrong with
+ * it rather than the body being unknown to the route.
+ */
+export function deckWrite(body: unknown): DeckWrite | null {
+    if (!isMap(body) || body.kind !== 'deck') return null;
+    const selection = keyList(body.selection);
+    const order = keyList(body.order);
+    if (selection === null || order === null) return null;
+    return { kind: 'deck', selection, order };
 }
 
 /** The body as a new idea, or null when it is not one. */

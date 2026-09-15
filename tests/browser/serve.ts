@@ -6,13 +6,15 @@
 // scaffold projects, and every one of those writes lands under the system temporary directory. The
 // copy's path is asserted to be inside that directory before anything is written into it.
 //
-// The run reaches nothing of the machine's own, and every one of the three ways is a setting the
+// The run reaches nothing of the machine's own, and every one of the four ways is a setting the
 // server already reads. OCULUS_LOCAL names the hub copy, which is loadLocal()'s override in
-// src/lib/data/sources/config.ts. HOME names a home directory this run made, so the session stores,
-// the session registry and the byte-offset cache are the fixture's rather than the owner's. PATH
-// puts this run's own `ssh` and `tmux` in front: the Live HPC poller's ssh answers from demo/hpc/
-// instead of opening a connection, and tmux fails, so no terminal and no usage refresh starts a
-// process on the machine.
+// src/lib/data/sources/config.ts. OCULUS_CONFIG names a copy of the engine's own config/, which is
+// configDir()'s override there, so a spec that presses Save in the Slides view writes that copy's
+// present.yml and never the checkout's. HOME names a home directory this run made, so the session
+// stores, the session registry and the byte-offset cache are the fixture's rather than the owner's.
+// PATH puts this run's own `ssh` and `tmux` in front: the Live HPC poller's ssh answers from
+// demo/hpc/ instead of opening a connection, and tmux fails, so no terminal and no usage refresh
+// starts a process on the machine.
 //
 // The server refuses to start over a stale build, since src/server.ts imports build/handler.js and a
 // spec would otherwise press yesterday's page. What the run made is removed when it exits.
@@ -73,12 +75,16 @@ removeLeftovers(tmpdir(), PREFIX);
 
 const temp = mkdtempSync(join(tmpdir(), PREFIX));
 const hub = inside(join(temp, 'demo'), tmpdir());
+const engineConfig = inside(join(temp, 'config'), tmpdir());
 const home = inside(join(temp, 'home'), tmpdir());
 const bin = inside(join(temp, 'bin'), tmpdir());
 const local = inside(join(temp, 'local.yml'), tmpdir());
 const marker = inside(join(here, '.hub'), engine);
 
 cpSync(join(engine, 'demo'), hub, { recursive: true });
+// The engine's own YAML, copied so that a write from the page lands here. The Slides view's Save
+// rewrites present.yml, and the watcher watching this directory is what pushes the deck back.
+cpSync(join(engine, 'config'), engineConfig, { recursive: true });
 // The Focus board draws a position lead only inside `leads_horizon_days` of today, so the demo's
 // dated lead is moved to a week from now in the copy: the spec that clicks its line holds on any day.
 const leads = inside(join(hub, 'feeds', 'position-leads.yml'), tmpdir());
@@ -138,6 +144,7 @@ const server = spawn(process.execPath, [join(engine, 'src', 'server.ts')], {
     env: {
         ...process.env,
         OCULUS_LOCAL: local,
+        OCULUS_CONFIG: engineConfig,
         HOME: home,
         PATH: `${bin}:${process.env.PATH ?? ''}`
     },

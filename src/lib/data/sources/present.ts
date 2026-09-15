@@ -14,6 +14,7 @@
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
+import { PRESENT_DOC } from '../deck.ts';
 import { byKey, fields, isMap, str, strings } from '../guards.ts';
 import { readFrontmatter, splitFrontmatter } from './docs.ts';
 import type {
@@ -26,8 +27,9 @@ import type {
     PresentTag
 } from '../model.ts';
 
-/** The one file a project's slides are read from, and the folder its figures live in. */
-export const PRESENT_DOC = 'PRESENT.md';
+export { PRESENT_DOC };
+
+/** The folder a project's slide figures live in; the file itself is data/deck.ts's PRESENT_DOC. */
 export const PRESENT_DIR = 'present';
 
 /** The heading the deck strips off the body, so the narrative starts at its first paragraph. */

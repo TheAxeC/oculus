@@ -26,7 +26,10 @@ import { portfolioConfigFrom } from '../data/index.ts';
 import { engineDir, loadConfig, loadLocal } from '../data/sources/config.ts';
 import { hasToken, sameOrigin } from './auth.ts';
 import { setHidden, setOverride } from './sessions/overrides.ts';
+import { projects as projectsOf } from './sessions/hooks.ts';
+import type { HubLike } from './sessions/hooks.ts';
 import { createIdea, writeManifest } from './writes/manifest.ts';
+import { writeDeck } from './writes/deck.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 import { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 import {
@@ -38,6 +41,7 @@ import {
     writeFeedField
 } from './feeds.ts';
 import {
+    deckWrite,
     deleteEntryWrite,
     entryWrite,
     feedDeleteWrite,
@@ -56,14 +60,25 @@ import {
 } from './writes/bodies.ts';
 import type { Refusal } from './yaml-edit.ts';
 import type { SubtaskTarget } from './writes/subtasks.ts';
-import type { PortfolioConfig } from '../data/model.ts';
+import type { PortfolioConfig, Project } from '../data/model.ts';
 
 /**
  * What a write needs to know: which hub to write in, what its manifests are checked against, and
  * where the per-session overrides file is. The overrides path is absent on a machine that has not
  * set `sessions_overrides` in local.yml, and `defaultOverridesPath()` is used then.
  */
-export type WriteTarget = { hub: string; config: PortfolioConfig; overrides?: string };
+export type WriteTarget = {
+    hub: string;
+    config: PortfolioConfig;
+    overrides?: string;
+    /**
+     * The projects of the portfolio this server last published, which the deck write builds its
+     * catalog of slide keys from. It is required rather than optional so that a route reaching for a
+     * target cannot leave the deck write with no catalog and refuse every save; a process that has
+     * published no portfolio yet names no projects, and the write refuses with a reason.
+     */
+    projects: () => Project[];
+};
 
 export type WriteOutcome = {
     /** False when the hub holds no project with that id; then nothing was read and nothing written. */
@@ -74,6 +89,7 @@ export type WriteOutcome = {
 
 // The writers and the parsers, under the name this file gave them before the split.
 export { coerce, createIdea, fieldTypes, insideHub, writeManifest } from './writes/manifest.ts';
+export { writeDeck } from './writes/deck.ts';
 export {
     collectionFile,
     createEntry,
@@ -85,6 +101,7 @@ export {
 export { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 export type { SubtaskAction, SubtaskTarget } from './writes/subtasks.ts';
 export {
+    deckWrite,
     deleteEntryWrite,
     entryWrite,
     feedDeleteWrite,
@@ -109,14 +126,22 @@ function json(status: number, body: unknown): Response {
     });
 }
 
-/** Where writes land on this machine: the hub of local.yml, read the way every other reader does. */
-export function target(): WriteTarget {
+/**
+ * Where writes land on this machine: the hub of local.yml, read the way every other reader does, and
+ * the projects of the portfolio this request's server last published.
+ *
+ * The server is passed in rather than reached from a module, so nothing here is process-wide. A
+ * caller with no server in hand (a document read, a deposit action) names no projects, and only the
+ * deck write depends on them.
+ */
+export function target(server?: { hub: HubLike }): WriteTarget {
     const engine = engineDir();
     const local = loadLocal(engine);
     return {
         hub: local.hub,
         config: portfolioConfigFrom(loadConfig(engine).config),
-        overrides: local.sessionsOverrides
+        overrides: local.sessionsOverrides,
+        projects: () => (server === undefined ? [] : projectsOf(server.hub))
     };
 }
 
@@ -287,6 +312,22 @@ export async function handleWrite(
         if (!outcome.found)
             return json(404, { error: 'the LinkedIn idea file is not on this hub' });
         return answer(outcome);
+    }
+
+    const deck = deckWrite(body);
+    if (deck !== null) {
+        let outcome;
+        try {
+            outcome = writeDeck(into.config, into.projects(), deck.selection, deck.order);
+        } catch {
+            // The file is the reader's own configuration and anything about it can go wrong on this
+            // machine; the page is told which of the refusals it was and the file is left alone.
+            return json(500, { error: 'unwritable' });
+        }
+        if ('error' in outcome) {
+            return json(outcome.error === 'unwritable' ? 500 : 400, { error: outcome.error });
+        }
+        return answer({ found: true, ...outcome });
     }
 
     const idea = newIdea(body);

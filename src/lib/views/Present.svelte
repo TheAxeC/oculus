@@ -41,6 +41,7 @@
     import type { ViewProps } from './registry';
 
     const {
+        layout: { openBeside },
         present: { current, first, last, next, position, previous, slides },
         ui: { instanceState, setInstanceState }
     } = useState();
@@ -148,6 +149,13 @@
             onclick={() => {
                 write({ overview: !grid });
                 box?.focus();
+            }}
+        />
+        <ToolButton
+            label={t('slides.open')}
+            title={t('slides.open_tip')}
+            onclick={() => {
+                openBeside('slides');
             }}
         />
     </Toolbar>

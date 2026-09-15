@@ -24,6 +24,7 @@ import type { FSWatcher } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
 import { buildPortfolio, portfolioConfigFrom } from '../../data/index.ts';
 import {
+    configDir,
     iconFindings,
     iconSet,
     loadConfig,
@@ -138,7 +139,7 @@ function reason(error: unknown): string {
  */
 export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOptions = {}): Watcher {
     const debounce = options.debounce ?? DEBOUNCE;
-    const configDir = join(paths.engine, 'config');
+    const engineConfig = configDir(paths.engine);
     const handles = new Map<string, FSWatcher>();
     /** Refusals are logged once until recovery; every rebuild still retries unopened paths. */
     const refused = new Set<string>();
@@ -292,7 +293,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             }
             if (withFeeds) hub.publish('feeds', buildFeeds(paths.hub, portfolio));
             openFile(join(paths.hub, portfolio.career));
-            open(configDir, true);
+            open(engineConfig, true);
         } catch (error) {
             console.error(`portfolio watch: rebuild failed: ${reason(error)}`);
         }

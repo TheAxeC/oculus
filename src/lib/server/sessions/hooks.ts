@@ -163,6 +163,16 @@ export function project(hub: HubLike, id: string): Project | null {
     return isMap(found) ? (found as Project) : null;
 }
 
+/** Every project in the last published portfolio payload, for an action over the whole portfolio. */
+export function projects(hub: HubLike): Project[] {
+    const held = entityMap(hub, 'projects');
+    return held === null
+        ? []
+        : Object.values(held)
+              .filter(isMap)
+              .map((one) => one as Project);
+}
+
 /** Dataset keys in the last portfolio payload, for recovery requests to address by snapshot only. */
 export function datasetIds(hub: HubLike): string[] {
     const datasets = entityMap(hub, 'datasets');

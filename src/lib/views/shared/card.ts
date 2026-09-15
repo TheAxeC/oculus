@@ -65,6 +65,15 @@ export function openDocument(client: ClientState, folder: string, path: string):
     });
 }
 
+/**
+ * The slide the deck opens at for one project: the first of the slides its PRESENT.md declares, and
+ * nothing for a project that declares none. It is the whole of what the card's deck control decides,
+ * so which slide a card opens is a plain call rather than a rendered page.
+ */
+export function deckSlideOf(project: BoardItem['project']): string | null {
+    return (project.present ?? [])[0]?.id ?? null;
+}
+
 /** The catalogued label for a code-deposit state. */
 export function codeLabel(value: string, translate: Translate): string {
     if (value === 'deposited') return translate('board.code_deposited');

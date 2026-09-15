@@ -20,7 +20,13 @@ import {
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import { area, payload, record, workspace } from '../sessions-fixture.ts';
-import type { Id, Project as Record_, Relations, Snapshot } from '../../src/lib/data/model.ts';
+import type {
+    Id,
+    PresentSlide,
+    Project as Record_,
+    Relations,
+    Snapshot
+} from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { clientContext, createClientState, type ClientState } from '../client.ts';
 
@@ -91,8 +97,19 @@ function project(): Record_ {
     };
 }
 
-function snapshot(): Snapshot {
-    const byId: Record<Id, Record_> = { alpha: project() };
+/** The one slide a project with a PRESENT.md carries, whatever else that file declares. */
+const SLIDE: PresentSlide = {
+    id: 'alpha',
+    projectId: 'alpha',
+    title: 'A headline for the slide',
+    specs: [],
+    panels: [],
+    method: [],
+    results: []
+};
+
+function snapshot(over: Partial<Record_> = {}): Snapshot {
+    const byId: Record<Id, Record_> = { alpha: { ...project(), ...over } };
     return {
         version: 1,
         entities: {
@@ -112,8 +129,8 @@ function snapshot(): Snapshot {
 }
 
 /** What every case here starts from, installed into the case's own client. */
-function installFixture(): void {
-    receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+function installFixture(over: Partial<Record_> = {}): void {
+    receive({ channel: 'portfolio', version: 1, payload: snapshot(over) });
     receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
     receive({
         channel: 'sessions',
@@ -177,6 +194,28 @@ describe('a project as its own tab', () => {
         // still on the card's own row of four, which reports presence and offers nothing.
         expect(group).not.toContain('>manuscript/main.pdf</span>');
         expect(group).not.toContain('>manuscript/main.tex</span>');
+    });
+
+    it('offers no PRESENT.md and no deck control for a project that has no slide', () => {
+        expect(segment(body)).not.toContain('>PRESENT.md</span>');
+        expect(body).not.toContain(catalog['project.card.present']);
+    });
+
+    it('offers PRESENT.md after the four, and the deck control, for a project with a slide', () => {
+        installFixture({ present: [SLIDE] });
+        const drawn = html('alpha');
+        const group = segment(drawn);
+        expect(group).toContain('>PRESENT.md</span>');
+        // It joins the documents rather than replacing them, and the tab still opens on the README.
+        expect(group).toContain('>README.md</span>');
+        expect(chosen(drawn)).toBe('README.md');
+        expect(drawn).toContain(catalog['project.card.present']);
+        expect(drawn).toContain(catalog['project.card.present_tip']);
+    });
+
+    it('draws the PRESENT.md the tab was left showing', () => {
+        installFixture({ present: [SLIDE] });
+        expect(chosen(html('alpha', { id: 'alpha', doc: 'PRESENT.md' }))).toBe('PRESENT.md');
     });
 
     it('waits for the chosen document rather than drawing an empty one', () => {

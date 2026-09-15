@@ -66,6 +66,9 @@ text:
             overdue: overdue {0}d
             pin_glyph: pin
             pin_to_top: pin to top
+            present: slide
+            present_glyph: poster
+            present_tip: open the public deck at this project's slide
             program_glyph: program
             repro_glyph: check
             reproduced: Reproduced
@@ -96,7 +99,7 @@ text:
             xlink_idea: idea
             xlink_ideas: ideas
             xlink_published: published
-        no_documents: This project has none of the four Markdown documents.
+        no_documents: This project has no Markdown document.
         no_sessions: No session has worked in this folder.
         none: No project chosen. Open a project from the title of its card.
         none_glyph: folder

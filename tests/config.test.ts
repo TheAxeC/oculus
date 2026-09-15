@@ -18,6 +18,7 @@ import {
     DEFAULT_PORT,
     asciiCatalog,
     collectionKeys,
+    configDir,
     engineDir,
     glyphCatalog,
     iconCatalog,
@@ -27,6 +28,7 @@ import {
     loadLocal,
     textCatalog
 } from '../src/lib/data/sources/config.ts';
+import { portfolioConfigFrom } from '../src/lib/data/index.ts';
 import { readRoots, rootsFile } from '../src/lib/server/files.ts';
 import { docFindings } from '../src/lib/server/docs.ts';
 import { descriptionKey } from '../src/lib/views/config/files.ts';
@@ -366,6 +368,39 @@ describe('loadLocal', () => {
     });
 });
 
+describe('OCULUS_CONFIG', () => {
+    afterEach(() => {
+        delete process.env.OCULUS_CONFIG;
+    });
+
+    it('is the engine config directory when it is not set', () => {
+        const engine = scratch();
+        expect(configDir(engine)).toBe(join(engine, 'config'));
+    });
+
+    it('is read instead of the engine config directory, so a write lands in the copy', () => {
+        const engine = scratch();
+        writeConfig(engine, 'behavior.yml', 'stale_days: 30\n');
+        const elsewhere = scratch();
+        const named = join(elsewhere, 'config');
+        expect(resolve(named).startsWith(resolve(elsewhere) + sep)).toBe(true);
+        mkdirSync(named, { recursive: true });
+        writeFileSync(join(named, 'behavior.yml'), 'stale_days: 7\n');
+        process.env.OCULUS_CONFIG = named;
+        expect(configDir(engine)).toBe(named);
+        expect(loadConfig(engine).config.stale_days).toBe(7);
+        expect(portfolioConfigFrom(loadConfig(engine).config, engine).deckFile).toBe(
+            join(named, 'present.yml')
+        );
+    });
+
+    it('resolves a relative directory against the engine', () => {
+        const engine = scratch();
+        process.env.OCULUS_CONFIG = 'other';
+        expect(configDir(engine)).toBe(join(engine, 'other'));
+    });
+});
+
 describe('loadConfig', () => {
     it('merges the top-level keys of every file in name order', () => {
         const engine = scratch();
@@ -584,6 +619,7 @@ describe("oculus's own config directory", () => {
         'views/radar.yml',
         'views/session-detail.yml',
         'views/session-list.yml',
+        'views/slides.yml',
         'views/source.yml',
         'views/status.yml',
         'views/terminal.yml',

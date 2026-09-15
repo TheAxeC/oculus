@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import {
     codeLabel,
     deadline,
+    deckSlideOf,
     matching,
     nameOf,
     subOf,
@@ -82,5 +83,23 @@ describe('card labels', () => {
         expect(deadline(project('2026-10-20'), ['submitted'], now, translate)).toEqual({
             label: '2026-10-20'
         });
+    });
+});
+
+describe('the deck a card opens', () => {
+    it('opens at the project own first slide, whatever else its PRESENT.md declares', () => {
+        const one = project();
+        one.present = [
+            { id: 'one', projectId: 'one', specs: [], panels: [], method: [], results: [] },
+            { id: 'one/data', projectId: 'one', specs: [], panels: [], method: [], results: [] }
+        ];
+        expect(deckSlideOf(one)).toBe('one');
+    });
+
+    it('opens at nothing for a project with no slide, which is what hides the control', () => {
+        expect(deckSlideOf(project())).toBeNull();
+        const bare = project();
+        bare.present = [];
+        expect(deckSlideOf(bare)).toBeNull();
     });
 });

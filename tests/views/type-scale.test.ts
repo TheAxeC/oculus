@@ -65,6 +65,7 @@ const VIEWS: Record<string, string> = {
         '.heading=fs-xs | .said, .failed=fs-md | .doc=fs-md | .doc :global(h1)=fs-3xl | .doc :global(h2)=fs-2xl | .doc :global(h3)=fs-xl | .doc :global(h4)=fs-md | .doc :global(code)=fs-sm | .doc :global(table)=fs-md | .nm=fs-md | .meta=fs-sm',
     'Projects.svelte': '.said=fs-md',
     'Radar.svelte': '',
+    'Slides.svelte': '.intro=fs-md | .at=fs-xs | .said=fs-md',
     'Source.svelte': '',
     'Status.svelte': '.view=fs-md',
     'Venues.svelte': '.said=fs-md | .empty=fs-md',

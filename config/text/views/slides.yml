@@ -1,0 +1,32 @@
+# Oculus text owned by the Slides view.
+text:
+    slides:
+        down: down
+        down_tip: move {0} one place later
+        drag_glyph: grip
+        drag_tip: drag {0} to another place in the deck
+        dropped: The deck changed on disk, so these are the slides the file holds now. Tick and order them again.
+        empty: The deck holds no slides to choose from.
+        empty_glyph: circle_empty
+        failed_file: The deck file could not be read or written on this machine.
+        failed_invalid: The deck did not take that selection. Tick at least one slide the deck still holds.
+        failed_network: The save did not reach the server.
+        failed_order: The deck did not take that order. It changed on disk while you were working; try again.
+        failed_other: The deck was not saved.
+        intro: Tick the slides the deck shows, and drag or step them into the order it shows them in.
+        keep_one: Keep at least one slide ticked.
+        kind: '{0}'
+        moved: '{0} is now {1} of {2}'
+        open: Slides
+        open_tip: choose which slides the deck shows, and in what order
+        position: '{0}'
+        save: Save
+        saved: saved
+        saving: saving ...
+        title: Slides
+        toolbar: Slide catalog controls
+        up: up
+        up_tip: move {0} one place earlier
+    views:
+        slides: Slides
+        slides_glyph: section

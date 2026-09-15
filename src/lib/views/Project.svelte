@@ -37,6 +37,7 @@
     import type { BoardItem } from '$lib/state/board';
     import { cardCursor } from '$lib/state/instance';
     import { modelShort, stamp } from '$lib/state/format';
+    import { PRESENT_DOC } from '$lib/state/present';
     import type { GroupedSession } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
@@ -57,7 +58,7 @@
     const item = $derived(id === '' ? null : boardItemOf(id));
     const folder = $derived(item === null ? '' : folderOf(item));
     const rows = $derived(folder === '' ? [] : sessionsForProject(folder));
-    const names = $derived(item === null ? [] : item.project.docs.filter(markdown).map(nameOf));
+    const names = $derived(item === null ? [] : documentNames(item));
     const chosen = $derived(pick(names, readDoc(instanceState(instance.id))));
     const shown = $derived(chosen === '' ? null : docFor(id, chosen));
     const lag = $derived(staleLag());
@@ -98,6 +99,17 @@
 
     function nameOf(doc: { name: string }): string {
         return doc.name;
+    }
+
+    /**
+     * The Markdown this tab can draw: the fixed documents the folder holds, and the PRESENT.md when
+     * the project has one. A PRESENT.md is not one of the four a project is measured by, so the
+     * card's document row does not report on it; its narrative is still a document of the project,
+     * and api/docs answers with the body alone, the front matter split off.
+     */
+    function documentNames(one: BoardItem): string[] {
+        const found = one.project.docs.filter(markdown).map(nameOf);
+        return (one.project.present ?? []).length > 0 ? [...found, PRESENT_DOC] : found;
     }
 
     /** The document showing: the one the tab remembers while it is still there, else the first. */

@@ -409,7 +409,7 @@ describe('watchPortfolio', () => {
                 })
             }),
             token,
-            { hub: started.hub, config }
+            { hub: started.hub, config, projects: () => [] }
         );
         expect(response.status).toBe(200);
         expect(await response.json()).toMatchObject({

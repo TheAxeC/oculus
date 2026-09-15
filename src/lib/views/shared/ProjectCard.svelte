@@ -9,7 +9,7 @@
     import CardDetails from './CardDetails.svelte';
     import CardLinks from './CardLinks.svelte';
     import CardSessions from './CardSessions.svelte';
-    import { codeLabel, deadline, openDocument } from './card';
+    import { codeLabel, deadline, deckSlideOf, openDocument } from './card';
     import { firstSentence, isStale, waitingLine, type BoardItem } from '$lib/state/board';
     import { contextText } from '$lib/state/project-context';
     import { findView } from '$lib/state/layout';
@@ -25,6 +25,7 @@
         selectors: { collectionOf },
         selection: { select },
         terminals: { startChat },
+        ui: { setInstanceState },
         writes: { openFolder, writeManifest }
     } = client;
     type Props = {
@@ -126,6 +127,20 @@
                 active: open,
                 toggle: true,
                 onclick: ontoggle
+            });
+        }
+        const slide = deckSlideOf(item.project);
+        if (slide !== null) {
+            rows.push({
+                label: t('project.card.present'),
+                title: t('project.card.present_tip'),
+                glyph: t('project.card.present_glyph'),
+                onclick: () => {
+                    // The deck's position is the pane's own state, so the pane is opened and then
+                    // put on the slide: a pane already on the deck moves to it rather than staying
+                    // where its reader left it.
+                    setInstanceState(openBeside('present', { slide }), { slide });
+                }
             });
         }
         if (!item.project.ghost) {

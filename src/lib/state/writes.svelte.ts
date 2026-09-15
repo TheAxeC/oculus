@@ -82,6 +82,7 @@ export type WritesStore = {
     addLinkedinIdea: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
     markPosted: (file: string) => Promise<WriteAnswer>;
     newEntry: (collection: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
+    writeDeck: (selection: string[], order: string[]) => Promise<WriteAnswer>;
     newIdea: (fields: {
         id: string;
         title?: string;
@@ -264,6 +265,15 @@ export function createWrites(): WritesStore {
         return send({ kind: 'new-entry', collection, fields });
     }
 
+    /**
+     * Save the public deck's slide selection and its order. `order` is every slide of the catalog,
+     * shown or not, and `selection` the ones the deck shows; an empty selection, a key outside the
+     * catalog and an order that is not the whole catalog are each refused and the file is untouched.
+     */
+    async function writeDeck(selection: string[], order: string[]): Promise<WriteAnswer> {
+        return send({ kind: 'deck', selection, order });
+    }
+
     /** Scaffold one idea project: a manifest and a README under projects/ideas/<id>. */
     async function newIdea(fields: {
         id: string;
@@ -372,6 +382,7 @@ export function createWrites(): WritesStore {
         addLinkedinIdea,
         markPosted,
         newEntry,
+        writeDeck,
         newIdea,
         writeGit,
         writeDeposit,

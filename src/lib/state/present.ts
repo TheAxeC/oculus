@@ -1,20 +1,28 @@
 // Layer 2, client state, pure. The deck as data: the `deck:` map of config/present.yml read into the
 // typed Deck, and the ordered list of slides the Present view draws.
 //
-// The list is assembled the way the deck is written. The `order:` places the deck's own slides and
-// any project slide it names; every other project slide is placed before the closing slide, so a
-// project that has just written a PRESENT.md is in the deck without this file or the config changing.
-// A saved `selection:` then decides which of them are shown and a saved `slide_order:` decides where,
-// both keyed by the same slide key: a project slide's own id, and `kind` or `kind:ref` for the
-// deck's own. A key either list holds for a slide that is no longer there places nothing, because
-// the two lists are written over one hub and read over whatever the hub holds now.
+// Which slides the deck places, under which keys and in which order, is data/deck.ts: the write that
+// saves a selection checks the keys it was sent against the same rule, and a second copy of it would
+// let the view and the write disagree about what a key is. What is here is the typed Deck the config
+// map reads into, and the words and the hue each placed entry is drawn with.
 //
 // Nothing here reads a store or a file: the caller hands in the config map and the projects, which
 // is what makes every case of tests/state/present.test.ts a plain call. The one thing it reaches for
 // is the tone catalog, because a colour the deck writes as a hex is painted as the palette hue that
 // hex stands for, which is what keeps every pair on a slide inside the set contrast.test.ts measures.
 
-import { byKey, fields, isMap, str, strings } from '../data/guards.ts';
+import {
+    PRESENT_DOC,
+    catalogKeys,
+    deckChoice,
+    deckEntries,
+    deckOrder,
+    deckSources,
+    defaultKeys,
+    savedKeys,
+    slideKey
+} from '../data/deck.ts';
+import { byKey, fields, isMap, str } from '../data/guards.ts';
 import { toneOf, UNKNOWN_TONE } from './tones.ts';
 import type {
     Deck,
@@ -24,7 +32,6 @@ import type {
     DeckFraming,
     DeckIdea,
     DeckIdeas,
-    DeckKind,
     DeckMeta,
     DeckSlide,
     DeckSummary,
@@ -48,22 +55,6 @@ export type {
     PresentSlide,
     Project
 } from '../data/model.ts';
-
-/** The kinds `order:` may name, so a line naming anything else places no slide. */
-const KINDS: DeckKind[] = ['title', 'framing', 'project', 'summary', 'ideas', 'closing'];
-
-/** Where a project sorts among the slides no `order:` line placed. */
-const TYPE_RANK: Record<string, number> = { active: 0, manuscript: 1, idea: 2 };
-
-/**
- * The tiers whose slides join the deck on their own. Work that is finished or somebody else's is on
- * the deck only when the `order:` places it or a saved selection holds it, so a public deck does not
- * grow an archived project the day its PRESENT.md is written.
- */
-const OPEN_TIERS = ['active', 'manuscripts', 'ideas'];
-
-/** The rank of a type the map does not name, which puts archived and coauthor work last. */
-const LAST_RANK = 9;
 
 /** The entities a `&` escape in a deck title stands for, for the plain words the overview draws. */
 const ENTITIES: Record<string, string> = {
@@ -108,11 +99,7 @@ export function parsePresentState(value: unknown): PresentState {
     return { slide: str(held.slide) ?? '', overview: held.overview === true };
 }
 
-/** The key a slide is named by in `selection:` and `slide_order:`. */
-export function slideKey(entry: DeckEntry): string {
-    if (entry.slide === 'project') return entry.ref ?? '';
-    return entry.ref === undefined ? entry.slide : `${entry.slide}:${entry.ref}`;
-}
+export { PRESENT_DOC, slideKey };
 
 /** A title written as HTML, as the plain words an overview tile and a pane title draw. */
 export function plainTitle(html: string): string {
@@ -271,39 +258,18 @@ function ideas(value: unknown): DeckIdeas | null {
     return held;
 }
 
-/** The `order:` lines, dropping one that names a kind the deck has no slide of. */
-function order(value: unknown): DeckEntry[] {
-    if (!Array.isArray(value)) return [];
-    const held: DeckEntry[] = [];
-    for (const item of value) {
-        if (!isMap(item)) continue;
-        const kind = str(item.slide);
-        if (kind === undefined || !KINDS.includes(kind as DeckKind)) continue;
-        const ref = str(item.ref);
-        held.push(
-            ref === undefined ? { slide: kind as DeckKind } : { slide: kind as DeckKind, ref }
-        );
-    }
-    return held;
-}
-
-/** A saved list of keys, or null when the file holds none and the order alone decides. */
-function saved(value: unknown): string[] | null {
-    return Array.isArray(value) ? strings(value) : null;
-}
-
 /** The deck of the merged config, empty in every part when the config holds no `deck:` map. */
 export function deckFrom(config: Record<string, unknown>): Deck {
     const map = fields(config.deck);
     return {
         meta: meta(map.meta),
         themes: themes(map.themes),
-        order: order(map.order),
+        order: deckOrder(map.order),
         framing: framing(map.framing),
         summaries: summaries(map.summaries),
         ideas: ideas(map.ideas),
-        selection: saved(map.selection),
-        slideOrder: saved(map.slide_order),
+        selection: savedKeys(map.selection),
+        slideOrder: savedKeys(map.slide_order),
         equationsDir: str(map.equations_dir) ?? '',
         tagTones: tagTones(map.tag_tones)
     };
@@ -340,18 +306,19 @@ export type SlideSource = {
 };
 
 /**
- * Every project slide there is, by its id, sorted the way the slides no `order:` line placed are
- * appended: active work first, then manuscripts, then ideas, then everything else, each by title.
+ * Every project slide there is, paired with its project, in the order data/deck.ts appends the ones
+ * no `order:` line placed: active work first, then manuscripts, then ideas, then everything else,
+ * each by title.
  */
 export function slideSources(projects: Project[]): SlideSource[] {
-    const ranked = [...projects].sort((left, right) => {
-        const gap =
-            (TYPE_RANK[left.type ?? ''] ?? LAST_RANK) - (TYPE_RANK[right.type ?? ''] ?? LAST_RANK);
-        return gap !== 0 ? gap : left.title.localeCompare(right.title);
+    const held = new Map<string, SlideSource>();
+    for (const project of projects) {
+        for (const slide of project.present ?? []) held.set(slide.id, { slide, project });
+    }
+    return deckSources(projects).flatMap((source) => {
+        const found = held.get(source.id);
+        return found === undefined ? [] : [found];
     });
-    return ranked.flatMap((project) =>
-        (project.present ?? []).map((slide) => ({ slide, project }))
-    );
 }
 
 /** The words a row of the deck is named by in the overview and the pane title. */
@@ -380,61 +347,58 @@ function toneFor(deck: Deck, source: SlideSource | undefined): string | undefine
 }
 
 /**
- * The deck as the reader moves through it: the `order:` lines that resolve, every project slide the
- * order did not name placed before the closing slide, the saved selection applied, and the saved
- * order applied over what is left. A deck whose order places something but names no closing slide
- * still ends with one; a deck that places nothing holds no slides at all.
+ * The deck as the reader moves through it: the entries data/deck.ts places, narrowed to the saved
+ * selection and put in the saved order, each drawn with the words and the hue it wears.
  */
 export function deckSlides(deck: Deck, projects: Project[]): DeckSlide[] {
-    const sources = slideSources(projects);
-    const byId = new Map(sources.map((source) => [source.slide.id, source]));
-    const named = new Set(
-        deck.order.filter((entry) => entry.slide === 'project').map((entry) => entry.ref ?? '')
+    return rowsOf(
+        deck,
+        projects,
+        deckChoice(placement(deck, projects), deck.selection, deck.slideOrder)
     );
+}
 
-    // A deck that places nothing places nothing at all, closing slide included: the view's empty
-    // state is what a config holding no deck reads as, rather than one blank slide.
-    const placed = [...deck.order];
-    if (placed.length > 0 && !placed.some((entry) => entry.slide === 'closing')) {
-        placed.push({ slide: 'closing' });
-    }
-    // With nothing saved, an unnamed slide joins the deck only from the three open tiers; a saved
-    // selection is the reader's own list and decides on its own, archived work included.
-    const extras: DeckEntry[] = sources
-        .filter((source) => !named.has(source.slide.id))
-        .filter(
-            (source) =>
-                deck.selection !== null || OPEN_TIERS.includes(source.project.tier as string)
-        )
-        .map((source) => ({ slide: 'project' as const, ref: source.slide.id }));
-    const close = placed.findIndex((entry) => entry.slide === 'closing');
-    const cut = close === -1 ? placed.length : close;
-    const entries = [...placed.slice(0, cut), ...extras, ...placed.slice(cut)];
+/**
+ * Every slide the deck could hold, in the order the Slides view lists them: every project slide
+ * there is beside the deck's own, put in the saved order. It is the same catalog the deck write
+ * checks against. An archived project's slide is in it, unticked until a selection names it.
+ */
+export function deckCatalog(deck: Deck, projects: Project[]): DeckSlide[] {
+    return rowsOf(
+        deck,
+        projects,
+        deckChoice(deckEntries(deck.order, deckSources(projects), true), null, deck.slideOrder)
+    );
+}
 
-    const rows: DeckSlide[] = [];
-    const seen = new Set<string>();
-    for (const entry of entries) {
+/** The catalog rows a deck with no saved selection shows, which is what the ticks start from. */
+export function deckDefaultKeys(deck: Deck, projects: Project[]): string[] {
+    return defaultKeys(deck.order, deckSources(projects));
+}
+
+/** The keys of that catalog, for a caller that wants the vocabulary and not the words. */
+export function deckCatalogKeys(deck: Deck, projects: Project[]): string[] {
+    return catalogKeys(deck.order, deckSources(projects), deck.slideOrder);
+}
+
+/** The entries the deck places before any saved selection narrows them. */
+function placement(deck: Deck, projects: Project[]): DeckEntry[] {
+    return deckEntries(deck.order, deckSources(projects), deck.selection !== null);
+}
+
+/** One row per entry: its key, its kind, the words it is named by and the hue it is drawn in. */
+function rowsOf(deck: Deck, projects: Project[], entries: DeckEntry[]): DeckSlide[] {
+    const byId = new Map(slideSources(projects).map((source) => [source.slide.id, source]));
+    return entries.map((entry) => {
         const source = entry.slide === 'project' ? byId.get(entry.ref ?? '') : undefined;
-        if (entry.slide === 'project' && source === undefined) continue;
-        const key = slideKey(entry);
-        if (key === '' || seen.has(key)) continue;
-        seen.add(key);
         const tone = toneFor(deck, source);
-        const row: DeckSlide = { key, kind: entry.slide, title: titleOf(deck, entry, source) };
+        const row: DeckSlide = {
+            key: slideKey(entry),
+            kind: entry.slide,
+            title: titleOf(deck, entry, source)
+        };
         if (entry.ref !== undefined) row.ref = entry.ref;
         if (tone !== undefined) row.tone = tone;
-        rows.push(row);
-    }
-
-    const chosen =
-        deck.selection === null ? rows : rows.filter((row) => deck.selection?.includes(row.key));
-    if (deck.slideOrder === null) return chosen;
-    const positions = deck.slideOrder;
-    return [...chosen].sort((left, right) => {
-        const at = (key: string): number => {
-            const found = positions.indexOf(key);
-            return found === -1 ? positions.length : found;
-        };
-        return at(left.key) - at(right.key);
+        return row;
     });
 }

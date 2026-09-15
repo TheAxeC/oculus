@@ -6,15 +6,17 @@
 // be inside it first. What this does NOT cover: the token actually reaching the page, and Kit
 // putting it on the event, which is exercised by the curl in the package's verification.
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 import { handleWrite } from '../../src/lib/server/writes.ts';
 import { mintToken } from '../../src/lib/server/auth.ts';
 import { localDate } from '../../src/lib/data/dates.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
+import type { Project, Tier } from '../../src/lib/data/model.ts';
 import type { WriteTarget } from '../../src/lib/server/writes.ts';
 import { present } from '../present.ts';
 
@@ -82,7 +84,8 @@ function target(): WriteTarget {
     return {
         hub: dir,
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
-        overrides
+        overrides,
+        projects: () => []
     };
 }
 
@@ -604,5 +607,215 @@ describe('the kinds the write endpoint learned in P1', () => {
         expect(readFileSync(join(fresh.hub, 'registries', 'venues.yml'), 'utf8')).toContain(
             '  - name: Fresh Venue\n    id: fresh'
         );
+    });
+});
+
+/** A deck file of the same shape as config/present.yml, with comments the edit must keep. */
+const DECK = `deck:
+    # the deck's own slides, in the order it shows them
+    order:
+        - { slide: title }
+        - { slide: framing, ref: engine }
+        - { slide: project, ref: alpha }
+        - { slide: closing }
+    framing:
+        engine: { title: 'The common engine' }
+`;
+
+/** The `deck:` map of a deck file, as the portfolio config carries it. */
+function deckMapOf(source: string): unknown {
+    return (parse(source) as { deck: unknown }).deck;
+}
+
+/** One project with one slide, at the tier whose slides join the deck on their own. */
+function slideProject(id: string, tier: Tier): Project {
+    return {
+        id,
+        tier,
+        ghost: false,
+        type: tier === 'active' ? 'active' : 'archive',
+        title: id,
+        chips: [],
+        results: [],
+        ideas: [],
+        waitingOn: [],
+        followups: [],
+        subtasks: [],
+        relatedIds: [],
+        fundingIds: [],
+        datasetIds: [],
+        programIds: [],
+        domainIds: [],
+        collaborators: [],
+        docs: [],
+        present: [{ id, projectId: id, specs: [], panels: [], method: [], results: [] }],
+        folder: `projects/${tier}/${id}`,
+        file: `projects/${tier}/${id}/project.yml`
+    };
+}
+
+/**
+ * A target whose deck file is a copy under the system temporary directory, so no case here writes
+ * the engine's own config/present.yml. The projects are the snapshot the catalog is built over:
+ * `alpha` is placed by the order and `gamma` is archived, so neither the view nor the write offers
+ * it a place in the catalog.
+ */
+function deckTarget(): WriteTarget {
+    const dir = mkdtempSync(join(tmpdir(), 'oculus-deck-'));
+    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+    const file = join(dir, 'present.yml');
+    expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
+    writeFileSync(file, DECK);
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+    return {
+        hub: dir,
+        config: { ...real, deck: deckMapOf(DECK), deckFile: file },
+        projects: () => [slideProject('alpha', 'active'), slideProject('gamma', 'archive')]
+    };
+}
+
+/** What the deck file of a target holds now. */
+function deckOf(into: WriteTarget): string {
+    return readFileSync(into.config.deckFile, 'utf8');
+}
+
+/**
+ * The catalog those two projects and that order make, which is what a save must name. The archived
+ * project's slide is in it, unticked by default, so a reader can put it on the deck.
+ */
+const CATALOG = ['title', 'framing:engine', 'alpha', 'gamma', 'closing'];
+
+describe('the deck write', () => {
+    it('writes both lists into the deck file and keeps every other byte of it', async () => {
+        const into = deckTarget();
+        const order = ['title', 'alpha', 'framing:engine', 'gamma', 'closing'];
+        const response = await handleWrite(
+            request({ kind: 'deck', selection: ['title', 'alpha'], order }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ ok: true, changed: ['deck'], refused: [] });
+        const written = deckOf(into);
+        const deck = (parse(written) as { deck: Record<string, unknown> }).deck;
+        expect(deck.selection).toEqual(['title', 'alpha']);
+        expect(deck.slide_order).toEqual(order);
+        expect(written).toContain("    # the deck's own slides, in the order it shows them\n");
+        expect(written).toContain("        engine: { title: 'The common engine' }\n");
+    });
+
+    it('saves the selection in the order the reader left the deck in', async () => {
+        const into = deckTarget();
+        await handleWrite(
+            request({
+                kind: 'deck',
+                selection: ['closing', 'title'],
+                order: ['closing', 'framing:engine', 'gamma', 'alpha', 'title']
+            }),
+            TOKEN,
+            into
+        );
+        const deck = (parse(deckOf(into)) as { deck: Record<string, unknown> }).deck;
+        expect(deck.selection).toEqual(['closing', 'title']);
+    });
+
+    it('refuses an empty selection, a key it does not know and a repeated key', async () => {
+        for (const selection of [[], ['title', 'nobody'], ['title', 'title']]) {
+            const into = deckTarget();
+            const before = deckOf(into);
+            const response = await handleWrite(
+                request({ kind: 'deck', selection, order: CATALOG }),
+                TOKEN,
+                into
+            );
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({ error: 'invalid' });
+            expect(deckOf(into)).toBe(before);
+        }
+    });
+
+    it('refuses an order that is not a permutation of the catalog', async () => {
+        for (const order of [
+            ['title', 'alpha'],
+            ['title', 'framing:engine', 'alpha', 'gamma', 'nobody'],
+            ['title', 'title', 'alpha', 'gamma', 'closing']
+        ]) {
+            const into = deckTarget();
+            const before = deckOf(into);
+            const response = await handleWrite(
+                request({ kind: 'deck', selection: ['title'], order }),
+                TOKEN,
+                into
+            );
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({ error: 'invalid_order' });
+            expect(deckOf(into)).toBe(before);
+        }
+    });
+
+    it('saves a selection naming an archived project, and the file holds it', async () => {
+        const into = deckTarget();
+        const response = await handleWrite(
+            request({ kind: 'deck', selection: ['title', 'gamma'], order: CATALOG }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ ok: true, changed: ['deck'], refused: [] });
+        const deck = (parse(deckOf(into)) as { deck: Record<string, unknown> }).deck;
+        expect(deck.selection).toEqual(['title', 'gamma']);
+        expect(deck.slide_order).toEqual(CATALOG);
+    });
+
+    it('refuses a deck file that is not there, and says which refusal it was', async () => {
+        const into = deckTarget();
+        rmSync(into.config.deckFile);
+        const response = await handleWrite(
+            request({ kind: 'deck', selection: ['title'], order: CATALOG }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(500);
+        expect(await response.json()).toEqual({ error: 'unwritable' });
+        expect(existsSync(into.config.deckFile)).toBe(false);
+    });
+
+    it('refuses a deck file whose map the line edit cannot keep, and writes nothing', async () => {
+        const into = deckTarget();
+        const flow = 'deck: { order: [{ slide: title }] }\n';
+        writeFileSync(into.config.deckFile, flow);
+        const response = await handleWrite(
+            request({ kind: 'deck', selection: ['title'], order: CATALOG }),
+            TOKEN,
+            into
+        );
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({ error: 'invalid' });
+        expect(deckOf(into)).toBe(flow);
+    });
+
+    it('does not know a body whose two lists are not lists of words', async () => {
+        for (const body of [
+            { kind: 'deck', selection: 'title', order: CATALOG },
+            { kind: 'deck', selection: ['title'], order: [1, 2] },
+            { kind: 'deck', selection: [''], order: CATALOG },
+            { kind: 'deck', order: CATALOG }
+        ]) {
+            const response = await handleWrite(request(body), TOKEN, deckTarget());
+            expect(response.status).toBe(400);
+            expect(await response.json()).toEqual({
+                error: 'the body is not a write this route knows'
+            });
+        }
+    });
+
+    it('writes nothing when the file already holds exactly those two lists', async () => {
+        const into = deckTarget();
+        const body = { kind: 'deck', selection: ['title'], order: CATALOG };
+        await handleWrite(request(body), TOKEN, into);
+        const written = deckOf(into);
+        const again = await handleWrite(request(body), TOKEN, into);
+        expect(await again.json()).toEqual({ ok: true, changed: [], refused: [] });
+        expect(deckOf(into)).toBe(written);
     });
 });

@@ -6,6 +6,9 @@
 
 import { beforeEach, describe, expect, it } from 'vitest';
 import {
+    deckCatalog,
+    deckCatalogKeys,
+    deckDefaultKeys,
     deckFrom,
     deckSlides,
     hasSlideContent,
@@ -335,6 +338,69 @@ describe('deckSlides', () => {
     });
 });
 
+describe('deckCatalog', () => {
+    it('offers every slide the deck places, whatever a saved selection keeps', () => {
+        const deck = deckFrom({
+            deck: { ...CONFIG.deck, selection: ['title', 'alpha', 'closing'] }
+        });
+        expect(deckSlides(deck, PROJECTS).map((row) => row.key)).toEqual([
+            'title',
+            'alpha',
+            'closing'
+        ]);
+        expect(deckCatalog(deck, PROJECTS).map((row) => row.key)).toEqual([
+            'title',
+            'framing:engine',
+            'summary:one',
+            'ideas',
+            'alpha',
+            'alpha/data',
+            'beta',
+            'closing'
+        ]);
+    });
+
+    it('offers the catalog in the saved order, so the rows sit where the deck shows them', () => {
+        const deck = deckFrom({
+            deck: { ...CONFIG.deck, slide_order: ['closing', 'alpha'] }
+        });
+        const keys = deckCatalog(deck, PROJECTS).map((row) => row.key);
+        expect(keys.slice(0, 2)).toEqual(['closing', 'alpha']);
+        expect([...keys].sort()).toEqual(deckCatalogKeys(DECK, PROJECTS).sort());
+    });
+
+    it('offers an archived slide, which the deck with no selection does not show', () => {
+        const all = [...PROJECTS, ARCHIVED];
+        expect(deckCatalogKeys(DECK, all)).toContain('delta');
+        expect(deckSlides(DECK, all).map((row) => row.key)).not.toContain('delta');
+        expect(deckDefaultKeys(DECK, all)).not.toContain('delta');
+    });
+
+    it('is ticked by the saved selection when there is one, archived work included', () => {
+        const all = [...PROJECTS, ARCHIVED];
+        const deck = deckFrom({ deck: { ...CONFIG.deck, selection: ['title', 'delta'] } });
+        expect(deckCatalogKeys(deck, all)).toContain('delta');
+        expect(deck.selection).toEqual(['title', 'delta']);
+        expect(deckSlides(deck, all).map((row) => row.key)).toEqual(['title', 'delta']);
+    });
+
+    it('names each row with its words and its kind, as the deck draws them', () => {
+        const rows = deckCatalog(DECK, PROJECTS);
+        expect(rows.find((row) => row.key === 'title')?.title).toBe(
+            'Structured models, everywhere they hide'
+        );
+        expect(rows.find((row) => row.key === 'alpha')).toMatchObject({
+            kind: 'project',
+            title: 'Alpha slide'
+        });
+    });
+
+    it('offers nothing for a deck that places nothing over no projects', () => {
+        expect(deckCatalog(deckFrom({}), [])).toEqual([]);
+        expect(deckCatalogKeys(deckFrom({}), [])).toEqual([]);
+    });
+});
+
 describe('parsePresentState', () => {
     it('reads a pane place, with the first slide and a closed grid for what is missing', () => {
         expect(parsePresentState({ slide: 'alpha/data', overview: true })).toEqual({
@@ -428,6 +494,34 @@ describe('the present store', () => {
         expect(bare.present.position('title')).toBe(0);
         expect(bare.present.next('title')).toBe('title');
         expect(bare.present.first()).toBe('');
+    });
+
+    it('answers the whole catalog beside the slides the deck shows', () => {
+        expect(client.present.catalog().map((row) => row.key)).toEqual(
+            client.present.slides().map((row) => row.key)
+        );
+        const narrowed = createClientState();
+        narrowed.entities.receive({
+            channel: 'config',
+            version: 1,
+            payload: {
+                config: { deck: { ...CONFIG.deck, selection: ['title', 'alpha'] } },
+                text: {},
+                findings: []
+            }
+        });
+        narrowed.entities.receive({
+            channel: 'portfolio',
+            version: 1,
+            payload: {
+                version: 1,
+                entities: { projects: Object.fromEntries(PROJECTS.map((p) => [p.id, p])) },
+                relations: {},
+                findings: []
+            }
+        });
+        expect(narrowed.present.slides().map((row) => row.key)).toEqual(['title', 'alpha']);
+        expect(narrowed.present.catalog()).toHaveLength(8);
     });
 
     it('answers the project and the slide behind a row, and nothing for a deck-level row', () => {

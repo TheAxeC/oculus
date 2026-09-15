@@ -14,7 +14,13 @@ import {
     type ExecFile,
     type HookTarget
 } from '../../src/lib/server/hooks.ts';
-import { HookStore, mergeHooks, patchPayload } from '../../src/lib/server/sessions/hooks.ts';
+import {
+    HookStore,
+    mergeHooks,
+    patchPayload,
+    projects
+} from '../../src/lib/server/sessions/hooks.ts';
+import type { HubLike } from '../../src/lib/server/sessions/hooks.ts';
 import type { HookEvent, SessionRecord, SessionsPayload } from '../../src/lib/data/model.ts';
 import { record } from '../sessions-fixture.ts';
 import { noop } from '../doubles.ts';
@@ -353,5 +359,31 @@ describe('handleHookRequest, the event filter', () => {
         );
         expect(response.status).toBe(200);
         expect(calls).toHaveLength(0);
+    });
+});
+
+/** A stand-in for the process's Hub: whatever a channel was last published with. */
+function hub(payloads: Record<string, unknown>): HubLike {
+    return {
+        latest: (channel: string) =>
+            channel in payloads ? { payload: payloads[channel] } : undefined,
+        publish: () => 0
+    };
+}
+
+describe('projects', () => {
+    it('answers every project of the last published portfolio', () => {
+        const alpha = { id: 'alpha', title: 'Alpha' };
+        const beta = { id: 'beta', title: 'Beta' };
+        const held = hub({ portfolio: { entities: { projects: { alpha, beta } } } });
+        expect(projects(held).map((one) => one.id)).toEqual(['alpha', 'beta']);
+    });
+
+    it('answers none when nothing has been published, and drops what is not a project', () => {
+        expect(projects(hub({}))).toEqual([]);
+        expect(projects(hub({ portfolio: { entities: {} } }))).toEqual([]);
+        expect(projects(hub({ portfolio: 'not a payload' }))).toEqual([]);
+        const odd = hub({ portfolio: { entities: { projects: { a: 1, b: { id: 'b' } } } } });
+        expect(projects(odd).map((one) => one.id)).toEqual(['b']);
     });
 });

@@ -14,7 +14,7 @@ import { CAREER_FILE, readCareer } from './sources/career.ts';
 import { readFeeds } from './sources/feeds.ts';
 import { projectDocs } from './sources/docs.ts';
 import { deckFindings, readPresent } from './sources/present.ts';
-import { engineDir } from './sources/config.ts';
+import { configDir, engineDir } from './sources/config.ts';
 import { normalise } from './normalise.ts';
 import { validate } from './validate.ts';
 import type {
@@ -33,8 +33,8 @@ import type {
     Vocabulary
 } from './model.ts';
 
-/** The one config file the public deck lives in, engine-relative, for a finding that names it. */
-export const DECK_FILE = 'config/present.yml';
+/** The one config file the public deck lives in, inside the engine's config directory. */
+export const DECK_FILE = 'present.yml';
 
 function list(value: unknown): unknown[] {
     return Array.isArray(value) ? value : [];
@@ -144,7 +144,7 @@ export function portfolioConfigFrom(
         schema: merged.manifest_schema,
         vocab,
         deck: merged.deck,
-        deckFile: join(engine, DECK_FILE)
+        deckFile: join(configDir(engine), DECK_FILE)
     };
 }
 

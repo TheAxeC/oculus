@@ -117,6 +117,19 @@ describe('the document endpoint', () => {
         expect(fields(await response.json()).error).toBe('no project with the id beta');
     });
 
+    it("serves a project's PRESENT.md as its narrative, the front matter split off", async () => {
+        const into = target({
+            'README.md': README,
+            'PRESENT.md': '---\npresent:\n  title: A headline\n---\n\n# PRESENT\n\nThe narrative.\n'
+        });
+        const response = handleDocs(request('project=alpha&name=PRESENT.md'), into);
+        expect(response.status).toBe(200);
+        const body = fields(await response.json());
+        expect(body.html).toContain('The narrative.');
+        expect(body.html).not.toContain('A headline');
+        expect(fields(body.frontmatter).present).toEqual({ title: 'A headline' });
+    });
+
     it('answers 404 for a name outside the list, a path of its own included', async () => {
         const into = target();
         for (const name of ['NOTES.md', 'manuscript/main.pdf', '../../etc/passwd']) {

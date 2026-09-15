@@ -277,11 +277,27 @@ function configNames(dir: string): string[] {
 /** The pure reader of the `collections:` keys lives with the registry keys it excludes, client-safe. */
 export { collectionKeys } from '../normalise.ts';
 
+/**
+ * The directory the engine's YAML is read from and written to: `<engine>/config`, or the directory
+ * OCULUS_CONFIG names.
+ *
+ * The override is the companion of OCULUS_LOCAL and is there for the same reason: the browser layer
+ * stands a server up and presses controls that write, the Slides view's Save among them, and the
+ * file that save edits is `config/present.yml`. Pointing the run at a copy keeps a tracked file from
+ * being a test fixture. A relative value resolves against the engine, so a path typed on the command
+ * line means what it looks like from tools/oculus.
+ */
+export function configDir(engine: string): string {
+    const named = process.env.OCULUS_CONFIG;
+    if (named === undefined || named === '') return join(engine, 'config');
+    return isAbsolute(named) ? named : resolve(engine, named);
+}
+
 export function loadConfig(engine: string): {
     config: Record<string, unknown>;
     findings: Finding[];
 } {
-    const dir = join(engine, 'config');
+    const dir = configDir(engine);
     const config: Record<string, unknown> = {};
     const findings: Finding[] = [];
     /** Which file each top-level key came from, so a clash can name both sides. */
@@ -437,7 +453,7 @@ function iconFile(icon: string): string | null {
  * files, which is why this is separate from loadConfig and takes the engine directory.
  */
 export function iconFindings(engine: string, config: Record<string, unknown>): Finding[] {
-    const file = join(engine, 'config', 'icons.yml');
+    const file = join(configDir(engine), 'icons.yml');
     const map = iconCatalog(config);
     const glyphs = glyphCatalog(config);
     const findings: Finding[] = [];

@@ -20,9 +20,11 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 //
 // A block two views draw the same way lives under `views/shared/**` once instead of twice, and only a view may import it. A file under `views/shared/` is in the views layer itself, so the row binds it too and it may reach no other view's partials.
 //
-// `data/guards` and `data/dates` join `data/model` in the state row as pure helpers with no reader
-// and no I/O. The model's own concern modules (`data/model-*`) are reached through the facade only,
-// which is why they are not listed here.
+// `data/guards`, `data/dates` and `data/deck` join `data/model` in the state row as pure helpers with
+// no reader and no I/O. `data/deck` is there because the deck's placement rule has two readers, the
+// Present view and the write that saves a selection, and a copy of it on each side would let them
+// disagree about what a slide key is. The model's own concern modules (`data/model-*`) are reached
+// through the facade only, which is why they are not listed here.
 //
 // The shell's row names the state modules the workbench is made of, one at a time. The one drag in progress belongs to the shell, as do the theme picker and the configuration it offers; views do not read or write either concern. A shell component reaches those stores through the client object (`state/context`, read with `state/use`), which names every store there is, so the row alone would no longer hold the shell to its own: the stores a shell file may take out of the object are SHELL_STORES below, and the second rule checks each destructuring against that list.
 //
@@ -46,7 +48,15 @@ const ALLOWED: Record<string, string[]> = {
         'views/registry'
     ],
     views: ['ui/**', 'state/**', 'views/registry', 'views/shared/**'],
-    state: ['state/**', 'data/model', 'data/guards', 'data/dates', 'views/registry', 'ui/tip-ids'],
+    state: [
+        'state/**',
+        'data/model',
+        'data/guards',
+        'data/dates',
+        'data/deck',
+        'views/registry',
+        'ui/tip-ids'
+    ],
     data: ['data/**'],
     server: ['server/**', 'data/**'],
     'server/transcripts': ['server/transcripts/**', 'data/**'],

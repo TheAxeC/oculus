@@ -10,7 +10,7 @@
 // takes that key and answers over the deck, holding nothing of its own.
 
 import { item } from '../data/guards.ts';
-import { deckFrom, deckSlides } from './present.ts';
+import { deckCatalog, deckDefaultKeys, deckFrom, deckSlides } from './present.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
 import type { Deck, DeckSlide, PresentSlide, Project } from '../data/model.ts';
 
@@ -19,6 +19,10 @@ export type PresentStore = {
     deck: () => Deck;
     /** Every slide the deck shows, in order. */
     slides: () => DeckSlide[];
+    /** Every slide the deck could show, in catalog order, whatever the saved selection keeps. */
+    catalog: () => DeckSlide[];
+    /** The keys a deck with no saved selection shows, which is what a catalog row is ticked by. */
+    defaults: () => string[];
     /** The slide a key names, the first slide when the deck does not hold it, null for an empty deck. */
     current: (key: string) => DeckSlide | null;
     /** The position of that slide, counting from one; zero for an empty deck. */
@@ -40,6 +44,8 @@ export function createPresent(entities: EntitiesStore): PresentStore {
     const deck = $derived(deckFrom(entities.config()?.config ?? {}));
     const projects = $derived(Object.values(entities.portfolio()?.entities.projects ?? {}));
     const slides = $derived(deckSlides(deck, projects));
+    const catalog = $derived(deckCatalog(deck, projects));
+    const defaults = $derived(deckDefaultKeys(deck, projects));
 
     /** Where a key sits in the deck, and the first slide when the deck does not hold it. */
     function at(key: string): number {
@@ -69,6 +75,8 @@ export function createPresent(entities: EntitiesStore): PresentStore {
     return {
         deck: () => deck,
         slides: () => slides,
+        catalog: () => catalog,
+        defaults: () => defaults,
         current,
         position: (key: string) => (slides.length === 0 ? 0 : at(key) + 1),
         next: (key: string) => step(key, 1),

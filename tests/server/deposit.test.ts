@@ -232,7 +232,8 @@ beforeAll(() => {
     into = {
         hub,
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
-        overrides: join(dir, 'sessions.json')
+        overrides: join(dir, 'sessions.json'),
+        projects: () => []
     };
 });
 

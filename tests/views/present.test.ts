@@ -259,6 +259,13 @@ describe('the Present view', () => {
         expect(body).toContain(`${client.present.position('alpha')} / ${rows}`);
     });
 
+    it('offers the slide catalog from its toolbar, beside the overview control', () => {
+        const body = at('title');
+        expect(body).toContain(catalog['slides.open']);
+        expect(body).toContain(catalog['slides.open_tip']);
+        expect(body).toContain(catalog['present.overview']);
+    });
+
     it('draws its empty state when no config and no snapshot have arrived', () => {
         const bare = createClientState();
         const body = render(Present, {

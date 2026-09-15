@@ -176,6 +176,7 @@ describe('the real registrations', () => {
                 'domains',
                 'map',
                 'present',
+                'slides',
                 'focus',
                 'projects',
                 'archive',
@@ -243,6 +244,7 @@ describe('the real registrations', () => {
             radar: { group: 'feeds', order: 0 },
             'session-detail': { group: 'sessions', order: 1 },
             'session-list': { group: 'sessions', order: 0 },
+            slides: { group: '', order: 0 },
             source: { group: '', order: 0 },
             statements: { group: 'sources', order: 3 },
             status: { group: 'system', order: 0 },
@@ -319,6 +321,15 @@ describe('the real registrations', () => {
             id: 'doc',
             label: 'views.doc',
             glyph: 'views.doc_glyph',
+            listed: false
+        });
+    });
+
+    it('registers the slide catalog as an unlisted view opened from the deck', () => {
+        expect(viewFor('slides')).toMatchObject({
+            id: 'slides',
+            label: 'views.slides',
+            glyph: 'views.slides_glyph',
             listed: false
         });
     });
