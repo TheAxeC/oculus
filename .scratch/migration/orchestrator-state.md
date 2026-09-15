@@ -34,7 +34,19 @@ dispatch:                                  # O28b + D1 + D2, the set of three (t
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O28b/report.md
   exit: none
   pid: none
-  session_id: a0bd39040f4bf9598            # the Agent tool's id, launched 19:23; reported 20:30 (runs/O28b/report.md, diff.patch 5,114 lines without the sixteen images, 66 files +4,060 -222); checks started 20:30 (runs/O28b/checks.sh); checks green 20:33 (check 1005 files, 3,037 tests, browser 93; lint red only on the base's `as Bookmark` line main fixed at 4e95aefc; runs/O28b/check-*.log); the orchestrator's read done 20:35 (runs/O28b/read-notes.md: five repair items, the wire words shown in both views, an upload with no content check, a README marker not re-running the scan, a dead branch in writeAtomic, a document-wide refocus query); no reviewer and no repair round under the pause of 20:15, both wait for the lift
+  session_id: a0bd39040f4bf9598            # the Agent tool's id, launched 19:23; reported 20:30 (runs/O28b/report.md, diff.patch 5,114 lines without the sixteen images, 66 files +4,060 -222); checks started 20:30 (runs/O28b/checks.sh); checks green 20:33 (check 1005 files, 3,037 tests, browser 93; lint red only on the base's `as Bookmark` line main fixed at 4e95aefc; runs/O28b/check-*.log); the orchestrator's read done 20:35 (runs/O28b/read-notes.md: five repair items, the wire words shown in both views, an upload with no content check, a README marker not re-running the scan, a dead branch in writeAtomic, a document-wide refocus query); reviewer dispatched 21:33 at the lift (Agent id a2c0b8f0676905332, claude:opus), the repair round follows its report
+  landing: not-started
+- package: D3
+  worker: claude:opus
+  worktree: .agents/worktrees/d3
+  base: 1103ab09
+  launched: 2026-09-15T21:34+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D3/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D3/report.md
+  exit: none
+  pid: none
+  session_id: pending                    # the Agent tool's id, written the moment it is known; the rolling window's first dispatch after D2's landing, the brief re-checked against 1103ab09 at 21:33 (every premise holds)
   landing: not-started
 - package: D1
   worker: claude:opus
@@ -46,14 +58,15 @@ dispatch:                                  # O28b + D1 + D2, the set of three (t
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D1/report.md
   exit: none
   pid: none
-  session_id: a40c18420b38580f7            # the Agent tool's id, launched 19:23; reported 20:21 (runs/D1/report.md, diff.patch 4,619 lines, 41 files +3,244 -295); checks started 20:21 (runs/D1/checks.sh); checks green 20:25 (check 1000 files, 2,982 tests, browser 88; runs/D1/check-*.log); the orchestrator's read done (runs/D1/read-notes.md: an undo of a session unhide refused as moved, a DESIGN.md blank line); no reviewer and no repair round under the pause of 20:15, both wait for the lift
+  session_id: a40c18420b38580f7            # the Agent tool's id, launched 19:23; reported 20:21 (runs/D1/report.md, diff.patch 4,619 lines, 41 files +3,244 -295); checks started 20:21 (runs/D1/checks.sh); checks green 20:25 (check 1000 files, 2,982 tests, browser 88; runs/D1/check-*.log); the orchestrator's read done (runs/D1/read-notes.md: an undo of a session unhide refused as moved, a DESIGN.md blank line); reviewer dispatched 21:33 at the lift (Agent id aa11a274b2fe06d1f, claude:opus), the repair round follows its report
   landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
 - The pause of 2026-09-14 20:27 was lifted at 22:21 with a window until 2026-09-15 07:10: at 07:10 no worker, reviewer or landing is in flight, the dispatch block reads `none`, everything is committed; a package is dispatched only when it can land before then.
 
-- The pause (Axel, 2026-09-15 20:15, "let the current agents finish and then pause"): no new agent is launched after O28b's and D1's workers report; their reports, diffs and check runs are recorded, the orchestrator reads the diffs, their worktrees stay, and D3 waits in the queue; D2, whose worker had finished, is landed. Lifting the pause resumes at O28b's and D1's reviews.
+- The night run (Axel, 2026-09-15 21:32, "Back to the night run, you have 9h40m available (and no hpc access). Please resume"): the window ends at 07:12 on 2026-09-16; no package that cannot land inside it is dispatched, no HPC command; the pause of 20:15 is lifted, the reviewers for D1 and O28b dispatched at 21:33, D3 dispatched under the rolling window.
+- The pause, lifted 21:32 (Axel, 2026-09-15 20:15, "let the current agents finish and then pause"): no new agent is launched after O28b's and D1's workers report; their reports, diffs and check runs are recorded, the orchestrator reads the diffs, their worktrees stay, and D3 waits in the queue; D2, whose worker had finished, is landed. Lifting the pause resumes at O28b's and D1's reviews.
 - The rolling window (Axel, 2026-09-15 19:58): a new package is dispatched the moment one lands, three in flight at all times, the plan's set list read as the queue; each is cut at main's head after the latest landing and its paths are checked against the two still running.
 - The hub `CLAUDE.md` "Working rules" section, in full. The ones that bite here: reports open with what is NOT done and carry a DONE / NOT DONE ledger naming the proving command; every measurement names its command or says not verified; a risk named is a task owned; no question boxes; surface rule clashes and stop; show code, not prose about code; references are not justifications (the cockpit never justifies an oculus choice); every change rewinds.
 - Agents: the worker the block above names, on the working tier (Claude Opus 5 or GPT 5.6 Sol), general-purpose, one at a time or two on disjoint paths and different views (R9, `workers_at_once: 2`; the skill's "Two packages in flight" section); the orchestrator on the top tier (Claude Fable 5.1 or GPT 6 Astra); any combination, as Axel ruled on 2026-09-11. An agent works in a git worktree the orchestrator creates at main's head (`git worktree add -b <package> .agents/worktrees/<package> HEAD`; the folder moved from `.claude/worktrees` on 2026-09-11 so nothing in the process carries a vendor's name; every git command on the worktree is run from inside it, never as `git -C <path>`, since `.codex/rules/default.rules` forbids the `-C` form and one recipe holds under both runners, then, from inside the worktree, `git sparse-checkout set <worktree_paths>` when the block names any); the agent never runs git and never edits any file under `.scratch/`. The orchestrator reads the whole diff, runs the verification commands on the worktree, lands by `git cherry-pick -n` onto main, runs them again on main, books the package in `plan.md`, commits by explicit path. Ruled by Axel 2026-09-10 as the substitute for `/rewind` over agent work.
