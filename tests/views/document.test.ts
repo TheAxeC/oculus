@@ -9,7 +9,7 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Document from '../../src/lib/views/Document.svelte';
-import { fileUrl } from '../../src/lib/views/document/file-url.ts';
+import { fileUrl } from '../../src/lib/views/shared/file-url.ts';
 import {
     engineDir,
     glyphCatalog,

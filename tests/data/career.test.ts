@@ -135,6 +135,7 @@ describe('validating a host status', () => {
             feeds: NO_FEEDS,
             career: readCareer(hub(CAREER)).career,
             docs: {},
+            present: {},
             findings: [],
             ...over
         };

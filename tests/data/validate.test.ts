@@ -93,6 +93,7 @@ function portfolio(over: Partial<RawPortfolio> = {}): RawPortfolio {
         feeds: NO_FEEDS,
         career: null,
         docs: {},
+        present: {},
         findings: [],
         ...over
     };

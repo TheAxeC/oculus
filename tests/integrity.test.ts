@@ -19,6 +19,14 @@ import { describe, expect, it } from 'vitest';
 import { buildPortfolio, portfolioConfigFrom } from '../src/lib/data/index.ts';
 import { ENTITY_KINDS } from '../src/lib/data/normalise.ts';
 import { engineDir, loadConfig, loadLocal } from '../src/lib/data/sources/config.ts';
+import { isMap } from '../src/lib/data/guards.ts';
+
+/**
+ * How many projects of the hub carry a PRESENT.md front matter. It is a floor rather than a count:
+ * a slide written for one more project is not a reason for this file to fail, and the reader losing
+ * the ones there are is.
+ */
+const FILES_WITH_SLIDES = 14;
 
 const engine = engineDir();
 const hub = loadLocal(engine).hub;
@@ -122,5 +130,40 @@ describe.skipIf(!present)('the real hub', () => {
 
     it('survives JSON.stringify and JSON.parse unchanged', () => {
         expect(JSON.parse(JSON.stringify(snapshot))).toStrictEqual(snapshot);
+    });
+
+    it('reads a front-matter slide out of every PRESENT.md that declares one', () => {
+        const projects = Object.values(snapshot?.entities.projects ?? {});
+        // A slide made from front matter carries no body; a narrative-only file's one slide does.
+        const withSlides = projects.filter((project) =>
+            (project.present ?? []).some((slide) => slide.body === undefined)
+        );
+        expect(withSlides.length).toBeGreaterThanOrEqual(FILES_WITH_SLIDES);
+    });
+
+    it('reads the covert-theory slide with its diagram panel and its equation', () => {
+        const slides = snapshot?.entities.projects['covert-theory']?.present ?? [];
+        expect(slides).toHaveLength(1);
+        expect(slides[0].id).toBe('covert-theory');
+        expect(slides[0].equation).toBeDefined();
+        expect(slides[0].panels.some((panel) => panel.diagramHtml !== undefined)).toBe(true);
+        expect(slides[0].method.length).toBeGreaterThan(0);
+        expect(slides[0].results.length).toBeGreaterThan(0);
+    });
+
+    it('resolves every project entry of the shipped deck order to a slide of this hub', () => {
+        const ids = new Set(
+            Object.values(snapshot?.entities.projects ?? {}).flatMap((project) =>
+                (project.present ?? []).map((slide) => slide.id)
+            )
+        );
+        const deck = merged.deck;
+        const order = isMap(deck) && Array.isArray(deck.order) ? deck.order : [];
+        const refs = order
+            .filter((entry): entry is Record<string, unknown> => isMap(entry))
+            .filter((entry) => entry.slide === 'project')
+            .map((entry) => String(entry.ref));
+        expect(refs.length).toBeGreaterThan(0);
+        expect(refs.filter((ref) => !ids.has(ref))).toEqual([]);
     });
 });

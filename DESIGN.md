@@ -50,6 +50,7 @@ tools/oculus/
     glyphs.yml                 the icon vocabulary
     text.yml                   every user-facing string, keyed
     manifest-schema.yml        the project.yml edit form
+    present.yml                the public deck: its own slides, the domain themes, the order
   local.yml                    machine-local values (the hub path), gitignored
   src/
     routes/
@@ -94,7 +95,9 @@ tools/oculus/
       shell/                   LAYER 3, the workbench, view-blind
         Workbench.svelte ActivityRail.svelte Panel.svelte SplitView.svelte
       views/                   LAYER 3, domain-aware, layout-blind; one file per surface
-        Focus.svelte Projects.svelte Archive.svelte Venues.svelte Funding.svelte ...
+        Focus.svelte Projects.svelte Archive.svelte Venues.svelte Funding.svelte Present.svelte ...
+        present/
+          Title.svelte Framing.svelte Project.svelte Summary.svelte Ideas.svelte Closing.svelte
         sessions/
           SessionList.svelte SessionDetail.svelte Terminal.svelte Timeline.svelte Changes.svelte Agents.svelte
       themes/
@@ -137,7 +140,7 @@ type Snapshot = {
 }
 ```
 
-Flat, JSON-safe, small: the whole hub is a few hundred kilobytes. Documents are not in it; `api/docs` serves one when a view opens it. That is the reason the cockpit's page is 8.8 MB and this one is not.
+Flat, JSON-safe, small: the whole hub is a few hundred kilobytes. Documents are not in it; `api/docs` serves one when a view opens it. That is the reason the cockpit's page is 8.8 MB and this one is not. The one exception is a project's `PRESENT.md` front matter, and for a file that has none its narrative: the Present view draws a slide on a key press, so its slides ride in the snapshot rather than being fetched one at a time.
 
 ## Layer 2, code
 
@@ -276,6 +279,7 @@ Each step names what "done" means. Nothing visual before step 3.
 - 2026-09-14, Axel: one tree per page, every split child foldable to its edge through one control and expandable again, the folded state saved with the layout. The panel category is retired with its dock, its size and the move-to-panel item, because a split that looked like the panel was not the panel: only the docked area had the dedicated button. What opened in the panel (shift-click on the rail, a session detail opened from a card, a project's editor and deposit opened from its card) opens in a new pane to the right of the active one, and the next one joins that pane as a tab while it is still open, so opening the editor from five cards is one pane of five tabs rather than five panes. A saved layout of two trees migrates: a page keeps its main area as the root when the panel holds nothing, and otherwise becomes a split of the two at the shares the panel had, with the panel child folded when the panel was hidden.
 - 2026-09-14, Axel: a page shows other pages. A leaf of a page's tree is another page, drawn where it sits with a header naming it and the one control that stops showing it there; it is the same page and never a copy, so a tab opened in it is open wherever that page shows and switching the strip to it shows the same arrangement. A page never contains itself, directly or through another page, and is drawn at most once on a screen; a drop or a menu item that would break either rule is not offered, and a page taken out, or closed from the strip, gives its space back to the neighbour it was split from. Two page leaves side by side show two pages next to each other. A nested page is reached by focus and not by a digit: a bare digit is still the strip's page. Every store operation that names a path names the page it addresses, the page on screen when it names none, so a pane carries the page it belongs to beside its path and a view opened while reading inside a shown page lands in that page. The pane menu is the keyboard path to showing a page and a page tab dragged out of the strip onto a pane's edge is the pointer path.
 - 2026-09-11, pages, asked for by Axel after the boards, the sessions views and the terminal had each wanted their own arrangement: the workbench becomes one of several pages, each a whole workbench (its two trees, dock and panel share) with a name, and the saved layout is the list of pages plus which one is current, so the layout tree of "Layout as data" is unchanged and gains a level above it. A strip of page names runs across the top of the main area and the panel together, since a page governs both; the rail stays what it is. A page is made by a control at the end of the strip and named from its menu; the saved arrangements of `layout.yml` open as pages, which retires the control that swapped the one workbench for an arrangement and back. Switching pages unmounts the hidden page's views, which rebuild from the stores when it returns (a terminal repaints its scrollback), so nothing is drawn twice and no hidden terminal holds a client. The digits 1 to 9 switch pages, Ctrl with a digit switches the tab in the focused pane, and `v`, `c` or `m` before a digit opens a view. Package O10e.
+- 2026-09-15, Axel: the public deck is a live oculus view and never a generated file. `present` is a listed view in the Academic life group drawing one slide at a time, with the arrow keys, the on-screen controls and `O` for an overview grid; the six kinds are components under `views/present/`. The deck's own slides, the domain themes and the order live in `config/present.yml` as the `deck:` key, read by the config loader and pushed like every other config file; a project's slides are the `present:` front matter of its PRESENT.md, read into `Project.present` and carried in the snapshot, with a `slides:` list beside it for further slides of the same project under `<project>/<slug>` ids. LaTeX is typeset in the page by KaTeX, the one new dependency, and a figure is served through the file route. Package P1; the Slides catalog and the card control that opens a project's slide are P2.
 - 2026-09-13, the terminal has no composer: the box under the grid, its Send control and the routing of a typed line to another terminal (Q-series O18) are removed at Axel's decision of 2026-09-13 00:30, since the cockpit never had one and the typed text goes into the grid as in any terminal; the migration order's step 6 above still lists the composer as built, which it was, and this note is the record of its removal (Q13).
 
 ## Still undecided, and not needed yet

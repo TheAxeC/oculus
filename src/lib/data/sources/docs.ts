@@ -1,12 +1,13 @@
 // Layer 1, data. Reads one Markdown document, and reports which documents a project folder has.
 // Server side only: it reads the filesystem and no client module may import it.
 //
-// Neither function is called by the portfolio build. Documents stay out of the snapshot on
-// purpose (DESIGN.md, "Layer 1, data"): the snapshot is a few hundred kilobytes because the READMEs
-// are not in it, and a view that opens one asks the server for that one file. readDoc is what that
-// request calls; projectDocs is the cheap existence check a project card shows, and it reads
-// nothing. Hub-level documents (HPC-UTwente-howto.md, RESEARCH-APPROACH.md, AGENT-APPROACH.md) go
-// through readDoc like any other.
+// The long documents stay out of the snapshot (DESIGN.md, "Layer 1, data"): the snapshot is a few
+// hundred kilobytes because the READMEs are not in it, and a view that opens one asks the server for
+// that one file. readDoc is what that request calls, and hub-level documents
+// (HPC-UTwente-howto.md, RESEARCH-APPROACH.md, AGENT-APPROACH.md) go through it like any other.
+// projectDocs is the cheap existence check a project card shows, and it opens no file. The one
+// document the build does read is PRESENT.md, through sources/present.ts, which splits its front
+// matter with splitFrontmatter below so the two readers agree on where a block ends.
 
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -53,6 +54,17 @@ function marks(label: string): { human: boolean } {
  */
 const FRONTMATTER = /^---[ \t]*\r?\n((?:[\s\S]*?\r?\n)?)(?:---|\.\.\.)[ \t]*(?:\r?\n|$)/;
 
+/**
+ * One document split in two: the frontmatter block as it was written, null when the file opens with
+ * no block, and everything after it. Text only, so a reader that wants the body of a file whose
+ * block does not parse still has it.
+ */
+export function splitFrontmatter(text: string): { block: string | null; body: string } {
+    const match = FRONTMATTER.exec(text);
+    if (match === null) return { block: null, body: text };
+    return { block: match[1], body: text.slice(match[0].length) };
+}
+
 /** Whether the path is a file, and when it was last written; 0 for anything that is not one. */
 function fileStat(path: string): { present: boolean; mtime: number } {
     try {
@@ -79,13 +91,25 @@ export function readDoc(path: string): DocRead {
         return { file: path, key: '', message: 'document does not exist' };
     }
 
-    const match = FRONTMATTER.exec(text);
-    if (match === null) return { text, frontmatter: null };
+    const { block, body } = splitFrontmatter(text);
+    if (block === null) return { text, frontmatter: null };
 
+    const read = readFrontmatter(block, path);
+    if ('message' in read) return read;
+    return { text: body, frontmatter: read.frontmatter };
+}
+
+/**
+ * One frontmatter block as the map it holds, or the one problem that stopped it being read. An
+ * empty block is no keys, the same as loadLocal reads an empty file.
+ */
+export function readFrontmatter(
+    block: string,
+    path: string
+): { frontmatter: Record<string, unknown> } | Finding {
     let parsed: unknown;
     try {
-        // An empty block parses to null; it means no keys, the same as loadLocal reads an empty file.
-        parsed = parse(match[1]) ?? {};
+        parsed = parse(block) ?? {};
     } catch (error) {
         const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
         return { file: path, key: 'frontmatter', message: `does not parse: ${message}` };
@@ -93,10 +117,7 @@ export function readDoc(path: string): DocRead {
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
         return { file: path, key: 'frontmatter', message: 'is not a map of keys' };
     }
-    return {
-        text: text.slice(match[0].length),
-        frontmatter: parsed as Record<string, unknown>
-    };
+    return { frontmatter: parsed as Record<string, unknown> };
 }
 
 /**

@@ -1,0 +1,28 @@
+# Oculus text owned by the Present view.
+text:
+    present:
+        at: '{0}'
+        col_field: Field
+        col_headline: Headline result
+        col_mechanism: Core mechanism
+        col_project: Project
+        counter: '{0} / {1}'
+        eli5_plain: In plain words
+        eli5_purpose: Purpose
+        empty: The deck holds no slides yet.
+        empty_glyph: circle_empty
+        equation_alt: The slide's governing equation
+        equation_missing: 'missing equation: {0}'
+        figure_alt: A figure of the project
+        figure_missing: 'missing figure: {0}'
+        method: Method
+        next: Next
+        overview: Overview
+        overview_glyph: cards
+        previous: Previous
+        results: Results
+        title: Present
+        toolbar: Deck controls
+    views:
+        present: Present
+        present_glyph: poster

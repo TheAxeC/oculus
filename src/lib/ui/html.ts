@@ -116,6 +116,17 @@ export const PROFILE = {
     ALLOW_UNKNOWN_PROTOCOLS: false
 };
 
+/**
+ * The second profile, for a slide's inline diagram and nothing else. A diagram is a small grid of
+ * boxes whose geometry and per-box colour are written on the elements themselves (the columns of the
+ * grid, the border of a node), so the profile above would keep the boxes and throw the diagram away.
+ * It is the profile above with `style` added and no other difference: the same elements, the same
+ * addresses, no handler, no script, no frame.
+ */
+export const DIAGRAM_ATTR = [...ALLOWED_ATTR, 'style'];
+
+export const DIAGRAM_PROFILE = { ...PROFILE, ALLOWED_ATTR: DIAGRAM_ATTR };
+
 /** A link out of the page opens its own tab and carries no handle back to this one. */
 function markLinks(node: Element): void {
     if (node.tagName !== 'A') return;
@@ -148,6 +159,12 @@ export function sanitise(html: string): string {
     return purifier.sanitize(html, PROFILE);
 }
 
+/** One slide's inline diagram, filtered by the profile that keeps the geometry it was drawn with. */
+export function sanitiseDiagram(html: string): string {
+    if (purifier === null) return html;
+    return purifier.sanitize(html, DIAGRAM_PROFILE);
+}
+
 /**
  * One field of Markdown as the HTML a card draws it with. The intro, the note and the funding
  * statement are one paragraph and a link or two in the hub's files, so this is the inline renderer:
@@ -157,4 +174,14 @@ export function sanitise(html: string): string {
  */
 export function inlineMarkdown(text: string): string {
     return sanitise(marked.parseInline(text, { async: false }));
+}
+
+/**
+ * A whole Markdown document as the HTML a view draws it with: headings, lists, tables and fenced
+ * code, which the inline renderer above leaves as the text they were written as. The server renders
+ * a README this way before it sends it; this is for the Markdown a view already holds, a slide's
+ * narrative being the one. What the file holds is somebody's text, so the result is sanitised.
+ */
+export function blockMarkdown(text: string): string {
+    return sanitise(marked.parse(text, { async: false }));
 }

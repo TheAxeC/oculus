@@ -25,6 +25,7 @@ import { createFs, type FsStore } from './fs.svelte.ts';
 import { createHpc, type HpcStore } from './hpc.svelte.ts';
 import { createLayout, type LayoutStore } from './layout.svelte.ts';
 import { createPaletteSource, type PaletteSourceStore } from './palette-source.svelte.ts';
+import { createPresent, type PresentStore } from './present.svelte.ts';
 import { createRailBadges, type RailBadgesStore } from './rail-badges.svelte.ts';
 import { createSelection, type SelectionStore } from './selection.svelte.ts';
 import { createSelectors, type SelectorsStore } from './selectors.svelte.ts';
@@ -55,6 +56,7 @@ export type ClientState = {
     source: SourceStore;
     feeds: FeedsStore;
     hpc: HpcStore;
+    present: PresentStore;
     usageRefresh: UsageRefreshStore;
     selectors: SelectorsStore;
     railBadges: RailBadgesStore;
@@ -86,6 +88,7 @@ export function createClientState(): ClientState {
     const source = createSource(writes, ui);
     const feeds = createFeeds(entities);
     const hpc = createHpc(entities, writes);
+    const present = createPresent(entities);
     const usageRefresh = createUsageRefresh(entities, writes);
     const selectors = createSelectors(entities, layout, selection);
     const railBadges = createRailBadges(entities, feeds, hpc, selectors);
@@ -110,6 +113,7 @@ export function createClientState(): ClientState {
         source,
         feeds,
         hpc,
+        present,
         usageRefresh,
         selectors,
         railBadges,

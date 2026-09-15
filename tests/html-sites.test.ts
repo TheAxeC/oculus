@@ -31,6 +31,12 @@ const ALLOWED: Record<string, string> = {
         'drawn() sanitises unless the caller marked the content trusted, and the trusted Intro sites are checked one by one below: each must hand over a catalog line with literal arguments, so a hub value never reaches this site unfiltered.',
     'views/file/Code.svelte:painted':
         'highlight.js escapes every & < > of the file text before it emits its own fixed span classes, so the code window holds no markup the file could put there.',
+    'views/present/Words.svelte:html':
+        "words() and body() render the slide field through ui/html.ts, which sanitises what it renders; only the KaTeX markup they put back is unfiltered, and that is KaTeX's own output over escaped source with trust off.",
+    'views/present/Equation.svelte:tex(slide.equation, true)':
+        "tex() is KaTeX's own markup over escaped source with trust off, so the slide's LaTeX reaches the page as text nodes and the elements around them are KaTeX's; the sanitiser would drop the style attributes that position them.",
+    'views/present/Panel.svelte:diagram':
+        "the panel's diagram markup is put through sanitiseDiagram() where it is derived, one line above the site: the ordinary profile with `style` added, because a diagram is a grid of boxes whose columns and per-box colour are written on the elements themselves and the ordinary profile would keep the boxes and throw the diagram away. Every other rule of the profile stands, so no handler, script or frame survives; what the profile does not check is the style value itself, so a url() written there is fetched by the browser, which is a slide author's own doing.",
     'views/source/Editor.svelte:painted':
         'state/highlight.ts escapes every & < > of the file text before it emits its own fixed span classes, so the mirror holds no markup the file could put there.'
 };

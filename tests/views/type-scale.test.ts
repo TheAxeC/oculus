@@ -56,6 +56,7 @@ const VIEWS: Record<string, string> = {
     'Leads.svelte': '.empty=fs-md | .runlog=fs-sm',
     'Linkedin.svelte': 'h3=fs-lg',
     'Map.svelte': '.head=fs-sm | .empty=fs-md',
+    'Present.svelte': '.counter=fs-xs',
     'Programs.svelte': '.note, .said=fs-md',
     'Project.svelte':
         '.heading=fs-xs | .said, .failed=fs-md | .doc=fs-md | .doc :global(h1)=fs-3xl | .doc :global(h2)=fs-2xl | .doc :global(h3)=fs-xl | .doc :global(h4)=fs-md | .doc :global(code)=fs-sm | .doc :global(table)=fs-md | .nm=fs-md | .meta=fs-sm',
@@ -93,6 +94,23 @@ const VIEWS: Record<string, string> = {
     'linkedin/PostCard.svelte': '.date=fs-sm',
     'map/Controls.svelte': '.controls=fs-sm',
     'map/Graph.svelte': 'text=fs-xs | text.line-label=fs-sm',
+    'present/Closing.svelte': '.kicker=fs-sm | .headline=fs-3xl | .lede=fs-xl | .hint=fs-sm',
+    'present/Dot.svelte': '',
+    'present/Equation.svelte': '.gap=fs-md',
+    'present/Framing.svelte':
+        '.headline=fs-2xl | .lede=fs-xl | .card=fs-lg | .n=fs-2xl | .hint=fs-sm',
+    'present/Ideas.svelte':
+        '.headline=fs-2xl | .lede=fs-xl | .idea p=fs-md | .head b=fs-lg | .maturity=fs-xxs | .hint=fs-sm',
+    'present/Legend.svelte': '',
+    'present/Overview.svelte': '.at=fs-xs',
+    'present/Panel.svelte':
+        '.gap=fs-md | .cap=fs-sm | .explain=fs-md | .diagram :global(.dnode)=fs-lg | .diagram :global(.darrow)=fs-md | .diagram :global(.dbar)=fs-md',
+    'present/Project.svelte':
+        '.headline=fs-2xl | .sub=fs-lg | .hook=fs-lg | .spec=fs-sm | .spec b=fs-3xs | .lbl=fs-xs | li=fs-md | .e5 span=fs-xxs | .e5 p=fs-md | .body=fs-md',
+    'present/Slide.svelte': '',
+    'present/Summary.svelte': '.headline=fs-2xl | .hint=fs-sm',
+    'present/Title.svelte': '.kicker=fs-sm | .headline=fs-3xl | .lede=fs-xl | .hint=fs-sm',
+    'present/Words.svelte': '.block :global(table)=fs-sm',
     'programs/ArchivalCard.svelte': '',
     'programs/LineCard.svelte': '',
     'programs/OrphansCard.svelte': '',

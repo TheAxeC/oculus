@@ -216,6 +216,7 @@ function portfolio(): RawPortfolio {
         feeds: NO_FEEDS,
         career: null,
         docs: { alpha: documents('alpha', ['README.md']) },
+        present: {},
         findings: []
     };
 }
@@ -334,6 +335,7 @@ describe('normalise, the field mapping', () => {
                 feeds: NO_FEEDS,
                 career: null,
                 docs: {},
+                present: {},
                 findings: []
             },
             []

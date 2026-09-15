@@ -445,14 +445,15 @@ describe('the groups of the real config', () => {
         ]);
     });
 
-    it('puts six of them under Academic life, which is therefore a flyout', () => {
+    it('puts the six collections and the deck under Academic life, which is therefore a flyout', () => {
         expect(section('Academic life').map((view) => view.id)).toEqual([
             'funding',
             'events',
             'education',
             'applications',
             'collaborations',
-            'tasks'
+            'tasks',
+            'present'
         ]);
         expect(section('Academic life').length).toBeGreaterThan(GROUP_MAX);
     });
@@ -499,7 +500,8 @@ describe('the groups of the real config', () => {
             'education',
             'applications',
             'collaborations',
-            'tasks'
+            'tasks',
+            'present'
         ]);
         expect(order.chords.m).toEqual([
             'session-list',

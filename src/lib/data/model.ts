@@ -10,6 +10,7 @@ import type {
     Finding,
     Funding,
     Id,
+    PresentSlide,
     Program,
     Project,
     RawCollection,
@@ -45,6 +46,11 @@ export type RawPortfolio = {
      * folder, and a reader that put it on the record would be adding a key no schema names.
      */
     docs: Record<Id, DocPresence[]>;
+    /**
+     * The slides each project's PRESENT.md declares, by project id, from sources/present.ts. It sits
+     * beside `docs` for the same reason: no manifest key names it, it is read from the folder.
+     */
+    present: Record<Id, PresentSlide[]>;
     findings: Finding[];
 };
 
@@ -98,6 +104,10 @@ export type PortfolioConfig = {
     career: string;
     schema: unknown;
     vocab: Vocabulary;
+    /** The `deck:` map of config/present.yml, unparsed: its shape is the deck's own business. */
+    deck: unknown;
+    /** The file the deck was read from, so a finding about the deck names it. */
+    deckFile: string;
 };
 
 /** The entities of one snapshot, each kind keyed by its own id. */
@@ -189,6 +199,19 @@ export type {
     CodeAvailability,
     CollectionFile,
     Dataset,
+    Deck,
+    DeckCard,
+    DeckChip,
+    DeckEntry,
+    DeckFraming,
+    DeckIdea,
+    DeckIdeas,
+    DeckKind,
+    DeckMeta,
+    DeckSlide,
+    DeckSummary,
+    DeckSummaryRow,
+    DeckTheme,
     DocFlag,
     DocPresence,
     Domain,
@@ -197,6 +220,11 @@ export type {
     Followup,
     Funding,
     Id,
+    PresentEli5,
+    PresentPanel,
+    PresentSlide,
+    PresentSpec,
+    PresentTag,
     Program,
     Project,
     RawCollection,

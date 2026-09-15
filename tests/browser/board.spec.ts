@@ -40,10 +40,11 @@ test('expanding a card lists the file finder rows', async ({ page }) => {
     const name = shortOf(BANDITS);
     const card = page.locator('.slot').filter({ hasText: name }).first();
     await card.getByRole('button', { name: t('project.card.toggle_tip') }).click();
-    // The manifest and the README are the two files the demo's project folder holds.
-    await expect(card.getByText(t('project.card.files_hdr', 2))).toBeVisible();
+    // The manifest, the README and the slide source are the three files the demo's folder holds.
+    await expect(card.getByText(t('project.card.files_hdr', 3))).toBeVisible();
     await expect(card.getByRole('button', { name: 'project.yml' })).toBeVisible();
     await expect(card.getByRole('button', { name: 'README.md' })).toBeVisible();
+    await expect(card.getByRole('button', { name: 'PRESENT.md' })).toBeVisible();
 });
 
 test('a card labels each kind of tag and draws the rest of a long kind in place', async ({

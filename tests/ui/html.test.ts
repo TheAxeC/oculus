@@ -16,6 +16,8 @@ import {
     ALLOWED_ATTR,
     ALLOWED_TAGS,
     ALLOWED_URI_REGEXP,
+    DIAGRAM_ATTR,
+    DIAGRAM_PROFILE,
     INPUT_TYPE,
     LINK_REL,
     LINK_TARGET,
@@ -52,6 +54,13 @@ describe('the sanitiser profile', () => {
         expect(ALLOWED_ATTR.filter((name) => name.startsWith('on'))).toEqual([]);
         expect(ALLOWED_ATTR).not.toContain('style');
         expect(ALLOWED_ATTR).not.toContain('srcset');
+    });
+
+    it('gives a slide diagram the same profile with style alone added', () => {
+        expect(DIAGRAM_ATTR).toEqual([...ALLOWED_ATTR, 'style']);
+        expect(DIAGRAM_PROFILE).toEqual({ ...PROFILE, ALLOWED_ATTR: DIAGRAM_ATTR });
+        expect(DIAGRAM_PROFILE.ALLOWED_TAGS).toBe(PROFILE.ALLOWED_TAGS);
+        for (const attr of DIAGRAM_ATTR) expect(attr.startsWith('on')).toBe(false);
     });
 
     it('opens no door beside the two lists', () => {

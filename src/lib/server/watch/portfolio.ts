@@ -9,9 +9,10 @@
 //
 // The filter is what keeps that cheap. `projects/` holds tens of thousands of files, nearly all of
 // them under a project's `code/` deposit or its `attic/`, so a build there would otherwise rebuild
-// the portfolio on every write. An event counts only when its filename ends in .yml and no segment
-// of its path is `code` or `attic`, which also drops an editor's swap and lock files. The flat
-// LinkedIn folder also accepts the post filenames read by server/feeds.ts.
+// the portfolio on every write. An event counts only when its filename ends in .yml or is the one
+// Markdown file the build reads, a project's PRESENT.md, and no segment of its path is `code` or
+// `attic`, which also drops an editor's swap and lock files. The flat LinkedIn folder also accepts
+// the post filenames read by server/feeds.ts.
 //
 // One rebuild too many is possible and harmless: the first fs.watch of a process on darwin can
 // deliver an event for a write that happened shortly before the watch was opened, so a start that
@@ -24,6 +25,7 @@ import { basename, dirname, join, sep } from 'node:path';
 import { buildPortfolio, portfolioConfigFrom } from '../../data/index.ts';
 import { loadConfig, textCatalog } from '../../data/sources/config.ts';
 import { MANIFEST } from '../../data/sources/manifests.ts';
+import { PRESENT_DOC } from '../../data/sources/present.ts';
 import { readRoots, rootsFile } from '../files.ts';
 import { buildFeeds, isLinkedinFile } from '../feeds.ts';
 import type { ConfigPayload, PortfolioConfig } from '../../data/model.ts';
@@ -51,20 +53,26 @@ const DEBOUNCE = 200;
 /** Folders whose contents never change what the snapshot holds. */
 const NEVER = ['code', 'attic'];
 
-/** Whether a watch event is one of ours: a YAML file outside every `code/` and `attic/` folder. */
+/**
+ * Whether a watch event is one of ours: a YAML file, or a project's PRESENT.md, outside every
+ * `code/` and `attic/` folder. PRESENT.md is here because its front matter is in the snapshot, so a
+ * slide saved has to reach the open deck the way a changed manifest reaches the open board.
+ */
 export function relevant(filename: string | null): boolean {
     if (filename === null || filename === '') return false;
     const parts = filename.split(/[/\\]/);
     if (parts.some((part) => NEVER.includes(part))) return false;
-    return parts[parts.length - 1].endsWith('.yml');
+    const name = parts[parts.length - 1];
+    return name.endsWith('.yml') || name === PRESENT_DOC;
 }
 
 /**
  * The hub files a rebuild actually reads: every registry, collection and YAML feed file, the career
- * file, and every `project.yml` under a scan tier. A `.yml` kept beside one of them (a note next to
- * a registry, a draft, a second file in a project folder) changes nothing the snapshot holds, so an
- * event for it is not a rebuild. The set is derived from the same config the build was made from,
- * which is why the predicate is built again at every rebuild rather than held as a constant.
+ * file, and every `project.yml` and `PRESENT.md` under a scan tier. A `.yml` kept beside one of them
+ * (a note next to a registry, a draft, a second file in a project folder) changes nothing the
+ * snapshot holds, so an event for it is not a rebuild. The set is derived from the same config the
+ * build was made from, which is why the predicate is built again at every rebuild rather than held
+ * as a constant.
  */
 export function namedByConfig(hub: string, config: PortfolioConfig): (path: string) => boolean {
     const files = new Set<string>();
@@ -75,9 +83,10 @@ export function namedByConfig(hub: string, config: PortfolioConfig): (path: stri
     }
     files.add(join(hub, config.career));
     const tiers = config.scan.map((rule) => join(hub, rule.dir) + sep);
+    const perProject = [MANIFEST, PRESENT_DOC];
     return (path: string): boolean => {
         if (files.has(path)) return true;
-        if (basename(path) !== MANIFEST) return false;
+        if (!perProject.includes(basename(path))) return false;
         return tiers.some((tier) => path.startsWith(tier));
     };
 }

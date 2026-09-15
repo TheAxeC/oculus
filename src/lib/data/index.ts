@@ -13,14 +13,18 @@ import { readCollections } from './sources/collections.ts';
 import { CAREER_FILE, readCareer } from './sources/career.ts';
 import { readFeeds } from './sources/feeds.ts';
 import { projectDocs } from './sources/docs.ts';
+import { deckFindings, readPresent } from './sources/present.ts';
+import { engineDir } from './sources/config.ts';
 import { normalise } from './normalise.ts';
 import { validate } from './validate.ts';
 import type {
     CollectionFile,
     DocPresence,
     FeedFiles,
+    Finding,
     Id,
     PortfolioConfig,
+    PresentSlide,
     RawManifest,
     RawPortfolio,
     RegistryFiles,
@@ -28,6 +32,9 @@ import type {
     Snapshot,
     Vocabulary
 } from './model.ts';
+
+/** The one config file the public deck lives in, engine-relative, for a finding that names it. */
+export const DECK_FILE = 'config/present.yml';
 
 function list(value: unknown): unknown[] {
     return Array.isArray(value) ? value : [];
@@ -100,7 +107,10 @@ function vocabKeys(value: unknown): string[] {
  * else. A key the config does not hold falls back to the path the hub uses today, so a config that
  * has moved on in one place still builds.
  */
-export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioConfig {
+export function portfolioConfigFrom(
+    merged: Record<string, unknown>,
+    engine: string = engineDir()
+): PortfolioConfig {
     const path = (key: string, fallback: string): string =>
         typeof merged[key] === 'string' ? merged[key] : fallback;
     const collections = collectionFiles(merged.collections);
@@ -145,7 +155,9 @@ export function portfolioConfigFrom(merged: Record<string, unknown>): PortfolioC
         linkedinCadenceDays: Number(merged.linkedin_cadence_days),
         career: path('career_file', CAREER_FILE),
         schema: merged.manifest_schema,
-        vocab
+        vocab,
+        deck: merged.deck,
+        deckFile: join(engine, DECK_FILE)
     };
 }
 
@@ -159,6 +171,28 @@ function documents(hub: string, manifests: RawManifest[]): Record<Id, DocPresenc
     return found;
 }
 
+/** The slides of every project that carries a PRESENT.md, by project id, with what was wrong. */
+function slides(
+    hub: string,
+    manifests: RawManifest[],
+    equationsDir: string
+): { present: Record<Id, PresentSlide[]>; findings: Finding[] } {
+    const present: Record<Id, PresentSlide[]> = {};
+    const findings: Finding[] = [];
+    for (const manifest of manifests) {
+        const read = readPresent({ hub, folder: manifest.folder, equationsDir }, manifest.id);
+        present[manifest.id] = read.slides;
+        findings.push(...read.findings);
+    }
+    return { present, findings };
+}
+
+/** The deck's `equations_dir`, hub-relative, and the empty string when the deck names none. */
+function equationsDirOf(deck: unknown): string {
+    const held = isMap(deck) ? deck.equations_dir : undefined;
+    return typeof held === 'string' ? held : '';
+}
+
 /**
  * Read the hub, check what was read, and hand back the snapshot. The three steps are the three
  * modules: the sources say what is on disk, validate says what is wrong with it, and normalise
@@ -170,6 +204,12 @@ export function buildPortfolio(hub: string, config: PortfolioConfig, version = 0
     const collections = readCollections(hub, config.collections);
     const feeds = readFeeds(hub, config.feeds);
     const career = readCareer(hub, config.career);
+    const present = slides(hub, manifests.manifests, equationsDirOf(config.deck));
+    const deck = deckFindings(
+        config.deck,
+        Object.values(present.present).flatMap((list) => list.map((one) => one.id)),
+        config.deckFile
+    );
 
     const raw: RawPortfolio = {
         manifests: manifests.manifests,
@@ -178,12 +218,15 @@ export function buildPortfolio(hub: string, config: PortfolioConfig, version = 0
         feeds: feeds.feeds,
         career: career.career,
         docs: documents(hub, manifests.manifests),
+        present: present.present,
         findings: [
             ...manifests.findings,
             ...registries.findings,
             ...collections.findings,
             ...feeds.findings,
-            ...career.findings
+            ...career.findings,
+            ...present.findings,
+            ...deck
         ]
     };
 

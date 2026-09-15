@@ -1,0 +1,276 @@
+# The public slide deck the Present view draws: the deck-level slides, the domain themes, and the order.
+# A project slide is not here. It lives in that project's own PRESENT.md front matter, and the view reads it out of the portfolio snapshot.
+# Rules for what goes on a slide (a public artifact): public-safe only, every number real and matching the manuscript, never a null or negative result, no hedging (the slide's `tag` chip carries the status).
+
+deck:
+    # Hub-relative folder holding the rendered equation images a slide may name instead of LaTeX.
+    equations_dir: tools/present/assets/equations
+
+    # The hue a slide's `tag.class` wears, one palette hue name per class.
+    tag_tones:
+        measured: green
+        design: amber
+        proof: purple
+        mixed: cyan
+
+    meta:
+        kicker: 'Research portfolio | technical briefing | June 2026'
+        title_html: 'Structured models,<br>everywhere they hide'
+        lede: 'A dozen active projects spanning brain, heart, liver and immunity. A shared thesis: clinical data is intrinsically <b>multi-way</b> (modality x time x space x leads), and <b>block-term tensor structure</b>, interpolating CP and Tucker, buys interpretability and parameter efficiency that flattening throws away.'
+        legend:
+            - { label: 'Liver | imaging', color: '#0d9488' }
+            - { label: 'Privacy / federated', color: '#2563eb' }
+            - { label: 'Heart | ECG', color: '#e2374d' }
+            - { label: 'Methods frontier', color: '#ea580c' }
+        hint: 'left / right to move | <b>O</b> for the overview | each project slide: equation | specs | method | results'
+        closing_kicker: 'Thank you'
+        closing_title_html: 'Questions &amp;<br>collaborations welcome'
+        closing_lede: 'Happy to go deeper on any one: the clinical motivation, the optimization and theory, or the data pipeline. Several are open to collaborators across computer science, psychology, and medicine.'
+        contact: 'axel.faes@gmail.com'
+
+    # A research domain's colour and the words its slides wear. A project's slide is themed by its project.yml `domain`.
+    themes:
+        heart: { color: '#e2374d', label: 'Cardiology | ECG' }
+        liver: { color: '#0d9488', label: 'Hepatology | imaging' }
+        liverfl: { color: '#0d9488', label: 'Hepatology | federated' }
+        liversurv: { color: '#0d9488', label: 'Hepatology | survival' }
+        privacy: { color: '#2563eb', label: 'Privacy | vertical FL' }
+        theory: { color: '#2563eb', label: 'Privacy | theory' }
+        immune: { color: '#7c5cff', label: 'Immunology | federated' }
+        method: { color: '#ea580c', label: 'Methods frontier' }
+        brain: { color: '#7c3aed', label: 'Neuroscience | EEG' }
+        brainbci: { color: '#7c3aed', label: 'Neuroscience | BCI' }
+        meta: { color: '#64748b', label: 'Meta-science' }
+
+    # The table of contents. A `framing` or `summary` entry names a key below; a `project` entry names a slide id, which is a project id or `<project>/<slug>`.
+    # A project slide this list does not name is placed before the closing slide, so a new PRESENT.md is in the deck before anybody edits this file; a project entry the mounted hub does not declare places nothing.
+    order:
+        - { slide: title }
+        - { slide: framing, ref: engine }
+        - { slide: project, ref: hccnet-revision }
+        - { slide: project, ref: hccnet-fl }
+        - { slide: project, ref: covert-applied }
+        - { slide: project, ref: covert-theory }
+        - { slide: project, ref: bttn-incident-af }
+        - { slide: project, ref: raw-pls }
+        - { slide: project, ref: btfno }
+        - { slide: project, ref: bt-operator-theory }
+        - { slide: summary, ref: summary1 }
+        - { slide: framing, ref: transition }
+        - { slide: project, ref: bttd-source-eeg }
+        - { slide: project, ref: dries-bttr-ecg }
+        - { slide: project, ref: dongho-ecg-clustering }
+        - { slide: project, ref: fed-multicellular-immune }
+        - { slide: project, ref: meseret-cirrhosis }
+        - { slide: project, ref: ward-bttr-crosssubject }
+        - { slide: summary, ref: summary2 }
+        - { slide: ideas }
+        - { slide: closing }
+
+    # Section slides: a heading and a lede, with up to three cards, a legend and a hint.
+    framing:
+        engine:
+            title: 'The common engine: rank-(L,L,1) block-term decomposition'
+            lede: 'A block-term tensor is a <b>sum of R low-multilinear-rank blocks</b>, strictly between CP (rank-1 blocks, no within-block coupling) and Tucker (one dense core, no modularity). That middle ground recurs across the portfolio:'
+            cards:
+                - {
+                      n: '1',
+                      title: 'Interpretable by construction.',
+                      body: 'Sparse and low-rank cores <i>are</i> the explanation: per-block (time x lead) or (freq x lead) signatures a clinician can read.'
+                  }
+                - {
+                      n: '2',
+                      title: 'Parameter-efficient.',
+                      body: 'An (R,L) knob matches CP and Tucker budgets while dedicating capacity to distinct regimes (scales, modalities, leads).'
+                  }
+                - {
+                      n: '3',
+                      title: 'Composable with constraints.',
+                      body: 'The same factorization carries through irregular time, federation, differential privacy, and unaligned geometry.'
+                  }
+            hint: 'Each of the next slides leads with the governing equation, then specs, method, and results.'
+        transition:
+            title: 'Six more, same backbone: across brain, heart, immunity and survival'
+            lede: 'The next six projects apply the same structured-tensor philosophy to other modalities and questions: locating brain sources, reading AF substrate, benchmarking ECG representations, federating immune atlases, fixing a survival benchmark, and transferring brain-computer interfaces across people.'
+            legend:
+                - { label: 'Brain | EEG / BCI', color: '#7c3aed' }
+                - { label: 'Heart | ECG', color: '#e2374d' }
+                - { label: 'Immunology | federated', color: '#2563eb' }
+                - { label: 'Hepatology | survival', color: '#0d9488' }
+            hint: 'Same four-layer format: equation | specs | method | measured results.'
+
+    # Cross-project tables, written by hand. When a project's headline number changes, its row here changes with it.
+    summaries:
+        summary1:
+            title: 'Active programs, at a glance'
+            rows:
+                - {
+                      field: 'Liver',
+                      color: '#0d9488',
+                      project: 'HCCNet, longitudinal MRI prognosis',
+                      mechanism: "3D DINO backbone + $\\sqrt{\\Delta t}$ Transformer",
+                      headline: 'AUROC 0.936 | backbone = +136% AUPRC'
+                  }
+                - {
+                      field: 'Liver',
+                      color: '#0d9488',
+                      project: 'HCCNet-FL, component-aware federation',
+                      mechanism: 'Federate label-free backbone, localize head',
+                      headline: '~97% of centralized at -37% comms'
+                  }
+                - {
+                      field: 'Privacy',
+                      color: '#2563eb',
+                      project: 'COVERT, vertical block-term tensors',
+                      mechanism: 'Couple via shared DP score; private cores',
+                      headline: 'O(Pm+mC) comms; theorem exact+private'
+                  }
+                - {
+                      field: 'Privacy',
+                      color: '#2563eb',
+                      project: 'COVERT, theory',
+                      mechanism: 'PALM+KL, Gaussian-DP excess-risk bound',
+                      headline: "Dimension-free in $\\prod I_n$; matching $\\Omega(\\sigma)$ bound"
+                  }
+                - {
+                      field: 'Heart | ECG',
+                      color: '#e2374d',
+                      project: 'Incident-AF prediction (MIMIC-IV)',
+                      mechanism: 'K=12 block-term net, Cox loss',
+                      headline: 'BTTN 0.762 vs CNN 0.748, P~1.0'
+                  }
+                - {
+                      field: 'Methods',
+                      color: '#ea580c',
+                      project: 'RAW-PLS, registration-free tumor MRI',
+                      mechanism: 'Supervised fused-GW + PLS head',
+                      headline: 'Beats registered and grid baselines on real BraTS (struct +0.43 $R^2$, grade AUC 0.935)'
+                  }
+                - {
+                      field: 'Methods',
+                      color: '#ea580c',
+                      project: 'BT-FNO, block-term neural operator',
+                      mechanism: 'Mixture of block-term experts (MoBTE)',
+                      headline: 'MoBTE -60% error vs CP (6-PDE)'
+                  }
+                - {
+                      field: 'Methods',
+                      color: '#ea580c',
+                      project: 'BT Operator Theory, why it generalizes',
+                      mechanism: 'Inductive-bias and generalization-gap account',
+                      headline: 'Gen-gap CP .029 to BT .019 to MoBTE .012 (predicted)'
+                  }
+            foot: 'Spanning hepatology, privacy-preserving learning, cardiology and ML methods, unified by structured, interpretable tensor models.'
+        summary2:
+            title: 'The wider portfolio, at a glance'
+            rows:
+                - {
+                      field: 'Brain',
+                      color: '#7c3aed',
+                      project: 'BTTD, source-reconstructed EEG',
+                      mechanism: 'Lead-field-constrained sparse BTD',
+                      headline: 'Time-course corr 0.93 | 13.4 mm focal'
+                  }
+                - {
+                      field: 'Heart | ECG',
+                      color: '#e2374d',
+                      project: 'Dries, AF substrate in normal ECG',
+                      mechanism: 'Supervised glass-box BTTR',
+                      headline: '0.718 vs 0.631 clinical, p=0.002'
+                  }
+                - {
+                      field: 'Heart | ECG',
+                      color: '#e2374d',
+                      project: 'Dongho, ECG representation benchmark',
+                      mechanism: 'Chance-corrected ARI, 5 arms',
+                      headline: 'Hand-crafted 0.71 vs foundation 0.19'
+                  }
+                - {
+                      field: 'Immuno',
+                      color: '#2563eb',
+                      project: 'Federated multicellular tensor',
+                      mechanism: 'Stacked-SVD = centralized',
+                      headline: 'SLE-AUC 0.958 | COVID corr 0.989'
+                  }
+                - {
+                      field: 'Liver',
+                      color: '#0d9488',
+                      project: 'Meseret, competing-risks survival',
+                      mechanism: 'Cause-specific Cox + Aalen-Johansen',
+                      headline: 'Death C 0.833 | transplant C 0.822'
+                  }
+                - {
+                      field: 'Brain',
+                      color: '#7c3aed',
+                      project: 'Ward, cross-subject BCI decoding',
+                      mechanism: 'BTTR deflation, LOSO transfer',
+                      headline: "$\\rho$ 0.084 to 0.49 fix | ~10 x faster"
+                  }
+            foot: 'Brain, heart, immunity and survival: the same structured-tensor backbone throughout.'
+
+    # The idea grid. `maturity` is nascent, scoping or de-risking, and drives the chip colour.
+    ideas:
+        title: 'The idea pipeline, what is next'
+        lede: 'Early-stage directions seeding the next wave. Most reuse the federated, block-term and longitudinal machinery above, plus meta-science and methods bets.'
+        hint: 'Maturity: nascent (concept) | scoping (lit-check and framing) | de-risking (feasibility experiment). Each gated on a novelty check before committing.'
+        items:
+            - {
+                  title: 'BTD Autoencoder',
+                  desc: 'Tensor-native autoencoder for sparse scRNA-seq denoising plus a small-N rigor benchmark',
+                  color: '#ea580c',
+                  maturity: scoping
+              }
+            - {
+                  title: 'FLoRank x HCCNet / Block-Term',
+                  desc: 'Adaptive low-rank federated personalization extended to HCCNet imaging or a block-term adapter',
+                  color: '#2563eb',
+                  maturity: scoping
+              }
+            - {
+                  title: 'Clinical-AI Eval Artifacts',
+                  desc: 'Meta-science: many federated and clinical-AI gains are evaluation artifacts; a corrected protocol',
+                  color: '#ea580c',
+                  maturity: scoping
+              }
+            - {
+                  title: 'ECG-AF (Vandervoort)',
+                  desc: 'FAIR-aligned AF-risk prediction from sinus-rhythm ECG, interpretable tensor and private multisite',
+                  color: '#e2374d',
+                  maturity: de-risking
+              }
+            - {
+                  title: 'Federated Block-Term Decomp.',
+                  desc: 'Properly federated BTD with alignment-aware aggregation (block permutation, subspace, scale)',
+                  color: '#2563eb',
+                  maturity: de-risking
+              }
+            - {
+                  title: 'FL Privacy Auditing',
+                  desc: 'A standardized privacy-attack audit battery for deployed federated and DP clinical models',
+                  color: '#2563eb',
+                  maturity: scoping
+              }
+            - {
+                  title: 'HCCNet-FL Network (Sweden)',
+                  desc: 'Real cross-country federated HCC (Twente and Linköping) with modality-incomplete federation',
+                  color: '#0d9488',
+                  maturity: de-risking
+              }
+            - {
+                  title: 'HCCNet Pathology Networks',
+                  desc: 'Modular pathology-decomposed HCC risk (fibrosis, inflammation, steatosis, iron) plus a temporal head',
+                  color: '#0d9488',
+                  maturity: scoping
+              }
+            - {
+                  title: 'SSM Longitudinal Imaging',
+                  desc: 'Continuous-time state-space backbone for irregular-interval longitudinal 3D MRI',
+                  color: '#ea580c',
+                  maturity: nascent
+              }
+            - {
+                  title: 'Quantum Tensor / FL',
+                  desc: 'Exploratory: quantum-inspired tensor networks or quantum federated learning, after a novelty check',
+                  color: '#ea580c',
+                  maturity: nascent
+              }

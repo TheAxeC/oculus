@@ -23,6 +23,7 @@ import type {
     Funding,
     Host,
     Id,
+    PresentSlide,
     Program,
     Project,
     Reproduced,
@@ -237,7 +238,11 @@ export function subtasks(value: unknown): Subtask[] {
 }
 
 /** A project. Every field comes from the manifest key of the same meaning, and nothing else does. */
-function project(manifest: RawManifest, found: DocPresence[] | undefined): Project {
+function project(
+    manifest: RawManifest,
+    found: DocPresence[] | undefined,
+    slides: PresentSlide[] | undefined
+): Project {
     const status = isMap(manifest.status) ? manifest.status : {};
     const authors = manifest.authors;
     const domain = str(manifest.domain);
@@ -288,6 +293,7 @@ function project(manifest: RawManifest, found: DocPresence[] | undefined): Proje
         venue: str(manifest.venue),
         staleDays: lag > 0 ? lag : undefined,
         docs: docs(found),
+        present: slides !== undefined && slides.length > 0 ? slides : undefined,
         folder: manifest.folder,
         file: manifest.file
     });
@@ -648,7 +654,9 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
     const withId = (entries: RawRegistryEntry[]): RawRegistryEntry[] =>
         entries.filter((item) => item.key.length > 0);
 
-    const projects = raw.manifests.map((manifest) => project(manifest, raw.docs[manifest.id]));
+    const projects = raw.manifests.map((manifest) =>
+        project(manifest, raw.docs[manifest.id], raw.present[manifest.id])
+    );
     const venues = withId(raw.registries.venues.entries).map(venue);
     const datasets = withId(raw.registries.datasets.entries).map(dataset);
     const programs = withId(raw.registries.programs.entries).map(program);

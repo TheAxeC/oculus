@@ -30,7 +30,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import { t } from '$lib/state/text';
-    import { fileUrl } from './document/file-url';
+    import { fileUrl } from './shared/file-url';
     import type { ViewProps } from './registry';
 
     let { instance }: ViewProps = $props();

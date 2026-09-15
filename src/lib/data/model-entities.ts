@@ -214,6 +214,190 @@ export type Subtask = {
     snooze?: string;
 };
 
+/** The status chip of a slide: the class its colour comes from, and the word it wears. */
+export type PresentTag = {
+    class?: string;
+    text?: string;
+};
+
+/** One chip of a slide's spec strip. */
+export type PresentSpec = {
+    label: string;
+    value: string;
+};
+
+/** The plain-language callout of a slide: what the work is for, and what it does in plain words. */
+export type PresentEli5 = {
+    purpose?: string;
+    plain?: string;
+};
+
+/**
+ * One visual of a slide. `figure` is a bare file name under the project's own `present/` folder and
+ * the view resolves it through the file route; `diagramHtml` is inline markup the sanitiser filters.
+ */
+export type PresentPanel = {
+    figure?: string;
+    diagramHtml?: string;
+    caption?: string;
+    explain?: string;
+    /** The named figure is not in the folder, so the view draws the gap and not a dead image. */
+    missing?: boolean;
+};
+
+/**
+ * One slide a project owns, read from its PRESENT.md. `id` is the project's id for the front
+ * matter's own `present:` slide and `<project>/<slug>` for an entry of its `slides:` list, which is
+ * what the deck's `order`, `selection` and `slide_order` name a slide by.
+ *
+ * `equation` is either LaTeX the page typesets or the name of a rendered image; which one it is is
+ * the value's own suffix, and data/sources/present.ts holds that rule. That reader resolves an image
+ * against the disk, so the view draws `equationImage` and never chooses a folder. `body` is the
+ * markdown under the front matter, which is the slide a project with no front matter draws.
+ */
+export type PresentSlide = {
+    id: Id;
+    /** The project the slide belongs to, which is what themes it and resolves its figures. */
+    projectId: Id;
+    tag?: PresentTag;
+    title?: string;
+    sub?: string;
+    hook?: string;
+    eli5?: PresentEli5;
+    equation?: string;
+    /** Hub-relative path of the rendered equation image, when `equation` names one that is there. */
+    equationImage?: string;
+    /** The named equation image is in neither place it could be, so the view draws the gap. */
+    equationMissing?: boolean;
+    specs: PresentSpec[];
+    panels: PresentPanel[];
+    method: string[];
+    results: string[];
+    body?: string;
+};
+
+/** The six kinds of slide the deck is made of; five are the deck's own, `project` is a project's. */
+export type DeckKind = 'title' | 'framing' | 'project' | 'summary' | 'ideas' | 'closing';
+
+/** One entry of the deck's `order:`. A `project` entry's `ref` is a PresentSlide id. */
+export type DeckEntry = {
+    slide: DeckKind;
+    ref?: string;
+};
+
+/** One chip of a legend row: the words and the palette hue behind them. */
+export type DeckChip = {
+    label: string;
+    /** A hue name from state/tones.ts, resolved from the colour the deck wrote. */
+    tone: string;
+};
+
+/** The deck's own words: the opening slide, the closing slide and the legend between them. */
+export type DeckMeta = {
+    kicker?: string;
+    titleHtml?: string;
+    lede?: string;
+    legend: DeckChip[];
+    hint?: string;
+    closingKicker?: string;
+    closingTitleHtml?: string;
+    closingLede?: string;
+    contact?: string;
+};
+
+/** A research domain's hue and the words a slide of that domain wears. */
+export type DeckTheme = {
+    /** A hue name from state/tones.ts, resolved from the colour the deck wrote. */
+    tone: string;
+    label: string;
+};
+
+/** One numbered card of a framing slide. */
+export type DeckCard = {
+    n?: string;
+    title?: string;
+    body?: string;
+};
+
+/** A framing slide: a heading, a lede, up to three cards, a legend and a hint. */
+export type DeckFraming = {
+    title?: string;
+    lede?: string;
+    cards: DeckCard[];
+    legend: DeckChip[];
+    hint?: string;
+};
+
+/** One row of a summary table. */
+export type DeckSummaryRow = {
+    field?: string;
+    /** A hue name from state/tones.ts, for the dot beside the field. */
+    tone?: string;
+    project?: string;
+    mechanism?: string;
+    headline?: string;
+};
+
+/** A cross-project summary slide. */
+export type DeckSummary = {
+    title?: string;
+    rows: DeckSummaryRow[];
+    foot?: string;
+};
+
+/** One card of the idea grid. */
+export type DeckIdea = {
+    title?: string;
+    desc?: string;
+    /** A hue name from state/tones.ts, for the dot on the head of the card. */
+    tone?: string;
+    maturity?: string;
+};
+
+/** The idea-grid slide. */
+export type DeckIdeas = {
+    title?: string;
+    lede?: string;
+    items: DeckIdea[];
+    hint?: string;
+};
+
+/**
+ * The deck of config/present.yml: the deck-level slides, the order they and the project slides are
+ * shown in, and the two lists a saved arrangement writes. `selection` null means nothing has been
+ * saved and every slide the order places is shown; `slideOrder` null means the order alone places
+ * them.
+ */
+export type Deck = {
+    meta: DeckMeta;
+    themes: Record<string, DeckTheme>;
+    order: DeckEntry[];
+    framing: Record<string, DeckFraming>;
+    summaries: Record<string, DeckSummary>;
+    ideas: DeckIdeas | null;
+    selection: string[] | null;
+    slideOrder: string[] | null;
+    /** Hub-relative folder the rendered equation images live in, for a slide naming one. */
+    equationsDir: string;
+    /** A hue name per `tag.class` a slide may wear, from the deck's `tag_tones`. */
+    tagTones: Record<string, string>;
+};
+
+/**
+ * One slide of the assembled deck: what kind it is, what it draws, and the key the saved selection
+ * and order name it by. A `project` slide's key is its PresentSlide id; every other kind's is its
+ * kind and its ref, so two framing slides are told apart.
+ */
+export type DeckSlide = {
+    key: string;
+    kind: DeckKind;
+    ref?: string;
+    /** Plain words naming the slide in the overview grid; the pane's title is the view's name. */
+    title: string;
+    /** The hue the slide is drawn in, from the deck's `themes` by the project's domain. */
+    tone?: string;
+};
+
 /**
  * A project. The relation fields hold ids; data/normalise.ts fills them from the manifest's
  * `venue_id`, `funding`, `datasets`, `program` and `domain` keys, and leaves them empty when it has
@@ -287,6 +471,12 @@ export type Project = {
     venue?: string;
     /** The four fixed project documents, in the order sources/docs.ts lists them, presence only. */
     docs: DocFlag[];
+    /**
+     * The slides of the project's PRESENT.md, in the order the file declares them. Absent for a
+     * project that has no PRESENT.md, which is most of the hub, so the wire carries the key only
+     * where there is something to draw.
+     */
+    present?: PresentSlide[];
     /** Folder relative to the hub, and the manifest's absolute path. */
     folder: string;
     file: string;

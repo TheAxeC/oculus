@@ -14,6 +14,7 @@ import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { Sink } from '../../src/lib/server/channels.ts';
 import {
+    namedByConfig,
     relevant,
     watchPortfolio,
     watchedDirectories
@@ -186,6 +187,58 @@ describe('relevant', () => {
         expect(relevant('active/loewner/.project.yml.swp')).toBe(false);
         expect(relevant(null)).toBe(false);
     });
+
+    it('takes a PRESENT.md, whose front matter is in the snapshot, and no other markdown', () => {
+        expect(relevant('active/loewner/PRESENT.md')).toBe(true);
+        expect(relevant('active/loewner/code/PRESENT.md')).toBe(false);
+        expect(relevant('active/loewner/present.md')).toBe(false);
+        expect(relevant('active/loewner/NOTES.md')).toBe(false);
+    });
+});
+
+describe('namedByConfig', () => {
+    const config = {
+        scan: [{ dir: 'projects/active' }],
+        feeds: {
+            inbox: 'feeds/inbox.yml',
+            leads: 'feeds/position-leads.yml',
+            radar: 'feeds/literature-radar.yml',
+            linkedin: 'site/_linkedin'
+        },
+        linkedinCadenceDays: 30,
+        career: 'CAREER.yml',
+        registries: {
+            venues: 'registries/venues.yml',
+            datasets: 'registries/data.yml',
+            programs: 'registries/programs.yml',
+            domains: 'registries/domains.yml',
+            funding: 'funding/funding.yml'
+        },
+        collections: [{ key: 'events', file: 'network/events.yml' }],
+        schema: undefined,
+        vocab: { types: [], statuses: [] },
+        deck: undefined,
+        deckFile: '/hub/config/present.yml'
+    };
+
+    it('names a manifest and a PRESENT.md under a scan tier, and no other document', () => {
+        const named = namedByConfig('/hub', config);
+        expect(named(join('/hub', 'projects/active/loewner/project.yml'))).toBe(true);
+        expect(named(join('/hub', 'projects/active/loewner/PRESENT.md'))).toBe(true);
+        expect(named(join('/hub', 'projects/ideas/other/PRESENT.md'))).toBe(false);
+        expect(named(join('/hub', 'projects/active/loewner/README.md'))).toBe(false);
+        expect(named(join('/hub', 'registries/venues.yml'))).toBe(true);
+    });
+
+    it('rebuilds on a PRESENT.md under a tier and on none under a project code folder', () => {
+        // The pair the watcher applies: the filename filter, then the file the build reads.
+        const named = namedByConfig('/hub', config);
+        const accepts = (rel: string): boolean =>
+            relevant(rel) && named(join('/hub', 'projects/active', rel));
+        expect(accepts('loewner/PRESENT.md')).toBe(true);
+        expect(accepts('loewner/code/PRESENT.md')).toBe(false);
+        expect(accepts('loewner/attic/PRESENT.md')).toBe(false);
+    });
 });
 
 describe('watchedDirectories', () => {
@@ -209,7 +262,9 @@ describe('watchedDirectories', () => {
             },
             collections: [{ key: 'events', file: 'network/events.yml' }],
             schema: undefined,
-            vocab: { types: [], statuses: [] }
+            vocab: { types: [], statuses: [] },
+            deck: undefined,
+            deckFile: '/hub/config/present.yml'
         });
         expect(dirs.sort()).toEqual([
             join('/hub', 'feeds'),

@@ -353,6 +353,7 @@ describe("oculus's own config directory", () => {
     /** Every non-text top-level key, by its root config file. */
     const EXPECTED: Record<string, string[]> = {
         'appearance.yml': ['themes', 'wallpaper', 'crt', 'terminal'],
+        'present.yml': ['deck'],
         'behavior.yml': [
             'read_limits',
             'stale_days',
@@ -458,6 +459,7 @@ describe("oculus's own config directory", () => {
         'views/leads.yml',
         'views/linkedin.yml',
         'views/map.yml',
+        'views/present.yml',
         'views/programs.yml',
         'views/project.yml',
         'views/projects.yml',

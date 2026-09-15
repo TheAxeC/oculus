@@ -26,6 +26,7 @@ const STORES: (keyof ClientState)[] = [
     'source',
     'feeds',
     'hpc',
+    'present',
     'usageRefresh',
     'selectors',
     'railBadges',
