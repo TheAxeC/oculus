@@ -98,6 +98,9 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - D1 the change log of every write through `api/write`: what file, what field, from what to what, when, undoable where the write is (Axel 2026-09-12 23:45; brief at dispatch).
 - D2 the map's controls: filters by project type and by pillar as toggle chips in one toolbar row, a keep-connected-only toggle dropping projects with no edge to a remaining pillar, pure state over the graph (Axel 2026-09-12 23:45; brief at dispatch)
 - D3 software as a project type: a scan tier `projects/software/` of manifests with `type: software` and `related:` to the paper that introduced the algorithm, the Code view listing them beside the paper deposits, the card linking both ways (Axel 2026-09-12 23:45; the tier folder name is a shape for him; brief at dispatch)
+- Q20 `local.yml` into `config/`: read by `loadLocal` as now and left out of the merged map, carded in the Config view as this machine's own, served under the `engine` root, the gitignore rule and every path reference moved (Axel 2026-09-15 20:12; brief at dispatch)
+- Q21 no environment variables: the server takes `--engine <dir>` (the directory holding `config/` and `local.yml`), the browser suite builds a temporary engine directory and passes it, `OCULUS_CONFIG` and `OCULUS_LOCAL` go (Axel 2026-09-15 20:12; after Q20; brief at dispatch)
+- Q22 two lazy options undone: the Files pane tinted again with an entry-form variant that paints no surface of its own, and a note written at the first keystroke so nothing is deleted behind the reader (Axel 2026-09-15 20:12; brief at dispatch)
 - D4 the Repositories view: every configured root's status, log, branches and a diff on the git channel; extended 2026-09-13 17:50 with the worktrees of every root with their diff, a terminal started in a new worktree, and a merge-back action behind the write token (Axel 2026-09-12 23:45 and 2026-09-13 17:50; brief at dispatch).
 - D5 the LaTeX panel on a project: build and clean as task terminals, the log parsed into errors with line numbers, the PDF tab refreshed on success, several main files per project each with its own build (Axel 2026-09-12 23:45; how a manifest names its main files is a shape for him; brief at dispatch)
 - D6 highlight.js languages beyond O27a's core set (Lisp, OCaml, R, MATLAB, Svelte and the ones the hub's files use) and a Markdown preview beside the source editor, live from the editor's text (Axel 2026-09-12 23:45; after O27a and Q9; brief at dispatch)
@@ -158,7 +161,8 @@ One line per package: the status mark, the id, the title, and where the rest is 
 
 ## Could run in parallel
 
-- The feature stretch after R17, three in flight at all times (Axel 2026-09-14 17:50 for three at a time; 2026-09-15 19:58 for the rolling window: one new package dispatched at each landing, cut at main's head, its paths checked against the two still running): the queue is Q15 + Q16 + H1, then Q15b; Q17 + P1 + O27a; P2 + O27b + O28a; O28b + D1 + D2; D3 + D6 + D4; D5 + D7 + D10; D8 + D12 + D9; D16 + D11 + D13; D14 + D15 + D17; D18 + D20 + O31. Alone by nature: Q18, R10, R13a, R13b, K1, R17, L1, L2 before it; R2, O29, O30, X2 after it.
+- The feature stretch after R17, three in flight at all times (Axel 2026-09-14 17:50 for three at a time; 2026-09-15 19:58 for the rolling window: one new package dispatched at each landing, cut at main's head, its paths checked against the two still running). Alone by nature: Q18, R10, R13a, R13b, K1, R17, L1, L2 before it; R2, O29, O30, X2 after it.
+- The queue, in order: Q15 + Q16 + H1, then Q15b; Q17 + P1 + O27a; P2 + O27b + O28a; O28b + D1 + D2; D3; Q20; Q21; Q22; D6 + D4; D5 + D7 + D10; D8 + D12 + D9; D16 + D11 + D13; D14 + D15 + D17; D18 + D20 + O31.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
@@ -167,6 +171,8 @@ Independent of each other; two may run side by side under R9's rule when their b
 - O22 to O28 with each other once O10 has landed.
 
 ## Rulings (2026-09-10)
+- 2026-09-15 20:12, Axel, on the fifteen open items (1 of 2): 2, 3, 4, 5, 7, 8, 9, 10, 11, 13 and 15 agreed as recommended; 1: `local.yml` moves into `config/` (Q20); 6: no environment variables, `OCULUS_CONFIG` and `OCULUS_LOCAL` go (Q21).
+- 2026-09-15 20:12, Axel (2 of 2): 12 and 14 named by the orchestrator as the lazy options at Axel's question and left unlocked: the Files pane tinted again with a form that paints no surface, and a note written at the first keystroke (Q22); 15's one-shape alternative offered, not ruled.
 - 2026-09-15 19:58, Axel: the rolling window. A new package is dispatched the moment one lands, three in flight at all times, the plan's set list read as the queue; each is cut at main's head after the latest landing and its paths are checked against the two still running.
 - 2026-09-15 17:33, Axel: the System group's `chord: y` and `glyph: audit` and the Sessions group's `glyph: live` stay as O27a landed them; O28a's `engine` root (the engine's `config/` folder served as a fixed root for the file route, the source route and the file browser) stays.
 - 2026-09-15 15:57, Axel, yes to all six open items (1 of 3): Q17's status marks keep their hue through a toned `Tag`; O27a's Sources group stays a flyout and the file view keeps its "Open in a browser tab" control.
