@@ -452,7 +452,8 @@ function checkFundingStatements(raw: RawPortfolio, findings: Finding[]): void {
     raw.registries.funding.entries.forEach((entry, index) => {
         const status = typeof entry.status === 'string' ? entry.status : '';
         if (!ACKNOWLEDGED.has(status)) return;
-        const name = entry.key.length > 0 ? entry.key : String(entry.title ?? '');
+        const title = typeof entry.title === 'string' ? entry.title : '';
+        const name = entry.key.length > 0 ? entry.key : title;
         const statement = entry.statement;
         if (entry.key.length === 0) {
             findings.push({
