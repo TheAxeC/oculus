@@ -115,7 +115,8 @@ function handler(path: string, page?: string, focus: () => null = () => null) {
         setPaletteOpen: noop,
         setUpdateOpen: noop,
         setSheetOpen: noop,
-        openPalette: noop
+        openPalette: noop,
+        openDoc: noop
     });
     keys.paneFocused({ target: element } as unknown as FocusEvent);
     return keys;

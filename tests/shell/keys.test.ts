@@ -20,7 +20,7 @@ const order: RailOrder = {
     all: ['focus', 'projects', 'funding', 'events', 'archive'],
     chords: {
         v: ['focus', 'projects', 'archive'],
-        c: ['funding', 'events'],
+        c: ['funding', 'events', 'doc:GUIDE.md'],
         m: ['sessions', 'terminal']
     }
 };
@@ -86,6 +86,14 @@ describe('digit and chord navigation', () => {
         expect(press('2', started.state, 2000 + CHORD_MS - 1).action).toEqual({
             kind: 'open',
             view: 'events'
+        });
+    });
+
+    it('opens the document a chord counts to after the views, as its own entry', () => {
+        const started = press('c', initialKeyState(), 2000);
+        expect(press('3', started.state, 2000 + CHORD_MS - 1).action).toEqual({
+            kind: 'open',
+            view: 'doc:GUIDE.md'
         });
     });
 

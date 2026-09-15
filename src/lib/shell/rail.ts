@@ -46,6 +46,14 @@ export function docState(entry: DocEntry): { id: string; path: string; label: st
     return { id: entry.path, path: entry.path, label: entry.label };
 }
 
+/** What a document is identified by inside a group's list or a chord, told from a view's id. */
+export const DOC_PICK = 'doc:';
+
+/** One document's entry in a group's list or a chord: the prefix and its path. */
+export function docPick(entry: DocEntry): string {
+    return `${DOC_PICK}${entry.path}`;
+}
+
 /**
  * The rail as it is drawn: a group's registrations and its documents, or the ungrouped ones under no
  * heading. The documents follow the views, since a group is its views first.
@@ -119,7 +127,9 @@ export function arrange(
  * The rail's directly drawn views in their numbered order, every view in display order, and the
  * lists a one-letter chord counts into. `directChord` is the letter the directly drawn views are
  * reached under; a group that names the same letter takes it, since a group's own configuration is
- * the more specific one.
+ * the more specific one. A group's documents follow its views in its chord, as `docPick` entries,
+ * so the digit after a group's last view opens its first document; the directly drawn groups'
+ * documents follow the direct views the same way. `direct` and `all` hold views alone.
  */
 export function railOrder(
     registrations: Registration[],
@@ -133,10 +143,18 @@ export function railOrder(
         .flatMap((section) => section.items.map((view) => view.id));
     const all = sections.flatMap((section) => section.items.map((view) => view.id));
     const chords: Record<string, string[]> = {};
-    if (directChord !== undefined && direct.length > 0) chords[directChord] = direct;
+    if (directChord !== undefined && direct.length > 0) {
+        const documents = sections
+            .filter((section) => !isFlyout(section))
+            .flatMap((section) => section.docs.map(docPick));
+        chords[directChord] = [...direct, ...documents];
+    }
     for (const section of sections) {
         if (!isFlyout(section) || section.chord === undefined) continue;
-        chords[section.chord] = section.items.map((view) => view.id);
+        chords[section.chord] = [
+            ...section.items.map((view) => view.id),
+            ...section.docs.map(docPick)
+        ];
     }
     return { direct, all, chords };
 }

@@ -676,7 +676,13 @@ describe('the groups of the real config', () => {
             'linkedin',
             'memories'
         ]);
-        expect(order.chords[config.direct_chord as string]).toEqual(order.direct);
+        // The directly drawn groups' documents follow the direct views in the direct chord, so a
+        // digit past the last view opens one; the direct list itself holds views alone.
+        expect(order.chords[config.direct_chord as string]).toEqual([
+            ...order.direct,
+            'doc:RESEARCH-APPROACH.md',
+            'doc:AGENT-APPROACH.md'
+        ]);
         expect(order.all).toContain('funding');
         expect(order.chords.c).toEqual([
             'funding',
@@ -706,7 +712,8 @@ describe('the groups of the real config', () => {
             'help',
             'config',
             'audit',
-            'history'
+            'history',
+            'doc:HPC-UTwente-howto.md'
         ]);
         expect(Object.keys(order.chords).sort()).toEqual(['c', 'm', 's', 'v', 'y']);
     });
@@ -778,7 +785,7 @@ describe('a bookmark opened as a document tab', () => {
     });
 });
 
-describe("the reader's own bookmarks in the Docs section", () => {
+describe("the reader's own bookmarks under their heading", () => {
     /** The rail with the configured bookmarks and the reader's own. */
     function drawn(bookmarks: Bookmark[], saved: Bookmark[]): string {
         return render(ActivityRail, {
@@ -787,7 +794,7 @@ describe("the reader's own bookmarks in the Docs section", () => {
         }).body;
     }
 
-    /** The bookmark identities the Docs section drew, in the order it drew them. */
+    /** The bookmark identities the heading's list drew, in the order it drew them. */
     function order(body: string): string[] {
         return [...body.matchAll(/data-bookmark="([^"]+)"/g)].map((found) => found[1]);
     }
@@ -800,7 +807,7 @@ describe("the reader's own bookmarks in the Docs section", () => {
         ]);
 
         expect(order(body)).toEqual(['docs/manual.html', 'hub/code/run.py']);
-        expect(body.match(/>Docs</g)).toHaveLength(1);
+        expect(body.match(/>Bookmarks</g)).toHaveLength(1);
         expect(body).toContain('run.py');
     });
 
@@ -811,11 +818,11 @@ describe("the reader's own bookmarks in the Docs section", () => {
         );
 
         expect(order(body)).toEqual(['hub/code/run.py']);
-        expect(body).toContain('>Docs<');
+        expect(body).toContain('>Bookmarks<');
     });
 
     it('draws no heading at all when there is neither', () => {
-        expect(drawn([], [])).not.toContain('>Docs<');
+        expect(drawn([], [])).not.toContain('>Bookmarks<');
     });
 
     it("draws two of the reader's own on one file as two buttons, under their two labels", () => {

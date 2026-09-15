@@ -12,7 +12,7 @@
 
     import { activeLabel, windowTitle } from '$lib/shell/workbench-title';
     import ActivityRail from './ActivityRail.svelte';
-    import { railOrder, type Bookmark, type DocEntry, type NavGroup } from './rail';
+    import { docState, railOrder, type Bookmark, type DocEntry, type NavGroup } from './rail';
     import DropLayer from './DropLayer.svelte';
     import { createWorkbenchKeys } from './workbench-keys.svelte';
     import PageStrip from './PageStrip.svelte';
@@ -110,6 +110,10 @@
         setPaletteOpen: (open) => (paletteOpen = open),
         setUpdateOpen: (open) => (updateOpen = open),
         setSheetOpen: (open) => (sheetOpen = open),
+        openDoc: (path, at) => {
+            const entry = docs.find((one) => one.path === path);
+            if (entry !== undefined) client.layout.openView('doc', docState(entry), at);
+        },
         openPalette: (prefill) => openPalette(prefill)
     });
 

@@ -52,7 +52,7 @@ The layout is saved as it is changed, so the window comes back as it was left.
 | Esc | clear the cursor |
 | Ctrl+Shift+Left / Right | move the page |
 
-The sheet itself opens with `?` and closes with `?` or Escape. The letters before a digit are the `direct_chord` of `config/layout.yml` and the `chord` of each group in `nav_groups`.
+The sheet itself opens with `?` and closes with `?` or Escape. The letters before a digit are the `direct_chord` of `config/layout.yml` and the `chord` of each group in `nav_groups`. A group's documents follow its views in its chord, so the digit after the group's last view opens its first document; the directly drawn groups' documents follow the direct views under the direct chord the same way.
 
 ## The views
 

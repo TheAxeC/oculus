@@ -5,6 +5,7 @@
     // decides; where a view then lands in the tree is the store's.
 
     import {
+        DOC_PICK,
         type Bookmark,
         type DocEntry,
         type NavGroup,
@@ -127,9 +128,6 @@
 
     /** The view a configured hub document opens in, one instance per path. */
     const DOC_VIEW = 'doc';
-
-    /** What a document's choice is identified by inside a group's list, told from a view's id. */
-    const DOC_PICK = 'doc:';
 
     /** The same two paths for a document: where a view lands, or in a pane beside it. */
     function openDoc(entry: DocEntry, event: MouseEvent): void {
@@ -273,9 +271,8 @@
             {/if}
         {/each}
 
-        <!-- The documents of config/layout.yml and the reader's own bookmarks after them. They are
-             not registrations, so they sit under a heading of their own rather than in a section
-             arrange() built. -->
+        <!-- The reader's own bookmarks. They are not registrations, so they sit under a heading of
+             their own rather than in a section arrange() built. -->
         {#if marks.length > 0}
             <p class="group">{t('ui.docs')}</p>
             <!-- Keyed by position, as the sections above are: two of the reader's own bookmarks may

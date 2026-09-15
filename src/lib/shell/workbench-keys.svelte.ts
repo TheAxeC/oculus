@@ -15,6 +15,7 @@ import {
     type KeyAction,
     type RailOrder
 } from './keys';
+import { DOC_PICK } from './rail';
 
 type Options = {
     drag: DragStore;
@@ -30,6 +31,8 @@ type Options = {
     setUpdateOpen: (open: boolean) => void;
     setSheetOpen: (open: boolean) => void;
     openPalette: (prefill: string) => void;
+    /** Open one configured hub document by its path, in the page named, the way the rail does. */
+    openDoc: (path: string, page: string | undefined) => void;
 };
 
 export type WorkbenchKeys = {
@@ -143,7 +146,13 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     function perform(action: KeyAction, pane: HTMLElement | null): boolean {
         if (action.kind === 'open') {
             clearCursor();
-            options.layout.openView(action.view, undefined, pageOf());
+            // A chord counts a group's documents after its views, so the entry a digit lands on
+            // may be a document rather than a view: it opens through the rail's own path.
+            if (action.view.startsWith(DOC_PICK)) {
+                options.openDoc(action.view.slice(DOC_PICK.length), pageOf());
+            } else {
+                options.layout.openView(action.view, undefined, pageOf());
+            }
         } else if (action.kind === 'cursor') {
             return moveCursor(pane, action.direction);
         } else if (action.kind === 'move') {

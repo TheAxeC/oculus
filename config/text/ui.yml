@@ -10,7 +10,7 @@ text:
         confirm_stop: Confirm
         crt_on: crt
         crt_title: 'CRT overlay: scanlines + vignette. Cosmetic only.'
-        docs: Docs
+        docs: Bookmarks
         drag_hint: Moving {0}
         embed_page: 'Show {0} here'
         embed_refused: '{0} cannot be shown here'
