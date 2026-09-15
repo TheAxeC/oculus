@@ -58,7 +58,7 @@ dispatch:                                  # D4 + D21 + Q23, the set of three cu
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q23/report.md
   exit: none
   pid: none
-  session_id: a5e59580540d3de57            # the Agent tool's id, launched 01:18
+  session_id: a5e59580540d3de57            # the Agent tool's id, launched 01:18; reported 01:43 (runs/Q23/report.md, diff.patch 1,200 lines, 19 files +326 -208; 251,177 tokens, 109 tool uses, 1,496 s); checks started 01:44 (runs/Q23/checks.sh); reviewer dispatched 01:44 (Agent id afd9ce06b0e0a5222); the orchestrator's read done 01:48 (runs/Q23/read-notes.md: nothing against the brief; two things to settle at landing)
   landing: not-started
 ```
 
