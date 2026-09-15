@@ -23,7 +23,43 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # P2 + O27b + O28a, the set of three (the paths overlap on server/writes.ts between P2 and O27b and on shell/ActivityRail.svelte between O27b and O28a; the second and third landings resolve those)
+dispatch:                                  # O28b + D1 + D2, the set of three (the paths overlap on server/writes.ts, writes/bodies.ts, config/behavior.yml, HELP.md's view table and the registry test between O28b and D1, all additive; D2 is disjoint; the second landing of the two resolves them)
+- package: O28b
+  worker: claude:opus
+  worktree: .agents/worktrees/o28b
+  base: 71dcf2c1
+  launched: 2026-09-15T19:22+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O28b/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/O28b/report.md
+  exit: none
+  pid: none
+  session_id: pending                      # the Agent tool's id, written at launch
+  landing: not-started
+- package: D1
+  worker: claude:opus
+  worktree: .agents/worktrees/d1
+  base: 71dcf2c1
+  launched: 2026-09-15T19:22+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D1/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D1/report.md
+  exit: none
+  pid: none
+  session_id: pending                      # the Agent tool's id, written at launch
+  landing: not-started
+- package: D2
+  worker: claude:opus
+  worktree: .agents/worktrees/d2
+  base: 71dcf2c1
+  launched: 2026-09-15T19:22+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D2/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D2/report.md
+  exit: none
+  pid: none
+  session_id: pending                      # the Agent tool's id, written at launch
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
