@@ -35,7 +35,7 @@ dispatch:                                  # Q17 + O27a + P1, the set of three
   exit: none
   pid: none
   session_id: ab8df68c6d98c4cc5            # the Agent tool's id
-  round: 1                                   # repair round sent 2026-09-15T15:22+0200 over the review and the orchestrator read (twelve items, runs/Q17/repair-prompt.md)
+  round: 1                                   # repair round sent 2026-09-15T15:22+0200 over the review and the orchestrator read (twelve items, runs/Q17/repair-prompt.md; item 13, the toned Tag, sent 15:59 on Axel's ruling)
   landing: not-started
 - package: O27a
   worker: claude:opus
@@ -61,7 +61,7 @@ dispatch:                                  # Q17 + O27a + P1, the set of three
   exit: none
   pid: none
   session_id: a911f959f0f08fd92            # the Agent tool's id; reported 2026-09-15T15:36+0200; checks green on the first diff (162 files, 2535 tests, browser 66, runs/P1/check-*.log); review in agents/reviews/P1.md
-  round: 1                                   # repair round sent 2026-09-15T15:53+0200 (fourteen items, runs/P1/repair-prompt.md)
+  round: 1                                   # repair round sent 2026-09-15T15:53+0200 (fourteen items, runs/P1/repair-prompt.md; items 15 to 17, the order semantics, the DESIGN.md clause and the umlaut, sent 16:00 on Axel's ruling)
   landing: not-started
 ```
 
