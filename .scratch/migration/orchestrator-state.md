@@ -34,7 +34,7 @@ dispatch:                                  # D4 + D21 + Q23, the set of three cu
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D4/report.md
   exit: none
   pid: none
-  session_id: pending                    # the Agent tool's id, written the moment it is returned
+  session_id: a9a063aaad88b6c97            # the Agent tool's id, launched 01:18
   landing: not-started
 - package: D21
   worker: claude:opus
@@ -46,7 +46,7 @@ dispatch:                                  # D4 + D21 + Q23, the set of three cu
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D21/report.md
   exit: none
   pid: none
-  session_id: pending                    # the Agent tool's id, written the moment it is returned
+  session_id: a83c7ded45f30be3b            # the Agent tool's id, launched 01:18
   landing: not-started
 - package: Q23
   worker: claude:opus
@@ -58,7 +58,7 @@ dispatch:                                  # D4 + D21 + Q23, the set of three cu
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q23/report.md
   exit: none
   pid: none
-  session_id: pending                    # the Agent tool's id, written the moment it is returned
+  session_id: a5e59580540d3de57            # the Agent tool's id, launched 01:18
   landing: not-started
 ```
 
