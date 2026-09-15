@@ -324,6 +324,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - The boundaries test's rule today (`tests/boundaries.test.ts` 124 to 143): process-wide state forbidden under `src`; the client's state modules are exempt by the state layer's design (the comment at 133 to 135). R17 removes the exemption for the collections it moves and keeps it, or not, for the catalogs (`text.ts`, `tones.ts`, `appearance.ts`), which is the brief's first decision to state.
 
 ## Journal
+- 2026-09-15 15:22: with three workers at once, the browser suites of three worktrees share port 8792 (`playwright.config.ts` and `tests/browser/serve.ts`): O27a's suite in the orchestrator's run found the port taken, then ran against another worktree's server with no `.hub` file of its own (55 of 64 red), and passed 64 of 64 once alone. Rule from here: a browser suite runs only while `lsof -nP -iTCP:8792 -sTCP:LISTEN` prints nothing and no other `serve.ts` is alive; the worker prompts say so, and the orchestrator's check script waits for the port. A per-worktree port is a candidate package (the port read from `local.yml` or an env var in `serve.ts` and the config).
 
 No night log is running. Nothing has been left for Axel to read here.
 
