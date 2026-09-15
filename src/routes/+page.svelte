@@ -115,7 +115,7 @@
                     root,
                     path,
                     view: typeOfFile(path).kind === 'html' ? 'document' : 'file'
-                } as Bookmark
+                }
             ];
         })
     );
