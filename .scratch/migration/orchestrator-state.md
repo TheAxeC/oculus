@@ -34,7 +34,7 @@ dispatch:                                  # Q17 first of the next set; O27a and
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q17/report.md
   exit: none
   pid: none
-  session_id: pending                        # the Agent tool's id, written the moment it is known
+  session_id: ab8df68c6d98c4cc5            # the Agent tool's id
   landing: not-started
 ```
 
