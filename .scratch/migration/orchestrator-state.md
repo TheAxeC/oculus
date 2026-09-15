@@ -46,7 +46,7 @@ dispatch:                                  # O28b + D1 + D2, the set of three (t
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q22/report.md
   exit: none
   pid: none
-  session_id: a571030f4bd4b8091            # the Agent tool's id, launched 22:31; the rolling window's dispatch after D3's landing (Q21 waits for Q20), the brief re-checked at 22:30; reported 23:09 (runs/Q22/report.md, diff.patch 907 lines); checks started 23:09 (runs/Q22/checks.sh); reviewer dispatched 23:10
+  session_id: a571030f4bd4b8091            # the Agent tool's id, launched 22:31; the rolling window's dispatch after D3's landing (Q21 waits for Q20), the brief re-checked at 22:30; reported 23:09 (runs/Q22/report.md, diff.patch 907 lines); checks started 23:09 (runs/Q22/checks.sh); reviewer dispatched 23:10 (Agent id af83134b0212663e3); the orchestrator's read done 23:12 (runs/Q22/read-notes.md: nothing against the brief; the worker's fix of the save restating the wrong tab is a real defect of delivered work, closed)
   landing: not-started
 - package: Q20
   worker: claude:opus
