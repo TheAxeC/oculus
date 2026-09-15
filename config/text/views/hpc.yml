@@ -2,6 +2,7 @@
 text:
     hpc:
         as_of: as of {0}
+        as_of_late: as of {0}, the next poll is late
         badge_pending: pending
         badge_running: running
         cancel_confirm: Cancel job {0}? This runs scancel and cannot be undone.
@@ -29,6 +30,7 @@ text:
         col_state: State
         col_time: Time
         col_used: Used
+        controls_offline: the cluster is not answering
         disk: disk
         disk_label: '{0} disk usage'
         error: error
@@ -38,6 +40,7 @@ text:
         footer: Polls squeue, sacct, sinfo, and disk quota on {0}. See the HPC how-to.
         gpu: gpu
         idle_count: '{0} idle'
+        last_ok: last reached {0}
         live: live
         loading: loading...
         log: log
@@ -54,6 +57,7 @@ text:
         queue_summary: '{0} running | {1} pending | {2} total'
         recent_summary: Recent (finished) - {0}
         refresh_now: Refresh now
+        retrying: retrying every {0}m
         tail: tail
         unreachable: unreachable
         unreachable_msg: Cluster unreachable - on UT network / EduVPN?

@@ -143,7 +143,7 @@ Flat, JSON-safe, small: the whole hub is a few hundred kilobytes. Documents are 
 
 ### Server
 
-**The socket.** One WebSocket per open page. Messages are `{channel, version, payload}`. Channels: `portfolio`, `sessions`, `git`, `slurm`, later `pty:<id>`. A page subscribes to the channels it needs; the server sends the current payload on subscribe and pushes on change. If a page falls behind, the server keeps only the latest payload per channel: the newest state is the only one that matters.
+**The socket.** One WebSocket per open page. Messages are `{channel, version, payload}`. Channels: `portfolio`, `sessions`, `git`, `hpc`, later `pty:<id>`. A page subscribes to the channels it needs; the server sends the current payload on subscribe and pushes on change. If a page falls behind, the server keeps only the latest payload per channel: the newest state is the only one that matters.
 
 **Watchers.** Each channel has one watcher module that owns its `fs.watch` handles, debounces, rebuilds only what changed, and pushes. Portfolio watches the hub's YAML directories. Sessions watches `~/.claude/projects` (transcripts) and `~/.claude/sessions` (the registry). Git watches each workspace's `.git/index` and worktree and re-reads on change, no more often than every two seconds.
 
@@ -156,6 +156,8 @@ Flat, JSON-safe, small: the whole hub is a few hundred kilobytes. Documents are 
 - Context occupancy is the last assistant turn's `input + cache_creation + cache_read`, never the lifetime sums.
 
 **Git.** Exactly four read-only commands (`rev-parse --abbrev-ref HEAD`, `rev-list --left-right --count`, `status --porcelain=v1 -z`, `diff --numstat -z`), one subprocess call site, a five-second timeout, list arguments only. No writing subcommand appears in the module, and a test asserts it. Git writes are Axel's alone; the commit action (step 6) runs `git commit` only from an explicit click carrying the write token, and nothing else in the application can reach that endpoint.
+
+**Live HPC.** One poller runs `squeue`, `sacct` and `sinfo` in a single ssh call every `slurm.poll_min` minutes, with disk quota on its own slower cadence, and publishes one complete state on the `hpc` channel. The connection is the poll's own and never the user's shared ssh master, so a master whose route died cannot make a poll wait past its connect timeout. While the cluster is not answering the next attempt comes after two minutes instead of the full period, and an answer restores the regular cadence. The head marks its "as of" time stale when the answer on screen is older than the period plus two minutes. A failed poll keeps the last good queue, recent and partition rows under the state word with the time the cluster was last reached, and their controls are shown unpressable until it answers again.
 
 **PTY** (step 6). Sessions run inside tmux (`tmux new-session -d -s ock-<id> claude`), so they outlive the server. oculus attaches a pty to the tmux session and bridges it over the `pty:<id>` channel; the page renders it with xterm.js. A session started elsewhere is observed (transcript only) until Axel explicitly resumes it into tmux with `claude --resume <id>`; nothing migrates on its own. The server sends no signal to any registry pid other than the liveness probe.
 

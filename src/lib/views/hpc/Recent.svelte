@@ -6,7 +6,16 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { efficiencyTone, type HpcRecent } from '$lib/state/hpc';
     import { t } from '$lib/state/text';
-    let { rows, onlog }: { rows: HpcRecent[]; onlog: (id: string) => void } = $props();
+    let {
+        rows,
+        live,
+        onlog
+    }: {
+        rows: HpcRecent[];
+        /** Whether the cluster is answering; a control that would run a doomed ssh command is shown and not pressable. */
+        live: boolean;
+        onlog: (id: string) => void;
+    } = $props();
     const columns: Column[] = [
         { key: 'job', label: t('hpc.col_job') },
         { key: 'name', label: t('hpc.col_name') },
@@ -57,7 +66,12 @@
             tone={efficiencyTone(row.cpuPct as number | null)}
         />
     {:else if column.key === 'actions'}
-        <ToolButton label={t('hpc.log')} onclick={() => onlog(cellText(row.id))} />
+        <ToolButton
+            label={t('hpc.log')}
+            disabled={!live}
+            title={live ? undefined : t('hpc.controls_offline')}
+            onclick={() => onlog(cellText(row.id))}
+        />
     {:else}
         {cellText(row[column.key])}
     {/if}

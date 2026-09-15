@@ -8,9 +8,16 @@
     import { t } from '$lib/state/text';
     let {
         rows,
+        live,
         onlog,
         oncancel
-    }: { rows: HpcJob[]; onlog: (id: string) => void; oncancel: (id: string) => void } = $props();
+    }: {
+        rows: HpcJob[];
+        /** Whether the cluster is answering; a control that would run a doomed ssh command is shown and not pressable. */
+        live: boolean;
+        onlog: (id: string) => void;
+        oncancel: (id: string) => void;
+    } = $props();
     let asking: string | null = $state(null);
     const heads = [
         t('hpc.col_job'),
@@ -56,9 +63,13 @@
                         <td class="actions"
                             ><ToolButton
                                 label={t('hpc.cancel_ok')}
+                                disabled={!live}
+                                title={live ? undefined : t('hpc.controls_offline')}
                                 onclick={() => (asking = row.id)}
                             />{#if row.state === 'RUNNING'}<ToolButton
                                     label={t('hpc.log')}
+                                    disabled={!live}
+                                    title={live ? undefined : t('hpc.controls_offline')}
                                     onclick={() => onlog(row.id)}
                                 />{/if}</td
                         >

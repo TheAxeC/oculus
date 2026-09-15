@@ -54,19 +54,23 @@
 <Pane title={t('views.hpc')} tinted>
     <div class="hpc" data-instance={instance.id}>
         <Head {data} onrefresh={refresh} />
-        {#if data?.status === 'ok'}
+        {#if data?.status === 'starting'}
+            <p>{t('hpc.fetching')}</p>
+        {:else if data && data.status !== 'ok'}
+            <p>{t('hpc.unreachable_msg')}</p>
+        {/if}
+        {#if data && (data.status === 'ok' || data.sinfo.length > 0 || data.quota.length > 0)}
             <Capacity rows={data.sinfo} />
             <Quota rows={data.quota} />
-            <Jobs rows={data.jobs} onlog={showLog} oncancel={cancel} />
-            <Recent rows={data.recent} onlog={showLog} />
-        {:else if data?.status === 'starting'}
-            <p>{t('hpc.fetching')}</p>
-        {:else if data}
-            <p>{t('hpc.unreachable_msg')}</p>
+        {/if}
+        {#if data && (data.status === 'ok' || data.jobs.length > 0 || data.recent.length > 0)}
+            <Jobs rows={data.jobs} live={data.status === 'ok'} onlog={showLog} oncancel={cancel} />
+            <Recent rows={data.recent} live={data.status === 'ok'} onlog={showLog} />
         {/if}
         {#if logId}
             <Log
                 id={logId}
+                live={data?.status === 'ok'}
                 status={logStatus}
                 output={logOutput}
                 onrefresh={() => showLog(logId)}

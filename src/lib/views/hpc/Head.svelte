@@ -4,21 +4,67 @@
     import { t } from '$lib/state/text';
     import { clock } from '$lib/state/format';
     import type { HpcPayload } from '$lib/state/hpc';
+    import { useState } from '$lib/state/use';
+
+    /**
+     * Minutes past the poll's own period before the head calls the next poll late. One period plus
+     * this is a poll that did not happen rather than a poll still on its way, since a poll that
+     * answers publishes a new time and a poll that fails publishes the failure at its own budget.
+     */
+    const LATE_GRACE_MIN = 2;
+
+    const {
+        clock: { minuteNow, startMinuteClock }
+    } = useState();
     let { data, onrefresh }: { data: HpcPayload | null; onrefresh: () => void } = $props();
+
+    // The head ages between publishes, so the minute the page is in is read as state.
+    $effect(startMinuteClock);
+    const now = $derived(minuteNow());
+
     function status(): string {
         if (data === null || data.status === 'starting') return t('hpc.polling');
         if (data.status === 'unreachable') return t('hpc.unreachable');
         if (data.status === 'error') return t('hpc.error');
         return t('hpc.live');
     }
-    function parts(): string[] {
-        if (data?.status !== 'ok') return [];
+
+    /** Whether the answer on screen is older than the poll that should have replaced it. */
+    function late(): boolean {
+        if (data?.status !== 'ok') return false;
+        const updated = Date.parse(data.updated);
+        return Number.isFinite(updated) && now - updated > (data.pollMin + LATE_GRACE_MIN) * 60000;
+    }
+
+    /** The meta parts after the state word; the stale one carries the failure tone. */
+    function parts(): { text: string; late: boolean }[] {
+        if (data === null) return [];
+        if (data.status === 'unreachable' || data.status === 'error')
+            return [
+                ...(data.lastOk
+                    ? [{ text: t('hpc.last_ok', clock(data.lastOk)), late: false }]
+                    : []),
+                ...(data.retryMin === undefined
+                    ? []
+                    : [{ text: t('hpc.retrying', data.retryMin), late: false }])
+            ];
+        if (data.status !== 'ok') return [];
+        const stale = late();
         return [
-            data.jobs.length === 0
-                ? t('hpc.queue_empty')
-                : t('hpc.queue_summary', data.running, data.pending, data.total),
-            t('hpc.as_of', clock(data.updated)),
-            t('hpc.every', data.pollMin)
+            {
+                text:
+                    data.jobs.length === 0
+                        ? t('hpc.queue_empty')
+                        : t('hpc.queue_summary', data.running, data.pending, data.total),
+                late: false
+            },
+            {
+                text: stale
+                    ? t('hpc.as_of_late', clock(data.updated))
+                    : t('hpc.as_of', clock(data.updated)),
+                late: stale
+            },
+            { text: t('hpc.every', data.pollMin), late: false }
         ];
     }
 </script>
@@ -33,9 +79,9 @@
             >
                 {status()}
             </span>
-            {#each parts() as part (part)}
+            {#each parts() as part (part.text)}
                 <span class="separator">{t('sessions.meta_sep')}</span>
-                <span>{part}</span>
+                <span class:late={part.late}>{part.text}</span>
             {/each}
         </p>
         {#if data?.hint}<code>{data.hint}</code>{/if}
@@ -65,6 +111,9 @@
     .bad {
         color: var(--c-red-d-txt);
         font-weight: 600;
+    }
+    .late {
+        color: var(--c-red-d-txt);
     }
     code {
         color: var(--c-red-txt);

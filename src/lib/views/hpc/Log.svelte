@@ -6,10 +6,18 @@
         id,
         status,
         output,
+        live,
         onrefresh,
         onclose
-    }: { id: string; status: string; output: string; onrefresh: () => void; onclose: () => void } =
-        $props();
+    }: {
+        id: string;
+        status: string;
+        output: string;
+        /** Whether the cluster is answering; the tail runs an ssh command, so it waits until it is. */
+        live: boolean;
+        onrefresh: () => void;
+        onclose: () => void;
+    } = $props();
     const body = $derived(
         status === 'loading'
             ? t('hpc.loading')
@@ -22,10 +30,12 @@
 <section>
     <header>
         <b>{t('hpc.log_job', id)}</b><span
-            ><ToolButton label={t('hpc.tail')} onclick={onrefresh} /><ToolButton
-                label={t('hpc.close')}
-                onclick={onclose}
-            /></span
+            ><ToolButton
+                label={t('hpc.tail')}
+                disabled={!live}
+                title={live ? undefined : t('hpc.controls_offline')}
+                onclick={onrefresh}
+            /><ToolButton label={t('hpc.close')} onclick={onclose} /></span
         >
     </header>
     <pre>{body}</pre>

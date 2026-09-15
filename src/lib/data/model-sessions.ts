@@ -374,7 +374,11 @@ export type HpcPayload = {
     sinfo: HpcPartition[];
     quota: HpcQuotaItem[];
     updated: string;
+    /** When the cluster last answered, so a failed poll can say how old the rows under it are. */
+    lastOk?: string;
     pollMin: number;
+    /** Minutes between attempts while the cluster is not answering; absent from a payload written before it was carried. */
+    retryMin?: number;
     host: string;
 };
 
