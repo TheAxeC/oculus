@@ -58,7 +58,7 @@ dispatch:                                  # Q17 + O27a + P1, the set of three
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/P1/report.md
   exit: none
   pid: none
-  session_id: pending                        # the Agent tool's id, written the moment it is known
+  session_id: a911f959f0f08fd92            # the Agent tool's id
   landing: not-started
 ```
 
