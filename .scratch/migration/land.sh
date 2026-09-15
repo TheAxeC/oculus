@@ -205,26 +205,14 @@ run_step "npm run build" sh -c 'cd "$1" && npm run build' land "$landing_tool"
 run_step "npm run format:check" sh -c 'cd "$1" && npm run format:check' land "$landing_tool"
 run_step "npm run lint" sh -c 'cd "$1" && npm run lint' land "$landing_tool"
 
-(cd "$landing_tool" && LC_ALL=C grep -rna --exclude=glyphs.yml '[^ -~]' src tests bin config) >"$landing_output" 2>&1
+# ASCII in every authored file; under config/ an accented Latin letter (UTF-8 C3 xx, a real name such
+# as Linköping) is allowed, everywhere else nothing outside printable ASCII is.
+(cd "$landing_tool" && LC_ALL=C perl -ne 'my $l = $_; $l =~ s/\xC3[\x80-\xBF]//g if $ARGV =~ m{^config/}; print "$ARGV:$.:$_" if $l =~ /[^\x20-\x7E\n]/; close ARGV if eof' $(find src tests bin config -type f ! -name glyphs.yml)) >"$landing_output" 2>&1
 landing_status=$?
-case "$landing_status" in
-    1)
-        if [ -s "$landing_output" ]; then
-            cat "$landing_output" >&2
-            fail "ASCII check failed"
-        fi
-        ;;
-    0)
-        cat "$landing_output" >&2
-        fail "ASCII check failed"
-        ;;
-    *)
-        if [ -s "$landing_output" ]; then
-            cat "$landing_output" >&2
-        fi
-        fail "ASCII check failed" "$landing_status"
-        ;;
-esac
+if [ "$landing_status" -ne 0 ] || [ -s "$landing_output" ]; then
+    cat "$landing_output" >&2
+    fail "ASCII check failed" "$landing_status"
+fi
 
 run_step "source line counts" sh -c 'cd "$1" && find src tests config bin -type f | xargs wc -l | sort -rn | head -3' land "$landing_tool"
 
