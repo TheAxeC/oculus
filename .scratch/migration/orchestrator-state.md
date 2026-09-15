@@ -34,7 +34,7 @@ dispatch:                                  # O28b + D1 + D2, the set of three (t
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D6/report.md
   exit: none
   pid: none
-  session_id: a7615cda00a72c647            # the Agent tool's id, launched 22:46; the rolling window's dispatch after O28b's landing (Q21 waits for Q20), the brief re-checked at 22:46; reported 23:14 (runs/D6/report.md, diff.patch 849 lines); checks started 23:14 (runs/D6/checks.sh); reviewer dispatched 23:15
+  session_id: a7615cda00a72c647            # the Agent tool's id, launched 22:46; the rolling window's dispatch after O28b's landing (Q21 waits for Q20), the brief re-checked at 22:46; reported 23:14 (runs/D6/report.md, diff.patch 849 lines); checks started 23:14 (runs/D6/checks.sh); reviewer dispatched 23:15 (Agent id a66117f3e8c9297a3); the orchestrator's read done 23:18 (runs/D6/read-notes.md: nothing against the brief; the brief's browser-case premise was wrong and the file-view control repairs it; a front-matter edge in the preview to settle at landing)
   landing: not-started
 - package: Q22
   worker: claude:opus
