@@ -35,7 +35,7 @@ dispatch:                                  # Q17 + O27a + P1, the set of three
   exit: none
   pid: none
   session_id: ab8df68c6d98c4cc5            # the Agent tool's id
-  round: 1                                   # repair round sent 2026-09-15T15:22+0200 over the review and the orchestrator read (twelve items, runs/Q17/repair-prompt.md; item 13, the toned Tag, sent 15:59 on Axel's ruling)
+  round: 1                                   # repair round sent 2026-09-15T15:22+0200 over the review and the orchestrator read (twelve items, runs/Q17/repair-prompt.md; item 13, the toned Tag, sent 15:59 on Axel's ruling); reported 16:24 (runs/Q17/report-2.md, diff-2.patch, repair-read.patch 2,552 lines); checks running (runs/Q17/checks.sh); second reviewer claude:opus a7f05cb7d5bee67a0 launched 16:25
   landing: not-started
 - package: O27a
   worker: claude:opus
