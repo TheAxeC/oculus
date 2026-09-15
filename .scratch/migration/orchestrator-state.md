@@ -36,6 +36,18 @@ dispatch:                                  # O28b + D1 + D2, the set of three (t
   pid: none
   session_id: a0bd39040f4bf9598            # the Agent tool's id, launched 19:23; reported 20:30 (runs/O28b/report.md, diff.patch 5,114 lines without the sixteen images, 66 files +4,060 -222); checks started 20:30 (runs/O28b/checks.sh); checks green 20:33 (check 1005 files, 3,037 tests, browser 93; lint red only on the base's `as Bookmark` line main fixed at 4e95aefc; runs/O28b/check-*.log); the orchestrator's read done 20:35 (runs/O28b/read-notes.md: five repair items, the wire words shown in both views, an upload with no content check, a README marker not re-running the scan, a dead branch in writeAtomic, a document-wide refocus query); review saved 21:48 (agents/reviews/O28b.md; failed the bar: the five read items confirmed, the built server's 512K body cap refusing any photo, five cockpit manifest rules in neither tool (a premise of the brief), the Findings link a sentence, a hand-written mute entry dropped); repair round of twelve items sent 21:50 (runs/O28b/repair-prompt.md); repaired 22:12 (runs/O28b/report-2.md, diff-2.patch 6,020 lines, the delta runs/O28b/repair-read.patch 4,057 lines); checks-2 started 22:12; second reviewer dispatched 22:13 over the delta; the orchestrator's read of the delta next
   landing: not-started
+- package: Q20
+  worker: claude:opus
+  worktree: .agents/worktrees/q20
+  base: 822e3056
+  launched: 2026-09-15T22:23+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q20/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q20/report.md
+  exit: none
+  pid: none
+  session_id: pending                    # the Agent tool's id, written the moment it is known; the rolling window's dispatch after D1's landing, the brief re-checked at 22:22
+  landing: not-started
 - package: D3
   worker: claude:opus
   worktree: .agents/worktrees/d3
