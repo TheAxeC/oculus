@@ -29,6 +29,7 @@ describe('the sentence one refusal reads as', () => {
         expect(uploadMessage({ ok: false, error: 'unwritable' })).toBe(
             catalog['memories.failed_file']
         );
+        expect(uploadMessage({ ok: false, error: 'taken' })).toBe(catalog['memories.failed_taken']);
         expect(uploadMessage({ ok: false, error: 'data' })).toBe(
             catalog['memories.failed_data'].replace('{0}', String(MAX_UPLOAD_MB))
         );
@@ -59,9 +60,10 @@ describe('the sentence one refusal reads as', () => {
             uploadMessage({ ok: false, error: 'name' }),
             uploadMessage({ ok: false, error: 'data' }),
             uploadMessage({ ok: false, error: 'unwritable' }),
+            uploadMessage({ ok: false, error: 'taken' }),
             uploadMessage({ ok: false, error: 'nonsense' })
         ];
-        for (const word of ['name', 'data', 'unwritable']) {
+        for (const word of ['name', 'data', 'taken', 'unwritable']) {
             expect(sentences.filter((one) => one.split(/\W+/).includes(word))).toEqual([]);
         }
     });

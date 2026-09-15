@@ -23,6 +23,7 @@ import { hasToken } from './auth.ts';
 import { writeBytesAtomic } from './sessions/json.ts';
 import { engineDir } from '../data/sources/config.ts';
 import { configOf, folderOf, images, isName, sameOrigin, stream } from './images.ts';
+import { existsSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 
 /** The extensions an upload may carry. The wall serves `.webp` too; nothing writes one. */
@@ -64,7 +65,8 @@ export function memoriesMemory(): MemoriesMemory {
 export type Upload = { name: string; data: string };
 
 /** What an upload answers with: the name it wrote, or the one word saying what was wrong. */
-export type UploadOutcome = { written: string } | { error: 'name' | 'data' | 'unwritable' };
+export type UploadOutcome =
+    { written: string } | { error: 'name' | 'data' | 'taken' | 'unwritable' };
 
 /**
  * The configured folder, or null when there is none to serve. The config is read per request so an
@@ -99,7 +101,8 @@ export function isPicture(name: string, bytes: Uint8Array): boolean {
  *
  * `Buffer.from` on a string that is not base64 gives back the bytes it could read rather than
  * throwing, so what stands between a text file under a picture's name and the folder is the check
- * on the first bytes, not a decode that fails.
+ * on the first bytes, not a decode that fails. A name already on the wall is refused, so no picture
+ * is ever replaced by a press.
  */
 export function write(dir: string, asked: Upload): UploadOutcome {
     const name = basename(asked.name.trim());
@@ -108,6 +111,7 @@ export function write(dir: string, asked: Upload): UploadOutcome {
     const bytes = Buffer.from(encoded, 'base64');
     if (bytes.byteLength === 0 || bytes.byteLength > MAX_UPLOAD_BYTES) return { error: 'data' };
     if (!isPicture(name, bytes)) return { error: 'data' };
+    if (existsSync(join(dir, name))) return { error: 'taken' };
     try {
         writeBytesAtomic(join(dir, name), bytes);
     } catch {

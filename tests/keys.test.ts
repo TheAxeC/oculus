@@ -29,8 +29,8 @@ beforeEach(() => {
 
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 
-/** Client readers whose first argument is a catalog key. */
-const CALL = /(?<![\w$.])(t|lookup|catalogText)\(/g;
+/** Readers whose first argument is a catalog key: the client's three and the audit's `sentence`, spread or not. */
+const CALL = /(?<![\w$.])(?:\.\.\.)?(t|lookup|catalogText|sentence)\(/g;
 
 /** Server interpolation takes the catalog before its key. */
 const WORDS = /(?<![\w$.])words\(\s*catalog\s*,/g;
@@ -62,6 +62,13 @@ const COMPUTED_PREFIXES = [
             readdirSync(join(engineDir(), 'config'))
                 .filter((name) => name.endsWith('.yml'))
                 .map((name) => descriptionKey(name))
+    },
+    {
+        // The audit's collector words every finding from the sentence its rule named by key; the
+        // keys are read at the rules' `sentence(` calls, so this computed call covers none itself.
+        file: 'lib/server/audit.ts',
+        start: 'words(catalog, key',
+        keys: () => []
     },
     {
         // One word per kind of write the change log records, keyed by the body kind itself, so a

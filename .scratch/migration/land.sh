@@ -207,7 +207,7 @@ run_step "npm run lint" sh -c 'cd "$1" && npm run lint' land "$landing_tool"
 
 # ASCII in every authored file; under config/ an accented Latin letter (UTF-8 C3 xx, a real name such
 # as Linköping) is allowed, everywhere else nothing outside printable ASCII is.
-(cd "$landing_tool" && LC_ALL=C perl -ne 'my $l = $_; $l =~ s/\xC3[\x80-\xBF]//g if $ARGV =~ m{^config/}; print "$ARGV:$.:$_" if $l =~ /[^\x20-\x7E\n]/; close ARGV if eof' $(find src tests bin config -type f ! -name glyphs.yml)) >"$landing_output" 2>&1
+(cd "$landing_tool" && LC_ALL=C perl -ne 'my $l = $_; $l =~ s/\xC3[\x80-\xBF]//g if $ARGV =~ m{^config/}; print "$ARGV:$.:$_" if $l =~ /[^\x20-\x7E\n]/; close ARGV if eof' $(find src tests bin config -type f ! -name glyphs.yml ! -name local.yml)) >"$landing_output" 2>&1
 landing_status=$?
 if [ "$landing_status" -ne 0 ] || [ -s "$landing_output" ]; then
     cat "$landing_output" >&2

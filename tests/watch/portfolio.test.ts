@@ -542,7 +542,7 @@ describe('watchPortfolio', () => {
         const marker = audit.findings.find((one) => one.kind === 'todo');
         expect(marker?.scope).toBe(join('projects', 'active', 'loewner'));
         expect(marker?.where).toBe('README.md');
-        expect(marker?.message).toBe('1 open marker(s) - e.g. "TODO: the method"');
+        expect(marker?.message).toBe('1 open marker(s), the first "TODO: the method"');
         expect(marker?.signature).toMatch(/^[0-9a-f]{12}$/);
     });
 
@@ -567,7 +567,7 @@ describe('watchPortfolio', () => {
             (one) => one.kind === 'todo'
         );
         expect(marker?.where).toBe('README.md');
-        expect(marker?.message).toBe('1 open marker(s) - e.g. "TODO: the method"');
+        expect(marker?.message).toBe('1 open marker(s), the first "TODO: the method"');
     });
 
     it('publishes the audit again after a mute write, with the signature parked', async () => {

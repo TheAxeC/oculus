@@ -22,6 +22,7 @@ text:
         failed_name: The wall takes a JPEG or a PNG, named without a folder in front of it.
         failed_data: 'The file is not a JPEG or a PNG the wall can read, or it is larger than {0} MB.'
         failed_file: The picture could not be written into the folder on this machine.
+        failed_taken: A picture called that is already on the wall; call the file something else and add it again.
         failed_network: The picture did not reach the server.
         failed_other: The picture was not added.
         reading: The file could not be read from this machine.

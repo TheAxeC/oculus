@@ -196,15 +196,15 @@ describe('one picture added', () => {
         expect(existsSync(join(dir, 'large.png'))).toBe(false);
     });
 
-    it('replaces a picture already on the wall, which is what a repeated name does today', () => {
+    it('refuses a name already on the wall, and leaves that picture as it was', () => {
         const dir = pictures([]);
         expect(write(dir, { name: 'same.png', data: PIXEL })).toEqual({ written: 'same.png' });
         const first = readFileSync(join(dir, 'same.png'));
         const second = Buffer.concat([Buffer.from(PIXEL, 'base64'), Buffer.from('tail', 'utf8')]);
         expect(write(dir, { name: 'same.png', data: second.toString('base64') })).toEqual({
-            written: 'same.png'
+            error: 'taken'
         });
-        expect(readFileSync(join(dir, 'same.png')).byteLength).toBeGreaterThan(first.byteLength);
+        expect(readFileSync(join(dir, 'same.png')).equals(first)).toBe(true);
     });
 
     it('refuses an empty body of data', () => {

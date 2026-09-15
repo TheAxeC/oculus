@@ -1,7 +1,7 @@
 # Oculus text owned by the audit view, the scan behind it included: a finding's message is the words
-# the reader sees, so it is a catalog entry like every other. The messages are the research cockpit's
-# own, word for word, because a finding's signature is a hash of its message and a mute made in
-# either tool must hold in the other.
+# the reader sees, so it is a catalog entry like every other. A finding's signature is over its scope,
+# place, kind, catalog key and arguments, never the sentence, so rewording a message here keeps every
+# mute.
 text:
     views:
         audit: Audit
@@ -34,36 +34,36 @@ text:
         open_findings_glyph: warn
         open_findings_tip: Open the Findings view, which lists the errors in the files themselves.
         findings_note: "A bad id, an unknown chip and every other error in the files themselves are the Findings view's, and are not repeated here."
-        msg_markers: '{0} open marker(s) - e.g. "{1}"'
+        msg_markers: '{0} open marker(s), the first "{1}"'
         msg_intro_marker: 'intro: "{0}"'
-        msg_entry_marker: 'open marker - "{0}"'
+        msg_entry_marker: 'open marker: "{0}"'
         msg_no_venue: published/submitted but no venue_id (no venue renders on the card)
         msg_missing_field: 'missing `{0}`'
-        msg_provisional: '{0} provisional result(s) - numbers not final'
+        msg_provisional: '{0} provisional result(s): the numbers are not final'
         msg_no_data_section: 'has `datasets` but no Data section (README.md `## Data` or DATA.md)'
         msg_docs_ahead: 'docs changed {0}, {1}d after the manifest; refresh project.yml'
-        msg_deposit_before_reproduction: 'deposit dated {0} predates the from-scratch reproduction {1} - the reproduced code may not be what was pushed; re-push code/ and bump `code_availability.date`'
+        msg_deposit_before_reproduction: 'deposit dated {0} predates the from-scratch reproduction {1}: the reproduced code may not be what was pushed; re-push code/ and bump `code_availability.date`'
         msg_collection_missing: collection file missing
         msg_entry_no_title: missing title
         msg_entry_no_status: missing status
         msg_entry_no_date: 'status "{0}" but no date tracked'
         msg_entry_related: 'related id `{0}` is not a known project'
-        msg_entry_link: 'link path missing - {0}'
-        msg_no_readme: 'missing - the one private doc every project needs'
-        msg_retired_doc: 'retired doc - fold it into README.md'
-        msg_bad_folder: 'non-canonical folder - rename to {0}'
+        msg_entry_link: 'link path missing: {0}'
+        msg_no_readme: 'missing: the one private doc every project needs'
+        msg_retired_doc: 'retired doc: fold it into README.md'
+        msg_bad_folder: 'non-canonical folder: rename to {0}'
         msg_code_no_readme: code/ has no README.md (the deposit root)
         msg_no_author_chip: 'archive/coauthor entry has no author-role chip (lead / coauthor)'
-        msg_terminal_live: 'terminal ({0}) but still carries live chip(s) {1} - stale; clear them or re-open the project'
-        msg_projects_published: 'projects-tier carries `published` - it got accepted; move the folder to archive/published/'
+        msg_terminal_live: 'terminal ({0}) but still carries live chip(s) {1}: stale; clear them or re-open the project'
+        msg_projects_published: 'projects-tier carries `published`: it got accepted; move the folder to archive/published/'
         msg_contradictory_chips: 'contradictory status chips `{0}` + `{1}`'
         msg_missing: missing
-        msg_too_long: '{0} chars (>{1}) - trim to a glance; detail belongs in the prose docs'
-        msg_result_too_long: '{0} chars (>{1}) - headline only'
-        msg_site_unreadable: 'could not parse publications.yml - {0}'
-        msg_site_wrong_section: 'on the website under {0} but hub type `{1}` expects {2} - wrong section?'
-        msg_site_title_differs: 'likely on the website as "{0}" (section {1}) but the titles differ - reconcile them'
-        msg_site_missing: 'public (`{0}`) but no website entry - add it (likely section: {1})'
-        msg_site_negative: 'hub-private negative result (`{0}`) but appears on the PUBLIC website under {1} - remove it (null/negative results never leave the hub)'
-        msg_site_deadend: 'hub marks this `{0}` but it appears on the PUBLIC website under {1} - reconcile: retype to `published` if it is a real publication, else remove it from the site (or mute if intentional)'
-        msg_site_untracked: '{0} website paper(s) not matched to any hub project - expected for pre-hub work; verify none are stale or duplicated: {1}'
+        msg_too_long: '{0} chars (>{1}): trim to a glance; detail belongs in the prose docs'
+        msg_result_too_long: '{0} chars (>{1}): headline only'
+        msg_site_unreadable: 'could not parse publications.yml: {0}'
+        msg_site_wrong_section: 'on the website under {0} but hub type `{1}` expects {2}: wrong section?'
+        msg_site_title_differs: 'likely on the website as "{0}" (section {1}) but the titles differ: reconcile them'
+        msg_site_missing: 'public (`{0}`) but no website entry: add it (likely section {1})'
+        msg_site_negative: 'hub-private negative result (`{0}`) but appears on the PUBLIC website under {1}: remove it (null/negative results never leave the hub)'
+        msg_site_deadend: 'hub marks this `{0}` but it appears on the PUBLIC website under {1}; retype to `published` if it is a real publication, else remove it from the site (or mute if intentional)'
+        msg_site_untracked: '{0} website paper(s) not matched to any hub project, expected for pre-hub work; verify none are stale or duplicated: {1}'

@@ -1,7 +1,7 @@
 // Layer 2, client state, pure. What a refused upload reads as, and the size the page checks a file
 // against before it encodes one.
 //
-// The endpoint answers one word (`name`, `data`, `unwritable`) or a sentence of its own for a
+// The endpoint answers one word (`name`, `data`, `taken`, `unwritable`) or a sentence of its own for a
 // request it would not read at all, and the page never draws either: DESIGN.md's rule for the deck
 // write is that the view shows a sentence of its own per refusal, and this is that map for the wall.
 // A word this does not know gets the general sentence.
@@ -36,6 +36,7 @@ export function uploadMessage(answer: UploadAnswer): string {
     if (answer.network === true) return t('memories.failed_network');
     if (answer.error === 'name') return t('memories.failed_name');
     if (answer.error === 'data') return t('memories.failed_data', MAX_UPLOAD_MB);
+    if (answer.error === 'taken') return t('memories.failed_taken');
     if (answer.error === 'unwritable') return t('memories.failed_file');
     return t('memories.failed_other');
 }

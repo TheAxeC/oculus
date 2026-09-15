@@ -124,8 +124,8 @@ describe('the open markers', () => {
         write(hub, 'projects/active/alpha/code/README.md', 'FIXME: the loader\n');
         const found = scan(hub, [project()]);
         expect(lines(found, 'todo')).toEqual([
-            'code/README.md: 1 open marker(s) - e.g. "FIXME: the loader"',
-            'README.md: 2 open marker(s) - e.g. "TODO: write the method"'
+            'code/README.md: 1 open marker(s), the first "FIXME: the loader"',
+            'README.md: 2 open marker(s), the first "TODO: write the method"'
         ]);
     });
 
@@ -138,7 +138,7 @@ describe('the open markers', () => {
         );
         write(hub, 'projects/active/alpha/NOTES.md', 'TODO not scanned\n');
         expect(lines(scan(hub, [project()]), 'todo')).toEqual([
-            'PRESENT.md: 1 open marker(s) - e.g. "%VERIFY the number"'
+            'PRESENT.md: 1 open marker(s), the first "%VERIFY the number"'
         ]);
     });
 
@@ -170,7 +170,7 @@ describe('the open markers', () => {
             ]
         );
         expect(lines(found, 'todo')).toEqual([
-            'A task: open marker - "note: "FIXME: the wording""',
+            'A task: open marker: "note: "FIXME: the wording""',
             'tasks/tasks.yml: intro: "TODO: describe the list"'
         ]);
     });
@@ -212,7 +212,7 @@ describe('the data gaps', () => {
         const hub = scratch();
         const found = scan(hub, [project({ results: ['[PROVISIONAL] 0.81 AUC', 'final'] })]);
         expect(lines(found, 'data')).toContain(
-            'project.yml: 1 provisional result(s) - numbers not final'
+            'project.yml: 1 provisional result(s): the numbers are not final'
         );
     });
 
@@ -257,7 +257,7 @@ describe('the data gaps', () => {
             })
         ]);
         expect(lines(found, 'data')).toContain(
-            'project.yml: deposit dated 2026-05-01 predates the from-scratch reproduction 2026-06-01 - the reproduced code may not be what was pushed; re-push code/ and bump `code_availability.date`'
+            'project.yml: deposit dated 2026-05-01 predates the from-scratch reproduction 2026-06-01: the reproduced code may not be what was pushed; re-push code/ and bump `code_availability.date`'
         );
     });
 
@@ -348,7 +348,7 @@ describe('the collection invariants', () => {
         expect(lines(found, 'data')).toEqual([
             'entry #1: missing status',
             'entry #1: missing title',
-            'Linked: link path missing - nothing/here.md',
+            'Linked: link path missing: nothing/here.md',
             'Linked: related id `nobody` is not a known project',
             'Waiting: status "submitted" but no date tracked'
         ]);
@@ -359,7 +359,7 @@ describe('the tier conformance', () => {
     it('asks an idea, an active and a manuscript project for the one README', () => {
         const hub = scratch();
         expect(lines(scan(hub, [project({ type: 'idea' })]), 'conform')).toEqual([
-            'README.md: missing - the one private doc every project needs'
+            'README.md: missing: the one private doc every project needs'
         ]);
         expect(lines(scan(hub, [project({ type: 'published' })]), 'conform')).toEqual([]);
     });
@@ -373,9 +373,9 @@ describe('the tier conformance', () => {
         folder(hub, 'projects/active/alpha/code');
         expect(lines(scan(hub, [project()]), 'conform')).toEqual([
             'code/: code/ has no README.md (the deposit root)',
-            'IDEA.md: retired doc - fold it into README.md',
-            `notes${sep}METHOD_NOTES.md: retired doc - fold it into README.md`,
-            'paper/: non-canonical folder - rename to manuscript/'
+            'IDEA.md: retired doc: fold it into README.md',
+            `notes${sep}METHOD_NOTES.md: retired doc: fold it into README.md`,
+            'paper/: non-canonical folder: rename to manuscript/'
         ]);
     });
 });
@@ -403,7 +403,7 @@ describe('the status guardrails', () => {
             chips: ['lead', 'submitted', 'blocked']
         });
         expect(lines(scan(hub, [stale]), 'manifest')).toContain(
-            "status.chips: terminal (published) but still carries live chip(s) ['blocked', 'submitted'] - stale; clear them or re-open the project"
+            "status.chips: terminal (published) but still carries live chip(s) ['blocked', 'submitted']: stale; clear them or re-open the project"
         );
     });
 
@@ -411,7 +411,7 @@ describe('the status guardrails', () => {
         const hub = scratch();
         const accepted = project({ tier: 'manuscripts', type: 'manuscript', chips: ['published'] });
         expect(lines(scan(hub, [accepted]), 'manifest')).toContain(
-            'status.chips: projects-tier carries `published` - it got accepted; move the folder to archive/published/'
+            'status.chips: projects-tier carries `published`: it got accepted; move the folder to archive/published/'
         );
         // Archived work carrying it is where it belongs, so nothing is said there.
         const archived = project({
@@ -479,9 +479,9 @@ describe('the readability limits', () => {
             project({ statusLine: long, next: long, results: [long, 'short'] })
         ]);
         expect(lines(found, 'readability')).toEqual([
-            '`next`: 30 chars (>20) - trim to a glance; detail belongs in the prose docs',
-            '`status.line`: 30 chars (>20) - trim to a glance; detail belongs in the prose docs',
-            'results[0]: 30 chars (>20) - headline only'
+            '`next`: 30 chars (>20): trim to a glance; detail belongs in the prose docs',
+            '`status.line`: 30 chars (>20): trim to a glance; detail belongs in the prose docs',
+            'results[0]: 30 chars (>20): headline only'
         ]);
     });
 
@@ -521,7 +521,7 @@ describe('the website sync', () => {
             project({ type: 'published', title: 'Something else entirely', chips: ['journal'] })
         ]);
         expect(lines(found, 'publink')).toContain(
-            'publications.yml: public (`published`) but no website entry - add it (likely section: journal/other-publications)'
+            'publications.yml: public (`published`) but no website entry: add it (likely section journal/other-publications)'
         );
     });
 
@@ -531,7 +531,7 @@ describe('the website sync', () => {
             project({ type: 'published', title: 'A paper being drafted', chips: ['journal'] })
         ]);
         expect(lines(found, 'publink')).toContain(
-            "publications.yml: on the website under ['papers-in-preparation'] but hub type `published` expects ['journal', 'other-publications'] - wrong section?"
+            "publications.yml: on the website under ['papers-in-preparation'] but hub type `published` expects ['journal', 'other-publications']: wrong section?"
         );
     });
 
@@ -541,7 +541,7 @@ describe('the website sync', () => {
             project({ type: 'published', title: 'A published paper trial', chips: ['journal'] })
         ]);
         expect(lines(found, 'publink')).toContain(
-            'publications.yml: likely on the website as "A published paper" (section [\'journal\']) but the titles differ - reconcile them'
+            'publications.yml: likely on the website as "A published paper" (section [\'journal\']) but the titles differ: reconcile them'
         );
     });
 
@@ -549,7 +549,7 @@ describe('the website sync', () => {
         const hub = hubWithSite();
         const found = scan(hub, [project({ type: 'nogo', title: 'A published paper' })]);
         expect(lines(found, 'publink')).toContain(
-            "publications.yml: hub-private negative result (`nogo`) but appears on the PUBLIC website under ['journal'] - remove it (null/negative results never leave the hub)"
+            "publications.yml: hub-private negative result (`nogo`) but appears on the PUBLIC website under ['journal']: remove it (null/negative results never leave the hub)"
         );
     });
 
@@ -557,7 +557,7 @@ describe('the website sync', () => {
         const hub = hubWithSite();
         const found = scan(hub, [project({ type: 'dropped', title: 'A dead end that is public' })]);
         expect(lines(found, 'publink')).toContain(
-            "publications.yml: hub marks this `dropped` but it appears on the PUBLIC website under ['abandoned-papers'] - reconcile: retype to `published` if it is a real publication, else remove it from the site (or mute if intentional)"
+            "publications.yml: hub marks this `dropped` but it appears on the PUBLIC website under ['abandoned-papers']; retype to `published` if it is a real publication, else remove it from the site (or mute if intentional)"
         );
     });
 
@@ -567,7 +567,7 @@ describe('the website sync', () => {
             project({ type: 'published', title: 'A published paper', chips: ['journal'] })
         ]);
         expect(lines(found, 'publink')).toContain(
-            'publications.yml: 2 website paper(s) not matched to any hub project - expected for pre-hub work; verify none are stale or duplicated: "A paper being drafted"; "A dead end that is public"'
+            'publications.yml: 2 website paper(s) not matched to any hub project, expected for pre-hub work; verify none are stale or duplicated: "A paper being drafted"; "A dead end that is public"'
         );
     });
 
@@ -575,7 +575,7 @@ describe('the website sync', () => {
         const hub = scratch();
         write(hub, 'site/publications.yml', 'journal:\n  papers: [\n');
         const found = scan(hub, []).find((one) => one.kind === 'publink');
-        expect(found?.message.startsWith('could not parse publications.yml - ')).toBe(true);
+        expect(found?.message.startsWith('could not parse publications.yml: ')).toBe(true);
     });
 });
 
@@ -600,24 +600,44 @@ describe('the title matching behind the website sync', () => {
 });
 
 describe('the signature', () => {
-    it('is twelve hex characters of a sha1 over the four fields', () => {
-        const one = signatureOf('projects/active/alpha', 'README.md', 'todo', 'a message');
+    it('is twelve hex characters of a sha1 over the scope, place, kind, key and arguments', () => {
+        const one = signatureOf('projects/active/alpha', 'README.md', 'todo', 'audit.msg_markers', [
+            1,
+            'TODO one'
+        ]);
         expect(one).toMatch(/^[0-9a-f]{12}$/);
-        expect(signatureOf('projects/active/alpha', 'README.md', 'todo', 'a message')).toBe(one);
-        expect(signatureOf('projects/active/alpha', 'README.md', 'todo', 'another')).not.toBe(one);
-        expect(signatureOf('projects/active/beta', 'README.md', 'todo', 'a message')).not.toBe(one);
+        expect(
+            signatureOf('projects/active/alpha', 'README.md', 'todo', 'audit.msg_markers', [
+                1,
+                'TODO one'
+            ])
+        ).toBe(one);
+        expect(
+            signatureOf('projects/active/alpha', 'README.md', 'todo', 'audit.msg_markers', [
+                2,
+                'TODO one'
+            ])
+        ).not.toBe(one);
+        expect(
+            signatureOf('projects/active/beta', 'README.md', 'todo', 'audit.msg_markers', [
+                1,
+                'TODO one'
+            ])
+        ).not.toBe(one);
+        expect(
+            signatureOf('projects/active/alpha', 'README.md', 'todo', 'audit.msg_intro_marker', [
+                1,
+                'TODO one'
+            ])
+        ).not.toBe(one);
     });
 
-    it('is carried by every finding the scan reports', () => {
+    it('is carried by every finding the scan reports, twelve hex characters each', () => {
         const hub = scratch();
         write(hub, 'projects/active/alpha/README.md', 'TODO one\n');
         const found = scan(hub, [project()]);
         expect(found.length).toBeGreaterThan(0);
-        for (const finding of found) {
-            expect(finding.signature).toBe(
-                signatureOf(finding.scope, finding.where, finding.kind, finding.message)
-            );
-        }
+        for (const finding of found) expect(finding.signature).toMatch(/^[0-9a-f]{12}$/);
     });
 
     it('is stable across two scans of the same hub', () => {
@@ -626,6 +646,23 @@ describe('the signature', () => {
         expect(scan(hub, [project()]).map((one) => one.signature)).toEqual(
             scan(hub, [project()]).map((one) => one.signature)
         );
+    });
+
+    it('survives a reworded catalog sentence, so a mute made before the reword still holds', () => {
+        const hub = scratch();
+        write(hub, 'projects/active/alpha/README.md', 'TODO one\n');
+        const before = scan(hub, [project()]);
+        const reworded = { ...catalog, 'audit.msg_markers': 'REWORDED {0} and {1}' };
+        const after = auditFindings({
+            hub,
+            projects: [project()],
+            collections: [],
+            rules: RULES,
+            catalog: reworded
+        });
+        expect(after.map((one) => one.signature)).toEqual(before.map((one) => one.signature));
+        expect(after.map((one) => one.message)).not.toEqual(before.map((one) => one.message));
+        expect(after.some((one) => one.message.startsWith('REWORDED'))).toBe(true);
     });
 });
 

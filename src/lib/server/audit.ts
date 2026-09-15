@@ -224,12 +224,20 @@ export function mutedSignatures(config: Record<string, unknown>): string[] {
 export const SIGNATURE = /^[0-9a-f]{12}$/;
 
 /**
- * One finding's stable short key: sha1 over the scope, the place, the kind and the message, twelve
- * hex characters of it. The message is in the key so two gaps on one file are two findings and a
- * changed marker count comes back as a new one.
+ * One finding's stable short key: sha1 over the scope, the place, the kind, the catalog key of its
+ * message and the arguments the rule filled the message with, twelve hex characters of it. The key
+ * and the arguments are in it so two gaps on one file are two findings and a changed marker count
+ * comes back as a new one; the rendered sentence is not, so rewording a message in the catalog
+ * keeps every mute.
  */
-export function signatureOf(scope: string, where: string, kind: string, message: string): string {
-    const raw = [scope, where, kind, message].join('\u001f');
+export function signatureOf(
+    scope: string,
+    where: string,
+    kind: string,
+    key: string,
+    args: readonly (string | number)[]
+): string {
+    const raw = [scope, where, kind, key, ...args.map(String)].join('\u001f');
     return createHash('sha1').update(raw, 'utf8').digest('hex').slice(0, 12);
 }
 
@@ -242,15 +250,30 @@ export type AuditInput = {
     catalog: Record<string, string>;
 };
 
-/** A collector, so a rule adds a finding without knowing how one is keyed. */
-function collector(): { found: AuditFinding[]; add: (f: Omit<AuditFinding, 'signature'>) => void } {
+/** The catalog sentence a finding is worded by: its key and the arguments that fill it. */
+type Sentence = { key: string; args: readonly (string | number)[] };
+
+/** A rule names its sentence by key, so the key and the arguments are what the signature reads. */
+function sentence(key: string, ...args: (string | number)[]): Sentence {
+    return { key, args };
+}
+
+/** What a rule hands the collector: where the finding is and which catalog sentence says it. */
+type Raised = Omit<AuditFinding, 'signature' | 'message'> & Sentence;
+
+/** A collector, so a rule adds a finding without knowing how one is keyed or worded. */
+function collector(catalog: Record<string, string>): {
+    found: AuditFinding[];
+    add: (f: Raised) => void;
+} {
     const found: AuditFinding[] = [];
     return {
         found,
-        add(finding) {
+        add({ key, args, ...finding }) {
             found.push({
                 ...finding,
-                signature: signatureOf(finding.scope, finding.where, finding.kind, finding.message)
+                message: words(catalog, key, ...args),
+                signature: signatureOf(finding.scope, finding.where, finding.kind, key, args)
             });
         }
     };
@@ -330,8 +353,7 @@ function hasDataSection(folder: string): boolean {
 }
 
 /** The open markers of one project's documents and of every collection entry. */
-function markers(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) => void): void {
-    const { catalog } = input;
+function markers(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
         if (project.ghost) continue;
         const folder = join(input.hub, project.folder);
@@ -345,7 +367,7 @@ function markers(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) =>
                 scope: project.folder,
                 where: name,
                 kind: 'todo',
-                message: words(catalog, 'audit.msg_markers', count, firstMarker(text))
+                ...sentence('audit.msg_markers', count, firstMarker(text))
             });
         }
     }
@@ -356,7 +378,7 @@ function markers(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) =>
                 scope: collection.id,
                 where: relative(input.hub, collection.file),
                 kind: 'todo',
-                message: words(catalog, 'audit.msg_intro_marker', firstMarker(intro))
+                ...sentence('audit.msg_intro_marker', firstMarker(intro))
             });
         }
         for (const entry of collection.entries) {
@@ -366,7 +388,7 @@ function markers(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) =>
                 scope: collection.id,
                 where: labelOf(entry.title, entry.index),
                 kind: 'todo',
-                message: words(catalog, 'audit.msg_entry_marker', firstMarker(blob))
+                ...sentence('audit.msg_entry_marker', firstMarker(blob))
             });
         }
     }
@@ -384,8 +406,8 @@ function relative(hub: string, path: string): string {
 }
 
 /** The manifest gaps of every project: what a live project has not filled in. */
-function gaps(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) => void): void {
-    const { catalog, rules } = input;
+function gaps(input: AuditInput, add: (f: Raised) => void): void {
+    const { rules } = input;
     for (const project of input.projects) {
         if (project.ghost) continue;
         const scope = project.folder;
@@ -399,7 +421,7 @@ function gaps(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) => vo
                 scope,
                 where: 'venue_id',
                 kind: 'data',
-                message: words(catalog, 'audit.msg_no_venue')
+                ...sentence('audit.msg_no_venue')
             });
         }
         if (project.type !== undefined && LIVE.includes(project.type)) {
@@ -413,7 +435,7 @@ function gaps(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) => vo
                     scope,
                     where: 'project.yml',
                     kind: 'data',
-                    message: words(catalog, 'audit.msg_missing_field', field)
+                    ...sentence('audit.msg_missing_field', field)
                 });
             }
             const provisional = project.results.filter((one) => PROVISIONAL.test(one));
@@ -422,7 +444,7 @@ function gaps(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) => vo
                     scope,
                     where: 'project.yml',
                     kind: 'data',
-                    message: words(catalog, 'audit.msg_provisional', provisional.length)
+                    ...sentence('audit.msg_provisional', provisional.length)
                 });
             }
             if (project.datasetIds.length > 0 && !hasDataSection(folder)) {
@@ -430,7 +452,7 @@ function gaps(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) => vo
                     scope,
                     where: 'project',
                     kind: 'data',
-                    message: words(catalog, 'audit.msg_no_data_section')
+                    ...sentence('audit.msg_no_data_section')
                 });
             }
             const lag = project.staleDays ?? 0;
@@ -440,7 +462,7 @@ function gaps(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) => vo
                     scope,
                     where: 'project.yml',
                     kind: 'data',
-                    message: words(catalog, 'audit.msg_docs_ahead', when, lag)
+                    ...sentence('audit.msg_docs_ahead', when, lag)
                 });
             }
         }
@@ -458,20 +480,14 @@ function gaps(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) => vo
                 scope,
                 where: 'project.yml',
                 kind: 'data',
-                message: words(
-                    catalog,
-                    'audit.msg_deposit_before_reproduction',
-                    deposited,
-                    reproduced
-                )
+                ...sentence('audit.msg_deposit_before_reproduction', deposited, reproduced)
             });
         }
     }
 }
 
 /** The tier-conformance rules: the one README, the retired documents and the folder names. */
-function conformance(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) => void): void {
-    const { catalog } = input;
+function conformance(input: AuditInput, add: (f: Raised) => void): void {
     for (const project of input.projects) {
         if (project.ghost) continue;
         const scope = project.folder;
@@ -485,7 +501,7 @@ function conformance(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>
                 scope,
                 where: 'README.md',
                 kind: 'conform',
-                message: words(catalog, 'audit.msg_no_readme')
+                ...sentence('audit.msg_no_readme')
             });
         }
         for (const name of RETIRED) {
@@ -494,7 +510,7 @@ function conformance(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>
                 scope,
                 where: name,
                 kind: 'conform',
-                message: words(catalog, 'audit.msg_retired_doc')
+                ...sentence('audit.msg_retired_doc')
             });
         }
         for (const [bad, good] of FOLDERS) {
@@ -503,7 +519,7 @@ function conformance(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>
                 scope,
                 where: `${bad}/`,
                 kind: 'conform',
-                message: words(catalog, 'audit.msg_bad_folder', good)
+                ...sentence('audit.msg_bad_folder', good)
             });
         }
         if (isFolder(join(folder, 'code')) && !existsSync(join(folder, 'code', 'README.md'))) {
@@ -511,7 +527,7 @@ function conformance(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>
                 scope,
                 where: 'code/',
                 kind: 'conform',
-                message: words(catalog, 'audit.msg_code_no_readme')
+                ...sentence('audit.msg_code_no_readme')
             });
         }
     }
@@ -521,8 +537,8 @@ function conformance(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>
  * The status guardrails: what a project's tier and type say its chips cannot be, and the one field a
  * live project must fill in. They are soft, as the cockpit's are: drift to clear, never a bad value.
  */
-function guardrails(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) => void): void {
-    const { catalog, rules } = input;
+function guardrails(input: AuditInput, add: (f: Raised) => void): void {
+    const { rules } = input;
     for (const project of input.projects) {
         if (project.ghost) continue;
         const scope = project.folder;
@@ -534,7 +550,7 @@ function guardrails(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>)
                 scope,
                 where: 'status.chips',
                 kind: 'manifest',
-                message: words(catalog, 'audit.msg_no_author_chip')
+                ...sentence('audit.msg_no_author_chip')
             });
         }
         const live = [...chips].filter((chip) => rules.liveChips.has(chip)).sort();
@@ -544,7 +560,7 @@ function guardrails(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>)
                     scope,
                     where: 'status.chips',
                     kind: 'manifest',
-                    message: words(catalog, 'audit.msg_terminal_live', project.type, printed(live))
+                    ...sentence('audit.msg_terminal_live', project.type, printed(live))
                 });
             }
         }
@@ -555,7 +571,7 @@ function guardrails(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>)
                 scope,
                 where: 'status.chips',
                 kind: 'manifest',
-                message: words(catalog, 'audit.msg_projects_published')
+                ...sentence('audit.msg_projects_published')
             });
         }
         for (const [one, other] of rules.contradictory) {
@@ -564,7 +580,7 @@ function guardrails(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>)
                 scope,
                 where: 'status.chips',
                 kind: 'manifest',
-                message: words(catalog, 'audit.msg_contradictory_chips', one, other)
+                ...sentence('audit.msg_contradictory_chips', one, other)
             });
         }
         if (
@@ -576,15 +592,15 @@ function guardrails(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>)
                 scope,
                 where: 'eli5',
                 kind: 'manifest',
-                message: words(catalog, 'audit.msg_missing')
+                ...sentence('audit.msg_missing')
             });
         }
     }
 }
 
 /** The manifest fields that are a glance, and how long each has grown. */
-function readability(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) => void): void {
-    const { catalog, rules } = input;
+function readability(input: AuditInput, add: (f: Raised) => void): void {
+    const { rules } = input;
     for (const project of input.projects) {
         if (project.ghost) continue;
         const scope = project.folder;
@@ -603,7 +619,7 @@ function readability(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>
                 scope,
                 where: `\`${field}\``,
                 kind: 'readability',
-                message: words(catalog, 'audit.msg_too_long', length, limit)
+                ...sentence('audit.msg_too_long', length, limit)
             });
         }
         const limit = byKey(rules.readLimits, 'results');
@@ -614,15 +630,15 @@ function readability(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>
                 scope,
                 where: `results[${at}]`,
                 kind: 'readability',
-                message: words(catalog, 'audit.msg_result_too_long', result.length, limit)
+                ...sentence('audit.msg_result_too_long', result.length, limit)
             });
         });
     }
 }
 
 /** The collection invariants: the file is there, and every entry says what it is and where it is. */
-function collections(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) => void): void {
-    const { catalog, rules } = input;
+function collections(input: AuditInput, add: (f: Raised) => void): void {
+    const { rules } = input;
     const ids = new Set(input.projects.filter((one) => !one.ghost).map((one) => one.id));
     for (const collection of input.collections) {
         const where = relative(input.hub, collection.file);
@@ -631,7 +647,7 @@ function collections(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>
                 scope: collection.id,
                 where,
                 kind: 'data',
-                message: words(catalog, 'audit.msg_collection_missing')
+                ...sentence('audit.msg_collection_missing')
             });
             continue;
         }
@@ -645,7 +661,7 @@ function collections(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>
                     scope: collection.id,
                     where: `entry #${entry.index + 1}`,
                     kind: 'data',
-                    message: words(catalog, 'audit.msg_entry_no_title')
+                    ...sentence('audit.msg_entry_no_title')
                 });
             }
             const status = scalar(entry.fields.status);
@@ -654,7 +670,7 @@ function collections(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>
                     scope: collection.id,
                     where: label,
                     kind: 'data',
-                    message: words(catalog, 'audit.msg_entry_no_status')
+                    ...sentence('audit.msg_entry_no_status')
                 });
             } else if (
                 rules.waitingStatus.has(status.toLowerCase()) &&
@@ -664,7 +680,7 @@ function collections(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>
                     scope: collection.id,
                     where: label,
                     kind: 'data',
-                    message: words(catalog, 'audit.msg_entry_no_date', status)
+                    ...sentence('audit.msg_entry_no_date', status)
                 });
             }
             for (const related of listOf(entry.fields.related)) {
@@ -673,7 +689,7 @@ function collections(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>
                     scope: collection.id,
                     where: label,
                     kind: 'data',
-                    message: words(catalog, 'audit.msg_entry_related', related)
+                    ...sentence('audit.msg_entry_related', related)
                 });
             }
             const link = scalar(entry.fields.link);
@@ -682,7 +698,7 @@ function collections(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>
                     scope: collection.id,
                     where: label,
                     kind: 'data',
-                    message: words(catalog, 'audit.msg_entry_link', link)
+                    ...sentence('audit.msg_entry_link', link)
                 });
             }
         }
@@ -792,8 +808,8 @@ function match(
  * title and is never certain, so nothing here is an error, only something to look at. The check is
  * skipped without a word when the site repository is not checked out beside the hub.
  */
-function publications(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'>) => void): void {
-    const { catalog, rules } = input;
+function publications(input: AuditInput, add: (f: Raised) => void): void {
+    const { rules } = input;
     if (rules.publicationsFile === '') return;
     const path = join(input.hub, rules.publicationsFile);
     if (!existsSync(path)) return;
@@ -806,7 +822,7 @@ function publications(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'
             scope: 'website',
             where: rules.publicationsFile,
             kind: 'publink',
-            message: words(catalog, 'audit.msg_site_unreadable', reason)
+            ...sentence('audit.msg_site_unreadable', reason)
         });
         return;
     }
@@ -835,8 +851,7 @@ function publications(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'
                     scope: project.folder,
                     where: 'publications.yml',
                     kind: 'publink',
-                    message: words(
-                        catalog,
+                    ...sentence(
                         'audit.msg_site_wrong_section',
                         printed(sectionsOf(hit)),
                         type,
@@ -851,12 +866,7 @@ function publications(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'
                     scope: project.folder,
                     where: 'publications.yml',
                     kind: 'publink',
-                    message: words(
-                        catalog,
-                        'audit.msg_site_title_differs',
-                        hit.title,
-                        printed(sectionsOf(hit))
-                    )
+                    ...sentence('audit.msg_site_title_differs', hit.title, printed(sectionsOf(hit)))
                 });
             }
         } else if (PUBLIC.includes(type)) {
@@ -864,12 +874,7 @@ function publications(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'
                 scope: project.folder,
                 where: 'publications.yml',
                 kind: 'publink',
-                message: words(
-                    catalog,
-                    'audit.msg_site_missing',
-                    type,
-                    expectedSections(project).join('/')
-                )
+                ...sentence('audit.msg_site_missing', type, expectedSections(project).join('/'))
             });
         }
     }
@@ -889,9 +894,9 @@ function publications(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'
             scope: project.folder,
             where: 'publications.yml',
             kind: 'publink',
-            message: NEGATIVE.includes(type)
-                ? words(catalog, 'audit.msg_site_negative', type, printed(sectionsOf(hit)))
-                : words(catalog, 'audit.msg_site_deadend', type, printed(sectionsOf(hit)))
+            ...(NEGATIVE.includes(type)
+                ? sentence('audit.msg_site_negative', type, printed(sectionsOf(hit)))
+                : sentence('audit.msg_site_deadend', type, printed(sectionsOf(hit))))
         });
     }
 
@@ -910,8 +915,7 @@ function publications(input: AuditInput, add: (f: Omit<AuditFinding, 'signature'
         scope: 'website',
         where: 'publications.yml',
         kind: 'publink',
-        message: words(
-            catalog,
+        ...sentence(
             'audit.msg_site_untracked',
             untracked.length,
             `${shown.map((title) => `"${title}"`).join('; ')}${more}`
@@ -927,7 +931,7 @@ const KINDS: AuditKind[] = ['todo', 'data', 'conform', 'manifest', 'readability'
  * section order and, inside a section, by the project or collection they are about.
  */
 export function auditFindings(input: AuditInput): AuditFinding[] {
-    const { found, add } = collector();
+    const { found, add } = collector(input.catalog);
     markers(input, add);
     gaps(input, add);
     conformance(input, add);
