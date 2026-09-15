@@ -158,7 +158,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 
 ## Could run in parallel
 
-- The feature stretch after R17, three at a time (Axel 2026-09-14 17:50), each set checked for disjoint paths at its dispatch: Q15 + Q16 + H1, then Q15b; Q17 + P1 + O27a; P2 + O27b + O28a; O28b + D1 + D2; D3 + D6 + D4; D5 + D7 + D10; D8 + D12 + D9; D16 + D11 + D13; D14 + D15 + D17; D18 + D20 + O31. Alone by nature: Q18, R10, R13a, R13b, K1, R17, L1, L2 before it; R2, O29, O30, X2 after it.
+- The feature stretch after R17, three in flight at all times (Axel 2026-09-14 17:50 for three at a time; 2026-09-15 19:58 for the rolling window: one new package dispatched at each landing, cut at main's head, its paths checked against the two still running): the queue is Q15 + Q16 + H1, then Q15b; Q17 + P1 + O27a; P2 + O27b + O28a; O28b + D1 + D2; D3 + D6 + D4; D5 + D7 + D10; D8 + D12 + D9; D16 + D11 + D13; D14 + D15 + D17; D18 + D20 + O31. Alone by nature: Q18, R10, R13a, R13b, K1, R17, L1, L2 before it; R2, O29, O30, X2 after it.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
@@ -167,6 +167,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - O22 to O28 with each other once O10 has landed.
 
 ## Rulings (2026-09-10)
+- 2026-09-15 19:58, Axel: the rolling window. A new package is dispatched the moment one lands, three in flight at all times, the plan's set list read as the queue; each is cut at main's head after the latest landing and its paths are checked against the two still running.
 - 2026-09-15 17:33, Axel: the System group's `chord: y` and `glyph: audit` and the Sessions group's `glyph: live` stay as O27a landed them; O28a's `engine` root (the engine's `config/` folder served as a fixed root for the file route, the source route and the file browser) stays.
 - 2026-09-15 15:57, Axel, yes to all six open items (1 of 3): Q17's status marks keep their hue through a toned `Tag`; O27a's Sources group stays a flyout and the file view keeps its "Open in a browser tab" control.
 - 2026-09-15 15:57, Axel (2 of 3): a P1 deck `order:` entry naming a project slide the mounted hub lacks places nothing and is not a finding (framing and summary refs still are), so the shipped order carries the cockpit's interleaving.
