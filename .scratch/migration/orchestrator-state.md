@@ -34,7 +34,7 @@ dispatch:                                  # Q15b alone
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q15b/report.md
   exit: none
   pid: none
-  session_id: pending                        # the Agent tool's id, written the moment it is known
+  session_id: a9a4da56219ababa7            # the Agent tool's id
   landing: not-started
 ```
 
