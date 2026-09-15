@@ -24,6 +24,18 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 
 ```yaml
 dispatch:                                  # O28b + D1 + D2, the set of three (the paths overlap on server/writes.ts, writes/bodies.ts, config/behavior.yml, HELP.md's view table and the registry test between O28b and D1, all additive; D2 is disjoint; the second landing of the two resolves them)
+- package: D6
+  worker: claude:opus
+  worktree: .agents/worktrees/d6
+  base: 1b4fc206
+  launched: 2026-09-15T22:47+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D6/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D6/report.md
+  exit: none
+  pid: none
+  session_id: pending                    # the Agent tool's id, written the moment it is known; the rolling window's dispatch after O28b's landing (Q21 waits for Q20), the brief re-checked at 22:46
+  landing: not-started
 - package: Q22
   worker: claude:opus
   worktree: .agents/worktrees/q22
