@@ -51,6 +51,7 @@ dispatch:                                  # O28b + D1 + D2, the set of three (t
 ```
 
 ## The standing demands (from Axel, in force)
+- An answer ends the turn (Axel, 2026-09-15 23:38, "make sure this never ever happens again"): text written between tool calls reaches him only as a one-line machine summary marked "summarized" (his D10 answers of 23:29 and 23:33 were lost that way), so a question is answered fully and the turn ends there, with no tool call after; the rule is in `~/.claude/rules/answer-ends-the-turn.md`, the global `CLAUDE.md` and the hub `CLAUDE.md`.
 - The lazy option never locks (Axel, 2026-09-15 20:12 and again at 23:32, "This goes for ALL decisions"): a yes to a recommended option counts only when that option is the better one, not the one that costs least; the orchestrator says at every ruling which options were the lazy ones, and a yes to a lazy option is not booked as locked.
 - The pause of 2026-09-14 20:27 was lifted at 22:21 with a window until 2026-09-15 07:10: at 07:10 no worker, reviewer or landing is in flight, the dispatch block reads `none`, everything is committed; a package is dispatched only when it can land before then.
 
