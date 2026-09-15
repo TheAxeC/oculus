@@ -48,6 +48,7 @@ dispatch:                                  # Q17 + O27a + P1, the set of three
   exit: none
   pid: none
   session_id: a770870931a7f7284            # the Agent tool's id
+  round: 1                                   # repair round sent 2026-09-15T15:35+0200 over the review (twenty items, runs/O27a/repair-prompt.md; review in agents/reviews/O27a.md)
   landing: not-started
 - package: P1
   worker: claude:opus
@@ -59,7 +60,7 @@ dispatch:                                  # Q17 + O27a + P1, the set of three
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/P1/report.md
   exit: none
   pid: none
-  session_id: a911f959f0f08fd92            # the Agent tool's id
+  session_id: a911f959f0f08fd92            # the Agent tool's id; reported 2026-09-15T15:36+0200, checks and review next
   landing: not-started
 ```
 
@@ -92,6 +93,7 @@ dispatch:                                  # Q17 + O27a + P1, the set of three
 - P1, the Present view's shapes (raised 2026-09-15 14:35 in `briefs/P1-present.md`, for Axel's yes before dispatch): (1) several slides per project as a `slides:` list beside `present:` in the PRESENT.md front matter, ids `<project>/<slug>`; (2) the deck as `config/present.yml` in oculus with the shape of `tools/present/content/present.yml`; (3) a listed `present` view in the Academic life group with left/right keys and the `O` overview; (4) KaTeX as the LaTeX renderer, one new dependency, PNG equations still served until rewritten; (5) figures through the file route under the hub root. Recommended as written. Closed 2026-09-15 14:42, Axel: yes to all five.
 - Q17, the marks that lose their hue (raised 2026-09-15 15:07 by Q17's report, before its landing): Axel's words of 2026-09-13 13:45 keep the capsule on the status words (the `status_legend` chips, the type chip) and turn the rest into plain muted text; read literally, about twenty marks whose colour encoded a state (an HPC job's COMPLETED green or FAILED red, the memory and CPU efficiency marks, the session timeline kinds, a tool turn's ok or fail, the deadline urgency on the Focus band and the card, the venue quartile and free-route marks, the dataset access mark, the inbox kind) become grey text. Q17 lands as the words say. Recommended: a `tone` on the `Tag` primitive that paints its words in the hue with no capsule, applied to those state marks (a small inline change, on his yes); the other shape is keeping the chip for them.
 - O27a, the Sources group as a flyout (raised 2026-09-15 15:17 by O27a's report, before its landing): the file browser is the fifth view of the rail's Sources group (venues, data, code, statements, files), and a group past `GROUP_MAX` (4, `shell/rail.ts`) draws as one labelled button with a list, as Sessions and Academic life do, so the four Sources views now sit behind a flyout. Recommended: keep it (one rule for every group); the other shape is `files` in another group, or `GROUP_MAX` 5, one line in `config/layout.yml` or `rail.ts`. O27a lands with the flyout.
+- O27a, the "Open in a browser tab" control on the file view (raised 2026-09-15 15:36 by O27a's review): `src/lib/views/File.svelte` carries a toolbar control that opens the served file in a new browser tab, the same control `Document.svelte` has on main; the brief named a download link for the undrawn types and nothing else. Recommended: keep, since the two views then read alike and the control costs one toolbar button. The control stays until Axel rules.
 - The Command Center split (raised 2026-09-14 17:28): closed 2026-09-14 17:39, Axel chose (a), a Tasks section on the Focus board; booked as Q18.
 - R12c edge 2, the `waiting-on` finding: closed 2026-09-14 17:20, Axel ruled: a collaborator key or a project id, never a free name, a finding otherwise; the manifest's `BTFNO` is `btfno`; booked as R12f beside R12e.
 - R12c edge 8, `Entry.id` identity-first: closed 2026-09-14 17:28, Axel agreed: a wrong premise, no change; the entry id stays the `id:` line, then `key:`, then the schema's identity field.
