@@ -1,0 +1,27 @@
+# Oculus text owned by the memories view.
+text:
+    views:
+        memories: Memories
+        memories_glyph: memories
+    memories:
+        title: Memories
+        toolbar: Memories controls
+        add: add photo
+        add_glyph: expand
+        add_tip: Add a picture to the wall. JPEG and PNG.
+        empty: 'No pictures on the wall yet. Add one, or drop a JPEG or PNG into the folder config/appearance.yml names.'
+        empty_glyph: circle_empty
+        open: 'Enlarge {0}'
+        tile: 'Memory {0}'
+        close: Close
+        close_outside: Close the picture
+        close_glyph: dismiss
+        lightbox: 'The enlarged picture {0}'
+        failed: '{0} was not added: {1}'
+        failed_many: '{0} pictures were not added.'
+        failed_name: The wall takes a JPEG or a PNG, named without a folder in front of it.
+        failed_data: 'The file is not a JPEG or a PNG the wall can read, or it is larger than {0} MB.'
+        failed_file: The picture could not be written into the folder on this machine.
+        failed_network: The picture did not reach the server.
+        failed_other: The picture was not added.
+        reading: The file could not be read from this machine.

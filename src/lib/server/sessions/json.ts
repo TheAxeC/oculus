@@ -38,6 +38,19 @@ export function writeJsonAtomic(path: string, payload: unknown): void {
 
 /** Write text atomically, preserving an existing mode or using newMode for a new file. */
 export function writeTextAtomic(path: string, content: string, newMode?: number): void {
+    writeAtomic(path, content, newMode);
+}
+
+/**
+ * Write bytes atomically, by the same temporary file and rename: the one write in oculus that
+ * carries a picture rather than a document, and it must not leave a half-written image in a folder
+ * the wall lists.
+ */
+export function writeBytesAtomic(path: string, content: Uint8Array, newMode?: number): void {
+    writeAtomic(path, content, newMode);
+}
+
+function writeAtomic(path: string, content: string | Uint8Array, newMode?: number): void {
     const folder = dirname(path) || '.';
     mkdirSync(folder, { recursive: true });
     const temporary = join(
@@ -56,7 +69,10 @@ export function writeTextAtomic(path: string, content: string, newMode?: number)
         const handle =
             mode === undefined ? openSync(temporary, 'w') : openSync(temporary, 'w', mode);
         try {
-            writeSync(handle, content);
+            // `writeSync` declares a string overload and an ArrayBufferView overload, and a
+            // `string | Uint8Array` matches neither, so the union is narrowed before either call.
+            if (typeof content === 'string') writeSync(handle, content);
+            else writeSync(handle, content);
             if (mode !== undefined) fchmodSync(handle, mode);
         } finally {
             closeSync(handle);

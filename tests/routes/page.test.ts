@@ -81,7 +81,8 @@ describe('the page subscription', () => {
             'files',
             'hpc',
             'usage',
-            'feeds'
+            'feeds',
+            'audit'
         ]);
     });
 });

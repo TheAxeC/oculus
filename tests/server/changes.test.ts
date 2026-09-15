@@ -79,6 +79,7 @@ function target(keep = 500): WriteTarget {
         overrides,
         projects: () => [],
         bookmarks,
+        behaviorFile: join(dir, 'behavior.yml'),
         changes: { file: log, keep, writes: fsWrites() }
     };
 }
@@ -137,6 +138,7 @@ function deckTarget(): WriteTarget {
         config: { ...real, deck: (parse(DECK) as { deck: unknown }).deck, deckFile: file },
         projects: () => [slideProject('alpha', 'active'), slideProject('gamma', 'archive')],
         bookmarks: join(dir, 'bookmarks.yml'),
+        behaviorFile: join(dir, 'behavior.yml'),
         changes: { file: log, keep: 500, writes: fsWrites() }
     };
 }

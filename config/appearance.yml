@@ -48,6 +48,12 @@ wallpaper:
   panel_blur: 2         # px of backdrop blur behind each window (keeps text crisp without smearing the image)
 
 
+# === Memories ===============================================================
+# The photo wall's folder, the same shape as `wallpaper:` above: `dir` is relative to the hub and must remain inside it. Every .jpg / .jpeg / .png / .webp in it is a tile, and the wall's own control adds one.
+memories:
+  dir: tools/oculus/assets/memories
+
+
 # The CRT overlay (scanlines and vignette, cosmetic only): what a browser that has never been told
 # otherwise starts on. The rail's toggle writes the viewer's own choice into the appearance store.
 crt:

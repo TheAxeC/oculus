@@ -2,7 +2,7 @@
 // writes that path here; a spec that asserts on a file reads it back through readHubFile, so a
 // write the DOM says happened is checked against the bytes on disk.
 
-import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { tmpdir } from 'node:os';
@@ -47,6 +47,19 @@ export function writeHubFile(relative: string, body: string): void {
     const full = resolve(join(root, relative));
     if (!full.startsWith(resolve(root) + sep)) throw new Error(`${full} is not inside ${root}`);
     writeFileSync(full, body);
+}
+
+/**
+ * Copy a file the tree ships into that hub, for a spec whose subject is a folder the demo does not
+ * carry. The destination is resolved and asserted to be inside the temporary hub, and the folders
+ * above it are made, before anything is written.
+ */
+export function copyIntoHub(relative: string, from: string): void {
+    const root = hubDir();
+    const full = resolve(join(root, relative));
+    if (!full.startsWith(resolve(root) + sep)) throw new Error(`${full} is not inside ${root}`);
+    mkdirSync(dirname(full), { recursive: true });
+    copyFileSync(from, full);
 }
 
 /**

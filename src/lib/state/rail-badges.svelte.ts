@@ -4,6 +4,7 @@
 import { scalar } from '../data/guards.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
 import type { FeedsStore } from './feeds.svelte.ts';
+import type { AuditStore } from './audit.svelte.ts';
 import type { HpcStore } from './hpc.svelte.ts';
 import type { SelectorsStore } from './selectors.svelte.ts';
 import { splitPosts } from './linkedin.ts';
@@ -53,6 +54,7 @@ export type RailBadgesStore = {
     leadsBadge: () => string;
     linkedinBadgeGlyph: () => string;
     applicationsBadge: () => string;
+    auditBadge: () => string;
     boardCells: (view: string) => BadgeCell[];
     queueCells: () => BadgeCell[];
     boardBadgeTitle: (view: string) => string;
@@ -63,6 +65,7 @@ export function createRailBadges(
     entities: EntitiesStore,
     feeds: FeedsStore,
     hpc: HpcStore,
+    audit: AuditStore,
     selectors: SelectorsStore
 ): RailBadgesStore {
     /** The number of cards on one of the three project boards. */
@@ -141,6 +144,11 @@ export function createRailBadges(
         );
     }
 
+    /** Audit findings the reader has not parked, which is what the Audit view opens on. */
+    function auditBadge(): string {
+        return countText(audit.openCount());
+    }
+
     /** The project-board types from `scan`, in the vocabulary's configured type order. */
     function projectTypeOrder(): string[] {
         const preset = selectors.boardPreset('projects');
@@ -211,6 +219,7 @@ export function createRailBadges(
         leadsBadge,
         linkedinBadgeGlyph,
         applicationsBadge,
+        auditBadge,
         boardCells,
         queueCells,
         boardBadgeTitle,

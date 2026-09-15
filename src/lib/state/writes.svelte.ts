@@ -44,6 +44,9 @@ export const GIT_PATH = '/api/git';
 /** The endpoint of the deposit panel: one action on one project, behind the same token. */
 export const DEPOSIT_PATH = '/api/deposit';
 
+/** The endpoint of the Memories wall: one picture added to the folder, behind the same token. */
+export const MEMORIES_PATH = '/api/memories';
+
 /** The page's end of the write endpoint, one per client. */
 export type WritesStore = {
     setToken: (next: string) => void;
@@ -83,6 +86,8 @@ export type WritesStore = {
     markPosted: (file: string) => Promise<WriteAnswer>;
     newEntry: (collection: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
     writeDeck: (selection: string[], order: string[]) => Promise<WriteAnswer>;
+    muteFinding: (signature: string, muted: boolean) => Promise<WriteAnswer>;
+    addMemory: (name: string, data: string) => Promise<WriteAnswer>;
     newIdea: (fields: {
         id: string;
         title?: string;
@@ -276,6 +281,23 @@ export function createWrites(): WritesStore {
         return send({ kind: 'deck', selection, order });
     }
 
+    /**
+     * Park one audit finding, or bring it back. The signature is the scan's own; the endpoint writes
+     * it into the `audit_ignore:` list of config/behavior.yml and the watcher pushes the scan again.
+     */
+    async function muteFinding(signature: string, muted: boolean): Promise<WriteAnswer> {
+        return send({ kind: 'audit-mute', signature, muted });
+    }
+
+    /**
+     * Add one picture to the Memories wall. `data` is the file as base64, which is what the browser's
+     * own FileReader gives; the endpoint is the wall's own rather than /api/write, since what it
+     * writes is bytes into a folder and not a field of a YAML file.
+     */
+    async function addMemory(name: string, data: string): Promise<WriteAnswer> {
+        return send({ name, data }, MEMORIES_PATH);
+    }
+
     /** Scaffold one idea project: a manifest and a README under projects/ideas/<id>. */
     async function newIdea(fields: {
         id: string;
@@ -394,6 +416,8 @@ export function createWrites(): WritesStore {
         markPosted,
         newEntry,
         writeDeck,
+        muteFinding,
+        addMemory,
         newIdea,
         undoWrite,
         writeGit,

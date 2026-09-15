@@ -32,6 +32,14 @@ usage_refresh_model: "haiku"
 data_domains: [heart, liver, liverfl, liversurv, immune, brain, brainbci]
 
 
+# Collection-entry statuses that wait on someone else, so the audit asks for a date to track them by.
+waiting_status: [submitted, pending, under review, under-review]
+
+
+# Audit findings the reader has parked. Each entry is a finding's signature, the twelve hex characters the Audit view's mute control writes here; the finding stays true and is drawn in the muted section.
+audit_ignore: []
+
+
 # A manifest is stale when its `updated` date trails the newest project content by this many days.
 stale_lag_days: 1
 

@@ -2,7 +2,7 @@
 // outside them is read or written, every write asserts its path is inside first, and every watcher
 // is closed when the test ends.
 
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
@@ -12,7 +12,7 @@ import { handleSource } from '../../src/lib/server/source.ts';
 import { mintToken } from '../../src/lib/server/auth.ts';
 import { ENGINE_ROOT, engineRoot } from '../../src/lib/server/files.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
-import { loadConfig, type IconMemory } from '../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig, type IconMemory } from '../../src/lib/data/sources/config.ts';
 import type { Sink } from '../../src/lib/server/channels.ts';
 import {
     namedByConfig,
@@ -21,7 +21,13 @@ import {
     watchedDirectories
 } from '../../src/lib/server/watch/portfolio.ts';
 import type { Watcher } from '../../src/lib/server/watch/portfolio.ts';
-import type { ConfigPayload, FeedsPayload, Message, Snapshot } from '../../src/lib/data/model.ts';
+import type {
+    AuditPayload,
+    ConfigPayload,
+    FeedsPayload,
+    Message,
+    Snapshot
+} from '../../src/lib/data/model.ts';
 import { noop } from '../doubles.ts';
 
 const LAYOUT = [
@@ -85,6 +91,13 @@ function buildEngine(): string {
     write(engine, 'config/vocab.yml', VOCAB);
     write(engine, 'config/manifest-schema.yml', SCHEMA);
     write(engine, 'config/text.yml', TEXT);
+    // The audit's words are the engine's own catalog file, so the scan the watcher runs has the
+    // messages it writes its findings in rather than a copy of them typed into this file.
+    mkdirSync(join(engine, 'config', 'text', 'views'), { recursive: true });
+    cpSync(
+        join(engineDir(), 'config', 'text', 'views', 'audit.yml'),
+        join(engine, 'config', 'text', 'views', 'audit.yml')
+    );
     return engine;
 }
 
@@ -177,7 +190,7 @@ function start(
     prepare?.(hub, engine);
     const channels = new Hub();
     const client = recording();
-    channels.subscribe(client.sink, ['portfolio', 'config', 'feeds']);
+    channels.subscribe(client.sink, ['portfolio', 'config', 'feeds', 'audit']);
     watchers.push(watchPortfolio(channels, { hub, engine, icons }));
     return { hub, engine, got: client.got, icons };
 }
@@ -188,9 +201,30 @@ describe('relevant', () => {
         expect(relevant('venues.yml')).toBe(true);
         expect(relevant('active/loewner/code/results.yml')).toBe(false);
         expect(relevant('archive/nogo/thing/attic/old.yml')).toBe(false);
-        expect(relevant('active/loewner/README.md')).toBe(false);
         expect(relevant('active/loewner/.project.yml.swp')).toBe(false);
         expect(relevant(null)).toBe(false);
+    });
+
+    it('takes the documents and folders the audit scan reads off the disk', () => {
+        expect(relevant('active/loewner/README.md')).toBe(true);
+        expect(relevant('active/loewner/PRESENT.md')).toBe(true);
+        expect(relevant('active/loewner/DATA.md')).toBe(true);
+        expect(relevant('active/loewner/IDEA.md')).toBe(true);
+        expect(relevant('active/loewner/notes/METHOD_NOTES.md')).toBe(true);
+        expect(relevant('active/loewner/paper')).toBe(true);
+        expect(relevant('active/loewner/paper/main.tex')).toBe(true);
+    });
+
+    it('takes the deposit README and nothing else out of a code folder', () => {
+        expect(relevant('active/loewner/code/README.md')).toBe(true);
+        expect(relevant('active/loewner/code/train.py')).toBe(false);
+        expect(relevant('active/loewner/code/notes/README.md')).toBe(false);
+        expect(relevant('active/loewner/attic/README.md')).toBe(false);
+    });
+
+    it('leaves a document the audit does not read alone', () => {
+        expect(relevant('active/loewner/NOTES.md')).toBe(false);
+        expect(relevant('active/loewner/manuscript/main.tex')).toBe(false);
     });
 
     it('takes a PRESENT.md, whose front matter is in the snapshot, and no other markdown', () => {
@@ -226,13 +260,22 @@ describe('namedByConfig', () => {
         deckFile: '/hub/config/present.yml'
     };
 
-    it('names a manifest and a PRESENT.md under a scan tier, and no other document', () => {
+    it('names a manifest, a PRESENT.md and what the audit reads under a scan tier', () => {
         const named = namedByConfig('/hub', config);
         expect(named(join('/hub', 'projects/active/loewner/project.yml'))).toBe(true);
         expect(named(join('/hub', 'projects/active/loewner/PRESENT.md'))).toBe(true);
         expect(named(join('/hub', 'projects/ideas/other/PRESENT.md'))).toBe(false);
-        expect(named(join('/hub', 'projects/active/loewner/README.md'))).toBe(false);
+        expect(named(join('/hub', 'projects/active/loewner/README.md'))).toBe(true);
+        expect(named(join('/hub', 'projects/active/loewner/code/README.md'))).toBe(true);
+        expect(named(join('/hub', 'projects/active/loewner/paper'))).toBe(true);
         expect(named(join('/hub', 'registries/venues.yml'))).toBe(true);
+    });
+
+    it('names no document of the hub above a tier, and none the audit does not read', () => {
+        const named = namedByConfig('/hub', config);
+        expect(named(join('/hub', 'README.md'))).toBe(false);
+        expect(named(join('/hub', 'projects/ideas/other/README.md'))).toBe(false);
+        expect(named(join('/hub', 'projects/active/loewner/NOTES.md'))).toBe(false);
     });
 
     it('rebuilds on a PRESENT.md under a tier and on none under a project code folder', () => {
@@ -413,7 +456,8 @@ describe('watchPortfolio', () => {
                 hub: started.hub,
                 config,
                 projects: () => [],
-                bookmarks: join(started.hub, 'bookmarks.yml')
+                bookmarks: join(started.hub, 'bookmarks.yml'),
+                behaviorFile: join(started.engine, 'config', 'behavior.yml')
             }
         );
         expect(response.status).toBe(200);
@@ -484,6 +528,90 @@ describe('watchPortfolio', () => {
         expect(payload.findings).toEqual([]);
         expect(payload.config.venues_file).toBe('registries/venues.yml');
         expect((feeds[0].payload as FeedsPayload).linkedin.entries[0].title).toBe('Start');
+    });
+
+    it('publishes the audit scan beside the portfolio, with the mute list of the config', async () => {
+        const started = start((hub, engine) => {
+            write(hub, 'projects/active/loewner/README.md', '# Loewner\n\nTODO: the method\n');
+            write(engine, 'config/behavior.yml', 'audit_ignore: []\n');
+        });
+        await until(() => on(started.got, 'audit').length > 0, 3000);
+
+        const audit = on(started.got, 'audit').at(-1)?.payload as AuditPayload;
+        expect(audit.muted).toEqual([]);
+        const marker = audit.findings.find((one) => one.kind === 'todo');
+        expect(marker?.scope).toBe(join('projects', 'active', 'loewner'));
+        expect(marker?.where).toBe('README.md');
+        expect(marker?.message).toBe('1 open marker(s) - e.g. "TODO: the method"');
+        expect(marker?.signature).toMatch(/^[0-9a-f]{12}$/);
+    });
+
+    it('publishes the audit again when a marker is written into a project README', async () => {
+        const started = start((_hub, engine) => {
+            write(engine, 'config/behavior.yml', 'audit_ignore: []\n');
+        });
+        await until(() => on(started.got, 'audit').length > 0, 3000);
+        await quiet(started.got);
+        const before = on(started.got, 'audit').length;
+        expect(
+            (on(started.got, 'audit').at(-1)?.payload as AuditPayload).findings.filter(
+                (one) => one.kind === 'todo'
+            )
+        ).toEqual([]);
+
+        // A README is not a `.yml` and not PRESENT.md, so this is the audit's own reason to rebuild.
+        write(started.hub, 'projects/active/loewner/README.md', '# Loewner\n\nTODO: the method\n');
+        await until(() => on(started.got, 'audit').length > before, 3000);
+
+        const marker = (on(started.got, 'audit').at(-1)?.payload as AuditPayload).findings.find(
+            (one) => one.kind === 'todo'
+        );
+        expect(marker?.where).toBe('README.md');
+        expect(marker?.message).toBe('1 open marker(s) - e.g. "TODO: the method"');
+    });
+
+    it('publishes the audit again after a mute write, with the signature parked', async () => {
+        const started = start((hub, engine) => {
+            write(hub, 'projects/active/loewner/README.md', '# Loewner\n\nTODO: the method\n');
+            write(engine, 'config/behavior.yml', 'audit_ignore: []\n');
+        });
+        await until(() => on(started.got, 'audit').length > 0, 3000);
+        const first = on(started.got, 'audit').at(-1)?.payload as AuditPayload;
+        const signature = first.findings[0].signature;
+        await quiet(started.got);
+        const before = on(started.got, 'audit').length;
+
+        const token = mintToken();
+        const config = portfolioConfigFrom(loadConfig(started.engine).config);
+        const response = await handleWrite(
+            new Request('http://127.0.0.1:8790/api/write', {
+                method: 'POST',
+                headers: {
+                    'content-type': 'application/json',
+                    'sec-fetch-site': 'same-origin',
+                    'x-oculus-token': token
+                },
+                body: JSON.stringify({ kind: 'audit-mute', signature, muted: true })
+            }),
+            token,
+            {
+                hub: started.hub,
+                config,
+                projects: () => [],
+                bookmarks: join(started.hub, 'bookmarks.yml'),
+                behaviorFile: join(started.engine, 'config', 'behavior.yml')
+            }
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({
+            ok: true,
+            changed: ['audit_ignore'],
+            refused: []
+        });
+
+        await until(() => on(started.got, 'audit').length > before, 3000);
+        const after = on(started.got, 'audit').at(-1)?.payload as AuditPayload;
+        expect(after.muted).toEqual([signature]);
     });
 
     it('reports a configured document with no file at its path, and none for one that is there', async () => {

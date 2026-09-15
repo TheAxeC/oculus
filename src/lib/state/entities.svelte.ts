@@ -10,6 +10,7 @@
 // state/context.ts, so two pages, or two test cases, share nothing.
 
 import type {
+    AuditPayload,
     ConfigPayload,
     FeedsPayload,
     GitPayload,
@@ -31,6 +32,7 @@ export type EntitiesStore = {
     git: () => GitPayload | null;
     hpc: () => HpcPayload | null;
     usage: () => UsagePayload | null;
+    audit: () => AuditPayload | null;
 };
 
 export function createEntities(): EntitiesStore {
@@ -69,6 +71,8 @@ export function createEntities(): EntitiesStore {
         /** The latest Live HPC state, or null before the server's starting message. */
         hpc: () => (payload('hpc') as HpcPayload | undefined) ?? null,
         /** The Claude and Codex subscription windows and seven-day token totals. */
-        usage: () => (payload('usage') as UsagePayload | undefined) ?? null
+        usage: () => (payload('usage') as UsagePayload | undefined) ?? null,
+        /** What the audit scan found and what the reader has parked, or null before the first scan. */
+        audit: () => (payload('audit') as AuditPayload | undefined) ?? null
     };
 }

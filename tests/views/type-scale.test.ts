@@ -51,6 +51,7 @@ const VIEWS: Record<string, string> = {
     'files/Workspaces.svelte': '',
     'Domains.svelte': '.empty, .said=fs-md',
     'Editor.svelte': '.heading=fs-sm | .result=fs-md',
+    'Audit.svelte': '.failed=fs-sm | h3=fs-sm | .where=fs-sm | .message=fs-md | .note=fs-sm',
     'Findings.svelte': '.view=fs-md | .file, .key=fs-sm',
     'Focus.svelte': '.said=fs-md | .wait-head, .seg-lbl=fs-xs',
     'Gallery.svelte': 'h3=fs-xs',
@@ -64,6 +65,7 @@ const VIEWS: Record<string, string> = {
     'Leads.svelte': '.empty=fs-md | .runlog=fs-sm',
     'Linkedin.svelte': 'h3=fs-lg',
     'Map.svelte': '.head=fs-sm | .empty=fs-md',
+    'Memories.svelte': '.failed=fs-sm',
     'Present.svelte': '.counter=fs-xs',
     'Programs.svelte': '.note, .said=fs-md',
     'Project.svelte':

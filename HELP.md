@@ -95,6 +95,8 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `usage` | Usage | What each agent account has spent. |
 | `help` | Help | This manual. |
 | `config` | Config | The files the configuration is merged from, each with its text and an edit control. |
+| `audit` | Audit | What the hub is missing, in six sections: open markers, manifest gaps, folders off the tier standard, status chips the project's own tier and type contradict, fields that have stopped being a glance, and the website's publication list against the portfolio. Each finding can be muted. |
+| `memories` | Memories | The photo wall, with a control that adds a picture and a click that enlarges one. |
 | `history` | History | Every write oculus made on this machine, newest first, with what each field held before it and a control that puts it back. |
 
 Four views are opened for something rather than listed in the rail: `project` (one project as its own tab), `editor` (its manifest form), `deposit` (its public code deposit) and `doc` (one Markdown document of the hub, from a group of the rail). Three more open from a file: `document` (a local HTML file in a frame), `file` (one file drawn by what its name says it is) and `source` (one text file, edited and saved).
@@ -105,8 +107,8 @@ The files below sit in the `config/` folder of the engine, `tools/oculus/config/
 
 | File | What it holds |
 |---|---|
-| `appearance.yml` | The UI theme list, the wallpaper behind the panels, the CRT default and the terminal text size. |
-| `behavior.yml` | Thresholds, horizons and cadences: read limits, stale days, the context window, the Live HPC settings, git and chat. |
+| `appearance.yml` | The UI theme list, the wallpaper behind the panels, the Memories wall's folder, the CRT default and the terminal text size. |
+| `behavior.yml` | Thresholds, horizons and cadences: read limits, stale days, the context window, the Live HPC settings, the audit's waiting statuses and mute list, git and chat. |
 | `glyphs.yml` | The glyph vocabulary, one character per name, and the ASCII stand-in a terminal theme draws instead. |
 | `icons.yml` | The line icon each glyph name is drawn as, one row per name in the glyph vocabulary. |
 | `layout.yml` | How things are arranged: the rail groups, the hub documents, the board chrome, the tab rollups, the live badges and the saved arrangements. |

@@ -500,7 +500,7 @@ describe('loadConfig', () => {
 describe("oculus's own config directory", () => {
     /** Every non-text top-level key, by its root config file. */
     const EXPECTED: Record<string, string[]> = {
-        'appearance.yml': ['themes', 'wallpaper', 'crt', 'terminal'],
+        'appearance.yml': ['themes', 'wallpaper', 'memories', 'crt', 'terminal'],
         'present.yml': ['deck'],
         'behavior.yml': [
             'read_limits',
@@ -510,6 +510,8 @@ describe("oculus's own config directory", () => {
             'usage_refresh_min',
             'usage_refresh_model',
             'data_domains',
+            'waiting_status',
+            'audit_ignore',
             'stale_lag_days',
             'refresh_stale_days',
             'deadline_horizon_days',
@@ -594,6 +596,7 @@ describe("oculus's own config directory", () => {
         'server.yml',
         'ui.yml',
         'views/agents.yml',
+        'views/audit.yml',
         'views/changes.yml',
         'views/collection.yml',
         'views/config.yml',
@@ -615,6 +618,7 @@ describe("oculus's own config directory", () => {
         'views/leads.yml',
         'views/linkedin.yml',
         'views/map.yml',
+        'views/memories.yml',
         'views/note.yml',
         'views/present.yml',
         'views/programs.yml',

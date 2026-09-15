@@ -99,6 +99,7 @@ export function target(): WriteTarget {
         overrides,
         projects: () => [],
         bookmarks,
+        behaviorFile: join(dir, 'behavior.yml'),
         changes: { file: changes, keep: 500, writes: fsWrites() }
     };
 }
@@ -216,6 +217,7 @@ export function deckTarget(): WriteTarget {
         config: { ...real, deck: deckMapOf(DECK), deckFile: file },
         projects: () => [slideProject('alpha', 'active'), slideProject('gamma', 'archive')],
         bookmarks: join(dir, 'bookmarks.yml'),
+        behaviorFile: join(dir, 'behavior.yml'),
         changes: { file: changes, keep: 500, writes: fsWrites() }
     };
 }

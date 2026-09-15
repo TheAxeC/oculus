@@ -187,6 +187,34 @@ export type ConfigPayload = {
     findings: Finding[];
 };
 
+/**
+ * Which section of the audit a finding belongs to: an open marker left in a document, a manifest
+ * field a live project has not filled in, a folder the tier standard does not name, a status the
+ * project's own tier and type contradict, a field that has stopped being a glance, and the public
+ * website's list against the portfolio.
+ */
+export type AuditKind = 'todo' | 'data' | 'conform' | 'manifest' | 'readability' | 'publink';
+
+/**
+ * One thing the hub is missing. `scope` is the project folder, the collection key or the website,
+ * `where` the file, field or entry it is about, and `signature` the twelve hex characters the mute
+ * list in config/behavior.yml holds.
+ */
+export type AuditFinding = {
+    scope: string;
+    where: string;
+    kind: AuditKind;
+    message: string;
+    signature: string;
+};
+
+/** The payload of the `audit` channel: what the scan found, and what the reader has parked. */
+export type AuditPayload = {
+    findings: AuditFinding[];
+    /** The signatures of config/behavior.yml's `audit_ignore:`. */
+    muted: string[];
+};
+
 /** The four complete feed states carried together on the `feeds` channel. */
 export type FeedsPayload = Record<
     FeedKind,

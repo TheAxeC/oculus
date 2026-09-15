@@ -22,8 +22,15 @@
 // a subtask line and a career host, writes/bodies.ts for the ten body parsers. Everything they
 // export that this file exported before the split is re-exported here, so an importer names either.
 
+import { join } from 'node:path';
 import { portfolioConfigFrom } from '../data/index.ts';
-import { changesKeep, engineDir, loadConfig, loadLocal } from '../data/sources/config.ts';
+import {
+    changesKeep,
+    configDir,
+    engineDir,
+    loadConfig,
+    loadLocal
+} from '../data/sources/config.ts';
 import { hasToken, sameOrigin } from './auth.ts';
 import { changeAt, defaultChangesPath, logChanges, pathOf } from './changes.ts';
 import { undoChange } from './writes/undo.ts';
@@ -33,6 +40,7 @@ import { projects as projectsOf } from './sessions/hooks.ts';
 import type { HubLike } from './sessions/hooks.ts';
 import { createIdea, writeManifest } from './writes/manifest.ts';
 import { writeDeck } from './writes/deck.ts';
+import { writeMute } from './writes/audit-mute.ts';
 import { createEntry, removeEntry, reorderCollection, writeEntry } from './writes/entries.ts';
 import { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 import {
@@ -44,6 +52,7 @@ import {
     writeFeedField
 } from './feeds.ts';
 import {
+    auditMuteWrite,
     deckWrite,
     deleteEntryWrite,
     entryWrite,
@@ -94,6 +103,12 @@ export type WriteTarget = {
      * behind. A caller with no server in hand holds none, and then a write records nothing.
      */
     changes?: ChangeLog;
+    /**
+     * The engine's own config/behavior.yml, where the audit's mute list lives. It is named here
+     * rather than reached for, so a test writes a copy and the browser layer writes the copy
+     * OCULUS_CONFIG points at rather than the checkout's.
+     */
+    behaviorFile: string;
 };
 
 export type WriteOutcome = {
@@ -121,7 +136,9 @@ export {
 } from './writes/entries.ts';
 export { writeHost, writeSubtask, writeSubtaskAdd } from './writes/subtasks.ts';
 export type { SubtaskAction, SubtaskTarget } from './writes/subtasks.ts';
+export { writeMute } from './writes/audit-mute.ts';
 export {
+    auditMuteWrite,
     deckWrite,
     deleteEntryWrite,
     entryWrite,
@@ -141,6 +158,9 @@ export {
     undoWrite
 } from './writes/bodies.ts';
 export { undoChange, valueNow } from './writes/undo.ts';
+
+/** The engine config file the audit's mute list lives in. */
+const BEHAVIOR = 'behavior.yml';
 
 function json(status: number, body: unknown): Response {
     return new Response(JSON.stringify(body), {
@@ -167,6 +187,7 @@ export function target(server?: { hub: HubLike; fsWrites: FsWrites }): WriteTarg
         overrides: local.sessionsOverrides,
         projects: () => (server === undefined ? [] : projectsOf(server.hub)),
         bookmarks: local.bookmarks ?? defaultBookmarksPath(),
+        behaviorFile: join(configDir(engine), BEHAVIOR),
         changes:
             server === undefined
                 ? undefined
@@ -389,6 +410,22 @@ export async function handleWrite(
             return json(outcome.error === 'unwritable' ? 500 : 400, { error: outcome.error });
         }
         return answer({ found: true, ...outcome }, 'deck', into);
+    }
+
+    const mute = auditMuteWrite(body);
+    if (mute !== null) {
+        let outcome;
+        try {
+            outcome = writeMute(into.behaviorFile, mute.signature, mute.muted);
+        } catch {
+            // The file is the reader's own configuration and anything about it can go wrong on this
+            // machine; the page is told which of the refusals it was and the file is left alone.
+            return json(500, { error: 'unwritable' });
+        }
+        if ('error' in outcome) {
+            return json(outcome.error === 'unwritable' ? 500 : 400, { error: outcome.error });
+        }
+        return answer({ found: true, ...outcome }, 'audit-mute', into);
     }
 
     const idea = newIdea(body);

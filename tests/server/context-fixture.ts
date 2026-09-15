@@ -46,6 +46,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
     let closed = false;
     const context: ServerContext = {
         hub,
+        memories: { refused: new Set<string>() },
         terminals,
         hooks,
         git: { refresh: noop, close: noop },

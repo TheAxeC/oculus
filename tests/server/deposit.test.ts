@@ -234,7 +234,8 @@ beforeAll(() => {
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
         overrides: join(dir, 'sessions.json'),
         projects: () => [],
-        bookmarks: join(dir, 'bookmarks.yml')
+        bookmarks: join(dir, 'bookmarks.yml'),
+        behaviorFile: join(dir, 'behavior.yml')
     };
 });
 

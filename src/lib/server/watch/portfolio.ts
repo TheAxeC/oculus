@@ -1,4 +1,4 @@
-// Layer 2, server. The `portfolio`, `config`, and `feeds` channels: build once at start, then rebuild
+// Layer 2, server. The `portfolio`, `config`, `feeds` and `audit` channels: build once at start, then rebuild
 // and publish whenever a source file changes. This is DESIGN.md's third row of "Hot
 // reload", the one that is identical in development and in production, and the reason the page
 // never polls.
@@ -23,6 +23,7 @@ import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
 import { buildPortfolio, portfolioConfigFrom } from '../../data/index.ts';
+import { AUDIT_PATHS, auditFindings, auditRules, mutedSignatures } from '../audit.ts';
 import {
     configDir,
     iconFindings,
@@ -36,7 +37,7 @@ import { PRESENT_DOC } from '../../data/sources/present.ts';
 import { docFindings, layoutFile } from '../docs.ts';
 import { readRoots, rootsFile } from '../files.ts';
 import { buildFeeds, isLinkedinFile } from '../feeds.ts';
-import type { ConfigPayload, PortfolioConfig } from '../../data/model.ts';
+import type { AuditPayload, ConfigPayload, PortfolioConfig } from '../../data/model.ts';
 import type { Hub } from '../channels.ts';
 
 export type WatchPaths = {
@@ -64,16 +65,37 @@ const DEBOUNCE = 200;
 const NEVER = ['code', 'attic'];
 
 /**
- * Whether a watch event is one of ours: a YAML file, or a project's PRESENT.md, outside every
- * `code/` and `attic/` folder. PRESENT.md is here because its front matter is in the snapshot, so a
- * slide saved has to reach the open deck the way a changed manifest reaches the open board.
+ * Whether the path names something the audit scan reads: one of its documents, by the last segments
+ * of the path, or one of the folders it reports, by any segment. The scan reads the disk, so an
+ * event on one of these is the only way a marker added to a README or a `paper/` folder made by hand
+ * reaches the open Audit view.
+ */
+export function audited(parts: string[]): boolean {
+    return AUDIT_PATHS.some((wanted) => {
+        const want = wanted.split('/');
+        // A folder is named by any segment of the path, since both its own event and an event on a
+        // file inside it mean it is there; a document is the last segments and nothing else.
+        if (want.length === 1 && !want[0].includes('.')) return parts.includes(want[0]);
+        if (parts.length < want.length) return false;
+        return want.every((one, at) => parts[parts.length - want.length + at] === one);
+    });
+}
+
+/**
+ * Whether a watch event is one of ours: a YAML file, a project's PRESENT.md, or one of the documents
+ * and folders the audit scan reads, outside every `code/` and `attic/` folder. PRESENT.md is here
+ * because its front matter is in the snapshot, so a slide saved has to reach the open deck the way a
+ * changed manifest reaches the open board. `code/README.md` is the one path taken from inside a
+ * `code/` folder: the deposit holds thousands of files and none of the others is read by anything.
  */
 export function relevant(filename: string | null): boolean {
     if (filename === null || filename === '') return false;
-    const parts = filename.split(/[/\\]/);
-    if (parts.some((part) => NEVER.includes(part))) return false;
+    const parts = filename.split(/[/\\]/).filter((part) => part !== '');
+    if (parts.length === 0) return false;
     const name = parts[parts.length - 1];
-    return name.endsWith('.yml') || name === PRESENT_DOC;
+    const deposit = parts.length >= 2 && parts[parts.length - 2] === 'code' && name === 'README.md';
+    if (!deposit && parts.some((part) => NEVER.includes(part))) return false;
+    return name.endsWith('.yml') || name === PRESENT_DOC || audited(parts);
 }
 
 /**
@@ -96,8 +118,18 @@ export function namedByConfig(hub: string, config: PortfolioConfig): (path: stri
     const perProject = [MANIFEST, PRESENT_DOC];
     return (path: string): boolean => {
         if (files.has(path)) return true;
-        if (!perProject.includes(basename(path))) return false;
-        return tiers.some((tier) => path.startsWith(tier));
+        const tier = tiers.find((one) => path.startsWith(one));
+        if (tier === undefined) return false;
+        if (perProject.includes(basename(path))) return true;
+        // The audit reads a project's documents and folders off the disk, so an event on one of them
+        // under a tier is a rebuild like a changed manifest; the path is read tier-relative, so a
+        // folder of the hub above the tier never counts as one of a project's.
+        return audited(
+            path
+                .slice(tier.length)
+                .split(sep)
+                .filter((part) => part !== '')
+        );
     };
 }
 
@@ -261,7 +293,26 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             const portfolio = portfolioConfigFrom(config);
             named = namedByConfig(paths.hub, portfolio);
             const version = hub.nextVersion('portfolio');
-            hub.publish('portfolio', buildPortfolio(paths.hub, portfolio, version));
+            const snapshot = buildPortfolio(paths.hub, portfolio, version);
+            hub.publish('portfolio', snapshot);
+            // The audit reads the disk, so it runs here, once per rebuild, and never per request.
+            // It is published inside its own guard: a scan that throws leaves the previous audit
+            // standing and must not take the portfolio down with it.
+            try {
+                const audit: AuditPayload = {
+                    findings: auditFindings({
+                        hub: paths.hub,
+                        projects: Object.values(snapshot.entities.projects),
+                        collections: Object.values(snapshot.entities.collections),
+                        rules: auditRules(config),
+                        catalog: textCatalog(config)
+                    }),
+                    muted: mutedSignatures(config)
+                };
+                hub.publish('audit', audit);
+            } catch (error) {
+                console.error(`portfolio watch: the audit scan failed: ${reason(error)}`);
+            }
             const linkedinDir = join(paths.hub, portfolio.feeds.linkedin);
             const yamlFeedDirs = new Set([
                 dirname(join(paths.hub, portfolio.feeds.inbox)),

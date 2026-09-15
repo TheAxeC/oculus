@@ -189,7 +189,7 @@ export function findGlobalState(sourceRoot: string): string[] {
 /**
  * Module-level bindings that are not a store, listed by name.
  *
- * The server's two are lookup tables written once at load. The client's are the four catalogs:
+ * The server's three are lookup tables written once at load. The client's are the four catalogs:
  * state/text.ts, state/tones.ts and state/appearance.ts hold what the server last sent, are never
  * written after a push installs them, and are read by t(), toneOf() and themes() from every layer,
  * `ui/` included, where there is no client object to read them from. The two runes beside them,
@@ -198,6 +198,7 @@ export function findGlobalState(sourceRoot: string): string[] {
  * the one set of maps they both read.
  */
 const FROZEN = [
+    'lib/server/audit.ts:STOPWORDS',
     'lib/server/pty/channel.ts:CHANGE_EVENTS',
     'lib/server/pty/tmux.ts:SINGLES',
     'lib/state/text.ts:catalog',

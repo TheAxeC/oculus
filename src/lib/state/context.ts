@@ -15,6 +15,7 @@
 import { createRegistry, type RegistryStore } from '../views/registry.ts';
 import { createTipIds, type TipIds } from '../ui/tip-ids.ts';
 import { createChanges, type ChangesStore } from './changes.svelte.ts';
+import { createAudit, type AuditStore } from './audit.svelte.ts';
 import { createClock, type ClockStore } from './clock.svelte.ts';
 import { createDeposit, type DepositStore } from './deposit.svelte.ts';
 import { createDocs, type DocsStore } from './docs.svelte.ts';
@@ -25,6 +26,7 @@ import { createFiles, type FilesStore } from './files.svelte.ts';
 import { createFs, type FsStore } from './fs.svelte.ts';
 import { createHpc, type HpcStore } from './hpc.svelte.ts';
 import { createLayout, type LayoutStore } from './layout.svelte.ts';
+import { createMemories, type MemoriesStore } from './memories.svelte.ts';
 import { createPaletteSource, type PaletteSourceStore } from './palette-source.svelte.ts';
 import { createPresent, type PresentStore } from './present.svelte.ts';
 import { createRailBadges, type RailBadgesStore } from './rail-badges.svelte.ts';
@@ -58,6 +60,8 @@ export type ClientState = {
     source: SourceStore;
     feeds: FeedsStore;
     hpc: HpcStore;
+    audit: AuditStore;
+    memories: MemoriesStore;
     present: PresentStore;
     usageRefresh: UsageRefreshStore;
     selectors: SelectorsStore;
@@ -91,10 +95,12 @@ export function createClientState(): ClientState {
     const source = createSource(writes, ui);
     const feeds = createFeeds(entities);
     const hpc = createHpc(entities, writes);
+    const audit = createAudit(entities);
+    const memories = createMemories();
     const present = createPresent(entities);
     const usageRefresh = createUsageRefresh(entities, writes);
     const selectors = createSelectors(entities, layout, selection);
-    const railBadges = createRailBadges(entities, feeds, hpc, selectors);
+    const railBadges = createRailBadges(entities, feeds, hpc, audit, selectors);
     const paletteSource = createPaletteSource(entities, feeds);
     const registry = createRegistry(layout);
     const tipIds = createTipIds();
@@ -117,6 +123,8 @@ export function createClientState(): ClientState {
         source,
         feeds,
         hpc,
+        audit,
+        memories,
         present,
         usageRefresh,
         selectors,

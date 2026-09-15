@@ -575,9 +575,9 @@ describe('the groups of the real config', () => {
         return sections.find((found) => found.label === label)?.items ?? [];
     }
 
-    it('draws Personal for its two documents alone, and puts the third in System', () => {
+    it('draws Personal for the wall and its two documents, and puts the third in System', () => {
         const personal = sections.find((found) => found.label === 'Personal');
-        expect(personal?.items).toEqual([]);
+        expect(personal?.items.map((view) => view.id)).toEqual(['memories']);
         expect(personal?.docs.map((entry) => entry.path)).toEqual([
             'RESEARCH-APPROACH.md',
             'AGENT-APPROACH.md'
@@ -592,6 +592,7 @@ describe('the groups of the real config', () => {
             'usage',
             'help',
             'config',
+            'audit',
             'history'
         ]);
         expect(isFlyout(system)).toBe(true);
@@ -672,7 +673,8 @@ describe('the groups of the real config', () => {
             'radar',
             'leads',
             'inbox',
-            'linkedin'
+            'linkedin',
+            'memories'
         ]);
         expect(order.chords[config.direct_chord as string]).toEqual(order.direct);
         expect(order.all).toContain('funding');
@@ -703,6 +705,7 @@ describe('the groups of the real config', () => {
             'usage',
             'help',
             'config',
+            'audit',
             'history'
         ]);
         expect(Object.keys(order.chords).sort()).toEqual(['c', 'm', 's', 'v', 'y']);

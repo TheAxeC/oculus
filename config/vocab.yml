@@ -217,7 +217,7 @@ archive_dead: [nogo, dropped, disproved, abandoned, parked]
 leads_fit: { strong: "#16a34a", moderate: "#b45309", reach: "#9ca3af" }
 
 
-# Project lifecycle vocab - the single source for the status guardrails in selftest.py. `archive_outcomes` =
+# Project lifecycle vocab - the single source for the status guardrails the Audit view reports. `archive_outcomes` =
 # the `type:` set on archiving, and the conventional archive/<outcome>/ filing folder (archive is a NESTED
 # tier, so the folder is a convention here, not a rule the engine reads). `live_chips` = in-flight chips a
 # terminal project must not still carry - clear them when you archive, or the guardrail flags it.
@@ -226,6 +226,11 @@ lifecycle:
   archive_outcomes: [published, nogo, dropped, disproved, phd]
   live_chips: [submit-ready, submitted, revision, accepted, in-prep, blocked, numbers-pending, results-positive, admin-prep]
   terminal_types: [published, nogo, dropped, disproved, abandoned, phd, tech-report, software]
+  author_chips: [lead, coauthor]   # one of these marks the author role on finished or contributed work
+  contradictory_chips:             # chip pairs that cannot both be true; the audit reports a project carrying one pair
+    - [submit-ready, submitted]
+    - [submit-ready, blocked]
+    - [submit-ready, numbers-pending]
 
 arch_color:
   published: "#16a34a"

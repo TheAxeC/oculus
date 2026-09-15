@@ -95,6 +95,9 @@ export type DeckWrite = { kind: 'deck'; selection: string[]; order: string[] };
 export type LinkedinIdeaWrite = { kind: 'linkedin-idea'; title: string; category: string };
 export type LinkedinPostWrite = { kind: 'linkedin-post'; file: string };
 
+/** One audit finding parked, or brought back, by the signature the scan gave it. */
+export type AuditMuteWrite = { kind: 'audit-mute'; signature: string; muted: boolean };
+
 const ACTIONS: SubtaskAction[] = ['done', 'reopen', 'snooze', 'delete'];
 
 /** The `target` of a subtask body: `{ id }` for a manifest, `{ collection, id }` for an entry. */
@@ -302,4 +305,12 @@ export function newIdea(body: unknown): NewIdeaWrite | null {
     if (!isMap(body.fields)) return null;
     if (typeof body.fields.id !== 'string' || body.fields.id === '') return null;
     return { kind: 'new-idea', fields: body.fields };
+}
+
+/** The body as a mute write, or null when it is not one. The signature itself is checked by the writer. */
+export function auditMuteWrite(body: unknown): AuditMuteWrite | null {
+    if (!isMap(body) || body.kind !== 'audit-mute') return null;
+    if (typeof body.signature !== 'string' || body.signature === '') return null;
+    if (typeof body.muted !== 'boolean') return null;
+    return { kind: 'audit-mute', signature: body.signature, muted: body.muted };
 }

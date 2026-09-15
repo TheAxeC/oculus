@@ -22,6 +22,7 @@ import { RateLimiter, notifyConfig, type HookTarget } from './hooks.ts';
 import type { LogPaths } from './hpc/actions.ts';
 import type { Plan } from './deposit.ts';
 import { fsWrites, type FsWrites } from './fs.ts';
+import { memoriesMemory, type MemoriesMemory } from './memories.ts';
 import { wallpaperMemory, type WallpaperMemory } from './wallpaper.ts';
 import { watchHpc, type HpcOptions, type HpcWatcher } from './hpc/poll.ts';
 import { Terminals } from './pty/channel.ts';
@@ -55,6 +56,8 @@ export type ServerContext = {
     depositPlans: Map<string, Plan>;
     /** The wallpaper pick and the refused directories. */
     wallpaper: WallpaperMemory;
+    /** The Memories wall's refused directories, so a bad setting is reported once. */
+    memories: MemoriesMemory;
     /**
      * The drawing of every icon config/icons.yml names, read once here and again whenever the
      * watcher publishes a config push, so a page load reads what is held rather than the disk.
@@ -193,6 +196,7 @@ export function createServerContext(
         hpcLogPaths,
         depositPlans: new Map(),
         wallpaper: wallpaperMemory(),
+        memories: memoriesMemory(),
         icons,
         close(): void {
             if (closed) return;
