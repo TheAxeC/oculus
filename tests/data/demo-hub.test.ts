@@ -68,12 +68,14 @@ describe('the demo hub', () => {
         });
     });
 
-    it('joins each joint-work entry to its person and each person to their organisation', () => {
+    it('joins each joint-work entry to its person and each person to their organisations', () => {
         expect(snapshot.relations.jointWorkPerson).toEqual([
             ['chen-graph', 'chen-graph'],
             ['rivera-lab', 'rivera-lab']
         ]);
-        expect(snapshot.entities.people['rivera-lab'].affiliation).toBe('northwood-university');
+        expect(snapshot.entities.people['rivera-lab'].affiliations).toEqual([
+            'northwood-university'
+        ]);
         expect(snapshot.entities.organisations['northwood-university'].personIds).toEqual([
             'owner',
             'rivera-lab'

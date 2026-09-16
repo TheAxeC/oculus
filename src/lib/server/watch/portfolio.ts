@@ -25,6 +25,7 @@ import { basename, dirname, join, sep } from 'node:path';
 import { buildPortfolio, portfolioConfigFrom } from '../../data/index.ts';
 import { AUDIT_PATHS, auditFindings, auditRules, mutedSignatures } from '../audit.ts';
 import {
+    behaviorFindings,
     configDir,
     iconFindings,
     iconSet,
@@ -284,6 +285,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                     findings: [
                         ...findings,
                         ...iconFindings(paths.engine, config),
+                        ...behaviorFindings(paths.engine, config),
                         ...readRoots(config, rootsFile(paths.engine)).findings,
                         ...docFindings(config, paths.hub, layoutFile(paths.engine))
                     ]

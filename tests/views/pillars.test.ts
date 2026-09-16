@@ -57,6 +57,12 @@ function withPillarTypes(types: string[]): Snapshot {
 }
 
 describe('the Pillars view', () => {
+    it('closes its toolbar with the control that opens registries/pillars.yml', () => {
+        const body = html();
+        expect(body).toContain('data-source-path="registries/pillars.yml"');
+        expect(body).toContain(catalog['views.open_source']);
+    });
+
     it('draws the intro, add control, line metrics, prose, edits and project groups', () => {
         const body = html();
         expect(body).toMatch(/class="intro(?:\s|")/);

@@ -15,7 +15,7 @@ text:
         connecting: connecting...
         error: error
         every: every {0}m
-        footer: Read-only over {0} days back and {1} days ahead.
+        footer: Read-only over {0} days back and {1} days ahead. A Google account reads the calendars ticked in Google's own calendar list, and no others.
         last_ok: last read {0}
         live: live
         needs_file: Put the client id in {0}, then press Connect.

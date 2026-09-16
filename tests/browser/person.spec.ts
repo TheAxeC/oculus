@@ -1,6 +1,6 @@
 // The Person view, opened in Chrome from the collaborator tag on a project card. The tag is the way
 // into it a reader has on the board, and what lands is a tab of its own drawing that person's
-// organisation, their joint work and the projects whose `collaborators:` name them.
+// organisations, their joint work and the projects whose `collaborators:` name them.
 //
 // Only a rendered page holds this: the tag opens a tab through the layout store, and whether that tab
 // is the one the pane shows is the workbench's answer rather than the view's.

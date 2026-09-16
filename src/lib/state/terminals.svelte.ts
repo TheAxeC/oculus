@@ -13,7 +13,7 @@
 // POST carries the token state/writes.svelte.ts holds, and the socket carries it in its subscribe
 // message, which is what lets that socket send input at all.
 
-import { chatSkipPermissions } from '../data/chat.ts';
+import { taskSkipPermissions } from '../data/tasks.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
 import type { SocketStore } from './socket.svelte.ts';
 import { t } from './text.ts';
@@ -287,11 +287,11 @@ export function createTerminals(
 
     /**
      * Whether a task started now runs with the CLI's permission prompts turned off. The rule is
-     * data/chat.ts's, the one the server builds the argv from, so what the tray tells the reader and
+     * data/tasks.ts's, the one the server builds the argv from, so what the tray tells the reader and
      * what the command does are one answer to one configured key.
      */
     function taskSkipsPermissions(): boolean {
-        return chatSkipPermissions(entities.config()?.config ?? {});
+        return taskSkipPermissions(entities.config()?.config ?? {});
     }
 
     /**

@@ -22,6 +22,7 @@ import {
 } from './board/index.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
 import { byKey } from '../data/guards.ts';
+import { paintLimit } from '../data/editor.ts';
 import type { LayoutStore } from './layout.svelte.ts';
 import { choicesFor, formFields, formSections } from './schema.ts';
 import { pinnedSession } from './selection.svelte.ts';
@@ -73,6 +74,7 @@ function inside(path: string | null, folder: string): boolean {
 /** The joins over what the socket delivered, for one client. */
 export type SelectorsStore = {
     configMap: () => Record<string, unknown>;
+    paintLimit: () => number | null;
     boardPreset: (view: string) => BoardPreset;
     board: (preset: BoardPreset) => BoardItem[];
     boardStats: (items: BoardItem[]) => BoardStats;
@@ -111,6 +113,14 @@ export function createSelectors(
     /** The merged config the `config` channel delivered, or an empty map before the first message. */
     function configMap(): Record<string, unknown> {
         return entities.config()?.config ?? {};
+    }
+
+    /**
+     * The size in bytes above which the source editor paints its mirror without colour,
+     * `editor.paint_limit_kb` of config/behavior.yml, and null until the config channel has spoken.
+     */
+    function editorPaintLimit(): number | null {
+        return paintLimit(configMap());
     }
 
     /** The preset of one view id, over the config as it currently stands. */
@@ -418,6 +428,7 @@ export function createSelectors(
 
     return {
         configMap,
+        paintLimit: editorPaintLimit,
         boardPreset,
         board,
         boardStats,

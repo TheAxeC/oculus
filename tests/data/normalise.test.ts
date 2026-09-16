@@ -175,14 +175,14 @@ function portfolio(): RawPortfolio {
                 {
                     key: 'someone',
                     name: 'Someone Else',
-                    affiliation: 'twente',
+                    affiliations: ['twente', 'fwo', 'nowhere'],
                     role: 'co-author',
                     orcid: '0000-0000-0000-0000',
                     email: 'someone@example.invalid',
                     links: ['https://example.invalid/someone'],
                     self: true
                 },
-                { key: 'nobody-home', name: 'Nobody Home', affiliation: 'nowhere' }
+                { key: 'nobody-home', name: 'Nobody Home', affiliation: 'twente' }
             ]),
             organisations: entries('organisations', [
                 { key: 'twente', name: 'University of Twente', kind: 'university', country: 'NL' },
@@ -520,9 +520,25 @@ describe('normalise, the relations', () => {
             fundingPillar: [['FAIR', 'federated']],
             projectPerson: [['alpha', 'someone']],
             jointWorkPerson: [],
-            personOrganisation: [['someone', 'twente']],
+            personOrganisation: [
+                ['nobody-home', 'twente'],
+                ['someone', 'fwo'],
+                ['someone', 'twente']
+            ],
             fundingOrganisation: [['FAIR', 'fwo']]
         });
+    });
+
+    it('keeps every affiliations key the organisation registry holds, and drops the rest', () => {
+        expect(snapshot.entities.people.someone.affiliations).toEqual(['twente', 'fwo']);
+        expect(snapshot.entities.organisations.twente.personIds).toEqual([
+            'nobody-home',
+            'someone'
+        ]);
+    });
+
+    it('reads the one key the list replaced as a list of that one', () => {
+        expect(snapshot.entities.people['nobody-home'].affiliations).toEqual(['twente']);
     });
 
     it('fills the other side of each relation on the entity that is pointed at', () => {

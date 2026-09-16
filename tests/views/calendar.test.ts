@@ -216,6 +216,14 @@ describe('the Calendar view', () => {
         expect(body).toContain('Read-only over 1 days back and 14 days ahead.');
     });
 
+    // Which calendars of an account are read is a choice the reader makes at Google rather than
+    // here, so the footer is where they are told where it is made.
+    it("says in the footer which of a Google account's calendars are read", () => {
+        expect(draw(payload)).toContain(
+            "A Google account reads the calendars ticked in Google's own calendar list, and no others."
+        );
+    });
+
     it('says the agenda is empty when the window holds nothing', () => {
         const body = draw({ ...payload, events: [] });
         expect(body).toContain('No events in this window.');

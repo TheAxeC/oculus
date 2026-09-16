@@ -187,6 +187,16 @@ function tagLabels(html: string): string[] {
 }
 
 describe('the Data view', () => {
+    it('closes its toolbar with the control that opens registries/data.yml', () => {
+        receive({ channel: 'portfolio', version: 25, payload: snapshot(DATASETS) });
+        const body = render(Data, {
+            context: clientContext(client),
+            props: { instance: instance() }
+        }).body;
+        expect(body).toContain('data-source-path="registries/data.yml"');
+        expect(body).toContain(catalog['views.open_source']);
+    });
+
     it('draws the intro, controls, facets and every dataset card in file order', () => {
         receive({ channel: 'portfolio', version: 25, payload: snapshot(DATASETS) });
         setInstanceState(INSTANCE, { search: '', off: [], reveal: 'open' });

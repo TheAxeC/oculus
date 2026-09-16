@@ -18,7 +18,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
         hubFor: () => server.local.hub,
         projectFor: (id) => project(server.hub, id),
         // Read from disk on this request rather than from the snapshot the context took at start:
-        // `chat.skip_permissions` decides both the argv here and the confirmation the tray draws,
+        // `tasks.skip_permissions` decides both the argv here and the confirmation the tray draws,
         // and the tray reads the config channel, which republishes on every save. A start-time copy
         // would let the two disagree until a restart, with the flag on and nothing asking first.
         configFor: () => loadConfig(server.engine).config,

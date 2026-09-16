@@ -8,11 +8,16 @@
 // half to `registries/people.yml` and `registries/organisations.yml` and leaves the second half in
 // `network/joint-work.yml`, where each entry names its person by key.
 //
+// A person belongs to every organisation their Institution row names, so `affiliations:` is a list
+// with the primary first. `--from <file>` reads those rows out of a collaborations file the hub no
+// longer has, which is how a hub whose people were written from the first organisation alone gains
+// the rest; a tool script never runs git, so the file is handed to it rather than read from history.
+//
 // It is idempotent: a registry already on the hub is read first and its entries are kept as they are,
 // so a second run over a migrated hub writes the same bytes, and a run over a hub that has gained a
 // collaborations entry since adds that one and touches nothing else. Run it as
 //
-//     node bin/migrate-joint-work.mjs <hub> [--self-key k] [--self-name n] [--self-role r]
+//     node bin/migrate-joint-work.mjs <hub> [--from f] [--self-key k] [--self-name n] [--self-role r]
 //
 // and it prints, per file, what it wrote and what it could not fill in.
 
@@ -33,9 +38,9 @@ const PERSON_ROWS = ['Institution', 'Role'];
 /**
  * What the hub's own organisation spellings mean. The registry's `name` is never taken from here: it
  * is the string the hub wrote, first spelling wins. `alias` folds a second spelling of one
- * organisation onto the first, since a person's affiliation is one key and two spellings would be two
- * organisations. Anything not named here is written `kind: other` with no country and is listed in
- * the run's output as a row to complete.
+ * organisation onto the first, since two spellings of one organisation would otherwise be two
+ * entries of the registry. Anything not named here is written `kind: other` with no country and is
+ * listed in the run's output as a row to complete.
  */
 const KNOWN = {
     'university-of-twente': { kind: 'university', country: 'NL' },
@@ -139,6 +144,16 @@ function organisationKey(name) {
     return KNOWN[key]?.alias ?? key;
 }
 
+/** The registry keys a list of named organisations comes to, each one recorded as it is reached. */
+function keysOf(named, addOrganisation) {
+    const keys = [];
+    for (const one of named) {
+        const held = addOrganisation(one.name, one.country);
+        if (!keys.includes(held)) keys.push(held);
+    }
+    return keys;
+}
+
 /** The student folders of a hub, each one person the supervision folder is for. */
 function students(hub) {
     const dir = join(hub, STUDENTS);
@@ -159,13 +174,29 @@ function students(hub) {
         });
 }
 
-/** The people an already-migrated hub holds, by key, so a second run keeps what is there. */
+/**
+ * The people an already-migrated hub holds, by key, so a second run keeps what is there. An entry
+ * still written with the one key `affiliation:` is read as a list of that one, which is what makes a
+ * run over such a hub write the list without being told anything about the entry.
+ */
 function existingPeople(hub) {
     const held = new Map();
     for (const entry of entriesOf(read(hub, PEOPLE))) {
-        if (typeof entry.key === 'string' && entry.key !== '') held.set(entry.key, entry);
+        if (typeof entry.key !== 'string' || entry.key === '') continue;
+        const { affiliation, ...rest } = entry;
+        held.set(entry.key, { ...rest, affiliations: affiliationList(entry) });
     }
     return held;
+}
+
+/** The organisation keys one people entry names, taking the one key the list replaced. */
+function affiliationList(entry) {
+    if (Array.isArray(entry.affiliations)) {
+        return entry.affiliations.filter((one) => typeof one === 'string' && one !== '');
+    }
+    return typeof entry.affiliation === 'string' && entry.affiliation !== ''
+        ? [entry.affiliation]
+        : [];
 }
 
 /** The organisations an already-migrated hub holds, by key. */
@@ -188,24 +219,24 @@ const PEOPLE_HEAD = `# People - one entry per human the hub names: a collaborato
 # \`waiting-on:\` points at, a student whose supervision folder is under education/, and the hub's own
 # owner, the one entry carrying \`self: true\`. A person's facts live here and nowhere else, so a name
 # is written once and every card, tag and map node that draws one reads it from this file.
-# \`affiliation:\` is a key of registries/organisations.yml, never a free string.
+# \`affiliations:\` are keys of registries/organisations.yml, never free strings, the primary first.
 
 schema:
-  - { field: key,         type: text,     required: true, label: "Person key" }
-  - { field: name,        type: text,     required: true }
-  - { field: affiliation, type: text,     help: "an organisations.yml key" }
-  - { field: role,        type: text,     help: "what this person is to the hub" }
-  - { field: orcid,       type: text }
-  - { field: email,       type: text }
-  - { field: links,       type: tags }
-  - { field: folder,      type: text,     help: "hub-relative folder of a student's supervision files" }
-  - { field: self,        type: checkbox, help: "true on the hub owner's own entry, exactly one" }
+  - { field: key,          type: text,     required: true, label: "Person key" }
+  - { field: name,         type: text,     required: true }
+  - { field: affiliations, type: tags,     help: "organisations.yml keys, the primary first" }
+  - { field: role,         type: text,     help: "what this person is to the hub" }
+  - { field: orcid,        type: text }
+  - { field: email,        type: text }
+  - { field: links,        type: tags }
+  - { field: folder,       type: text,     help: "hub-relative folder of a student's supervision files" }
+  - { field: self,         type: checkbox, help: "true on the hub owner's own entry, exactly one" }
 
 entries:
 `;
 
 const ORGANISATIONS_HEAD = `# Organisations - the universities, hospitals, funders and companies the hub names. A person's
-# \`affiliation:\` in registries/people.yml and a funding scheme's \`funder:\` in funding/funding.yml are
+# \`affiliations:\` in registries/people.yml and a funding scheme's \`funder:\` in funding/funding.yml are
 # keys into this file, so an organisation is spelled once and drawn the same way everywhere.
 # \`kind:\` is one of university | hospital | funder | company | other.
 
@@ -244,7 +275,9 @@ entries:
 function personBlock(entry) {
     const out = [`  - key: ${quoted(entry.key)}`];
     out.push(...line('    ', 'name', entry.name));
-    out.push(...line('    ', 'affiliation', entry.affiliation));
+    if (Array.isArray(entry.affiliations) && entry.affiliations.length > 0) {
+        out.push(`    affiliations: [${entry.affiliations.map(quoted).join(', ')}]`);
+    }
     out.push(...line('    ', 'role', entry.role));
     out.push(...line('    ', 'orcid', entry.orcid));
     out.push(...line('    ', 'email', entry.email));
@@ -296,7 +329,7 @@ function workBlock(entry) {
 }
 
 /** The whole migration over one hub, and the lines the run prints about it. */
-function migrate(hub, self) {
+function migrate(hub, self, from) {
     const said = [];
     const source = existsSync(join(hub, SOURCE)) ? SOURCE : JOINT_WORK;
     const data = read(hub, source);
@@ -329,17 +362,12 @@ function migrate(hub, self) {
         const sub = typeof entry.sub === 'string' ? entry.sub : '';
         const institution = metaRow(entry, 'Institution');
         const role = metaRow(entry, 'Role');
-        const named = organisationsOf(institution ?? '');
-        let affiliation;
-        for (const one of named) {
-            const held = addOrganisation(one.name, one.country);
-            affiliation ??= held;
-        }
+        const affiliations = keysOf(organisationsOf(institution ?? ''), addOrganisation);
         // An entry that already names a person has had its person facts taken out of it, so its
         // title is the work and no name can be read from it; the registry already holds that person.
         const migrated = typeof entry.person === 'string';
         if (!migrated && !people.has(key)) {
-            people.set(key, { key, name: nameOf(title), affiliation, role: role ?? sub });
+            people.set(key, { key, name: nameOf(title), affiliations, role: role ?? sub });
         }
         work.push({
             key,
@@ -355,6 +383,17 @@ function migrate(hub, self) {
             followup: typeof entry.followup === 'string' ? entry.followup : '',
             related: Array.isArray(entry.related) ? entry.related : []
         });
+    }
+
+    // The Institution rows of a file the hub no longer has: every organisation a row names becomes a
+    // key of that person's list, which is what a hub whose entries hold the first one alone is missing.
+    for (const entry of entriesOf(from === '' ? {} : read('', from))) {
+        const key = typeof entry.key === 'string' ? entry.key : '';
+        const institution = metaRow(entry, 'Institution');
+        if (key === '' || institution === undefined || !people.has(key)) continue;
+        const affiliations = keysOf(organisationsOf(institution), addOrganisation);
+        if (affiliations.length === 0) continue;
+        people.set(key, { ...people.get(key), affiliations });
     }
 
     for (const one of students(hub)) {
@@ -390,30 +429,38 @@ function migrate(hub, self) {
 /** The command line: the hub, then the hub owner's own person entry. */
 function options(argv) {
     const rest = [];
+    let from = '';
     const self = {
         key: 'axel-faes',
         name: 'Axel Faes',
         role: 'postdoc',
-        affiliation: 'university-of-twente'
+        affiliations: ['university-of-twente']
     };
     for (let at = 0; at < argv.length; at += 1) {
         const arg = argv[at];
         if (arg === '--self-key') self.key = argv[(at += 1)] ?? '';
         else if (arg === '--self-name') self.name = argv[(at += 1)] ?? '';
         else if (arg === '--self-role') self.role = argv[(at += 1)] ?? '';
-        else if (arg === '--self-affiliation') self.affiliation = argv[(at += 1)] ?? '';
+        else if (arg === '--self-affiliation') self.affiliations = [argv[(at += 1)] ?? ''];
+        else if (arg === '--from') from = argv[(at += 1)] ?? '';
         else rest.push(arg);
     }
-    return { hub: rest[0], self };
+    return { hub: rest[0], self, from };
 }
 
-const { hub, self } = options(process.argv.slice(2));
+const { hub, self, from } = options(process.argv.slice(2));
 if (hub === undefined) {
-    console.error('usage: node bin/migrate-joint-work.mjs <hub> [--self-key k] [--self-name n]');
+    console.error(
+        'usage: node bin/migrate-joint-work.mjs <hub> [--from f] [--self-key k] [--self-name n]'
+    );
+    process.exit(2);
+}
+if (from !== '' && !existsSync(from)) {
+    console.error(`no such file: ${from}`);
     process.exit(2);
 }
 if (!existsSync(join(hub, SOURCE)) && !existsSync(join(hub, JOINT_WORK))) {
     console.error(`no ${SOURCE} and no ${JOINT_WORK} under ${hub}`);
     process.exit(2);
 }
-for (const said of migrate(hub, self)) console.log(said);
+for (const said of migrate(hub, self, from)) console.log(said);

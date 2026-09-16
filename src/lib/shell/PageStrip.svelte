@@ -12,7 +12,8 @@
     // drag store's, which is what every pane reports a drop for, so it lands on a pane's edge and is
     // shown there.
 
-    import { pageName, type Arrangement } from '$lib/shell/page-strip';
+    import { closeQuestion } from '$lib/shell/closing';
+    import { pageInstanceIds, pageName, type Arrangement } from '$lib/shell/page-strip';
     import Confirm from '$lib/ui/Confirm.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu-items';
@@ -20,7 +21,7 @@
     import type { Tab } from '$lib/ui/tab-strip';
     import TextInput from '$lib/ui/TextInput.svelte';
     import { THRESHOLD, withoutOwn, type Point } from '$lib/state/drag.svelte';
-    import { panes, type Page } from '$lib/state/layout';
+    import type { Page } from '$lib/state/layout';
     import { lookup, t } from '$lib/state/text';
     import { useState } from '$lib/state/use';
 
@@ -35,7 +36,8 @@
             renamePage,
             switchPage
         },
-        drag: { startPage }
+        drag: { startPage },
+        ui: { unsaved }
     } = useState();
 
     type Props = {
@@ -53,8 +55,12 @@
     const RENAME = 'rename';
     const FROM = 'from:';
 
-    /** The page a close is waiting on, or null when nothing is being asked. */
-    let closing: Page | null = $state(null);
+    /**
+     * The close that is waiting on the dialog: the words it asks and the page a yes closes. A page
+     * takes the same question a pane does over the tabs it would take away, so one tab holding
+     * unsaved text is asked about in the tab's own words.
+     */
+    let confirming: { message: string; id: string } | null = $state(null);
 
     /** The name being typed, or null when no page is being renamed. */
     let draft: string | null = $state(null);
@@ -93,17 +99,35 @@
         return { id: page.id, label, hint: t('ui.page_shortcut', label, index + 1) };
     }
 
-    /** How many tabs a page holds, which is what a close is asked about. */
-    function held(page: Page): number {
-        return panes(page.workbench.root).reduce((count, { pane }) => count + pane.tabs.length, 0);
-    }
-
-    /** A page holding one tab goes at once; any other is asked about first. */
+    /**
+     * Close a page, asking first unless it holds one tab with nothing unsaved in it. More than one
+     * tab is the page's own sentence, which says how many go; one tab holding unsaved text is the
+     * tab sentence, since what would be lost is that text rather than the page.
+     */
     function close(id: string): void {
         const page = shown.find((one) => one.id === id);
         if (page === undefined) return;
-        if (held(page) > 1) closing = page;
-        else closePage(id);
+        const ids = pageInstanceIds(page);
+        const asks = closeQuestion(ids, unsaved);
+        if (asks === 'none') {
+            closePage(id);
+            return;
+        }
+        const message =
+            asks === 'many'
+                ? t('ui.page_close_confirm', pageName(page, shown.indexOf(page)), ids.length)
+                : t('ui.tab_close_dirty');
+        confirming = { message, id };
+    }
+
+    /**
+     * Perform the close the dialog was asking about. The page is read out of the state before the
+     * dialog is taken away, since the markup reads the same state and would have nothing to close.
+     */
+    function confirmed(): void {
+        const id = confirming?.id;
+        confirming = null;
+        if (id !== undefined) closePage(id);
     }
 
     function pick(id: string): void {
@@ -262,20 +286,13 @@
     />
 </section>
 
-{#if closing !== null}
-    {@const page = closing}
+{#if confirming !== null}
     <Confirm
-        message={t('ui.page_close_confirm', pageName(page, shown.indexOf(page)), held(page))}
+        message={confirming.message}
         confirm={t('ui.confirm_ok')}
         cancel={t('ui.confirm_cancel')}
-        onconfirm={() => {
-            // The id is read before the dialog is put away: `page` is the const over `closing`,
-            // and once that is null there is no page to read it from.
-            const id = page.id;
-            closing = null;
-            closePage(id);
-        }}
-        oncancel={() => (closing = null)}
+        onconfirm={confirmed}
+        oncancel={() => (confirming = null)}
     />
 {/if}
 

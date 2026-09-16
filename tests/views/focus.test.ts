@@ -242,6 +242,7 @@ function snapshot(): Snapshot {
                 someone: {
                     id: 'someone',
                     name: 'Some One',
+                    affiliations: [],
                     links: [],
                     projectIds: [],
                     jointWorkIds: []
@@ -333,6 +334,7 @@ function bare(): Snapshot {
                 someone: {
                     id: 'someone',
                     name: 'Some One',
+                    affiliations: [],
                     links: [],
                     projectIds: [],
                     jointWorkIds: []

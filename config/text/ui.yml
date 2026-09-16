@@ -44,6 +44,7 @@ text:
         sash: Resize
         split_down: Split tab downwards
         split_right: Split tab to the right
+        tab_close_dirty: Close this tab and lose its unsaved changes?
         tabs_scroll_left: Scroll tabs left
         tabs_scroll_right: Scroll tabs right
         theme: Theme

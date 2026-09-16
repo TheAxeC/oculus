@@ -69,6 +69,7 @@ describe('ServerContext', () => {
                     prewarm: false
                 },
                 calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
+                editor: { paint_limit_kb: 64 },
                 usage_tiers: {},
                 usage_refresh_min: 5,
                 usage_refresh_model: 'model',
@@ -161,6 +162,7 @@ describe('ServerContext', () => {
                         prewarm: false
                     },
                     calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
+                    editor: { paint_limit_kb: 64 },
                     usage_tiers: {},
                     usage_refresh_min: 5,
                     usage_refresh_model: 'model'

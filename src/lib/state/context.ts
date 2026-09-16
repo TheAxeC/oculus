@@ -100,6 +100,9 @@ export function createClientState(): ClientState {
     const deposit = createDeposit();
     const transcripts = createTranscripts();
     const source = createSource(writes, ui);
+    // The pane asks the instance id whether a tab holds unsaved text before it closes it, and asks
+    // the ui store rather than the source store, which the shell may not read.
+    ui.registerUnsaved(source.sourceDirty);
     const feeds = createFeeds(entities);
     const hpc = createHpc(entities, writes);
     const calendar = createCalendar(entities, writes, clock);

@@ -77,6 +77,8 @@ describe("oculus's own config directory", () => {
             'file_index',
             'slurm',
             'chat',
+            'tasks',
+            'editor',
             'notify',
             'notes',
             'changes',

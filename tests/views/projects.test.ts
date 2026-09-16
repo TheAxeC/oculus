@@ -177,6 +177,7 @@ function snapshot(): Snapshot {
                 someone: {
                     id: 'someone',
                     name: 'Someone Else',
+                    affiliations: [],
                     links: [],
                     projectIds: [],
                     jointWorkIds: []

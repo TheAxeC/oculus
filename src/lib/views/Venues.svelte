@@ -21,6 +21,7 @@
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
+    import SourceButton from '$lib/views/shared/SourceButton.svelte';
     import Intro from '$lib/views/shared/Intro.svelte';
     import Reveal from '$lib/views/shared/Reveal.svelte';
     import Facets from '$lib/views/venues/Facets.svelte';
@@ -37,17 +38,20 @@
     } from '$lib/state/venues';
     import { cardCursor } from '$lib/state/instance';
     import { t } from '$lib/state/text';
+    import { viewSourceFile } from '$lib/state/view-source';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
     const {
-        selectors: { archiveDead, collectionOf, projects, venues },
+        selectors: { archiveDead, collectionOf, configMap, projects, venues },
         ui: { instanceState, setInstanceState }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
     const collection = $derived(collectionOf('venues'));
+    /** The registry file this view is drawn from, which the control at the end of the toolbar opens. */
+    const source = $derived(viewSourceFile('venues', configMap()));
     const allVenues = $derived(venues());
     const allProjects = $derived(realProjects(projects(), archiveDead()));
     const held = $derived(parseVenuesState(instanceState(instance.id)));
@@ -94,6 +98,9 @@
             placeholder={t('collection.search', t('views.venues'))}
             oninput={(search: string) => write({ search })}
         />
+        {#if source !== null}
+            <SourceButton file={source} />
+        {/if}
     </Toolbar>
 {/snippet}
 

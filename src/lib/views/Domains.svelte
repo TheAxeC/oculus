@@ -15,8 +15,10 @@
     // membership, with the shared schema-driven add and edit forms.
 
     import Pane from '$lib/ui/Pane.svelte';
+    import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import DomainCard from '$lib/views/domains/DomainCard.svelte';
+    import SourceButton from '$lib/views/shared/SourceButton.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
     import Intro from '$lib/views/shared/Intro.svelte';
     import Reveal from '$lib/views/shared/Reveal.svelte';
@@ -24,12 +26,13 @@
     import { cardCursor } from '$lib/state/instance';
     import { domainMembers, parseDomainsState, type DomainsState } from '$lib/state/lines';
     import { t } from '$lib/state/text';
+    import { viewSourceFile } from '$lib/state/view-source';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
     const {
         entities: { portfolio },
-        selectors: { archiveDead, collectionOf, projects },
+        selectors: { archiveDead, collectionOf, configMap, projects },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -37,6 +40,8 @@
     const held = $derived(parseDomainsState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
     const collection = $derived(collectionOf('domains'));
+    /** The registry file this view is drawn from, which the control at the end of the toolbar opens. */
+    const source = $derived(viewSourceFile('domains', configMap()));
     const domains = $derived.by(() => {
         const entities = Object.values(portfolio()?.entities.domains ?? {});
         const byId = new Map(entities.map((domain) => [domain.id, domain]));
@@ -76,7 +81,15 @@
     {/if}
 {/snippet}
 
-<Pane title={t('views.domains')}>
+{#snippet tools()}
+    <Toolbar label={t('collection.toolbar')}>
+        {#if source !== null}
+            <SourceButton file={source} />
+        {/if}
+    </Toolbar>
+{/snippet}
+
+<Pane title={t('views.domains')} toolbar={tools}>
     <div class="domains-view" data-instance={instance.id}>
         <Intro html={inlineMarkdown(t('domains.intro'))} trusted actions={introActions} />
         {#if adding && collection?.schema !== undefined}

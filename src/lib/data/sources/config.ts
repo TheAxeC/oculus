@@ -13,6 +13,7 @@ import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
+import { paintLimit } from '../editor.ts';
 import type { CalendarAccountConfig, Finding, UsageAccountConfig } from '../model.ts';
 
 export type LocalConfig = {
@@ -592,6 +593,37 @@ export function iconFindings(engine: string, config: Record<string, unknown>): F
         } else if (iconFile(icon) === null) {
             findings.push({ file, key: name, message: `the icon package ships no ${icon}.svg` });
         }
+    }
+    return findings;
+}
+
+/**
+ * What is wrong with `behavior.yml` that only the reader can put right, as findings on the config
+ * channel. Both are things a saved edit can introduce while the server runs, where a throw would
+ * take the page down with it: a key still written under a name the tree no longer reads, which is
+ * ignored where it stands so the block runs on its default, and a key the editor needs that no
+ * longer names a size, which leaves the editor painting without colour and says nothing about why.
+ */
+export function behaviorFindings(engine: string, config: Record<string, unknown>): Finding[] {
+    const file = join(configDir(engine), 'behavior.yml');
+    const findings: Finding[] = [];
+    const chat = config.chat;
+    if (typeof chat === 'object' && chat !== null && !Array.isArray(chat)) {
+        if ('skip_permissions' in (chat as Record<string, unknown>)) {
+            findings.push({
+                file,
+                key: 'chat.skip_permissions',
+                message: 'chat.skip_permissions is not read; the key is tasks.skip_permissions'
+            });
+        }
+    }
+    if (paintLimit(config) === null) {
+        findings.push({
+            file,
+            key: 'editor.paint_limit_kb',
+            message:
+                'editor.paint_limit_kb must be a number above zero; the editor paints without colour until it is'
+        });
     }
     return findings;
 }

@@ -55,7 +55,15 @@ const NO_RELATIONS: Relations = {
 };
 
 function person(id: string, over: Partial<PersonEntity> = {}): PersonEntity {
-    return { id, name: id, links: [], projectIds: [], jointWorkIds: [], ...over };
+    return {
+        id,
+        name: id,
+        affiliations: [],
+        links: [],
+        projectIds: [],
+        jointWorkIds: [],
+        ...over
+    };
 }
 
 function organisation(id: string, over: Partial<Organisation> = {}): Organisation {
@@ -118,7 +126,7 @@ function snapshot(): Snapshot {
             people: {
                 naesens: person('naesens', {
                     name: 'Maarten Naesens',
-                    affiliation: 'ku-leuven',
+                    affiliations: ['ku-leuven', 'uz-leuven'],
                     role: 'host candidate',
                     email: 'someone@example.invalid',
                     projectIds: ['alpha'],
@@ -137,6 +145,12 @@ function snapshot(): Snapshot {
                     kind: 'university',
                     country: 'BE',
                     personIds: ['naesens']
+                }),
+                'uz-leuven': organisation('uz-leuven', {
+                    name: 'UZ Leuven',
+                    kind: 'hospital',
+                    country: 'BE',
+                    personIds: ['naesens']
                 })
             },
             collections: { 'joint-work': jointWork() },
@@ -147,7 +161,10 @@ function snapshot(): Snapshot {
             ...NO_RELATIONS,
             projectPerson: [['alpha', 'naesens']],
             jointWorkPerson: [['ecg-paper', 'naesens']],
-            personOrganisation: [['naesens', 'ku-leuven']]
+            personOrganisation: [
+                ['naesens', 'ku-leuven'],
+                ['naesens', 'uz-leuven']
+            ]
         },
         findings: []
     };
@@ -204,10 +221,12 @@ describe('one person as their own tab', () => {
         expect(drawn(client, { key: 'nobody' })).toContain('nobody');
     });
 
-    it('draws the name, the organisation and the rest of the fact strip', () => {
+    it('draws the name, one line per organisation, and the rest of the fact strip', () => {
         const body = drawn(client, { key: 'naesens' });
         expect(body).toContain('Maarten Naesens');
         expect(body).toContain('KU Leuven (university, BE)');
+        expect(body).toContain('UZ Leuven (hospital, BE)');
+        expect(body.indexOf('KU Leuven')).toBeLessThan(body.indexOf('UZ Leuven'));
         expect(body).toContain('host candidate');
         expect(body).toContain('someone@example.invalid');
     });

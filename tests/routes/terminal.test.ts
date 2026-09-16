@@ -29,7 +29,7 @@ import {
 } from '../../src/lib/server/pty/routes.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { chatIndexPath } from '../../src/lib/server/pty/chat.ts';
-import { chatSkipPermissions } from '../../src/lib/data/chat.ts';
+import { taskSkipPermissions } from '../../src/lib/data/tasks.ts';
 import { record } from '../sessions-fixture.ts';
 import type { SessionRecord } from '../../src/lib/data/model.ts';
 import { contextFixture } from '../server/context-fixture.ts';
@@ -435,8 +435,8 @@ describe('POST /api/terminal, the task action', () => {
         }
     });
 
-    it('adds the skip flag and nothing else when chat.skip_permissions is on', async () => {
-        const { started, name } = await taskArgv('litwatch', { chat: { skip_permissions: true } });
+    it('adds the skip flag and nothing else when tasks.skip_permissions is on', async () => {
+        const { started, name } = await taskArgv('litwatch', { tasks: { skip_permissions: true } });
         expect(name).toBe('task litwatch');
         expect(started[started.indexOf('-c') + 1]).toBe(HERE);
         expect(started[started.length - 1]).toBe(
@@ -444,19 +444,24 @@ describe('POST /api/terminal, the task action', () => {
         );
     });
 
-    it('reads a chat.skip_permissions of any other shape, and a missing one, as off', async () => {
-        for (const chat of [
+    it('reads a tasks.skip_permissions of any other shape, and a missing one, as off', async () => {
+        for (const tasks of [
             { skip_permissions: 'true' },
             { skip_permissions: 1 },
             { skip_permissions: null },
             {}
         ]) {
-            const { started } = await taskArgv('scout', { chat });
+            const { started } = await taskArgv('scout', { tasks });
             expect(started[started.length - 1]).toBe(
                 `'/opt/Claude CLI/claude' '/research-cockpit scout'`
             );
         }
-        // A configuration with no `chat:` block at all, which is what the engine of this suite holds.
+        // The key under its retired name is not read, so a task started over it runs with prompts on.
+        const retired = await taskArgv('scout', { chat: { skip_permissions: true } });
+        expect(retired.started[retired.started.length - 1]).toBe(
+            `'/opt/Claude CLI/claude' '/research-cockpit scout'`
+        );
+        // A configuration with no `tasks:` block at all, which is what the engine of this suite holds.
         const bare = await taskArgv('scout', {});
         expect(bare.started[bare.started.length - 1]).toBe(
             `'/opt/Claude CLI/claude' '/research-cockpit scout'`
@@ -474,7 +479,7 @@ describe('POST /api/terminal, the task action', () => {
         const behavior = join(engine, 'config', 'behavior.yml');
         const live = { engine, configFor: () => loadConfig(engine).config };
 
-        writeFileSync(behavior, 'chat:\n  skip_permissions: true\n');
+        writeFileSync(behavior, 'tasks:\n  skip_permissions: true\n');
         const first = tmux();
         expect(
             (
@@ -493,7 +498,7 @@ describe('POST /api/terminal, the task action', () => {
             `'/opt/Claude CLI/claude' '--dangerously-skip-permissions' '/research-cockpit scout'`
         );
 
-        writeFileSync(behavior, 'chat:\n  skip_permissions: false\n');
+        writeFileSync(behavior, 'tasks:\n  skip_permissions: false\n');
         const second = tmux();
         expect(
             (
@@ -523,10 +528,14 @@ describe('POST /api/terminal, the task action', () => {
         expect(route).not.toContain('configFor: () => server.config');
     });
 
-    it('carries chat.skip_permissions on the wire, off in the checked-in configuration', () => {
-        const merged = loadConfig(engineDir()).config as { chat?: Record<string, unknown> };
-        expect(merged.chat?.skip_permissions).toBe(false);
-        expect(chatSkipPermissions(merged as Record<string, unknown>)).toBe(false);
+    it('carries tasks.skip_permissions on the wire, off in the checked-in configuration', () => {
+        const merged = loadConfig(engineDir()).config as {
+            chat?: Record<string, unknown>;
+            tasks?: Record<string, unknown>;
+        };
+        expect(merged.tasks?.skip_permissions).toBe(false);
+        expect(merged.chat?.skip_permissions).toBeUndefined();
+        expect(taskSkipPermissions(merged as Record<string, unknown>)).toBe(false);
     });
 
     it('refuses another task kind without starting a terminal', async () => {

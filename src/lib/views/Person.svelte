@@ -15,8 +15,8 @@
 
 <script lang="ts">
     // Layer 3, view. One human as their own tab, drawn from the five joins state/person.ts makes: the
-    // registry entry, the organisation they are affiliated to, the joint work whose `person:` is this
-    // key, the projects whose `collaborators:` name them, and a student's supervision folder.
+    // registry entry, the organisations they are affiliated to, the joint work whose `person:` is
+    // this key, the projects whose `collaborators:` name them, and a student's supervision folder.
     //
     // One instance per person, and the person it is for is the `key` in its instance state, the way
     // the project tab reads its own `id`.
@@ -33,7 +33,7 @@
     import SourceButton from './shared/SourceButton.svelte';
     import { openSourceFile } from './shared/source-file';
     import { HUB_ROOT } from '$lib/state/collection';
-    import { personJoin } from '$lib/state/person';
+    import { personJoin, type PersonJoin } from '$lib/state/person';
     import { t } from '$lib/state/text';
     import { viewSourceFile } from '$lib/state/view-source';
     import type { ViewProps } from './registry';
@@ -64,8 +64,10 @@
         const person = join.person;
         if (person === null) return [];
         const rows: { label: string; value: string }[] = [];
-        if (join.organisation !== null) {
-            rows.push({ label: t('person.organisation'), value: organisationLine() });
+        // One row per organisation, in the entry's own order, so a clinician's university and
+        // hospital are both drawn and the primary one is the row above the other.
+        for (const held of join.organisations) {
+            rows.push({ label: t('person.organisation'), value: organisationLine(held) });
         }
         if (person.role !== undefined) rows.push({ label: t('person.role'), value: person.role });
         if (person.orcid !== undefined)
@@ -76,10 +78,8 @@
         return rows;
     });
 
-    /** The organisation as one line: its name, then its kind and country when it names them. */
-    function organisationLine(): string {
-        const held = join.organisation;
-        if (held === null) return '';
+    /** One organisation as one line: its name, then its kind and country when it names them. */
+    function organisationLine(held: PersonJoin['organisations'][number]): string {
         const parts = [held.kind, held.country].filter(
             (one): one is string => one !== undefined && one !== ''
         );

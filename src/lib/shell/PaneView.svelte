@@ -5,6 +5,11 @@
     // a view this release does not have still renders: the tab says so and the body is empty, which
     // is the rule state/layout.ts states for a ViewId the registry does not hold.
     //
+    // It is where closing is guarded. A tab holding text no save has taken is asked about before it
+    // goes, whether the close came from the tab's own control or from Delete on it, and so is a pane
+    // close over more than one tab; the question is asked of the instance id, so the pane learns
+    // nothing about what any view keeps.
+    //
     // It is also where a drag begins and where most drops land. The strip reports a press and an
     // insertion index; the body turns the pointer's place inside its own rect into an edge or a
     // centre. Neither performs anything: the drag store holds what is hovered and the pointer coming
@@ -15,6 +20,7 @@
     // Escape.
 
     import { EMBED, PAGE, embedPageItems, foldable, pageMoveItems } from '$lib/shell/pane-view';
+    import { closeQuestion } from '$lib/shell/closing';
     import Confirm from '$lib/ui/Confirm.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu-items';
@@ -47,7 +53,8 @@
             touchPane
         },
         drag: { dragging, hover, start },
-        registry: { viewFor }
+        registry: { viewFor },
+        ui: { unsaved }
     } = client;
 
     type Props = {
@@ -124,8 +131,12 @@
             : null
     );
 
-    /** Whether the pane menu's close is waiting on the dialog. */
-    let closing = $state(false);
+    /**
+     * The close that is waiting on the dialog: the words it asks and what a yes does. One dialog
+     * serves the pane menu's close and a tab holding unsaved text, since both ask the same question
+     * about work that would be lost.
+     */
+    let confirming: { message: string; act: () => void } | null = $state(null);
 
     /** Every page but this pane's own, as the item that moves the active tab onto it. */
     const elsewhere = $derived<MenuItem[]>(pageMoveItems(pages(), page, t));
@@ -154,6 +165,27 @@
             drop.path.length === path.length &&
             drop.path.every((step, index) => step === path[index])
         );
+    }
+
+    /**
+     * Close one tab, asking first when it holds text no save has taken. The rule is the instance id
+     * and the ui store's answer for it, so the close control and Delete take the same guard and no
+     * view is scanned for what it is holding.
+     */
+    function closeTab(id: string): void {
+        const act = (): void => closeInstance(id, page);
+        if (closeQuestion([id], unsaved) === 'none') act();
+        else confirming = { message: t('ui.tab_close_dirty'), act };
+    }
+
+    /**
+     * Perform the close the dialog was asking about. What to do is taken out of the state before the
+     * dialog is taken away, since the markup reads the same state and would have nothing to call.
+     */
+    function confirmed(): void {
+        const act = confirming?.act;
+        confirming = null;
+        act?.();
     }
 
     function press(id: string, point: { x: number; y: number }): void {
@@ -203,11 +235,19 @@
 
     function pick(id: string): void {
         if (id === 'close') {
-            // Closing a pane closes every tab in it at once, and a tab holds a view's own state. One
-            // tab is the tab's own close control by another name, so it goes; more than one is asked
-            // about first.
-            if (tabs.length > 1) closing = true;
-            else closePane(path, page);
+            // Closing a pane closes every tab in it at once, and a tab holds a view's own state,
+            // so the pane takes the same question a tab's own close control takes over the tabs it
+            // would take away.
+            const act = (): void => closePane(path, page);
+            const asks = closeQuestion(
+                tabs.map((tab) => tab.id),
+                unsaved
+            );
+            if (asks === 'many') {
+                confirming = { message: t('ui.pane_close_confirm', tabs.length), act };
+            } else if (asks === 'dirty') {
+                confirming = { message: t('ui.tab_close_dirty'), act };
+            } else act();
             return;
         }
         if (id === 'maximise') {
@@ -256,7 +296,7 @@
         {active}
         {dropIndex}
         onselect={(id: string) => activateInstance(id, page)}
-        onclose={(id: string) => closeInstance(id, page)}
+        onclose={closeTab}
         ondblclick={(id: string) => keepPreview(id)}
         onpointerdown={press}
         onhoverindex={held === null ? undefined : stripHover}
@@ -280,16 +320,13 @@
     </div>
 </div>
 
-{#if closing}
+{#if confirming !== null}
     <Confirm
-        message={t('ui.pane_close_confirm', tabs.length)}
+        message={confirming.message}
         confirm={t('ui.confirm_ok')}
         cancel={t('ui.confirm_cancel')}
-        onconfirm={() => {
-            closing = false;
-            closePane(path, page);
-        }}
-        oncancel={() => (closing = false)}
+        onconfirm={confirmed}
+        oncancel={() => (confirming = null)}
     />
 {/if}
 

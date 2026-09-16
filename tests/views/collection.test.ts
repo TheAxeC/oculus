@@ -218,6 +218,7 @@ function snapshot(projects: Record<string, Project> = PROJECTS): Snapshot {
                 naesens: {
                     id: 'naesens',
                     name: 'Maarten Naesens',
+                    affiliations: [],
                     links: [],
                     projectIds: [],
                     jointWorkIds: ['ecg-paper']

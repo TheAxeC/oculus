@@ -1,5 +1,5 @@
 // Layer 2, client state. One person, joined to everything the hub knows about them: the registry
-// entry, the organisation they are affiliated to, the joint work that names them, the projects whose
+// entry, the organisations they are affiliated to, the joint work that names them, the projects whose
 // `collaborators:` name them, and a student's supervision folder.
 //
 // Pure, so the Person view is tested without a browser: every join reads the snapshot it is given and
@@ -14,7 +14,8 @@ import { JOINT_WORK } from './collection.ts';
 /** One person and what they are joined to; every join is empty for a key the registry does not hold. */
 export type PersonJoin = {
     person: Person | null;
-    organisation: Organisation | null;
+    /** The organisations the entry names, in its own order, so the primary one is first. */
+    organisations: Organisation[];
     /** The entries of the joint-work collection whose `person:` is this key, in the file's order. */
     jointWork: Entry[];
     /** The projects whose `collaborators:` name this key, by project id. */
@@ -51,22 +52,21 @@ function jointWorkOf(snapshot: Snapshot, key: Id): Entry[] {
     return (collection?.entries ?? []).filter((entry) => ids.has(entry.id));
 }
 
-/** One person joined to their organisation, joint work, projects and folder. */
+/** One person joined to their organisations, joint work, projects and folder. */
 export function personJoin(snapshot: Snapshot | null, key: Id): PersonJoin {
     const person = snapshot === null ? undefined : byKey(snapshot.entities.people, key);
     if (snapshot === null || person === undefined) {
-        return { person: null, organisation: null, jointWork: [], projects: [], folder: '' };
+        return { person: null, organisations: [], jointWork: [], projects: [], folder: '' };
     }
-    const affiliation =
-        person.affiliation === undefined
-            ? undefined
-            : byKey(snapshot.entities.organisations, person.affiliation);
+    const organisations = person.affiliations
+        .map((one) => byKey(snapshot.entities.organisations, one))
+        .filter((held): held is Organisation => held !== undefined);
     const projects = person.projectIds
         .map((id) => byKey(snapshot.entities.projects, id))
         .filter((project): project is Project => project !== undefined);
     return {
         person,
-        organisation: affiliation ?? null,
+        organisations,
         jointWork: jointWorkOf(snapshot, key),
         projects,
         folder: person.folder ?? ''

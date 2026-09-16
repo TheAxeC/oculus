@@ -1,7 +1,7 @@
 // Layer 2, client state. Which file of the hub a view is drawn from: one of the four feeds by its
-// kind, the people registry, or one collection by its key. All three are read from the merged
-// configuration the config channel carries, so every view that offers the file shares one rule and
-// one answer.
+// kind, one of the five registry views with a pane of its own, or one collection by its key. All of
+// them are read from the merged configuration the config channel carries, so every view that offers
+// the file shares one rule and one answer.
 //
 // It reads the configuration and nothing else. A kind the config names no path for is null, which
 // is the view drawing no control rather than a control that opens nothing, and a path that names a
@@ -15,19 +15,24 @@ import type { FeedKind } from '../data/model.ts';
 /** One file of the hub, addressed the way the source tab addresses it. */
 export type ViewSource = { root: string; path: string };
 
-/** What a view is drawn from: one of the four feeds, the people registry, or a collection. */
-export type ViewSourceKind = FeedKind | 'collection' | 'people';
+/** What a view is drawn from: one of the four feeds, one of the five registries, or a collection. */
+export type ViewSourceKind = FeedKind | 'collection' | RegistryKind;
 
-/** The configuration key each feed's path is written under. */
-const FEED_KEYS: Record<FeedKind, string> = {
+/** The registry views drawn from a file of their own, each by the view's own id. */
+export type RegistryKind = 'people' | 'venues' | 'datasets' | 'pillars' | 'domains';
+
+/** The configuration key each kind's path is written under, the one collection apart. */
+const FILE_KEYS: Record<Exclude<ViewSourceKind, 'collection'>, string> = {
     inbox: 'inbox_file',
     leads: 'leads_file',
     radar: 'radar_file',
-    linkedin: 'linkedin_dir'
+    linkedin: 'linkedin_dir',
+    people: 'people_file',
+    venues: 'venues_file',
+    datasets: 'datasets_file',
+    pillars: 'pillars_file',
+    domains: 'domains_file'
 };
-
-/** The configuration key the people registry's path is written under. */
-const PEOPLE_KEY = 'people_file';
 
 /** A configured path, and null for a value that is not one. */
 function pathOf(value: unknown): string | null {
@@ -57,8 +62,6 @@ export function viewSourceFile(
     const file =
         kind === 'collection'
             ? collectionPath(config, collection)
-            : kind === 'people'
-              ? pathOf(config[PEOPLE_KEY])
-              : pathOf(config[FEED_KEYS[kind]]);
+            : pathOf(config[FILE_KEYS[kind]]);
     return file === null ? null : { root: HUB_ROOT, path: file };
 }

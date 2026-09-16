@@ -39,6 +39,7 @@ function html(empty = false, state: Record<string, unknown> = {}): string {
     snapshot.entities.people.person = {
         id: 'person',
         name: 'Person Name',
+        affiliations: [],
         links: [],
         projectIds: ['alpha'],
         jointWorkIds: []
@@ -64,6 +65,7 @@ function graphFixture() {
     snapshot.entities.people.person = {
         id: 'person',
         name: 'Person Name',
+        affiliations: [],
         links: [],
         projectIds: ['alpha'],
         jointWorkIds: []

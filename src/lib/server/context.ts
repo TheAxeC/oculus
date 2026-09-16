@@ -4,6 +4,7 @@
 
 import type { IncomingMessage } from 'node:http';
 import {
+    behaviorFindings,
     calendarSettings,
     iconFindings,
     iconSet,
@@ -15,6 +16,7 @@ import {
     usageTiers,
     type LocalConfig
 } from '../data/sources/config.ts';
+import { requirePaintLimit } from '../data/editor.ts';
 import type { Finding, Snapshot } from '../data/model.ts';
 import { mintToken } from './auth.ts';
 import { ConnectStates } from './calendar/oauth.ts';
@@ -136,6 +138,9 @@ export function createServerContext(
     const slurm = slurmSettings(config);
     const calendarConfig = calendarSettings(config);
     const tiers = usageTiers(config);
+    // Read for its check alone: the value itself is in the merged configuration the page is sent, and
+    // a missing or mistyped key stops the server here with the key named rather than reaching a tab.
+    requirePaintLimit(config);
     const hub = make.createHub();
     const terminals = make.createTerminals(hub);
     const token = make.mintToken();
@@ -155,6 +160,7 @@ export function createServerContext(
     const icons: IconMemory = { set: iconSet(config) };
     reportFindings([
         ...iconFindings(engine, config),
+        ...behaviorFindings(engine, config),
         ...docFindings(config, local.hub, layoutFile(engine))
     ]);
     const portfolio = make.watchPortfolio(hub, { hub: local.hub, engine, icons });

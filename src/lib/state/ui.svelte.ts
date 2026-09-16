@@ -56,6 +56,8 @@ export type UiStore = {
     textScale: () => number | null;
     terminalFont: () => number | null;
     instanceState: (id: string) => unknown;
+    registerUnsaved: (reports: (id: string) => boolean) => void;
+    unsaved: (id: string) => boolean;
     requestUpdateTray: () => void;
     updateTrayRequested: () => number;
     requestCardMove: (instance: string, card: string, step: -1 | 1) => void;
@@ -104,6 +106,9 @@ export function createUi(): UiStore {
     /** Where save() writes, once loadUi has named it. Nothing is saved before that. */
     let backing: Storable | null = null;
 
+    /** What the stores holding unsaved text registered, asked in turn by unsaved(). */
+    const unsavedReports: ((id: string) => boolean)[] = [];
+
     /** The theme's name, one of the names config/appearance.yml lists. */
     function theme(): string {
         return store.current.theme;
@@ -144,6 +149,21 @@ export function createUi(): UiStore {
     /** What a view instance saved, or undefined when it has saved nothing yet. */
     function instanceState(id: string): unknown {
         return store.current.instances[id];
+    }
+
+    /**
+     * What answers whether one instance holds text no save has taken. A store that keeps such text
+     * registers one at the point the client is wired, so the shell asks the instance id and never a
+     * view's own store: a view that gains unsaved state later registers the same way and the pane
+     * that closes tabs is not edited for it.
+     */
+    function registerUnsaved(reports: (id: string) => boolean): void {
+        unsavedReports.push(reports);
+    }
+
+    /** Whether the instance holds unsaved text, which is what a close asks a confirmation about. */
+    function unsaved(id: string): boolean {
+        return unsavedReports.some((reports) => reports(id));
     }
 
     /** Ask the shell to open the Update tray. Every request changes the observed value. */
@@ -301,6 +321,8 @@ export function createUi(): UiStore {
         textScale,
         terminalFont,
         instanceState,
+        registerUnsaved,
+        unsaved,
         requestUpdateTray,
         updateTrayRequested,
         requestCardMove,

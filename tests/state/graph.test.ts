@@ -80,6 +80,7 @@ function snapshot(): Snapshot {
                 person: {
                     id: 'person',
                     name: 'Person Name',
+                    affiliations: [],
                     links: [],
                     projectIds: [],
                     jointWorkIds: []

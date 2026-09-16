@@ -567,15 +567,16 @@ export type Domain = {
  * work's `person:` and a `waiting-on:` value name, so a person's name is written once and every
  * surface that draws one reads it here.
  *
- * `affiliation` is a key of the organisation registry rather than the organisation itself, which is
- * what keeps the pair JSON-safe: a person points at an organisation and the organisation lists its
- * people, and neither holds the other resolved.
+ * `affiliations` are keys of the organisation registry rather than the organisations themselves,
+ * which is what keeps the pair JSON-safe: a person points at organisations and an organisation lists
+ * its people, and neither holds the other resolved. A person holds more than one because a clinician
+ * belongs to the university and to the hospital alike, and the first is the one a single line draws.
  */
 export type Person = {
     id: Id;
     name: string;
-    /** Key of an organisations.yml entry; absent for a person the file records no affiliation for. */
-    affiliation?: Id;
+    /** Keys of organisations.yml entries, the primary first, and empty for a person with none. */
+    affiliations: Id[];
     /** What the person is to this hub in its own words: co-supervisor, co-author, student. */
     role?: string;
     orcid?: string;
@@ -592,7 +593,7 @@ export type Person = {
 };
 
 /**
- * One organisation, from registries/organisations.yml. A person's `affiliation:` and a funding
+ * One organisation, from registries/organisations.yml. A person's `affiliations:` and a funding
  * scheme's `funder:` are keys into it, so a university, a hospital or a funder is named once and
  * spelled the same way wherever it is drawn.
  */
@@ -603,7 +604,7 @@ export type Organisation = {
     kind?: string;
     country?: string;
     links: string[];
-    /** People whose `affiliation:` is this key. */
+    /** People whose `affiliations:` name this key. */
     personIds: Id[];
     /** Funding schemes whose `funder:` is this key. */
     fundingIds: Id[];

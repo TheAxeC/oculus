@@ -72,7 +72,7 @@ function people(keys: string[]): RawRegistry {
             key,
             file: '/hub/people.yml',
             name: 'Someone Else',
-            affiliation: 'twente',
+            affiliations: ['twente'],
             ...(at === 0 ? { self: true } : {})
         })),
         meta: {}
@@ -551,14 +551,38 @@ describe('validate, the people and organisation registries', () => {
         };
     }
 
-    it('reports an affiliation that names no organisation', () => {
+    it('reports every affiliations key that names no organisation', () => {
         const raw = withPeople([
-            { key: 'someone', name: 'Someone Else', affiliation: 'nowhere', self: true }
+            {
+                key: 'someone',
+                name: 'Someone Else',
+                affiliations: ['twente', 'nowhere', 12],
+                self: true
+            }
         ]);
-        expect(said(raw)).toEqual(['affiliation names no organisation: "nowhere"']);
+        expect(said(raw)).toEqual([
+            'affiliations names no organisation: "nowhere"',
+            'affiliations names no organisation: 12'
+        ]);
     });
 
-    it('takes a person with no affiliation at all', () => {
+    it('reads the one key the list replaced as a list of that one, and asks for the new name', () => {
+        const raw = withPeople([
+            { key: 'someone', name: 'Someone Else', affiliation: 'twente', self: true }
+        ]);
+        expect(said(raw)).toEqual([
+            'affiliation is read as a one-entry affiliations list; write affiliations'
+        ]);
+        const unknown = withPeople([
+            { key: 'someone', name: 'Someone Else', affiliation: 'nowhere', self: true }
+        ]);
+        expect(said(unknown)).toEqual([
+            'affiliation is read as a one-entry affiliations list; write affiliations',
+            'affiliations names no organisation: "nowhere"'
+        ]);
+    });
+
+    it('takes a person with no affiliations at all', () => {
         const raw = withPeople([{ key: 'someone', name: 'Someone Else', self: true }]);
         expect(said(raw)).toEqual([]);
     });

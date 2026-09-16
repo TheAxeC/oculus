@@ -16,8 +16,10 @@
 
     import Pane from '$lib/ui/Pane.svelte';
     import Search from '$lib/ui/Search.svelte';
+    import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Intro from './shared/Intro.svelte';
+    import SourceButton from '$lib/views/shared/SourceButton.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
     import Reveal from '$lib/views/shared/Reveal.svelte';
     import Facets from '$lib/views/data/Facets.svelte';
@@ -33,17 +35,20 @@
     import { inlineMarkdown } from '$lib/ui/html';
     import { cardCursor } from '$lib/state/instance';
     import { t } from '$lib/state/text';
+    import { viewSourceFile } from '$lib/state/view-source';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
     const {
-        selectors: { collectionOf, datasets, projects },
+        selectors: { collectionOf, configMap, datasets, projects },
         ui: { instanceState, setInstanceState }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
     const collection = $derived(collectionOf('data'));
+    /** The registry file this view is drawn from, which the control at the end of the toolbar opens. */
+    const source = $derived(viewSourceFile('datasets', configMap()));
     const allDatasets = $derived(datasets());
     const allProjects = $derived(projects());
     const held = $derived(parseDataState(instanceState(instance.id)));
@@ -78,7 +83,15 @@
     }
 </script>
 
-<Pane title={t('views.data')}>
+{#snippet tools()}
+    <Toolbar label={t('collection.toolbar')}>
+        {#if source !== null}
+            <SourceButton file={source} />
+        {/if}
+    </Toolbar>
+{/snippet}
+
+<Pane title={t('views.data')} toolbar={tools}>
     <div class="data" data-instance={instance.id}>
         <Intro
             lines={[

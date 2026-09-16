@@ -63,6 +63,9 @@ const SCHEMA = [
 
 const TEXT = ['text:', '  app:', '    title: "oculus"', ''].join('\n');
 
+/** The keys of behavior.yml a config draws no finding of its own without. */
+const BEHAVIOR = ['editor:', '  paint_limit_kb: 64', ''].join('\n');
+
 const MANIFEST = 'id: loewner\ntype: active\ntitle: Loewner layers\n';
 
 const watchers: Watcher[] = [];
@@ -87,6 +90,9 @@ function write(root: string, rel: string, body: string): void {
 /** An engine directory holding the four config files the build reads. */
 function buildEngine(): string {
     const engine = scratch('engine');
+    // The block the source editor's cap lives in: a config without it is a finding of its own, and
+    // what these cases are about is the findings the hub and the icon map produce.
+    write(engine, 'config/behavior.yml', BEHAVIOR);
     write(engine, 'config/layout.yml', LAYOUT);
     write(engine, 'config/vocab.yml', VOCAB);
     write(engine, 'config/manifest-schema.yml', SCHEMA);
@@ -537,7 +543,7 @@ describe('watchPortfolio', () => {
     it('publishes the audit scan beside the portfolio, with the mute list of the config', async () => {
         const started = start((hub, engine) => {
             write(hub, 'projects/active/loewner/README.md', '# Loewner\n\nTODO: the method\n');
-            write(engine, 'config/behavior.yml', 'audit_ignore: []\n');
+            write(engine, 'config/behavior.yml', `audit_ignore: []\n${BEHAVIOR}`);
         });
         await until(() => on(started.got, 'audit').length > 0, 3000);
 
@@ -552,7 +558,7 @@ describe('watchPortfolio', () => {
 
     it('publishes the audit again when a marker is written into a project README', async () => {
         const started = start((_hub, engine) => {
-            write(engine, 'config/behavior.yml', 'audit_ignore: []\n');
+            write(engine, 'config/behavior.yml', `audit_ignore: []\n${BEHAVIOR}`);
         });
         await until(() => on(started.got, 'audit').length > 0, 3000);
         await quiet(started.got);
@@ -577,7 +583,7 @@ describe('watchPortfolio', () => {
     it('publishes the audit again after a mute write, with the signature parked', async () => {
         const started = start((hub, engine) => {
             write(hub, 'projects/active/loewner/README.md', '# Loewner\n\nTODO: the method\n');
-            write(engine, 'config/behavior.yml', 'audit_ignore: []\n');
+            write(engine, 'config/behavior.yml', `audit_ignore: []\n${BEHAVIOR}`);
         });
         await until(() => on(started.got, 'audit').length > 0, 3000);
         const first = on(started.got, 'audit').at(-1)?.payload as AuditPayload;

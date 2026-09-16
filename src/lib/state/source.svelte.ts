@@ -93,6 +93,7 @@ export async function loadSourceReadonly(root: string, path: string): Promise<bo
 /** The source tab's drafts and saves, for one client. */
 export type SourceStore = {
     sourceDraft: (id: string) => SourceDraft;
+    sourceDirty: (id: string) => boolean;
     loadSourceDraft: (id: string, root: string, path: string) => Promise<void>;
     editSourceDraft: (id: string, text: string) => void;
     revertSourceDraft: (id: string) => void;
@@ -124,6 +125,16 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
             truncated: held.truncated === true,
             file: typeof held.file === 'string' ? held.file : ''
         };
+    }
+
+    /**
+     * Whether the tab holds text the file on disk does not have, which is what closing it asks a
+     * confirmation about. A draft that has not been read yet holds no text of the reader's, and an
+     * instance of any other view has no draft at all, so both answer no.
+     */
+    function sourceDirty(id: string): boolean {
+        const draft = sourceDraft(id);
+        return draft.loaded && draft.text !== draft.saved;
     }
 
     function updateDraft(id: string, changes: Partial<SourceDraft>): void {
@@ -241,6 +252,7 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
 
     return {
         sourceDraft,
+        sourceDirty,
         loadSourceDraft,
         editSourceDraft,
         revertSourceDraft,

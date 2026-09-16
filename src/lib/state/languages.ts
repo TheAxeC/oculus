@@ -41,13 +41,6 @@ import yaml from 'highlight.js/lib/languages/yaml';
 /** What the highlighter falls back to for a name it has no language for. */
 export const PLAIN = 'plaintext';
 
-/**
- * Bytes of text above which the editor's mirror is painted without colour. The mirror is painted
- * again on every keystroke, and the grammars cost more than a frame on a file past this size, so
- * a larger file is edited over escaped text; the code window, painted once, colours every size.
- */
-export const PAINT_LIMIT = 64 * 1024;
-
 /** Every language the window registers. A name outside this map is drawn as plain text. */
 const REGISTERED: Record<string, LanguageFn> = {
     bash,

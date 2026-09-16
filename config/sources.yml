@@ -37,10 +37,10 @@ domains_file: registries/domains.yml
 
 # People registry - one entry per human the hub names. A project's `collaborators:` and `waiting-on:`,
 # a joint-work entry's `person:` and the Person view all read a name from here. Exactly one entry
-# carries `self: true`, the hub's owner. `affiliation:` is a key of the organisations file below.
+# carries `self: true`, the hub's owner. `affiliations:` are keys of the organisations file below.
 people_file: registries/people.yml
 
-# Organisation registry - the universities, hospitals, funders and companies a person's `affiliation:`
+# Organisation registry - the universities, hospitals, funders and companies a person's `affiliations:`
 # and a funding scheme's `funder:` point at, so an organisation is named once.
 organisations_file: registries/organisations.yml
 

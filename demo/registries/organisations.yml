@@ -1,5 +1,5 @@
 # Organisations - the universities, hospitals, funders and companies the hub names. A person's
-# `affiliation:` in registries/people.yml and a funding scheme's `funder:` in funding/funding.yml are
+# `affiliations:` in registries/people.yml and a funding scheme's `funder:` in funding/funding.yml are
 # keys into this file, so an organisation is spelled once and drawn the same way everywhere.
 # `kind:` is one of university | hospital | funder | company | other.
 

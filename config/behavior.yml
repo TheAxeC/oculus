@@ -86,6 +86,8 @@ slurm:
 
 chat:
   model: "opus"
+
+tasks:
   # The four update tasks start as ordinary Claude sessions, so a permission prompt is answered by the reader in the terminal pane. `true` starts them with --dangerously-skip-permissions instead, which runs them unattended; the update tray then asks for a confirmation before each task.
   skip_permissions: false
 
@@ -102,6 +104,13 @@ notify:
   enabled: true
   events: [permission_prompt, idle_prompt, stop]
   quiet_seconds: 3
+
+
+# === The source editor ======================================================
+# The editor's mirror is painted again on every keystroke, so a file larger than this many kilobytes
+# is written over plain escaped text instead; the read-only code window, painted once, colours every size.
+editor:
+  paint_limit_kb: 64
 
 
 # === Scratch notes ==========================================================

@@ -20,9 +20,14 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import { SASH_PX } from '$lib/ui/sash-size';
-    import { PAINT_LIMIT, PLAIN, codeHtml } from '$lib/state/languages';
+    import { PLAIN, codeHtml } from '$lib/state/languages';
     import { languageOf } from '$lib/state/fs';
     import { t } from '$lib/state/text';
+    import { useState } from '$lib/state/use';
+
+    const {
+        selectors: { paintLimit }
+    } = useState();
 
     type Props = {
         path: string;
@@ -55,11 +60,19 @@
     /** How far the editor is scrolled through its text, which is what the rendered half follows. */
     let fraction = $state(0);
 
+    /**
+     * Whether the mirror is coloured: the file is under `editor.paint_limit_kb` of
+     * config/behavior.yml. The mirror is painted again on every keystroke and the grammars cost more
+     * than a frame past that size, so a larger file is written over escaped text. A cap the
+     * configuration has not delivered yet is no cap to paint under, so those frames are plain too.
+     */
+    const coloured = $derived.by(() => {
+        const limit = paintLimit();
+        return limit !== null && text.length <= limit;
+    });
     // The trailing newline keeps a last mirror line under the textarea's empty last line, which a
     // pre would otherwise drop, so the two scroll to the same height.
-    const painted = $derived(
-        codeHtml(text, text.length > PAINT_LIMIT ? PLAIN : languageOf(path)) + '\n'
-    );
+    const painted = $derived(codeHtml(text, coloured ? languageOf(path) : PLAIN) + '\n');
     /** Whether this file has a rendered half at all, which is what a Markdown file has. */
     const markdown = $derived(languageOf(path) === 'markdown');
     const split = $derived(markdown && rendered);

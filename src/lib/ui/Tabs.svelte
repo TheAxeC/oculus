@@ -23,8 +23,8 @@
         insertionIndex,
         tabScrollState
     } from '$lib/ui/tab-strip';
-    import { nextStop } from '$lib/ui/roving';
-    import { tick, type Snippet } from 'svelte';
+    import { heldStop, nextStop } from '$lib/ui/roving';
+    import { type Snippet } from 'svelte';
     import Glyph from './Glyph.svelte';
     import ToolButton from './ToolButton.svelte';
     import Tooltip from './Tooltip.svelte';
@@ -73,6 +73,14 @@
     let scroll = $state<TabScrollState>({ overflowing: false, atStart: true, atEnd: true });
 
     /**
+     * The tab a Delete asked to close, with the ring it asked from. The caller may put a question in
+     * front of the close, so the keyboard is carried only once the tab has actually gone; until then
+     * it belongs to whatever is asking, and a close the reader refuses leaves the focus where the
+     * question left it.
+     */
+    let asked: { id: string; ring: string[] } | null = null;
+
+    /**
      * The tab the strip's one stop sits on: the tab the arrows last carried the focus to, and the
      * showing tab whenever that changes, so selecting a tab, or a change from anywhere else, brings
      * the stop back to what the reader is looking at. A stop naming a tab that has gone falls back
@@ -115,6 +123,34 @@
         });
     });
 
+    // A tab closed by Delete unmounts its button under the keyboard, which would drop the focus to
+    // the document. The tab that now sits where it sat takes the stop and the keyboard, by the one
+    // rule ui/roving.ts states for a ring that has lost a control; a pane whose last tab went is
+    // gone with it, and where the keyboard lands is then the tree's answer.
+    $effect(() => {
+        const ring = tabs.map((tab) => tab.id);
+        const held = asked;
+        if (held === null || ring.includes(held.id)) return;
+        asked = null;
+        const moved = heldStop(held.ring, ring, held.id);
+        if (moved === '') return;
+        stopped = moved;
+        recoverStop(ring.indexOf(moved));
+    });
+
+    /**
+     * Take the keyboard for one tab, and only where nothing else holds it: the button that went is
+     * left holding the focus until the browser hands it to the document, so both that button and the
+     * document count as nothing, and a dialog or a field that has taken it keeps it.
+     */
+    function recoverStop(index: number): void {
+        queueMicrotask(() => {
+            const at = document.activeElement;
+            if (at !== null && at !== document.body && at.isConnected) return;
+            heads[index]?.focus();
+        });
+    }
+
     function scrollOne(direction: -1 | 1): void {
         if (scroller === undefined) return;
         const width = faces.find((face) => face !== undefined && face !== null)?.offsetWidth ?? 0;
@@ -138,8 +174,9 @@
      * The keyboard on one tab. The strip is one stop of the browser's focus order, so the arrow
      * keys are what reach the other tabs: they carry the stop with the focus and bring the tab they
      * land on into view, since a strip that scrolls can hold it off screen. Delete closes the tab
-     * under the focus through the same `onclose` the close control calls, under the same guard that
-     * control takes, which is none. A key held with a modifier belongs to whatever else wants it,
+     * under the focus through the same `onclose` the close control calls, so whatever guard the
+     * caller puts in front of closing a tab is taken by both, and the effect above carries the
+     * keyboard once the tab has gone. A key held with a modifier belongs to whatever else wants it,
      * the shell's page moves above all, so it is left alone.
      */
     function keys(event: KeyboardEvent, index: number): void {
@@ -154,18 +191,8 @@
         }
         if (event.key !== 'Delete') return;
         event.preventDefault();
+        asked = { id: tabs[index].id, ring: tabs.map((tab) => tab.id) };
         onclose(tabs[index].id);
-        // The closed tab's button unmounts under the keyboard, which would drop the focus to the
-        // document: once the strip is drawn again, the tab now at that place takes it, or the last
-        // one when the closed tab was the last. A pane whose last tab went is gone with it.
-        void tick().then(() => {
-            const live: HTMLButtonElement[] = [];
-            for (const one of heads) if (one?.isConnected === true) live.push(one);
-            const head = live.at(Math.min(index, live.length - 1));
-            if (head === undefined) return;
-            stopped = tabs[live.indexOf(head)]?.id ?? active;
-            head.focus();
-        });
     }
 
     function over(event: PointerEvent): void {

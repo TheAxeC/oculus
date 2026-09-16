@@ -162,8 +162,8 @@ describe('UpdateTray', () => {
         expect(body).toMatch(/class="[^"]*tray[^"]*"[^>]*role="dialog"/);
     });
 
-    it('marks no task row as confirming while chat.skip_permissions is off', () => {
-        expect((config as { chat?: Record<string, unknown> }).chat?.skip_permissions).toBe(false);
+    it('marks no task row as confirming while tasks.skip_permissions is off', () => {
+        expect((config as { tasks?: Record<string, unknown> }).tasks?.skip_permissions).toBe(false);
         const body = render(UpdateTray, {
             context: clientContext(client),
             props: { open: true, onclose: noop }
@@ -173,12 +173,12 @@ describe('UpdateTray', () => {
         expect(body).not.toContain(catalog['app.tasks.skip_confirm_ok']);
     });
 
-    it('marks every task row as confirming while chat.skip_permissions is on', () => {
+    it('marks every task row as confirming while tasks.skip_permissions is on', () => {
         // The setting travels in the merged config the `config` channel carries, so the case turns
         // it on the way the server would: by pushing a config that holds it. A server render cannot
         // press, so what is asserted here is the path a press takes; the press itself is
         // tests/browser/tasks.spec.ts.
-        const skipping = { ...config, chat: { skip_permissions: true } };
+        const skipping = { ...config, tasks: { skip_permissions: true } };
         receive({
             channel: 'config',
             version: 8002,

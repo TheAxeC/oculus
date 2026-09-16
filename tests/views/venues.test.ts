@@ -222,6 +222,16 @@ function venueCard(body: string, id: string): string {
 }
 
 describe('the Venues controls and facets', () => {
+    it('closes its toolbar with the control that opens registries/venues.yml', () => {
+        const body = html();
+        expect(body).toContain('data-source-path="registries/venues.yml"');
+        expect(body).toContain(catalog['views.open_source']);
+        // Last in the toolbar: the way out of the view, after the view's own controls.
+        expect(body.indexOf(catalog['collection.add'])).toBeLessThan(
+            body.indexOf('data-source-path="registries/venues.yml"')
+        );
+    });
+
     it('draws add, search, and theme toggles most frequent first', () => {
         const body = html();
         expect(body).toMatch(/class="intro(?:\s|")/);

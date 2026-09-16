@@ -7,6 +7,11 @@
     // a confirm, and a confirm that is a second press of the same button is one the hand learns to
     // press twice. So it is a real dialog: modal, focus on the confirm, Escape cancels, Tab stays
     // inside it. A click on the ground behind it cancels too, which is the way out for a pointer.
+    //
+    // The keyboard comes back to the control the dialog was raised from when the dialog goes, so a
+    // cancel leaves the reader where they pressed. A yes may take that control off the page, and
+    // the strip it was in is then what says where the keyboard lands, so a control that has gone is
+    // left alone here.
 
     type Props = {
         /** What is about to happen, in the caller's own words, already translated. */
@@ -26,8 +31,16 @@
     let box: HTMLDivElement | undefined = $state();
     let yes: HTMLButtonElement | undefined = $state();
 
+    /** The control that held the keyboard when the dialog was raised, read before it takes it. */
+    const came = typeof document === 'undefined' ? null : document.activeElement;
+
     $effect(() => {
         yes?.focus();
+    });
+
+    // No dependency, so the body runs once and the cleanup runs when the dialog goes.
+    $effect(() => () => {
+        if (came instanceof HTMLElement && came.isConnected) came.focus();
     });
 
     /** Escape cancels, and Tab walks the two buttons and stops there: a modal owns the keyboard. */

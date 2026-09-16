@@ -23,6 +23,22 @@ describe('the file a view is drawn from', () => {
         });
     });
 
+    it('answers each registry view the path its own configuration key names', () => {
+        expect({
+            people: viewSourceFile('people', config),
+            venues: viewSourceFile('venues', config),
+            datasets: viewSourceFile('datasets', config),
+            pillars: viewSourceFile('pillars', config),
+            domains: viewSourceFile('domains', config)
+        }).toEqual({
+            people: { root: HUB_ROOT, path: config.people_file },
+            venues: { root: HUB_ROOT, path: config.venues_file },
+            datasets: { root: HUB_ROOT, path: config.datasets_file },
+            pillars: { root: HUB_ROOT, path: config.pillars_file },
+            domains: { root: HUB_ROOT, path: config.domains_file }
+        });
+    });
+
     it('answers a collection key the file of its own entry, under the hub root', () => {
         expect(viewSourceFile('collection', config, 'funding')).toEqual({
             root: HUB_ROOT,
@@ -36,6 +52,10 @@ describe('the file a view is drawn from', () => {
 
     it('answers null for a configuration that names no file, and for an unknown collection', () => {
         expect(viewSourceFile('inbox', {})).toBeNull();
+        expect(viewSourceFile('venues', {})).toBeNull();
+        expect(viewSourceFile('datasets', { datasets_file: '  ' })).toBeNull();
+        expect(viewSourceFile('pillars', { pillars_file: 12 })).toBeNull();
+        expect(viewSourceFile('domains', {})).toBeNull();
         expect(viewSourceFile('leads', { leads_file: '   ' })).toBeNull();
         expect(viewSourceFile('radar', { radar_file: 12 })).toBeNull();
         expect(viewSourceFile('collection', {}, 'funding')).toBeNull();

@@ -16,7 +16,7 @@
 // no English the page would have to show raw. The page maps the two keys back through t().
 
 import { join } from 'node:path';
-import { chatSkipPermissions } from '../../data/chat.ts';
+import { taskSkipPermissions } from '../../data/tasks.ts';
 import { scalar } from '../../data/guards.ts';
 import { hasToken, sameOrigin } from '../auth.ts';
 import { loadConfig, loadLocalOrDefaults, textCatalog } from '../../data/sources/config.ts';
@@ -165,7 +165,7 @@ async function recoverDataset(
  * The server-built shell command for one update task. It is an ordinary interactive session, the
  * shape the chat terminal has, so the skill runs in the pty the terminal pane shows and every
  * permission prompt the CLI raises is answered there by the reader; the skill invocation is the
- * session's first message, passed as the positional argument. `chat.skip_permissions` puts
+ * session's first message, passed as the positional argument. `tasks.skip_permissions` puts
  * `--dangerously-skip-permissions` back, which runs the task unattended instead.
  */
 function taskCommand(binary: string, kind: TaskKind, skip: boolean): string {
@@ -197,7 +197,7 @@ async function startTask(
         },
         {
             ...options,
-            command: taskCommand(local.claudeBin, kind as TaskKind, chatSkipPermissions(config))
+            command: taskCommand(local.claudeBin, kind as TaskKind, taskSkipPermissions(config))
         }
     );
     options.refresh?.();

@@ -2,7 +2,7 @@
 text:
     config:
         desc_appearance: "The UI theme list, the wallpaper behind the panels, the Memories wall's folder, the CRT default and the terminal text size."
-        desc_behavior: "Thresholds, horizons and cadences: read limits, stale days, the context window, the Live HPC settings, the audit's waiting statuses and mute list, git and chat."
+        desc_behavior: "Thresholds, horizons and cadences: read limits, stale days, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, the update tasks' `tasks.skip_permissions`, git and chat."
         desc_glyphs: 'The glyph vocabulary, one character per name, and the ASCII stand-in a terminal theme draws instead.'
         desc_icons: 'The line icon each glyph name is drawn as, one row per name in the glyph vocabulary.'
         desc_layout: 'How things are arranged: the rail groups, the hub documents, the board chrome, the tab rollups, the live badges and the saved arrangements.'

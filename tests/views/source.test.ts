@@ -13,7 +13,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Code from '../../src/lib/views/source/Code.svelte';
 import Editor from '../../src/lib/views/source/Editor.svelte';
 import Source from '../../src/lib/views/Source.svelte';
-import { PAINT_LIMIT, codeHtml, lineNumbers, registered } from '../../src/lib/state/languages.ts';
+import { codeHtml, lineNumbers, registered } from '../../src/lib/state/languages.ts';
+import { paintLimit, requirePaintLimit } from '../../src/lib/data/editor.ts';
 import { TEXT_LIMIT, languageOf } from '../../src/lib/state/fs.ts';
 import { sourceTabState } from '../../src/lib/state/source.svelte.ts';
 import {
@@ -168,21 +169,55 @@ describe('the source editor', () => {
         expect(painted('notes.yml', 'title: one\n')).not.toContain('source-key');
     });
 
-    it('paints a file past the paint limit as escaped text, since it is painted on every keystroke', () => {
+    it('paints a file past the configured cap as escaped text, since it is painted on every keystroke', () => {
         const painted = (text: string): string =>
             render(Editor, {
                 context: clientContext(client),
                 props: { path: 'code/run.py', text, ...actions }
             }).body;
+        const cap = requirePaintLimit(config);
         const line = 'import sys  # <one>\n';
-        const small = line.repeat(Math.ceil(PAINT_LIMIT / line.length) - 1);
-        const large = line.repeat(Math.ceil(PAINT_LIMIT / line.length) + 1);
-        expect(small.length).toBeLessThanOrEqual(PAINT_LIMIT);
-        expect(large.length).toBeGreaterThan(PAINT_LIMIT);
+        const small = line.repeat(Math.ceil(cap / line.length) - 1);
+        const large = line.repeat(Math.ceil(cap / line.length) + 1);
+        expect(small.length).toBeLessThanOrEqual(cap);
+        expect(large.length).toBeGreaterThan(cap);
         expect(painted(small)).toContain('hljs-keyword');
         const plain = painted(large);
         expect(plain).not.toContain('hljs-keyword');
         expect(plain).toContain('&lt;one&gt;');
+    });
+
+    // The cap is a key of the configuration rather than a constant, so a client that has been sent a
+    // smaller one paints the same file plain, and one sent nothing at all paints plain as well.
+    it('paints under the cap the configuration it was sent carries, and plain before there is one', () => {
+        const text = 'import sys  # <one>\n'.repeat(4);
+        const painted = (): string =>
+            render(Editor, {
+                context: clientContext(client),
+                props: { path: 'code/run.py', text, ...actions }
+            }).body;
+        expect(painted()).toContain('hljs-keyword');
+
+        receive({
+            channel: 'config',
+            version: 2,
+            payload: {
+                config: { ...config, editor: { paint_limit_kb: 0.01 } },
+                text: catalog,
+                findings: []
+            }
+        });
+        expect(paintLimit({ ...config, editor: { paint_limit_kb: 0.01 } })).toBe(10.24);
+        expect(painted()).not.toContain('hljs-keyword');
+
+        const bare = createClientState();
+        expect(bare.selectors.paintLimit()).toBeNull();
+        expect(
+            render(Editor, {
+                context: clientContext(bare),
+                props: { path: 'code/run.py', text, ...actions }
+            }).body
+        ).not.toContain('hljs-keyword');
     });
 
     it("keeps one mirror line under the textarea's empty last line", () => {

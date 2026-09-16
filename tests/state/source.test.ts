@@ -21,6 +21,7 @@ let loadSourceDraft: ClientState['source']['loadSourceDraft'];
 let editSourceDraft: ClientState['source']['editSourceDraft'];
 let saveSourceDraft: ClientState['source']['saveSourceDraft'];
 let sourceDraft: ClientState['source']['sourceDraft'];
+let sourceDirty: ClientState['source']['sourceDirty'];
 let toggleSourceRendered: ClientState['source']['toggleSourceRendered'];
 let setToken: ClientState['writes']['setToken'];
 let loadUi: ClientState['ui']['loadUi'];
@@ -33,6 +34,7 @@ beforeEach(() => {
         editSourceDraft,
         saveSourceDraft,
         sourceDraft,
+        sourceDirty,
         toggleSourceRendered
     } = client.source);
     ({ setToken } = client.writes);
@@ -282,5 +284,38 @@ describe('source tab state', () => {
             path: 'notes/a.md',
             content: 'replacement\n'
         });
+    });
+});
+
+describe('the unsaved-text rule a close asks', () => {
+    it('answers no for an instance with no draft and for a draft nothing has edited', async () => {
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response('on disk\n')));
+        expect(sourceDirty('never-opened')).toBe(false);
+        await loadSourceDraft('tab', 'hub', 'notes.md');
+        expect(sourceDraft('tab').text).toBe('on disk\n');
+        expect(sourceDirty('tab')).toBe(false);
+    });
+
+    it('answers yes once the working text differs from the saved text, and no again after a save', async () => {
+        vi.stubGlobal('fetch', (_url: string, init?: RequestInit) =>
+            Promise.resolve(
+                new Response(init === undefined ? 'on disk\n' : JSON.stringify({ ok: true }))
+            )
+        );
+        setToken('source-token');
+        await loadSourceDraft('tab', 'hub', 'notes.md');
+        editSourceDraft('tab', 'typed over it\n');
+        expect(sourceDirty('tab')).toBe(true);
+        await saveSourceDraft('tab', 'hub', 'notes.md');
+        expect(sourceDirty('tab')).toBe(false);
+    });
+
+    it('is what the ui store answers for an instance id, which is what the pane asks', async () => {
+        vi.stubGlobal('fetch', () => Promise.resolve(new Response('on disk\n')));
+        await loadSourceDraft('tab', 'hub', 'notes.md');
+        expect(client.ui.unsaved('tab')).toBe(false);
+        editSourceDraft('tab', 'typed over it\n');
+        expect(client.ui.unsaved('tab')).toBe(true);
+        expect(client.ui.unsaved('another-view')).toBe(false);
     });
 });

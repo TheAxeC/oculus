@@ -1,5 +1,5 @@
 // The five joins one person is drawn from, over a hand-built snapshot: the registry entry, the
-// organisation, the joint work, the projects and the supervision folder. The joins read the relation
+// organisations, the joint work, the projects and the supervision folder. The joins read the relation
 // tables data/normalise.ts wrote, so the fixture writes those tables the way a snapshot carries them.
 
 import { describe, expect, it } from 'vitest';
@@ -29,7 +29,15 @@ const NO_RELATIONS: Relations = {
 };
 
 function person(id: string, over: Partial<Person> = {}): Person {
-    return { id, name: id, links: [], projectIds: [], jointWorkIds: [], ...over };
+    return {
+        id,
+        name: id,
+        affiliations: [],
+        links: [],
+        projectIds: [],
+        jointWorkIds: [],
+        ...over
+    };
 }
 
 function organisation(id: string, over: Partial<Organisation> = {}): Organisation {
@@ -102,7 +110,7 @@ function snapshot(): Snapshot {
             people: {
                 naesens: person('naesens', {
                     name: 'Maarten Naesens',
-                    affiliation: 'ku-leuven',
+                    affiliations: ['ku-leuven', 'uz-leuven'],
                     role: 'host candidate',
                     projectIds: ['alpha'],
                     jointWorkIds: ['ecg-paper']
@@ -118,6 +126,12 @@ function snapshot(): Snapshot {
                 'ku-leuven': organisation('ku-leuven', {
                     name: 'KU Leuven',
                     kind: 'university',
+                    country: 'BE',
+                    personIds: ['naesens']
+                }),
+                'uz-leuven': organisation('uz-leuven', {
+                    name: 'UZ Leuven',
+                    kind: 'hospital',
                     country: 'BE',
                     personIds: ['naesens']
                 })
@@ -156,10 +170,10 @@ describe('personNames', () => {
 });
 
 describe('personJoin', () => {
-    it('joins the entry, the organisation, the joint work and the projects', () => {
+    it('joins the entry, the organisations, the joint work and the projects', () => {
         const join = personJoin(snapshot(), 'naesens');
         expect(join.person?.name).toBe('Maarten Naesens');
-        expect(join.organisation?.name).toBe('KU Leuven');
+        expect(join.organisations.map((one) => one.name)).toEqual(['KU Leuven', 'UZ Leuven']);
         expect(join.jointWork.map((entry) => entry.id)).toEqual(['ecg-paper']);
         expect(join.projects.map((one) => one.id)).toEqual(['alpha']);
         expect(join.folder).toBe('');
@@ -168,7 +182,7 @@ describe('personJoin', () => {
     it('draws a student by their supervision folder and by nothing else', () => {
         const join = personJoin(snapshot(), 'ward');
         expect(join.folder).toBe('education/student-supervision/ward-2024');
-        expect(join.organisation).toBeNull();
+        expect(join.organisations).toEqual([]);
         expect(join.jointWork).toEqual([]);
         expect(join.projects).toEqual([]);
     });
@@ -176,7 +190,7 @@ describe('personJoin', () => {
     it('answers an empty join for a key the registry does not hold, and before the snapshot', () => {
         expect(personJoin(snapshot(), 'nobody')).toEqual({
             person: null,
-            organisation: null,
+            organisations: [],
             jointWork: [],
             projects: [],
             folder: ''
@@ -184,9 +198,18 @@ describe('personJoin', () => {
         expect(personJoin(null, 'naesens').person).toBeNull();
     });
 
-    it('leaves an affiliation the organisation registry does not hold unresolved', () => {
+    it('joins every organisation the entry names, in its own order, the primary first', () => {
+        expect(personJoin(snapshot(), 'naesens').organisations.map((one) => one.id)).toEqual([
+            'ku-leuven',
+            'uz-leuven'
+        ]);
+    });
+
+    it('leaves an affiliation the organisation registry does not hold out of the join', () => {
         const held = snapshot();
-        held.entities.people.naesens.affiliation = 'nowhere';
-        expect(personJoin(held, 'naesens').organisation).toBeNull();
+        held.entities.people.naesens.affiliations = ['nowhere', 'ku-leuven'];
+        expect(personJoin(held, 'naesens').organisations.map((one) => one.id)).toEqual([
+            'ku-leuven'
+        ]);
     });
 });

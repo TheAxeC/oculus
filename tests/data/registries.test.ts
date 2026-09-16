@@ -65,7 +65,7 @@ function buildHub(): string {
         [
             'schema: []',
             'entries:',
-            '  - { key: naesens, name: Maarten Naesens, affiliation: ku-leuven, role: host }',
+            '  - { key: naesens, name: Maarten Naesens, affiliations: [ku-leuven], role: host }',
             '  - { key: me, name: The Owner, self: true }',
             '  - { name: nameless }',
             ''
@@ -204,7 +204,7 @@ describe('readRegistries', () => {
         expect(out.people.entries[0]).toEqual({
             key: 'naesens',
             name: 'Maarten Naesens',
-            affiliation: 'ku-leuven',
+            affiliations: ['ku-leuven'],
             role: 'host',
             registry: 'people',
             file: join(hub, REGISTRY_FILES.people)

@@ -1,5 +1,5 @@
-// Layer 3, shell test. The pane menu's move-to-page items: which pages are offered and what each
-// one is called, over hand-built page lists.
+// Layer 3, shell test. The pane menu's move-to-page items and the question a close asks, over
+// hand-built page lists and instance ids.
 //
 // What this does NOT cover: the menu opening and the item being pressed. There is no DOM in this
 // suite, so a closed Menu renders its opener and no list; the move itself is
@@ -13,6 +13,7 @@ import {
     pageMoveItems,
     PAGE
 } from '../../src/lib/shell/pane-view.ts';
+import { closeQuestion } from '../../src/lib/shell/closing.ts';
 import { pageName, pageNameOf } from '../../src/lib/shell/page-strip.ts';
 import { pane, split } from '../state/layout-fixture.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
@@ -147,5 +148,29 @@ describe('the fold item', () => {
         const root = { ...split('row', [0.5, 0.5], [pane(['a']), pane(['b'])]), folded: [0] };
         expect(foldable(root, [1])).toBe(false);
         expect(foldable(root, [0])).toBe(false);
+    });
+});
+
+// The one rule the tab's own close, the pane menu's close and a page's close all take, so the same
+// tabs asked about in three places get the same question.
+describe('the question a close asks', () => {
+    const dirty = (id: string): boolean => id === 'unsaved';
+
+    it('asks nothing over one instance with nothing unsaved in it', () => {
+        expect(closeQuestion(['saved'], dirty)).toBe('none');
+        expect(closeQuestion([], dirty)).toBe('none');
+    });
+
+    it('asks about the text over one instance holding unsaved text', () => {
+        expect(closeQuestion(['unsaved'], dirty)).toBe('dirty');
+    });
+
+    it("asks the caller's own question over more than one, unsaved or not", () => {
+        expect(closeQuestion(['saved', 'other'], dirty)).toBe('many');
+        expect(closeQuestion(['saved', 'unsaved'], dirty)).toBe('many');
+    });
+
+    it('asks nothing of any instance when nothing reports unsaved text', () => {
+        expect(closeQuestion(['unsaved'], () => false)).toBe('none');
     });
 });

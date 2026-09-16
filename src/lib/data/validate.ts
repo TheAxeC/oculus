@@ -432,23 +432,36 @@ function checkEntryIdentity(raw: RawPortfolio, findings: Finding[]): void {
 }
 
 /**
- * A person's `affiliation:` names an organisation of the registry, and exactly one entry carries
- * `self: true`. The affiliation is what draws the person's organisation everywhere a person is
- * shown, so a free string there is a name nothing can be looked up by; `self` is how the hub knows
- * which entry is its owner, and two of them or none leaves that question unanswered.
+ * Every key of a person's `affiliations:` names an organisation of the registry, the entry writes the
+ * list under that name, and exactly one entry carries `self: true`. The affiliations are what draw
+ * the person's organisations everywhere a person is shown, so a free string there is a name nothing
+ * can be looked up by; `self` is how the hub knows which entry is its owner, and two of them or none
+ * leaves that question unanswered.
  */
 function checkPeople(raw: RawPortfolio, organisations: Set<string>, findings: Finding[]): void {
     const entries = raw.registries.people.entries;
     const selves: number[] = [];
     entries.forEach((entry, index) => {
         if (entry.self === true) selves.push(index);
-        const affiliation = entry.affiliation;
-        if (affiliation === undefined || affiliation === null) return;
-        if (typeof affiliation === 'string' && organisations.has(affiliation)) return;
-        findings.push({
-            file: entry.file,
-            key: `entries[${index}].affiliation`,
-            message: `affiliation names no organisation: ${JSON.stringify(affiliation)}`
+        // The one key the list replaced is still read, as a list of that one, so the entry keeps
+        // drawing its organisation; the finding is what asks for it to be written the new way.
+        if (entry.affiliation !== undefined && entry.affiliation !== null) {
+            findings.push({
+                file: entry.file,
+                key: `entries[${index}].affiliation`,
+                message: 'affiliation is read as a one-entry affiliations list; write affiliations'
+            });
+        }
+        const held = entry.affiliations ?? entry.affiliation;
+        if (held === undefined || held === null) return;
+        const named = typeof held === 'string' ? [held] : Array.isArray(held) ? held : [held];
+        named.forEach((one, at) => {
+            if (typeof one === 'string' && organisations.has(one)) return;
+            findings.push({
+                file: entry.file,
+                key: `entries[${index}].affiliations[${at}]`,
+                message: `affiliations names no organisation: ${JSON.stringify(one)}`
+            });
         });
     });
     if (entries.length === 0 || selves.length === 1) return;
@@ -499,7 +512,7 @@ function checkJointWork(raw: RawPortfolio, people: Set<string>, findings: Findin
 
 /**
  * A funding scheme's `funder:` names an organisation of the registry. It is the same rule as a
- * person's affiliation, from the other file: who funds a scheme is an organisation the hub holds.
+ * person's affiliations, from the other file: who funds a scheme is an organisation the hub holds.
  */
 function checkFunders(raw: RawPortfolio, organisations: Set<string>, findings: Finding[]): void {
     raw.registries.funding.entries.forEach((entry, index) => {

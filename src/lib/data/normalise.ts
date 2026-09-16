@@ -377,7 +377,7 @@ function person(entry: RawRegistryEntry): Person {
     return compact({
         id: entry.key,
         name: str(entry.name) ?? '',
-        affiliation: str(entry.affiliation),
+        affiliations: affiliationsOf(entry),
         role: str(entry.role),
         orcid: str(entry.orcid),
         email: str(entry.email),
@@ -389,7 +389,18 @@ function person(entry: RawRegistryEntry): Person {
     });
 }
 
-/** One organisation, the thing a person's `affiliation:` and a scheme's `funder:` point at. */
+/**
+ * The organisation keys a person's entry names, the primary first. A file still writing the one key
+ * `affiliation:` is read as a list of that one, so an entry nobody has rewritten still draws its
+ * organisation; validate.ts is where the key that replaced it is named.
+ */
+function affiliationsOf(entry: RawRegistryEntry): string[] {
+    const held = entry.affiliations ?? entry.affiliation;
+    if (typeof held === 'string') return held === '' ? [] : [held];
+    return strings(held);
+}
+
+/** One organisation, the thing a person's `affiliations:` and a scheme's `funder:` point at. */
 function organisation(entry: RawRegistryEntry): Organisation {
     return compact({
         id: entry.key,
@@ -722,8 +733,8 @@ function relations(
         if (entities.people.has(entry.person)) jointWorkPerson.push([entry.id, entry.person]);
     }
     for (const one of sides.people) {
-        if (one.affiliation !== undefined && entities.organisations.has(one.affiliation)) {
-            personOrganisation.push([one.id, one.affiliation]);
+        for (const key of one.affiliations) {
+            if (entities.organisations.has(key)) personOrganisation.push([one.id, key]);
         }
     }
     for (const scheme of sides.schemes) {
@@ -809,9 +820,7 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
     for (const item of people) {
         item.projectIds = sources(tables.projectPerson, item.id);
         item.jointWorkIds = sources(tables.jointWorkPerson, item.id);
-        if (item.affiliation !== undefined && !known.organisations.has(item.affiliation)) {
-            delete item.affiliation;
-        }
+        item.affiliations = item.affiliations.filter((key) => known.organisations.has(key));
     }
     for (const item of organisations) {
         item.personIds = sources(tables.personOrganisation, item.id);

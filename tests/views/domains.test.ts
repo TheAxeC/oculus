@@ -27,6 +27,12 @@ function html(empty = false): string {
 }
 
 describe('the Domains view', () => {
+    it('closes its toolbar with the control that opens registries/domains.yml', () => {
+        const body = html();
+        expect(body).toContain('data-source-path="registries/domains.yml"');
+        expect(body).toContain(catalog['views.open_source']);
+    });
+
     it('draws the intro, add control and populated domain in file order', () => {
         const body = html();
         expect(body).toMatch(/class="intro(?:\s|")/);

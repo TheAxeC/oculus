@@ -16,7 +16,10 @@ import {
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
-import { fakeStorage } from '../state/layout-fixture.ts';
+import { pageInstanceIds } from '../../src/lib/shell/page-strip.ts';
+import { closeQuestion } from '../../src/lib/shell/closing.ts';
+import type { Page } from '../../src/lib/state/layout/index.ts';
+import { bench, fakeStorage, pane, split } from '../state/layout-fixture.ts';
 import { clientContext, createClientState, type ClientState } from '../client.ts';
 
 let client: ClientState;
@@ -88,5 +91,40 @@ describe('the page strip', () => {
 
     it('is the strip of pages, for anything reading the page by its regions', () => {
         expect(body).toContain('aria-label="Pages"');
+    });
+});
+
+// What a page's close asks, which is the pane's own rule over every instance the page holds rather
+// than over the count alone: a page of one saved tab goes at once and a page of one unsaved tab does
+// not. The press itself is the browser's check; the words each answer draws are the component's.
+describe("the question a page's close asks", () => {
+    const page = (root: ReturnType<typeof pane>): Page => ({
+        id: 'p1',
+        label: 'Reading',
+        workbench: bench(root)
+    });
+
+    it("lists every instance of every pane of the page, in the tree's own order", () => {
+        expect(pageInstanceIds(page(pane(['a', 'b'])))).toEqual(['a', 'b']);
+        expect(
+            pageInstanceIds(page(split('row', [0.5, 0.5], [pane(['a']), pane(['b', 'c'])])))
+        ).toEqual(['a', 'b', 'c']);
+        expect(pageInstanceIds(page(pane([])))).toEqual([]);
+    });
+
+    it('goes at once for one tab with nothing unsaved in it', () => {
+        const ids = pageInstanceIds(page(pane(['a'])));
+        expect(closeQuestion(ids, () => false)).toBe('none');
+    });
+
+    it('asks about the text for one tab holding an unsaved edit', () => {
+        const ids = pageInstanceIds(page(pane(['a'])));
+        expect(closeQuestion(ids, (id) => id === 'a')).toBe('dirty');
+    });
+
+    it("asks the page's own question once it holds more than one tab", () => {
+        const ids = pageInstanceIds(page(split('row', [0.5, 0.5], [pane(['a']), pane(['b'])])));
+        expect(closeQuestion(ids, () => false)).toBe('many');
+        expect(closeQuestion(ids, (id) => id === 'b')).toBe('many');
     });
 });

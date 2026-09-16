@@ -9,8 +9,10 @@ import type { MockInstance } from 'vitest';
 import {
     DEFAULT_PORT,
     LOCAL_NAME,
+    behaviorFindings,
     checkLocal,
     configDir,
+    engineDir,
     loadConfig,
     loadLocal
 } from '../src/lib/data/sources/config.ts';
@@ -475,6 +477,48 @@ describe('loadConfig', () => {
                 message: 'config directory does not exist'
             }
         ]);
+    });
+});
+
+describe('behaviorFindings', () => {
+    /** The keys a configuration needs to draw no finding of its own, beside whatever a case adds. */
+    const SOUND = { editor: { paint_limit_kb: 64 } };
+
+    it('names the key that replaced a retired one, against behavior.yml', () => {
+        const engine = scratch();
+        expect(behaviorFindings(engine, { ...SOUND, chat: { skip_permissions: true } })).toEqual([
+            {
+                file: join(engine, 'config', 'behavior.yml'),
+                key: 'chat.skip_permissions',
+                message: 'chat.skip_permissions is not read; the key is tasks.skip_permissions'
+            }
+        ]);
+    });
+
+    // A throw at start is what a bad key gets, but the watcher republishes a saved edit into a
+    // running server, and the editor then paints without colour; the finding is what says why.
+    it('names a paint limit that is missing or is not a size, and says what it costs', () => {
+        const engine = scratch();
+        const said = (config: Record<string, unknown>): string[] =>
+            behaviorFindings(engine, config).map((one) => `${one.key}: ${one.message}`);
+        const named = [
+            'editor.paint_limit_kb: editor.paint_limit_kb must be a number above zero; the editor paints without colour until it is'
+        ];
+        expect(said({})).toEqual(named);
+        expect(said({ editor: {} })).toEqual(named);
+        expect(said({ editor: { paint_limit_kb: '64' } })).toEqual(named);
+        expect(said({ editor: { paint_limit_kb: 0 } })).toEqual(named);
+        expect(behaviorFindings(engine, {})[0].file).toBe(join(engine, 'config', 'behavior.yml'));
+    });
+
+    it('says nothing about a configuration whose keys are all under their own names', () => {
+        const engine = scratch();
+        expect(behaviorFindings(engine, { ...SOUND, tasks: { skip_permissions: true } })).toEqual(
+            []
+        );
+        expect(behaviorFindings(engine, { ...SOUND, chat: { model: 'opus' } })).toEqual([]);
+        expect(behaviorFindings(engine, { ...SOUND, chat: 'opus' })).toEqual([]);
+        expect(behaviorFindings(engine, loadConfig(engineDir()).config)).toEqual([]);
     });
 });
 

@@ -1,4 +1,4 @@
-// The update tray in Chrome: what a press of a task control reaches with `chat.skip_permissions`
+// The update tray in Chrome: what a press of a task control reaches with `tasks.skip_permissions`
 // off, which is what the checked-in config/behavior.yml holds, and what it asks first with it on.
 //
 // What this file does NOT run is `claude`. The browser layer puts its own `tmux` on PATH ahead of
