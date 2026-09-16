@@ -23,7 +23,19 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q21 + Q27 in flight, Q24 next (D4 landed 03:10, Q21 dispatched 03:12 from e0656c5c, D21 landed 03:18; Q21 was waiting on it, since both edit context.ts, pty/routes.ts and files.ts; Q24 at the following landing)
+dispatch:                                  # Q21 + Q24 + Q27 in flight (D4 landed 03:10, Q21 dispatched 03:12 from e0656c5c, D21 landed 03:18, Q24 dispatched 03:20 from 6a91cde1; Q21 was waiting on it, since both edit context.ts, pty/routes.ts and files.ts; Q24 at the following landing)
+- package: Q24
+  worker: claude:opus
+  worktree: .agents/worktrees/q24
+  base: 6a91cde1
+  launched: 2026-09-16T03:20+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q24/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q24/report.md
+  exit: none
+  pid: none
+  session_id: pending                      # the Agent tool's id, written the moment it is known
+  landing: not-started
 - package: Q27
   worker: claude:opus
   worktree: .agents/worktrees/q27
