@@ -34,7 +34,7 @@ dispatch:                                  # Q21 + Q24 + Q27 in flight (D4 lande
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q24/report.md
   exit: none
   pid: none
-  session_id: pending                      # the Agent tool's id, written the moment it is known
+  session_id: a07c13a4f135226ae            # the Agent tool's id, launched 03:20
   landing: not-started
 - package: Q27
   worker: claude:opus
