@@ -46,7 +46,7 @@ dispatch:                                  # Q29 + D12 in flight, M2 next after 
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D12/report.md
   exit: none
   pid: none                                 # a native Claude worker has no process of its own
-  session_id: pending                       # the Agent tool's id, written after the dispatch
+  session_id: a7c9f1cdd63e315af            # the Agent tool's id, launched 11:10
   landing: not-started
 ```
 
