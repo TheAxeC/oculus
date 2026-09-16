@@ -39,6 +39,7 @@ dispatch:                                  # M2 landed 15:16; D16 (repair round 
   round: 2                                  # round 1 sent 15:10 (ten rulings on agents/reviews/D16-refuter.md), answered 15:36 (agents/reviews/D16-report.md, its round 1 section); round 2 sent 15:33: the unreachable refusal-key guard removed; a second review follows, since round 1 went well beyond a small delta; answered 15:47; the second review dispatched 15:47
   reported: 2026-09-16T14:57
   reviewer: a92a2e3722fc1f4ea                # claude:opus through the Agent tool, read-only, launched 14:57
+  reviewer2: a97d43955a764ff3d               # claude:opus through the Agent tool, read-only, the second review, launched 15:47, scratch folder scratchpad/d16-review2
   landing: not-started
 - package: Q33
   worker: claude:opus
@@ -699,6 +700,7 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - D16, worker claude:opus through the Agent tool, first run: 243,380 tokens, 73 tool uses, 1,487 s (14:33 to 14:57); one brief premise found wrong (DESIGN.md names no open action; the doc text adds a sentence to the roots paragraph).
 - D16, reviewer claude:opus through the Agent tool, read-only: 165,715 tokens, 49 tool uses, 662 s (14:58 to 15:09); 10 rulings sent back in round 1.
 - D16, worker round 1: 369,396 tokens (cumulative on the thread), 129 tool uses (cumulative), about 26 min (15:10 to 15:36); nine of ten rulings done, the tenth's R7 half found unreachable; added `.docx`, `.xlsx`, `.pptx` to `file_index.ext` so the card control can show.
+- D16, worker round 2: 373,223 tokens (cumulative on the thread), 137 tool uses (cumulative), about 14 min; the refusal-key guard removed, R8 rerun red. Its browser retries twice met "You are calling test() from an async test.describe() block" while port 8792 was held by another run; cause not found, absent from the passing runs.
 - Q33, worker claude:opus through the Agent tool, first run: 389,452 tokens, 155 tool uses, 3,005 s (14:36 to 15:26); two brief premises reported wrong (tabs never shrank; the orange is every rail toggle's filled active state).
 - Q33, reviewer claude:opus through the Agent tool, read-only: 219,001 tokens, 65 tool uses, 1,132 s (15:27 to 15:46); nine rulings sent back in round 1. During the review it wrote into another agent's scratch folder (`scratchpad/rev`, D16's finished reviewer's copy) and made a symlink inside `.agents/worktrees/d16/tools/oculus/node_modules`; the symlink was removed by the orchestrator at 15:45 (`rm` of that one link, checked with `readlink` first). Every agent prompt from here names a scratch folder of its own.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
