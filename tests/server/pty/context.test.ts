@@ -14,6 +14,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { portfolioContext } from '../../../src/lib/server/pty/context.ts';
+import { engineDir } from '../../../src/lib/data/sources/config.ts';
 import { writeTextAtomic } from '../../../src/lib/server/sessions/json.ts';
 
 const ROOT = mkdtempSync(join(resolve(tmpdir()), 'oculus-chat-context-'));
@@ -59,7 +60,7 @@ afterAll(() => {
 });
 
 describe('portfolioContext', () => {
-    const index = portfolioContext(ROOT, config);
+    const index = portfolioContext(ROOT, config, engineDir());
 
     it('keeps the configured files in portfolio order and skips a missing file', () => {
         const headings = [

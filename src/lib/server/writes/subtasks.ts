@@ -12,7 +12,7 @@ import { readFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
 import { isMap } from '../../data/guards.ts';
-import { engineDir, loadConfig } from '../../data/sources/config.ts';
+import { loadConfig } from '../../data/sources/config.ts';
 import { readManifests } from '../../data/sources/manifests.ts';
 import {
     addSubtask,
@@ -157,8 +157,8 @@ export function writeSubtaskAdd(
 }
 
 /** The career file and the host statuses, read out of the same merged config every reader reads. */
-export function careerRules(): { file: string; statuses: string[] } {
-    const merged = loadConfig(engineDir()).config;
+export function careerRules(engine: string): { file: string; statuses: string[] } {
+    const merged = loadConfig(engine).config;
     const file = typeof merged.career_file === 'string' ? merged.career_file : 'CAREER.yml';
     const held = merged.career_host_status;
     return { file, statuses: isMap(held) ? Object.keys(held) : [] };
@@ -178,8 +178,12 @@ export function subtaskValue(
 }
 
 /** The status one career host holds now, or nothing when CAREER.yml no longer names it. */
-export function hostStatus(hub: string, name: string): { found: boolean; value: unknown } {
-    const file = resolve(join(hub, careerRules().file));
+export function hostStatus(
+    hub: string,
+    name: string,
+    engine: string
+): { found: boolean; value: unknown } {
+    const file = resolve(join(hub, careerRules(engine).file));
     if (!file.startsWith(resolve(hub) + sep)) return { found: false, value: null };
     let data: unknown;
     try {
@@ -194,8 +198,8 @@ export function hostStatus(hub: string, name: string): { found: boolean; value: 
 }
 
 /** Set one host's status in CAREER.yml. A status outside the vocabulary is refused, never written. */
-export function writeHost(hub: string, name: string, status: string): WriteOutcome {
-    const rules = careerRules();
+export function writeHost(hub: string, name: string, status: string, engine: string): WriteOutcome {
+    const rules = careerRules(engine);
     const file = resolve(join(hub, rules.file));
     if (!file.startsWith(resolve(hub) + sep)) return { found: false, changed: [], refused: [] };
     let source: string;

@@ -3,12 +3,12 @@
 // anything back beyond the { ok: true } every answer carries.
 
 import { handleHookRequest } from '$lib/server/hooks';
-import { engineDir, loadConfig, textCatalog } from '$lib/data/sources/config';
+import { loadConfig, textCatalog } from '$lib/data/sources/config';
 import { notifyConfig } from '$lib/server/hooks';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = ({ request, locals }) => {
-    const config = loadConfig(engineDir()).config;
+    const config = loadConfig(locals.server.engine).config;
     return handleHookRequest(request, {
         ...locals.server.hooks,
         config: notifyConfig(config),

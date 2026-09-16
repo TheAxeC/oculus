@@ -44,6 +44,7 @@ import {
     type GitRunner,
     type Outcome
 } from '../../src/lib/server/deposit-git.ts';
+import { knownIds } from '../../src/lib/server/deposit-routes.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { WriteTarget } from '../../src/lib/server/writes.ts';
@@ -228,10 +229,11 @@ beforeAll(() => {
     );
     write(codeOf('gamma'), 'README.md', '# gamma\n');
 
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
     into = {
         hub,
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
+        engine: engineDir(),
         overrides: join(dir, 'sessions.json'),
         projects: () => [],
         bookmarks: join(dir, 'bookmarks.yml'),
@@ -241,6 +243,50 @@ beforeAll(() => {
 
 afterAll(() => {
     if (dir !== '') rmSync(dir, { recursive: true, force: true });
+});
+
+// The endpoint names no write target of its own: the route hands the deposit the engine directory
+// off the request's server context, and the hub is read from that engine's own local.yml. Without
+// that wiring every deposit action would read some other machine-local file.
+describe('the hub the engine names', () => {
+    /** An engine directory whose local.yml puts the hub at this suite's own, built once. */
+    function depositEngine(): string {
+        const engine = join(dir, 'deposit-engine');
+        expect(resolve(engine).startsWith(resolve(dir) + sep)).toBe(true);
+        mkdirSync(join(engine, 'config'), { recursive: true });
+        writeFileSync(join(engine, 'config', 'local.yml'), `hub: ${hub}\n`);
+        writeFileSync(
+            join(engine, 'config', 'sources.yml'),
+            'scan:\n  - { dir: projects/manuscripts, type: manuscript, tier: projects }\n'
+        );
+        return engine;
+    }
+
+    it('is read from the engine directory when the caller names no target', async () => {
+        const engine = depositEngine();
+        // `alpha` is a project of that hub and `never-made` is not, so the answer says the engine
+        // was read rather than that nothing was.
+        expect(await state('alpha', { engine, mirrors })).not.toBeNull();
+        expect(await state('never-made', { engine, mirrors })).toBeNull();
+    });
+
+    it('is a fault said plainly when the caller names neither a target nor an engine', async () => {
+        await expect(state('alpha', { mirrors })).rejects.toThrow(
+            'a deposit needs either a write target or the engine directory'
+        );
+    });
+
+    // The id gate of the endpoint. The published payload is what a running server has seen, and the
+    // hub is the whole of what there is: a project the payload does not carry, and every project
+    // before the first publish, is still one this endpoint answers for.
+    it('is the id gate, so a project the last payload does not carry is still known', () => {
+        const engine = depositEngine();
+        expect(knownIds(['gamma'], engine)).toContain('alpha');
+        expect(knownIds([], engine).sort()).toEqual(['alpha', 'beta', 'gamma']);
+        // Without an engine the gate is only what the caller supplied, which is what the endpoint
+        // would be reduced to if the route stopped naming one.
+        expect(knownIds(['gamma'])).toEqual(['gamma']);
+    });
 });
 
 describe('the mirror', () => {

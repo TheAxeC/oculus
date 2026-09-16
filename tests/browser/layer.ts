@@ -47,8 +47,9 @@ export function newest(dir: string): { at: number; path: string } {
 /**
  * Copy the engine's config folder for one run, leaving the machine's own local.yml behind. The run
  * writes its own in the copy: without the filter the owner's hub and port would be copied in with
- * the tracked YAML, and the copy is what OCULUS_CONFIG names, so every run would read them. The name
- * is the loader's own, so the filter cannot drift from the file the server reads.
+ * the tracked YAML, and the copy is the config folder of the engine the run is started over, so
+ * every run would read them. The name is the loader's own, so the filter cannot drift from the file
+ * the server reads.
  */
 export function copyConfig(from: string, into: string): void {
     const own = join(from, LOCAL_NAME);

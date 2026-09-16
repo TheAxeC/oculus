@@ -24,13 +24,7 @@
 
 import { join } from 'node:path';
 import { portfolioConfigFrom } from '../data/index.ts';
-import {
-    changesKeep,
-    configDir,
-    engineDir,
-    loadConfig,
-    loadLocalOrDefaults
-} from '../data/sources/config.ts';
+import { changesKeep, configDir, loadConfig, loadLocalOrDefaults } from '../data/sources/config.ts';
 import { hasToken, sameOrigin } from './auth.ts';
 import { changeAt, defaultChangesPath, logChanges, pathOf } from './changes.ts';
 import { undoChange } from './writes/undo.ts';
@@ -89,6 +83,11 @@ import type { PortfolioConfig, Project } from '../data/model.ts';
 export type WriteTarget = {
     hub: string;
     config: PortfolioConfig;
+    /**
+     * The engine directory this write's configuration was read from, so a writer that needs another
+     * key of it (the career rules, the audit's mute list) reads the same folder the request did.
+     */
+    engine: string;
     overrides?: string;
     /**
      * The projects of the portfolio this server last published, which the deck write builds its
@@ -105,8 +104,8 @@ export type WriteTarget = {
     changes?: ChangeLog;
     /**
      * The engine's own config/behavior.yml, where the audit's mute list lives. It is named here
-     * rather than reached for, so a test writes a copy and the browser layer writes the copy
-     * OCULUS_CONFIG points at rather than the checkout's.
+     * rather than reached for, so a test writes a copy and a run started over another engine
+     * directory writes that copy rather than the checkout's.
      */
     behaviorFile: string;
 };
@@ -177,13 +176,13 @@ function json(status: number, body: unknown): Response {
  * caller with no server in hand (a document read, a deposit action) names no projects, and only the
  * deck write depends on them.
  */
-export function target(server?: { hub: HubLike; fsWrites: FsWrites }): WriteTarget {
-    const engine = engineDir();
+export function target(engine: string, server?: { hub: HubLike; fsWrites: FsWrites }): WriteTarget {
     const local = loadLocalOrDefaults(engine);
     const merged = loadConfig(engine).config;
     return {
         hub: local.hub,
-        config: portfolioConfigFrom(merged),
+        config: portfolioConfigFrom(merged, engine),
+        engine,
         overrides: local.sessionsOverrides,
         projects: () => (server === undefined ? [] : projectsOf(server.hub)),
         bookmarks: local.bookmarks ?? defaultBookmarksPath(),
@@ -294,7 +293,7 @@ export async function handleWrite(
 
     const host = hostWrite(body);
     if (host !== null) {
-        const outcome = writeHost(into.hub, host.name, host.status);
+        const outcome = writeHost(into.hub, host.name, host.status, into.engine);
         if (!outcome.found) return json(404, { error: `no host named ${host.name}` });
         return answer(outcome, 'host', into);
     }

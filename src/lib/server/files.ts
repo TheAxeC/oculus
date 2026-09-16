@@ -18,7 +18,7 @@ import { createReadStream, realpathSync, statSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { dirname, extname, isAbsolute, join, resolve, sep } from 'node:path';
 import { Readable } from 'node:stream';
-import { configDir, engineDir, loadConfig, loadLocalOrDefaults } from '../data/sources/config.ts';
+import { configDir, loadConfig, loadLocalOrDefaults } from '../data/sources/config.ts';
 import { sameOrigin } from './auth.ts';
 import type { Finding } from '../data/model.ts';
 
@@ -216,7 +216,7 @@ export function serveFile(request: Request, list: Root[], key: string, path: str
 }
 
 /** The file config/sources.yml sits in, which is what a root's finding names. */
-export function rootsFile(engine: string = engineDir()): string {
+export function rootsFile(engine: string): string {
     return join(configDir(engine), 'sources.yml');
 }
 
@@ -234,8 +234,8 @@ export const ENGINE_ROOT = 'engine';
 
 /**
  * The engine's config folder as a root, which is the directory loadConfig merges its files from and
- * loadLocal reads local.yml in, OCULUS_CONFIG included: the folder the page lists and saves into is
- * the folder the server reads, so a run pointed at a copy never writes the checkout.
+ * loadLocal reads local.yml in: the folder the page lists and saves into is the folder the server
+ * reads, so a run started over another engine directory never writes the checkout.
  */
 export function engineRoot(engine: string): Root {
     return { key: ENGINE_ROOT, dir: configDir(engine) };
@@ -244,12 +244,6 @@ export function engineRoot(engine: string): Root {
 /** The roots config/sources.yml names, without the hub in front of them, out of a config already read. */
 export function configuredRootsOf(config: Record<string, unknown>, engine: string): Root[] {
     return readRoots(config, rootsFile(engine)).roots;
-}
-
-/** The same, for a caller with no request to take the config off. */
-export function configuredRoots(): Root[] {
-    const engine = engineDir();
-    return configuredRootsOf(loadConfig(engine).config, engine);
 }
 
 /**
@@ -288,7 +282,11 @@ export function rootsFrom(
  * The same, reading the config and local itself, for a caller with no request to take them off. A
  * request carries both on its ServerContext and uses rootsFrom, so one request reads each file once.
  */
-export function roots(added: Root[] = []): Root[] {
-    const engine = engineDir();
-    return rootsFrom(configuredRoots(), loadLocalOrDefaults(engine).hub, engine, added);
+export function roots(engine: string, added: Root[] = []): Root[] {
+    return rootsFrom(
+        configuredRootsOf(loadConfig(engine).config, engine),
+        loadLocalOrDefaults(engine).hub,
+        engine,
+        added
+    );
 }

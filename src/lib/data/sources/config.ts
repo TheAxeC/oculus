@@ -1,11 +1,11 @@
 // Layer 1, data. Resolves the machine-local values and the text catalog from files on disk.
 // Server side only: it reads the filesystem and no client module may import it.
-// A caller passes the engine directory, and engineDir() derives it from this module's own location
-// so dev and the built server agree. One environment variable is read, OCULUS_LOCAL, and only by
-// loadLocal(): it names the machine-local file instead of local.yml of the config directory, which
-// is how a test server is pointed at a hub in a temporary directory without writing into the
-// checkout. That file sits in the config directory with the tracked YAML and is read by loadLocal
-// alone: loadConfig leaves it out, so a machine's own keys never join the merged map.
+// A caller passes the engine directory, and engineDir derives it from this module's own location
+// so dev and the built server agree. Nothing here reads the environment: the built server takes the
+// engine directory as its one command-line argument and threads it down, which is how a test server
+// is pointed at a hub in a temporary directory without writing into the checkout. The machine-local
+// file sits in the config directory with the tracked YAML and is read by loadLocal alone: loadConfig
+// leaves it out, so a machine's own keys never join the merged map.
 
 import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -149,23 +149,12 @@ function usageAccounts(value: unknown, file: string, base: string): UsageAccount
 }
 
 /**
- * Which file loadLocal reads, and the directory a relative path in it resolves against.
- *
- * Without OCULUS_LOCAL that is local.yml of the config directory, which is the whole of what the
- * machine's own configuration is, and the base is the engine directory rather than the file's own
- * folder, so a relative `hub` is read from tools/oculus as it always was. With it, the named file
- * and its own folder: the browser specs stand a server up over a hub in a temporary directory, and
- * writing local.yml into the checkout to do that would make the machine's own file a test fixture.
- * A relative OCULUS_LOCAL resolves against the engine, so a path typed on the command line means
- * what it looks like from tools/oculus.
+ * Which file loadLocal reads: local.yml of the engine's config directory, which is the whole of what
+ * the machine's own configuration is. A relative path inside it resolves against the engine rather
+ * than the file's own folder, so a relative `hub` is read from the engine directory.
  */
-function localFile(engine: string): { file: string; base: string; required: boolean } {
-    const named = process.env.OCULUS_LOCAL;
-    if (named === undefined || named === '') {
-        return { file: join(configDir(engine), LOCAL_NAME), base: engine, required: false };
-    }
-    const file = isAbsolute(named) ? named : resolve(engine, named);
-    return { file, base: dirname(file), required: true };
+function localFile(engine: string): string {
+    return join(configDir(engine), LOCAL_NAME);
 }
 
 /**
@@ -233,20 +222,16 @@ function applyLocal(
 }
 
 /**
- * Read local.yml of the config directory, or the file OCULUS_LOCAL names. A missing file means the
- * defaults, except when OCULUS_LOCAL named it: a run told to read a file that is not there is an
- * error rather than a silent fall back to the machine's own hub. An unknown key is reported on
- * stderr and ignored. A key of the wrong type is an error naming the file and the key, which is what
- * a start reads: a machine whose own file is malformed is told at once rather than served wrongly.
+ * Read local.yml of the engine's config directory. A missing file means the defaults, since every
+ * key has one. An unknown key is reported on stderr and ignored. A key of the wrong type is an error
+ * naming the file and the key, which is what a start reads: a machine whose own file is malformed is
+ * told at once rather than served wrongly.
  */
 export function loadLocal(engine: string): LocalConfig {
-    const { file, base, required } = localFile(engine);
+    const file = localFile(engine);
     const config = localDefaults(engine);
-    if (!existsSync(file)) {
-        if (required) throw new Error(`${file}: OCULUS_LOCAL names a file that does not exist`);
-        return config;
-    }
-    return applyLocal(readFileSync(file, 'utf8'), file, base, config, (keys) =>
+    if (!existsSync(file)) return config;
+    return applyLocal(readFileSync(file, 'utf8'), file, engine, config, (keys) =>
         console.warn(`${file}: ignoring unknown key(s) ${keys.join(', ')}`)
     );
 }
@@ -359,19 +344,16 @@ function configNames(dir: string): string[] {
 export { collectionKeys } from '../normalise.ts';
 
 /**
- * The directory the engine's YAML is read from and written to: `<engine>/config`, or the directory
- * OCULUS_CONFIG names. The machine's own local.yml sits in it beside the tracked files.
+ * The directory the engine's YAML is read from and written to: `<engine>/config`, always. The
+ * machine's own local.yml sits in it beside the tracked files.
  *
- * The override is the companion of OCULUS_LOCAL and is there for the same reason: the browser layer
- * stands a server up and presses controls that write, the Slides view's Save among them, and the
- * file that save edits is `config/present.yml`. Pointing the run at a copy keeps a tracked file from
- * being a test fixture. A relative value resolves against the engine, so a path typed on the command
- * line means what it looks like from tools/oculus.
+ * A run that must not write the checkout names another engine directory on the command line, which
+ * is what the browser layer does: it stands a server up and presses controls that write, the Slides
+ * view's Save among them, and the file that save edits is `config/present.yml` of the engine it was
+ * given.
  */
 export function configDir(engine: string): string {
-    const named = process.env.OCULUS_CONFIG;
-    if (named === undefined || named === '') return join(engine, 'config');
-    return isAbsolute(named) ? named : resolve(engine, named);
+    return join(engine, 'config');
 }
 
 /**

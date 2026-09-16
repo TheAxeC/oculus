@@ -17,7 +17,7 @@
 
 import { scalar } from '../../data/guards.ts';
 import { hasToken, sameOrigin } from '../auth.ts';
-import { engineDir, loadLocalOrDefaults } from '../../data/sources/config.ts';
+import { loadLocalOrDefaults } from '../../data/sources/config.ts';
 import { startChat, type ChatOptions } from './chat.ts';
 import {
     KINDS,
@@ -79,7 +79,7 @@ function reason(error: unknown): string {
 /** GET /api/terminal: every terminal oculus owns. */
 export async function handleTerminalList(
     request: Request,
-    options: TerminalOptions = {}
+    options: StartOptions = {}
 ): Promise<Response> {
     if (!sameOrigin(request, request.headers.get('host') ?? '')) {
         return json(403, { error: 'the request did not come from this page' });
@@ -139,7 +139,7 @@ async function recoverDataset(
     if (!known.includes(key)) {
         return json(400, { error: 'key is not a dataset in the current portfolio' });
     }
-    const cwd = options.hubFor?.() ?? loadLocalOrDefaults(engineDir()).hub;
+    const cwd = options.hubFor?.() ?? loadLocalOrDefaults(options.engine).hub;
     const terminal = await startTerminal(
         {
             kind: 'shell',
@@ -180,7 +180,7 @@ async function startTask(
     if (typeof kind !== 'string' || !TASKS.includes(kind as TaskKind)) {
         return json(400, { error: `kind must be one of ${TASKS.join(', ')}` });
     }
-    const local = options.localFor?.() ?? loadLocalOrDefaults(engineDir());
+    const local = options.localFor?.() ?? loadLocalOrDefaults(options.engine);
     const terminal = await startTerminal(
         {
             kind: 'claude',
@@ -199,7 +199,7 @@ async function startTask(
 export async function handleTerminal(
     request: Request,
     token: string,
-    options: TerminalOptions = {}
+    options: TerminalOptions
 ): Promise<Response> {
     if (!sameOrigin(request, request.headers.get('host') ?? '')) {
         return json(403, { error: 'the request did not come from this page' });

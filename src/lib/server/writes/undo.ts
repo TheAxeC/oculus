@@ -111,7 +111,7 @@ export function valueNow(into: WriteTarget, change: Change): { found: boolean; v
         const entry = change.key in held ? held[change.key] : {};
         return { found: true, value: entry[change.field] ?? null };
     }
-    if (change.kind === 'host') return hostStatus(into.hub, change.key);
+    if (change.kind === 'host') return hostStatus(into.hub, change.key, into.engine);
     if (change.kind === 'deck') {
         const lists = deckNow(into.config);
         return lists === null ? { found: false, value: null } : { found: true, value: lists };
@@ -195,7 +195,12 @@ function apply(into: WriteTarget, change: Change): WriteOutcome | null {
         return outcomeOf(setOverride(change.key, { [change.field]: value }, into.overrides));
     }
     if (change.kind === 'host') {
-        return writeHost(hub, change.key, typeof change.before === 'string' ? change.before : '');
+        return writeHost(
+            hub,
+            change.key,
+            typeof change.before === 'string' ? change.before : '',
+            into.engine
+        );
     }
     if (change.kind === 'deck') {
         const before = fields(change.before);

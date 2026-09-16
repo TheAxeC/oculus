@@ -692,7 +692,7 @@ if (!present) {
 
 /** Every collection file of the hub that is on this machine, with its text and its entries. */
 function collectionFiles(): { file: string; source: string; ident: string; items: unknown[] }[] {
-    const config = portfolioConfigFrom(loadConfig(engine).config);
+    const config = portfolioConfigFrom(loadConfig(engine).config, engine);
     const out = [];
     for (const one of config.collections) {
         const file = join(hub, one.file);

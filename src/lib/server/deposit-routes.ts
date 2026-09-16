@@ -113,13 +113,18 @@ function operate(with_: ServerDepositOptions): DepositRun {
     };
 }
 
-/** The hub's own project ids, and the ones the last published portfolio payload named. */
-export function knownIds(published: string[] = []): string[] {
+/**
+ * The hub's own project ids, and the ones the last published portfolio payload named. The hub is the
+ * one the engine directory says, so a project the payload does not carry, and every project before
+ * the first publish, is still a project this endpoint answers for.
+ */
+export function knownIds(published: string[] = [], engine?: string): string[] {
     const ids = new Set<string>(published);
     try {
-        for (const id of projectIds()) ids.add(id);
+        for (const id of projectIds({ engine })) ids.add(id);
     } catch {
-        // A machine whose local.yml cannot be read still answers for what the caller supplied.
+        // A caller that names no engine, or one whose configuration does not read, still answers for
+        // the ids it supplied.
     }
     return [...ids];
 }

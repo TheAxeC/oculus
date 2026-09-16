@@ -66,7 +66,7 @@ function target(keep = 500): WriteTarget {
         mkdirSync(join(file, '..'), { recursive: true });
         writeFileSync(file, body);
     }
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
     const log = join(dir, 'changes.jsonl');
     const overrides = join(dir, 'sessions.json');
     const bookmarks = join(dir, 'bookmarks.yml');
@@ -76,6 +76,7 @@ function target(keep = 500): WriteTarget {
     return {
         hub: dir,
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
+        engine: engineDir(),
         overrides,
         projects: () => [],
         bookmarks,
@@ -132,10 +133,11 @@ function deckTarget(): WriteTarget {
         expect(resolve(path).startsWith(resolve(dir) + sep)).toBe(true);
     }
     writeFileSync(file, DECK);
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
     return {
         hub: dir,
         config: { ...real, deck: (parse(DECK) as { deck: unknown }).deck, deckFile: file },
+        engine: engineDir(),
         projects: () => [slideProject('alpha', 'active'), slideProject('gamma', 'archive')],
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: join(dir, 'behavior.yml'),

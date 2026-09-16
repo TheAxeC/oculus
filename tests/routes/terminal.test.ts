@@ -5,7 +5,8 @@
 // a `run` that records the argv and answers the list itself, and a `recordFor` the test owns instead
 // of the bridge to the last published payload, so only the synthetic hub and state folder are read.
 // The only real path any case touches is the temporary directory: to have statSync say it is there,
-// and, for the task cases, to hold a local.yml the route reads and that afterAll removes.
+// and, for the task cases, to hold an engine directory whose local.yml the route reads and that
+// afterAll removes.
 
 import {
     existsSync,
@@ -50,10 +51,23 @@ expect(existsSync(GONE)).toBe(false);
 
 const TASK_CONFIG = mkdtempSync(join(HERE, 'oculus-task-route-'));
 expect(resolve(TASK_CONFIG).startsWith(HERE + sep)).toBe(true);
-const TASK_LOCAL = join(TASK_CONFIG, 'local.yml');
-writeFileSync(TASK_LOCAL, `hub: ${HERE}\nclaude_bin: /opt/Claude CLI/claude\n`);
-const TASK_DEFAULT_LOCAL = join(TASK_CONFIG, 'default.yml');
-writeFileSync(TASK_DEFAULT_LOCAL, `hub: ${HERE}\n`);
+
+/**
+ * An engine directory of this suite's own: a config folder holding the machine-local file the case
+ * under test reads. The route is handed the directory, so nothing here reads the checkout's own.
+ */
+function engineWith(name: string, local = ''): string {
+    const dir = join(TASK_CONFIG, name);
+    expect(resolve(dir).startsWith(TASK_CONFIG + sep)).toBe(true);
+    mkdirSync(join(dir, 'config'), { recursive: true });
+    if (local !== '') writeFileSync(join(dir, 'config', 'local.yml'), local);
+    return dir;
+}
+
+/** The engine a case that reads no machine-local value is given: a config folder and nothing in it. */
+const ENGINE = engineWith('engine');
+const TASK_ENGINE = engineWith('task-engine', `hub: ${HERE}\nclaude_bin: /opt/Claude CLI/claude\n`);
+const TASK_DEFAULT_ENGINE = engineWith('default-engine', `hub: ${HERE}\n`);
 
 const CHAT_HUB = join(TASK_CONFIG, 'hub');
 const CHAT_STATE = join(TASK_CONFIG, 'state');
@@ -63,9 +77,8 @@ mkdirSync(CHAT_PROJECT, { recursive: true });
 mkdirSync(join(CHAT_HUB, 'registries'), { recursive: true });
 writeFileSync(join(CHAT_PROJECT, 'project.yml'), 'id: alpha\ntitle: Alpha Study\n');
 writeFileSync(join(CHAT_HUB, 'registries', 'venues.yml'), 'entries: []\n');
-const CHAT_LOCAL = join(TASK_CONFIG, 'chat.yml');
-writeFileSync(
-    CHAT_LOCAL,
+const CHAT_ENGINE = engineWith(
+    'chat-engine',
     `hub: ${CHAT_HUB}\nclaude_bin: /opt/Claude CLI/claude\nsessions_overrides: ${join(CHAT_STATE, 'sessions.json')}\n`
 );
 const BASE_CHAT_CONFIG = loadConfig(engineDir()).config;
@@ -74,7 +87,6 @@ const CHAT_CATALOG = textCatalog(CHAT_CONFIG);
 
 afterAll(() => {
     SERVER.close();
-    delete process.env.OCULUS_LOCAL;
     rmSync(TASK_CONFIG, { recursive: true, force: true });
 });
 
@@ -132,7 +144,7 @@ function tmux(existingNames: string[] = []): {
 }
 
 function options(over: Partial<TerminalOptions> = {}): TerminalOptions {
-    return { run: tmux().run, recordFor: () => null, ...over };
+    return { engine: ENGINE, run: tmux().run, recordFor: () => null, ...over };
 }
 
 /** A record source holding exactly the sessions the case is about. */
@@ -171,7 +183,7 @@ describe('GET /api/terminal after a write', () => {
         const started = await handleTerminal(
             request({ action: 'start', kind: 'claude', cwd: HERE, cols: 80, rows: 24 }),
             TOKEN,
-            { run: driver.run }
+            { engine: ENGINE, run: driver.run }
         );
         expect(started.status).toBe(200);
         const terminal = (await answer(started)).terminal as { id: string };
@@ -197,7 +209,7 @@ describe('POST /api/terminal, a session oculus did not start', () => {
             const response = await handleTerminal(
                 request({ action, id: 'scratch', cols: 80, rows: 24 }),
                 TOKEN,
-                { run: driver.run }
+                { engine: ENGINE, run: driver.run }
             );
             expect(response.status).toBe(400);
             expect(String((await answer(response)).error)).toContain('not started by oculus');
@@ -243,7 +255,7 @@ describe('POST /api/terminal, the resume action', () => {
         const response = await handleTerminal(
             request({ action: 'resume', tool: 'claude', id: SESSION, cols: 80, rows: 24 }),
             TOKEN,
-            { run: driver.run, recordFor: source(running) }
+            { engine: ENGINE, run: driver.run, recordFor: source(running) }
         );
         expect(response.status).toBe(400);
         expect((await answer(response)).error).toBe('sessions.resume_live');
@@ -267,7 +279,7 @@ describe('POST /api/terminal, the resume action', () => {
         const response = await handleTerminal(
             request({ action: 'resume', tool: 'claude', id: SESSION, cols: 100, rows: 30 }),
             TOKEN,
-            { run: driver.run, recordFor: source(ended) }
+            { engine: ENGINE, run: driver.run, recordFor: source(ended) }
         );
         expect(response.status).toBe(200);
         const body = await answer(response);
@@ -294,7 +306,7 @@ describe('POST /api/terminal, the resume action', () => {
         const response = await handleTerminal(
             request({ action: 'resume', tool: 'codex', id: SESSION, cols: 80, rows: 24 }),
             TOKEN,
-            { run: driver.run, recordFor: source(ended) }
+            { engine: ENGINE, run: driver.run, recordFor: source(ended) }
         );
         expect(response.status).toBe(200);
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
@@ -306,7 +318,7 @@ describe('POST /api/terminal, the resume action', () => {
         const response = await handleTerminal(
             request({ action: 'resume', tool: 'claude', id: SESSION }, 'stale'),
             TOKEN,
-            { run: driver.run, recordFor: source(record(SESSION, { cwd: HERE })) }
+            { engine: ENGINE, run: driver.run, recordFor: source(record(SESSION, { cwd: HERE })) }
         );
         expect(response.status).toBe(403);
         expect(driver.calls).toEqual([]);
@@ -320,6 +332,7 @@ describe('POST /api/terminal, the recover action', () => {
             request({ action: 'recover', key: 'mimic-iv', cols: 96, rows: 28 }),
             TOKEN,
             {
+                engine: ENGINE,
                 run: driver.run,
                 datasetIdsFor: () => ['mimic-iv'],
                 hubFor: () => HERE
@@ -341,7 +354,12 @@ describe('POST /api/terminal, the recover action', () => {
         const response = await handleTerminal(
             request({ action: 'recover', key: 'unknown', cols: 80, rows: 24 }),
             TOKEN,
-            { run: driver.run, datasetIdsFor: () => ['mimic-iv'], hubFor: () => HERE }
+            {
+                engine: ENGINE,
+                run: driver.run,
+                datasetIdsFor: () => ['mimic-iv'],
+                hubFor: () => HERE
+            }
         );
         expect(response.status).toBe(400);
         expect((await answer(response)).error).toBe(
@@ -355,7 +373,12 @@ describe('POST /api/terminal, the recover action', () => {
         const response = await handleTerminal(
             request({ action: 'recover', key: 'mimic; touch nope', cols: 80, rows: 24 }),
             TOKEN,
-            { run: driver.run, datasetIdsFor: () => ['mimic-iv'], hubFor: () => HERE }
+            {
+                engine: ENGINE,
+                run: driver.run,
+                datasetIdsFor: () => ['mimic-iv'],
+                hubFor: () => HERE
+            }
         );
         expect(response.status).toBe(400);
         expect(driver.calls).toEqual([]);
@@ -366,7 +389,7 @@ describe('POST /api/terminal, the recover action', () => {
         const response = await handleTerminal(
             request({ action: 'recover', key: '--all', cols: 80, rows: 24 }),
             TOKEN,
-            { run: driver.run, datasetIdsFor: () => ['--all'], hubFor: () => HERE }
+            { engine: ENGINE, run: driver.run, datasetIdsFor: () => ['--all'], hubFor: () => HERE }
         );
         expect(response.status).toBe(400);
         expect((await answer(response)).error).toBe('key is not a valid dataset key');
@@ -376,13 +399,12 @@ describe('POST /api/terminal, the recover action', () => {
 
 describe('POST /api/terminal, the task action', () => {
     it('starts every accepted task in the hub with the configured Claude binary and fixed argv', async () => {
-        process.env.OCULUS_LOCAL = TASK_LOCAL;
         for (const kind of ['litwatch', 'scout', 'linkedin', 'inbox']) {
             const driver = tmux();
             const response = await handleTerminal(
                 request({ action: 'task', kind, cols: 92, rows: 27 }),
                 TOKEN,
-                { run: driver.run }
+                { engine: TASK_ENGINE, run: driver.run }
             );
             expect(response.status).toBe(200);
             const terminal = (await answer(response)).terminal as { name: string };
@@ -398,24 +420,22 @@ describe('POST /api/terminal, the task action', () => {
     });
 
     it('refuses another task kind without starting a terminal', async () => {
-        process.env.OCULUS_LOCAL = TASK_LOCAL;
         const driver = tmux();
         const response = await handleTerminal(
             request({ action: 'task', kind: 'audit', cols: 80, rows: 24 }),
             TOKEN,
-            { run: driver.run }
+            { engine: TASK_ENGINE, run: driver.run }
         );
         expect(response.status).toBe(400);
         expect(driver.calls).toEqual([]);
     });
 
     it('uses Claude from PATH when local configuration names no binary', async () => {
-        process.env.OCULUS_LOCAL = TASK_DEFAULT_LOCAL;
         const driver = tmux();
         const response = await handleTerminal(
             request({ action: 'task', kind: 'scout', cols: 80, rows: 24 }),
             TOKEN,
-            { run: driver.run }
+            { engine: TASK_DEFAULT_ENGINE, run: driver.run }
         );
         expect(response.status).toBe(200);
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
@@ -426,6 +446,7 @@ describe('POST /api/terminal, the task action', () => {
 describe('POST /api/terminal, the chat action', () => {
     function chatOptions(driver: ReturnType<typeof tmux>): TerminalOptions {
         return {
+            engine: CHAT_ENGINE,
             run: driver.run,
             projectFor: (id) =>
                 id === 'alpha' ? { title: 'Alpha Study', folder: 'projects/active/alpha' } : null,
@@ -434,7 +455,6 @@ describe('POST /api/terminal, the chat action', () => {
     }
 
     it('starts a focused interactive Claude terminal and writes its private index first', async () => {
-        process.env.OCULUS_LOCAL = CHAT_LOCAL;
         const driver = tmux();
         const routed = chatOptions(driver);
         const run = routed.run;
@@ -494,7 +514,6 @@ describe('POST /api/terminal, the chat action', () => {
     });
 
     it('starts a numbered portfolio chat in the hub with no model argument when none is set', async () => {
-        process.env.OCULUS_LOCAL = CHAT_LOCAL;
         const driver = tmux();
         const config = { ...BASE_CHAT_CONFIG, chat: { model: '' } };
         const response = await handleTerminal(
@@ -528,7 +547,6 @@ describe('POST /api/terminal, the chat action', () => {
     });
 
     it('numbers a portfolio chat past an existing Chat 1', async () => {
-        process.env.OCULUS_LOCAL = CHAT_LOCAL;
         const driver = tmux([CHAT_CATALOG['server.chat.chat_name'].replace('{0}', '1')]);
         const response = await handleTerminal(
             request({ action: 'chat', cols: 80, rows: 24 }),
@@ -541,7 +559,6 @@ describe('POST /api/terminal, the chat action', () => {
     });
 
     it('leaves no index when zero columns are refused', async () => {
-        process.env.OCULUS_LOCAL = CHAT_LOCAL;
         const driver = tmux();
         const before = readdirSync(join(CHAT_STATE, 'chat')).sort();
         const response = await handleTerminal(
@@ -556,7 +573,6 @@ describe('POST /api/terminal, the chat action', () => {
     });
 
     it('removes the index when the terminal runner fails to start', async () => {
-        process.env.OCULUS_LOCAL = CHAT_LOCAL;
         const driver = tmux();
         const routed = chatOptions(driver);
         let index = '';
@@ -583,7 +599,6 @@ describe('POST /api/terminal, the chat action', () => {
     });
 
     it('refuses an unknown project before writing an index or starting a terminal', async () => {
-        process.env.OCULUS_LOCAL = CHAT_LOCAL;
         const driver = tmux();
         const response = await handleTerminal(
             request({ action: 'chat', id: 'unknown', cols: 80, rows: 24 }),

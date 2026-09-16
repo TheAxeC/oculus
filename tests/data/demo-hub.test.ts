@@ -17,7 +17,7 @@ import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 
 const engine = engineDir();
 const demo = join(engine, 'demo');
-const config = portfolioConfigFrom(loadConfig(engine).config);
+const config = portfolioConfigFrom(loadConfig(engine).config, engine);
 const snapshot = buildPortfolio(demo, config);
 
 describe('the demo hub', () => {

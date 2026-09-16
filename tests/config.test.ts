@@ -211,41 +211,24 @@ describe('loadLocal', () => {
         }
     });
 
-    describe('OCULUS_LOCAL', () => {
-        afterEach(() => {
-            delete process.env.OCULUS_LOCAL;
+    // The engine directory is the whole of what says which machine-local file is read: a server
+    // started over another one reads that one's, which is how a run keeps off the checkout's.
+    it('reads the file of the engine it is given and never another engine own', () => {
+        const one = scratch();
+        writeLocal(one, 'hub: /srv/from-one\nport: 8791\n');
+        const other = scratch();
+        writeLocal(other, 'hub: /srv/from-the-other\nport: 8792\n');
+        expect(loadLocal(one)).toEqual({
+            hub: '/srv/from-one',
+            port: 8791,
+            claudeBin: 'claude',
+            accounts: DEFAULT_ACCOUNTS
         });
-
-        it('is read instead of the engine local.yml', () => {
-            const dir = scratch();
-            writeLocal(dir, 'hub: /srv/from-the-engine\nport: 8791\n');
-            const elsewhere = scratch();
-            const named = join(elsewhere, 'named.yml');
-            expect(resolve(named).startsWith(resolve(elsewhere) + sep)).toBe(true);
-            writeFileSync(named, 'hub: /srv/from-the-override\nport: 8792\n');
-            process.env.OCULUS_LOCAL = named;
-            expect(loadLocal(dir)).toEqual({
-                hub: '/srv/from-the-override',
-                port: 8792,
-                claudeBin: 'claude',
-                accounts: DEFAULT_ACCOUNTS
-            });
-        });
-
-        it('resolves a relative hub against the named file own folder', () => {
-            const dir = scratch();
-            const elsewhere = scratch();
-            const named = join(elsewhere, 'named.yml');
-            expect(resolve(named).startsWith(resolve(elsewhere) + sep)).toBe(true);
-            writeFileSync(named, 'hub: demo\n');
-            process.env.OCULUS_LOCAL = named;
-            expect(loadLocal(dir).hub).toBe(join(elsewhere, 'demo'));
-        });
-
-        it('throws when the named file is not there', () => {
-            const dir = scratch();
-            process.env.OCULUS_LOCAL = join(dir, 'absent.yml');
-            expect(() => loadLocal(dir)).toThrow(/does not exist/);
+        expect(loadLocal(other)).toEqual({
+            hub: '/srv/from-the-other',
+            port: 8792,
+            claudeBin: 'claude',
+            accounts: DEFAULT_ACCOUNTS
         });
     });
 });
@@ -346,48 +329,31 @@ describe('checkLocal', () => {
     });
 });
 
-describe('OCULUS_CONFIG', () => {
-    afterEach(() => {
-        delete process.env.OCULUS_CONFIG;
-    });
-
-    it('is the engine config directory when it is not set', () => {
+describe('configDir', () => {
+    it('is the config folder of the engine it is given', () => {
         const engine = scratch();
         expect(configDir(engine)).toBe(join(engine, 'config'));
     });
 
-    it('is read instead of the engine config directory, so a write lands in the copy', () => {
+    it('is that engine own folder, so a run over a copy reads and writes the copy', () => {
         const engine = scratch();
         writeConfig(engine, 'behavior.yml', 'stale_days: 30\n');
-        const elsewhere = scratch();
-        const named = join(elsewhere, 'config');
-        expect(resolve(named).startsWith(resolve(elsewhere) + sep)).toBe(true);
-        mkdirSync(named, { recursive: true });
-        writeFileSync(join(named, 'behavior.yml'), 'stale_days: 7\n');
-        process.env.OCULUS_CONFIG = named;
-        expect(configDir(engine)).toBe(named);
-        expect(loadConfig(engine).config.stale_days).toBe(7);
-        expect(portfolioConfigFrom(loadConfig(engine).config, engine).deckFile).toBe(
-            join(named, 'present.yml')
+        const copy = scratch();
+        writeConfig(copy, 'behavior.yml', 'stale_days: 7\n');
+        expect(loadConfig(engine).config.stale_days).toBe(30);
+        expect(loadConfig(copy).config.stale_days).toBe(7);
+        expect(portfolioConfigFrom(loadConfig(copy).config, copy).deckFile).toBe(
+            join(copy, 'config', 'present.yml')
         );
     });
 
     it('is the folder the engine root serves and the file a root finding names', () => {
-        // The page lists and saves through that root, so a run pointed at a copy never reaches the
+        // The page lists and saves through that root, so a run over a copy never reaches the
         // checkout's own folder, and the machine's own local.yml it lists is the one loadLocal read.
         const engine = scratch();
-        const named = join(scratch(), 'config');
-        mkdirSync(named, { recursive: true });
-        process.env.OCULUS_CONFIG = named;
-        expect(engineRoot(engine)).toEqual({ key: ENGINE_ROOT, dir: named });
-        expect(rootsFile(engine)).toBe(join(named, 'sources.yml'));
-        expect(layoutFile(engine)).toBe(join(named, 'layout.yml'));
-    });
-
-    it('resolves a relative directory against the engine', () => {
-        const engine = scratch();
-        process.env.OCULUS_CONFIG = 'other';
-        expect(configDir(engine)).toBe(join(engine, 'other'));
+        expect(engineRoot(engine)).toEqual({ key: ENGINE_ROOT, dir: join(engine, 'config') });
+        expect(rootsFile(engine)).toBe(join(engine, 'config', 'sources.yml'));
+        expect(layoutFile(engine)).toBe(join(engine, 'config', 'layout.yml'));
     });
 });
 

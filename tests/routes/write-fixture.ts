@@ -81,7 +81,7 @@ export function target(): WriteTarget {
         join(linkedin, 'xx-route-idea.md'),
         '---\ntitle: "Route idea"\ncategory: research\ndate: 2026-09-12\n---\n\n'
     );
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
     // The overrides file is inside the same temporary directory, so a session write in this suite
     // can never reach ~/.oculus/sessions.json.
     const overrides = join(dir, 'sessions.json');
@@ -97,6 +97,7 @@ export function target(): WriteTarget {
     return {
         hub: dir,
         config: { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] },
+        engine: engineDir(),
         overrides,
         projects: () => [],
         bookmarks,
@@ -210,12 +211,13 @@ export function deckTarget(): WriteTarget {
     const file = join(dir, 'present.yml');
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
     writeFileSync(file, DECK);
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
     const changes = join(dir, 'changes.jsonl');
     expect(resolve(changes).startsWith(resolve(dir) + sep)).toBe(true);
     return {
         hub: dir,
         config: { ...real, deck: deckMapOf(DECK), deckFile: file },
+        engine: engineDir(),
         projects: () => [slideProject('alpha', 'active'), slideProject('gamma', 'archive')],
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: join(dir, 'behavior.yml'),

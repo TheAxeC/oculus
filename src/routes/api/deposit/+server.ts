@@ -9,8 +9,8 @@ import { projectIds } from '$lib/server/sessions/hooks';
 import type { RequestHandler } from './$types';
 
 const options = (server: App.Locals['server']) => ({
-    idsFor: () => knownIds(projectIds(server.hub)),
-    deposit: { plans: server.depositPlans }
+    idsFor: () => knownIds(projectIds(server.hub), server.engine),
+    deposit: { plans: server.depositPlans, engine: server.engine }
 });
 
 export const GET: RequestHandler = ({ request, locals }) =>

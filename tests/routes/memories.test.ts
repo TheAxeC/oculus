@@ -290,7 +290,8 @@ describe('the request the server accepts', () => {
 });
 
 describe('the configured folder', () => {
-    function fixture(body: string): { engine: string; hub: string; local: string } {
+    /** An engine directory of this case's own: its config folder, its appearance and its local.yml. */
+    function fixture(body: string): { engine: string; hub: string } {
         const root = mkdtempSync(join(tmpdir(), 'oculus-memories-config-'));
         expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const engine = join(root, 'engine');
@@ -298,33 +299,19 @@ describe('the configured folder', () => {
         mkdirSync(join(engine, 'config'), { recursive: true });
         mkdirSync(hub, { recursive: true });
         writeFileSync(join(engine, 'config', 'appearance.yml'), body);
-        const file = join(root, 'local.yml');
-        writeFileSync(file, `hub: ${JSON.stringify(hub)}\n`);
-        return { engine, hub, local: file };
-    }
-
-    function withLocal<T>(file: string, run: () => T): T {
-        const before = process.env.OCULUS_LOCAL;
-        process.env.OCULUS_LOCAL = file;
-        try {
-            return run();
-        } finally {
-            if (before === undefined) delete process.env.OCULUS_LOCAL;
-            else process.env.OCULUS_LOCAL = before;
-        }
+        writeFileSync(join(engine, 'config', 'local.yml'), `hub: ${JSON.stringify(hub)}\n`);
+        return { engine, hub };
     }
 
     it('resolves the configured directory under the hub', () => {
         const own = fixture('memories:\n  dir: pictures\n');
-        expect(withLocal(own.local, () => folder(memoriesMemory(), own.engine))).toBe(
-            join(own.hub, 'pictures')
-        );
+        expect(folder(memoriesMemory(), own.engine)).toBe(join(own.hub, 'pictures'));
     });
 
     it('is null when the key is absent, and when the directory leaves the hub', () => {
         const absent = fixture('themes: []\n');
-        expect(withLocal(absent.local, () => folder(memoriesMemory(), absent.engine))).toBeNull();
+        expect(folder(memoriesMemory(), absent.engine)).toBeNull();
         const outside = fixture('memories:\n  dir: ../elsewhere\n');
-        expect(withLocal(outside.local, () => folder(memoriesMemory(), outside.engine))).toBeNull();
+        expect(folder(memoriesMemory(), outside.engine)).toBeNull();
     });
 });

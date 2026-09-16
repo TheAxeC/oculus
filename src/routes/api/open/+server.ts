@@ -5,4 +5,4 @@ import { handleOpen } from '$lib/server/open';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = ({ request, locals }) =>
-    handleOpen(request, locals.token, roots());
+    handleOpen(request, locals.token, roots(locals.server.engine));

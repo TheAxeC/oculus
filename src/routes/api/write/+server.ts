@@ -10,4 +10,4 @@ import { handleWrite, target } from '$lib/server/writes';
 import type { RequestHandler } from './$types';
 
 export const POST: RequestHandler = ({ request, locals }) =>
-    handleWrite(request, locals.token, target(locals.server));
+    handleWrite(request, locals.token, target(locals.server.engine, locals.server));

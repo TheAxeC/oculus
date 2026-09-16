@@ -11,6 +11,7 @@ export const GET: RequestHandler = ({ request }) => handleTerminalList(request);
 export const POST: RequestHandler = ({ request, locals }) => {
     const server = locals.server;
     return handleTerminal(request, server.token, {
+        engine: server.engine,
         recordFor: (id) => sessionRecord(server.hub, id),
         datasetIdsFor: () => datasetIds(server.hub),
         hubFor: () => server.local.hub,

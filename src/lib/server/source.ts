@@ -15,7 +15,7 @@ import { accessSync, closeSync, constants, openSync, readSync } from 'node:fs';
 import { LOCAL_NAME, checkLocal } from '../data/sources/config.ts';
 import { TEXT_SNIFF_READ, isTextBytes } from '../data/text-kind.ts';
 import { hasToken, sameOrigin } from './auth.ts';
-import { ENGINE_ROOT, resolveRootFileResult, resolveRootPath, roots, type Root } from './files.ts';
+import { ENGINE_ROOT, resolveRootFileResult, resolveRootPath, type Root } from './files.ts';
 import { writeTextAtomic } from './sessions/json.ts';
 
 export type SourceBody = { root: string; path: string; content: string };
@@ -100,7 +100,7 @@ function localRefusal(list: Root[], path: string, content: string): string | nul
  * What the source tab may do with one file: whether this machine's mode on it refuses a write. The
  * resolver and the origin check are the write's, so the two answer about the same file.
  */
-export function handleSourceInfo(request: Request, url: URL, rootList: Root[] = roots()): Response {
+export function handleSourceInfo(request: Request, url: URL, rootList: Root[]): Response {
     if (!sameOrigin(request, request.headers.get('host') ?? '')) {
         return json(403, { ok: false, error: 'the request did not come from this page' });
     }
@@ -122,7 +122,7 @@ export function handleSourceInfo(request: Request, url: URL, rootList: Root[] = 
 export async function handleSource(
     request: Request,
     token: string,
-    rootList: Root[] = roots()
+    rootList: Root[]
 ): Promise<Response> {
     if (!sameOrigin(request, request.headers.get('host') ?? '')) {
         return json(403, { ok: false, error: 'the request did not come from this page' });

@@ -139,7 +139,8 @@ describe('the response', () => {
 });
 
 describe('the configured settings', () => {
-    function fixture(body: string): { engine: string; hub: string; local: string } {
+    /** An engine directory of this case's own: its config folder, its appearance and its local.yml. */
+    function fixture(body: string): { engine: string; hub: string } {
         const root = mkdtempSync(join(tmpdir(), 'oculus-wallpaper-config-'));
         expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const engine = join(root, 'engine');
@@ -148,25 +149,13 @@ describe('the configured settings', () => {
         mkdirSync(config, { recursive: true });
         mkdirSync(hub, { recursive: true });
         writeFileSync(join(config, 'appearance.yml'), body);
-        const local = join(root, 'local.yml');
-        writeFileSync(local, `hub: ${JSON.stringify(hub)}\n`);
-        return { engine, hub, local };
+        writeFileSync(join(config, 'local.yml'), `hub: ${JSON.stringify(hub)}\n`);
+        return { engine, hub };
     }
 
-    function withLocal<T>(file: string, run: () => T): T {
-        const before = process.env.OCULUS_LOCAL;
-        process.env.OCULUS_LOCAL = file;
-        try {
-            return run();
-        } finally {
-            if (before === undefined) delete process.env.OCULUS_LOCAL;
-            else process.env.OCULUS_LOCAL = before;
-        }
-    }
-
-    it('reads the configured directory through OCULUS_LOCAL', () => {
+    it('reads the configured directory under the hub of the engine it is given', () => {
         const own = fixture('wallpaper:\n  dir: pictures\n  pick: first\n');
-        expect(withLocal(own.local, () => settings(wallpaperMemory(), own.engine))).toEqual({
+        expect(settings(wallpaperMemory(), own.engine)).toEqual({
             dir: join(own.hub, 'pictures'),
             file: undefined,
             pick: 'first'
@@ -175,7 +164,7 @@ describe('the configured settings', () => {
 
     it('returns null when dir is absent', () => {
         const own = fixture('wallpaper:\n  pick: first\n');
-        expect(withLocal(own.local, () => settings(wallpaperMemory(), own.engine))).toBeNull();
+        expect(settings(wallpaperMemory(), own.engine)).toBeNull();
     });
 
     it('reports a missing or unknown pick once and returns null', () => {
@@ -183,20 +172,12 @@ describe('the configured settings', () => {
         try {
             const missing = fixture('wallpaper:\n  dir: pictures\n');
             const missingMemory = wallpaperMemory();
-            expect(
-                withLocal(missing.local, () => settings(missingMemory, missing.engine))
-            ).toBeNull();
-            expect(
-                withLocal(missing.local, () => settings(missingMemory, missing.engine))
-            ).toBeNull();
+            expect(settings(missingMemory, missing.engine)).toBeNull();
+            expect(settings(missingMemory, missing.engine)).toBeNull();
             const unknown = fixture('wallpaper:\n  dir: pictures\n  pick: newest\n');
             const unknownMemory = wallpaperMemory();
-            expect(
-                withLocal(unknown.local, () => settings(unknownMemory, unknown.engine))
-            ).toBeNull();
-            expect(
-                withLocal(unknown.local, () => settings(unknownMemory, unknown.engine))
-            ).toBeNull();
+            expect(settings(unknownMemory, unknown.engine)).toBeNull();
+            expect(settings(unknownMemory, unknown.engine)).toBeNull();
             expect(error).toHaveBeenCalledTimes(2);
         } finally {
             error.mockRestore();

@@ -4,4 +4,5 @@
 import { filesTarget, handleProjectFiles } from '$lib/server/project-files';
 import type { RequestHandler } from './$types';
 
-export const GET: RequestHandler = ({ request }) => handleProjectFiles(request, filesTarget());
+export const GET: RequestHandler = ({ request, locals }) =>
+    handleProjectFiles(request, filesTarget(locals.server.engine));

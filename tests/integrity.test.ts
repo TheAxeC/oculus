@@ -36,7 +36,7 @@ if (!present) {
 }
 
 const merged = loadConfig(engine).config;
-const config = portfolioConfigFrom(merged);
+const config = portfolioConfigFrom(merged, engine);
 
 /** Folders a project.yml never sits under: a project's own code deposit and its attic. */
 const NEVER_DESCEND = ['code', 'attic'];

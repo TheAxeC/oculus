@@ -429,7 +429,7 @@ describe('watchPortfolio', () => {
         });
         await quiet(started.got);
         const before = on(started.got, 'feeds').length;
-        const config = portfolioConfigFrom(loadConfig(started.engine).config);
+        const config = portfolioConfigFrom(loadConfig(started.engine).config, started.engine);
         expect(
             resolve(join(started.hub, config.feeds.inbox)).startsWith(resolve(started.hub) + sep)
         ).toBe(true);
@@ -455,6 +455,7 @@ describe('watchPortfolio', () => {
             {
                 hub: started.hub,
                 config,
+                engine: started.engine,
                 projects: () => [],
                 bookmarks: join(started.hub, 'bookmarks.yml'),
                 behaviorFile: join(started.engine, 'config', 'behavior.yml')
@@ -476,7 +477,7 @@ describe('watchPortfolio', () => {
         const started = start();
         await quiet(started.got);
         const before = on(started.got, 'feeds').length;
-        const config = portfolioConfigFrom(loadConfig(started.engine).config);
+        const config = portfolioConfigFrom(loadConfig(started.engine).config, started.engine);
         const path = config.feeds.inbox;
         expect(resolve(join(started.hub, path)).startsWith(resolve(started.hub) + sep)).toBe(true);
         const token = mintToken();
@@ -581,7 +582,7 @@ describe('watchPortfolio', () => {
         const before = on(started.got, 'audit').length;
 
         const token = mintToken();
-        const config = portfolioConfigFrom(loadConfig(started.engine).config);
+        const config = portfolioConfigFrom(loadConfig(started.engine).config, started.engine);
         const response = await handleWrite(
             new Request('http://127.0.0.1:8790/api/write', {
                 method: 'POST',
@@ -596,6 +597,7 @@ describe('watchPortfolio', () => {
             {
                 hub: started.hub,
                 config,
+                engine: started.engine,
                 projects: () => [],
                 bookmarks: join(started.hub, 'bookmarks.yml'),
                 behaviorFile: join(started.engine, 'config', 'behavior.yml')

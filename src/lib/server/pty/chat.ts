@@ -6,7 +6,6 @@ import { rmSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { byKey } from '../../data/guards.ts';
 import {
-    engineDir,
     loadConfig,
     loadLocalOrDefaults,
     textCatalog,
@@ -21,6 +20,8 @@ import { listTerminals, newId, startTerminal, type StartOptions } from './sessio
 type ChatProject = Pick<Project, 'title' | 'folder'>;
 
 export type ChatOptions = StartOptions & {
+    /** The engine directory the configuration and the machine's own file are read from. */
+    engine: string;
     /** A project in the latest portfolio snapshot. Tests provide the snapshot source they own. */
     projectFor?: (id: string) => ChatProject | null;
     /** The merged engine config. Tests provide a fixture without changing the checked-in catalog. */
@@ -99,16 +100,11 @@ export function chatCommand(
 }
 
 /** Start one project-focused or portfolio-wide interactive chat terminal. */
-export async function startChat(
-    id: unknown,
-    cols: unknown,
-    rows: unknown,
-    options: ChatOptions = {}
-) {
+export async function startChat(id: unknown, cols: unknown, rows: unknown, options: ChatOptions) {
     if (id !== null && id !== undefined && typeof id !== 'string') {
         throw new Error('id must be a project id or null');
     }
-    const engine = engineDir();
+    const engine = options.engine;
     const local = options.localFor?.() ?? loadLocalOrDefaults(engine);
     const config = options.configFor?.() ?? loadConfig(engine).config;
     const catalog = textCatalog(config);
@@ -136,7 +132,7 @@ export async function startChat(
     const seed = portfolio
         ? words(catalog, 'server.chat.seed_portfolio')
         : words(catalog, 'server.chat.seed_focus', project.title);
-    writeTextAtomic(index, portfolioContext(local.hub, config), 0o600);
+    writeTextAtomic(index, portfolioContext(local.hub, config, engine), 0o600);
     try {
         return await startTerminal(
             {

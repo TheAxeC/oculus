@@ -10,7 +10,6 @@
 
 import { resolve } from 'node:path';
 import { byKey } from '../data/guards.ts';
-import { engineDir } from '../data/sources/config.ts';
 import { configOf, folderOf, images, sameOrigin, stream } from './images.ts';
 
 export { images, sameOrigin } from './images.ts';
@@ -80,7 +79,7 @@ export function serve(
  * The configured wallpaper, or null when there is nothing to serve. The config is read per request
  * so an edit shows on reload. A missing `dir`, or one outside the hub, serves nothing.
  */
-export function settings(memory: WallpaperMemory, engine: string = engineDir()): Wallpaper | null {
+export function settings(memory: WallpaperMemory, engine: string): Wallpaper | null {
     const raw = configOf(engine).wallpaper;
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return null;
     const held = raw as Record<string, unknown>;

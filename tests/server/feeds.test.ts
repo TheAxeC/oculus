@@ -43,7 +43,7 @@ function fixture(): { hub: string; config: PortfolioConfig } {
     const hub = mkdtempSync(join(tmpdir(), 'oculus-feeds-'));
     expect(resolve(hub).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const config = {
-        ...portfolioConfigFrom(loadConfig(engineDir()).config),
+        ...portfolioConfigFrom(loadConfig(engineDir()).config, engineDir()),
         feeds: { ...FILES, linkedin: 'fixture/linkedin' }
     };
     for (const [kind, id] of [

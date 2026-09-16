@@ -13,7 +13,7 @@
 
 import { readdirSync, statSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
-import { engineDir, loadConfig } from '../data/sources/config.ts';
+import { loadConfig } from '../data/sources/config.ts';
 import { isMap } from '../data/guards.ts';
 import { readManifests } from '../data/sources/manifests.ts';
 import { sameOrigin } from './auth.ts';
@@ -187,9 +187,9 @@ export function listFiles(into: FilesTarget, id: string): Response {
  * the scan rules come from lib/server/writes.ts rather than a second reader of local.yml, exactly
  * as the document route's do.
  */
-export function filesTarget(): FilesTarget {
-    const { hub, config } = target();
-    return { hub, config, settings: loadConfig(engineDir()).config };
+export function filesTarget(engine: string): FilesTarget {
+    const { hub, config } = target(engine);
+    return { hub, config, settings: loadConfig(engine).config };
 }
 
 /** The whole endpoint: refuse a request from another origin, or list the project it names. */

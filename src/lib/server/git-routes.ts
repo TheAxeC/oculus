@@ -16,7 +16,7 @@
 // Every operation is an option with a real default, so tests/routes/git.test.ts drives the whole
 // endpoint without running git at all.
 
-import { engineDir, loadConfig, textCatalog } from '../data/sources/config.ts';
+import { loadConfig, textCatalog } from '../data/sources/config.ts';
 import { byKey, strings } from '../data/guards.ts';
 import { hasToken, sameOrigin } from './auth.ts';
 import {
@@ -76,6 +76,8 @@ export type GitRun = (
 ) => Promise<Outcome>;
 
 export type GitOptions = {
+    /** The engine directory the commit-message instruction and model are read from. */
+    engine: string;
     /** What an action does; the real git-write.ts operations when absent. */
     run?: GitRun;
     /** Which roots a request may name; the published workspaces and the hub when absent. */
@@ -116,9 +118,10 @@ export function messagePrompt(config: Record<string, unknown>): string {
 async function suggestFor(
     root: string,
     roots: string[],
+    engine: string,
     options: MessageOptions = {}
 ): Promise<Outcome> {
-    const { config } = loadConfig(engineDir());
+    const { config } = loadConfig(engine);
     return suggestMessage(
         root,
         messagePrompt(config),
@@ -163,7 +166,7 @@ async function operate(
  * refused for a root this server has not published; the diffs are fetched when a pane opens rather
  * than published, since the channel carries state and not text.
  */
-export async function handleGitGet(request: Request, options: GitOptions = {}): Promise<Response> {
+export async function handleGitGet(request: Request, options: GitOptions): Promise<Response> {
     const parameters = new URL(request.url).searchParams;
     if (parameters.has('diff')) return handleGitDiff(request, parameters, options);
     if (parameters.has('worktree')) return handleGitWorktree(request, parameters, options);
@@ -223,10 +226,7 @@ async function handleGitWorktree(
  * GET /api/git?root=: the branches of one root, for the branch menu. A read, so it carries no token,
  * but it is still refused to another origin, and to a root this server has not published.
  */
-export async function handleGitBranches(
-    request: Request,
-    options: GitOptions = {}
-): Promise<Response> {
+export async function handleGitBranches(request: Request, options: GitOptions): Promise<Response> {
     if (!sameOrigin(request, request.headers.get('host') ?? '')) {
         return json(403, { error: 'the request did not come from this page' });
     }
@@ -247,7 +247,7 @@ export async function handleGitBranches(
 export async function handleGit(
     request: Request,
     token: string,
-    options: GitOptions = {}
+    options: GitOptions
 ): Promise<Response> {
     if (!sameOrigin(request, request.headers.get('host') ?? '')) {
         return json(403, { error: 'the request did not come from this page' });
@@ -282,7 +282,7 @@ export async function handleGit(
     if (action === 'suggest') {
         const answer = await (
             options.suggest ??
-            ((selected, allowed) => suggestFor(selected, allowed, options.message))
+            ((selected, allowed) => suggestFor(selected, allowed, options.engine, options.message))
         )(root, roots);
         if (!answer.ok) return json(400, { error: answer.error });
         return json(200, { ok: true, output: answer.output });

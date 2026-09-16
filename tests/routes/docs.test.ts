@@ -51,7 +51,7 @@ function target(docs: Record<string, string> = { 'README.md': README }): DocTarg
         expect(resolve(path).startsWith(resolve(folder) + sep)).toBe(true);
         writeFileSync(path, body);
     }
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
     return {
         hub: dir,
         engine: engineDir(),
@@ -173,7 +173,7 @@ describe('the document endpoint', () => {
         mkdirSync(folder, { recursive: true });
         writeFileSync(join(folder, 'project.yml'), MANIFEST);
         writeFileSync(join(folder, 'README.md'), README);
-        const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+        const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
         const into: DocTarget = {
             hub: dir,
             engine: engineDir(),

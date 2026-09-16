@@ -4,8 +4,8 @@
 //
 // The served hub is the demo, whose one PRESENT.md is graph-bandits, so the deck holds the deck-level
 // slides of config/present.yml plus that project's two slides. Nothing here writes to the hub, and
-// the save writes the copy of the engine's config/ that tests/browser/serve.ts points the run at
-// through OCULUS_CONFIG, never the checkout's own.
+// the save writes the copy of the engine's config/ inside the engine directory tests/browser/serve.ts
+// starts the run over, never the checkout's own.
 //
 // One case changes that copy's deck and it is the last in the file, since the specs share one server:
 // a case reading the deck after it would be reading what that case wrote rather than the shipped

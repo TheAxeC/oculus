@@ -194,7 +194,7 @@ describe("oculus's own config directory", () => {
     });
 
     it('names the six scan tiers, the software one flat, typed and optional', () => {
-        const { scan } = portfolioConfigFrom(loadConfig(engineDir()).config);
+        const { scan } = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
         expect(scan.map((rule) => rule.dir)).toEqual([
             'projects/ideas',
             'projects/active',
@@ -270,7 +270,7 @@ describe("oculus's own config directory", () => {
     // The two roots of sources.yml sit under the home directory of whoever runs this, and a
     // checkout on a machine without those two repositories has neither. The check is skipped there
     // with the directories named, rather than failing over a fact about the machine.
-    const ROOTS = readRoots(loadConfig(engineDir()).config, rootsFile()).roots;
+    const ROOTS = readRoots(loadConfig(engineDir()).config, rootsFile(engineDir())).roots;
     const MISSING = ROOTS.filter((root) => !existsSync(root.dir));
     if (MISSING.length > 0) {
         console.log(
@@ -280,7 +280,9 @@ describe("oculus's own config directory", () => {
 
     it.skipIf(MISSING.length > 0)('names roots that are on this machine', () => {
         expect(ROOTS.map((root) => root.key)).toEqual(['cathedra', 'game-engine']);
-        expect(readRoots(loadConfig(engineDir()).config, rootsFile()).findings).toEqual([]);
+        expect(readRoots(loadConfig(engineDir()).config, rootsFile(engineDir())).findings).toEqual(
+            []
+        );
     });
 
     it('names a root of its own for every bookmark, and a path under it', () => {

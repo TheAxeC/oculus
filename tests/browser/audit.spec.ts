@@ -4,7 +4,7 @@
 // The demo hub is clean, so this file makes the one finding it reads: a task with no status, written
 // into the run's own copy of demo/ and taken out again at the end. The mute is what needs a browser
 // at all: it posts to /api/write, the server edits `audit_ignore:` in the copy of the engine's
-// config/ that tests/browser/serve.ts points the run at through OCULUS_CONFIG, the watcher pushes
+// config/ inside the engine directory tests/browser/serve.ts starts the run over, the watcher pushes
 // the scan again, and the card moves. Nothing here writes the checkout's own hub or configuration.
 
 import { expect, test, type Page } from '@playwright/test';

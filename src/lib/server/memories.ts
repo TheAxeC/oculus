@@ -21,7 +21,6 @@
 import { byKey } from '../data/guards.ts';
 import { hasToken } from './auth.ts';
 import { writeBytesAtomic } from './sessions/json.ts';
-import { engineDir } from '../data/sources/config.ts';
 import { configOf, folderOf, images, isName, sameOrigin, stream } from './images.ts';
 import { existsSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
@@ -72,7 +71,7 @@ export type UploadOutcome =
  * The configured folder, or null when there is none to serve. The config is read per request so an
  * edit shows on reload; a missing `dir`, or one outside the hub, serves nothing.
  */
-export function folder(memory: MemoriesMemory, engine: string = engineDir()): string | null {
+export function folder(memory: MemoriesMemory, engine: string): string | null {
     return folderOf(configOf(engine).memories, engine, memory.refused, 'memories');
 }
 

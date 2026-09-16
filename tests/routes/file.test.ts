@@ -10,7 +10,7 @@
 import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
     ENGINE_ROOT,
     HUB_ROOT,
@@ -23,7 +23,6 @@ import {
     typeOf,
     withFixed
 } from '../../src/lib/server/files.ts';
-import { engineDir } from '../../src/lib/data/sources/config.ts';
 import { ENGINE_ROOT as CLIENT_ENGINE_ROOT } from '../../src/lib/state/fs.ts';
 import type { Root } from '../../src/lib/server/files.ts';
 
@@ -215,23 +214,18 @@ describe('the two fixed roots', () => {
 // roots() runs on a request, so a machine file that does not read must not take the request with it:
 // the source save that would put the file back is one of those requests.
 describe('the roots over a machine file that does not read', () => {
-    afterEach(() => {
-        delete process.env.OCULUS_LOCAL;
-    });
-
     it('answers the default hub and says once what is wrong, rather than throwing', () => {
-        const dir = folder({ 'local.yml': 'port: eight\n' });
-        process.env.OCULUS_LOCAL = join(dir, 'local.yml');
+        const engine = folder({ 'config/local.yml': 'port: eight\n' });
         const printed = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         try {
-            const list = roots();
+            const list = roots(engine);
             const hub = list.find((one) => one.key === HUB_ROOT);
-            expect(hub?.dir).toBe(resolve(engineDir(), '..', '..'));
+            expect(hub?.dir).toBe(resolve(engine, '..', '..'));
             expect(list.some((one) => one.key === ENGINE_ROOT)).toBe(true);
             expect(printed).toHaveBeenCalledTimes(1);
             expect(String(printed.mock.calls[0][0])).toContain('port must be an integer');
             // The second call over the same file says nothing more and answers the same.
-            expect(roots().find((one) => one.key === HUB_ROOT)?.dir).toBe(hub?.dir);
+            expect(roots(engine).find((one) => one.key === HUB_ROOT)?.dir).toBe(hub?.dir);
             expect(printed).toHaveBeenCalledTimes(1);
         } finally {
             printed.mockRestore();

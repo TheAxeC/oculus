@@ -9,6 +9,7 @@ import { gitRoots } from '$lib/server/sessions/hooks';
 import type { RequestHandler } from './$types';
 
 const options = (server: App.Locals['server']) => ({
+    engine: server.engine,
     rootsFor: () => allowedRoots(gitRoots(server.hub), server.local.hub),
     refresh: (root: string) => server.git.refresh(root)
 });

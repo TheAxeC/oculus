@@ -14,7 +14,7 @@ import { CAREER_FILE, readCareer } from './sources/career.ts';
 import { readFeeds } from './sources/feeds.ts';
 import { projectDocs } from './sources/docs.ts';
 import { deckFindings, readPresent } from './sources/present.ts';
-import { configDir, engineDir } from './sources/config.ts';
+import { configDir } from './sources/config.ts';
 import { normalise } from './normalise.ts';
 import { validate } from './validate.ts';
 import type {
@@ -97,7 +97,7 @@ function vocabKeys(value: unknown): string[] {
  */
 export function portfolioConfigFrom(
     merged: Record<string, unknown>,
-    engine: string = engineDir()
+    engine: string
 ): PortfolioConfig {
     const path = (key: string, fallback: string): string =>
         typeof merged[key] === 'string' ? merged[key] : fallback;

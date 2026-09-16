@@ -44,7 +44,7 @@ const MANIFEST = [
 
 /** The real schema and vocabulary over a scan that names one synthetic tier. */
 function configFor(): PortfolioConfig {
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
     return { ...real, scan: [{ dir: 'projects/manuscripts', type: 'manuscript' }] };
 }
 
@@ -656,7 +656,7 @@ describe('writing one subtask line', () => {
 describe('writing one career host', () => {
     it('sets a status of the vocabulary and refuses one outside it', () => {
         const root = wider();
-        const out = writeHost(root, 'Naesens', 'candidate');
+        const out = writeHost(root, 'Naesens', 'candidate', engineDir());
         expect(out).toEqual({
             found: true,
             changed: ['status'],
@@ -666,7 +666,7 @@ describe('writing one career host', () => {
         expect(readFileSync(join(root, 'CAREER.yml'), 'utf8')).toBe(
             CAREER.replace('status: "warm"', 'status: "candidate"')
         );
-        const bad = writeHost(root, 'Naesens', 'promoted');
+        const bad = writeHost(root, 'Naesens', 'promoted', engineDir());
         expect(bad.changed).toEqual([]);
         expect(bad.refused).toEqual([
             { field: 'status', reason: 'promoted is not a career host status' }
@@ -675,7 +675,7 @@ describe('writing one career host', () => {
 
     it('says not found for a host the file does not hold', () => {
         const root = wider();
-        expect(writeHost(root, 'Nobody', 'warm')).toEqual({
+        expect(writeHost(root, 'Nobody', 'warm', engineDir())).toEqual({
             found: false,
             changed: [],
             refused: []

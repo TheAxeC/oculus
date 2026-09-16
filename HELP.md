@@ -157,7 +157,7 @@ Every write through the write endpoint that changed something is recorded in the
 
 ## Running it and checking it
 
-The server runs on this machine only, bound to the loopback address, on the port `local.yml` names. `npm run dev` runs it in development; `npm run build` builds it and `npm run preview` serves that build.
+The server runs on this machine only, bound to the loopback address, on the port `local.yml` names. `npm run dev` runs it in development; `npm run build` builds it and `npm run preview` serves that build. The built server is `node src/server.ts`, and its one argument is `--engine <dir>`, the directory holding the `config/` folder it reads and writes and the `HELP.md` this page is drawn from; without it that directory is `tools/oculus` itself. The server reads no environment variable of its own; the one it does read is the operating system's `SHELL`, which is the command a plain terminal starts, `/bin/zsh` when the environment names none.
 
 The checks, from `tools/oculus`:
 

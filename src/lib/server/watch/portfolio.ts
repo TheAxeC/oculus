@@ -290,7 +290,7 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
                 };
                 hub.publish('config', payload);
             }
-            const portfolio = portfolioConfigFrom(config);
+            const portfolio = portfolioConfigFrom(config, paths.engine);
             named = namedByConfig(paths.hub, portfolio);
             const version = hub.nextVersion('portfolio');
             const snapshot = buildPortfolio(paths.hub, portfolio, version);

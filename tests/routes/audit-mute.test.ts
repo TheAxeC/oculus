@@ -61,10 +61,11 @@ function muteTarget(body = BEHAVIOR): WriteTarget {
     const file = join(dir, 'behavior.yml');
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
     writeFileSync(file, body);
-    const real = portfolioConfigFrom(loadConfig(engineDir()).config);
+    const real = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
     return {
         hub: dir,
         config: real,
+        engine: engineDir(),
         projects: () => [],
         bookmarks: join(dir, 'bookmarks.yml'),
         behaviorFile: file

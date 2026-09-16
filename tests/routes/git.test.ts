@@ -16,6 +16,7 @@ import {
     messagePrompt
 } from '../../src/lib/server/git-routes.ts';
 import { mintToken } from '../../src/lib/server/auth.ts';
+import { engineDir } from '../../src/lib/data/sources/config.ts';
 import type { GitOptions } from '../../src/lib/server/git-routes.ts';
 import { contextFixture } from '../server/context-fixture.ts';
 
@@ -39,9 +40,10 @@ describe('the commit-message instruction', () => {
 /** What ran, so a case can assert that a refusal refused before the operation. */
 let ran: { action: string; root: string; fields: Record<string, unknown> }[] = [];
 
-function options(extra: GitOptions = {}): GitOptions {
+function options(extra: Partial<GitOptions> = {}): GitOptions {
     ran = [];
     return {
+        engine: engineDir(),
         rootsFor: () => [ROOT],
         run: (action, root, fields) => {
             ran.push({ action, root, fields });

@@ -27,8 +27,12 @@ function addFile(parts: string[], hub: string, path: string, suffix = ''): void 
  * The cockpit portfolio_context() bundle, using oculus's configured source paths: venue catalogue,
  * project manifests, programs, then the six private collections in their established order.
  */
-export function portfolioContext(hub: string, merged: Record<string, unknown>): string {
-    const config = portfolioConfigFrom(merged);
+export function portfolioContext(
+    hub: string,
+    merged: Record<string, unknown>,
+    engine: string
+): string {
+    const config = portfolioConfigFrom(merged, engine);
     const parts: string[] = [];
     addFile(parts, hub, config.registries.venues, ' (venue catalogue)');
     parts.push('# PROJECT MANIFESTS (status/venue source of truth)\n');

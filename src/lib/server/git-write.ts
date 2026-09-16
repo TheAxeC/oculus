@@ -43,7 +43,6 @@ import { isWorktreePath, validName, worktreePath } from '../data/worktrees.ts';
 import { defaultMirrorsDir } from './deposit-git.ts';
 import { BRANCH_FORMAT, parseBranches } from './git-parse.ts';
 import { GIT } from './git.ts';
-import { target } from './writes.ts';
 
 export { parseBranches };
 
@@ -102,17 +101,13 @@ function run(root: string, args: string[], timeout: number): Promise<Outcome> {
  * mirrors folder. The third is there for the suggested commit message of the deposit panel, which
  * asks this module for a message over the mirror's staged diff; every other write on a mirror goes
  * through server/deposit.ts, whose own gate is the enumerated subcommands of deposit-git.ts.
+ *
+ * The hub is named by the caller, which is the route: it holds the machine's own configuration on
+ * the request's server context, so nothing here reads a file to find out where the hub is.
  */
 export function allowedRoots(workspaces: string[] = [], hub?: string): string[] {
     const roots = new Set(workspaces);
     if (hub !== undefined) roots.add(hub);
-    else {
-        try {
-            roots.add(target().hub);
-        } catch {
-            // A machine whose local.yml cannot be read still permits the roots the caller supplied.
-        }
-    }
     roots.add(defaultMirrorsDir());
     return [...roots].filter((root) => root !== '');
 }

@@ -356,7 +356,7 @@ describe('the key a reader-added root is filed under', () => {
 
 describe("the reader's own bookmarks", () => {
     /** The hub the collection writers are given, which holds no bookmarks file of its own. */
-    const config = portfolioConfigFrom(loadConfig(engineDir()).config);
+    const config = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
 
     /** A bookmarks path inside a fresh temporary directory, with nothing written at it yet. */
     function bookmarksFile(): { hub: string; file: string } {

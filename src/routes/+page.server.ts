@@ -1,7 +1,6 @@
 import {
     asciiCatalog,
     collectionKeys,
-    engineDir,
     glyphCatalog,
     loadConfig,
     textCatalog,
@@ -27,7 +26,7 @@ import type { PageServerLoad } from './$types';
 // minted by ServerContext, put on the event by hooks.server.ts, and reaches the browser here and nowhere else. invalidateAll() runs this
 // load again, which is how a page that met a 403 gets the token a restarted server minted.
 export const load: PageServerLoad = ({ locals }) => {
-    const { config } = loadConfig(engineDir());
+    const { config } = loadConfig(locals.server.engine);
     return {
         text: textCatalog(config),
         glyphs: glyphCatalog(config),

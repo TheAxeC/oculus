@@ -1,4 +1,4 @@
-import { engineDir, loadConfig, textCatalog } from '$lib/data/sources/config';
+import { loadConfig, textCatalog } from '$lib/data/sources/config';
 import { byKey } from '$lib/data/guards';
 import { reportFindings, serverContext } from '$lib/server/context';
 import type { Handle } from '@sveltejs/kit';
@@ -11,7 +11,7 @@ export const handle: Handle = ({ event, resolve }) => {
     const context = serverContext(event.platform);
     event.locals.server = context;
     event.locals.token = context.token;
-    const { config, findings } = loadConfig(engineDir());
+    const { config, findings } = loadConfig(context.engine);
     reportFindings(findings);
 
     const catalog = textCatalog(config);

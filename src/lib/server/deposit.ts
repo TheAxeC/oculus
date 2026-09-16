@@ -129,8 +129,10 @@ export type BranchOutcome = Outcome & { branches: Branch[] };
 export type DepositOptions = {
     /** The mirrors folder; `~/.oculus/deposits` when absent. Every test passes one under mkdtemp. */
     mirrors?: string;
-    /** Which hub the project is read and written in; local.yml's when absent. */
+    /** Which hub the project is read and written in; the engine's local.yml says when absent. */
     into?: WriteTarget;
+    /** The engine directory the hub is read from when the caller names no target of its own. */
+    engine?: string;
     /** How `gh` is run; the real one when absent. */
     gh?: GhRun;
     /** How git is run; the real one when absent. A test fails one command through it. */
@@ -162,6 +164,19 @@ function done(output: string): Outcome {
     return { ok: true, output, error: '' };
 }
 
+/**
+ * Where the deposit reads and writes: the target the caller named, or the one the engine directory it
+ * named says. A caller that gives neither is the endpoint without its server settings, which is a
+ * fault in the wiring rather than in a request, so it is said as one.
+ */
+function hubTarget(options: DepositOptions): WriteTarget {
+    if (options.into !== undefined) return options.into;
+    if (options.engine === undefined) {
+        throw new Error('a deposit needs either a write target or the engine directory');
+    }
+    return target(options.engine);
+}
+
 function settings(options: DepositOptions): {
     mirrors: string;
     into: WriteTarget;
@@ -171,7 +186,7 @@ function settings(options: DepositOptions): {
     const runner = options.git;
     return {
         mirrors: options.mirrors ?? defaultMirrorsDir(),
-        into: options.into ?? target(),
+        into: hubTarget(options),
         run: options.gh ?? gh,
         where: (dir, mirrors) =>
             runner === undefined ? { dir, mirrors } : { dir, mirrors, git: runner }

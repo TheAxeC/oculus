@@ -435,7 +435,7 @@ function manifestFiles(dir: string): string[] {
 }
 
 describe.skipIf(!present)('every manifest of the real hub, read only', () => {
-    const config = portfolioConfigFrom(loadConfig(engine).config);
+    const config = portfolioConfigFrom(loadConfig(engine).config, engine);
     const files = config.scan.flatMap((rule) => manifestFiles(join(hub, rule.dir))).sort();
 
     it('finds the manifests at all', () => {

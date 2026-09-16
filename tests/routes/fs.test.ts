@@ -386,7 +386,7 @@ describe("the fs route, the reader's own bookmarks and notes", () => {
 
     it('answers the bookmarks a write left in the file, with their schema', async () => {
         const into = target();
-        const config = portfolioConfigFrom(loadConfig(engineDir()).config);
+        const config = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
         createEntry(
             into.hub,
             config,
