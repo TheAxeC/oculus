@@ -23,7 +23,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # D21 + Q27 in flight, Q21 next (D4 landed 03:10; Q21 was waiting on it, since both edit context.ts, pty/routes.ts and files.ts; Q24 at the following landing)
+dispatch:                                  # Q21 + D21 + Q27 in flight (D4 landed 03:10, Q21 dispatched 03:13 from e0656c5c; Q21 was waiting on it, since both edit context.ts, pty/routes.ts and files.ts; Q24 at the following landing)
 - package: Q27
   worker: claude:opus
   worktree: .agents/worktrees/q27
@@ -35,6 +35,18 @@ dispatch:                                  # D21 + Q27 in flight, Q21 next (D4 l
   exit: none
   pid: none
   session_id: a06859daa93709255            # the Agent tool's id, launched 02:12; reported 02:27 (runs/Q27/report.md, diff.patch 519 lines, 8 files +212 -78; 160,393 tokens, 69 tool uses, 867 s); checks started 02:27 (runs/Q27/checks.sh); reviewer dispatched 02:27 (Agent id aa6024e560d70899d); the orchestrator's read done 02:28 (runs/Q27/read-notes.md: the binding itself is the defect, below); checks green 02:30 (test 194 files 3,235, check 1,033 files, build, format, lint, ASCII 0, browser 102); review saved 02:34 (agents/reviews/Q27.md; 135,336 tokens, 41 tool uses, 373 s: RailOrder.all left dead, the palette guard untested in one file, the bare-Tab browser half not proving the regression, a nested case that never nests, untested branches, the focus order unmanaged); repair round of ten items sent 02:34 (the rebinding to Ctrl+] and Ctrl+[ plus the review's list; item 9, one tab stop per tablist, goes beyond the list, so a second review follows); repair reported 02:53 (runs/Q27/report-2.md, diff-2.patch 1,383 lines; 293,048 tokens, 94 tool uses, 1,279 s); the orchestrator's delta read done 02:57 (runs/Q27/read-notes.md: the ten items in, item 9 beyond the list); re-check started 02:55 (runs/Q27/checks.sh); second reviewer dispatched 02:56 over runs/Q27/repair-read.patch (Agent id a658069eacd012ea8); re-check green 02:59 (test 195 files 3,252, check, build, format, lint, ASCII 0, browser 103); second review saved 03:09 (agents/reviews/Q27.md, second section; 189,594 tokens, 65 tool uses, 711 s: the ten items in, and nine findings in the item 9 addition, which the first review never saw: the strip not one stop with its scroll controls and pane menu, the stop not following the arrows, Backspace closing a tab, no sheet row for Delete, a control disabled by its own press dropping the focus, no toolbar role on the rail's ring, the tablist focusable by click, two stale Ctrl+Tab mentions, three weak tests); a second repair round of nine items sent 03:10 to the same worker, since the addition was new work reviewed for the first time (a deviation from the skill's one-round rule, booked here)
+  landing: not-started
+- package: Q21
+  worker: claude:opus
+  worktree: .agents/worktrees/q21
+  base: e0656c5c
+  launched: 2026-09-16T03:13+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q21/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q21/report.md
+  exit: none
+  pid: none
+  session_id: pending                      # the Agent tool's id, written the moment it is known
   landing: not-started
 - package: D21
   worker: claude:opus
