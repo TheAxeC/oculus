@@ -23,7 +23,19 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # D7 + D5 in flight, M1 next (D7 dispatched 05:10 from 7130862a; D4 landed 03:10, Q27 landed 04:08, D5 dispatched 04:08 from 5def0882, Q21 landed 04:24, Q25 dispatched 04:25 from 173f6896 and landed 05:08; Q21 dispatched 03:12 from e0656c5c, D21 landed 03:18, Q24 dispatched 03:20 from 6a91cde1 and landed 04:02; Q21 was waiting on it, since both edit context.ts, pty/routes.ts and files.ts; Q24 at the following landing)
+dispatch:                                  # D7 + M1 in flight, Q26 next (M1 dispatched 05:17 from 9a64308a; D7 dispatched 05:10 from 7130862a; D4 landed 03:10, Q27 landed 04:08, D5 dispatched 04:08 from 5def0882, Q21 landed 04:24, Q25 dispatched 04:25 from 173f6896 and landed 05:08; Q21 dispatched 03:12 from e0656c5c, D21 landed 03:18, Q24 dispatched 03:20 from 6a91cde1 and landed 04:02; Q21 was waiting on it, since both edit context.ts, pty/routes.ts and files.ts; Q24 at the following landing)
+- package: M1
+  worker: claude:opus
+  worktree: .agents/worktrees/m1
+  base: 9a64308a
+  launched: 2026-09-16T05:17+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/M1/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/M1/report.md
+  exit: none
+  pid: none
+  session_id: pending                      # the Agent tool's id, written the moment it is known
+  landing: not-started
 - package: D7
   worker: claude:opus
   worktree: .agents/worktrees/d7
@@ -46,7 +58,7 @@ dispatch:                                  # D7 + D5 in flight, M1 next (D7 disp
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D5/report.md
   exit: none
   pid: none
-  session_id: ac3d755ba41ef700a            # the Agent tool's id, launched 04:09; reported 04:41 (runs/D5/report.md, diff.patch 2,183 lines, 25 files +1,785 -14; 325,195 tokens, 152 tool uses, 1,969 s; one read-only `git status` against the no-git rule, nothing written; the browser case cannot press a build through since the browser layer's tmux fails on purpose); checks started 04:42 (runs/D5/checks.sh); reviewer dispatched 04:42 (Agent id aa637b3df09555c56); the orchestrator's read done 04:43 (runs/D5/read-notes.md: no defect, the pty/routes.ts conflict against Q21 and the hub fallback to settle at landing); checks 04:46 (check 1,061 files, build, format, lint, ASCII 0, browser 115; `npm test` red on the git watcher's timing case alone, 3,420 of 3,421, the case green alone with 22 of 22 and fixed on main at 04:45, see the journal); review saved 04:56 (agents/reviews/D5.md; 200,405 tokens, 79 tool uses, 823 s: the parser right over five hub logs and two real builds; one defect, a race in the client store leaving a row stale after a build; the terminal name a literal the catalog could carry; a symlinked main never listed; the head read whole and sliced; the hub check twice; the browser build press unreachable since the browser layer's tmux fails on purpose, a premise of the brief found wrong; one read-only git status against the rule); repair round of six items sent 04:56; repair reported 05:06 (runs/D5/report-2.md, diff-2.patch 2,411 lines; 383,205 tokens, 39 tool uses, 638 s: the six in, the race case failing without its fix); the orchestrator's delta read done 05:07 (inside the list, no second review); re-check started 05:07 (runs/D5/checks.sh)
+  session_id: ac3d755ba41ef700a            # the Agent tool's id, launched 04:09; reported 04:41 (runs/D5/report.md, diff.patch 2,183 lines, 25 files +1,785 -14; 325,195 tokens, 152 tool uses, 1,969 s; one read-only `git status` against the no-git rule, nothing written; the browser case cannot press a build through since the browser layer's tmux fails on purpose); checks started 04:42 (runs/D5/checks.sh); reviewer dispatched 04:42 (Agent id aa637b3df09555c56); the orchestrator's read done 04:43 (runs/D5/read-notes.md: no defect, the pty/routes.ts conflict against Q21 and the hub fallback to settle at landing); checks 04:46 (check 1,061 files, build, format, lint, ASCII 0, browser 115; `npm test` red on the git watcher's timing case alone, 3,420 of 3,421, the case green alone with 22 of 22 and fixed on main at 04:45, see the journal); review saved 04:56 (agents/reviews/D5.md; 200,405 tokens, 79 tool uses, 823 s: the parser right over five hub logs and two real builds; one defect, a race in the client store leaving a row stale after a build; the terminal name a literal the catalog could carry; a symlinked main never listed; the head read whole and sliced; the hub check twice; the browser build press unreachable since the browser layer's tmux fails on purpose, a premise of the brief found wrong; one read-only git status against the rule); repair round of six items sent 04:56; repair reported 05:06 (runs/D5/report-2.md, diff-2.patch 2,411 lines; 383,205 tokens, 39 tool uses, 638 s: the six in, the race case failing without its fix); the orchestrator's delta read done 05:07 (inside the list, no second review); re-check started 05:07 (runs/D5/checks.sh); re-check green 05:12 (test 201 files 3,425, check 1,061, build, format, lint, ASCII 0, browser 115); landing started 05:12: three conflicts on `d5-land` (DESIGN.md and HELP.md against Q25, keeping both; `server/pty/routes.ts` against Q21, the imports merged and the latex action reading the engine's config and the hub through `options.engine`, the terminal test threading `engine` into its options), `git cherry-pick -n` onto main at 05:13, the check set on main started 05:13
   landing: not-started
 ```
 
