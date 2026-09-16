@@ -7,7 +7,7 @@
     // classes are coloured from the palette's own code hues, so the window follows the theme the
     // reader picked instead of carrying a stylesheet of its own.
 
-    import { codeHtml, lineNumbers } from './languages';
+    import { codeHtml, lineNumbers } from '$lib/state/languages';
     import { t } from '$lib/state/text';
 
     type Props = {

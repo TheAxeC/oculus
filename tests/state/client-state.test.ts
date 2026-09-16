@@ -30,6 +30,7 @@ const STORES: (keyof ClientState)[] = [
     'audit',
     'memories',
     'present',
+    'repositories',
     'usageRefresh',
     'selectors',
     'railBadges',

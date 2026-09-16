@@ -1,14 +1,21 @@
-// Layer 2, server. The `git` channel: the read-only state of the hub root and of every workspace the
-// `sessions` channel names, re-read when that root changes. DESIGN.md, "Watchers": git watches each
-// workspace's .git and worktree and re-reads on change, no more often than every two seconds.
+// Layer 2, server. The `git` channel: the read-only state of every root the file browser knows and
+// of every workspace the `sessions` channel names, re-read when that root changes. DESIGN.md,
+// "Watchers": git watches each workspace's .git and worktree and re-reads on change, no more often
+// than every two seconds.
+//
+// The file browser's roots are the second source because the Repositories view is over every
+// repository the reader has told oculus about, not only the ones an agent happens to be working in.
+// They are read through the `roots` option at start, again on a `config` push, which is what says
+// the configured roots moved, and again whenever the saved workspaces file changes, which is the
+// other way a root is added while the server runs.
 //
 // The same watch answers a second question, on the `files` channel: which root a write just landed
 // under. It is this watcher's because it already watches every root recursively and already
 // throttles the burst a save makes, so no second watcher and no second throttle are needed.
 //
 // Which workspaces those are is the sessions payload's answer, and this watcher takes it from the
-// hub rather than from the sessions watcher: it subscribes a sink of its own to the `sessions`
-// channel, so the two watchers meet on the socket protocol and neither imports the other. A
+// hub rather than from the sessions watcher: it subscribes a sink of its own to the `sessions` and
+// `config` channels, so the watchers meet on the socket protocol and none imports another. A
 // subscription is answered with the channel's current message, so a git watcher started after the
 // first scan reads the workspaces immediately.
 //
@@ -25,7 +32,7 @@
 
 import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
-import { join } from 'node:path';
+import { basename, dirname, join } from 'node:path';
 import { byKey } from '../../data/guards.ts';
 import type { FilesPayload, GitPayload, Message, SessionsPayload } from '../../data/model.ts';
 import type { Hub, Sink } from '../channels.ts';
@@ -69,6 +76,15 @@ export type GitWatchOptions = {
      * show the state it had when the page opened.
      */
     always?: string;
+    /**
+     * The directories the file browser serves, in the order it lists them, asked again on a config
+     * push and whenever the saved workspaces file changes. It reads the configuration as it is at
+     * the call rather than a copy taken at start. They come before the sessions' workspaces, so the
+     * payload's keys are in the order the Repositories view draws its sections.
+     */
+    roots?: () => string[];
+    /** The saved workspaces file, watched so a root added in the page is watched from that moment. */
+    workspacesFile?: string;
 };
 
 /**
@@ -120,6 +136,16 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
     const clock = options.clock ?? systemClock;
     const timeout = options.timeout ?? TIMEOUT_MS;
     const always = options.always ?? '';
+    const configured = options.roots ?? ((): string[] => []);
+    /** The roots the newest sessions payload named, kept so a rescan can compose the whole list. */
+    let named: string[] = [];
+    /**
+     * The file browser's roots as last read. Reading them parses the configuration, so they are
+     * read at start, on a config push and when the workspaces file changes, and a sessions push
+     * composes its list from this copy.
+     */
+    let browser: string[] = [];
+    let workspacesWatch: FSWatcher | null = null;
     const handles = new Map<string, FSWatcher[]>();
     const timers = new Map<string, Timer>();
     const last = new Map<string, number>();
@@ -218,15 +244,49 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         delete state[root];
     };
 
-    /** The roots of the newest sessions payload: open what is new, drop what is gone, read once. */
-    const follow = (named: string[]): void => {
+    /**
+     * Every root on the channel, in the order the page draws them: the always-watched root, the file
+     * browser's, then the sessions' workspaces, each named once.
+     */
+    const readRoots = (): void => {
+        // The file browser's roots are read off config and a file the reader edits, so a broken one
+        // leaves the channel with the roots it can name rather than stopping the watcher.
+        try {
+            browser = configured();
+        } catch (error) {
+            console.error(`git watch: reading the roots failed: ${reason(error)}`);
+        }
+    };
+    const wanted = (): string[] => {
+        const roots: string[] = [];
+        for (const root of [always, ...browser, ...named]) {
+            if (root !== '' && !roots.includes(root)) roots.push(root);
+        }
+        return roots;
+    };
+
+    /** The payload, rebuilt in root order, so its keys say what order the sections are drawn in. */
+    const reorder = (roots: string[]): void => {
+        const held = state;
+        state = {};
+        for (const root of roots) {
+            const one = byKey(held, root);
+            if (one !== undefined) state[root] = one;
+        }
+    };
+
+    /**
+     * Open what is new, drop what is gone, read the new ones once, and publish when the set or its
+     * order moved. The order is part of the payload: the view draws its sections in the order the
+     * keys come in, so a root that only changed place is a publish like any other.
+     */
+    const follow = (): void => {
         if (closed) return;
-        const roots = always === '' ? named : [always, ...named.filter((one) => one !== always)];
-        let changed = false;
+        const roots = wanted();
+        const before = Object.keys(state);
         for (const root of [...handles.keys()]) {
             if (roots.includes(root)) continue;
             drop(root);
-            changed = true;
         }
         const fresh = roots.filter((root) => !handles.has(root));
         for (const root of fresh) open(root);
@@ -238,12 +298,34 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
                     if (one !== undefined) state[root] = one;
                     last.set(root, Date.now());
                 }
-                changed = true;
             } catch (error) {
                 console.error(`git watch: first read failed: ${reason(error)}`);
             }
         }
-        if (changed) publish();
+        reorder(roots);
+        const after = Object.keys(state);
+        if (before.length === after.length && before.every((root, at) => root === after[at]))
+            return;
+        publish();
+    };
+
+    /**
+     * Watch the saved workspaces file. Its directory is what is watched rather than the file, since
+     * a machine that has saved no workspace has no file yet and a write replaces the one there is.
+     */
+    const watchWorkspaces = (file: string): void => {
+        const folder = dirname(file);
+        const name = basename(file);
+        if (!existsSync(folder)) return;
+        try {
+            workspacesWatch = watch(folder, (_event, filename) => {
+                if (typeof filename === 'string' && filename !== name) return;
+                readRoots();
+                follow();
+            });
+        } catch (error) {
+            console.error(`git watch: cannot watch ${file}: ${reason(error)}`);
+        }
     };
 
     // The sink is this watcher's own end of the `sessions` channel. It sends nothing back and is
@@ -253,10 +335,18 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
             try {
                 const message = JSON.parse(text) as Message;
                 if (message.channel === 'sessions') {
-                    follow(rootsOf(message.payload as SessionsPayload));
+                    named = rootsOf(message.payload as SessionsPayload);
+                    follow();
+                }
+                // A config push is how a root added to sources.yml reaches this watcher: the roots
+                // option reads the configuration as it is now, so reading it again and following
+                // is the whole work. A sessions push keeps the copy: it says nothing about config.
+                if (message.channel === 'config') {
+                    readRoots();
+                    follow();
                 }
             } catch (error) {
-                console.error(`git watch: unreadable sessions message: ${reason(error)}`);
+                console.error(`git watch: unreadable message: ${reason(error)}`);
             }
             return Promise.resolve();
         },
@@ -264,10 +354,14 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
             // The probe holds no handle, so closing it frees nothing.
         }
     };
-    // The always-watched root is opened before the first sessions message, so a hub nobody has a
-    // session in is on the channel from the start.
-    if (always !== '') follow([]);
-    hub.subscribe(sink, ['sessions']);
+    // The always-watched root and the file browser's are opened before the first sessions message,
+    // so a hub nobody has a session in is on the channel from the start.
+    if (always !== '' || options.roots !== undefined) {
+        readRoots();
+        follow();
+    }
+    if (options.workspacesFile !== undefined) watchWorkspaces(options.workspacesFile);
+    hub.subscribe(sink, ['sessions', 'config']);
 
     return {
         refresh(root: string): void {
@@ -276,6 +370,8 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
         close(): void {
             closed = true;
             hub.remove(sink);
+            workspacesWatch?.close();
+            workspacesWatch = null;
             for (const root of [...handles.keys()]) drop(root);
             state = {};
         }

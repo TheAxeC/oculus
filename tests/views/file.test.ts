@@ -9,7 +9,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
 import File from '../../src/lib/views/File.svelte';
 import Code from '../../src/lib/views/file/Code.svelte';
-import { codeHtml, lineNumbers, registered } from '../../src/lib/views/file/languages.ts';
+import { codeHtml, lineNumbers, registered } from '../../src/lib/state/languages.ts';
 import { typeOfFile } from '../../src/lib/state/fs.ts';
 import {
     engineDir,

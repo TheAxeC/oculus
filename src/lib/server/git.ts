@@ -4,17 +4,21 @@
 // can say, and that is this module: the branch, the distance from its upstream, and the staged,
 // changed and untracked lists.
 //
-// DESIGN.md, "Git": exactly four commands run here and no others, ever.
+// DESIGN.md, "Git": exactly these read-only commands run here and no others, ever.
 //
 //     git -C <root> rev-parse --abbrev-ref HEAD
 //     git -C <root> rev-list --left-right --count @{upstream}...HEAD
 //     git -C <root> status --porcelain=v1 -z --untracked-files=normal
 //     git -C <root> diff --numstat -z
+//     git -C <root> log -<n> --format=...
+//     git -C <root> branch --format=...
+//     git -C <root> worktree list --porcelain
 //
 // Nothing here may ever change a repository. Every writing subcommand belongs to Axel alone, and a
 // dashboard watcher must never be the thing that runs one. tests/server/git.test.ts holds two gates
-// over that: the source names no writing subcommand, and the suite records every argument vector the process runs and asserts the whole
-// suite ran only those four.
+// over that: the source names no writing subcommand, and the suite records every argument vector the
+// process runs and asserts the whole suite ran only the commands above, `worktree` only as a
+// listing.
 //
 // A repository on a slow mount must not stall a watcher, so the one call site takes a list argument
 // (never a shell string), carries a timeout, and collapses any failure into the empty shape with a
@@ -22,14 +26,19 @@
 
 import { scalar } from '../data/guards.ts';
 import { spawnSync } from 'node:child_process';
-import { statSync } from 'node:fs';
-import type { GitEntry, GitState } from '../data/model.ts';
+import { readFileSync, realpathSync, statSync } from 'node:fs';
+import { join, sep } from 'node:path';
+import type { GitBranch, GitCommit, GitEntry, GitState, GitWorktree } from '../data/model.ts';
+import { ignoresWorktrees } from '../data/worktrees.ts';
+import { BRANCH_FORMAT, LOG_FORMAT, parseBranches, parseLog, parseWorktrees } from './git-parse.ts';
 
 export const GIT = 'git';
 /** Milliseconds one git command is given before it is given up on. */
 export const TIMEOUT_MS = 5000;
-/** One workspace with 4000 untracked files must not become the payload. */
+/** One workspace with 4000 untracked files, or 4000 branches, must not become the payload. */
 export const MAX_ENTRIES = 200;
+/** How many commits the log carries: the view is a glance, and a terminal reads a longer history. */
+export const LOG_ENTRIES = 20;
 /** git's own letter for a path it does not track. */
 export const UNTRACKED = '?';
 /** An index or worktree column saying "nothing here". */
@@ -57,6 +66,10 @@ export function empty(error: string | null = null): GitState {
         staged: [],
         unstaged: [],
         untracked: [],
+        log: [],
+        branches: [],
+        worktrees: [],
+        ignoresWorktrees: false,
         error
     };
 }
@@ -93,6 +106,10 @@ function state(root: string, timeout: number): GitState {
     // --abbrev-ref says HEAD when nothing is checked out.
     found.detached = name === 'HEAD';
     upstream(root, found, timeout);
+    found.log = log(root, timeout);
+    found.branches = branches(root, timeout);
+    found.worktrees = worktrees(root, timeout);
+    found.ignoresWorktrees = ignored(root);
     const rows = porcelain(root, timeout);
     if (rows.rows === null) {
         found.error = rows.reason || 'git status failed';
@@ -100,6 +117,73 @@ function state(root: string, timeout: number): GitState {
     }
     fill(found, rows.rows, numstat(root, timeout));
     return found;
+}
+
+/**
+ * The newest commits of the checked-out branch. A repository with no commit yet answers with a
+ * failure rather than an empty log, which is an empty list here like every other unreadable list:
+ * the branch line above it is what says the repository is there.
+ */
+function log(root: string, timeout: number): GitCommit[] {
+    const done = run(root, ['log', `-${LOG_ENTRIES}`, LOG_FORMAT], timeout);
+    return done.ok ? parseLog(done.text) : [];
+}
+
+/** Every list this module puts on the channel is cut here: one repository is never the payload. */
+export function capped<Row>(rows: Row[]): Row[] {
+    return rows.slice(0, MAX_ENTRIES);
+}
+
+/** Every branch, with its upstream and which one is checked out, capped like the change lists. */
+function branches(root: string, timeout: number): GitBranch[] {
+    const done = run(root, ['branch', BRANCH_FORMAT], timeout);
+    return done.ok ? capped(parseBranches(done.text)) : [];
+}
+
+/**
+ * Every worktree of the repository, the checkout itself first. `list` is the one form run here.
+ *
+ * git answers with real paths, and a root reached through a symbolic link is therefore named
+ * differently there than it is everywhere else in oculus, where the root is the key the channel and
+ * the file browser use. Each path under the real root is put back under the root as asked for, so
+ * one vocabulary reaches the page and the checks a write makes.
+ */
+function worktrees(root: string, timeout: number): GitWorktree[] {
+    const done = run(root, ['worktree', 'list', '--porcelain'], timeout);
+    if (!done.ok) return [];
+    const real = realpath(root);
+    return capped(parseWorktrees(done.text)).map((one) => ({
+        ...one,
+        path: under(one.path, real, root)
+    }));
+}
+
+/** The path with `real` swapped back for `root`, and the path itself when it is somewhere else. */
+function under(path: string, real: string, root: string): string {
+    if (real === root) return path;
+    if (path === real) return root;
+    return path.startsWith(real + sep) ? root + path.slice(real.length) : path;
+}
+
+/** The root with every symbolic link resolved, or the root itself when it cannot be resolved. */
+function realpath(root: string): string {
+    try {
+        return realpathSync(root);
+    } catch {
+        return root;
+    }
+}
+
+/**
+ * Whether the repository keeps its worktrees folder out of its own history. A repository with no
+ * .gitignore, or one that cannot be read, does not, which is what the view warns about.
+ */
+function ignored(root: string): boolean {
+    try {
+        return ignoresWorktrees(readFileSync(join(root, '.gitignore'), 'utf8'));
+    } catch {
+        return false;
+    }
 }
 
 /**

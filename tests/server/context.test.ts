@@ -33,7 +33,7 @@ describe('ServerContext', () => {
             close: closes[0]
         }));
         const watchSessions = vi.fn(() => ({ onChange: vi.fn(() => noop), close: closes[1] }));
-        const watchGit = vi.fn((_hub: Hub, _root: string) => ({
+        const watchGit = vi.fn((_hub: Hub, _options: unknown) => ({
             refresh: vi.fn(),
             close: closes[2]
         }));
@@ -55,6 +55,23 @@ describe('ServerContext', () => {
             close: closes[4]
         }));
         const watchUsage = vi.fn(() => ({ refresh: vi.fn(noopAsync), close: closes[5] }));
+        const loadConfig = vi.fn(() => ({
+            config: {
+                slurm: {
+                    host: 'cluster',
+                    days: 2,
+                    poll_min: 1,
+                    quota_min: 5,
+                    prewarm: false
+                },
+                usage_tiers: {},
+                usage_refresh_min: 5,
+                usage_refresh_model: 'model',
+                glyphs: { pin: 'P' },
+                icons: { pin: 'pin' }
+            },
+            findings: []
+        }));
         const context = createServerContext('/engine', {
             loadLocal: vi.fn(() => ({
                 hub: '/hub',
@@ -62,23 +79,7 @@ describe('ServerContext', () => {
                 claudeBin: 'claude',
                 accounts: []
             })),
-            loadConfig: vi.fn(() => ({
-                config: {
-                    slurm: {
-                        host: 'cluster',
-                        days: 2,
-                        poll_min: 1,
-                        quota_min: 5,
-                        prewarm: false
-                    },
-                    usage_tiers: {},
-                    usage_refresh_min: 5,
-                    usage_refresh_model: 'model',
-                    glyphs: { pin: 'P' },
-                    icons: { pin: 'pin' }
-                },
-                findings: []
-            })),
+            loadConfig,
             mintToken: vi.fn(() => 'context-token'),
             createHub,
             createTerminals,
@@ -106,7 +107,13 @@ describe('ServerContext', () => {
         // The git watcher is given the hub root as well as the channel bus: the hub's own state is
         // on the `git` channel whether or not a session names it, which is what the deposit and the
         // pin controls read.
-        expect(watchGit.mock.calls[0][1]).toBe('/hub');
+        expect(watchGit.mock.calls[0][1]).toMatchObject({ always: '/hub' });
+        // The roots the git channel carries are read at the call and not off the copy taken here, so
+        // a root added to sources.yml while the server runs is watched when the config push follows.
+        const read = loadConfig.mock.calls.length;
+        const roots = (watchGit.mock.calls[0][1] as { roots: () => string[] }).roots();
+        expect(loadConfig.mock.calls.length).toBeGreaterThan(read);
+        expect(roots).toContain('/hub');
         // One log-path map, two writers: the poller's prewarm fills in what a press has not asked
         // for yet, and the route's log action reads and writes the same object.
         expect(watchHpc.mock.calls[0][1].logPaths).toBe(context.hpcLogPaths);

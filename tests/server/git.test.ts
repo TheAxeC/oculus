@@ -15,7 +15,7 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import { MAX_ENTRIES, empty, statusFor } from '../../src/lib/server/git.ts';
+import { LOG_ENTRIES, MAX_ENTRIES, capped, empty, statusFor } from '../../src/lib/server/git.ts';
 import type { GitEntry, GitState } from '../../src/lib/data/model.ts';
 
 const MODULE = resolve(
@@ -29,7 +29,7 @@ const MODULE = resolve(
 );
 
 /** Everything git.ts is allowed to run. The source scan below asserts it holds no other. */
-const ALLOWED = ['diff', 'rev-list', 'rev-parse', 'status'];
+const ALLOWED = ['branch', 'diff', 'log', 'rev-list', 'rev-parse', 'status', 'worktree'];
 
 /** No writing subcommand may be named in the module at all, quoted as an argument would be. */
 const FORBIDDEN = [
@@ -266,6 +266,102 @@ describe('the shape', () => {
     });
 });
 
+describe('the log, the branches and the worktrees', () => {
+    it('carries the newest commits, newest first, capped at the constant', () => {
+        for (let i = 0; i < LOG_ENTRIES; i += 1) {
+            write(`later${String(i).padStart(3, '0')}.txt`, 'x\n');
+            git(repo, 'add', '.');
+            git(repo, 'commit', '-m', `later ${i}`);
+        }
+        const found = state();
+        expect(found.log.length).toBe(LOG_ENTRIES);
+        expect(found.log[0].subject).toBe(`later ${LOG_ENTRIES - 1}`);
+        expect(found.log[0].hash).toMatch(/^[0-9a-f]{40}$/);
+        expect(found.log[0].short.length).toBeGreaterThan(3);
+        expect(found.log[0].when).toMatch(/^\d{4}-\d{2}-\d{2}T/);
+    });
+
+    it('says nothing about the log of a repository with no commit in it', () => {
+        const fresh = join(dir, 'fresh');
+        mkdirSync(fresh);
+        git(fresh, 'init', '--initial-branch=work');
+        // A repository with no commit has no HEAD to resolve, which is the empty shape with the
+        // reason on it; the log is empty there like every other list.
+        const found = state(fresh);
+        expect(found.log).toEqual([]);
+        expect(found.branches).toEqual([]);
+        expect(found.error).toBeTruthy();
+    });
+
+    it('lists every branch with its upstream and which one is checked out', () => {
+        git(repo, 'branch', 'side');
+        const found = state();
+        expect(found.branches.map((one) => one.name).sort()).toEqual(['side', 'work']);
+        expect(found.branches.find((one) => one.name === 'work')?.current).toBe(true);
+        expect(found.branches.find((one) => one.name === 'side')?.upstream).toBe('');
+    });
+
+    it('lists the checkout first and every worktree after it', () => {
+        const side = join(repo, '.agents', 'worktrees', 'side');
+        git(repo, 'worktree', 'add', '-b', 'side', side);
+        const found = state();
+        expect(found.worktrees.length).toBe(2);
+        expect(found.worktrees[0]).toMatchObject({ path: repo, branch: 'work', main: true });
+        // git answers with real paths; the module puts them back under the root it was asked about,
+        // which is the name every other surface uses.
+        expect(found.worktrees[1]).toMatchObject({ path: side, branch: 'side', main: false });
+        expect(found.worktrees[1].head).toMatch(/^[0-9a-f]{40}$/);
+        // The worktree is a repository of its own to read, and says which branch it is on.
+        expect(state(side).branch).toBe('side');
+    });
+
+    it('reads a detached worktree without a branch', () => {
+        const head = git(repo, 'rev-parse', 'HEAD').trim();
+        const loose = join(repo, '.agents', 'worktrees', 'loose');
+        git(repo, 'worktree', 'add', '--detach', loose, head);
+        const found = state().worktrees.find((one) => one.path === loose);
+        expect(found).toMatchObject({ branch: '', head, main: false });
+    });
+
+    it('caps the branch list', () => {
+        // The cap is the change lists', so one repository with a thousand branches cannot become
+        // the payload. Three past it is enough to see the cut. The branches are made by one git
+        // process reading its refs from stdin, since one process per branch is what costs the time.
+        const head = git(repo, 'rev-parse', 'HEAD').trim();
+        const refs = Array.from(
+            { length: MAX_ENTRIES + 2 },
+            (_, i) => `create refs/heads/side-${String(i).padStart(3, '0')} ${head}\n`
+        ).join('');
+        const done = spawnSync('git', ['-C', repo, 'update-ref', '--stdin'], {
+            encoding: 'utf8',
+            input: refs,
+            timeout: 30000
+        });
+        expect(done.status).toBe(0);
+        expect(state().branches.length).toBe(MAX_ENTRIES);
+    });
+
+    it('cuts every list it publishes at the cap, and takes both new lists through it', () => {
+        expect(capped(Array.from({ length: MAX_ENTRIES + 5 }, (_, at) => at)).length).toBe(
+            MAX_ENTRIES
+        );
+        expect(capped([1, 2, 3])).toEqual([1, 2, 3]);
+        // Making two hundred worktrees would cost minutes of git, so the worktree list is held to
+        // the same cut by the source: two calls, the branch listing's and the worktree listing's,
+        // which is how this file gates its commands too.
+        const source = readFileSync(MODULE, 'utf8');
+        expect(source.match(/\bcapped\(parse/g)?.length).toBe(2);
+    });
+
+    it('says whether the repository keeps its worktrees folder out of its history', () => {
+        expect(state().ignoresWorktrees).toBe(false);
+        write('.gitignore', 'build/\n/.agents/worktrees/\n');
+        expect(state().ignoresWorktrees).toBe(true);
+        write('.gitignore', '# /.agents/worktrees/\n');
+        expect(state().ignoresWorktrees).toBe(false);
+    });
+});
+
 describe('failure', () => {
     it('does not take a plain directory for a repository', () => {
         const plain = join(dir, 'plain');
@@ -317,11 +413,14 @@ describe('read only', () => {
         }
     });
 
-    it('holds only the four read-only commands at its one call site', () => {
+    it('holds only the read-only commands at its one call site, worktree as a listing', () => {
         const source = readFileSync(MODULE, 'utf8');
         const calls = [...source.matchAll(/\brun\(\s*root\s*,\s*\[\s*'([a-z-]+)'/g)];
-        expect(calls.length).toBe(4);
+        expect(calls.length).toBe(ALLOWED.length);
         expect([...new Set(calls.map((call) => call[1]))].sort()).toEqual(ALLOWED);
+        // `worktree` is the one allowed subcommand with writing forms of its own, so the module's
+        // single use of it is pinned to the listing.
+        expect(source).toContain("['worktree', 'list', '--porcelain']");
     });
 
     it('ran every command without optional locks, so a read writes no index lock', () => {
@@ -331,7 +430,7 @@ describe('read only', () => {
         }
     });
 
-    it('ran nothing but those four commands over this whole file', () => {
+    it('ran nothing but those commands over this whole file', () => {
         expect(ran.length).toBeGreaterThan(0);
         const used = new Set<string>();
         for (const args of ran) {

@@ -2,14 +2,16 @@
 // the request does is here and src/routes/api/git/+server.ts is the few lines that join them, the
 // pattern lib/server/writes.ts and lib/server/pty/routes.ts already hold.
 //
-// A GET lists the branches of one root and is same-origin only, like every read. A POST writes, and
-// carries three things: the write token, this application's own origin, and, for the five actions
-// that can lose work (commit, push, discard, createBranch, switchBranch), a `confirm: true` the page
-// sets only from the confirm dialog.
+// A GET reads and is same-origin only, like every read: the branches of one root, one file's diff,
+// or what a worktree holds that its repository does not. A POST writes, and carries three things:
+// the write token, this application's own origin, and, for the eight actions that can lose work
+// (commit, push, discard, createBranch, switchBranch, createWorktree, removeWorktree, merge), a
+// `confirm: true` the page sets only from the confirm dialog.
 //
-// The roots a write may name come from the last published `git` payload, which is the sessions'
-// workspaces, plus the hub itself; server/git-write.ts checks the same thing again for itself, since
-// a refusal that lives only in a route is a refusal that disappears with the next caller.
+// The roots a write may name come from the last published `git` payload, which is every root the
+// file browser serves and every workspace a session names, plus the hub itself; server/git-write.ts
+// checks the same thing again for itself, since a refusal that lives only in a route is a refusal
+// that disappears with the next caller.
 //
 // Every operation is an option with a real default, so tests/routes/git.test.ts drives the whole
 // endpoint without running git at all.
@@ -22,13 +24,18 @@ import {
     branches,
     commit,
     createBranch,
+    createWorktree,
     discard,
+    fileDiff,
+    merge,
     parseBranches,
     permitted,
     push,
+    removeWorktree,
     stage,
     switchBranch,
     unstage,
+    worktreeDiff,
     type Outcome
 } from './git-write.ts';
 import { messageModel, suggestMessage, type MessageOptions } from './git-message.ts';
@@ -42,11 +49,23 @@ export const ACTIONS = [
     'push',
     'createBranch',
     'switchBranch',
+    'createWorktree',
+    'removeWorktree',
+    'merge',
     'suggest'
 ];
 
 /** The actions that may lose work, and therefore need the page's confirm. */
-export const CONFIRMED = ['commit', 'push', 'discard', 'createBranch', 'switchBranch'];
+export const CONFIRMED = [
+    'commit',
+    'push',
+    'discard',
+    'createBranch',
+    'switchBranch',
+    'createWorktree',
+    'removeWorktree',
+    'merge'
+];
 
 /** One action, its root and whatever fields it takes. */
 export type GitRun = (
@@ -67,6 +86,10 @@ export type GitOptions = {
     message?: MessageOptions;
     /** Re-read a root after a successful write. */
     refresh?: (root: string) => void;
+    /** One file's diff; the real `git diff` when absent. */
+    diff?: (root: string, path: string, staged: boolean, roots: string[]) => Promise<Outcome>;
+    /** A worktree's diff against its repository's branch; the real one when absent. */
+    worktree?: (root: string, path: string, roots: string[]) => Promise<Outcome>;
 };
 
 function json(status: number, body: unknown): Response {
@@ -112,7 +135,12 @@ const OPERATIONS: Record<string, GitRun> = {
     commit: (_action, root, fields, roots) => commit(root, text(fields.message), roots),
     push: (_action, root, _fields, roots) => push(root, roots),
     createBranch: (_action, root, fields, roots) => createBranch(root, text(fields.name), roots),
-    switchBranch: (_action, root, fields, roots) => switchBranch(root, text(fields.name), roots)
+    switchBranch: (_action, root, fields, roots) => switchBranch(root, text(fields.name), roots),
+    createWorktree: (_action, root, fields, roots) =>
+        createWorktree(root, text(fields.name), roots),
+    removeWorktree: (_action, root, fields, roots) =>
+        removeWorktree(root, text(fields.path), roots),
+    merge: (_action, root, fields, roots) => merge(root, text(fields.branch), roots)
 };
 
 async function operate(
@@ -126,6 +154,69 @@ async function operate(
         return { ok: false, output: '', error: `no git action named ${action}` };
     }
     return operation(action, root, fields, roots);
+}
+
+/**
+ * GET /api/git: one of three reads, by the parameter it names. `diff=<root>&path=<file>&staged=<0|1>`
+ * answers one file's diff, `worktree=<path>&root=<root>` answers what that worktree holds that its
+ * repository's branch does not, and `root=` answers the branch listing. Each is same-origin only and
+ * refused for a root this server has not published; the diffs are fetched when a pane opens rather
+ * than published, since the channel carries state and not text.
+ */
+export async function handleGitGet(request: Request, options: GitOptions = {}): Promise<Response> {
+    const parameters = new URL(request.url).searchParams;
+    if (parameters.has('diff')) return handleGitDiff(request, parameters, options);
+    if (parameters.has('worktree')) return handleGitWorktree(request, parameters, options);
+    return handleGitBranches(request, options);
+}
+
+/** One file's diff, staged or not. */
+async function handleGitDiff(
+    request: Request,
+    parameters: URLSearchParams,
+    options: GitOptions
+): Promise<Response> {
+    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
+        return json(403, { error: 'the request did not come from this page' });
+    }
+    const root = parameters.get('diff') ?? '';
+    const roots = (options.rootsFor ?? allowedRoots)();
+    if (!inside(root, roots)) {
+        return json(400, { error: 'that directory is not a workspace oculus knows' });
+    }
+    const staged = parameters.get('staged') === '1';
+    const outcome = await (options.diff ?? fileDiff)(
+        root,
+        parameters.get('path') ?? '',
+        staged,
+        roots
+    );
+    if (!outcome.ok) return json(400, { error: outcome.error });
+    return json(200, { ok: true, output: outcome.output });
+}
+
+/**
+ * What one worktree holds that its repository's checked-out branch does not. The request names both
+ * the worktree and the repository it belongs to: a worktree of the hub is itself a workspace on the
+ * `git` channel, so a root worked out from the path would be the worktree.
+ */
+async function handleGitWorktree(
+    request: Request,
+    parameters: URLSearchParams,
+    options: GitOptions
+): Promise<Response> {
+    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
+        return json(403, { error: 'the request did not come from this page' });
+    }
+    const path = parameters.get('worktree') ?? '';
+    const root = parameters.get('root') ?? '';
+    const roots = (options.rootsFor ?? allowedRoots)();
+    if (!inside(root, roots)) {
+        return json(400, { error: 'that directory is not a workspace oculus knows' });
+    }
+    const outcome = await (options.worktree ?? worktreeDiff)(root, path, roots);
+    if (!outcome.ok) return json(400, { error: outcome.error });
+    return json(200, { ok: true, output: outcome.output });
 }
 
 /**

@@ -72,6 +72,7 @@ const VIEWS: Record<string, string> = {
         '.heading=fs-xs | .said, .failed=fs-md | .doc=fs-md | .doc :global(h1)=fs-3xl | .doc :global(h2)=fs-2xl | .doc :global(h3)=fs-xl | .doc :global(h4)=fs-md | .doc :global(code)=fs-sm | .doc :global(table)=fs-md | .nm=fs-md | .meta=fs-sm',
     'Projects.svelte': '.said=fs-md',
     'Radar.svelte': '',
+    'Repositories.svelte': '',
     'Slides.svelte': '.intro=fs-md | .at=fs-xs | .said=fs-md',
     'Source.svelte': '',
     'Status.svelte': '.view=fs-md',
@@ -130,10 +131,15 @@ const VIEWS: Record<string, string> = {
     'projects/Stats.svelte': '.st=fs-sm',
     'radar/Bucket.svelte': '',
     'radar/RadarCard.svelte': '.sub=fs-md | .date=fs-sm',
+    'repositories/Diff.svelte': '.text=fs-sm | .note, .failed=fs-sm',
+    'repositories/Repo.svelte':
+        '.sec-h=fs-sm | .group-h=fs-xs | .branch, .add=fs-sm | .branch .lb, .add .lb=fs-xs | .branch .mt=fs-xs | .row=fs-sm | .when, .up=fs-xs | .none=fs-xs | .outcome=fs-md',
+    'repositories/Worktrees.svelte':
+        '.group-h=fs-xs | .row=fs-sm | .br=fs-xs | .add=fs-sm | .add .lb=fs-xs | .none=fs-xs | .warn=fs-xs',
     'sessions/Agents.svelte': '.agent=fs-sm | .st=fs-xs | .mo=fs-xs',
     'sessions/Changes.svelte': '.sec-h=fs-sm | .none=fs-xs',
     'sessions/ChangesRepo.svelte':
-        '.sec-h=fs-sm | .group-h=fs-xs | .file=fs-sm | .mark, .bin=fs-xs | .none=fs-xs | .cacts .none=fs-sm | .add, .del=fs-xs | .outcome=fs-md | .branch, .newbranch, .cacts=fs-sm | .branch .lb, .newbranch .lb=fs-xs | .branch .mt=fs-xs',
+        '.sec-h=fs-sm | .mark=fs-xs | .none=fs-xs | .cacts .none=fs-sm | .outcome=fs-md | .branch, .newbranch, .cacts=fs-sm | .branch .lb, .newbranch .lb=fs-xs | .branch .mt=fs-xs',
     'sessions/ChangesTouched.svelte':
         '.sec-h=fs-sm | .file=fs-sm | .ct, .mark=fs-xs | .to=fs-xs | .none=fs-xs',
     'sessions/SessionDetail.svelte':
@@ -147,6 +153,8 @@ const VIEWS: Record<string, string> = {
     'sessions/Timeline.svelte': '.event=fs-sm | .ts=fs-xs',
     'sessions/Transcript.svelte':
         '.turn=fs-md | .turn.tool=fs-sm | .who=fs-xs | .ts=fs-xs | .cut=fs-md | .failed=fs-md | .doc=fs-md | .doc :global(h1), .doc :global(h2), .doc :global(h3), .doc :global(h4)=fs-md | .doc :global(code), .doc :global(pre)=fs-sm',
+    'shared/ChangeGroups.svelte':
+        '.group-h=fs-xs | .file=fs-sm | .bin=fs-xs | .none=fs-xs | .add, .del=fs-xs',
     'shared/CrossLinks.svelte': '',
     'shared/CardDetails.svelte': '.field .value=fs-md | .label=fs-xxs | .statusline=fs-sm',
     'shared/CardDocs.svelte': '.label=fs-xxs | .frow=fs-md | .capped=fs-xs',

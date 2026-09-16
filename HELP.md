@@ -70,6 +70,7 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `code` | Code | The repositories registry, what the portfolio says about its own code, and the software projects of the `projects/software` tier with the papers each one names. |
 | `statements` | Statements | The reusable boilerplate paragraphs. |
 | `files` | Files | The file browser over the hub, the engine config folder and the configured roots, with saved workspaces. A scratch note's file is made by the first keystroke typed into it, and the delete control in the Notes list is the one thing that takes a note away. |
+| `repositories` | Repositories | Every repository oculus knows, one section each: the branch line, what is changed, the newest twenty commits, the branches, and the worktrees of the root with the controls that make, open, merge back and remove one. |
 | `funding` | Funding | The funding schemes, their stage and the statement each grant requires. |
 | `events` | Talks & Events | Talks, events and what is coming. |
 | `education` | Education & Service | Teaching and service entries. |
@@ -99,7 +100,17 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `memories` | Memories | The photo wall, with a control that adds a picture and a click that enlarges one. |
 | `history` | History | Every write oculus made on this machine, newest first, with what each field held before it and a control that puts it back. |
 
-Four views are opened for something rather than listed in the rail: `project` (one project as its own tab), `editor` (its manifest form), `deposit` (its public code deposit) and `doc` (one Markdown document of the hub, from a group of the rail). Three more open from a file: `document` (a local HTML file in a frame), `file` (one file drawn by what its name says it is, with a control that opens a text file the source tab may save in that tab) and `source` (one text file, edited and saved, a Markdown file beside the rendered document its text makes, which a control in the bar takes away).
+Four views are opened for something rather than listed in the rail: `project` (one project as its own tab), `editor` (its manifest form), `deposit` (its public code deposit) and `doc` (one Markdown document of the hub, from a group of the rail). Three more open from a file: `document` (a local HTML file in a frame), `file` (one file drawn by what its name says it is, with a control that opens a text file the source tab may save in that tab) and `source` (one text file, edited and saved, a Markdown file beside the rendered document its text makes, which a control in the bar takes away). One more opens from a repository: `repositories-diff` (one file's diff, staged or as the worktree has it, or everything a worktree holds that its repository does not).
+
+## Worktrees and the merge back
+
+The Repositories view is over every root the file browser serves, the hub and the configured roots and whatever the current workspace added, plus the workspace of every session. Each section is the pushed state of that repository: nothing is polled, and a commit made in a terminal moves the section within two seconds. A diff is the one thing not pushed; it is read when a pane opens it, so a repository with two hundred changed files costs the socket nothing.
+
+A worktree is a second checkout of the same repository on a branch of its own, which is how one repository carries two pieces of work at once. The control at the bottom of a root's worktree list takes a name, says the path before anything is made, and on confirm makes `<root>/.agents/worktrees/<name>` on a new branch of that name from the repository's HEAD, then opens a shell there. A repository whose `.gitignore` does not carry `/.agents/worktrees/` is warned about in the view rather than edited: what a repository ignores is its owner's to decide, and without the rule a worktree made there becomes content of the repository.
+
+Each worktree row carries four controls: its diff against the repository's checked-out branch, a shell started in it, the merge back, and the removal. The merge back is git's own `merge` onto the checked-out branch, a fast-forward where it can be one and a merge commit otherwise. It is refused when the repository has staged or changed paths of its own, when the repository has no branch checked out, when the name is not one of the repository's own branches, and when the branch asked for is the one checked out; a conflict is taken back with `merge --abort` and reported by the paths that conflicted, so a press on the page never leaves a repository half merged and a real conflict is taken to a terminal knowingly. An untracked file does not refuse a merge, because git carries one across untouched.
+
+Removing the worktree is a second control and never part of the merge. It refuses a worktree holding uncommitted changes or untracked files, which is the difference from the merge: the removal takes the folder away and everything in it with it, so a file git never saw would be a file nobody can get back. The branch goes with the worktree only when no work is left only there, and the answer says when the branch was kept.
 
 ## The configuration
 

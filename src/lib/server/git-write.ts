@@ -1,7 +1,7 @@
 // Layer 2, server. The writing half of git, kept apart from server/git.ts on purpose.
 //
-// DESIGN.md, "Git": the read-only module runs exactly four commands and a test asserts that its
-// source names no writing subcommand at all. Every write therefore lives here, and this module's own
+// DESIGN.md, "Git": the read-only module runs only its enumerated read-only commands and a test
+// asserts that its source names no writing subcommand at all. Every write therefore lives here, and this module's own
 // gate is the opposite one: tests/server/git-write.test.ts enumerates the subcommands it may run,
 // asserts each appears at exactly one call site, and watches every argument vector the suite ran.
 //
@@ -9,34 +9,43 @@
 //     git -C <root> restore [--staged] -- <paths>
 //     git -C <root> commit -F <file>
 //     git -C <root> push
-//     git -C <root> branch --format=...
+//     git -C <root> branch [--format=... | -d <name>]
 //     git -C <root> switch [-c] <name>
 //     git -C <root> check-ref-format --branch <name>
 //     git -C <root> status --porcelain=v1 -z
-//     git -C <root> diff --cached
-//     git -C <root> rev-parse --abbrev-ref @{upstream}
+//     git -C <root> diff [--cached | --name-only --diff-filter=U | <range>] [-- <path>]
+//     git -C <root> rev-parse [--abbrev-ref] <rev>
+//     git -C <root> worktree [add -b <name> <path> HEAD | remove <path>]
+//     git -C <root> merge [<branch> | --abort]
 //
 // Nothing here is reachable from a watcher, a timer or the socket. The one caller is server/
 // git-routes.ts, which answers POST /api/git only for a request carrying the write token, coming
-// from this application's own page, and (for the five destructive actions) carrying the confirm the
-// page sets from a dialog. DESIGN.md's decision on git writes is that shape: commit,
-// push and branches on the sessions' workspaces, every write behind the token and a confirm.
+// from this application's own page, and (for the eight destructive actions) carrying the confirm the
+// page sets from a dialog. DESIGN.md's decision on git writes is that shape: commit, push, branches
+// and worktrees on the repositories oculus knows, every write behind the token and a confirm.
 //
 // `git.ts`'s `run` is not imported: putting a writing subcommand through the read-only module's one
 // call site would run it past that module's recorder and break the gate that says what it ran.
 //
-// A root is refused unless the last published `git` payload names it (a workspace the sessions views
-// are showing) or it is the hub itself or under it. A path is refused unless it is relative and
-// stays inside the repository. Every operation answers `{ ok, output, error }` and never throws.
+// A root is refused unless the last published `git` payload names it or it is the hub itself or
+// under it. That payload is every root the file browser serves as well as every workspace a session
+// names, so these writes reach a configured repository nobody has a session in. A path is refused
+// unless it is relative and stays inside the repository. Every operation answers
+// `{ ok, output, error }` and never throws.
 
 import { execFile } from 'node:child_process';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdtempSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { isAbsolute, join, resolve, sep } from 'node:path';
+import { basename, isAbsolute, join, resolve, sep } from 'node:path';
 import { scalar } from '../data/guards.ts';
+import type { GitBranch } from '../data/model.ts';
+import { isWorktreePath, validName, worktreePath } from '../data/worktrees.ts';
 import { defaultMirrorsDir } from './deposit-git.ts';
+import { BRANCH_FORMAT, parseBranches } from './git-parse.ts';
 import { GIT } from './git.ts';
 import { target } from './writes.ts';
+
+export { parseBranches };
 
 /** Milliseconds one git command is given, for everything that stays on this machine. */
 export const TIMEOUT_MS = 10000;
@@ -51,7 +60,7 @@ export const MAX_OUTPUT = 8 * 1024 * 1024;
 export type Outcome = { ok: boolean; output: string; error: string };
 
 /** One row of `git branch --format`, as the branch menu draws it. */
-export type Branch = { name: string; upstream: string; current: boolean };
+export type Branch = GitBranch;
 
 function failed(error: string): Outcome {
     return { ok: false, output: '', error };
@@ -227,28 +236,7 @@ export async function push(root: string, roots: string[] = allowedRoots()): Prom
 /** Every branch, with its upstream and which one is checked out. A read, and the only one here. */
 export async function branches(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
     if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
-    return run(
-        root,
-        ['branch', '--format=%(refname:short)%09%(upstream:short)%09%(HEAD)'],
-        TIMEOUT_MS
-    );
-}
-
-/** The rows of `branches`, as the menu reads them. */
-export function parseBranches(output: string): Branch[] {
-    const rows: Branch[] = [];
-    for (const line of output.split('\n')) {
-        if (line.trim() === '') continue;
-        const parts = line.split('\t');
-        const name = parts.at(0);
-        if (name === undefined || name === '') continue;
-        rows.push({
-            name,
-            upstream: parts.at(1) ?? '',
-            current: (parts.at(2) ?? '').trim() === '*'
-        });
-    }
-    return rows;
+    return branch(root, [BRANCH_FORMAT]);
 }
 
 /** Make a branch and check it out. The name is git's own to judge, so git judges it first. */
@@ -284,7 +272,177 @@ export async function switchBranch(
 /** What is staged right now, which is what the suggested message is written from. */
 export async function stagedDiff(root: string, roots: string[] = allowedRoots()): Promise<Outcome> {
     if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
-    return run(root, ['diff', '--cached'], TIMEOUT_MS);
+    return diff(root, ['--cached']);
+}
+
+/**
+ * One file's diff, staged or not, for the pane the Repositories view opens over a row. A read: the
+ * `git` channel carries the paths and this answers the text of one of them, since a diff of every
+ * changed file of every root on every event is what the channel's throttle is there to avoid.
+ */
+export async function fileDiff(
+    root: string,
+    path: string,
+    staged: boolean,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    const wrong = checkPaths(root, [path], roots);
+    if (wrong !== '') return failed(wrong);
+    return diff(root, [...(staged ? ['--cached'] : []), '--', path]);
+}
+
+/**
+ * What a worktree holds that the repository's checked-out branch does not: the three-dot diff from
+ * that branch to the worktree's own HEAD, which is what the reader is about to merge back. A
+ * detached checkout has no branch to name, so its HEAD stands in.
+ *
+ * The repository is named by the caller and never worked out from the path: a worktree of the hub is
+ * itself a workspace on the `git` channel and therefore a root of its own, so a path would answer
+ * with itself and every worktree this hub makes would be refused.
+ */
+export async function worktreeDiff(
+    root: string,
+    path: string,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
+    if (!worktreeUnder(root, path)) return failed(OUTSIDE_WORKTREES);
+    const head = await revParse(root, ['--abbrev-ref', 'HEAD']);
+    if (!head.ok) return head;
+    const name = head.output.trim();
+    const from = name === '' || name === 'HEAD' ? await revParse(root, ['HEAD']) : head;
+    if (!from.ok) return from;
+    return diff(path, [`${from.output.trim()}...HEAD`]);
+}
+
+// ---------------------------------------------------------------- worktrees and the merge back
+
+/** What a request naming a path outside the root's worktrees folder is refused with. */
+const OUTSIDE_WORKTREES = 'that path is not a worktree oculus made under this repository';
+
+/** The real path of a directory, or null when there is nothing there to resolve. */
+function real(path: string): string | null {
+    try {
+        return realpathSync(path);
+    } catch {
+        return null;
+    }
+}
+
+/**
+ * Whether the path is a worktree this tool made under the root. Both sides go through realpath
+ * first, so a `..` inside either is worked out and a symbolic link under the worktrees folder that
+ * points at another repository resolves to where it points and is refused; a path that does not
+ * exist is refused too, since there is nothing to remove or diff. The rule itself is
+ * data/worktrees.ts's, which the page reads too.
+ */
+function worktreeUnder(root: string, path: string): boolean {
+    if (typeof path !== 'string' || path === '' || !isAbsolute(path)) return false;
+    if (!validName(basename(resolve(path)))) return false;
+    const full = real(path);
+    const top = real(root);
+    if (full === null || top === null) return false;
+    return isWorktreePath(top, full);
+}
+
+/**
+ * Make a worktree of the root on a new branch of the same name, under the root's own worktrees
+ * folder. The name is one path segment and a name git accepts as a branch, and the folder must not
+ * already be there: a worktree over an existing folder is a merge of two unrelated things.
+ */
+export async function createWorktree(
+    root: string,
+    name: string,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    const wrong = await checkName(root, name, roots);
+    if (wrong !== '') return failed(wrong);
+    if (!validName(name)) return failed(`${name} is not a name one worktree folder can carry`);
+    const path = worktreePath(root, name);
+    if (existsSync(path)) return failed(`there is already something at ${path}`);
+    return worktree(root, ['add', '-b', name, path, 'HEAD']);
+}
+
+/**
+ * Take a worktree away, and the branch it was on with it. A worktree holding uncommitted work is
+ * refused before anything runs: `git worktree remove` would refuse it too, and the reason is worth
+ * more than git's. The branch goes by `-d`, which git refuses for work no other branch holds, so a
+ * branch that is not merged stays and the answer says so.
+ */
+export async function removeWorktree(
+    root: string,
+    path: string,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    if (!permitted(root, roots)) return failed('that directory is not a workspace oculus knows');
+    if (!worktreeUnder(root, path)) return failed(OUTSIDE_WORKTREES);
+    if (!existsSync(path)) return failed(`there is no worktree at ${path}`);
+    const state = await porcelain(path);
+    if (!state.ok) return state;
+    // Untracked files count here, unlike the merge: `git worktree remove` would take the folder and
+    // them with it, and a file git never saw is a file nobody can get back.
+    if (state.output.trim() !== '') {
+        return failed(
+            'that worktree holds uncommitted changes or untracked files, so it is not taken away'
+        );
+    }
+    const head = await revParse(path, ['--abbrev-ref', 'HEAD']);
+    const name = head.ok ? head.output.trim() : '';
+    const gone = await worktree(root, ['remove', path]);
+    if (!gone.ok) return gone;
+    if (name === '' || name === 'HEAD') return gone;
+    const dropped = await branch(root, ['-d', name]);
+    if (dropped.ok) return { ok: true, output: `${gone.output}${dropped.output}`, error: '' };
+    return {
+        ok: true,
+        output: `${gone.output}the branch ${name} was kept: ${dropped.error}`,
+        error: ''
+    };
+}
+
+/**
+ * Merge a branch into the root's checked-out branch, which is git's own default: a fast-forward
+ * where it can be one and a merge commit otherwise. A dirty root and the checked-out branch itself
+ * are refused before anything runs, and a conflict is aborted and reported by the paths that
+ * conflicted, so a press on the page never leaves a repository half merged.
+ */
+export async function merge(
+    root: string,
+    name: string,
+    roots: string[] = allowedRoots()
+): Promise<Outcome> {
+    const wrong = await checkName(root, name, roots);
+    if (wrong !== '') return failed(wrong);
+    const head = await revParse(root, ['--abbrev-ref', 'HEAD']);
+    if (!head.ok) return head;
+    const onto = head.output.trim();
+    if (onto === 'HEAD' || onto === '') {
+        return failed(
+            'this repository has no branch checked out, so there is nothing to merge into'
+        );
+    }
+    if (onto === name) {
+        return failed(`${name} is the branch that is checked out, so there is nothing to merge`);
+    }
+    // A name git accepts as a reference is not a branch: a tag or a commit id would be merged just
+    // as happily, and what this control offers is the branch of a worktree.
+    const listed = await branch(root, [BRANCH_FORMAT]);
+    if (!listed.ok) return listed;
+    if (!parseBranches(listed.output).some((one) => one.name === name)) {
+        return failed(`${name} is not a branch of this repository`);
+    }
+    const state = await porcelain(root);
+    if (!state.ok) return state;
+    if (tracked(state.output)) {
+        return failed('the repository has changes of its own, so the merge would carry them in');
+    }
+    const done = await mergeIn(root, [name]);
+    if (done.ok) return done;
+    const conflicted = await diff(root, ['--name-only', '--diff-filter=U']);
+    const paths = conflicted.ok ? conflicted.output.trim().split('\n').filter(Boolean) : [];
+    await mergeIn(root, ['--abort']);
+    if (paths.length === 0) return done;
+    return failed(`the merge was taken back: ${paths.join(', ')} conflicted`);
 }
 
 // ---------------------------------------------------------------- the shared call sites
@@ -305,9 +463,34 @@ function porcelain(root: string): Promise<Outcome> {
     return run(root, ['status', '--porcelain=v1', '-z'], TIMEOUT_MS);
 }
 
-/** The one `rev-parse` call site: whether the current branch has somewhere to push to. */
+/** The one `rev-parse` call site: the upstream of the current branch, and what HEAD is. */
+function revParse(root: string, args: string[]): Promise<Outcome> {
+    return run(root, ['rev-parse', ...args], TIMEOUT_MS);
+}
+
+/** Whether the current branch has somewhere to push to. */
 function upstream(root: string): Promise<Outcome> {
-    return run(root, ['rev-parse', '--abbrev-ref', '@{upstream}'], TIMEOUT_MS);
+    return revParse(root, ['--abbrev-ref', '@{upstream}']);
+}
+
+/** The one `diff` call site: the staged diff, one file's, a worktree's range, and the conflicts. */
+function diff(root: string, args: string[]): Promise<Outcome> {
+    return run(root, ['diff', ...args], TIMEOUT_MS);
+}
+
+/** The one `branch` call site: the listing the menu draws, and the delete a worktree removal makes. */
+function branch(root: string, args: string[]): Promise<Outcome> {
+    return run(root, ['branch', ...args], TIMEOUT_MS);
+}
+
+/** The one `worktree` call site: the add and the remove. The list is server/git.ts's read. */
+function worktree(root: string, args: string[]): Promise<Outcome> {
+    return run(root, ['worktree', ...args], TIMEOUT_MS);
+}
+
+/** The one `merge` call site: the merge itself and the abort that takes a conflicted one back. */
+function mergeIn(root: string, args: string[]): Promise<Outcome> {
+    return run(root, ['merge', ...args], TIMEOUT_MS);
 }
 
 /** The one `check-ref-format` call site: git's own answer on whether a name is a branch name. */
@@ -320,6 +503,19 @@ async function checkName(root: string, name: string, roots: string[]): Promise<s
 }
 
 // ---------------------------------------------------------------- small stuff
+
+/**
+ * Whether the porcelain reports a change of the repository's own content. An untracked file is not
+ * one: git carries it across a merge and never overwrites it, so refusing a merge over one would
+ * refuse every repository with a build folder in it.
+ */
+function tracked(output: string): boolean {
+    for (const record of output.split('\0')) {
+        if (record.length < 4) continue;
+        if (!record.startsWith('??')) return true;
+    }
+    return false;
+}
 
 /**
  * The paths `status --porcelain=v1 -z` reported as untracked. A rename names its old path in the

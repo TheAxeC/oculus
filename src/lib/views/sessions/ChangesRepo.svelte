@@ -7,7 +7,7 @@
     import TextArea from '$lib/ui/TextArea.svelte';
     import TextInput from '$lib/ui/TextInput.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { elide } from '$lib/state/format';
+    import ChangeGroups from '$lib/views/shared/ChangeGroups.svelte';
     import type { GitEntry, GitState } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
 
@@ -68,87 +68,15 @@
      */
     const noUpstream = $derived(state.upstream === false);
     const pending = $derived(upstream === '' && !noUpstream && state.error === null);
-
-    const LETTERS: Record<string, string> = {
-        M: 'amber',
-        A: 'green',
-        D: 'red',
-        R: 'violet',
-        C: 'violet',
-        '?': 'slate'
-    };
-
-    /** The text color custom property for one git status letter. */
-    function letterStyle(status: string): string {
-        return `--tone-txt: var(--c-${LETTERS[status] ?? 'grey'}-txt)`;
-    }
 </script>
 
-{#snippet counts(entry: GitEntry)}
-    {#if entry.added === null && entry.deleted === null}
-        <span class="bin">{t('sessions.ch_binary')}</span>
-    {:else}
-        {#if entry.added}
-            <span class="add">{t('sessions.ch_added', entry.added)}</span>
-        {/if}
-        {#if entry.deleted}
-            <span class="del">{t('sessions.ch_deleted', entry.deleted)}</span>
-        {/if}
-    {/if}
-{/snippet}
-
-{#snippet mark(also: string[])}
+{#snippet mark(entry: GitEntry)}
+    {@const also = shared(entry.path)}
     {#if also.length > 0}
         <span class="mark" title={t('sessions.ch_shared_tip', also.join(', '))}
             >{t('sessions.ch_shared')}</span
         >
     {/if}
-{/snippet}
-
-{#snippet group(label: string, entries: GitEntry[], kind: string)}
-    <div class="group">
-        <div class="group-h">
-            <span>{label}</span>
-            <span class="n">{entries.length}</span>
-        </div>
-        {#if entries.length === 0}
-            <p class="none">{t('sessions.ch_group_empty')}</p>
-        {:else}
-            {#each entries as entry (entry.path)}
-                {@const also = shared(entry.path)}
-                <div class="file" class:shared={also.length > 0}>
-                    <span class="st" style={letterStyle(entry.status)}>{entry.status}</span>
-                    <span class="pa" title={entry.path}>{elide(entry.path)}</span>
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render mark(also)}
-                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-                    {@render counts(entry)}
-                    <span class="acts">
-                        {#if kind === 'staged'}
-                            <ToolButton
-                                label={t('git.unstage')}
-                                title={t('git.unstage_title')}
-                                onclick={() => onunstage(entry.path)}
-                            />
-                        {:else}
-                            <ToolButton
-                                label={t('git.stage')}
-                                title={t('git.stage_title')}
-                                onclick={() => onstage(entry.path)}
-                            />
-                        {/if}
-                        {#if kind === 'changed'}
-                            <ToolButton
-                                label={t('git.discard')}
-                                title={t('git.discard_title')}
-                                onclick={() => ondiscard(entry.path)}
-                            />
-                        {/if}
-                    </span>
-                </div>
-            {/each}
-        {/if}
-    </div>
 {/snippet}
 
 <section class="sec">
@@ -178,12 +106,16 @@
         <TextInput value={branchName} label={t('git.branch_new_label')} oninput={onbranchname} />
         <ToolButton label={t('git.branch_new_create')} onclick={onbranch} />
     </div>
-    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-    {@render group(t('sessions.ch_staged'), state.staged, 'staged')}
-    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-    {@render group(t('sessions.ch_changed'), state.unstaged, 'changed')}
-    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
-    {@render group(t('sessions.ch_untracked'), state.untracked, 'untracked')}
+    <ChangeGroups
+        staged={state.staged}
+        unstaged={state.unstaged}
+        untracked={state.untracked}
+        {onstage}
+        {onunstage}
+        {ondiscard}
+        beside={mark}
+        marked={(entry: GitEntry) => shared(entry.path).length > 0}
+    />
     <div class="commit">
         <TextArea value={message} label={t('git.commit_label')} rows={4} oninput={onmessage} />
         <div class="cacts">
@@ -208,56 +140,22 @@
 </section>
 
 <style>
-    .sec-h,
-    .group-h {
+    .sec-h {
         display: flex;
         align-items: center;
         gap: 6px;
         color: var(--muted-txt, var(--muted));
         text-transform: uppercase;
         letter-spacing: 0.04em;
-    }
-    .sec-h {
         font-size: var(--fs-sm);
         border-bottom: 1px solid var(--line);
         padding-bottom: 2px;
         margin-bottom: 4px;
     }
-    .group-h {
-        font-size: var(--fs-xs);
-    }
-    .group {
-        margin-top: 6px;
-    }
-    .group-h .n {
-        margin-left: auto;
-        font-family: var(--font-num);
-    }
-    .file {
-        display: flex;
-        align-items: baseline;
-        gap: 6px;
-        min-width: 0;
-        font-size: var(--fs-sm);
-    }
-    .pa {
-        min-width: 0;
-        overflow: hidden;
-        text-overflow: ellipsis;
-        white-space: nowrap;
-    }
-    .st {
+    .mark {
         flex: 0 0 auto;
-        width: 1.2em;
-        text-align: center;
-        color: var(--tone-txt, var(--muted-txt));
-        font-family: var(--font-mono);
-    }
-    .mark,
-    .bin {
-        flex: 0 0 auto;
-        color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
+        color: var(--c-amber-txt, var(--muted));
     }
     .none {
         color: var(--muted-txt, var(--muted));
@@ -267,30 +165,9 @@
     .cacts .none {
         font-size: var(--fs-sm);
     }
-    .add,
-    .del {
-        flex: 0 0 auto;
-        font-family: var(--font-num);
-        font-size: var(--fs-xs);
-    }
-    .add {
-        color: var(--c-green-txt, var(--muted));
-    }
-    .del {
-        color: var(--c-red-txt, var(--muted));
-    }
-    .mark {
-        color: var(--c-amber-txt, var(--muted));
-    }
     .outcome {
         margin: 2px 0 0;
         font-size: var(--fs-md);
-    }
-    .acts {
-        flex: 0 0 auto;
-        display: flex;
-        gap: 2px;
-        margin-left: auto;
     }
     .branch,
     .newbranch,

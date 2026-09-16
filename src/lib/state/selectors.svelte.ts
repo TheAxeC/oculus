@@ -98,6 +98,7 @@ export type SelectorsStore = {
     knownAreas: (workspace: string) => Area[];
     pinnableAreas: (workspace: string) => Area[];
     gitFor: (workspace: string) => GitState | null;
+    gitRoots: () => string[];
     touchers: (path: string, exclude?: string | null) => GroupedSession[];
     sessionsForProject: (folder: string) => GroupedSession[];
 };
@@ -379,6 +380,15 @@ export function createSelectors(
     }
 
     /**
+     * Every root the `git` channel carries, in the order the server watched them, which is the order
+     * the file browser lists its roots in and therefore the order the Repositories view draws.
+     */
+    function gitRoots(): string[] {
+        const payload = entities.git();
+        return payload === null ? [] : Object.keys(payload);
+    }
+
+    /**
      * The live sessions holding one path open, other than the one asking. It is what the "also open"
      * mark on a touched file names: two agents editing one file is the thing worth seeing at once.
      */
@@ -433,6 +443,7 @@ export function createSelectors(
         knownAreas,
         pinnableAreas,
         gitFor,
+        gitRoots,
         touchers,
         sessionsForProject
     };

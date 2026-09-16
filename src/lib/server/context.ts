@@ -21,8 +21,9 @@ import { Hub } from './channels.ts';
 import { RateLimiter, notifyConfig, type HookTarget } from './hooks.ts';
 import type { LogPaths } from './hpc/actions.ts';
 import type { Plan } from './deposit.ts';
-import { fsWrites, type FsWrites } from './fs.ts';
+import { defaultWorkspacesPath, fsWrites, type FsWrites } from './fs.ts';
 import { memoriesMemory, type MemoriesMemory } from './memories.ts';
+import { repositoryRoots } from './roots.ts';
 import { wallpaperMemory, type WallpaperMemory } from './wallpaper.ts';
 import { watchHpc, type HpcOptions, type HpcWatcher } from './hpc/poll.ts';
 import { Terminals } from './pty/channel.ts';
@@ -31,7 +32,7 @@ import { HookStore, sessionRecord } from './sessions/hooks.ts';
 import type { ProjectFolder } from './sessions/group.ts';
 import { watchUsageRefresh, type UsageRefreshWatcher } from './usage/refresh.ts';
 import { watchUsage, type UsageWatcher } from './usage/watch.ts';
-import { watchGit, type GitWatcher } from './watch/git.ts';
+import { watchGit, type GitWatcher, type GitWatchOptions } from './watch/git.ts';
 import { watchPortfolio, type Watcher } from './watch/portfolio.ts';
 import { watchSessions } from './watch/sessions.ts';
 
@@ -87,7 +88,7 @@ export type ContextDependencies = {
         paths: { hub: string; engine: string; icons: IconMemory }
     ) => Watcher;
     watchSessions: typeof watchSessions;
-    watchGit: (hub: Hub, root: string) => GitWatcher;
+    watchGit: (hub: Hub, options: GitWatchOptions) => GitWatcher;
     watchHpc: (hub: Hub, options: HpcOptions) => HpcWatcher;
     watchUsageRefresh: typeof watchUsageRefresh;
     watchUsage: typeof watchUsage;
@@ -101,7 +102,7 @@ const dependencies: ContextDependencies = {
     createTerminals: (hub) => new Terminals(hub),
     watchPortfolio,
     watchSessions,
-    watchGit: (hub, root) => watchGit(hub, { always: root }),
+    watchGit: (hub, options) => watchGit(hub, options),
     watchHpc,
     watchUsageRefresh,
     watchUsage
@@ -166,7 +167,16 @@ export function createServerContext(
         refresherFor: usageRefresh.state,
         onSessionsChange: sessions.onChange
     });
-    const git = make.watchGit(hub, local.hub);
+    // Every root the file browser serves is on the `git` channel, so the Repositories view is over
+    // the repositories the reader configured and not only the ones a session is working in. The
+    // configuration is read at the call and not taken from the copy above, so a root added to
+    // sources.yml while the server runs is watched when the config push follows the save.
+    const workspacesFile = local.workspaces ?? defaultWorkspacesPath();
+    const git = make.watchGit(hub, {
+        always: local.hub,
+        roots: () => repositoryRoots({ config: make.loadConfig(engine).config, engine, local }),
+        workspacesFile
+    });
     // One map, two writers: the log action writes what a press resolved, the watcher's prewarm what
     // it resolved behind the page, and neither replaces the other's answer.
     const hpcLogPaths: LogPaths = new Map();

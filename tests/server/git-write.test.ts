@@ -10,7 +10,15 @@
 // subprocess both handed in, which is what its options exist for.
 
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import {
+    existsSync,
+    mkdirSync,
+    mkdtempSync,
+    readFileSync,
+    rmSync,
+    symlinkSync,
+    writeFileSync
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,15 +29,21 @@ import {
     branches,
     commit,
     createBranch,
+    createWorktree,
     discard,
+    fileDiff,
+    merge,
     parseBranches,
     permitted,
     push,
+    removeWorktree,
     stage,
     stagedDiff,
     switchBranch,
-    unstage
+    unstage,
+    worktreeDiff
 } from '../../src/lib/server/git-write.ts';
+import { worktreePath } from '../../src/lib/data/worktrees.ts';
 import { suggestMessage } from '../../src/lib/server/git-message.ts';
 
 const MODULE = resolve(
@@ -49,11 +63,13 @@ const ALLOWED = [
     'check-ref-format',
     'commit',
     'diff',
+    'merge',
     'push',
     'restore',
     'rev-parse',
     'status',
-    'switch'
+    'switch',
+    'worktree'
 ];
 
 /** Every argument vector the module ran, over the whole file. Asserted by the last gate. */
@@ -317,6 +333,226 @@ describe('the suggested message', () => {
         expect(answer.ok).toBe(false);
         expect(answer.error).toContain('nothing is staged');
         expect(asked).toBe(0);
+    });
+});
+
+describe('one file, and one worktree, read as a diff', () => {
+    it('answers one path, staged and as the worktree has it, and refuses one outside', async () => {
+        write(repo, 'kept.txt', 'six\n');
+        const changed = await fileDiff(repo, 'kept.txt', false);
+        expect(changed.ok).toBe(true);
+        expect(changed.output).toContain('+six');
+        await stage(repo, ['kept.txt']);
+        const staged = await fileDiff(repo, 'kept.txt', true);
+        expect(staged.ok).toBe(true);
+        expect(staged.output).toContain('+six');
+        const outside_ = await fileDiff(repo, '../outside/kept.txt', false);
+        expect(outside_.ok).toBe(false);
+        expect(outside_.error).toContain('not inside the workspace');
+        await commit(repo, 'Set it to six\n');
+    });
+});
+
+describe('worktrees', () => {
+    const name = 'package-one';
+    /** The worktree's path. It is read in each case, since the repository is made in beforeAll. */
+    const where = (): string => worktreePath(repo, name);
+
+    it('makes one under the repository worktrees folder, on a branch of its name', async () => {
+        const path = where();
+        const answer = await createWorktree(repo, name);
+        expect(answer.ok).toBe(true);
+        expect(git(path, 'rev-parse', '--abbrev-ref', 'HEAD').trim()).toBe(name);
+        expect(path.endsWith(`.agents/worktrees/${name}`)).toBe(true);
+    });
+
+    it('refuses a name that is not one folder, and one git does not accept', async () => {
+        const nested = await createWorktree(repo, 'a/b');
+        expect(nested.ok).toBe(false);
+        const bad = await createWorktree(repo, 'a name');
+        expect(bad.ok).toBe(false);
+        expect(bad.error).toContain('not a branch name');
+    });
+
+    it('refuses to make one where there is already something', async () => {
+        const answer = await createWorktree(repo, name);
+        expect(answer.ok).toBe(false);
+        expect(answer.error).toContain('already');
+    });
+
+    it('answers what the worktree holds that the repository branch does not', async () => {
+        const path = where();
+        write(path, 'inside.txt', 'made in the worktree\n');
+        git(path, 'add', 'inside.txt');
+        git(path, 'commit', '-q', '-m', 'Add inside');
+        const answer = await worktreeDiff(repo, path);
+        expect(answer.ok).toBe(true);
+        expect(answer.output).toContain('inside.txt');
+        expect(answer.output).toContain('+made in the worktree');
+    });
+
+    it('answers for a worktree that is itself one of the allowed roots', async () => {
+        // An agent worktree of this hub is a session's workspace, so the `git` channel names it and
+        // it is an allowed root of its own. The repository is the one the request names, so the
+        // diff is still taken against the repository's branch and not against the worktree's.
+        const path = where();
+        const answer = await worktreeDiff(repo, path, [repo, path]);
+        expect(answer.ok).toBe(true);
+        expect(answer.output).toContain('inside.txt');
+    });
+
+    it('refuses a path that is not a worktree of the root', async () => {
+        const answer = await removeWorktree(repo, join(repo, 'kept.txt'));
+        expect(answer.ok).toBe(false);
+        expect(answer.error).toContain('not a worktree');
+        const read = await worktreeDiff(repo, join(repo, 'kept.txt'));
+        expect(read.ok).toBe(false);
+    });
+
+    it('refuses a path that climbs back out of the worktrees folder', async () => {
+        // The folder prefix is there, and the path leaves it again; a prefix test would take it.
+        const climb = join(where(), '..', '..', '..', 'outside');
+        const removal = await removeWorktree(repo, climb);
+        expect(removal.ok).toBe(false);
+        expect(removal.error).toContain('not a worktree');
+        const read = await worktreeDiff(repo, climb, [repo, outside]);
+        expect(read.ok).toBe(false);
+        expect(read.error).toContain('not a worktree');
+        // A second name under the folder is refused for the same reason: one segment, no more.
+        const deeper = await removeWorktree(repo, join(where(), 'inner'));
+        expect(deeper.ok).toBe(false);
+        expect(deeper.error).toContain('not a worktree');
+    });
+
+    it('refuses a symbolic link under the worktrees folder that points at another repository', async () => {
+        // The name is valid and the path sits under the folder; what it resolves to is elsewhere,
+        // and the diff of elsewhere is not this repository's to show.
+        mkdirSync(dirname(where()), { recursive: true });
+        const link = join(dirname(where()), 'elsewhere');
+        symlinkSync(outside, link);
+        const read = await worktreeDiff(repo, link, [repo, outside]);
+        expect(read.ok).toBe(false);
+        expect(read.error).toContain('not a worktree');
+        const removal = await removeWorktree(repo, link);
+        expect(removal.ok).toBe(false);
+        expect(removal.error).toContain('not a worktree');
+        rmSync(link);
+    });
+
+    it('refuses to remove one that holds uncommitted work, and leaves it there', async () => {
+        const path = where();
+        write(path, 'inside.txt', 'edited\n');
+        const answer = await removeWorktree(repo, path);
+        expect(answer.ok).toBe(false);
+        expect(answer.error).toContain('uncommitted changes or untracked files');
+        expect(readFileSync(join(path, 'inside.txt'), 'utf8')).toBe('edited\n');
+        git(path, 'checkout', '--', 'inside.txt');
+    });
+
+    it('refuses to remove one holding an untracked file, which the removal would take with it', async () => {
+        const path = where();
+        write(path, 'loose.txt', 'nothing tracks me\n');
+        const answer = await removeWorktree(repo, path);
+        expect(answer.ok).toBe(false);
+        expect(answer.error).toContain('untracked files');
+        expect(readFileSync(join(path, 'loose.txt'), 'utf8')).toBe('nothing tracks me\n');
+        rmSync(join(path, 'loose.txt'));
+    });
+});
+
+describe('the merge back', () => {
+    const name = 'package-one';
+
+    it('refuses the branch that is checked out', async () => {
+        const answer = await merge(repo, 'main');
+        expect(answer.ok).toBe(false);
+        expect(answer.error).toContain('checked out');
+    });
+
+    it('refuses a repository with changes of its own', async () => {
+        write(repo, 'kept.txt', 'dirty\n');
+        const answer = await merge(repo, name);
+        expect(answer.ok).toBe(false);
+        expect(answer.error).toContain('changes of its own');
+        await discard(repo, ['kept.txt']);
+    });
+
+    it('refuses a name that is not one of the branches of this repository', async () => {
+        git(repo, 'tag', 'a-tag');
+        const tag = await merge(repo, 'a-tag');
+        expect(tag.ok).toBe(false);
+        expect(tag.error).toContain('not a branch of this repository');
+        const head = git(repo, 'rev-parse', 'HEAD').trim();
+        const sha = await merge(repo, head);
+        expect(sha.ok).toBe(false);
+        expect(sha.error).toContain('not a branch of this repository');
+        const absent = await merge(repo, 'never-made');
+        expect(absent.ok).toBe(false);
+        expect(absent.error).toContain('not a branch of this repository');
+    });
+
+    it('refuses a repository with no branch checked out', async () => {
+        const head = git(repo, 'rev-parse', 'HEAD').trim();
+        git(repo, 'checkout', '--quiet', head);
+        const answer = await merge(repo, name);
+        expect(answer.ok).toBe(false);
+        expect(answer.error).toContain('no branch checked out');
+        git(repo, 'switch', '-q', 'main');
+    });
+
+    it('takes the worktree branch into the checked-out branch', async () => {
+        const answer = await merge(repo, name);
+        expect(answer.ok).toBe(true);
+        expect(readFileSync(join(repo, 'inside.txt'), 'utf8')).toBe('made in the worktree\n');
+    });
+
+    it('takes a conflicted merge back and names what conflicted', async () => {
+        git(repo, 'branch', 'other');
+        git(repo, 'switch', '-q', 'other');
+        write(repo, 'kept.txt', 'from the other branch\n');
+        git(repo, 'add', 'kept.txt');
+        git(repo, 'commit', '-q', '-m', 'Other');
+        git(repo, 'switch', '-q', 'main');
+        write(repo, 'kept.txt', 'from main\n');
+        git(repo, 'add', 'kept.txt');
+        git(repo, 'commit', '-q', '-m', 'Main');
+
+        const answer = await merge(repo, 'other');
+        expect(answer.ok).toBe(false);
+        expect(answer.error).toContain('kept.txt');
+        expect(answer.error).toContain('taken back');
+        // Nothing is left half merged: no path is staged or changed, and the file is main's. The
+        // worktrees folder is untracked here, which is what the repository's .gitignore is for.
+        expect(
+            status()
+                .split('\n')
+                .filter((line) => line.trim() !== '' && !line.startsWith('??'))
+        ).toEqual([]);
+        expect(readFileSync(join(repo, 'kept.txt'), 'utf8')).toBe('from main\n');
+    });
+
+    it('removes a worktree that is clean, and its branch with it', async () => {
+        const path = worktreePath(repo, name);
+        const answer = await removeWorktree(repo, path);
+        expect(answer.ok).toBe(true);
+        expect(existsSync(path)).toBe(false);
+        expect(git(repo, 'branch', '--list', name).trim()).toBe('');
+    });
+
+    it('keeps a branch no other branch holds, and says so', async () => {
+        const kept = 'kept-work';
+        expect((await createWorktree(repo, kept)).ok).toBe(true);
+        const path = worktreePath(repo, kept);
+        write(path, 'only-here.txt', 'work that is nowhere else\n');
+        git(path, 'add', 'only-here.txt');
+        git(path, 'commit', '-q', '-m', 'Only here');
+
+        const answer = await removeWorktree(repo, path);
+        expect(answer.ok).toBe(true);
+        expect(existsSync(path)).toBe(false);
+        expect(answer.output).toContain(`the branch ${kept} was kept`);
+        expect(git(repo, 'branch', '--list', kept)).toContain(kept);
+        git(repo, 'branch', '-D', kept);
     });
 });
 

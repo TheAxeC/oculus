@@ -9,24 +9,13 @@
 // ServerContext, so one request reads the workspaces file once and no config file at all.
 
 import { sameOrigin } from '$lib/server/auth';
-import { configuredRootsOf, rootsFrom, serveFile } from '$lib/server/files';
-import { addedRoots, defaultWorkspacesPath, readSaved } from '$lib/server/fs';
+import { serveFile } from '$lib/server/files';
+import { browserRoots } from '$lib/server/roots';
 import type { RequestHandler } from './$types';
 
 export const GET: RequestHandler = ({ params, request, locals }) => {
     if (!sameOrigin(request, request.headers.get('host') ?? '')) {
         return new Response(null, { status: 403 });
     }
-    const { server } = locals;
-    const fixed = rootsFrom(
-        configuredRootsOf(server.config, server.engine),
-        server.local.hub,
-        server.engine
-    );
-    const file = server.local.workspaces ?? defaultWorkspacesPath();
-    const saved = readSaved(
-        file,
-        fixed.map((one) => one.key)
-    );
-    return serveFile(request, [...fixed, ...addedRoots(fixed, saved)], params.root, params.path);
+    return serveFile(request, browserRoots(locals.server), params.root, params.path);
 };

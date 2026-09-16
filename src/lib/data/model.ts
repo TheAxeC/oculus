@@ -289,9 +289,12 @@ export type {
 export type {
     Area,
     FilesPayload,
+    GitBranch,
+    GitCommit,
     GitEntry,
     GitPayload,
     GitState,
+    GitWorktree,
     GroupedSession,
     HookEvent,
     HpcJob,

@@ -30,6 +30,7 @@ import { createMemories, type MemoriesStore } from './memories.svelte.ts';
 import { createPaletteSource, type PaletteSourceStore } from './palette-source.svelte.ts';
 import { createPresent, type PresentStore } from './present.svelte.ts';
 import { createRailBadges, type RailBadgesStore } from './rail-badges.svelte.ts';
+import { createRepositories, type RepositoriesStore } from './repositories.svelte.ts';
 import { createSelection, type SelectionStore } from './selection.svelte.ts';
 import { createSelectors, type SelectorsStore } from './selectors.svelte.ts';
 import { createSocket, type SocketStore } from './socket.svelte.ts';
@@ -63,6 +64,7 @@ export type ClientState = {
     audit: AuditStore;
     memories: MemoriesStore;
     present: PresentStore;
+    repositories: RepositoriesStore;
     usageRefresh: UsageRefreshStore;
     selectors: SelectorsStore;
     railBadges: RailBadgesStore;
@@ -98,6 +100,7 @@ export function createClientState(): ClientState {
     const audit = createAudit(entities);
     const memories = createMemories();
     const present = createPresent(entities);
+    const repositories = createRepositories(writes, terminals, layout);
     const usageRefresh = createUsageRefresh(entities, writes);
     const selectors = createSelectors(entities, layout, selection);
     const railBadges = createRailBadges(entities, feeds, hpc, audit, selectors);
@@ -126,6 +129,7 @@ export function createClientState(): ClientState {
         audit,
         memories,
         present,
+        repositories,
         usageRefresh,
         selectors,
         railBadges,

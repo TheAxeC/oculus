@@ -293,6 +293,28 @@ export type GitEntry = {
     deleted: number | null;
 };
 
+/** One commit of a branch's newest history, as the log list draws it. */
+export type GitCommit = {
+    hash: string;
+    /** The abbreviated hash, which is what the row shows. */
+    short: string;
+    subject: string;
+    /** The author date, ISO 8601 with its offset, as git wrote it. */
+    when: string;
+};
+
+/** One branch of a repository, its upstream and whether it is the checked-out one. */
+export type GitBranch = { name: string; upstream: string; current: boolean };
+
+/** One worktree of a repository. `main` is the checkout the others hang off. */
+export type GitWorktree = {
+    path: string;
+    /** The branch checked out there, empty for a worktree with a detached HEAD. */
+    branch: string;
+    head: string;
+    main: boolean;
+};
+
 /** One workspace's git state. Every field is filled, `error` saying why when the rest is empty. */
 export type GitState = {
     /** The branch name, `HEAD` when nothing is checked out, empty when git said nothing. */
@@ -312,6 +334,13 @@ export type GitState = {
     staged: GitEntry[];
     unstaged: GitEntry[];
     untracked: GitEntry[];
+    /** The newest commits of the checked-out branch, newest first. */
+    log: GitCommit[];
+    branches: GitBranch[];
+    /** Every worktree of the repository, the checkout itself first. */
+    worktrees: GitWorktree[];
+    /** Whether the repository's .gitignore keeps the worktrees folder out of its history. */
+    ignoresWorktrees: boolean;
     error: string | null;
 };
 

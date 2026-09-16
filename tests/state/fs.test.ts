@@ -21,7 +21,7 @@ import {
     type FsRoot
 } from '../../src/lib/state/fs.ts';
 import { fileBytesUrl, listingUrl, FS_PATH, NOTE_GONE } from '../../src/lib/state/fs.svelte.ts';
-import { registered } from '../../src/lib/views/file/languages.ts';
+import { registered } from '../../src/lib/state/languages.ts';
 import { createClientState, type ClientState } from '../client.ts';
 
 /** One file entry, since only the name and the kind matter to these cases. */

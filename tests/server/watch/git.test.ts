@@ -329,8 +329,9 @@ describe('watchGit', () => {
             'third.txt'
         ]);
         expect(payload[second].untracked).toEqual([]);
-        // Four commands make one read of the first root, and the second root was not read at all.
-        expect(reads(first) - before.first).toBe(4);
+        // Seven commands make one read of the first root (the status four, the log, the branch
+        // listing and the worktree listing), and the second root was not read at all.
+        expect(reads(first) - before.first).toBe(7);
         expect(reads(second) - before.second).toBe(0);
     });
 
@@ -359,8 +360,8 @@ describe('watchGit', () => {
         const since = client.got.slice(before.got);
         const named = since.filter((message) => message.channel === 'files');
         expect(named.map((message) => (message.payload as FilesPayload).root)).toEqual([first]);
-        // The cost of one write under one watched root: four git commands, none for the other root.
-        expect(reads(first) - before.first).toBe(4);
+        // The cost of one write under one watched root: seven git commands, none for the other root.
+        expect(reads(first) - before.first).toBe(7);
         expect(reads(second) - before.second).toBe(0);
     });
 
@@ -525,6 +526,145 @@ describe('watchGit', () => {
         put(always, ARM, 'x\n');
         await until(() => latest(client.got)[always].untracked.length > before, WAIT);
         expect(latest(client.got)[always].untracked.map((one) => one.path)).toContain(ARM);
+    });
+
+    it('watches the file browser roots as well, in the order it lists them', async () => {
+        const always = repository('hub');
+        const first = repository('configured-one');
+        const second = repository('configured-two');
+        const session = repository('session');
+        const hub = new Hub();
+        const client = recording();
+        hub.subscribe(client.sink, ['git']);
+        announce(hub, [session]);
+        watchers.push(
+            watchGit(hub, { always, throttle: 300, roots: () => [always, first, second] })
+        );
+
+        await until(() => Object.keys(latest(client.got)).length >= 4, WAIT);
+        // The always root, then the file browser's, then the sessions' workspaces, each once.
+        expect(Object.keys(latest(client.got))).toEqual([always, first, second, session]);
+        expect(latest(client.got)[second].branch).toBe('work');
+    });
+
+    it('keeps the roots it can name when the root reader throws', async () => {
+        const always = repository('hub');
+        const hub = new Hub();
+        const client = recording();
+        const quiet = vi.spyOn(console, 'error').mockImplementation(noop);
+        try {
+            hub.subscribe(client.sink, ['git']);
+            announce(hub, []);
+            watchers.push(
+                watchGit(hub, {
+                    always,
+                    throttle: 300,
+                    roots: () => {
+                        throw new Error('sources.yml is unreadable');
+                    }
+                })
+            );
+            await until(() => byKey(latest(client.got), always) !== undefined, WAIT);
+            expect(Object.keys(latest(client.got))).toEqual([always]);
+            expect(quiet).toHaveBeenCalled();
+        } finally {
+            quiet.mockRestore();
+        }
+    });
+
+    it('reads the roots again when a config push says the configuration moved', async () => {
+        const always = repository('hub');
+        const added = repository('configured-later');
+        const hub = new Hub();
+        const client = recording();
+        hub.subscribe(client.sink, ['git']);
+        announce(hub, []);
+        let roots = [always];
+        watchers.push(watchGit(hub, { always, throttle: 300, roots: () => roots }));
+        await until(() => byKey(latest(client.got), always) !== undefined, WAIT);
+        expect(byKey(latest(client.got), added)).toBe(undefined);
+
+        // A root added to sources.yml reaches this watcher as the config watcher's push: the roots
+        // option reads the configuration as it is now, so following again is the whole work.
+        roots = [always, added];
+        hub.publish('config', { config: {}, text: {}, findings: [] });
+        await until(() => byKey(latest(client.got), added) !== undefined, WAIT);
+        expect(latest(client.got)[added].branch).toBe('work');
+    });
+
+    it('keeps its copy of the configured roots across a sessions push', async () => {
+        const always = repository('hub');
+        const named = repository('named');
+        const hub = new Hub();
+        const client = recording();
+        hub.subscribe(client.sink, ['git']);
+        announce(hub, []);
+        let reads = 0;
+        const roots = (): string[] => {
+            reads += 1;
+            return [always];
+        };
+        watchers.push(watchGit(hub, { always, throttle: 300, roots }));
+        await until(() => byKey(latest(client.got), always) !== undefined, WAIT);
+        expect(reads).toBe(1);
+
+        // Reading the roots parses the configuration, and a sessions push says nothing about it,
+        // so the list is composed from the copy; a config push is what reads it again.
+        announce(hub, [named]);
+        await until(() => byKey(latest(client.got), named) !== undefined, WAIT);
+        expect(reads).toBe(1);
+        hub.publish('config', { config: {}, text: {}, findings: [] });
+        await until(() => reads === 2, WAIT);
+        expect(reads).toBe(2);
+    });
+
+    it('publishes again when the same roots come back in another order', async () => {
+        const always = repository('hub');
+        const first = repository('one');
+        const second = repository('two');
+        const hub = new Hub();
+        const client = recording();
+        hub.subscribe(client.sink, ['git']);
+        announce(hub, []);
+        let roots = [always, first, second];
+        watchers.push(watchGit(hub, { always, throttle: 300, roots: () => roots }));
+        await until(() => Object.keys(latest(client.got)).length >= 3, WAIT);
+        expect(Object.keys(latest(client.got))).toEqual([always, first, second]);
+
+        // The view draws its sections in the order of the keys, so an order that moved is a publish
+        // even though the set and every state in it are the same.
+        const before = client.got.length;
+        roots = [always, second, first];
+        hub.publish('config', { config: {}, text: {}, findings: [] });
+        await until(() => client.got.length > before, WAIT);
+        expect(Object.keys(latest(client.got))).toEqual([always, second, first]);
+    });
+
+    it('reads a root added to the workspaces file while it is running', async () => {
+        const always = repository('hub');
+        const added = repository('added');
+        const file = join(dir, 'workspaces.json');
+        writeFileSync(file, JSON.stringify({ current: '', workspaces: [] }));
+        const hub = new Hub();
+        const client = recording();
+        hub.subscribe(client.sink, ['git']);
+        announce(hub, []);
+        let roots = [always];
+        watchers.push(
+            watchGit(hub, { always, throttle: 300, roots: () => roots, workspacesFile: file })
+        );
+        await until(() => byKey(latest(client.got), always) !== undefined, WAIT);
+        expect(byKey(latest(client.got), added)).toBe(undefined);
+
+        // The page's write is what the watcher is waiting for: the file changes, the list is asked
+        // for again, and the root it now names is watched from that moment.
+        roots = [always, added];
+        writeFileSync(
+            file,
+            JSON.stringify({ current: '', workspaces: [{ name: 'a', roots: [] }] })
+        );
+        await until(() => byKey(latest(client.got), added) !== undefined, WAIT);
+        expect(latest(client.got)[added].branch).toBe('work');
     });
 
     it('reads nothing more once it is closed', async () => {

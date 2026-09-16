@@ -20,7 +20,7 @@
 // The server refuses to start over a stale build, since src/server.ts imports build/handler.js and a
 // spec would otherwise press yesterday's page. What the run made is removed when it exits.
 
-import { spawn } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -84,6 +84,38 @@ const local = inside(join(engineConfig, LOCAL_NAME), tmpdir());
 const marker = inside(join(here, '.hub'), engine);
 
 cpSync(join(engine, 'demo'), hub, { recursive: true });
+// The copy is made a git repository of its own, so the Repositories view has something to draw and
+// a spec can make a worktree in it. It is committed here, before the run rewrites the dated lead of
+// the copy, so the served hub always holds one changed file for the diff pane to open. Every command
+// names the copy, which is inside the temporary directory the run owns, and the identity is given on
+// the command line so the owner's git configuration is neither read nor written.
+function inHub(...args: string[]): void {
+    const done = spawnSync(
+        'git',
+        [
+            '-c',
+            'user.email=nobody@example.invalid',
+            '-c',
+            'user.name=Oculus Browser Layer',
+            '-c',
+            'commit.gpgsign=false',
+            '-C',
+            inside(hub, tmpdir()),
+            ...args
+        ],
+        { encoding: 'utf8', timeout: 60000 }
+    );
+    if (done.status !== 0) {
+        console.error(`browser layer: git ${args[0]} failed: ${done.stderr}`);
+        process.exit(1);
+    }
+}
+
+writeFileSync(inside(join(hub, '.gitignore'), tmpdir()), '/.agents/worktrees/\n');
+inHub('init', '--quiet', '--initial-branch=main');
+inHub('add', '--all');
+inHub('commit', '--quiet', '-m', 'The demo hub as it is shipped');
+
 // The engine's own YAML, copied so that a write from the page lands here. The Slides view's Save
 // rewrites present.yml, and the watcher watching this directory is what pushes the deck back. The
 // machine's own local.yml is a file of that folder and is left out of the copy, since this run

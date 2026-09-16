@@ -20,14 +20,15 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 //
 // A block two views draw the same way lives under `views/shared/**` once instead of twice, and only a view may import it. A file under `views/shared/` is in the views layer itself, so the row binds it too and it may reach no other view's partials.
 //
-// `data/guards`, `data/dates`, `data/deck` and `data/leads` join `data/model` in the state row as
-// pure helpers with no reader and no I/O. `data/deck` is there because the deck's placement rule has
-// two readers, the Present view and the write that saves a selection, and a copy of it on each side
-// would let them disagree about what a slide key is; `data/leads` for the same reason, since the
-// statuses that close a lead are read by the Position Leads view, its rail badge and the ticker on
-// the client, and by the summary the snapshot carries on the server. The model's own concern
-// modules (`data/model-*`) are reached through the facade only, which is why they are not listed
-// here.
+// `data/guards`, `data/dates`, `data/deck`, `data/leads` and `data/worktrees` join `data/model` in
+// the state row as pure helpers with no reader and no I/O. `data/deck` is there because the deck's
+// placement rule has two readers, the Present view and the write that saves a selection, and a copy
+// of it on each side would let them disagree about what a slide key is; `data/leads` for the same
+// reason, since the statuses that close a lead are read by the Position Leads view, its rail badge
+// and the ticker on the client, and by the summary the snapshot carries on the server; and
+// `data/worktrees` likewise, the Repositories view naming the path a worktree will take and the
+// write making it. The model's own concern modules (`data/model-*`) are reached through the facade
+// only, which is why they are not listed here.
 //
 // The shell's row names the state modules the workbench is made of, one at a time. The one drag in progress belongs to the shell, as do the theme picker and the configuration it offers; views do not read or write either concern. A shell component reaches those stores through the client object (`state/context`, read with `state/use`), which names every store there is, so the row alone would no longer hold the shell to its own: the stores a shell file may take out of the object are SHELL_STORES below, and the second rule checks each destructuring against that list.
 //
@@ -58,6 +59,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/dates',
         'data/deck',
         'data/leads',
+        'data/worktrees',
         'views/registry',
         'ui/tip-ids'
     ],

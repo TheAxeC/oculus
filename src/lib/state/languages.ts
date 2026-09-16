@@ -1,5 +1,8 @@
-// Layer 3, partial of views/File.svelte. The highlighter: the core build of highlight.js with the
-// languages this window draws registered by name, and the one call that paints a file's text.
+// Layer 2, client state. The highlighter: the core build of highlight.js with the languages the page
+// draws registered by name, and the one call that paints text.
+//
+// It sits in the state layer because two views paint with it, the code window of a file and the diff
+// pane of a repository, and a view may not import another view's partial.
 //
 // The core build rather than the whole package, which carries close to two hundred languages against
 // the eighteen a research tree actually holds. The registration runs once at load and is never
@@ -17,6 +20,7 @@ import hljs from 'highlight.js/lib/core';
 import type { LanguageFn } from 'highlight.js';
 import bash from 'highlight.js/lib/languages/bash';
 import css from 'highlight.js/lib/languages/css';
+import diff from 'highlight.js/lib/languages/diff';
 import ini from 'highlight.js/lib/languages/ini';
 import javascript from 'highlight.js/lib/languages/javascript';
 import json from 'highlight.js/lib/languages/json';
@@ -41,6 +45,7 @@ const PLAIN = 'plaintext';
 const REGISTERED: Record<string, LanguageFn> = {
     bash,
     css,
+    diff,
     ini,
     javascript,
     json,

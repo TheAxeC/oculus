@@ -9,7 +9,12 @@
 // exercised by the curl in the package's verification.
 
 import { describe, expect, it } from 'vitest';
-import { handleGit, handleGitBranches, messagePrompt } from '../../src/lib/server/git-routes.ts';
+import {
+    handleGit,
+    handleGitBranches,
+    handleGitGet,
+    messagePrompt
+} from '../../src/lib/server/git-routes.ts';
 import { mintToken } from '../../src/lib/server/auth.ts';
 import type { GitOptions } from '../../src/lib/server/git-routes.ts';
 import { contextFixture } from '../server/context-fixture.ts';
@@ -202,6 +207,156 @@ describe('the git endpoint', () => {
         );
         expect(response.status).toBe(400);
         expect(await response.json()).toEqual({ error: 'git said no' });
+    });
+});
+
+describe('the three worktree actions', () => {
+    it('refuses each of them unconfirmed, and takes each one confirmed', async () => {
+        for (const [action, fields] of [
+            ['createWorktree', { name: 'package-one' }],
+            ['removeWorktree', { path: '/hub/.agents/worktrees/package-one' }],
+            ['merge', { branch: 'package-one' }]
+        ] as [string, Record<string, unknown>][]) {
+            const into = options();
+            const unconfirmed = await handleGit(
+                request({ action, root: ROOT, ...fields }),
+                TOKEN,
+                into
+            );
+            expect(unconfirmed.status, action).toBe(400);
+            expect(await unconfirmed.json()).toEqual({
+                error: 'this action needs the page to confirm it'
+            });
+            expect(ran, action).toEqual([]);
+
+            const confirmed = await handleGit(
+                request({ action, root: ROOT, ...fields, confirm: true }),
+                TOKEN,
+                into
+            );
+            expect(confirmed.status, action).toBe(200);
+            expect(ran.map((one) => one.action)).toEqual([action]);
+        }
+    });
+
+    it('refuses a worktree action on a root it was not given', async () => {
+        const response = await handleGit(
+            request({
+                action: 'createWorktree',
+                root: '/somewhere/else',
+                name: 'one',
+                confirm: true
+            }),
+            TOKEN,
+            options()
+        );
+        expect(response.status).toBe(400);
+        expect(ran).toEqual([]);
+    });
+
+    it('answers a refusal from the worktree write with its own reason', async () => {
+        const response = await handleGit(
+            request({
+                action: 'removeWorktree',
+                root: ROOT,
+                path: '/hub/elsewhere',
+                confirm: true
+            }),
+            TOKEN,
+            options({
+                run: () =>
+                    Promise.resolve({ ok: false, output: '', error: 'that path is not a worktree' })
+            })
+        );
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({ error: 'that path is not a worktree' });
+    });
+});
+
+describe('the diff reads', () => {
+    /** A GET as the page makes it, same-origin and with no token. */
+    function get(query: string): Request {
+        return new Request(`${URL_}?${query}`, {
+            headers: { host: HOST, 'sec-fetch-site': 'same-origin' }
+        });
+    }
+
+    it("answers one file's diff, and says which side it was asked for", async () => {
+        const seen: { root: string; path: string; staged: boolean }[] = [];
+        const into = options({
+            diff: (root, path, staged) => {
+                seen.push({ root, path, staged });
+                return Promise.resolve({ ok: true, output: 'diff --git a b\n', error: '' });
+            }
+        });
+        const response = await handleGitGet(
+            get(`diff=${encodeURIComponent(ROOT)}&path=a.txt&staged=1`),
+            into
+        );
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ ok: true, output: 'diff --git a b\n' });
+        expect(seen).toEqual([{ root: ROOT, path: 'a.txt', staged: true }]);
+
+        await handleGitGet(get(`diff=${encodeURIComponent(ROOT)}&path=a.txt&staged=0`), into);
+        expect(seen[1].staged).toBe(false);
+    });
+
+    it('refuses a diff of a root it was not given, and one from another origin', async () => {
+        const refused = await handleGitGet(get('diff=/somewhere/else&path=a.txt'), options());
+        expect(refused.status).toBe(400);
+        const elsewhere = await handleGitGet(
+            new Request(`${URL_}?diff=${encodeURIComponent(ROOT)}&path=a.txt`, {
+                headers: {
+                    host: HOST,
+                    origin: 'http://example.invalid',
+                    'sec-fetch-site': 'cross-site'
+                }
+            }),
+            options()
+        );
+        expect(elsewhere.status).toBe(403);
+    });
+
+    it("answers a worktree's diff, the repository named beside the worktree", async () => {
+        const path = '/hub/.agents/worktrees/package-one';
+        const seen: { root: string; path: string }[] = [];
+        const response = await handleGitGet(
+            get(`worktree=${encodeURIComponent(path)}&root=${encodeURIComponent(ROOT)}`),
+            options({
+                worktree: (root, asked) => {
+                    seen.push({ root, path: asked });
+                    return Promise.resolve({ ok: true, output: 'diff --git a b\n', error: '' });
+                }
+            })
+        );
+        expect(response.status).toBe(200);
+        expect(seen).toEqual([{ root: ROOT, path }]);
+        // The answer is the text alone: the pane draws a diff and reads no state.
+        expect(await response.json()).toEqual({ ok: true, output: 'diff --git a b\n' });
+    });
+
+    it('checks the repository it was given and never the worktree it names', async () => {
+        // A worktree of the hub is a workspace on the `git` channel and therefore a root of its
+        // own; the request is still refused when the repository it names is not one.
+        const path = '/hub/.agents/worktrees/package-one';
+        const response = await handleGitGet(
+            get(`worktree=${encodeURIComponent(path)}&root=/somewhere/else`),
+            options({ rootsFor: () => [ROOT, path] })
+        );
+        expect(response.status).toBe(400);
+        expect(await response.json()).toEqual({
+            error: 'that directory is not a workspace oculus knows'
+        });
+    });
+
+    it('refuses a worktree request naming no repository', async () => {
+        const response = await handleGitGet(get('worktree=/elsewhere/tree'), options());
+        expect(response.status).toBe(400);
+    });
+
+    it('answers the branch listing when it is asked for no diff', async () => {
+        const response = await handleGitGet(get('root=/somewhere/else'), options());
+        expect(response.status).toBe(400);
     });
 });
 
