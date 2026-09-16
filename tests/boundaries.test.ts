@@ -20,11 +20,12 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 //
 // A block two views draw the same way lives under `views/shared/**` once instead of twice, and only a view may import it. A file under `views/shared/` is in the views layer itself, so the row binds it too and it may reach no other view's partials.
 //
-// `data/guards`, `data/calendar`, `data/dates`, `data/deck`, `data/editor`, `data/leads`,
-// `data/worktrees`, `data/text-kind`, `data/tasks` and `data/search` join `data/model` in the state
-// row as pure helpers with no reader and no I/O. `data/calendar` is there because how a calendar
-// account is named is read by the server that builds its credential file and by the page that
-// presses Connect on it; `data/deck` because the deck's placement rule has two readers, the Present
+// `data/guards`, `data/calendar`, `data/mail`, `data/dates`, `data/deck`, `data/editor`,
+// `data/leads`, `data/worktrees`, `data/text-kind`, `data/tasks` and `data/search` join `data/model`
+// in the state row as pure helpers with no reader and no I/O. `data/calendar` and `data/mail` are
+// there because how a connector account is named, and how old a thread is, are read by the server
+// that builds the credential file and reads the mailbox and by the page that presses Connect and
+// draws the age on a card; `data/deck` because the deck's placement rule has two readers, the Present
 // view and the write that saves a selection, and a copy of it on each side would let them disagree
 // about what a slide key is; `data/leads` for the same reason, since the statuses that close a lead
 // are read by the Position Leads view, its rail badge and the ticker on the client, and by the
@@ -66,6 +67,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/model',
         'data/guards',
         'data/calendar',
+        'data/mail',
         'data/dates',
         'data/deck',
         'data/leads',

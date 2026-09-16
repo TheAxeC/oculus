@@ -1,133 +1,245 @@
 <script lang="ts">
-    // Layer 3, view partial of views/Inbox.svelte. One inbox thread with its kind, note, optional
-    // draft and Gmail link, plus the one triage or restore write allowed for its section.
+    // Layer 3, view partial of views/Inbox.svelte. One thread of the plate: what it wants, how old
+    // it is, the note about it, the answer that has been drafted for it, and the two writes to the
+    // mailbox the view allows.
+    //
+    // The draft is an editor over the thread's own note. Typing in it writes nothing: the note is
+    // saved by its own control, and the answer is sent by a control behind a confirmation naming
+    // who it goes to and which account it goes from. Archive needs no draft, so it sits on the
+    // card's own row beside the triage control, behind a confirmation of its own. There is no other
+    // write to a mailbox anywhere on the page, and neither of these two ever creates a draft at the
+    // provider.
+    //
+    // What is drawn of the message itself is the provider's own one-line snippet, which is all the
+    // payload carries.
 
     import Card from '$lib/ui/Card.svelte';
+    import Confirm from '$lib/ui/Confirm.svelte';
     import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
+    import TextArea from '$lib/ui/TextArea.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
-    import { kindOf, kindTone, type InboxEntry } from '$lib/state/inbox';
+    import {
+        archiveConfirm,
+        kindOf,
+        kindTone,
+        sendConfirm,
+        threadAge,
+        type InboxThread
+    } from '$lib/state/inbox';
+    import type { MailAnswer, TriageFields } from '$lib/state/inbox.svelte';
     import { t } from '$lib/state/text';
-    import type { WriteAnswer } from '$lib/state/writes.svelte';
     import { useState } from '$lib/state/use';
 
     const {
-        writes: { writeFeedField }
+        clock: { minuteNow }
     } = useState();
 
     type Props = {
-        entry: InboxEntry;
+        thread: InboxThread;
         id: string;
         cursor: boolean;
-        triaged?: boolean;
+        /** The account's own label, which is what a confirmation names the mailbox by. */
+        account: string;
+        busy: boolean;
+        /** Whether this card's draft editor is open, which the view keeps in its instance state. */
+        draftOpen: boolean;
+        onshowdraft: (thread: InboxThread, open: boolean) => void;
+        ontriage: (thread: InboxThread, fields: TriageFields) => Promise<MailAnswer>;
+        onreply: (thread: InboxThread, body: string) => Promise<MailAnswer>;
+        onarchive: (thread: InboxThread) => Promise<MailAnswer>;
         onsaid: (words: string) => void;
     };
 
-    let { entry, id, cursor, triaged = false, onsaid }: Props = $props();
-    let draftOpen = $state(false);
+    let {
+        thread,
+        id,
+        cursor,
+        account,
+        busy,
+        draftOpen,
+        onshowdraft,
+        ontriage,
+        onreply,
+        onarchive,
+        onsaid
+    }: Props = $props();
 
-    const text = (field: string): string => {
-        const value = entry[field];
-        return typeof value === 'string' || typeof value === 'number' ? String(value) : '';
-    };
-    const identity = $derived(text('id'));
-    const subject = $derived(text('subject'));
-    const sender = $derived(text('sender') || subject || t('inbox.thread'));
-    const kind = $derived(kindOf(entry));
-    const age = $derived(text('age'));
-    const what = $derived(text('what'));
-    const draft = $derived(text('draft'));
-    const url = $derived(text('url'));
+    let asking: 'send' | 'archive' | null = $state(null);
+    /** The draft as the editor holds it; null while nothing has been typed since the last publish. */
+    let typed: string | null = $state(null);
 
-    function say(answer: WriteAnswer): void {
-        if (!answer.ok) {
-            onsaid(t('editor.failed', answer.error ?? ''));
-        } else if (answer.refused.length > 0) {
-            onsaid(
-                t(
-                    'editor.failed',
-                    answer.refused.map((one) => `${one.field}: ${one.reason}`).join('; ')
-                )
-            );
-        } else {
-            onsaid(t('editor.saved', answer.changed.join(', ')));
-        }
-    }
+    const kind = $derived(kindOf(thread));
+    const note = $derived(thread.triage);
+    const saved = $derived(note.draft ?? '');
+    const draft = $derived(typed ?? saved);
+    const sender = $derived(thread.sender || thread.subject || t('inbox.thread'));
+    const age = $derived(threadAge(thread, minuteNow()));
 
-    async function mark(value: true | null): Promise<void> {
-        if (identity === '') return;
-        say(await writeFeedField('inbox', identity, 'triaged', value));
+    /** The age in the reader's own words, and nothing when the provider's time cannot be read. */
+    function ageText(): string {
+        if (age === null) return '';
+        if (age.unit === 'd') return t('inbox.age_days', age.value);
+        return age.unit === 'h'
+            ? t('inbox.age_hours', age.value)
+            : t('inbox.age_minutes', age.value);
     }
 
     function kindLabel(): string {
         if (kind === 'reply') return t('inbox.reply');
         if (kind === 'action') return t('inbox.action');
-        return t('inbox.info');
+        return kind === 'info' ? t('inbox.info') : t('inbox.unsorted');
+    }
+
+    /** One command's outcome as the one sentence the view says about it. */
+    function say(answer: MailAnswer, done: string): void {
+        onsaid(answer.ok ? done : t('inbox.refused', answer.error ?? ''));
+    }
+
+    async function mark(triaged: boolean): Promise<void> {
+        say(
+            await ontriage(thread, { triaged }),
+            triaged ? t('inbox.said_triaged') : t('inbox.said_restored')
+        );
+    }
+
+    async function saveDraft(): Promise<void> {
+        const answer = await ontriage(thread, { draft });
+        if (answer.ok) typed = null;
+        say(answer, t('inbox.said_draft_saved'));
+    }
+
+    async function send(): Promise<void> {
+        asking = null;
+        const answer = await onreply(thread, draft);
+        if (answer.ok) typed = null;
+        say(answer, t('inbox.said_sent'));
+    }
+
+    async function archive(): Promise<void> {
+        asking = null;
+        say(await onarchive(thread), t('inbox.said_archived'));
     }
 </script>
 
-<div data-inbox={identity}>
+<div data-inbox={thread.id}>
     <Card {id} {cursor} title={sender} titleHtml={inlineMarkdown(sender)} tone={kindTone(kind)}>
         {#snippet meta()}
             <Tag label={kindLabel()} tone={kindTone(kind)} />
-            {#if age !== ''}
-                <span class="age">{age}</span>
+            <Tag label={account} />
+            {#if ageText() !== ''}
+                <span class="age">{ageText()}</span>
             {/if}
-            {#if identity !== ''}
-                {#if triaged}
-                    <ToolButton
-                        label={t('inbox.restore')}
-                        title={t('inbox.restore_tip')}
-                        glyph="refresh"
-                        compact
-                        onclick={() => mark(null)}
-                    />
-                {:else}
-                    <ToolButton
-                        label={t('inbox.triaged')}
-                        title={t('inbox.triage_tip')}
-                        glyph="done"
-                        compact
-                        onclick={() => mark(true)}
-                    />
-                {/if}
+            {#if thread.messages > 1}
+                <span class="age">{t('inbox.messages', thread.messages)}</span>
+            {/if}
+            <ToolButton
+                label={t('inbox.archive')}
+                title={t('inbox.archive_tip')}
+                glyph="archived"
+                compact
+                disabled={busy}
+                onclick={() => (asking = 'archive')}
+            />
+            {#if note.triaged}
+                <ToolButton
+                    label={t('inbox.restore')}
+                    title={t('inbox.restore_tip')}
+                    glyph="refresh"
+                    compact
+                    disabled={busy}
+                    onclick={() => void mark(false)}
+                />
+            {:else}
+                <ToolButton
+                    label={t('inbox.triaged')}
+                    title={t('inbox.triage_tip')}
+                    glyph="done"
+                    compact
+                    disabled={busy}
+                    onclick={() => void mark(true)}
+                />
             {/if}
         {/snippet}
 
-        {#if subject !== ''}
+        {#if thread.subject !== ''}
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <p class="sub">{@html inlineMarkdown(subject)}</p>
+            <p class="sub">{@html inlineMarkdown(thread.subject)}</p>
         {/if}
-        {#if what !== ''}
+        {#if note.what}
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-            <p class="what">{@html inlineMarkdown(what)}</p>
+            <p class="what">{@html inlineMarkdown(note.what)}</p>
         {/if}
-        {#if draft !== ''}
-            <div class="draft">
-                <ToolButton
-                    label={t('inbox.show_draft')}
-                    glyph="draft"
-                    active={draftOpen}
-                    expanded={draftOpen}
-                    onclick={() => (draftOpen = !draftOpen)}
+        {#if thread.snippet !== ''}
+            <p class="snippet">{thread.snippet}</p>
+        {/if}
+
+        <div class="draft">
+            <ToolButton
+                label={t('inbox.show_draft')}
+                glyph="draft"
+                active={draftOpen}
+                expanded={draftOpen}
+                onclick={() => onshowdraft(thread, !draftOpen)}
+            />
+            {#if draftOpen}
+                <TextArea
+                    value={draft}
+                    label={t('inbox.draft_label')}
+                    rows={6}
+                    oninput={(value: string) => (typed = value)}
                 />
-                {#if draftOpen}
-                    <pre>{draft}</pre>
-                {/if}
-            </div>
-        {/if}
-        {#if url.startsWith('http')}
-            <p class="gmail">
-                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
-                <a href={url} target="_blank" rel="noopener noreferrer">
+                <div class="acts">
+                    <ToolButton
+                        label={t('inbox.save_draft')}
+                        glyph="check"
+                        compact
+                        disabled={busy || draft === saved}
+                        onclick={() => void saveDraft()}
+                    />
+                    <ToolButton
+                        label={t('inbox.send')}
+                        glyph="reply"
+                        compact
+                        disabled={busy || draft.trim() === ''}
+                        onclick={() => (asking = 'send')}
+                    />
+                </div>
+            {/if}
+        </div>
+
+        {#if thread.url}
+            <p class="provider">
+                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, the provider's own page for this thread, rather than a route id resolve() takes -->
+                <a href={thread.url} target="_blank" rel="noopener noreferrer">
                     <Glyph name="link" />
-                    <span>{t('inbox.open_gmail')}</span>
+                    <span>{t('inbox.open_provider')}</span>
                 </a>
             </p>
         {/if}
     </Card>
 </div>
+
+{#if asking === 'send'}
+    <Confirm
+        message={sendConfirm(thread, account)}
+        detail={thread.subject}
+        confirm={t('inbox.send_confirm_ok')}
+        cancel={t('ui.confirm_cancel')}
+        onconfirm={() => void send()}
+        oncancel={() => (asking = null)}
+    />
+{:else if asking === 'archive'}
+    <Confirm
+        message={archiveConfirm(thread, account)}
+        detail={thread.subject}
+        confirm={t('inbox.archive_confirm_ok')}
+        cancel={t('ui.confirm_cancel')}
+        onconfirm={() => void archive()}
+        oncancel={() => (asking = null)}
+    />
+{/if}
 
 <style>
     .age {
@@ -140,34 +252,31 @@
         font-size: var(--fs-md);
     }
 
+    .snippet {
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
+    }
+
     .sub,
     .what,
-    .gmail {
+    .snippet,
+    .provider {
         margin: 4px 0 0;
     }
 
     .draft {
         margin-top: 8px;
+        display: grid;
+        gap: 6px;
     }
 
-    pre {
-        margin: 8px 0 0;
-        padding: 8px;
-        overflow: auto;
-        border: 1px solid var(--line);
-        background: var(--chip);
-        color: var(--ink-txt, var(--ink));
-        font: inherit;
-        font-family: var(--font-mono);
-        white-space: pre-wrap;
+    .acts {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
     }
 
-    /* Inside a card that is already translucent: a second layer would read as one nearly solid one, so the block keeps its border and paints nothing. */
-    :global(body.wall) pre {
-        background: transparent;
-    }
-
-    .gmail a {
+    .provider a {
         display: inline-flex;
         align-items: center;
         gap: 4px;

@@ -28,8 +28,8 @@ import type { Hub } from '../channels.ts';
 import type { Window } from './api.ts';
 import { readGoogle } from './google.ts';
 import { readMicrosoft } from './microsoft.ts';
-import { accessToken, type Fetcher } from './oauth.ts';
-import { credentialFile, readCredentials } from './store.ts';
+import { accessToken, type Fetcher } from '../connect/oauth.ts';
+import { credentialFile, readCredentials } from '../connect/store.ts';
 
 export type CalendarOptions = {
     accounts: CalendarAccountConfig[];
@@ -161,7 +161,12 @@ export function watchCalendar(hub: Hub, options: CalendarOptions): CalendarWatch
                 });
                 return true;
             }
-            const token = await accessToken(credentials, credentials.refreshToken, fetcher);
+            const token = await accessToken(
+                'calendar',
+                credentials,
+                credentials.refreshToken,
+                fetcher
+            );
             if (stopped()) return true;
             const args = {
                 token,

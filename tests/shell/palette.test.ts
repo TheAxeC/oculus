@@ -69,7 +69,6 @@ function installFixture(): void {
                     radar: { lastRun: '2026-09-01' },
                     scout: { lastRun: '2026-09-02' },
                     linkedin: { lastPost: '2026-09-03' },
-                    inbox: { run: '2026-09-04', actionable: 2 },
                     leads: null
                 }
             }
@@ -120,6 +119,20 @@ describe('Palette', () => {
 
 describe('UpdateTray', () => {
     it('draws the four tasks, the portfolio Chat row, their last runs and the inbox note', () => {
+        // The inbox task's last run is the triage notes file's, which the `inbox` channel carries.
+        receive({
+            channel: 'inbox',
+            version: 8002,
+            payload: {
+                status: 'ok',
+                accounts: [],
+                threads: [],
+                updated: '2026-09-04T10:00:00.000Z',
+                pollMin: 10,
+                retryMin: 2,
+                notesRun: '2026-09-04'
+            }
+        });
         const body = render(UpdateTray, {
             context: clientContext(client),
             props: { open: true, onclose: noop }

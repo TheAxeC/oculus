@@ -37,13 +37,12 @@ type FeedRule = { identity: string; fields: string[]; deletable: boolean };
 
 export const FEED_RULES: Record<FeedKind, FeedRule> = {
     radar: { identity: 'title', fields: ['dismissed'], deletable: false },
-    inbox: { identity: 'id', fields: ['triaged'], deletable: false },
     leads: { identity: 'title', fields: ['status'], deletable: true },
     linkedin: { identity: 'file', fields: [], deletable: false }
 };
 
 export function isFeedKind(value: string): value is FeedKind {
-    return value === 'radar' || value === 'leads' || value === 'inbox' || value === 'linkedin';
+    return value === 'radar' || value === 'leads' || value === 'linkedin';
 }
 
 /** Resolve one configured feed path only when it remains inside the hub. */
@@ -111,7 +110,6 @@ export function buildFeeds(hub: string, config: PortfolioConfig): FeedsPayload {
     return {
         radar: read('radar'),
         leads: read('leads'),
-        inbox: read('inbox'),
         linkedin: read('linkedin')
     };
 }

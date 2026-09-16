@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { ReadArgs } from '../../../src/lib/server/calendar/api.ts';
 import { readGoogle } from '../../../src/lib/server/calendar/google.ts';
 import { hostZone, readMicrosoft } from '../../../src/lib/server/calendar/microsoft.ts';
-import type { Fetcher } from '../../../src/lib/server/calendar/oauth.ts';
+import type { Fetcher } from '../../../src/lib/server/connect/oauth.ts';
 
 const TOKEN = 'the-access-token-of-this-case';
 

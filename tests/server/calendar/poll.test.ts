@@ -12,8 +12,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CalendarAccountConfig, CalendarPayload } from '../../../src/lib/data/model.ts';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import { RETRY_MIN, watchCalendar } from '../../../src/lib/server/calendar/poll.ts';
-import { credentialFile } from '../../../src/lib/server/calendar/store.ts';
-import type { Fetcher } from '../../../src/lib/server/calendar/oauth.ts';
+import { credentialFile } from '../../../src/lib/server/connect/store.ts';
+import type { Fetcher } from '../../../src/lib/server/connect/oauth.ts';
 
 const MINUTE = 60000;
 const POLL_MIN = 15;

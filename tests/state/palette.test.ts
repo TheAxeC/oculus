@@ -69,7 +69,6 @@ const snapshot = {
             }
         },
         feeds: {
-            inbox: null,
             leads: null,
             radar: null,
             scout: null,
@@ -81,7 +80,6 @@ const snapshot = {
 const feeds = {
     leads: { entries: [{ title: 'Chair opening', inst: 'Ghent' }] },
     radar: { entries: [{ title: 'A paper', why: 'causal objective' }] },
-    inbox: { entries: [{ id: 'thread-1', subject: 'Review request', sender: 'Editor' }] },
     linkedin: {
         entries: [{ file: 'xx-idea.md', title: 'Public methods', body: 'Explain the result' }]
     }
@@ -90,13 +88,12 @@ const feeds = {
 const index = buildIndex(snapshot, feeds, [{ id: 'focus', label: 'Focus' }]);
 
 describe('paletteSource', () => {
-    it('indexes all four feeds from their first socket message', () => {
+    it('indexes all three feeds from their first socket message', () => {
         receive({ channel: 'feeds', version: 1, payload: feeds });
         const fromChannel = buildIndex(null, paletteSource().feeds, []);
         expect(fromChannel.map((item) => item.id)).toEqual([
             'feed:leads:Chair opening',
             'feed:radar:A paper',
-            'feed:inbox:thread-1',
             'feed:linkedin:xx-idea.md'
         ]);
     });
@@ -110,7 +107,7 @@ describe('buildIndex', () => {
             expiredOpen: true
         });
         expect(state('feed:radar:A paper')).toEqual({ reveal: 'A paper', dismissedOpen: true });
-        expect(state('feed:inbox:thread-1')).toEqual({ reveal: 'thread-1', triagedOpen: true });
+        expect(state('feed:linkedin:xx-idea.md')).toEqual({ reveal: 'xx-idea.md' });
     });
 
     it('indexes views, projects, every collection entry and every socket feed entry', () => {
@@ -121,7 +118,6 @@ describe('buildIndex', () => {
             'collection:events:talk',
             'feed:leads:Chair opening',
             'feed:radar:A paper',
-            'feed:inbox:thread-1',
             'feed:linkedin:xx-idea.md'
         ]);
     });
@@ -141,8 +137,8 @@ describe('buildIndex', () => {
         expect(match(index, 'Leuven keynote').map((item) => item.id)).toEqual([
             'collection:events:talk'
         ]);
-        expect(match(index, 'Editor Review').map((item) => item.id)).toEqual([
-            'feed:inbox:thread-1'
+        expect(match(index, 'Public methods').map((item) => item.id)).toEqual([
+            'feed:linkedin:xx-idea.md'
         ]);
     });
 });

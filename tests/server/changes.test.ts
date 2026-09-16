@@ -41,7 +41,6 @@ schema:
 entries:
   - title: "Lead"
 `;
-const INBOX = 'meta: {}\nentries:\n  - id: "mail-1"\n';
 
 const TOKEN = mintToken();
 const HOST = '127.0.0.1:8791';
@@ -58,8 +57,7 @@ function target(keep = 500): WriteTarget {
         ['registries/venues.yml', VENUES],
         ['CAREER.yml', CAREER],
         ['feeds/literature-radar.yml', RADAR],
-        ['feeds/position-leads.yml', LEADS],
-        ['feeds/inbox.yml', INBOX]
+        ['feeds/position-leads.yml', LEADS]
     ]) {
         const file = join(dir, path);
         expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);

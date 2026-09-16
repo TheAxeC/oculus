@@ -14,7 +14,13 @@ import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 import { paintLimit } from '../editor.ts';
-import type { CalendarAccountConfig, Finding, UsageAccountConfig } from '../model.ts';
+import type {
+    CalendarAccountConfig,
+    ConnectAccountConfig,
+    Finding,
+    MailAccountConfig,
+    UsageAccountConfig
+} from '../model.ts';
 
 export type LocalConfig = {
     /** Absolute path of the research hub whose YAML the portfolio is built from. */
@@ -64,6 +70,13 @@ export type LocalConfig = {
      * unless the machine sets it, and the calendar connector then uses ~/.oculus/calendar.
      */
     calendarDir?: string;
+    /** The mail accounts the Inbox view reads, empty unless the machine names any. */
+    mail: MailAccountConfig[];
+    /**
+     * Where the per-account mail credential files and the triage notes live, `mail_dir` in the
+     * file. Absent unless the machine sets it, and the mail connector then uses ~/.oculus/mail.
+     */
+    mailDir?: string;
 };
 
 /** The default development port; the reserved port 8787 is never used. */
@@ -85,7 +98,9 @@ const LOCAL_KEYS = [
     'claude_bin',
     'accounts',
     'calendars',
-    'calendar_dir'
+    'calendar_dir',
+    'mail',
+    'mail_dir'
 ];
 
 /**
@@ -113,7 +128,8 @@ export function localDefaults(engine: string): LocalConfig {
             { tool: 'claude', dir: join(homedir(), '.claude'), label: 'claude' },
             { tool: 'codex', dir: join(homedir(), '.codex'), label: 'codex' }
         ],
-        calendars: []
+        calendars: [],
+        mail: []
     };
 }
 
@@ -160,38 +176,39 @@ function usageAccounts(value: unknown, file: string, base: string): UsageAccount
 }
 
 /**
- * What a calendar account's label may hold. The label becomes part of the credential file's name,
- * so a label that could leave the calendar directory, or name a hidden file, is refused here rather
- * than joined into a path later.
+ * What a connector account's label may hold. The label becomes part of the credential file's name,
+ * so a label that could leave the connector's directory, or name a hidden file, is refused here
+ * rather than joined into a path later.
  */
-const CALENDAR_LABEL = /^[a-z0-9][a-z0-9-]*$/;
+const ACCOUNT_LABEL = /^[a-z0-9][a-z0-9-]*$/;
 
 /**
- * The `calendars:` rows: one provider and one label each, the label unique per provider. A bad row
- * throws the sentence naming the file and the row, as the accounts above do, so a machine whose own
- * file is wrong is told at the start rather than served an empty view.
+ * The rows of `calendars:` or `mail:`: one provider and one label each, the label unique per
+ * provider inside its own list. A bad row throws the sentence naming the file, the list and the row,
+ * as the accounts above do, so a machine whose own file is wrong is told at the start rather than
+ * served an empty view.
  */
-function calendarAccounts(value: unknown, file: string): CalendarAccountConfig[] {
-    if (!Array.isArray(value)) throw new Error(`${file}: calendars must be a list`);
+function connectAccounts(value: unknown, file: string, list: string): ConnectAccountConfig[] {
+    if (!Array.isArray(value)) throw new Error(`${file}: ${list} must be a list`);
     const seen = new Set<string>();
     return value.map((item, index) => {
         if (typeof item !== 'object' || item === null || Array.isArray(item)) {
-            throw new Error(`${file}: calendars[${index}] must be a map`);
+            throw new Error(`${file}: ${list}[${index}] must be a map`);
         }
         const row = item as Record<string, unknown>;
         const provider = row.provider;
         if (provider !== 'google' && provider !== 'microsoft') {
-            throw new Error(`${file}: calendars[${index}].provider must be google or microsoft`);
+            throw new Error(`${file}: ${list}[${index}].provider must be google or microsoft`);
         }
-        if (typeof row.label !== 'string' || !CALENDAR_LABEL.test(row.label)) {
+        if (typeof row.label !== 'string' || !ACCOUNT_LABEL.test(row.label)) {
             throw new Error(
-                `${file}: calendars[${index}].label must be lowercase letters, digits and dashes`
+                `${file}: ${list}[${index}].label must be lowercase letters, digits and dashes`
             );
         }
         const key = `${provider}-${row.label}`;
         if (seen.has(key)) {
             throw new Error(
-                `${file}: calendars[${index}].label repeats ${row.label} for ${provider}`
+                `${file}: ${list}[${index}].label repeats ${row.label} for ${provider}`
             );
         }
         seen.add(key);
@@ -252,7 +269,10 @@ function applyLocal(
         config.claudeBin = record.claude_bin;
     }
     if (record.accounts !== undefined) config.accounts = usageAccounts(record.accounts, file, base);
-    if (record.calendars !== undefined) config.calendars = calendarAccounts(record.calendars, file);
+    if (record.calendars !== undefined) {
+        config.calendars = connectAccounts(record.calendars, file, 'calendars');
+    }
+    if (record.mail !== undefined) config.mail = connectAccounts(record.mail, file, 'mail');
     // The machine-local state paths are absent unless the machine names them, so a config that says
     // nothing about them leaves the defaults to the modules that own them.
     for (const [key, field] of [
@@ -262,7 +282,8 @@ function applyLocal(
         ['bookmarks', 'bookmarks'],
         ['notes', 'notes'],
         ['changes', 'changes'],
-        ['calendar_dir', 'calendarDir']
+        ['calendar_dir', 'calendarDir'],
+        ['mail_dir', 'mailDir']
     ] as const) {
         if (record[key] === undefined) continue;
         if (typeof record[key] !== 'string' || record[key] === '') {
@@ -749,6 +770,30 @@ export function searchSettings(config: Record<string, unknown>): SearchSettings 
         return value;
     };
     return { maxHits: number('max_hits'), timeoutS: number('timeout_s') };
+}
+
+/** The mail connector's settings of config/behavior.yml, every key required. */
+export type MailSettings = {
+    pollMin: number;
+    /** How many threads each of the plate's three signals is read at most. */
+    perSignal: number;
+};
+
+/** Read `mail:` with its two keys, or throw naming the key that is missing or mistyped. */
+export function mailSettings(config: Record<string, unknown>): MailSettings {
+    const held = config.mail;
+    if (typeof held !== 'object' || held === null || Array.isArray(held)) {
+        throw new Error('config/behavior.yml: mail must be a map');
+    }
+    const mail = held as Record<string, unknown>;
+    const number = (key: string): number => {
+        const value = mail[key];
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+            throw new Error(`config/behavior.yml: mail.${key} must be a number`);
+        }
+        return value;
+    };
+    return { pollMin: number('poll_min'), perSignal: number('per_signal') };
 }
 
 /** Read `changes.keep`, how many change-log lines are kept, or throw naming what is wrong. */

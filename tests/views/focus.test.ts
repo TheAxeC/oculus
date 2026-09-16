@@ -215,7 +215,6 @@ function snapshot(): Snapshot {
         version: 1,
         entities: {
             feeds: {
-                inbox: { run: '2020-01-01', actionable: 3 },
                 leads: [{ title: 'A lead', deadline: daysOff(8), status: 'open', fit: 'strong' }],
                 radar: { lastRun: '2020-01-01' },
                 scout: { lastRun: '2020-01-01' },
@@ -362,6 +361,30 @@ function html(): string {
 function installFixture(): void {
     receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
     receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+    // The inbox count and the triage-notes nudge are the `inbox` channel's, not the snapshot's.
+    receive({
+        channel: 'inbox',
+        version: 1,
+        payload: {
+            status: 'ok',
+            accounts: [],
+            threads: ['one', 'two', 'three'].map((id) => ({
+                id,
+                account: 'google-work',
+                provider: 'google',
+                sender: 'Someone',
+                subject: id,
+                received: '2026-09-11T09:00:00.000Z',
+                snippet: '',
+                messages: 1,
+                triage: { kind: 'reply', triaged: false }
+            })),
+            updated: '2026-09-11T12:00:00.000Z',
+            pollMin: 10,
+            retryMin: 2,
+            notesRun: '2020-01-01'
+        }
+    });
 }
 
 let body: string;
@@ -658,6 +681,21 @@ describe('an empty portfolio', () => {
 
     it('draws no command center, no tasks section, and says the hub keeps no career file', () => {
         receive({ channel: 'portfolio', version: 3, payload: bare() });
+        // An empty hub with an empty plate: the attention line the plate draws is the inbox
+        // channel's, so the command centre is empty only when that channel is empty too.
+        receive({
+            channel: 'inbox',
+            version: 2,
+            payload: {
+                status: 'unconfigured',
+                accounts: [],
+                threads: [],
+                updated: '2026-09-11T12:00:00.000Z',
+                pollMin: 10,
+                retryMin: 2,
+                notesRun: null
+            }
+        });
         const empty = html();
         expect(empty).not.toContain(catalog['focus.command.command_center']);
         expect(empty).not.toContain('<section class="tasks');

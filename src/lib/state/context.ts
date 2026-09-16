@@ -26,6 +26,7 @@ import { createFeeds, type FeedsStore } from './feeds.svelte.ts';
 import { createFiles, type FilesStore } from './files.svelte.ts';
 import { createFs, type FsStore } from './fs.svelte.ts';
 import { createHpc, type HpcStore } from './hpc.svelte.ts';
+import { createInbox, type InboxStore } from './inbox.svelte.ts';
 import { createLatex, type LatexStore } from './latex.svelte.ts';
 import { createLayout, type LayoutStore } from './layout.svelte.ts';
 import { createMemories, type MemoriesStore } from './memories.svelte.ts';
@@ -66,6 +67,7 @@ export type ClientState = {
     feeds: FeedsStore;
     hpc: HpcStore;
     calendar: CalendarStore;
+    inbox: InboxStore;
     audit: AuditStore;
     memories: MemoriesStore;
     present: PresentStore;
@@ -108,6 +110,7 @@ export function createClientState(): ClientState {
     const feeds = createFeeds(entities);
     const hpc = createHpc(entities, writes);
     const calendar = createCalendar(entities, writes, clock);
+    const inbox = createInbox(entities, writes);
     const audit = createAudit(entities);
     const memories = createMemories();
     const present = createPresent(entities);
@@ -115,7 +118,7 @@ export function createClientState(): ClientState {
     const search = createSearch(entities, writes, ui);
     const usageRefresh = createUsageRefresh(entities, writes);
     const selectors = createSelectors(entities, layout, selection);
-    const railBadges = createRailBadges(entities, feeds, hpc, calendar, audit, selectors);
+    const railBadges = createRailBadges(entities, feeds, hpc, calendar, inbox, audit, selectors);
     const paletteSource = createPaletteSource(entities, feeds);
     const registry = createRegistry(layout);
     const tipIds = createTipIds();
@@ -140,6 +143,7 @@ export function createClientState(): ClientState {
         feeds,
         hpc,
         calendar,
+        inbox,
         audit,
         memories,
         present,

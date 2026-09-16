@@ -51,15 +51,6 @@ export function liveEntries(
         .length;
 }
 
-/** Count fetched Inbox records awaiting a reply or action and not yet triaged. */
-export function actionableEntries(entries: Record<string, unknown>[]): number {
-    return entries.filter(
-        (entry) =>
-            entry.triaged !== true &&
-            ['reply', 'action'].includes(scalar(entry.kind).trim().toLowerCase())
-    ).length;
-}
-
 /** Count open Position Leads whose deadline is from today through the configured window. */
 export function leadsDue(
     entries: Record<string, unknown>[],

@@ -47,8 +47,6 @@ entries:
   - title: "Lead"
     status: open
 `;
-export const INBOX = 'meta: {}\nentries:\n  - id: "mail-1"\n';
-
 export const TOKEN = mintToken();
 export const HOST = '127.0.0.1:8791';
 export const URL_ = `http://${HOST}/api/write`;
@@ -66,8 +64,7 @@ export function target(): WriteTarget {
         ['registries/data.yml', DATA],
         ['CAREER.yml', CAREER],
         ['feeds/literature-radar.yml', RADAR],
-        ['feeds/position-leads.yml', LEADS],
-        ['feeds/inbox.yml', INBOX]
+        ['feeds/position-leads.yml', LEADS]
     ]) {
         const file = join(dir, path);
         expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);

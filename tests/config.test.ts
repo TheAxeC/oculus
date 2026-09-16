@@ -69,6 +69,7 @@ describe('loadLocal', () => {
             port: DEFAULT_PORT,
             claudeBin: 'claude',
             calendars: [],
+            mail: [],
             accounts: DEFAULT_ACCOUNTS
         });
         expect(warn).not.toHaveBeenCalled();
@@ -82,6 +83,7 @@ describe('loadLocal', () => {
             port: 8791,
             claudeBin: 'claude',
             calendars: [],
+            mail: [],
             accounts: DEFAULT_ACCOUNTS
         });
     });
@@ -107,6 +109,7 @@ describe('loadLocal', () => {
             port: DEFAULT_PORT,
             claudeBin: 'claude',
             calendars: [],
+            mail: [],
             accounts: DEFAULT_ACCOUNTS
         });
         expect(warn).toHaveBeenCalledTimes(1);
@@ -130,6 +133,7 @@ describe('loadLocal', () => {
             port: DEFAULT_PORT,
             claudeBin: 'claude',
             calendars: [],
+            mail: [],
             accounts: DEFAULT_ACCOUNTS,
             sessionsCache: '/srv/state/cache.json',
             sessionsOverrides: join(dir, 'state', 'sessions.json')
@@ -145,6 +149,7 @@ describe('loadLocal', () => {
             port: DEFAULT_PORT,
             claudeBin: '/opt/Claude CLI/claude',
             calendars: [],
+            mail: [],
             accounts: DEFAULT_ACCOUNTS
         });
         expect(warn).not.toHaveBeenCalled();
@@ -230,6 +235,7 @@ describe('loadLocal', () => {
             port: 8791,
             claudeBin: 'claude',
             calendars: [],
+            mail: [],
             accounts: DEFAULT_ACCOUNTS
         });
         expect(loadLocal(other)).toEqual({
@@ -237,6 +243,7 @@ describe('loadLocal', () => {
             port: 8792,
             claudeBin: 'claude',
             calendars: [],
+            mail: [],
             accounts: DEFAULT_ACCOUNTS
         });
     });

@@ -1,5 +1,6 @@
 <script module lang="ts">
-    // Layer 3, view registration. Inbox follows Position Leads in the feeds group.
+    // Layer 3, view registration. Inbox follows Position Leads in the feeds group. The rail badge is
+    // how many threads of the live plate are still waiting on an answer or an action.
     import type { ViewRegistration } from './registry';
     export const registration: ViewRegistration = {
         id: 'inbox',
@@ -13,62 +14,77 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. Inbox reads its socket feed, groups live cards by action kind, and keeps
-    // search plus the triaged-section disclosure in this view instance's state.
+    // Layer 3, view. The inbox plate read live from the reader's own mailboxes: the connector's
+    // head, one row per configured account with its Connect control, and the plate in four sections
+    // by what each thread wants.
+    //
+    // Everything drawn here comes from the `inbox` channel, so the view holds no copy of the plate
+    // and a publish redraws it. Search and the triaged disclosure are this view instance's own
+    // state; the note, the answer and the archive are writes through the mail endpoint.
 
-    import Tag from '$lib/ui/Tag.svelte';
     import Empty from '$lib/ui/Empty.svelte';
-    import Glyph from '$lib/ui/Glyph.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Search from '$lib/ui/Search.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import Accounts from './inbox/Accounts.svelte';
+    import Head from './inbox/Head.svelte';
     import InboxCard from './inbox/InboxCard.svelte';
-    import Intro from './shared/Intro.svelte';
     import Reveal from './shared/Reveal.svelte';
-    import SourceButton from './shared/SourceButton.svelte';
     import {
+        accountOf,
         inboxSearch,
         parseInboxState,
-        splitInbox,
-        type InboxEntry,
-        type InboxState
+        type InboxState,
+        type InboxThread,
+        type MailAccount
     } from '$lib/state/inbox';
-    import { asText } from '$lib/state/schema';
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
-    import { feedIdents } from '$lib/state/palette';
-    import { viewSourceFile } from '$lib/state/view-source';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
     const {
-        feeds: { feed },
-        selectors: { configMap },
+        clock: { startMinuteClock },
+        inbox: { archive, busy, connect, connecting, refresh, reply, split, state: plate, triage },
         ui: { instanceState, setInstanceState }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
-    const data = $derived(feed('inbox'));
-    const identOf = $derived(feedIdents('inbox', data?.entries ?? []));
+    // A card draws how old its thread is, which ages between publishes, so the page's minute clock
+    // runs while the view is open.
+    $effect(startMinuteClock);
+    const data = $derived(plate());
     const held = $derived(parseInboxState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
-    const split = $derived(splitInbox(data?.entries ?? []));
-    const replies = $derived(inboxSearch(split.replies, held.search));
-    const actions = $derived(inboxSearch(split.actions, held.search));
-    const info = $derived(inboxSearch(split.info, held.search));
-    const triaged = $derived(inboxSearch(split.triaged, held.search));
-    const run = $derived(asText(data?.meta.run));
-    const liveCount = $derived(split.replies.length + split.actions.length + split.info.length);
-    /** The feed file this view is drawn from, offered once the feed says the file is there. */
-    const source = $derived(
-        data === null || data.missing ? null : viewSourceFile('inbox', configMap())
+    const sections = $derived(split());
+    const unsorted = $derived(inboxSearch(sections.unsorted, held.search));
+    const replies = $derived(inboxSearch(sections.replies, held.search));
+    const actions = $derived(inboxSearch(sections.actions, held.search));
+    const info = $derived(inboxSearch(sections.info, held.search));
+    const triaged = $derived(inboxSearch(sections.triaged, held.search));
+    const liveCount = $derived(
+        sections.unsorted.length +
+            sections.replies.length +
+            sections.actions.length +
+            sections.info.length
     );
-    let said = $state('');
+    let said: string = $state('');
 
     function write(next: Partial<InboxState>): void {
         setInstanceState(instance.id, { ...held, ...next });
+    }
+
+    /** Open or close one thread's draft editor, which is this view instance's own state. */
+    function showDraft(thread: InboxThread, open: boolean): void {
+        const rest = held.drafts.filter((one) => one !== thread.id);
+        write({ drafts: open ? [...rest, thread.id] : rest });
+    }
+
+    /** The account's own label, which a card's tag and its two confirmations name it by. */
+    function labelOf(thread: InboxThread): string {
+        return accountOf(data?.accounts ?? [], thread)?.label ?? thread.account;
     }
 </script>
 
@@ -79,30 +95,35 @@
             placeholder={t('inbox.search')}
             oninput={(search: string) => write({ search })}
         />
-        {#if source !== null}
-            <SourceButton file={source} />
-        {/if}
     </Toolbar>
 {/snippet}
 
-{#snippet section(label: string, entries: InboxEntry[])}
-    {#if entries.length > 0}
+{#snippet card(thread: InboxThread)}
+    <Reveal id={thread.id} wanted={held.reveal} onrevealed={() => write({ reveal: '' })}>
+        <InboxCard
+            {thread}
+            id={thread.id}
+            cursor={cursor === thread.id}
+            account={labelOf(thread)}
+            busy={busy(thread)}
+            draftOpen={held.drafts.includes(thread.id)}
+            onshowdraft={showDraft}
+            ontriage={triage}
+            onreply={reply}
+            onarchive={archive}
+            onsaid={(words: string) => (said = words)}
+        />
+    </Reveal>
+{/snippet}
+
+{#snippet section(label: string, threads: InboxThread[])}
+    {#if threads.length > 0}
         <section class="group">
-            <h3>{label} ({entries.length})</h3>
+            <h3>{label} ({threads.length})</h3>
             <div class="cards">
-                {#each entries as entry, at (`${asText(entry.id)}:${at}`)}
-                    <Reveal
-                        id={identOf(entry)}
-                        wanted={held.reveal}
-                        onrevealed={() => write({ reveal: '' })}
-                    >
-                        <InboxCard
-                            {entry}
-                            id={identOf(entry)}
-                            cursor={cursor === identOf(entry)}
-                            onsaid={(words: string) => (said = words)}
-                        />
-                    </Reveal>
+                {#each threads as thread (thread.id)}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render card(thread)}
                 {/each}
             </div>
         </section>
@@ -111,28 +132,27 @@
 
 <Pane title={t('views.inbox')} toolbar={tools}>
     <div class="inbox" data-instance={instance.id}>
+        <Head {data} onrefresh={() => void refresh()} />
+
+        {#if data && data.accounts.length > 0}
+            <Accounts
+                rows={data.accounts}
+                {connecting}
+                onconnect={(account: MailAccount) => void connect(account)}
+            />
+        {/if}
+
         {#if data === null}
             <Empty message={t('app.waiting')} glyph="inbox" />
-        {:else if data.missing}
-            <p class="clear">
-                <Glyph name="warn" />
-                <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
-                <span>{@html t('inbox.no_file')}</span>
-            </p>
-        {:else if data.error !== undefined}
-            <Empty message={t('radar.feed_error', data.file, data.error)} glyph="warn" />
+        {:else if data.status === 'unconfigured'}
+            <Empty message={t('inbox.no_accounts')} glyph="inbox" />
         {:else}
-            <Intro>
-                <Tag label={`${t('inbox.triaged')} ${run}`} tone="teal" />
-                {#if split.triaged.length > 0}
-                    <span>{t('inbox.triaged_suffix', split.triaged.length)}</span>
-                {/if}
-            </Intro>
-
             {#if said !== ''}
                 <p class="said">{said}</p>
             {/if}
 
+            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+            {@render section(t('inbox.sec_unsorted'), unsorted)}
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
             {@render section(t('inbox.sec_reply'), replies)}
             <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
@@ -141,17 +161,13 @@
             {@render section(t('inbox.sec_info'), info)}
 
             {#if liveCount === 0}
-                <p class="clear">
-                    <Glyph name="done" />
-                    <!-- eslint-disable-next-line svelte/no-at-html-tags -- a catalog line, which oculus wrote -->
-                    <span>{@html t('inbox.clear')}</span>
-                </p>
+                <Empty message={t('inbox.clear')} glyph="done" />
             {/if}
 
-            {#if split.triaged.length > 0}
+            {#if sections.triaged.length > 0}
                 <section class="triaged">
                     <ToolButton
-                        label={`${t('inbox.triaged_sec')} (${split.triaged.length})`}
+                        label={`${t('inbox.triaged_sec')} (${sections.triaged.length})`}
                         glyph="done"
                         active={held.triagedOpen}
                         expanded={held.triagedOpen}
@@ -159,20 +175,9 @@
                     />
                     {#if held.triagedOpen && triaged.length > 0}
                         <div class="cards">
-                            {#each triaged as entry, at (`${asText(entry.id)}:${at}`)}
-                                <Reveal
-                                    id={identOf(entry)}
-                                    wanted={held.reveal}
-                                    onrevealed={() => write({ reveal: '' })}
-                                >
-                                    <InboxCard
-                                        {entry}
-                                        id={identOf(entry)}
-                                        cursor={cursor === identOf(entry)}
-                                        triaged
-                                        onsaid={(words: string) => (said = words)}
-                                    />
-                                </Reveal>
+                            {#each triaged as thread (thread.id)}
+                                <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                                {@render card(thread)}
                             {/each}
                         </div>
                     {/if}
@@ -188,17 +193,9 @@
         gap: 12px;
     }
 
-    .said,
-    .clear {
+    .said {
         margin: 0;
         color: var(--muted-txt, var(--muted));
-    }
-
-    .clear {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        padding: 10px 0;
     }
 
     .group h3 {

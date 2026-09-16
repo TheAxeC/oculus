@@ -11,14 +11,14 @@ import { join, resolve, sep } from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import type { CalendarAccountConfig } from '../../../src/lib/data/model.ts';
 import {
-    CALLBACK_PATH,
     CONNECT_MS,
     ConnectStates,
+    callbackPath,
     callbackUrl,
     type Fetcher
-} from '../../../src/lib/server/calendar/oauth.ts';
+} from '../../../src/lib/server/connect/oauth.ts';
 import { handleCalendar, handleCalendarCallback } from '../../../src/lib/server/calendar/routes.ts';
-import { credentialFile } from '../../../src/lib/server/calendar/store.ts';
+import { credentialFile } from '../../../src/lib/server/connect/store.ts';
 import { noop } from '../../doubles.ts';
 
 const TOKEN = 'the-write-token-of-this-case';
@@ -71,7 +71,7 @@ function post(body: unknown, headers: Record<string, string> = {}): Request {
 
 /** The provider's redirect back to this machine. */
 function callback(query: string): Request {
-    return new Request(`http://127.0.0.1:8791${CALLBACK_PATH}?${query}`);
+    return new Request(`http://127.0.0.1:8791${callbackPath('calendar')}?${query}`);
 }
 
 /** A fetcher answering the token endpoint with one refresh token, and recording what it was sent. */
@@ -95,7 +95,7 @@ function target(dir: string, states: ConnectStates, opened: string[]) {
         token: TOKEN,
         accounts: ACCOUNTS,
         dir,
-        redirect: callbackUrl(8791),
+        redirect: callbackUrl(8791, 'calendar'),
         states,
         refresh: () => Promise.resolve(),
         open: (url: string) => void opened.push(url),
@@ -137,7 +137,9 @@ describe('the consent URL a Connect press builds', () => {
         expect(url.searchParams.get('scope')).toBe(
             'https://www.googleapis.com/auth/calendar.readonly'
         );
-        expect(url.searchParams.get('redirect_uri')).toBe(`http://127.0.0.1:8791${CALLBACK_PATH}`);
+        expect(url.searchParams.get('redirect_uri')).toBe(
+            `http://127.0.0.1:8791${callbackPath('calendar')}`
+        );
         expect(url.searchParams.get('code_challenge_method')).toBe('S256');
         expect(url.searchParams.get('response_type')).toBe('code');
         expect(url.searchParams.get('state')).not.toBe(null);
@@ -241,7 +243,9 @@ describe('the callback the provider sends the browser to', () => {
         expect(createHash('sha256').update(verifier).digest('base64url')).toBe(
             consent.searchParams.get('code_challenge')
         );
-        expect(forms[0].get('redirect_uri')).toBe(`http://127.0.0.1:8791${CALLBACK_PATH}`);
+        expect(forms[0].get('redirect_uri')).toBe(
+            `http://127.0.0.1:8791${callbackPath('calendar')}`
+        );
         // The file gained the token, kept its client half, and is readable by its owner alone.
         const held = JSON.parse(readFileSync(file, 'utf8')) as Record<string, unknown>;
         expect(held).toEqual({

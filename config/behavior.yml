@@ -47,7 +47,7 @@ stale_lag_days: 1
 # The Focus refresh strip prompts for live feeds older than these numbers of days.
 refresh_stale_days:
   litwatch: 14  # /research-cockpit litwatch (meta.last_run in literature-radar.yml)
-  inbox: 2  # /research-cockpit inbox (`meta.run` in inbox.yml)
+  inbox: 2  # /research-cockpit inbox (the triage notes under `mail_dir`)
   scout: 7  # /research-cockpit scout (newest meta.log date in position-leads.yml)
 
 
@@ -96,6 +96,13 @@ calendar:
   poll_min: 15
   days_back: 1
   days_ahead: 14
+
+
+# === Mail connector =========================================================
+# How often the inbox plate is read, and how many threads each of the three plate signals is read.
+mail:
+  poll_min: 10
+  per_signal: 25
 
 
 # === Hook push notifications ================================================

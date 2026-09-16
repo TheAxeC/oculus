@@ -666,7 +666,6 @@ export function career(raw: Record<string, unknown> | null): Career | null {
  */
 function feeds(raw: Feeds): Feeds {
     return {
-        inbox: raw.inbox === null ? null : { ...raw.inbox },
         leads: raw.leads === null ? null : raw.leads.map((one) => ({ ...one })),
         radar: raw.radar === null ? null : { ...raw.radar },
         scout: raw.scout === null ? null : { ...raw.scout },

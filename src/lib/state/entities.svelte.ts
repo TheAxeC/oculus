@@ -16,6 +16,7 @@ import type {
     FeedsPayload,
     GitPayload,
     HpcPayload,
+    InboxPayload,
     Message,
     SessionsPayload,
     Snapshot,
@@ -33,6 +34,7 @@ export type EntitiesStore = {
     git: () => GitPayload | null;
     hpc: () => HpcPayload | null;
     calendar: () => CalendarPayload | null;
+    inbox: () => InboxPayload | null;
     usage: () => UsagePayload | null;
     audit: () => AuditPayload | null;
 };
@@ -74,6 +76,8 @@ export function createEntities(): EntitiesStore {
         hpc: () => (payload('hpc') as HpcPayload | undefined) ?? null,
         /** The latest calendar agenda, or null before the server's first message. */
         calendar: () => (payload('calendar') as CalendarPayload | undefined) ?? null,
+        /** The latest inbox plate and its triage notes, or null before the server's first message. */
+        inbox: () => (payload('inbox') as InboxPayload | undefined) ?? null,
         /** The Claude and Codex subscription windows and seven-day token totals. */
         usage: () => (payload('usage') as UsagePayload | undefined) ?? null,
         /** What the audit scan found and what the reader has parked, or null before the first scan. */

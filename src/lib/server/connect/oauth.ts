@@ -1,5 +1,5 @@
-// Layer 2, server. The authorization-code flow with PKCE for both providers: the two endpoint sets
-// as data, the consent URL, the pending states, and the two token calls.
+// Layer 2, server. The authorization-code flow with PKCE for both providers and both connectors:
+// the two endpoint sets as data, the consent URL, the pending states, and the two token calls.
 //
 // PKCE is what makes the flow safe on a machine-local redirect. The consent URL carries the SHA-256
 // of a verifier this process minted and holds in memory; the token call carries the verifier itself,
@@ -7,36 +7,58 @@
 // Google client is a Desktop client, whose secret is not a secret and whose loopback redirect allows
 // any port; the Microsoft application is a public client and has no secret at all.
 //
+// The kind is what a connector differs by: it picks the scopes asked for and the callback route the
+// provider is sent to. A calendar consent therefore never carries mail rights and a mail consent
+// never carries calendar rights, whichever mailbox they are for.
+//
 // The redirect is the server's own callback route, which is why the state map lives beside the
-// poller rather than inside the route: the route that mints a state and the route the provider sends
-// the browser to are two requests of the same process.
+// pollers rather than inside the route: the route that mints a state and the route the provider
+// sends the browser to are two requests of the same process.
 //
 // Nothing here logs, publishes or returns a secret, a code, a verifier or a token. An error carries
 // the HTTP status and the provider's own error code and never its body.
 
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { isMap, str } from '../../data/guards.ts';
-import type { CalendarProvider } from '../../data/model.ts';
+import type { ConnectKind, ConnectProvider } from '../../data/model.ts';
 import type { Credentials } from './store.ts';
 
 /** How the providers are called, injected so no test opens a connection. */
 export type Fetcher = typeof fetch;
 
-/** The path the providers send the reader's browser back to. */
-export const CALLBACK_PATH = '/api/calendar/callback';
+/** The path each connector's provider sends the reader's browser back to. */
+const CALLBACK_PATH: Record<ConnectKind, string> = {
+    calendar: '/api/calendar/callback',
+    mail: '/api/mail/callback'
+};
+
+/** The route one connector's consent comes back to. */
+export function callbackPath(kind: ConnectKind): string {
+    return CALLBACK_PATH[kind];
+}
 
 /** The loopback address the consent URL carries, on the port the machine's own file names. */
-export function callbackUrl(port: number): string {
-    return `http://127.0.0.1:${port}${CALLBACK_PATH}`;
+export function callbackUrl(port: number, kind: ConnectKind): string {
+    return `http://127.0.0.1:${port}${CALLBACK_PATH[kind]}`;
 }
 
 /** How long a consent a reader started stays open, in milliseconds. */
 export const CONNECT_MS = 10 * 60 * 1000;
 
-/** The read-only scope each provider is asked for, and nothing beside it. */
-const SCOPE: Record<CalendarProvider, string> = {
-    google: 'https://www.googleapis.com/auth/calendar.readonly',
-    microsoft: 'Calendars.Read offline_access'
+/**
+ * The scopes each connector asks each provider for, and nothing beside them. The calendar asks to
+ * read and nothing else; mail asks to read, to change a label and to send, which is what a triage
+ * that archives and answers needs and is the narrowest pair either provider offers for it.
+ */
+export const SCOPE: Record<ConnectKind, Record<ConnectProvider, string>> = {
+    calendar: {
+        google: 'https://www.googleapis.com/auth/calendar.readonly',
+        microsoft: 'Calendars.Read offline_access'
+    },
+    mail: {
+        google: 'https://www.googleapis.com/auth/gmail.modify https://www.googleapis.com/auth/gmail.send',
+        microsoft: 'Mail.ReadWrite Mail.Send offline_access'
+    }
 };
 
 /** Where a provider's consent page is. Microsoft's is per directory, so it takes the tenant. */
@@ -71,8 +93,9 @@ export type Pending = { key: string; verifier: string; redirect: string; expires
  * removed as it is read, so a code replayed against the same state finds nothing, and an entry past
  * its ten minutes is gone whether or not anything came back for it.
  *
- * The map belongs to the process's context object rather than to this module, so two servers in one
- * test run share nothing.
+ * The map belongs to the process's context object rather than to this module, and each connector
+ * has one of its own, so two servers in one test run share nothing and a mail state cannot be
+ * presented at the calendar's callback.
  */
 export class ConnectStates {
     #pending = new Map<string, Pending>();
@@ -131,8 +154,9 @@ export class ConnectStates {
     }
 }
 
-/** The consent page a reader is sent to: the read-only scope, the state, the challenge, the loopback. */
+/** The consent page a reader is sent to: the kind's scopes, the state, the challenge, the loopback. */
 export function consentUrl(
+    kind: ConnectKind,
     credentials: Credentials,
     args: { state: string; verifier: string; redirect: string }
 ): string {
@@ -140,7 +164,7 @@ export function consentUrl(
     url.searchParams.set('response_type', 'code');
     url.searchParams.set('client_id', credentials.clientId);
     url.searchParams.set('redirect_uri', args.redirect);
-    url.searchParams.set('scope', SCOPE[credentials.provider]);
+    url.searchParams.set('scope', SCOPE[kind][credentials.provider]);
     url.searchParams.set('state', args.state);
     url.searchParams.set('code_challenge', challengeOf(args.verifier));
     url.searchParams.set('code_challenge_method', 'S256');
@@ -157,7 +181,7 @@ export function consentUrl(
 }
 
 /** One line saying what a provider refused, made of the status and its own error code. */
-function refusal(provider: CalendarProvider, status: number, body: unknown): string {
+function refusal(provider: ConnectProvider, status: number, body: unknown): string {
     const code = isMap(body) ? (str(body.error) ?? '') : '';
     return `${provider} token endpoint: ${status}${code === '' ? '' : ` ${code}`}`;
 }
@@ -185,14 +209,15 @@ async function post(
 }
 
 /** The client fields every token call carries: the secret only where the provider has one. */
-function client(credentials: Credentials): Record<string, string> {
+function client(kind: ConnectKind, credentials: Credentials): Record<string, string> {
     return credentials.provider === 'google'
         ? { client_id: credentials.clientId, client_secret: credentials.clientSecret }
-        : { client_id: credentials.clientId, scope: SCOPE.microsoft };
+        : { client_id: credentials.clientId, scope: SCOPE[kind].microsoft };
 }
 
 /** Exchange one authorization code for the refresh token the connector keeps. */
 export async function exchangeCode(
+    kind: ConnectKind,
     credentials: Credentials,
     args: { code: string; verifier: string; redirect: string },
     fetcher: Fetcher
@@ -200,7 +225,7 @@ export async function exchangeCode(
     const answer = await post(
         credentials,
         {
-            ...client(credentials),
+            ...client(kind, credentials),
             grant_type: 'authorization_code',
             code: args.code,
             redirect_uri: args.redirect,
@@ -216,13 +241,18 @@ export async function exchangeCode(
 
 /** One access token from the account's refresh token, held by the caller in memory only. */
 export async function accessToken(
+    kind: ConnectKind,
     credentials: Credentials,
     refreshToken: string,
     fetcher: Fetcher
 ): Promise<string> {
     const answer = await post(
         credentials,
-        { ...client(credentials), grant_type: 'refresh_token', refresh_token: refreshToken },
+        {
+            ...client(kind, credentials),
+            grant_type: 'refresh_token',
+            refresh_token: refreshToken
+        },
         fetcher
     );
     if (answer.accessToken === undefined) {

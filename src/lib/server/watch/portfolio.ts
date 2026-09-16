@@ -111,7 +111,7 @@ export function namedByConfig(hub: string, config: PortfolioConfig): (path: stri
     const files = new Set<string>();
     for (const file of Object.values(config.registries)) files.add(join(hub, file));
     for (const file of config.collections) files.add(join(hub, file.file));
-    for (const file of [config.feeds.inbox, config.feeds.leads, config.feeds.radar]) {
+    for (const file of [config.feeds.leads, config.feeds.radar]) {
         files.add(join(hub, file));
     }
     files.add(join(hub, config.career));
@@ -155,7 +155,7 @@ export function roleDirectories(hub: string, config: PortfolioConfig): string[] 
     for (const rule of config.scan) dirs.add(join(hub, rule.dir));
     for (const file of Object.values(config.registries)) dirs.add(dirname(join(hub, file)));
     for (const file of config.collections) dirs.add(dirname(join(hub, file.file)));
-    for (const file of [config.feeds.inbox, config.feeds.leads, config.feeds.radar]) {
+    for (const file of [config.feeds.leads, config.feeds.radar]) {
         dirs.add(dirname(join(hub, file)));
     }
     return [...dirs];
@@ -317,7 +317,6 @@ export function watchPortfolio(hub: Hub, paths: WatchPaths, options: WatchOption
             }
             const linkedinDir = join(paths.hub, portfolio.feeds.linkedin);
             const yamlFeedDirs = new Set([
-                dirname(join(paths.hub, portfolio.feeds.inbox)),
                 dirname(join(paths.hub, portfolio.feeds.leads)),
                 dirname(join(paths.hub, portfolio.feeds.radar))
             ]);

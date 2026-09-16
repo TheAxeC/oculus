@@ -7,7 +7,7 @@
 
 import { describe, expect, it, vi } from 'vitest';
 import type { CalendarEvent } from '../../../src/lib/data/model.ts';
-import { ConnectStates, callbackUrl } from '../../../src/lib/server/calendar/oauth.ts';
+import { ConnectStates, callbackUrl } from '../../../src/lib/server/connect/oauth.ts';
 import { handleCalendar } from '../../../src/lib/server/calendar/routes.ts';
 
 const TOKEN = 'the-write-token-of-this-case';
@@ -45,7 +45,7 @@ function target(
         token: TOKEN,
         accounts: [{ provider: 'google' as const, label: 'work' }],
         dir: '/fixture/calendar',
-        redirect: callbackUrl(8791),
+        redirect: callbackUrl(8791, 'calendar'),
         states: new ConnectStates(),
         refresh,
         open: (url: string) => void opened.push(url),

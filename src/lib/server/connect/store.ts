@@ -6,8 +6,12 @@
 // in config/local.yml, so nothing the repository holds names an account of the reader's. The
 // connector writes one field, `refresh_token`, and reads the file at every poll.
 //
+// Each connector has a folder of its own, which the kind selects, and an account of one connector
+// has a file and a consent of its own even when it is the same mailbox as an account of the other:
+// a calendar token never gains send rights, and a mail token never gains calendar rights.
+//
 // The folder is resolved at the call and never at import, as server/changes.ts and
-// server/usage/accounts.ts resolve theirs, so a test points the connector at a directory of its own
+// server/usage/accounts.ts resolve theirs, so a test points a connector at a directory of its own
 // and a served run at the directory the machine's own file names.
 //
 // Nothing here logs, publishes or answers a field of the file. An error naming a field names the
@@ -17,13 +21,13 @@ import { chmodSync, existsSync, mkdirSync, readFileSync, writeFileSync } from 'n
 import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { isMap } from '../../data/guards.ts';
-import { calendarKey } from '../../data/calendar.ts';
-import type { CalendarAccountConfig } from '../../data/model.ts';
+import { connectKey } from '../../data/connect.ts';
+import type { ConnectAccountConfig, ConnectKind } from '../../data/model.ts';
 
 /** The mode the credential file is created and kept at: it holds one account's own secrets. */
 const MODE = 0o600;
 
-/** The mode the calendar folder is created at, for the same reason. */
+/** The mode a connector's folder is created at, for the same reason. */
 const DIR_MODE = 0o700;
 
 export type GoogleCredentials = {
@@ -43,14 +47,14 @@ export type MicrosoftCredentials = {
 
 export type Credentials = GoogleCredentials | MicrosoftCredentials;
 
-/** ~/.oculus/calendar, resolved at the call rather than at import. */
-export function defaultCalendarDir(): string {
-    return join(homedir(), '.oculus', 'calendar');
+/** ~/.oculus/calendar or ~/.oculus/mail, resolved at the call rather than at import. */
+export function defaultConnectDir(kind: ConnectKind): string {
+    return join(homedir(), '.oculus', kind);
 }
 
-/** The credential file of one account inside a calendar directory. */
-export function credentialFile(dir: string, account: CalendarAccountConfig): string {
-    return join(dir, `${calendarKey(account)}.json`);
+/** The credential file of one account inside a connector's directory. */
+export function credentialFile(dir: string, account: ConnectAccountConfig): string {
+    return join(dir, `${connectKey(account)}.json`);
 }
 
 /** A field of the file as a non-empty string, or undefined when it is absent or not one. */
@@ -64,7 +68,7 @@ function field(record: Record<string, unknown>, name: string): string | undefine
  * cannot be read as the provider's shape throws the sentence the view shows, which names the file
  * and the field and never what the field held.
  */
-export function readCredentials(dir: string, account: CalendarAccountConfig): Credentials | null {
+export function readCredentials(dir: string, account: ConnectAccountConfig): Credentials | null {
     const file = credentialFile(dir, account);
     if (!existsSync(file)) return null;
     let parsed: unknown;
@@ -97,7 +101,7 @@ export function readCredentials(dir: string, account: CalendarAccountConfig): Cr
  */
 export function writeRefreshToken(
     dir: string,
-    account: CalendarAccountConfig,
+    account: ConnectAccountConfig,
     refreshToken: string
 ): void {
     const file = credentialFile(dir, account);

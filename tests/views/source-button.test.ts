@@ -31,12 +31,14 @@ describe("the control over a view's own file", () => {
     it('carries the shared word, the root and path it was given, and the path in its tooltip', () => {
         const body = render(SourceButton, {
             context: clientContext(client),
-            props: { file: { root: 'hub', path: 'feeds/inbox.yml' } }
+            props: { file: { root: 'hub', path: 'feeds/literature-radar.yml' } }
         }).body;
         expect(body).toContain('data-source-root="hub"');
-        expect(body).toContain('data-source-path="feeds/inbox.yml"');
+        expect(body).toContain('data-source-path="feeds/literature-radar.yml"');
         expect(body).toContain(catalog['views.open_source']);
-        expect(body).toContain(catalog['views.open_source_tip'].replace('{0}', 'feeds/inbox.yml'));
+        expect(body).toContain(
+            catalog['views.open_source_tip'].replace('{0}', 'feeds/literature-radar.yml')
+        );
         expect(body).not.toContain('{G.');
     });
 

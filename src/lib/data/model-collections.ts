@@ -71,16 +71,15 @@ export type Lead = {
 };
 
 /**
- * What the four feed files say and nothing more: a count, a run date, the live leads. A feed whose
- * file or folder is not there is null rather than empty, because "nothing to report" and "no feed
- * on this machine" are different answers and the board says so. The feeds are generated, so a
- * missing one is not a finding; a broken one is.
+ * What the three feed files say and nothing more: a run date, the live leads. A feed whose file or
+ * folder is not there is null rather than empty, because "nothing to report" and "no feed on this
+ * machine" are different answers and the board says so. The feeds are generated, so a missing one
+ * is not a finding; a broken one is.
  *
  * `scout` is the position scout's own run date, which lives in the leads file's `meta.log` rather
  * than in a file of its own, so it is null exactly when `leads` is.
  */
 export type Feeds = {
-    inbox: { run: string | null; actionable: number } | null;
     leads: Lead[] | null;
     radar: { lastRun: string | null } | null;
     scout: { lastRun: string | null } | null;
@@ -88,7 +87,7 @@ export type Feeds = {
 };
 
 /** The generated YAML and Markdown feeds delivered together on the feeds channel. */
-export type FeedKind = 'radar' | 'leads' | 'inbox' | 'linkedin';
+export type FeedKind = 'radar' | 'leads' | 'linkedin';
 export type FeedEntry = Record<string, unknown>;
 export type FeedData = {
     meta: Record<string, unknown>;

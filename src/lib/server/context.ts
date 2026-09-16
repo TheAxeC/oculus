@@ -11,6 +11,7 @@ import {
     type IconMemory,
     loadConfig,
     loadLocal,
+    mailSettings,
     slurmSettings,
     textCatalog,
     usageTiers,
@@ -19,9 +20,10 @@ import {
 import { requirePaintLimit } from '../data/editor.ts';
 import type { Finding, Snapshot } from '../data/model.ts';
 import { mintToken } from './auth.ts';
-import { ConnectStates } from './calendar/oauth.ts';
-import { defaultCalendarDir } from './calendar/store.ts';
+import { ConnectStates } from './connect/oauth.ts';
+import { defaultConnectDir } from './connect/store.ts';
 import { watchCalendar, type CalendarOptions, type CalendarWatcher } from './calendar/poll.ts';
+import { watchMail, type MailOptions, type MailWatcher } from './mail/poll.ts';
 import { macOpen, type Opener } from './open.ts';
 import { docFindings, layoutFile } from './docs.ts';
 import { Hub } from './channels.ts';
@@ -50,6 +52,7 @@ export type ServerContext = {
     git: GitWatcher;
     hpc: HpcWatcher;
     calendar: CalendarWatcher;
+    mail: MailWatcher;
     usage: UsageWatcher;
     usageRefresh: UsageRefreshWatcher;
     token: string;
@@ -65,6 +68,10 @@ export type ServerContext = {
     calendarConnects: ConnectStates;
     /** The folder the calendar credential files live in, resolved once for the poller and the routes. */
     calendarDir: string;
+    /** The mail consents in flight, minted by the connect action and taken by the callback. */
+    mailConnects: ConnectStates;
+    /** The folder the mail credential files and the triage notes live in, resolved once. */
+    mailDir: string;
     /**
      * How an address reaches the operating system, so the one process that opens anything is this
      * one and a test is handed a context that opens nothing.
@@ -108,6 +115,7 @@ export type ContextDependencies = {
     watchGit: (hub: Hub, options: GitWatchOptions) => GitWatcher;
     watchHpc: (hub: Hub, options: HpcOptions) => HpcWatcher;
     watchCalendar: (hub: Hub, options: CalendarOptions) => CalendarWatcher;
+    watchMail: (hub: Hub, options: MailOptions) => MailWatcher;
     watchUsageRefresh: typeof watchUsageRefresh;
     watchUsage: typeof watchUsage;
 };
@@ -123,6 +131,7 @@ const dependencies: ContextDependencies = {
     watchGit: (hub, options) => watchGit(hub, options),
     watchHpc,
     watchCalendar,
+    watchMail,
     watchUsageRefresh,
     watchUsage
 };
@@ -137,6 +146,7 @@ export function createServerContext(
     const config = make.loadConfig(engine).config;
     const slurm = slurmSettings(config);
     const calendarConfig = calendarSettings(config);
+    const mailConfig = mailSettings(config);
     const tiers = usageTiers(config);
     // Read for its check alone: the value itself is in the merged configuration the page is sent, and
     // a missing or mistyped key stops the server here with the key named rather than reaching a tab.
@@ -215,13 +225,23 @@ export function createServerContext(
 
     // The calendar poller reads the credential files of the folder the machine's own file names, so
     // a served test run is pointed at a directory of its own and never at the reader's.
-    const calendarDir = local.calendarDir ?? defaultCalendarDir();
+    const calendarDir = local.calendarDir ?? defaultConnectDir('calendar');
     const calendar = make.watchCalendar(hub, {
         accounts: local.calendars,
         dir: calendarDir,
         pollMin: calendarConfig.pollMin,
         daysBack: calendarConfig.daysBack,
         daysAhead: calendarConfig.daysAhead
+    });
+
+    // The mail poller reads the credential files and the triage notes of the folder the machine's
+    // own file names, for the same reason: a served test run is pointed at a directory of its own.
+    const mailDir = local.mailDir ?? defaultConnectDir('mail');
+    const mail = make.watchMail(hub, {
+        accounts: local.mail,
+        dir: mailDir,
+        pollMin: mailConfig.pollMin,
+        perSignal: mailConfig.perSignal
     });
 
     let closed = false;
@@ -232,6 +252,7 @@ export function createServerContext(
         git,
         hpc,
         calendar,
+        mail,
         usage,
         usageRefresh,
         token,
@@ -242,6 +263,8 @@ export function createServerContext(
         hpcLogPaths,
         calendarConnects: new ConnectStates(),
         calendarDir,
+        mailConnects: new ConnectStates(),
+        mailDir,
         opener: macOpen,
         depositPlans: new Map(),
         wallpaper: wallpaperMemory(),
@@ -251,6 +274,7 @@ export function createServerContext(
             if (closed) return;
             closed = true;
             usageRefresh.close();
+            mail.close();
             calendar.close();
             hpc.close();
             git.close();

@@ -1,6 +1,7 @@
-// Layer 2, client state. The reactive values the shell palette indexes when it opens. This adapter
-// keeps the pure index in palette.ts free of stores while exposing only the snapshot, socket feeds
-// and merged config the overlay needs.
+// Layer 2, client state. The reactive values the shell palette indexes when it opens, and the two
+// run dates the update tray draws beside its tasks. This adapter keeps the pure index in palette.ts
+// free of stores while exposing only the snapshot, socket feeds, merged config and triage-notes run
+// date the shell needs.
 
 import type { EntitiesStore } from './entities.svelte.ts';
 import type { FeedsStore } from './feeds.svelte.ts';
@@ -11,6 +12,8 @@ export type PaletteSource = {
     snapshot: Snapshot | null;
     feeds: PaletteFeeds;
     config: Record<string, unknown>;
+    /** The day the triage skill last wrote its notes, which the update tray shows beside its task. */
+    notesRun: string | null;
 };
 
 /** What one client's palette indexes when it opens. */
@@ -29,10 +32,10 @@ export function createPaletteSource(
             feeds: {
                 leads: feeds.feed('leads'),
                 radar: feeds.feed('radar'),
-                inbox: feeds.feed('inbox'),
                 linkedin: feeds.feed('linkedin')
             },
-            config: entities.config()?.config ?? {}
+            config: entities.config()?.config ?? {},
+            notesRun: entities.inbox()?.notesRun ?? null
         };
     }
 

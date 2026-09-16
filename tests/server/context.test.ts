@@ -24,7 +24,7 @@ const driver = (close: () => void = noop): TerminalDriver => ({
 
 describe('ServerContext', () => {
     it('builds and closes each process-owned object once and carries its token', () => {
-        const closes = Array.from({ length: 8 }, () => vi.fn());
+        const closes = Array.from({ length: 9 }, () => vi.fn());
         const hub = new Hub();
         const terminals = new Terminals(hub, { driver: driver(closes[6]), poll: 0 });
         const createHub = vi.fn(() => hub);
@@ -59,6 +59,11 @@ describe('ServerContext', () => {
             refresh: vi.fn(noopAsync),
             close: closes[7]
         }));
+        const watchMail = vi.fn<ContextDependencies['watchMail']>(() => ({
+            refresh: vi.fn(noopAsync),
+            republish: noop,
+            close: closes[8]
+        }));
         const loadConfig = vi.fn(() => ({
             config: {
                 slurm: {
@@ -70,6 +75,7 @@ describe('ServerContext', () => {
                 },
                 calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
                 editor: { paint_limit_kb: 64 },
+                mail: { poll_min: 10, per_signal: 25 },
                 usage_tiers: {},
                 usage_refresh_min: 5,
                 usage_refresh_model: 'model',
@@ -84,7 +90,8 @@ describe('ServerContext', () => {
                 port: 8791,
                 claudeBin: 'claude',
                 accounts: [],
-                calendars: []
+                calendars: [],
+                mail: []
             })),
             loadConfig,
             mintToken: vi.fn(() => 'context-token'),
@@ -95,6 +102,7 @@ describe('ServerContext', () => {
             watchGit,
             watchHpc,
             watchCalendar,
+            watchMail,
             watchUsageRefresh,
             watchUsage
         });
@@ -108,6 +116,7 @@ describe('ServerContext', () => {
             watchGit,
             watchHpc,
             watchCalendar,
+            watchMail,
             watchUsageRefresh,
             watchUsage
         ]) {
@@ -129,6 +138,9 @@ describe('ServerContext', () => {
         // The calendar poller reads the credential folder the routes read, so the connect action and
         // the poll are always looking at the same files.
         expect(watchCalendar.mock.calls[0][1].dir).toBe(context.calendarDir);
+        // The mail poller reads the credential folder and the triage notes the routes read, for the
+        // same reason.
+        expect(watchMail.mock.calls[0][1].dir).toBe(context.mailDir);
         // The icon drawings are read once here, from the config this context was built with, and
         // the watcher is handed the same holder, so a config push replaces what a page load reads.
         expect(Object.keys(context.icons.set)).toEqual(['pin']);
@@ -150,7 +162,8 @@ describe('ServerContext', () => {
                 port: 8791,
                 claudeBin: 'claude',
                 accounts: [],
-                calendars: []
+                calendars: [],
+                mail: []
             }),
             loadConfig: () => ({
                 config: {
@@ -163,6 +176,7 @@ describe('ServerContext', () => {
                     },
                     calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
                     editor: { paint_limit_kb: 64 },
+                    mail: { poll_min: 10, per_signal: 25 },
                     usage_tiers: {},
                     usage_refresh_min: 5,
                     usage_refresh_model: 'model'
@@ -174,6 +188,7 @@ describe('ServerContext', () => {
             createTerminals: (hub) => new Terminals(hub, { driver: driver(), poll: 0 }),
             watchPortfolio: () => ({ close: noop }),
             watchCalendar: () => ({ refresh: noopAsync, close: noop }),
+            watchMail: () => ({ refresh: noopAsync, republish: noop, close: noop }),
             watchSessions: () => {
                 const listeners = new Set<() => void>();
                 rescans.push(() => {

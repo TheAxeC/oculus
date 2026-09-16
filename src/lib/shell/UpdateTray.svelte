@@ -1,7 +1,8 @@
 <script lang="ts">
     // Layer 3, shell. The update-task tray. Each task starts the server-built Claude command in a
     // terminal, selects it, and opens the Terminal view; the snapshot's feed summary supplies the
-    // last-run value beside each control.
+    // last-run value beside each control, and the inbox triage's comes from the `inbox` channel,
+    // whose notes file is what that task writes.
     //
     // A task is an ordinary Claude session, so its permission prompts are answered in the terminal
     // pane and a press starts it straight away. While `tasks.skip_permissions` is on there is nobody
@@ -59,7 +60,7 @@
             kind: 'inbox' as const,
             label: t('app.tasks.inbox_label'),
             note: t('app.tasks.inbox_note'),
-            last: summary?.inbox?.run
+            last: current.notesRun ?? undefined
         }
     ]);
 

@@ -120,7 +120,6 @@ function buildHub(): string {
     write(hub, 'registries/domains.yml', 'entries: []\n');
     write(hub, 'funding/funding.yml', 'entries: []\n');
     write(hub, 'network/events.yml', 'title: Talks\nentries: []\n');
-    write(hub, 'feeds/inbox.yml', 'meta:\n  run: 2026-09-12\nentries: []\n');
     write(hub, 'feeds/position-leads.yml', 'meta: {}\nentries: []\n');
     write(hub, 'feeds/literature-radar.yml', 'meta: {}\nentries: []\n');
     write(
@@ -245,7 +244,6 @@ describe('namedByConfig', () => {
     const config = {
         scan: [{ dir: 'projects/active' }],
         feeds: {
-            inbox: 'feeds/inbox.yml',
             leads: 'feeds/position-leads.yml',
             radar: 'feeds/literature-radar.yml',
             linkedin: 'site/_linkedin'
@@ -302,7 +300,6 @@ describe('watchedDirectories', () => {
         const dirs = watchedDirectories('/hub', {
             scan: [{ dir: 'projects/active' }],
             feeds: {
-                inbox: 'feeds/inbox.yml',
                 leads: 'feeds/position-leads.yml',
                 radar: 'feeds/literature-radar.yml',
                 linkedin: 'theaxec.github.io/_linkedin'
@@ -371,12 +368,12 @@ describe('watchPortfolio', () => {
         const before = on(started.got, 'feeds').length;
         write(
             started.hub,
-            'feeds/inbox.yml',
-            'meta: {}\nentries:\n  - { id: shared, kind: action }\n'
+            'feeds/literature-radar.yml',
+            'meta: {}\nentries:\n  - { title: shared, bucket: method }\n'
         );
         await until(() => on(started.got, 'feeds').length > before, 2000);
-        expect((on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).inbox.entries).toEqual([
-            { id: 'shared', kind: 'action' }
+        expect((on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).radar.entries).toEqual([
+            { title: 'shared', bucket: 'method' }
         ]);
 
         await quiet(started.got);
@@ -435,13 +432,17 @@ describe('watchPortfolio', () => {
 
     it('delivers a feed field written through handleWrite in a feeds message', async () => {
         const started = start((hub) => {
-            write(hub, 'feeds/inbox.yml', 'meta: {}\nentries:\n  - id: mail\n    kind: action\n');
+            write(
+                hub,
+                'feeds/literature-radar.yml',
+                'meta: {}\nentries:\n  - title: Paper\n    bucket: method\n'
+            );
         });
         await quiet(started.got);
         const before = on(started.got, 'feeds').length;
         const config = portfolioConfigFrom(loadConfig(started.engine).config, started.engine);
         expect(
-            resolve(join(started.hub, config.feeds.inbox)).startsWith(resolve(started.hub) + sep)
+            resolve(join(started.hub, config.feeds.radar)).startsWith(resolve(started.hub) + sep)
         ).toBe(true);
         const token = mintToken();
         const response = await handleWrite(
@@ -455,9 +456,9 @@ describe('watchPortfolio', () => {
                 },
                 body: JSON.stringify({
                     kind: 'feed-field',
-                    feed: 'inbox',
-                    id: 'mail',
-                    field: 'triaged',
+                    feed: 'radar',
+                    id: 'Paper',
+                    field: 'dismissed',
                     value: true
                 })
             }),
@@ -474,12 +475,12 @@ describe('watchPortfolio', () => {
         expect(response.status).toBe(200);
         expect(await response.json()).toMatchObject({
             ok: true,
-            changed: ['triaged'],
+            changed: ['dismissed'],
             refused: []
         });
         await until(() => on(started.got, 'feeds').length > before, 2000);
-        expect((on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).inbox.entries).toEqual([
-            { id: 'mail', kind: 'action', triaged: true }
+        expect((on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).radar.entries).toEqual([
+            { title: 'Paper', bucket: 'method', dismissed: true }
         ]);
     });
 
@@ -488,7 +489,7 @@ describe('watchPortfolio', () => {
         await quiet(started.got);
         const before = on(started.got, 'feeds').length;
         const config = portfolioConfigFrom(loadConfig(started.engine).config, started.engine);
-        const path = config.feeds.inbox;
+        const path = config.feeds.radar;
         expect(resolve(join(started.hub, path)).startsWith(resolve(started.hub) + sep)).toBe(true);
         const token = mintToken();
         const response = await handleSource(
@@ -504,7 +505,7 @@ describe('watchPortfolio', () => {
                     root: 'fixture',
                     path,
                     content:
-                        'meta: {}\nentries:\n  - id: source-mail\n    kind: action\n    triaged: true\n'
+                        'meta: {}\nentries:\n  - title: Source paper\n    bucket: method\n    dismissed: true\n'
                 })
             }),
             token,
@@ -513,8 +514,8 @@ describe('watchPortfolio', () => {
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({ ok: true });
         await until(() => on(started.got, 'feeds').length > before, 2000);
-        expect((on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).inbox.entries).toEqual([
-            { id: 'source-mail', kind: 'action', triaged: true }
+        expect((on(started.got, 'feeds').at(-1)?.payload as FeedsPayload).radar.entries).toEqual([
+            { title: 'Source paper', bucket: 'method', dismissed: true }
         ]);
     });
 
@@ -701,15 +702,15 @@ describe('watchPortfolio', () => {
 
         write(
             started.hub,
-            'feeds/inbox.yml',
-            'meta:\n  run: 2026-09-13\nentries:\n  - { id: one, kind: action }\n'
+            'feeds/literature-radar.yml',
+            'meta:\n  last_run: 2026-09-13\nentries:\n  - { title: one, bucket: method }\n'
         );
         await until(() => on(started.got, 'feeds').length > feedsBefore, 2000);
 
         expect(on(started.got, 'portfolio')).toHaveLength(portfolioBefore + 1);
         const feeds = on(started.got, 'feeds');
         const payload = feeds[feeds.length - 1].payload as FeedsPayload;
-        expect(payload.inbox.entries).toEqual([{ id: 'one', kind: 'action' }]);
+        expect(payload.radar.entries).toEqual([{ title: 'one', bucket: 'method' }]);
     });
 
     it('republishes feeds beside portfolio when a flat LinkedIn file changes', async () => {

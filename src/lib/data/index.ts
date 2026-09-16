@@ -73,7 +73,6 @@ function collectionFiles(value: unknown): CollectionFile[] {
 const BACKLOG = 'holding';
 
 const FEED_FILES: FeedFiles = {
-    inbox: 'feeds/inbox.yml',
     leads: 'feeds/position-leads.yml',
     radar: 'feeds/literature-radar.yml',
     linkedin: 'theaxec.github.io/_linkedin'
@@ -131,7 +130,6 @@ export function portfolioConfigFrom(
     }
 
     const feeds: FeedFiles = {
-        inbox: path('inbox_file', FEED_FILES.inbox),
         leads: path('leads_file', FEED_FILES.leads),
         radar: path('radar_file', FEED_FILES.radar),
         linkedin: path('linkedin_dir', FEED_FILES.linkedin)

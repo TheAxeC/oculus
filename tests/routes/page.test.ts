@@ -81,6 +81,7 @@ describe('the page subscription', () => {
             'files',
             'hpc',
             'calendar',
+            'inbox',
             'usage',
             'feeds',
             'audit'

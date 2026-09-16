@@ -301,6 +301,28 @@ export type {
 } from './model-collections.ts';
 
 export type {
+    ConnectAccountConfig,
+    ConnectAccountStatus,
+    ConnectKind,
+    ConnectProvider,
+    ConnectStatus
+} from './model-connect.ts';
+
+export type {
+    InboxKind,
+    InboxPayload,
+    InboxThread,
+    InboxTriage,
+    MailAccount,
+    MailAccountConfig,
+    MailAccountStatus,
+    MailProvider,
+    MailStatus,
+    TriageFile,
+    TriageNote
+} from './model-mail.ts';
+
+export type {
     CalendarAccount,
     CalendarAccountConfig,
     CalendarAccountStatus,

@@ -11,12 +11,10 @@ const { config } = loadConfig(engineDir());
 describe('the file a view is drawn from', () => {
     it('answers each feed kind the path its own configuration key names', () => {
         expect({
-            inbox: viewSourceFile('inbox', config),
             leads: viewSourceFile('leads', config),
             radar: viewSourceFile('radar', config),
             linkedin: viewSourceFile('linkedin', config)
         }).toEqual({
-            inbox: { root: HUB_ROOT, path: config.inbox_file },
             leads: { root: HUB_ROOT, path: config.leads_file },
             radar: { root: HUB_ROOT, path: config.radar_file },
             linkedin: { root: HUB_ROOT, path: config.linkedin_dir }
@@ -51,11 +49,11 @@ describe('the file a view is drawn from', () => {
     });
 
     it('answers null for a configuration that names no file, and for an unknown collection', () => {
-        expect(viewSourceFile('inbox', {})).toBeNull();
         expect(viewSourceFile('venues', {})).toBeNull();
         expect(viewSourceFile('datasets', { datasets_file: '  ' })).toBeNull();
         expect(viewSourceFile('pillars', { pillars_file: 12 })).toBeNull();
         expect(viewSourceFile('domains', {})).toBeNull();
+        expect(viewSourceFile('radar', {})).toBeNull();
         expect(viewSourceFile('leads', { leads_file: '   ' })).toBeNull();
         expect(viewSourceFile('radar', { radar_file: 12 })).toBeNull();
         expect(viewSourceFile('collection', {}, 'funding')).toBeNull();

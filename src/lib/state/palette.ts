@@ -38,7 +38,7 @@ function strings(value: unknown): string[] {
 
 /** The identity one entry carries on its own, before the feed is asked whether it is unique. */
 export function feedIdentity(kind: FeedKind, entry: object): string {
-    const key = kind === 'inbox' ? 'id' : kind === 'linkedin' ? 'file' : 'title';
+    const key = kind === 'linkedin' ? 'file' : 'title';
     const value = (entry as Record<string, unknown>)[key];
     if (typeof value === 'string' && value !== '') return value;
     return strings(entry)[0] ?? kind;
@@ -80,7 +80,6 @@ export function feedIdents(kind: FeedKind, entries: readonly object[]): FeedIden
 function revealState(kind: FeedKind, id: string): Record<string, unknown> {
     if (kind === 'leads') return { reveal: id, expiredOpen: true };
     if (kind === 'radar') return { reveal: id, dismissedOpen: true };
-    if (kind === 'inbox') return { reveal: id, triagedOpen: true };
     return { reveal: id };
 }
 
@@ -139,7 +138,7 @@ export function buildIndex(
             }
         }
     }
-    for (const kind of ['leads', 'radar', 'inbox', 'linkedin'] as const) {
+    for (const kind of ['leads', 'radar', 'linkedin'] as const) {
         const entries = feeds[kind]?.entries ?? [];
         const identOf = feedIdents(kind, entries);
         for (const entry of entries) {

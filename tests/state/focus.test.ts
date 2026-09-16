@@ -183,7 +183,6 @@ function snapshot(): Snapshot {
         version: 1,
         entities: {
             feeds: {
-                inbox: { run: '2026-09-09', actionable: 2 },
                 leads: [
                     { title: 'A lead', deadline: '2026-09-20', status: 'open', fit: 'strong' },
                     { title: 'A far lead', deadline: '2026-12-01', status: 'open', fit: null },
@@ -650,21 +649,21 @@ describe('what a line can be written to', () => {
 });
 
 describe('attention and refresh', () => {
-    it('counts the inbox and the days since the last post, and warns on venue load', () => {
-        expect(attention(snap, config, NOW)).toEqual([
+    it('counts the inbox the channel gave and the days since the last post, and warns on venue load', () => {
+        expect(attention(snap, config, NOW, 2)).toEqual([
             { kind: 'inbox', count: 2 },
             { kind: 'linkedin', count: 102 }
         ]);
     });
 
-    it('says nothing about a feed the hub does not have', () => {
+    it('says nothing about a feed the hub does not have, nor about notes never written', () => {
         const bare = { ...snap, entities: { ...snap.entities, feeds: NO_FEEDS } };
-        expect(attention(bare, config, NOW)).toEqual([]);
-        expect(refresh(bare, config, NOW)).toEqual([]);
+        expect(attention(bare, config, NOW, 0)).toEqual([]);
+        expect(refresh(bare, config, NOW, null)).toEqual([]);
     });
 
     it('nudges the feeds that are past their threshold and not the ones that are not', () => {
-        expect(refresh(snap, config, NOW)).toEqual([
+        expect(refresh(snap, config, NOW, '2026-09-09')).toEqual([
             { feed: 'litwatch', days: 22 },
             { feed: 'inbox', days: 2 }
         ]);
@@ -678,7 +677,7 @@ describe('attention and refresh', () => {
                 feeds: { ...snap.entities.feeds, radar: { lastRun: null } }
             }
         };
-        expect(refresh(never, config, NOW)[0]).toEqual({ feed: 'litwatch', days: null });
+        expect(refresh(never, config, NOW, null)[0]).toEqual({ feed: 'litwatch', days: null });
     });
 
     it('reads the threshold of each feed out of refresh_stale_days over stale_days', () => {

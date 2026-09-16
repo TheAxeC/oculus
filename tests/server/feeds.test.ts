@@ -22,7 +22,6 @@ import type { FeedKind, PortfolioConfig } from '../../src/lib/data/model.ts';
 const FILES: Record<FeedKind, string> = {
     radar: 'fixture/radar.yml',
     leads: 'fixture/leads.yml',
-    inbox: 'fixture/inbox.yml',
     linkedin: 'fixture/linkedin'
 };
 
@@ -48,10 +47,9 @@ function fixture(): { hub: string; config: PortfolioConfig } {
     };
     for (const [kind, id] of [
         ['radar', 'Paper'],
-        ['leads', 'Job'],
-        ['inbox', 'mail-1']
+        ['leads', 'Job']
     ] as const) {
-        const identity = kind === 'inbox' ? 'id' : 'title';
+        const identity = 'title';
         const file = join(hub, FILES[kind]);
         expect(resolve(file).startsWith(resolve(hub) + sep)).toBe(true);
         mkdirSync(join(file, '..'), { recursive: true });
@@ -106,10 +104,10 @@ describe('feed files', () => {
         expect(entry).toMatchObject({ title: 'Bare', date: '', category: '' });
     });
 
-    it('builds one payload with all four feeds', () => {
+    it('builds one payload with all three feeds', () => {
         const into = fixture();
         const payload = buildFeeds(into.hub, into.config);
-        expect(Object.keys(payload)).toEqual(['radar', 'leads', 'inbox', 'linkedin']);
+        expect(Object.keys(payload)).toEqual(['radar', 'leads', 'linkedin']);
         expect(payload.radar).toMatchObject({
             ok: true,
             kind: 'radar',
@@ -149,12 +147,12 @@ describe('feed files', () => {
             entries: []
         });
         expect(payload.radar.error).toBeTruthy();
-        expect(payload.inbox.entries).toHaveLength(1);
+        expect(payload.leads.entries).toHaveLength(1);
     });
 
-    it('reads radar, leads, and inbox with map entries', () => {
+    it('reads radar and leads with map entries', () => {
         const into = fixture();
-        for (const kind of ['radar', 'leads', 'inbox'] as const) {
+        for (const kind of ['radar', 'leads'] as const) {
             expect(readFeedFile(into.hub, into.config, kind)).toMatchObject({
                 kind,
                 file: FILES[kind],
@@ -385,9 +383,6 @@ describe('feed writes', () => {
         ).toEqual(['dismissed']);
         expect(readFileSync(join(into.hub, FILES.radar), 'utf8')).not.toContain('dismissed:');
         expect(
-            writeFeedField(into.hub, into.config, 'inbox', 'mail-1', 'triaged', true).changed
-        ).toEqual(['triaged']);
-        expect(
             writeFeedField(into.hub, into.config, 'leads', 'Job', 'status', 'closed').changed
         ).toEqual(['status']);
         expect(
@@ -403,6 +398,5 @@ describe('feed writes', () => {
         expect(deleteFeedEntry(into.hub, into.config, 'leads', 'Job').changed).toEqual(['entries']);
         expect(readFileSync(join(into.hub, FILES.leads), 'utf8')).not.toContain('Job');
         expect(deleteFeedEntry(into.hub, into.config, 'radar', 'Paper').refused).toHaveLength(1);
-        expect(deleteFeedEntry(into.hub, into.config, 'inbox', 'mail-1').refused).toHaveLength(1);
     });
 });

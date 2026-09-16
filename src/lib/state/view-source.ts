@@ -1,4 +1,4 @@
-// Layer 2, client state. Which file of the hub a view is drawn from: one of the four feeds by its
+// Layer 2, client state. Which file of the hub a view is drawn from: one of the three feeds by its
 // kind, one of the five registry views with a pane of its own, or one collection by its key. All of
 // them are read from the merged configuration the config channel carries, so every view that offers
 // the file shares one rule and one answer.
@@ -15,7 +15,7 @@ import type { FeedKind } from '../data/model.ts';
 /** One file of the hub, addressed the way the source tab addresses it. */
 export type ViewSource = { root: string; path: string };
 
-/** What a view is drawn from: one of the four feeds, one of the five registries, or a collection. */
+/** What a view is drawn from: one of the three feeds, one of the five registries, or a collection. */
 export type ViewSourceKind = FeedKind | 'collection' | RegistryKind;
 
 /** The registry views drawn from a file of their own, each by the view's own id. */
@@ -23,7 +23,6 @@ export type RegistryKind = 'people' | 'venues' | 'datasets' | 'pillars' | 'domai
 
 /** The configuration key each kind's path is written under, the one collection apart. */
 const FILE_KEYS: Record<Exclude<ViewSourceKind, 'collection'>, string> = {
-    inbox: 'inbox_file',
     leads: 'leads_file',
     radar: 'radar_file',
     linkedin: 'linkedin_dir',

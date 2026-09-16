@@ -13,7 +13,6 @@ import { readFeeds } from '../../src/lib/data/sources/feeds.ts';
 import type { FeedFiles } from '../../src/lib/data/model.ts';
 
 const FILES: FeedFiles = {
-    inbox: 'feeds/inbox.yml',
     leads: 'feeds/position-leads.yml',
     radar: 'feeds/literature-radar.yml',
     linkedin: 'site/_linkedin'
@@ -31,15 +30,6 @@ function hub(files: Record<string, string>): string {
     }
     return dir;
 }
-
-const INBOX = `meta:
-  run: 2026-09-09
-entries:
-  - { id: a, kind: reply, triaged: false }
-  - { id: b, kind: action }
-  - { id: c, kind: info }
-  - { id: d, kind: reply, triaged: true }
-`;
 
 const LEADS = `meta:
   log:
@@ -79,9 +69,8 @@ date: 2026-12-31
 body
 `;
 
-describe('the four feeds, all present', () => {
+describe('the three feeds, all present', () => {
     const dir = hub({
-        'feeds/inbox.yml': INBOX,
         'feeds/position-leads.yml': LEADS,
         'feeds/literature-radar.yml': RADAR,
         'site/_linkedin/01-a.md': POST,
@@ -89,10 +78,6 @@ describe('the four feeds, all present', () => {
         'site/_linkedin/xx-idea.md': IDEA
     });
     const { feeds, findings } = readFeeds(dir, FILES);
-
-    it('reads the inbox run and counts only the untriaged reply and action threads', () => {
-        expect(feeds.inbox).toEqual({ run: '2026-09-09', actionable: 2 });
-    });
 
     it('keeps the live leads with the ISO date inside their deadline text, dismissed ones out', () => {
         expect(feeds.leads).toEqual([
@@ -124,7 +109,6 @@ describe('a hub with no feeds at all', () => {
 
     it('answers null for every feed, which is not the same as an empty one', () => {
         expect(feeds).toEqual({
-            inbox: null,
             leads: null,
             radar: null,
             scout: null,
@@ -139,19 +123,14 @@ describe('a hub with no feeds at all', () => {
 
 describe('a feed that is there and broken', () => {
     const dir = hub({
-        'feeds/inbox.yml': 'meta: [this is: not a map\n',
         'feeds/literature-radar.yml': '- a list, not a map\n',
         'feeds/position-leads.yml': 'meta: {}\n'
     });
     const { feeds, findings } = readFeeds(dir, FILES);
 
     it('is a finding, and costs that feed alone', () => {
-        expect(findings).toHaveLength(2);
-        expect(findings.map((one) => one.message.split(':')[0]).sort()).toEqual([
-            'does not parse',
-            'is not a map of keys'
-        ]);
-        expect(feeds.inbox).toBeNull();
+        expect(findings).toHaveLength(1);
+        expect(findings.map((one) => one.message.split(':')[0])).toEqual(['is not a map of keys']);
         expect(feeds.radar).toBeNull();
     });
 

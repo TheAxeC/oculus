@@ -200,6 +200,7 @@
             'files',
             'hpc',
             'calendar',
+            'inbox',
             'usage',
             'feeds',
             'audit'

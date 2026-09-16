@@ -37,12 +37,10 @@ export type CollectionFile = {
 };
 
 /**
- * The four generated feed files the command center reads a count and a run date out of. They are
- * hub-relative like every other path in the config: the inbox entry of `docs:`, `leads_file`,
- * `radar_file` and `linkedin_dir`.
+ * The three generated feed files the command center reads a count and a run date out of. They are
+ * hub-relative like every other path in the config: `leads_file`, `radar_file` and `linkedin_dir`.
  */
 export type FeedFiles = {
-    inbox: string;
     leads: string;
     radar: string;
     linkedin: string;

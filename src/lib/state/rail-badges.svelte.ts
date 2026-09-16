@@ -7,13 +7,13 @@ import type { FeedsStore } from './feeds.svelte.ts';
 import type { AuditStore } from './audit.svelte.ts';
 import type { CalendarStore } from './calendar.svelte.ts';
 import type { HpcStore } from './hpc.svelte.ts';
+import type { InboxStore } from './inbox.svelte.ts';
 import type { SelectorsStore } from './selectors.svelte.ts';
 import { splitPosts } from './linkedin.ts';
 import { t } from './text.ts';
 import { statusTone, toneOf, UNKNOWN_TONE } from './tones.ts';
 import { isMap } from '../data/guards.ts';
 import {
-    actionableEntries,
     countText,
     leadsDue,
     linkedinOverdue,
@@ -69,6 +69,7 @@ export function createRailBadges(
     feeds: FeedsStore,
     hpc: HpcStore,
     calendar: CalendarStore,
+    inbox: InboxStore,
     audit: AuditStore,
     selectors: SelectorsStore
 ): RailBadgesStore {
@@ -100,13 +101,9 @@ export function createRailBadges(
         );
     }
 
-    /** Inbox entries awaiting triage, from the socket feed with the summary as fallback. */
+    /** Threads of the live plate awaiting an answer or an action, from the `inbox` channel. */
     function inboxBadge(): string {
-        const fetched = feeds.feed('inbox');
-        const count = available(fetched)
-            ? actionableEntries(fetched.entries)
-            : (entities.portfolio()?.entities.feeds.inbox?.actionable ?? 0);
-        return countText(count);
+        return countText(inbox.actionable());
     }
 
     /** Position Leads due inside `leads_badge_days`, from the socket feed with the summary as fallback. */

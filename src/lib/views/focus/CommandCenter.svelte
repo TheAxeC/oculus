@@ -27,6 +27,7 @@
     const {
         selectors: { configMap },
         entities: { portfolio },
+        inbox: { actionable, state: inboxState },
         layout: { openView },
         ui: { instanceState, requestUpdateTray, setInstanceState }
     } = client;
@@ -46,8 +47,10 @@
 
     const config = $derived(configMap());
     const snapshot = $derived(portfolio());
-    const needs = $derived(snapshot === null ? [] : attention(snapshot, config, now));
-    const nudges = $derived(snapshot === null ? [] : refresh(snapshot, config, now));
+    const needs = $derived(snapshot === null ? [] : attention(snapshot, config, now, actionable()));
+    const nudges = $derived(
+        snapshot === null ? [] : refresh(snapshot, config, now, inboxState()?.notesRun ?? null)
+    );
 
     /** The threshold the venue-load line quotes, the `venue_conc_warn` of behavior.yml. */
     const warnAt = $derived(

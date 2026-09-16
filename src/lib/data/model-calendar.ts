@@ -10,18 +10,28 @@
 // is asked for this machine's own zone and answers a wall-clock time with no offset, which the page
 // reads in the same zone because the page and the server are the same machine. `allDay` says which
 // of the two forms a reader is looking at, so nothing has to parse the string to find out.
+//
+// The account types are the connector's shared ones: an account of either connector is a provider
+// and a label, and the calendar's names for them are what its own readers already say.
+
+import type {
+    ConnectAccountConfig,
+    ConnectAccountStatus,
+    ConnectProvider,
+    ConnectStatus
+} from './model-connect.ts';
 
 /** The two providers a calendar account is read from, in the order they are offered. */
-export type CalendarProvider = 'google' | 'microsoft';
+export type CalendarProvider = ConnectProvider;
 
 /** One account of `calendars:` in the machine's own config/local.yml. */
-export type CalendarAccountConfig = { provider: CalendarProvider; label: string };
+export type CalendarAccountConfig = ConnectAccountConfig;
 
 /** The connector as a whole: `unconfigured` when the machine names no account. */
-export type CalendarStatus = 'ok' | 'error' | 'unconfigured';
+export type CalendarStatus = ConnectStatus;
 
 /** One account: `not-connected` until its credential file holds a refresh token. */
-export type CalendarAccountStatus = 'connected' | 'not-connected' | 'error';
+export type CalendarAccountStatus = ConnectAccountStatus;
 
 /** One calendar of an account, as the provider names it. */
 export type CalendarListEntry = { id: string; name: string };

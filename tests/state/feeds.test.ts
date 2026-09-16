@@ -42,13 +42,6 @@ describe('feed state', () => {
                 schema,
                 entries: [{ title: 'Lead' }]
             },
-            inbox: {
-                ok: true,
-                kind: 'inbox',
-                file: 'feeds/inbox.yml',
-                meta: {},
-                entries: [{ id: 'mail' }]
-            },
             linkedin: {
                 ok: true,
                 kind: 'linkedin',
@@ -61,7 +54,6 @@ describe('feed state', () => {
         receive({ channel: 'feeds', version: 1, payload });
         expect(feed('radar')?.entries[0].title).toBe('Paper');
         expect(feed('leads')?.schema).toEqual(schema);
-        expect(feed('inbox')?.entries[0].id).toBe('mail');
         expect(feed('linkedin')?.cadenceDays).toBe(30);
     });
 });
@@ -134,7 +126,7 @@ describe('attention lines', () => {
             },
             findings: []
         };
-        expect(attention(snapshot, { venue_conc_warn: 1 }, Date.now())).toEqual([
+        expect(attention(snapshot, { venue_conc_warn: 1 }, Date.now(), 0)).toEqual([
             { kind: 'venue', id: 'journal', count: 1, label: 'JN' },
             { kind: 'venue', id: 'journal-two', count: 1, label: 'JN' }
         ]);

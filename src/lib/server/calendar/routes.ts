@@ -16,9 +16,9 @@ import { calendarKey } from '../../data/calendar.ts';
 import type { CalendarAccountConfig } from '../../data/model.ts';
 import { hasToken, sameOrigin } from '../auth.ts';
 import type { Opener } from '../open.ts';
-import { httpsLink } from './api.ts';
-import { consentUrl, exchangeCode, type ConnectStates, type Fetcher } from './oauth.ts';
-import { readCredentials, writeRefreshToken } from './store.ts';
+import { httpsLink } from '../connect/api.ts';
+import { consentUrl, exchangeCode, type ConnectStates, type Fetcher } from '../connect/oauth.ts';
+import { readCredentials, writeRefreshToken } from '../connect/store.ts';
 
 export type CalendarTarget = {
     token: string;
@@ -96,7 +96,9 @@ async function connect(target: CalendarTarget, account: CalendarAccountConfig): 
     }
     if (credentials === null) return json(400, { error: 'no credential file' });
     const { state, verifier } = target.states.mint(calendarKey(account), target.redirect);
-    await target.open(consentUrl(credentials, { state, verifier, redirect: target.redirect }));
+    await target.open(
+        consentUrl('calendar', credentials, { state, verifier, redirect: target.redirect })
+    );
     return json(200, { ok: true });
 }
 
@@ -159,6 +161,7 @@ export async function handleCalendarCallback(
     let refreshToken: string;
     try {
         refreshToken = await exchangeCode(
+            'calendar',
             credentials,
             { code, verifier: pending.verifier, redirect: pending.redirect },
             target.fetcher

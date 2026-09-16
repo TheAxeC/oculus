@@ -1,4 +1,4 @@
-// The control a view drawn from one file of the hub closes its toolbar with, in Chrome. The Inbox
+// The control a view drawn from one file of the hub closes its toolbar with, in Chrome. Lit Watch
 // is the case: it is opened from the rail on the demo hub, its control is pressed, and what lands
 // is the source tab over the feed file the configuration names, showing as the tab in force.
 //
@@ -9,18 +9,18 @@ import { expect, test } from '@playwright/test';
 import { boot, openView } from './rail.ts';
 import { t } from './words.ts';
 
-const FEED = 'feeds/inbox.yml';
+const FEED = 'feeds/literature-radar.yml';
 
-test('the Inbox opens its own feed file as the source tab in force', async ({ page }) => {
+test('Lit Watch opens its own feed file as the source tab in force', async ({ page }) => {
     await boot(page);
-    await openView(page, 'inbox', t('views.inbox'));
+    await openView(page, 'radar', t('views.radar'));
 
     await page
         .locator(`[data-source-path="${FEED}"]`)
         .getByRole('button', { name: t('views.open_source') })
         .click();
 
-    await expect(page.getByRole('tab', { name: 'inbox.yml' })).toHaveAttribute(
+    await expect(page.getByRole('tab', { name: 'literature-radar.yml' })).toHaveAttribute(
         'aria-selected',
         'true'
     );

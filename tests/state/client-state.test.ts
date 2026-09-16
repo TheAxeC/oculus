@@ -29,6 +29,7 @@ const STORES: (keyof ClientState)[] = [
     'feeds',
     'hpc',
     'calendar',
+    'inbox',
     'audit',
     'memories',
     'present',

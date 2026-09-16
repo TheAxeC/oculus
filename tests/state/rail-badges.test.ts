@@ -3,7 +3,6 @@
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
-    actionableEntries,
     countText,
     leadsDue,
     linkedinOverdue,
@@ -45,6 +44,21 @@ beforeEach(() => {
 });
 
 const now = new Date(2026, 8, 12, 12).getTime();
+
+/** One thread of an inbox payload, with the note the case is about. */
+function thread(id: string, triage: { kind?: string; triaged?: boolean }): Record<string, unknown> {
+    return {
+        id,
+        account: 'google-work',
+        provider: 'google',
+        sender: 'Someone',
+        subject: id,
+        received: '2026-09-12T09:00:00.000Z',
+        snippet: '',
+        messages: 1,
+        triage: { ...triage, triaged: triage.triaged === true }
+    };
+}
 const { config } = loadConfig(engineDir());
 setCatalog(textCatalog(config));
 setGlyphs(glyphCatalog(config));
@@ -140,15 +154,7 @@ describe('rail badge counts', () => {
         expect(liveRule(config, 'events')).toBe(null);
     });
 
-    it('counts actionable untriaged Inbox records and suppresses zero text', () => {
-        expect(
-            actionableEntries([
-                { kind: 'reply', triaged: true },
-                { kind: 'reply', triaged: false },
-                { kind: 'info', triaged: false },
-                { kind: 'action' }
-            ])
-        ).toBe(2);
+    it('suppresses the text of a zero count', () => {
         expect(countText(2)).toBe('2');
         expect(countText(0)).toBe('');
     });
@@ -229,7 +235,6 @@ describe('rail badge counts', () => {
                         }
                     },
                     feeds: {
-                        inbox: { run: '2026-09-12', actionable: 4 },
                         leads: [
                             { title: 'Soon', deadline: '2026-09-17', status: 'open', fit: null },
                             { title: 'Later', deadline: '2026-10-17', status: 'open', fit: null }
@@ -245,8 +250,9 @@ describe('rail badge counts', () => {
             }
         });
 
+        // The plate is not in the snapshot, so the inbox badge is empty until the channel speaks.
         expect([inboxBadge(), leadsBadge(), linkedinBadgeGlyph(), applicationsBadge()]).toEqual([
-            '4',
+            '',
             '1',
             'bang',
             '2'
@@ -262,17 +268,6 @@ describe('rail badge counts', () => {
                     file: 'radar.yml',
                     meta: {},
                     entries: []
-                },
-                inbox: {
-                    ok: true,
-                    kind: 'inbox',
-                    file: 'inbox.yml',
-                    meta: {},
-                    entries: [
-                        { kind: 'info', triaged: false },
-                        { kind: 'reply', triaged: false },
-                        { kind: 'action', triaged: true }
-                    ]
                 },
                 leads: {
                     ok: true,
@@ -293,13 +288,34 @@ describe('rail badge counts', () => {
                 }
             }
         });
-        expect([inboxBadge(), leadsBadge(), linkedinBadgeGlyph()]).toEqual(['1', '2', '']);
+        expect([inboxBadge(), leadsBadge(), linkedinBadgeGlyph()]).toEqual(['', '2', '']);
+
+        // The plate itself is one channel of its own, and the badge counts what it publishes.
+        receive({
+            channel: 'inbox',
+            version: 1,
+            payload: {
+                status: 'ok',
+                accounts: [],
+                threads: [
+                    thread('one', { kind: 'reply' }),
+                    thread('two', {}),
+                    thread('three', { kind: 'info' }),
+                    thread('four', { kind: 'action', triaged: true })
+                ],
+                updated: '2026-09-12T10:00:00.000Z',
+                pollMin: 10,
+                retryMin: 2,
+                notesRun: '2026-09-12'
+            }
+        });
+        expect(inboxBadge()).toBe('2');
 
         receive({
             channel: 'feeds',
             version: 9103,
             payload: Object.fromEntries(
-                ['radar', 'inbox', 'leads', 'linkedin'].map((kind) => [
+                ['radar', 'leads', 'linkedin'].map((kind) => [
                     kind,
                     {
                         ok: true,
@@ -312,7 +328,8 @@ describe('rail badge counts', () => {
                 ])
             )
         });
-        expect([inboxBadge(), leadsBadge(), linkedinBadgeGlyph()]).toEqual(['4', '1', 'bang']);
+        // A broken feed file says nothing about the plate, which is not read from a file at all.
+        expect([inboxBadge(), leadsBadge(), linkedinBadgeGlyph()]).toEqual(['2', '1', 'bang']);
     });
 });
 

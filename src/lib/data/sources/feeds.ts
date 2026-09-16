@@ -1,9 +1,9 @@
-// Layer 1, data. Reads the four generated feed files into the counts and run dates the command
+// Layer 1, data. Reads the three generated feed files into the counts and run dates the command
 // center shows. Server side only: it reads the filesystem and no client module may import it.
 //
-// It summarises and does not carry. The Inbox, Lit Watch, Position Leads and LinkedIn views
-// read these files for themselves; what is here is the handful of numbers the Focus board needs, so
-// that a board rebuild does not pull several thousand lines of feed entries over the socket.
+// It summarises and does not carry. The Lit Watch, Position Leads and LinkedIn views read these
+// files for themselves; what is here is the handful of numbers the Focus board needs, so that a
+// board rebuild does not pull several thousand lines of feed entries over the socket.
 //
 // A file or folder that is not there is null for that feed and no finding: the feeds are generated
 // by the hand-run cockpit tasks, so a hub that has never run one legitimately has none. A file that
@@ -64,21 +64,6 @@ function readFeed(file: string, findings: Finding[]): Record<string, unknown> | 
         return null;
     }
     return parsed;
-}
-
-/**
- * The inbox: when it was last triaged, and how many threads are still waiting on an answer. A
- * thread counts when it is untriaged and its `kind` asks for a reply or an action; an informational
- * one is read and not acted on.
- */
-function inbox(file: string, findings: Finding[]): Feeds['inbox'] {
-    const data = readFeed(file, findings);
-    if (data === null) return null;
-    const run = str(metaOf(data).run);
-    const actionable = entriesOf(data).filter(
-        (entry) => entry.triaged !== true && ['reply', 'action'].includes(str(entry.kind))
-    ).length;
-    return { run: run === '' ? null : run, actionable };
 }
 
 /** One lead of the feed, with the ISO date its `deadline:` text holds. */
@@ -160,14 +145,13 @@ function linkedin(dir: string, findings: Finding[]): Feeds['linkedin'] {
 }
 
 /**
- * Read the four feed sources. Each is independent: a broken inbox costs the inbox line and nothing
+ * Read the three feed sources. Each is independent: a broken radar costs the radar line and nothing
  * else. Nothing here throws and no value is repaired.
  */
 export function readFeeds(hub: string, files: FeedFiles): { feeds: RawFeeds; findings: Finding[] } {
     const findings: Finding[] = [];
     const both = leads(join(hub, files.leads), findings);
     const feeds: RawFeeds = {
-        inbox: inbox(join(hub, files.inbox), findings),
         leads: both.leads,
         radar: radar(join(hub, files.radar), findings),
         scout: both.scout,

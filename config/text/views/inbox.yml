@@ -1,24 +1,64 @@
 # Oculus text owned by the inbox view.
 text:
     inbox:
+        account_error: error
         action: action
-        clear: Inbox clear - nothing unread, starred, or labelled <code>todo</code> as of the last triage. Re-run <code>/research-cockpit inbox</code> from an interactive session (needs the Gmail connector) to refresh.
+        age_days: '{0}d'
+        age_hours: '{0}h'
+        age_minutes: '{0}m'
+        archive: Archive
+        archive_confirm: Take the thread from {0} off the inbox of {1}?
+        archive_tip: take off the inbox at the provider
+        archive_confirm_ok: Archive
+        as_of: as of {0}
+        as_of_late: as of {0}, the next poll is late
+        callback_bad: That link was not recognised. Press Connect again in the Inbox view.
+        callback_ok: The account is connected. This tab can be closed.
+        clear: Nothing on the plate.
+        connect: Connect
+        connected: connected
+        connecting: connecting...
+        draft_label: The answer to send
+        error: error
+        every: every {0}m
         info: info
-        no_file: No inbox file - run <code>/research-cockpit inbox</code>.
-        open_gmail: open in Gmail
+        last_ok: last read {0}
+        live: live
+        messages: '{0} messages'
+        needs_file: Put the client id in {0}, then press Connect.
+        no_accounts: No mail account is configured; local.yml has no mail rows.
+        not_connected: not connected
+        notes_error: 'The triage notes were not read: {0}'
+        open_provider: open at the provider
+        polling: reading mailboxes...
+        provider_google: Gmail
+        provider_microsoft: Outlook
+        refresh_now: Refresh now
+        refused: 'Refused: {0}'
         reply: to reply
         restore: restore
-        restore_tip: back to the inbox
+        restore_tip: back to the plate
+        retrying: retrying every {0}m
+        said_archived: The thread is off the inbox.
+        said_draft_saved: The answer is saved as a note.
+        said_restored: The thread is back on the plate.
+        said_sent: The answer was sent on the thread.
+        said_triaged: The thread is triaged.
+        save_draft: Save draft
         search: Search inbox ...
         sec_action: To action / do
         sec_info: Informational / no action
         sec_reply: To reply
-        show_draft: Show draft reply
+        sec_unsorted: Unsorted
+        send: Send reply
+        send_confirm: Send this answer to {0} from {1}?
+        send_confirm_ok: Send
+        show_draft: Draft reply
         thread: (thread)
         triage_tip: mark triaged / done
         triaged: triaged
         triaged_sec: Triaged
-        triaged_suffix: '| {0} triaged'
+        unsorted: unsorted
     views:
         inbox: Inbox
         inbox_glyph: inbox
