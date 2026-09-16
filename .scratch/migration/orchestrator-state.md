@@ -51,7 +51,7 @@ dispatch:                                  # M2 landed 15:16; D16 (repair round 
   exit: none
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a582bc338eb45ced0            # the Agent tool's id, launched 14:36
-  round: 0
+  round: 1                                  # sent 15:45: nine rulings on agents/reviews/Q33-refuter.md (the tab cut out and whole-tab scrolling per Axel's (a), a tinted pressed rail toggle, the audit named, the Text row's arrows, stale comments, first-paint scrollbar tokens, Doc text)
   reported: 2026-09-16T15:25
   reviewer: af6d7fc40614f38ae                # claude:opus through the Agent tool, read-only, launched 15:26
   landing: not-started
@@ -700,4 +700,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - D16, reviewer claude:opus through the Agent tool, read-only: 165,715 tokens, 49 tool uses, 662 s (14:58 to 15:09); 10 rulings sent back in round 1.
 - D16, worker round 1: 369,396 tokens (cumulative on the thread), 129 tool uses (cumulative), about 26 min (15:10 to 15:36); nine of ten rulings done, the tenth's R7 half found unreachable; added `.docx`, `.xlsx`, `.pptx` to `file_index.ext` so the card control can show.
 - Q33, worker claude:opus through the Agent tool, first run: 389,452 tokens, 155 tool uses, 3,005 s (14:36 to 15:26); two brief premises reported wrong (tabs never shrank; the orange is every rail toggle's filled active state).
+- Q33, reviewer claude:opus through the Agent tool, read-only: 219,001 tokens, 65 tool uses, 1,132 s (15:27 to 15:46); nine rulings sent back in round 1. During the review it wrote into another agent's scratch folder (`scratchpad/rev`, D16's finished reviewer's copy) and made a symlink inside `.agents/worktrees/d16/tools/oculus/node_modules`; the symlink was removed by the orchestrator at 15:45 (`rm` of that one link, checked with `readlink` first). Every agent prompt from here names a scratch folder of its own.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
