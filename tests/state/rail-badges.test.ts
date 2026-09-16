@@ -159,6 +159,7 @@ describe('rail badge counts', () => {
             { status: 'open', deadline: '2026-09-26' },
             { status: 'open', deadline: '2026-09-27' },
             { status: 'applied', deadline: '2026-09-20' },
+            { status: 'dismissed', deadline: '2026-09-20' },
             { status: 'open', deadline: '2026-09-11' },
             { status: 'open', deadline: 'rolling' }
         ];

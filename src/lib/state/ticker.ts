@@ -3,6 +3,7 @@
 
 import type { Collection, Followup, Id, Project, Snapshot, Venue } from '../data/model.ts';
 import { isMap, text as str } from '../data/guards.ts';
+import { isLeadClosed } from '../data/leads.ts';
 import { DEADLINE_SOON, daysUntil } from './board/index.ts';
 import { entryDate, manifestsBehind, type ManifestBehind } from './focus-lanes.ts';
 import {
@@ -277,10 +278,12 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
     /**
      * The position scout's live leads. They move fast, so they have a window of their own rather
      * than the ninety-day planning horizon, and they sit in the same group as the applications the
-     * entry loop above found: both are positions.
+     * entry loop above found: both are positions. A closed status is left out here as well as where
+     * the snapshot is built, so the line the reader sees never outlives the lead's own status.
      */
     const leadsWindow = setting(config, 'leads_horizon_days', 21);
     for (const lead of snapshot.entities.feeds.leads ?? []) {
+        if (isLeadClosed(lead.status)) continue;
         const days = daysUntil(lead.deadline ?? '', now);
         if (days === null || days < 0 || days > leadsWindow) continue;
         dated.push({

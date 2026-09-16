@@ -14,11 +14,11 @@ import { join } from 'node:path';
 import { parse } from 'yaml';
 import type { Feeds, FeedFiles, Finding, Lead, RawFeeds } from '../model.ts';
 // `str` here is the shared `text`: this file's reading of a missing or mistyped value has always
-// been the empty string rather than undefined, and the alias keeps that reading at every call.
+// been the empty string rather than undefined, and the alias keeps that reading at every call it
+// makes. The lead's status is the one value it does not read for itself, since the rule that closes
+// a lead reads it in data/leads.ts.
 import { isMap, text as str } from '../guards.ts';
-
-/** A lead is closed, and off the radar, once it has been applied to, declined or withdrawn. */
-const CLOSED = ['applied', 'declined', 'closed'];
+import { isLeadClosed } from '../leads.ts';
 
 /** An ISO date anywhere inside a string; the leads feed writes prose around its dates. */
 const DATE = /\d{4}-\d{2}-\d{2}/;
@@ -105,7 +105,7 @@ function leads(
     const data = readFeed(file, findings);
     if (data === null) return { leads: null, scout: null };
     const live = entriesOf(data)
-        .filter((entry) => !CLOSED.includes(str(entry.status).trim().toLowerCase()))
+        .filter((entry) => !isLeadClosed(entry.status))
         .map(lead);
     const log = metaOf(data).log;
     const runs = (Array.isArray(log) ? log : [])

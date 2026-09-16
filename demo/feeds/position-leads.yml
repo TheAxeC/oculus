@@ -1,5 +1,5 @@
 # Position Leads (FAKE example data) - academic openings, auto-scouted, rendered as cards on the Position Leads
-# tab. fit = strong | moderate | reach. applied/declined/past-deadline leads tuck into the Expired disclosure.
+# tab. fit = strong | moderate | reach. applied/declined/dismissed/past-deadline leads tuck into the Expired disclosure.
 meta:
   log:
     - "2026-06-20 scout: 3 new openings (2 tenure-track, 1 postdoc)"

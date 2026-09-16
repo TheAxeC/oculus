@@ -27,6 +27,7 @@
     import Reveal from './shared/Reveal.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import {
+        dismissedCount,
         leadsSearch,
         leadIdents,
         localDate,
@@ -45,7 +46,7 @@
     const {
         entities: { config },
         feeds: { feed },
-        ui: { instanceState, leadsDismissed, setInstanceState, setLeadDismissed },
+        ui: { instanceState, setInstanceState },
         writes: { addLead }
     } = useState();
 
@@ -59,14 +60,12 @@
     const entries = $derived(data?.entries ?? []);
     const identOf = $derived(feedIdents('leads', entries));
     const leadOf = $derived(leadIdents(entries));
-    const dismissed = $derived(leadsDismissed());
-    const dismissedCount = $derived(dismissed.length);
-    const allSplit = $derived(splitLeads(entries, today));
-    const split = $derived(splitLeads(visibleLeads(entries, dismissed, held.showDismissed), today));
+    const dismissed = $derived(dismissedCount(entries));
+    const split = $derived(splitLeads(visibleLeads(entries, held.showDismissed), today));
     const dismissedToggleLabel = $derived(
         held.showDismissed
-            ? t('leads.hide_dismissed', dismissedCount)
-            : t('leads.show_dismissed', dismissedCount)
+            ? t('leads.hide_dismissed', dismissed)
+            : t('leads.show_dismissed', dismissed)
     );
     const live = $derived(leadsSearch(split.live, held.search));
     const expired = $derived(leadsSearch(split.expired, held.search));
@@ -89,6 +88,15 @@
     function write(next: Partial<LeadsState>): void {
         setInstanceState(instance.id, { ...held, ...next });
     }
+
+    /**
+     * Dismissed is one of the statuses that close a lead, so a dismissed card is drawn in the
+     * expired section. Turning the toggle on opens that section, or the count would change and
+     * nothing new would appear.
+     */
+    function showing(on: boolean): Partial<LeadsState> {
+        return on ? { showDismissed: true, expiredOpen: true } : { showDismissed: false };
+    }
 </script>
 
 {#snippet tools()}
@@ -104,13 +112,13 @@
             active={held.adding}
             onclick={() => write({ adding: !held.adding })}
         />
-        {#if dismissedCount > 0}
+        {#if dismissed > 0}
             <ToolButton
                 label={dismissedToggleLabel}
                 glyph="dismiss"
                 active={held.showDismissed}
                 pressed={held.showDismissed}
-                onclick={() => write({ showDismissed: !held.showDismissed })}
+                onclick={() => write(showing(!held.showDismissed))}
             />
         {/if}
     </Toolbar>
@@ -128,8 +136,8 @@
             <Intro
                 html={t(
                     'leads.intro',
-                    allSplit.live.length,
-                    allSplit.expired.length > 0 ? t('leads.exp_note', allSplit.expired.length) : ''
+                    split.live.length,
+                    split.expired.length > 0 ? t('leads.exp_note', split.expired.length) : ''
                 )}
             />
 
@@ -148,7 +156,7 @@
                 />
             {/if}
 
-            {#if allSplit.live.length > 0}
+            {#if split.live.length > 0}
                 <div class="cards">
                     {#each live as entry, at (`${asText(entry.title)}:${at}`)}
                         <Reveal
@@ -160,12 +168,6 @@
                                 {entry}
                                 {vocab}
                                 cursor={cursor === leadOf(entry)}
-                                dismissed={dismissed.includes(leadOf(entry))}
-                                ondismiss={() =>
-                                    setLeadDismissed(
-                                        leadOf(entry),
-                                        !dismissed.includes(leadOf(entry))
-                                    )}
                                 onsaid={(words: string) => (said = words)}
                             />
                         </Reveal>
@@ -198,12 +200,6 @@
                                         {vocab}
                                         cursor={cursor === leadOf(entry)}
                                         expired
-                                        dismissed={dismissed.includes(leadOf(entry))}
-                                        ondismiss={() =>
-                                            setLeadDismissed(
-                                                leadOf(entry),
-                                                !dismissed.includes(leadOf(entry))
-                                            )}
                                         onsaid={(words: string) => (said = words)}
                                     />
                                 </Reveal>

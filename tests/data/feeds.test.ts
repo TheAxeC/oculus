@@ -49,6 +49,7 @@ const LEADS = `meta:
 entries:
   - { title: "Postdoc AI", deadline: "20-09-2026 (2026-09-20)", status: open, fit: strong }
   - { title: "Closed one", deadline: "2026-09-30", status: applied }
+  - { title: "Dismissed one", deadline: "2026-09-30", status: dismissed }
   - { title: "No date", status: open }
 `;
 
@@ -93,7 +94,7 @@ describe('the four feeds, all present', () => {
         expect(feeds.inbox).toEqual({ run: '2026-09-09', actionable: 2 });
     });
 
-    it('keeps the live leads with the ISO date inside their deadline text', () => {
+    it('keeps the live leads with the ISO date inside their deadline text, dismissed ones out', () => {
         expect(feeds.leads).toEqual([
             { title: 'Postdoc AI', deadline: '2026-09-20', status: 'open', fit: 'strong' },
             { title: 'No date', deadline: null, status: 'open', fit: null }

@@ -1,7 +1,7 @@
 // Layer 2, client state. What the page looks like and what each open view remembers: the theme, the
-// CRT overlay, the wallpaper, the glyph mode, the app and terminal sizes, dismissed lead ids, and
-// one blob of state per view instance, keyed by the instance id the layout gives it. Two instances
-// of the same view therefore remember different things.
+// CRT overlay, the wallpaper, the glyph mode, the app and terminal sizes, and one blob of state per
+// view instance, keyed by the instance id the layout gives it. Two instances of the same view
+// therefore remember different things.
 //
 // The six appearance values save together under the one key, so what a browser was left looking
 // like comes back whole. What they start as is config/appearance.yml's, read through
@@ -36,8 +36,6 @@ type Ui = {
     unicode: boolean;
     textScale: number | null;
     terminalFont: number | null;
-    /** Position leads hidden in this browser until the viewer restores them. */
-    leadsDismissed: string[];
     /** One entry per view instance, by instance id. The shape of the value is the view's own. */
     instances: Record<string, unknown>;
 };
@@ -57,7 +55,6 @@ export type UiStore = {
     unicode: () => boolean;
     textScale: () => number | null;
     terminalFont: () => number | null;
-    leadsDismissed: () => string[];
     instanceState: (id: string) => unknown;
     requestUpdateTray: () => void;
     updateTrayRequested: () => number;
@@ -71,7 +68,6 @@ export type UiStore = {
     setTextScale: (scale: number | null) => void;
     stepTextScale: (by: -1 | 1) => void;
     setTerminalFont: (size: number | null) => void;
-    setLeadDismissed: (id: string, dismissed: boolean) => void;
     setInstanceState: (id: string, state: unknown) => void;
     clearInstanceState: (id: string) => void;
 };
@@ -94,7 +90,6 @@ export function createUi(): UiStore {
             unicode: false,
             textScale: null,
             terminalFont: null,
-            leadsDismissed: [],
             instances: {}
         };
     }
@@ -144,11 +139,6 @@ export function createUi(): UiStore {
     /** The terminal grid size chosen by the viewer, or null when the config default is in force. */
     function terminalFont(): number | null {
         return store.current.terminalFont;
-    }
-
-    /** Position lead ids dismissed in this browser. */
-    function leadsDismissed(): string[] {
-        return [...store.current.leadsDismissed];
     }
 
     /** What a view instance saved, or undefined when it has saved nothing yet. */
@@ -227,23 +217,12 @@ export function createUi(): UiStore {
                 typeof held.terminalFont === 'number' && Number.isFinite(held.terminalFont)
                     ? Math.min(40, Math.max(6, held.terminalFont))
                     : null,
-            leadsDismissed: stringList(held.leadsDismissed),
             instances:
                 typeof instances === 'object' && instances !== null && !Array.isArray(instances)
                     ? { ...(instances as Record<string, unknown>) }
                     : {}
         };
         return true;
-    }
-
-    /** Unique, non-empty strings from a saved browser list. */
-    function stringList(value: unknown): string[] {
-        if (!Array.isArray(value)) return [];
-        return [
-            ...new Set(
-                value.filter((entry): entry is string => typeof entry === 'string' && entry !== '')
-            )
-        ];
     }
 
     function save(next: Ui): void {
@@ -300,14 +279,6 @@ export function createUi(): UiStore {
         save({ ...store.current, terminalFont: bounded });
     }
 
-    /** Dismiss or restore one position lead in this browser. */
-    function setLeadDismissed(id: string, dismissed: boolean): void {
-        if (id === '') return;
-        const next = store.current.leadsDismissed.filter((entry) => entry !== id);
-        if (dismissed) next.push(id);
-        save({ ...store.current, leadsDismissed: next });
-    }
-
     /** What a view instance wants remembered. */
     function setInstanceState(id: string, state: unknown): void {
         save({ ...store.current, instances: { ...store.current.instances, [id]: state } });
@@ -329,7 +300,6 @@ export function createUi(): UiStore {
         unicode,
         textScale,
         terminalFont,
-        leadsDismissed,
         instanceState,
         requestUpdateTray,
         updateTrayRequested,
@@ -343,7 +313,6 @@ export function createUi(): UiStore {
         setTextScale,
         stepTextScale,
         setTerminalFont,
-        setLeadDismissed,
         setInstanceState,
         clearInstanceState
     };

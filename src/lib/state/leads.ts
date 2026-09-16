@@ -2,6 +2,15 @@
 // view state. The view receives ready-to-draw live and expired lists and owns no feed rules.
 
 import { scalar } from '../data/guards.ts';
+import {
+    APPLIED,
+    DECLINED,
+    DISMISSED,
+    OPEN,
+    isLeadClosed,
+    isLeadDismissed,
+    isLeadOpen
+} from '../data/leads.ts';
 import { uniqueIdents } from './palette.ts';
 
 export type LeadEntry = Record<string, unknown>;
@@ -14,7 +23,7 @@ export type LeadsState = {
     logAll: boolean;
     /** Whether the add form is open, kept with the instance so a re-render does not close it. */
     adding: boolean;
-    /** Whether cards dismissed in this browser are shown for possible restoration. */
+    /** Whether cards the reader dismissed are shown for possible restoration. */
     showDismissed: boolean;
     /** The palette destination, cleared by the view after it scrolls and flashes the card. */
     reveal?: string;
@@ -22,8 +31,16 @@ export type LeadsState = {
 export type SplitLeads = { live: LeadEntry[]; expired: LeadEntry[] };
 
 export { localDate } from '../data/dates.ts';
+export {
+    APPLIED,
+    DECLINED,
+    DISMISSED,
+    OPEN,
+    isLeadClosed as isClosed,
+    isLeadDismissed as isDismissed,
+    isLeadOpen as isOpen
+};
 
-const CLOSED = ['applied', 'declined', 'closed'];
 const FITS: FitKey[] = ['strong', 'moderate', 'reach'];
 const DATE = /\d{4}-\d{2}-\d{2}/;
 const TONE = /^c-([a-z][a-z0-9-]*)$/;
@@ -59,20 +76,15 @@ export function leadIdents(entries: readonly LeadEntry[]): (entry: LeadEntry) =>
     return uniqueIdents(entries, leadId, 'lead');
 }
 
-/** Hide dismissed entries, or return every entry while the restoration toggle is on. */
-export function visibleLeads(
-    entries: LeadEntry[],
-    dismissed: string[],
-    showing: boolean
-): LeadEntry[] {
+/** Hide the entries whose status the reader dismissed, or every entry while the toggle is on. */
+export function visibleLeads(entries: LeadEntry[], showing: boolean): LeadEntry[] {
     if (showing) return entries;
-    const hidden = new Set(dismissed);
-    return entries.filter((entry) => !hidden.has(leadId(entry)));
+    return entries.filter((entry) => !isLeadDismissed(entry.status));
 }
 
-/** Applied, declined, and closed statuses take a lead out of the live list. */
-export function isClosed(status: unknown): boolean {
-    return CLOSED.includes(scalar(status).trim().toLowerCase());
+/** How many entries of the feed the reader has dismissed, which is what the toggle offers. */
+export function dismissedCount(entries: readonly LeadEntry[]): number {
+    return entries.filter((entry) => isLeadDismissed(entry.status)).length;
 }
 
 /** The first ISO date inside deadline prose, or null when it contains none. */
@@ -84,7 +96,7 @@ export function deadlineOf(text: unknown): string | null {
 /** A closed lead or one whose ISO deadline precedes today belongs in the expired list. */
 export function isExpired(lead: LeadEntry, today: string): boolean {
     const deadline = deadlineOf(lead.deadline);
-    return isClosed(lead.status) || (deadline !== null && deadline < today);
+    return isLeadClosed(lead.status) || (deadline !== null && deadline < today);
 }
 
 /** The first fit vocabulary word found in the prose, in vocabulary priority order. */

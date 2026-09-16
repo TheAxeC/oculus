@@ -1,6 +1,5 @@
 // The Position Leads view rendered over a received feed with live, expired, undated, and run-log rows.
 
-import { readFileSync } from 'node:fs';
 import { scalar } from '../../src/lib/data/guards.ts';
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,7 +13,6 @@ import {
 } from '../../src/lib/data/sources/config.ts';
 import { feedsFixture } from '../feeds-fixture.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
-import { leadId } from '../../src/lib/state/leads.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { noop } from '../doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../client.ts';
@@ -23,13 +21,12 @@ let client: ClientState;
 let receive: ClientState['entities']['receive'];
 let loadUi: ClientState['ui']['loadUi'];
 let setInstanceState: ClientState['ui']['setInstanceState'];
-let setLeadDismissed: ClientState['ui']['setLeadDismissed'];
 let addLead: ClientState['writes']['addLead'];
 
 beforeEach(() => {
     client = createClientState();
     ({ receive } = client.entities);
-    ({ loadUi, setInstanceState, setLeadDismissed } = client.ui);
+    ({ loadUi, setInstanceState } = client.ui);
     ({ addLead } = client.writes);
     installFixture();
 });
@@ -54,7 +51,7 @@ const schema = [
     {
         field: 'status',
         type: 'select',
-        options: ['open', 'applied', 'declined'],
+        options: ['open', 'applied', 'declined', 'dismissed'],
         label: 'Status'
     },
     { field: 'date', type: 'date', label: 'Date' },
@@ -113,6 +110,16 @@ const entries = [
         fit: 'strong on paper',
         status: 'declined',
         deadline: '2099-06-30'
+    },
+    {
+        title: 'Dismissed role',
+        inst: 'University Six',
+        country: 'Belgium',
+        typ: 'postdoc',
+        focus: 'Wearables',
+        fit: 'reach',
+        status: 'dismissed',
+        deadline: '2099-11-30'
     }
 ];
 
@@ -143,11 +150,12 @@ function hasAction(body: string, label: string): boolean {
     return buttons.some((button) => button.includes(`>${label}</span>`));
 }
 
-function expectHideControl(body: string, label: string): void {
+/** A glyph-only control is named by its label and says more in its tooltip; assert both. */
+function expectCompactControl(body: string, label: string, tip: string): void {
     const start = body.indexOf(`aria-label="${label}"`);
     expect(start).toBeGreaterThanOrEqual(0);
     const tooltip = /<span\b[^>]*role="tooltip"[^>]*>([^<]*)<\/span>/.exec(body.slice(start));
-    expect(tooltip?.[1]).toBe(label);
+    expect(tooltip?.[1]).toBe(tip);
 }
 
 let feedVersion = 0;
@@ -160,20 +168,7 @@ beforeEach(() => loadUi({ getItem: () => null, setItem: noop }));
 afterEach(() => vi.unstubAllGlobals());
 
 describe('the Position Leads view', () => {
-    it('passes both hide states through the control title prop', () => {
-        const source = readFileSync(
-            new URL('../../src/lib/views/leads/LeadCard.svelte', import.meta.url),
-            'utf8'
-        );
-        expect(source).toMatch(
-            /title=\{dismissed\s*\?\s*t\('leads\.action\.show_lead'\)\s*:\s*t\('leads\.action\.hide_lead'\)\}/
-        );
-    });
-
-    it('hides dismissed cards, shows their count, and restores their card action under the toggle', () => {
-        const dismissed = entries[0];
-        setLeadDismissed(leadId(dismissed), true);
-        setLeadDismissed('no-longer-in-the-feed', true);
+    it('hides the dismissed card, counts it on the toggle, and shows it under the toggle', () => {
         serve({
             ok: true,
             kind: 'leads',
@@ -185,38 +180,40 @@ describe('the Position Leads view', () => {
 
         const hidden = render(Leads, {
             context: clientContext(client),
-            props: { instance: instance('leads-hidden') }
+            props: { instance: instance('leads-hidden', true) }
         }).body;
-        expect(hidden).not.toContain('data-lead="**Strong** role"');
-        expect(hidden).toContain(catalog['leads.show_dismissed'].replace('{0}', '2'));
+        expect(hidden).not.toContain('data-lead="Dismissed role"');
+        expect(hidden).toContain(catalog['leads.show_dismissed'].replace('{0}', '1'));
 
         const shown = render(Leads, {
             context: clientContext(client),
-            props: { instance: instance('leads-shown', false, false, '', false, true) }
+            props: { instance: instance('leads-shown', true, false, '', false, true) }
         }).body;
-        expect(shown).toContain('data-lead="**Strong** role"');
-        expect(shown).toContain(catalog['leads.hide_dismissed'].replace('{0}', '2'));
-        expectHideControl(card(shown, '**Strong** role'), catalog['leads.action.show_lead']);
+        expect(shown).toContain('data-lead="Dismissed role"');
+        expect(shown).toContain(catalog['leads.hide_dismissed'].replace('{0}', '1'));
     });
 
-    it('keeps the live grid without the no-live message when every live card is dismissed', () => {
-        const entry = entries[0];
-        setLeadDismissed(leadId(entry), true);
+    it('draws a dismissed card in the expired list, tagged by its status, with reopen and no dismiss', () => {
         serve({
             ok: true,
             kind: 'leads',
             file: 'feeds/position-leads.yml',
             meta: {},
             schema,
-            entries: [entry]
+            entries
         });
         const body = render(Leads, {
             context: clientContext(client),
-            props: { instance: instance('all-dismissed') }
+            props: { instance: instance('leads-dismissed', true, false, '', false, true) }
         }).body;
-        expect(body).toMatch(/class="cards(?:\s|")/);
-        expect(body).not.toContain('data-lead=');
-        expect(body).not.toContain(catalog['leads.empty']);
+        const dropped = card(body, 'Dismissed role');
+        expect(dropped).toMatch(/class="[^"]*expired/);
+        expect(dropped).toContain('>dismissed</span>');
+        expect(hasAction(dropped, catalog['leads.action.reopen'])).toBe(true);
+        expect(body.indexOf('data-lead="Dismissed role"')).toBeGreaterThan(
+            body.indexOf(catalog['leads.expired_sec'].replace('{0}', '4'))
+        );
+        expect(dropped).not.toContain(`aria-label="${catalog['leads.action.dismiss']}"`);
     });
 
     it('draws the intro, controls, ordered live cards, details, and collapsed sections', () => {
@@ -270,7 +267,7 @@ describe('the Position Leads view', () => {
         }).body;
         expect(body.indexOf('Applied role')).toBeLessThan(body.indexOf('Past role'));
         expect(body).toContain('2099-12-20');
-        expect(body).toContain(catalog['project.action.reopen']);
+        expect(body).toContain(catalog['leads.action.reopen']);
         expect(body).toContain('log <strong>1</strong>');
         expect(body).toContain('log <strong>6</strong>');
         expect(body).not.toContain('log <strong>7</strong>');
@@ -297,8 +294,12 @@ describe('the Position Leads view', () => {
 
         expect(hasAction(open, catalog['leads.action.applied'])).toBe(true);
         expect(hasAction(open, catalog['leads.action.decline'])).toBe(true);
-        expect(hasAction(open, catalog['project.action.reopen'])).toBe(false);
-        expectHideControl(open, catalog['leads.action.hide_lead']);
+        expect(hasAction(open, catalog['leads.action.reopen'])).toBe(false);
+        expectCompactControl(
+            open,
+            catalog['leads.action.dismiss'],
+            catalog['leads.action.dismiss_tip']
+        );
         expect(hasAction(open, catalog['project.action.del'])).toBe(true);
         expect(open).toContain(glyphs.deadline);
         expect(open).toContain('>Belgium</span>');
@@ -314,13 +315,13 @@ describe('the Position Leads view', () => {
         expect(applied).toContain('>applied</span>');
         expect(hasAction(applied, catalog['leads.action.applied'])).toBe(false);
         expect(hasAction(applied, catalog['leads.action.decline'])).toBe(true);
-        expect(hasAction(applied, catalog['project.action.reopen'])).toBe(true);
+        expect(hasAction(applied, catalog['leads.action.reopen'])).toBe(true);
 
         const declined = card(body, 'Declined role');
         expect(declined).toContain('>declined</span>');
         expect(hasAction(declined, catalog['leads.action.applied'])).toBe(true);
         expect(hasAction(declined, catalog['leads.action.decline'])).toBe(false);
-        expect(hasAction(declined, catalog['project.action.reopen'])).toBe(true);
+        expect(hasAction(declined, catalog['leads.action.reopen'])).toBe(true);
         for (const title of [
             '**Strong** role',
             'Undated role',
@@ -329,6 +330,26 @@ describe('the Position Leads view', () => {
             'Declined role'
         ]) {
             expect(hasAction(card(body, title), catalog['project.action.del'])).toBe(true);
+        }
+    });
+
+    it('offers the dismiss control on an open lead alone, never on a closed one', () => {
+        serve({
+            ok: true,
+            kind: 'leads',
+            file: 'feeds/position-leads.yml',
+            meta: {},
+            schema,
+            entries
+        });
+        const body = render(Leads, {
+            context: clientContext(client),
+            props: { instance: instance('leads-dismissable', true, false, '', false, true) }
+        }).body;
+        const label = catalog['leads.action.dismiss'];
+        expect(card(body, '**Strong** role')).toContain(`aria-label="${label}"`);
+        for (const title of ['Applied role', 'Declined role', 'Dismissed role']) {
+            expect(card(body, title)).not.toContain(`aria-label="${label}"`);
         }
     });
 

@@ -182,7 +182,13 @@ function snapshot(): Snapshot {
                 inbox: { run: '2026-09-09', actionable: 2 },
                 leads: [
                     { title: 'A lead', deadline: '2026-09-20', status: 'open', fit: 'strong' },
-                    { title: 'A far lead', deadline: '2026-12-01', status: 'open', fit: null }
+                    { title: 'A far lead', deadline: '2026-12-01', status: 'open', fit: null },
+                    {
+                        title: 'A dismissed lead',
+                        deadline: '2026-09-20',
+                        status: 'dismissed',
+                        fit: 'strong'
+                    }
                 ],
                 radar: { lastRun: '2026-08-20' },
                 scout: { lastRun: '2026-09-09' },
@@ -444,7 +450,7 @@ describe('ticker, deadlines', () => {
         ]);
     });
 
-    it('takes a live lead inside the leads window and leaves one beyond it', () => {
+    it('takes a live lead inside the leads window, leaving one beyond it and a dismissed one', () => {
         const leads = week.deadlines.filter((one) => one.target?.kind === 'lead');
         expect(leads.map((one) => one.label)).toEqual(['A lead']);
     });

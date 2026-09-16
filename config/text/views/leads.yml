@@ -6,10 +6,11 @@ text:
             decline: decline
             decline_tip: decline / not interested
             delete_lead_tip: delete this lead (removes the entry)
-            hide_lead: hide this lead in this browser
+            dismiss: dismiss
+            dismiss_tip: dismiss this lead (off the radar, kept in the file)
             mark_applied: mark applied
-            reopen_lead_tip: reopen (back to the radar)
-            show_lead: show this lead again
+            reopen: reopen
+            reopen_tip: reopen (back to the radar)
         add: + add lead
         add_tip: add a position lead
         empty: No live leads - run <code>/research-cockpit scout</code>.

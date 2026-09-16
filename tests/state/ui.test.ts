@@ -22,12 +22,10 @@ import { createClientState, type ClientState } from '../client.ts';
 let client: ClientState;
 let crt: ClientState['ui']['crt'];
 let instanceState: ClientState['ui']['instanceState'];
-let leadsDismissed: ClientState['ui']['leadsDismissed'];
 let loadUi: ClientState['ui']['loadUi'];
 let requestUpdateTray: ClientState['ui']['requestUpdateTray'];
 let setCrt: ClientState['ui']['setCrt'];
 let setInstanceState: ClientState['ui']['setInstanceState'];
-let setLeadDismissed: ClientState['ui']['setLeadDismissed'];
 let setTextScale: ClientState['ui']['setTextScale'];
 let setTerminalFont: ClientState['ui']['setTerminalFont'];
 let setTheme: ClientState['ui']['setTheme'];
@@ -48,12 +46,10 @@ beforeEach(() => {
     ({
         crt,
         instanceState,
-        leadsDismissed,
         loadUi,
         requestUpdateTray,
         setCrt,
         setInstanceState,
-        setLeadDismissed,
         setTextScale,
         setTerminalFont,
         setTheme,
@@ -109,7 +105,6 @@ describe('the appearance store', () => {
         expect(unicode()).toBe(false);
         expect(textScale()).toBe(null);
         expect(terminalFont()).toBe(null);
-        expect(leadsDismissed()).toEqual([]);
         expect(instanceState('a')).toBe(undefined);
     });
 
@@ -122,7 +117,6 @@ describe('the appearance store', () => {
         setUnicode(true);
         setTextScale(1.3);
         setTerminalFont(14.5);
-        setLeadDismissed('lead-one', true);
         setInstanceState('a', { filter: 'active' });
         setInstanceState('b', 3);
 
@@ -135,32 +129,27 @@ describe('the appearance store', () => {
             unicode: true,
             textScale: 1.3,
             terminalFont: 14.5,
-            leadsDismissed: ['lead-one'],
             instances: { a: { filter: 'active' }, b: 3 }
         });
     });
 
-    it('saves unique dismissed leads per browser and restores one without changing the others', () => {
-        const storage = fakeStorage();
-        loadUi(storage);
-        setLeadDismissed('lead-one', true);
-        setLeadDismissed('lead-two', true);
-        setLeadDismissed('lead-one', true);
-        expect(leadsDismissed()).toEqual(['lead-two', 'lead-one']);
-        setLeadDismissed('lead-one', false);
-        expect(leadsDismissed()).toEqual(['lead-two']);
-        expect(saved(storage).leadsDismissed).toEqual(['lead-two']);
+    it('loads an envelope that still carries dismissed lead ids without keeping the field', () => {
+        const storage = fakeStorage({
+            version: UI_VERSION,
+            theme: 'mocha',
+            crt: true,
+            leadsDismissed: ['lead-one', 'lead-two'],
+            instances: { a: 1 }
+        });
+        expect(loadUi(storage)).toBe(true);
+        expect(theme()).toBe('mocha');
+        expect(crt()).toBe(true);
+        expect(instanceState('a')).toBe(1);
 
-        expect(
-            loadUi(
-                fakeStorage({
-                    version: UI_VERSION,
-                    leadsDismissed: ['lead-two', '', 3, 'lead-two'],
-                    instances: {}
-                })
-            )
-        ).toBe(true);
-        expect(leadsDismissed()).toEqual(['lead-two']);
+        setTheme('nord');
+        const written = saved(storage);
+        expect(written.version).toBe(UI_VERSION);
+        expect('leadsDismissed' in written).toBe(false);
     });
 
     it('bounds a chosen terminal size and restores the null config default', () => {

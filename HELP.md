@@ -78,7 +78,7 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `tasks` | Tasks & Service | The task list. |
 | `present` | Present | The public deck, one slide at a time, with an overview grid. |
 | `radar` | Lit Watch | The literature radar the scout writes. |
-| `leads` | Position Leads | The position leads the scout writes. |
+| `leads` | Position Leads | The position leads the scout writes. Dismissing one sets its status to `dismissed` in the feed file, so it leaves the counts and History can undo it; the toolbar toggle shows the dismissed ones and each card's reopen control puts it back on the radar. |
 | `inbox` | Inbox | The private email triage feed. |
 | `linkedin` | LinkedIn | The posts pipeline: what is posted and what is still an idea. |
 | `session-list` | Sessions | Every agent session on this machine, live ones first. |

@@ -1,6 +1,11 @@
 <script lang="ts">
     // Layer 3, view partial of views/Leads.svelte. One position lead with its fit, deadline,
     // posting, status writes, and confirmed deletion. Feed rules stay in state and server modules.
+    //
+    // Dismissing is a status write like the others: the control sets the lead's status to
+    // `dismissed` in the hub's file, so the change log records it and the reopen control puts
+    // `open` back. Nothing about a dismissal is kept in the browser. It is offered on an open lead
+    // alone, so a dismissal never writes over an outcome and reopen always restores what was there.
 
     import Card from '$lib/ui/Card.svelte';
     import Tag from '$lib/ui/Tag.svelte';
@@ -8,7 +13,18 @@
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
-    import { fitKey, fitTone, isClosed, leadId, type LeadEntry } from '$lib/state/leads';
+    import {
+        APPLIED,
+        DECLINED,
+        DISMISSED,
+        OPEN,
+        fitKey,
+        fitTone,
+        isClosed,
+        isOpen,
+        leadId,
+        type LeadEntry
+    } from '$lib/state/leads';
     import { t } from '$lib/state/text';
     import type { WriteAnswer } from '$lib/state/writes.svelte';
     import { useState } from '$lib/state/use';
@@ -22,20 +38,10 @@
         vocab: unknown;
         cursor: boolean;
         expired?: boolean;
-        dismissed?: boolean;
-        ondismiss: () => void;
         onsaid: (words: string) => void;
     };
 
-    let {
-        entry,
-        vocab,
-        cursor,
-        expired = false,
-        dismissed = false,
-        ondismiss,
-        onsaid
-    }: Props = $props();
+    let { entry, vocab, cursor, expired = false, onsaid }: Props = $props();
     let sure = $state(false);
 
     const text = (field: string): string => {
@@ -109,28 +115,28 @@
             {/if}
             {#if identity !== ''}
                 <span class="actions">
-                    {#if status !== 'applied'}
+                    {#if status !== APPLIED}
                         <ToolButton
                             label={t('leads.action.applied')}
                             title={t('leads.action.mark_applied')}
                             compact
-                            onclick={() => mark('applied')}
+                            onclick={() => mark(APPLIED)}
                         />
                     {/if}
-                    {#if status !== 'declined'}
+                    {#if status !== DECLINED}
                         <ToolButton
                             label={t('leads.action.decline')}
                             title={t('leads.action.decline_tip')}
                             compact
-                            onclick={() => mark('declined')}
+                            onclick={() => mark(DECLINED)}
                         />
                     {/if}
-                    {#if status === 'applied' || status === 'declined'}
+                    {#if isClosed(status)}
                         <ToolButton
-                            label={t('project.action.reopen')}
-                            title={t('leads.action.reopen_lead_tip')}
+                            label={t('leads.action.reopen')}
+                            title={t('leads.action.reopen_tip')}
                             compact
-                            onclick={() => mark('open')}
+                            onclick={() => mark(OPEN)}
                         />
                     {/if}
                     <ToolButton
@@ -139,17 +145,15 @@
                         compact
                         onclick={() => (sure = true)}
                     />
-                    <ToolButton
-                        label={dismissed
-                            ? t('leads.action.show_lead')
-                            : t('leads.action.hide_lead')}
-                        title={dismissed
-                            ? t('leads.action.show_lead')
-                            : t('leads.action.hide_lead')}
-                        glyph="dismiss"
-                        compact
-                        onclick={ondismiss}
-                    />
+                    {#if isOpen(status)}
+                        <ToolButton
+                            label={t('leads.action.dismiss')}
+                            title={t('leads.action.dismiss_tip')}
+                            glyph="dismiss"
+                            compact
+                            onclick={() => mark(DISMISSED)}
+                        />
+                    {/if}
                 </span>
             {/if}
         {/snippet}

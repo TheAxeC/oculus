@@ -4,9 +4,11 @@ import { describe, expect, it } from 'vitest';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import {
     deadlineOf,
+    dismissedCount,
     fitKey,
     fitTone,
     isClosed,
+    isDismissed,
     isExpired,
     leadsSearch,
     leadId,
@@ -26,8 +28,16 @@ describe('position lead selectors', () => {
     });
 
     it('recognises closed statuses and ISO dates inside deadline prose', () => {
-        expect(['applied', ' Declined ', 'CLOSED'].map(isClosed)).toEqual([true, true, true]);
+        expect(['applied', ' Declined ', 'CLOSED', 'dismissed'].map(isClosed)).toEqual([
+            true,
+            true,
+            true,
+            true
+        ]);
         expect(isClosed('open')).toBe(false);
+        expect([' Dismissed ', 'DISMISSED'].map(isDismissed)).toEqual([true, true]);
+        expect(['open', 'declined'].map(isDismissed)).toEqual([false, false]);
+        expect(isExpired({ status: 'dismissed', deadline: '2099-10-01' }, '2026-09-12')).toBe(true);
         expect(deadlineOf('closes 20-09-2026 (2026-09-20)')).toBe('2026-09-20');
         expect(deadlineOf('rolling')).toBe(null);
         expect(isExpired({ status: 'open', deadline: '2026-09-11' }, '2026-09-12')).toBe(true);
@@ -107,17 +117,32 @@ describe('position lead selectors', () => {
         });
     });
 
-    it('hides dismissed stable ids until the toggle shows every lead', () => {
+    it('hides the entries whose status is dismissed until the toggle shows every lead', () => {
         const entries = [
-            { title: 'First role', inst: 'One', url: 'https://example.org/jobs/first' },
-            { title: 'Second role', inst: 'Two' }
+            {
+                title: 'First role',
+                inst: 'One',
+                url: 'https://example.org/jobs/first',
+                status: 'dismissed'
+            },
+            { title: 'Second role', inst: 'Two', status: 'open' }
         ];
         expect(leadId(entries[0])).toBe('https-example-org-jobs-first');
         expect(leadId(entries[1])).toBe('second-role-two');
-        expect(visibleLeads(entries, ['https-example-org-jobs-first'], false)).toEqual([
-            entries[1]
-        ]);
-        expect(visibleLeads(entries, ['https-example-org-jobs-first'], true)).toEqual(entries);
+        expect(visibleLeads(entries, false)).toEqual([entries[1]]);
+        expect(visibleLeads(entries, true)).toEqual(entries);
+        expect(dismissedCount(entries)).toBe(1);
+        expect(dismissedCount([entries[1]])).toBe(0);
+    });
+
+    it('sends a dismissed lead to the expired list, where its status is what it reads', () => {
+        const entries = [
+            { title: 'Kept', status: 'open', deadline: '2099-10-20' },
+            { title: 'Dropped', status: 'dismissed', deadline: '2099-10-20' }
+        ];
+        const split = splitLeads(entries, '2026-09-12');
+        expect(split.live.map((entry) => entry.title)).toEqual(['Kept']);
+        expect(split.expired.map((entry) => entry.title)).toEqual(['Dropped']);
     });
 });
 

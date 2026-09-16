@@ -41,10 +41,11 @@ export const RADAR = 'meta: {}\nentries:\n  - title: "Paper"\n';
 export const LEADS = `meta: {}
 schema:
   - { field: title, type: text }
-  - { field: status, type: select, options: [open, applied, declined] }
+  - { field: status, type: select, options: [open, applied, declined, dismissed] }
   - { field: date, type: date }
 entries:
   - title: "Lead"
+    status: open
 `;
 export const INBOX = 'meta: {}\nentries:\n  - id: "mail-1"\n';
 

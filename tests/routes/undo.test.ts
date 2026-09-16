@@ -137,6 +137,35 @@ describe('taking a change back', () => {
         expect(radar()).not.toContain('dismissed: true');
     });
 
+    it('records a dismissed lead as a status write and reopens it on the undo', async () => {
+        const into = target();
+        const leads = (): string =>
+            readFileSync(join(into.hub, 'feeds', 'position-leads.yml'), 'utf8');
+        const change = await made(into, {
+            kind: 'feed-field',
+            feed: 'leads',
+            id: 'Lead',
+            field: 'status',
+            value: 'dismissed'
+        });
+        expect(leads()).toContain('status: dismissed');
+        expect(change).toMatchObject({
+            kind: 'feed-field',
+            key: 'Lead',
+            field: 'status',
+            before: 'open',
+            after: 'dismissed',
+            undo: 'field'
+        });
+
+        const response = await handleWrite(request({ kind: 'undo', at: change.at }), TOKEN, into);
+        expect(response.status).toBe(200);
+        expect(await response.json()).toEqual({ ok: true, changed: ['status'], refused: [] });
+        expect(leads()).toContain('status: open');
+        expect(leads()).not.toContain('status: dismissed');
+        expect(changesOf(into)[0]).toMatchObject({ undoes: change.at, after: 'open' });
+    });
+
     it('puts a collection order back', async () => {
         const into = target();
         const before = tasksOf(into);
@@ -254,14 +283,14 @@ describe('taking a change back', () => {
         // Deleting the one lead leaves the `entries:` key with nothing under it, which is the file
         // an undo has to write the entry back into.
         const gone = await made(into, { kind: 'feed-delete', feed: 'leads', id: 'Lead' });
-        expect(gone.before).toEqual({ title: 'Lead' });
+        expect(gone.before).toEqual({ title: 'Lead', status: 'open' });
         expect(leads()).not.toContain('- title: "Lead"');
         expect(
             (await handleWrite(request({ kind: 'undo', at: gone.at }), TOKEN, into)).status
         ).toBe(200);
-        // What comes back is what the record holds and nothing derived: no status, no date.
+        // What comes back is what the record holds and nothing derived: no date, no fit.
         const back = parse(leads()) as { entries: Record<string, unknown>[] };
-        expect(back.entries).toEqual([{ title: 'Lead' }]);
+        expect(back.entries).toEqual([{ title: 'Lead', status: 'open' }]);
     });
 
     it('puts a deleted collection entry back as it was recorded', async () => {
