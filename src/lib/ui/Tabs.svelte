@@ -30,6 +30,8 @@
         active: string;
         onselect: (id: string) => void;
         onclose: (id: string) => void;
+        /** A second press on a tab face, which is what keeps a preview tab. */
+        ondblclick?: (id: string) => void;
         /** A pointer went down on a tab face, at this point in the viewport. */
         onpointerdown?: (id: string, point: { x: number; y: number }) => void;
         /** The pointer moved over the strip, and a drop would land at this index; null on leaving. */
@@ -45,6 +47,7 @@
         active,
         onselect,
         onclose,
+        ondblclick,
         onpointerdown,
         onhoverindex,
         dropIndex = null,
@@ -174,10 +177,13 @@
                     <button
                         type="button"
                         class="face"
+                        class:preview={tab.preview === true}
                         role="tab"
                         aria-selected={tab.id === active}
+                        data-tab-preview={tab.preview === true ? '' : undefined}
                         data-drag-handle={onpointerdown === undefined ? undefined : ''}
                         onclick={() => onselect(tab.id)}
+                        ondblclick={() => ondblclick?.(tab.id)}
                         onpointerdown={(event) => down(tab.id, event)}
                     >
                         {#if tab.glyph !== undefined}
@@ -371,6 +377,12 @@
 
     .tab.current .face {
         color: var(--ink-txt, var(--ink));
+    }
+
+    /* The tab the next single click replaces. Italics rather than a colour of its own: it says the
+       tab is provisional without taking a hue that stands for a status somewhere else. */
+    .face.preview .label {
+        font-style: italic;
     }
 
     .face:hover,

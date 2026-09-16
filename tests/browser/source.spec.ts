@@ -1,10 +1,21 @@
-// The source tab: the edit-source bar on Lit Watch opens the feed file as an editable tab,
-// and an unsaved edit survives leaving the tab and coming back, since the shell mounts only the
-// active view and the draft belongs to the instance, not the component.
+// The source tab: the edit-source bar on Lit Watch opens the feed file as an editable tab, an
+// unsaved edit survives leaving the tab and coming back, since the shell mounts only the active view
+// and the draft belongs to the instance rather than to the component, and a file this machine's mode
+// locks opens as the code window under the line that says so.
 
+import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve, sep } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { boot, openView } from './rail.ts';
 import { t } from './words.ts';
+
+/** A folder of the spec's own, under the system temporary directory and asserted to be inside it. */
+function scratch(): string {
+    const dir = mkdtempSync(join(tmpdir(), 'oculus-source-spec-'));
+    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+    return dir;
+}
 
 test('the edit-source bar opens the feed file and an unsaved edit survives a tab switch', async ({
     page
@@ -43,8 +54,7 @@ test('a Markdown file opens for editing and the preview follows what is typed', 
     await page.locator('[data-fs-row="hub:"]').getByRole('button').first().click();
     await page.locator('[data-fs-row="hub:README.md"]').getByRole('button').first().click();
 
-    // The file window is read only, and its control hands the same file to the source tab.
-    await page.getByRole('button', { name: t('file.edit'), exact: true }).click();
+    // A text file of the tree opens in the source tab; a Markdown one splits into the two halves.
     const editor = page.locator('[data-source-editor="README.md"]');
     await expect(editor).toBeVisible();
     const preview = page.locator('[data-source-preview="README.md"]');
@@ -69,4 +79,32 @@ test('a Markdown file opens for editing and the preview follows what is typed', 
     await expect(preview.locator('h1')).toHaveText('Heading');
 
     // Nothing is saved: the hub copy's README.md stays as it was.
+});
+
+test('a file this machine locks opens read only, says so, and offers nothing to type into', async ({
+    page
+}) => {
+    const dir = scratch();
+    const key = dir.split(sep).at(-1) ?? '';
+    const file = join(dir, 'locked.py');
+    expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
+    writeFileSync(file, 'print("locked")\n');
+    chmodSync(file, 0o444);
+
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
+    await page.getByRole('textbox', { name: t('files.root_dir') }).fill(dir);
+    await page.getByRole('button', { name: t('files.add'), exact: true }).click();
+    await expect(page.locator(`[data-fs-row="${key}:"]`)).toBeVisible();
+    await page.locator(`[data-fs-row="${key}:"]`).getByRole('button').first().click();
+    await page.locator(`[data-fs-row="${key}:locked.py"]`).getByRole('button').first().click();
+
+    // The code window under the sentence: no textarea to type into and no Save to press.
+    await expect(page.locator('[data-source-locked="locked.py"]')).toContainText(
+        t('source.readonly')
+    );
+    await expect(page.locator('[data-fs-code="locked.py"]')).toBeVisible();
+    await expect(page.locator('[data-source-editor="locked.py"]')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: t('editor.save'), exact: true })).toHaveCount(0);
 });

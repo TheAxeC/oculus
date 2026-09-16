@@ -12,27 +12,44 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One configured local text file as a tab. It reads once through api/file, keeps
-    // working and saved copies in its instance's ui state across tab switches, and writes through
-    // api/source when its extension is editable.
+    // Layer 3, view. One local text file as a tab: every text file of the file browser opens here.
+    // It reads once through api/file, asks api/source whether this machine's mode lets it be written,
+    // keeps working and saved copies in its instance's ui state across tab switches, and writes
+    // through api/source.
+    //
+    // A file it holds but may not write is drawn by the code window under a line saying why, rather
+    // than by an editor that would take typing and refuse every save: a file this machine's mode
+    // locks, and a file too long to have been read whole, where writing the copy back would take the
+    // rest of the file off the disk.
+    //
+    // A keystroke keeps a preview tab. A file opened by a single click is the tab the next single
+    // click replaces, and typing into it is a reader saying they are working in it.
+    //
+    // The star in the pane's own bar is `shared/BookmarkStar.svelte`, which the file view draws too,
+    // so a reader bookmarks the file in front of them whichever of the two tabs is showing it. The
+    // controls that act on the text (Save, Revert, the rendered half) are the editor's own bar.
 
     import { untrack } from 'svelte';
     import Empty from '$lib/ui/Empty.svelte';
+    import Glyph from '$lib/ui/Glyph.svelte';
     import Pane from '$lib/ui/Pane.svelte';
+    import Toolbar from '$lib/ui/Toolbar.svelte';
+    import BookmarkStar from './shared/BookmarkStar.svelte';
+    import Code from './source/Code.svelte';
     import Editor from './source/Editor.svelte';
-    import { sourceAccess } from '$lib/state/source.svelte';
+    import { languageOf } from '$lib/state/fs';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
     const {
-        selectors: { configMap },
+        layout: { keepPreview },
         source: {
             revertSourceDraft,
             editSourceDraft,
             loadSourceDraft,
             saveSourceDraft,
-            toggleSourcePreview,
+            toggleSourceRendered,
             sourceDraft
         }
     } = useState();
@@ -42,11 +59,14 @@
     const root = $derived(read(instance.state, 'root'));
     const path = $derived(read(instance.state, 'path'));
     const label = $derived(read(instance.state, 'label'));
-    const access = $derived(sourceAccess(path, configMap()));
     const title = $derived(label === '' ? t('views.source') : label);
     const draft = $derived(sourceDraft(instance.id));
-    const blocked = $derived(root === '' || path === '' || access === 'blocked');
+    const blocked = $derived(root === '' || path === '');
     const error = $derived(blocked ? t('source.cannot_open', path) : draft.error);
+    /** The line a tab that may not write its file draws, and the empty string for one that may. */
+    const locked = $derived(
+        draft.readonly ? t('source.readonly') : draft.truncated ? t('source.truncated') : ''
+    );
 
     $effect(() => {
         if (blocked) return;
@@ -63,28 +83,44 @@
     }
 
     async function save(): Promise<void> {
-        if (access !== 'editable') return;
         await saveSourceDraft(instance.id, root, path);
+    }
+
+    /** Typing is the reader working in this tab, so a preview tab becomes one that is kept. */
+    function typed(value: string): void {
+        keepPreview(instance.id);
+        editSourceDraft(instance.id, value);
     }
 </script>
 
-<Pane {title}>
+{#snippet tools()}
+    <Toolbar label={t('source.toolbar')}>
+        <BookmarkStar {root} {path} />
+    </Toolbar>
+{/snippet}
+
+<Pane {title} toolbar={tools}>
     <div class="source" data-instance={instance.id} data-root={root} data-path={path}>
         {#if error !== ''}
             <Empty message={error} glyph="warn" />
         {:else if !draft.loaded}
             <Empty message={t('app.waiting')} glyph="edit" />
+        {:else if locked !== ''}
+            <p class="locked" data-source-locked={path}>
+                <Glyph name={t('source.locked_glyph')} />
+                {locked}
+            </p>
+            <Code text={draft.text} language={languageOf(path)} {path} />
         {:else}
             <Editor
                 {path}
                 text={draft.text}
-                editable={access === 'editable'}
                 message={draft.message}
-                preview={draft.preview}
-                oninput={(value: string) => editSourceDraft(instance.id, value)}
+                rendered={draft.rendered}
+                oninput={typed}
                 onsave={save}
                 onrevert={() => revertSourceDraft(instance.id)}
-                onpreview={() => toggleSourcePreview(instance.id)}
+                onrendered={() => toggleSourceRendered(instance.id)}
             />
         {/if}
     </div>
@@ -92,7 +128,24 @@
 
 <style>
     .source {
+        display: grid;
+        grid-template-rows: minmax(0, 1fr);
         height: 100%;
         min-height: 0;
+    }
+
+    /* A tab drawing the line and the window is two rows: the line takes what it needs. */
+    .source:has(.locked) {
+        grid-template-rows: auto minmax(0, 1fr);
+        gap: 6px;
+    }
+
+    .locked {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        margin: 0;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
     }
 </style>

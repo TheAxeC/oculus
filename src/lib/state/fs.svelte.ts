@@ -21,10 +21,13 @@
 //
 // The file text is read through the file route and stopped at the window's limit: the reader is
 // cancelled once the limit is in, so a forty-megabyte file costs two megabytes of transfer and not
-// forty.
+// forty. What a file opens as is read the same way and stops after the rule's window and the one
+// byte it tells a cut by, and the answer is held for the round, so the tree, the tab it opens and a
+// second click on the same row ask the server once.
 
 import type { Entry, SchemaField } from '../data/model.ts';
-import { TEXT_LIMIT, treeKey, type FsEntry, type FsRoot } from './fs.ts';
+import { TEXT_SNIFF_READ } from '../data/text-kind.ts';
+import { TEXT_LIMIT, treeKey, typeOfFile, type FileType, type FsEntry, type FsRoot } from './fs.ts';
 import type { WriteAnswer, WritesStore } from './writes.svelte.ts';
 
 /** The endpoint the tree reads and the workspace actions write. */
@@ -117,6 +120,14 @@ export type FsStore = {
     entries: (root: string, path: string) => FsEntry[];
     workspaces: () => WorkspacesState;
     fileText: (root: string, path: string) => FileText;
+    /**
+     * What one file opens as. The three formats a browser draws are answered from the name at once;
+     * for anything else the head of the file is read and the rule over its bytes decides, so the
+     * caller awaits an answer before it opens a tab. The answer is held for the round.
+     */
+    readFileKind: (root: string, path: string) => Promise<FileType>;
+    /** The same answer as far as it is known now, and null while the bytes are still being read. */
+    heldFileKind: (root: string, path: string) => FileType | null;
     /** Ask again for what is held under one root, at the version of whatever said it had changed. */
     refresh: (root: string, version: number) => void;
     /** The reader's own bookmarks, asked for once a round like the workspaces. */
@@ -172,8 +183,19 @@ export async function readCapped(
     response: Response,
     limit: number
 ): Promise<{ text: string; truncated: boolean }> {
+    const held = await readCappedBytes(response, limit);
+    return { text: new TextDecoder().decode(held.bytes), truncated: held.truncated };
+}
+
+/** The same cut, before it is decoded: what a rule over the file's own bytes is handed. */
+export async function readCappedBytes(
+    response: Response,
+    limit: number
+): Promise<{ bytes: Uint8Array; truncated: boolean }> {
     const body = response.body;
-    if (body === null) return { text: await response.text(), truncated: false };
+    if (body === null) {
+        return { bytes: new Uint8Array(await response.arrayBuffer()), truncated: false };
+    }
     const reader = body.getReader();
     const chunks: Uint8Array[] = [];
     let taken = 0;
@@ -195,13 +217,23 @@ export async function readCapped(
         kept.set(part, at);
         at += part.byteLength;
     }
-    return { text: new TextDecoder().decode(kept), truncated: taken > limit };
+    return { bytes: kept, truncated: taken > limit };
 }
 
 export function createFs(writes: WritesStore): FsStore {
     const listings: Record<string, Listing | undefined> = $state({});
     const texts: Record<string, FileText | undefined> = $state({});
     const notes: Record<string, NoteState | undefined> = $state({});
+
+    /**
+     * What each file was last answered to open as, for the round it was answered in. A double click
+     * on a row asks three times and the tab it opens asks again, so without this one row would cost
+     * four reads of the same eight kilobytes.
+     */
+    const kinds: Record<string, FileType | undefined> = $state({});
+
+    /** The kind reads in flight, by key, so the asks a double click makes share one request. */
+    const asking = new Map<string, Promise<FileType>>();
 
     /**
      * The notes this page deleted. A deleted note is never asked for again and never written again,
@@ -396,6 +428,70 @@ export function createFs(writes: WritesStore): FsStore {
             rounds[`text:${key}`] = at;
             texts[key] = { ...NO_TEXT, error: reasonOf(error), loading: false };
         }
+    }
+
+    /**
+     * What one file opens as, as far as it is already known: the name's answer for a format the
+     * browser draws, the answer held from this round for anything else, and null for a file whose
+     * bytes have not been read yet. It is what a view draws by while readFileKind is running.
+     */
+    function heldFileKind(root: string, path: string): FileType | null {
+        const named = typeOfFile(path);
+        if (named.kind !== 'other') return named;
+        const key = treeKey(root, path);
+        return rounds[`kind:${key}`] === roundOf(root) ? (kinds[key] ?? null) : null;
+    }
+
+    /**
+     * What one file opens as. A name that names a format the browser draws is answered without a
+     * request; anything else is decided by the head of the file, and a file that cannot be read at
+     * all is a download, which is what the file view draws for it.
+     *
+     * The answer is held for the round, and the asks made while one read is in flight are that one
+     * read: a double click opens a row three times and the tab it opens asks once more, which is one
+     * request between them and none at all on the next click.
+     */
+    async function readFileKind(root: string, path: string): Promise<FileType> {
+        const named = typeOfFile(path);
+        if (named.kind !== 'other') return named;
+        const key = treeKey(root, path);
+        const at = roundOf(root);
+        const remembered = heldFileKind(root, path);
+        if (remembered !== null) return remembered;
+        const pending = asking.get(key);
+        if (pending !== undefined) return pending;
+        const request = loadKind(root, path, key, at).finally(() => asking.delete(key));
+        asking.set(key, request);
+        return request;
+    }
+
+    /**
+     * Read one file's head and hold what its bytes say, for the round the read belongs to. A head
+     * the route refuses or a read that fails is held as what the name says, the download, so the
+     * file view stops saying it is reading and draws the link.
+     */
+    async function loadKind(
+        root: string,
+        path: string,
+        key: string,
+        at: number
+    ): Promise<FileType> {
+        const named = typeOfFile(path);
+        let found = named;
+        try {
+            const response = await fetch(fileBytesUrl(root, path));
+            if (response.ok) {
+                const held = await readCappedBytes(response, TEXT_SNIFF_READ);
+                found = typeOfFile(path, held.bytes);
+            }
+        } catch {
+            found = named;
+        }
+        if (current(at, root)) {
+            rounds[`kind:${key}`] = at;
+            kinds[key] = found;
+        }
+        return found;
     }
 
     /** The reader's own bookmarks, asked for once a round and held until the next one. */
@@ -600,6 +696,8 @@ export function createFs(writes: WritesStore): FsStore {
         entries,
         workspaces,
         fileText,
+        readFileKind,
+        heldFileKind,
         refresh,
         bookmarks,
         notes: noteList,

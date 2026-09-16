@@ -37,6 +37,7 @@
             embedPage,
             focused,
             foldPane,
+            keepPreview,
             layout,
             maximisePane,
             moveInstanceToPage,
@@ -85,11 +86,17 @@
             }
             const own = stateLabel(instance.state);
             const badge = badgeOf(found, client);
+            const preview = instance.preview === true;
             return {
                 id: instance.id,
                 label: own ?? registrationLabel(found),
                 glyph: registrationGlyph(found),
-                hint: own === null ? undefined : registrationLabel(found),
+                preview,
+                hint: preview
+                    ? t('ui.preview_tab')
+                    : own === null
+                      ? undefined
+                      : registrationLabel(found),
                 badge: badge.tabText,
                 badgeGlyph: badge.glyph,
                 badgeTone: badge.tone,
@@ -250,6 +257,7 @@
         {dropIndex}
         onselect={(id: string) => activateInstance(id, page)}
         onclose={(id: string) => closeInstance(id, page)}
+        ondblclick={(id: string) => keepPreview(id)}
         onpointerdown={press}
         onhoverindex={held === null ? undefined : stripHover}
         menu={paneMenu}

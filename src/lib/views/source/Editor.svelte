@@ -2,9 +2,17 @@
     // Layer 3, partial of views/Source.svelte. One textarea over its escaped highlight mirror,
     // sharing font, padding, whitespace, and scroll position so the coloured text stays aligned.
     //
+    // The mirror is painted by the same highlighter the code window uses, over the language the
+    // file's own name gives it, so a file is coloured the same whether it is being written here or
+    // shown read only; the token classes are the code window's and are coloured from the same six
+    // hues of the palette.
+    //
     // A Markdown file is written and read at once: the row under the toolbar splits into the editor
     // and the rendered half, with the handle between them, and the toolbar carries the control that
     // takes the rendered half away. A file of any other kind is the editor alone.
+    //
+    // Every file drawn here can be written: one the tab may not write is the code window under the
+    // line that says why, so nothing here draws a Save that would be refused.
 
     import Preview from './Preview.svelte';
     import Sash from '$lib/ui/Sash.svelte';
@@ -12,33 +20,32 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import { SASH_PX } from '$lib/ui/sash-size';
-    import { highlight, languageFor } from '$lib/state/highlight';
+    import { PAINT_LIMIT, PLAIN, codeHtml } from '$lib/state/languages';
+    import { languageOf } from '$lib/state/fs';
     import { t } from '$lib/state/text';
 
     type Props = {
         path: string;
         text: string;
-        editable: boolean;
         message?: string;
         /** Whether the reader wants the rendered half, for a file that has one. */
-        preview?: boolean;
+        rendered?: boolean;
         oninput: (value: string) => void;
         onsave: () => void;
         onrevert: () => void;
         /** Show or hide the rendered half. */
-        onpreview: () => void;
+        onrendered: () => void;
     };
 
     let {
         path,
         text,
-        editable,
         message = '',
-        preview = true,
+        rendered = true,
         oninput,
         onsave,
         onrevert,
-        onpreview
+        onrendered
     }: Props = $props();
 
     let mirror: HTMLPreElement | undefined = $state();
@@ -48,9 +55,14 @@
     /** How far the editor is scrolled through its text, which is what the rendered half follows. */
     let fraction = $state(0);
 
-    const painted = $derived(highlight(text, languageFor(path)));
-    const rendered = $derived(languageFor(path) === 'md');
-    const split = $derived(rendered && preview);
+    // The trailing newline keeps a last mirror line under the textarea's empty last line, which a
+    // pre would otherwise drop, so the two scroll to the same height.
+    const painted = $derived(
+        codeHtml(text, text.length > PAINT_LIMIT ? PLAIN : languageOf(path)) + '\n'
+    );
+    /** Whether this file has a rendered half at all, which is what a Markdown file has. */
+    const markdown = $derived(languageOf(path) === 'markdown');
+    const split = $derived(markdown && rendered);
 
     function sync(event: Event): void {
         if (!(event.currentTarget instanceof HTMLTextAreaElement)) return;
@@ -75,22 +87,20 @@
     }
 </script>
 
-<div class="source-editor" data-source-editor={path} data-editable={editable}>
+<div class="source-editor" data-source-editor={path}>
     <Toolbar label={t('source.edit')}>
-        {#if editable}
-            <ToolButton label={t('editor.save')} glyph="check" onclick={onsave} />
-        {/if}
+        <ToolButton label={t('editor.save')} glyph="check" onclick={onsave} />
         <ToolButton
             label={t('editor.revert')}
             glyph={t('editor.revert_glyph')}
             onclick={onrevert}
         />
-        {#if rendered}
+        {#if markdown}
             <ToolButton
                 label={t('source.preview')}
                 glyph={t('source.preview_glyph')}
-                pressed={preview}
-                onclick={onpreview}
+                pressed={rendered}
+                onclick={onrendered}
             />
         {/if}
         {#if message !== ''}
@@ -100,7 +110,7 @@
     <div class="row" bind:this={box}>
         <div class="editor-wrap" style="flex: {split ? share : 1} 1 0">
             <!-- Keep pre and code on one line: a line break inside pre would enter the mirror's text. -->
-            <!-- eslint-disable-next-line svelte/no-at-html-tags -- state/highlight.ts escapes the file text before it emits its own span classes -->
+            <!-- eslint-disable-next-line svelte/no-at-html-tags -- highlight.js escapes the file text before it emits its own span classes -->
             <pre class="mirror" bind:this={mirror} aria-hidden="true"><code>{@html painted}</code
                 ></pre>
             <div class="input">
@@ -108,7 +118,6 @@
                     value={text}
                     label={path}
                     rows={24}
-                    readOnly={!editable}
                     spellcheck={false}
                     {oninput}
                     onscroll={sync}
@@ -201,41 +210,57 @@
         white-space: pre;
     }
 
-    .mirror :global(.source-key),
-    .mirror :global(.source-heading) {
-        color: var(--c-blue-txt);
+    .mirror :global(.hljs-keyword),
+    .mirror :global(.hljs-built_in),
+    .mirror :global(.hljs-literal),
+    .mirror :global(.hljs-type),
+    .mirror :global(.hljs-selector-tag) {
+        color: var(--c-code-keyword-txt);
+    }
+
+    .mirror :global(.hljs-string),
+    .mirror :global(.hljs-regexp),
+    .mirror :global(.hljs-addition),
+    .mirror :global(.hljs-quote) {
+        color: var(--c-code-string-txt);
+    }
+
+    .mirror :global(.hljs-number),
+    .mirror :global(.hljs-symbol),
+    .mirror :global(.hljs-bullet),
+    .mirror :global(.hljs-deletion) {
+        color: var(--c-code-number-txt);
+    }
+
+    .mirror :global(.hljs-title),
+    .mirror :global(.hljs-name),
+    .mirror :global(.hljs-attr),
+    .mirror :global(.hljs-attribute),
+    .mirror :global(.hljs-section),
+    .mirror :global(.hljs-selector-id),
+    .mirror :global(.hljs-selector-class) {
+        color: var(--c-code-name-txt);
+    }
+
+    .mirror :global(.hljs-meta),
+    .mirror :global(.hljs-doctag),
+    .mirror :global(.hljs-tag),
+    .mirror :global(.hljs-params),
+    .mirror :global(.hljs-punctuation),
+    .mirror :global(.hljs-variable),
+    .mirror :global(.hljs-template-variable) {
+        color: var(--c-code-meta-txt);
+    }
+
+    .mirror :global(.hljs-comment) {
+        color: var(--c-code-comment-txt);
+    }
+
+    .mirror :global(.hljs-strong) {
         font-weight: 700;
     }
 
-    .mirror :global(.source-string) {
-        color: var(--c-green-txt);
-    }
-
-    .mirror :global(.source-boolean),
-    .mirror :global(.source-fence) {
-        color: var(--c-violet-txt);
-    }
-
-    .mirror :global(.source-number),
-    .mirror :global(.source-marker) {
-        color: var(--c-amber-txt);
-    }
-
-    .mirror :global(.source-flow),
-    .mirror :global(.source-link) {
-        color: var(--c-cyan-txt);
-    }
-
-    .mirror :global(.source-code) {
-        color: var(--c-orange-txt);
-    }
-
-    .mirror :global(.source-strong) {
-        font-weight: 700;
-    }
-
-    .mirror :global(.source-punctuation),
-    .mirror :global(.source-comment) {
-        color: var(--muted-txt, var(--muted));
+    .mirror :global(.hljs-emphasis) {
+        font-style: italic;
     }
 </style>

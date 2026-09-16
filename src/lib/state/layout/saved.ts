@@ -191,7 +191,11 @@ function readPane(
         if (ids.has(raw.id))
             problems.push(`${where}: tab ${index} repeats the instance id ${raw.id}`);
         ids.add(raw.id);
-        tabs.push({ id: raw.id, view: raw.view, state: raw.state });
+        const tab: Instance = { id: raw.id, view: raw.view, state: raw.state };
+        // The flag is optional, so a layout saved before there were preview tabs reads as one whose
+        // tabs are all kept, and a reader who left one open finds it as it was.
+        if (raw.preview === true) tab.preview = true;
+        tabs.push(tab);
     }
     const active = value.active;
     if (typeof active !== 'string') {

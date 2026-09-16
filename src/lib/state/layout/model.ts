@@ -10,7 +10,12 @@ import { newInstance } from '../instance.ts';
  */
 export type ViewId = string;
 
-export type Instance = { id: string; view: ViewId; state: unknown };
+/**
+ * One tab: the view it mounts and the state that view was opened with. `preview` marks the tab a
+ * single click opened, which the next single click in the same pane replaces; a double click, a
+ * keystroke in its editor, a drag or a split keeps it, which is the flag going away.
+ */
+export type Instance = { id: string; view: ViewId; state: unknown; preview?: true };
 
 /**
  * A split and its children. `folded` holds the indexes of the children collapsed to the split's

@@ -1,12 +1,21 @@
-// Layer 2, client state. The source tab's file address, configured access mode, initial whole-text
-// read, and whole-text save through the shared authenticated write sender.
+// Layer 2, client state. The source tab's file address, its initial whole-text read, whether this
+// machine's mode lets it be written, and the whole-text save through the shared authenticated write
+// sender.
+//
+// Whether a file may be saved is the file's own mode, asked of the source route when the tab opens
+// and held with the draft: no list of extensions decides it, so a tab over a file this machine locks
+// shows it and says so, and a tab over anything else is an editor. The read is cut at the same limit
+// the file route's readers use, and a draft that was cut saves nothing: writing back a copy that
+// stops at two megabytes would take the rest of the file off the disk.
 
+import { TEXT_LIMIT } from './fs.ts';
+import { readCapped } from './fs.svelte.ts';
 import type { WriteAnswer, WritesStore } from './writes.svelte.ts';
 import type { UiStore } from './ui.svelte.ts';
 import { t } from './text.ts';
 
-export type SourceAccess = 'editable' | 'read-only' | 'blocked';
-export type SourceLoad = { ok: true; content: string } | { ok: false; error: string };
+export type SourceLoad =
+    { ok: true; content: string; truncated: boolean } | { ok: false; error: string };
 export type SourceTabState = { root: string; path: string; label: string };
 
 export type SourceDraft = {
@@ -18,33 +27,17 @@ export type SourceDraft = {
     error: string;
     message: string;
     /** Whether the rendered half is drawn beside the editor, for a file that has one. */
-    preview: boolean;
+    rendered: boolean;
+    /** Whether this machine's mode on the file refuses a write, which the tab draws instead of an editor. */
+    readonly: boolean;
+    /** Whether the read stopped at the limit, which is the other way a tab holds no complete file. */
+    truncated: boolean;
+    /** The file the draft was read for, as `root/path`, so a read that lands after the tab was pointed at another file is thrown away. */
+    file: string;
 };
 
 /** One token per page lifetime: a draft carrying it was read from disk since the page loaded. */
 const LIFETIME = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
-
-function extension(path: string): string {
-    const name = path.split('/').at(-1) ?? '';
-    const at = name.lastIndexOf('.');
-    return at < 0 ? '' : name.slice(at).toLowerCase();
-}
-
-function configured(config: Record<string, unknown>, key: string): string[] {
-    const value = config[key];
-    if (!Array.isArray(value)) return [];
-    return value
-        .filter((entry): entry is string => typeof entry === 'string')
-        .map((entry) => entry.toLowerCase());
-}
-
-/** Whether a path is writable, view-only, or outside both configured extension lists. */
-export function sourceAccess(path: string, config: Record<string, unknown>): SourceAccess {
-    const suffix = extension(path);
-    if (configured(config, 'editable_extensions').includes(suffix)) return 'editable';
-    if (configured(config, 'viewable_extensions').includes(suffix)) return 'read-only';
-    return 'blocked';
-}
 
 /** The state that identifies one source tab and labels it with the file name. */
 export function sourceTabState(root: string, path: string): SourceTabState {
@@ -60,14 +53,40 @@ export function sourceFileUrl(root: string, path: string): string {
     return `/api/file/${encodeURIComponent(root)}/${parts.join('/')}`;
 }
 
-/** Read one file's complete text from the existing file route. */
+/** The api/source address the file's own facts are read at. */
+export function sourceInfoUrl(root: string, path: string): string {
+    return `/api/source?root=${encodeURIComponent(root)}&path=${encodeURIComponent(path)}`;
+}
+
+/** Read one file's text from the existing file route, cut at the limit every reader of it uses. */
 export async function loadSource(root: string, path: string): Promise<SourceLoad> {
     try {
         const response = await fetch(sourceFileUrl(root, path));
         if (!response.ok) return { ok: false, error: `HTTP ${response.status}` };
-        return { ok: true, content: await response.text() };
+        const held = await readCapped(response, TEXT_LIMIT);
+        return { ok: true, content: held.text, truncated: held.truncated };
     } catch (error) {
         return { ok: false, error: error instanceof Error ? error.message : String(error) };
+    }
+}
+
+/**
+ * Whether the file is locked by its mode on this machine. A request that fails answers false: the
+ * save is what refuses a file that cannot be written, and an editor nobody could open over a
+ * hiccup in one request would be worse than one whose save says so.
+ */
+export async function loadSourceReadonly(root: string, path: string): Promise<boolean> {
+    try {
+        const response = await fetch(sourceInfoUrl(root, path));
+        if (!response.ok) return false;
+        const held: unknown = await response.json();
+        return (
+            typeof held === 'object' &&
+            held !== null &&
+            (held as Record<string, unknown>).readonly === true
+        );
+    } catch {
+        return false;
     }
 }
 
@@ -78,12 +97,12 @@ export type SourceStore = {
     editSourceDraft: (id: string, text: string) => void;
     revertSourceDraft: (id: string) => void;
     saveSourceDraft: (id: string, root: string, path: string) => Promise<void>;
-    toggleSourcePreview: (id: string) => void;
+    toggleSourceRendered: (id: string) => void;
     saveSource: (root: string, path: string, content: string) => Promise<WriteAnswer>;
 };
 
 export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
-    const reading = new Map<string, Promise<void>>();
+    const reading = new Map<string, { file: string; request: Promise<void> }>();
 
     /** Working and saved copies belong to the instance, not its currently mounted component. */
     function sourceDraft(id: string): SourceDraft {
@@ -100,7 +119,10 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
             message: typeof held.message === 'string' ? held.message : '',
             // A tab that has never been told otherwise shows the rendered half, so opening a
             // Markdown file reads as the document it is without a control being found first.
-            preview: held.preview !== false
+            rendered: held.rendered !== false,
+            readonly: held.readonly === true,
+            truncated: held.truncated === true,
+            file: typeof held.file === 'string' ? held.file : ''
         };
     }
 
@@ -112,31 +134,45 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
      * Read once per instance per page lifetime, sharing an unfinished read across tab switches. A draft
      * restored from the browser's storage after a reload is read again from disk: an unsaved edit is
      * kept as the working text over the disk's copy, a draft with no edit takes the disk's text.
+     *
+     * The read belongs to the file it was started for. A preview tab pointed at a second file while
+     * the first file's read is still in flight has its draft cleared and asks for the second file:
+     * that ask starts its own read rather than waiting on the first, and the first, when it lands,
+     * finds the draft is another file's and writes nothing.
      */
     async function loadSourceDraft(id: string, root: string, path: string): Promise<void> {
-        if (sourceDraft(id).readIn === LIFETIME) return;
+        const file = `${root}/${path}`;
+        const held = sourceDraft(id);
+        if (held.readIn === LIFETIME && held.file === file) return;
         const pending = reading.get(id);
-        if (pending !== undefined) return pending;
-        const request = loadSource(root, path).then((answer) => {
-            if (answer.ok) {
-                const held = sourceDraft(id);
-                const edited = held.loaded && held.text !== held.saved;
-                updateDraft(id, {
-                    text: edited ? held.text : answer.content,
-                    saved: answer.content,
-                    loaded: true,
-                    readIn: LIFETIME,
-                    error: ''
-                });
-            } else {
-                updateDraft(id, { error: t('source.cannot_open', answer.error) });
+        if (pending?.file === file) return pending.request;
+        updateDraft(id, { file });
+        const request = Promise.all([loadSource(root, path), loadSourceReadonly(root, path)]).then(
+            ([answer, readonly]) => {
+                if (sourceDraft(id).file !== file) return;
+                if (answer.ok) {
+                    const held = sourceDraft(id);
+                    const edited = held.loaded && held.text !== held.saved;
+                    updateDraft(id, {
+                        text: edited ? held.text : answer.content,
+                        saved: answer.content,
+                        loaded: true,
+                        readIn: LIFETIME,
+                        error: '',
+                        readonly,
+                        truncated: answer.truncated
+                    });
+                } else {
+                    updateDraft(id, { error: t('source.cannot_open', answer.error) });
+                }
             }
-        });
-        reading.set(id, request);
+        );
+        const entry = { file, request };
+        reading.set(id, entry);
         try {
             await request;
         } finally {
-            reading.delete(id);
+            if (reading.get(id) === entry) reading.delete(id);
         }
     }
 
@@ -151,27 +187,51 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
     }
 
     /** Show or hide the rendered half. It belongs to the instance, as the working copy does. */
-    function toggleSourcePreview(id: string): void {
-        updateDraft(id, { preview: !sourceDraft(id).preview });
+    function toggleSourceRendered(id: string): void {
+        updateDraft(id, { rendered: !sourceDraft(id).rendered });
     }
 
-    /** A save acknowledges the exact sent copy, even if more typing follows while it is pending. */
+    /**
+     * A save acknowledges the exact sent copy, even if more typing follows while it is pending. A
+     * draft the tab holds no complete file for is never sent: the file on disk would lose whatever
+     * the read left out.
+     */
     async function saveSourceDraft(id: string, root: string, path: string): Promise<void> {
-        const content = sourceDraft(id).text;
+        const draft = sourceDraft(id);
+        if (draft.readonly) {
+            updateDraft(id, { message: t('source.readonly') });
+            return;
+        }
+        if (draft.truncated) {
+            updateDraft(id, { message: t('source.truncated') });
+            return;
+        }
+        const content = draft.text;
         updateDraft(id, { message: t('source.saving') });
         const answer = await saveSource(root, path, content);
         if (answer.ok) {
             updateDraft(id, { saved: content, message: t('source.saved') });
-        } else {
-            // A request that never reached the server (offline, a dropped socket) is the catalog's
-            // save_failed; a server refusal carries its own words.
-            updateDraft(id, {
-                message: answer.network
-                    ? t('source.save_failed')
-                    : // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string takes the fallback here, which ?? would not
-                      t('ui.common.x_prefix', answer.error || t('source.failed'))
-            });
+            return;
         }
+        // A request that never reached the server (offline, a dropped socket) is the catalog's
+        // save_failed; a refusal the server named carries the tab's own sentence for it. A file
+        // whose mode changed under the tab becomes the tab a locked file gets.
+        if (answer.network) {
+            updateDraft(id, { message: t('source.save_failed') });
+            return;
+        }
+        if (answer.error === 'readonly') {
+            updateDraft(id, { readonly: true, message: t('source.readonly') });
+            return;
+        }
+        if (answer.error === 'binary') {
+            updateDraft(id, { message: t('source.binary') });
+            return;
+        }
+        updateDraft(id, {
+            // eslint-disable-next-line @typescript-eslint/prefer-nullish-coalescing -- an empty string takes the fallback here, which ?? would not
+            message: t('ui.common.x_prefix', answer.error || t('source.failed'))
+        });
     }
 
     /** Save one file's complete current text through POST /api/source. */
@@ -185,7 +245,7 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
         editSourceDraft,
         revertSourceDraft,
         saveSourceDraft,
-        toggleSourcePreview,
+        toggleSourceRendered,
         saveSource
     };
 }

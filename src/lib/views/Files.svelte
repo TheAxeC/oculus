@@ -25,6 +25,12 @@
     // workspace can only ever add. The server refuses a removal of a configured root as well; a
     // refusal that lives only in a view is a refusal that disappears with the next caller.
     //
+    // A file opens in the view that can show it: a text file in the source tab, which is where it is
+    // read and written, an HTML file in the document view, and a picture, a PDF or anything else in
+    // the file view. Which of those a file is comes from its own first bytes, so the answer is
+    // awaited before a tab is opened. One click opens the pane's preview tab and a double click
+    // opens a tab that is kept.
+    //
     // A bookmark is a collection entry, so it is added and edited by the form every other collection
     // is edited by, over the schema its own file carries; the one thing this view supplies is the
     // list of roots a bookmark may name, since that is what the workspace in force says and not what
@@ -53,6 +59,7 @@
         type TreeRow
     } from '$lib/state/fs';
     import { documentState } from '$lib/state/layout';
+    import { sourceTabState } from '$lib/state/source.svelte';
     import { noteId } from '$lib/state/notes';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
@@ -68,12 +75,13 @@
             entries,
             listing,
             notes,
+            readFileKind,
             removeRoot,
             saveWorkspace,
             selectWorkspace,
             workspaces
         },
-        layout: { closeRecord, openView },
+        layout: { closeRecord, keepPreview, openView },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -162,17 +170,34 @@
     }
 
     /**
-     * Open one file as its own tab. An HTML file opens in the document view, which gives it a frame
-     * of its own so its stylesheets and relative assets resolve; everything else opens in the file
-     * view, which draws it by what its name says it is.
+     * Open one file as its own tab, in the view that can show it. A text file is opened for editing,
+     * which is what an editor does with every file it can read; an HTML file opens in the document
+     * view, which gives it a frame of its own so its stylesheets and relative assets resolve; a
+     * picture, a PDF and a file no editor could read open in the file view.
+     *
+     * Whether a file is text is its own first bytes, so the answer is awaited before a tab is opened.
+     * A single click opens the pane's preview tab and a double click keeps the tab it opened.
      */
-    function open(row: TreeRow): void {
+    async function open(row: TreeRow, preview: boolean): Promise<void> {
         const label = nameOf(row.path);
-        if (typeOfFile(row.path).kind === 'html') {
-            openView('document', documentState({ label, root: row.root, path: row.path }));
-            return;
-        }
-        openView('file', { root: row.root, path: row.path, label, size: row.size });
+        const type = await readFileKind(row.root, row.path);
+        const id =
+            type.kind === 'html'
+                ? openView(
+                      'document',
+                      documentState({ label, root: row.root, path: row.path }),
+                      undefined,
+                      { preview }
+                  )
+                : type.kind === 'text'
+                  ? openView('source', sourceTabState(row.root, row.path), undefined, { preview })
+                  : openView(
+                        'file',
+                        { root: row.root, path: row.path, label, size: row.size },
+                        undefined,
+                        { preview }
+                    );
+        if (!preview) keepPreview(id);
     }
 
     /**
@@ -353,7 +378,7 @@
                 {rows}
                 {fixed}
                 ontoggle={toggle}
-                onopen={open}
+                onopen={(row: TreeRow, preview: boolean) => void open(row, preview)}
                 onremove={(key: string) => void remove(key)}
             />
         {/if}

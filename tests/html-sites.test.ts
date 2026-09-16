@@ -29,7 +29,7 @@ const ALLOWED: Record<string, string> = {
         'drawn() sanitises unless the caller marked the content trusted, and the trusted Intro sites are checked one by one below: each must hand over a catalog line with literal arguments, so a hub value never reaches this site unfiltered.',
     'views/shared/Intro.svelte:drawn(line)':
         'drawn() sanitises unless the caller marked the content trusted, and the trusted Intro sites are checked one by one below: each must hand over a catalog line with literal arguments, so a hub value never reaches this site unfiltered.',
-    'views/file/Code.svelte:painted':
+    'views/source/Code.svelte:painted':
         'highlight.js escapes every & < > of the file text before it emits its own fixed span classes, so the code window holds no markup the file could put there.',
     'views/repositories/Diff.svelte:painted':
         'highlight.js escapes every & < > of the diff text before it emits its own fixed span classes, so the pane holds no markup a repository could put there.',
@@ -40,7 +40,7 @@ const ALLOWED: Record<string, string> = {
     'views/present/Panel.svelte:diagram':
         "the panel's diagram markup is put through sanitiseDiagram() where it is derived, one line above the site: the ordinary profile with `style` added, because a diagram is a grid of boxes whose columns and per-box colour are written on the elements themselves and the ordinary profile would keep the boxes and throw the diagram away. Every other rule of the profile stands, so no handler, script or frame survives; what the profile does not check is the style value itself, so a url() written there is fetched by the browser, which is a slide author's own doing.",
     'views/source/Editor.svelte:painted':
-        'state/highlight.ts escapes every & < > of the file text before it emits its own fixed span classes, so the mirror holds no markup the file could put there.'
+        'highlight.js escapes every & < > of the file text before it emits its own fixed span classes, so the mirror holds no markup the file could put there.'
 };
 
 function svelteFiles(at: string, prefix = ''): string[] {

@@ -101,8 +101,6 @@ describe("oculus's own config directory", () => {
         'manifest-schema.yml': ['manifest_schema'],
         'meta.yml': ['meta'],
         'sources.yml': [
-            'editable_extensions',
-            'viewable_extensions',
             'scan',
             'venues_file',
             'datasets_file',
@@ -234,44 +232,6 @@ describe("oculus's own config directory", () => {
         expect(config.usage_refresh_model).toBe('haiku');
         // The wait between the last keystroke in a note and the save that follows it.
         expect(config.notes).toEqual({ autosave_ms: 800 });
-    });
-
-    it('configures the editable source extensions and their viewable superset', () => {
-        const { config } = loadConfig(engineDir());
-        expect(config.editable_extensions).toEqual([
-            '.md',
-            '.yml',
-            '.yaml',
-            '.tex',
-            '.bib',
-            '.txt'
-        ]);
-        expect(config.viewable_extensions).toEqual([
-            '.md',
-            '.yml',
-            '.yaml',
-            '.tex',
-            '.bib',
-            '.txt',
-            '.py',
-            '.sh',
-            '.slurm',
-            '.json',
-            '.csv',
-            '.r',
-            '.m',
-            '.cpp',
-            '.h',
-            '.c',
-            '.hpp',
-            '.js',
-            '.css',
-            '.html',
-            '.toml',
-            '.cfg',
-            '.ini',
-            '.log'
-        ]);
     });
 
     it('holds exactly the expected top-level keys, and no more', () => {

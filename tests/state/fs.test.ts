@@ -1,4 +1,4 @@
-// The pure half of the file browser: what a name says a file is, and the rows the tree draws.
+// The pure half of the file browser: what a file opens as, and the rows the tree draws.
 //
 // What this does NOT cover: state/fs.svelte.ts's fetching, which is a store over three endpoints and
 // is exercised through the views and the browser layer; and the highlighter's own output, which is
@@ -37,7 +37,12 @@ function root(key: string, fixed = true): FsRoot {
     return { key, dir: `/tmp/${key}`, fixed };
 }
 
-describe('what a name says a file is', () => {
+/** The bytes of a file holding this text, which is what typeOfFile is told a file's kind from. */
+function bytes(text: string): Uint8Array {
+    return new TextEncoder().encode(text);
+}
+
+describe('what a file opens as', () => {
     it('sends an HTML file to the document view and a PDF and an image to their own', () => {
         expect(typeOfFile('manual.html').kind).toBe('html');
         expect(typeOfFile('read me.HTM').kind).toBe('html');
@@ -48,21 +53,40 @@ describe('what a name says a file is', () => {
     });
 
     it('names the language of a code file and plain text for the rest of the text ones', () => {
-        expect(typeOfFile('run.ts')).toEqual({ kind: 'text', language: 'typescript' });
-        expect(typeOfFile('run.py')).toEqual({ kind: 'text', language: 'python' });
-        expect(typeOfFile('config/sources.yml')).toEqual({ kind: 'text', language: 'yaml' });
-        expect(typeOfFile('main.tex')).toEqual({ kind: 'text', language: 'latex' });
-        expect(typeOfFile('job.slurm')).toEqual({ kind: 'text', language: 'bash' });
-        expect(typeOfFile('View.svelte')).toEqual({ kind: 'text', language: 'xml' });
-        expect(typeOfFile('notes.txt')).toEqual({ kind: 'text', language: 'plaintext' });
+        const held = bytes('one\n');
+        expect(typeOfFile('run.ts', held)).toEqual({ kind: 'text', language: 'typescript' });
+        expect(typeOfFile('run.py', held)).toEqual({ kind: 'text', language: 'python' });
+        expect(typeOfFile('config/sources.yml', held)).toEqual({ kind: 'text', language: 'yaml' });
+        expect(typeOfFile('main.tex', held)).toEqual({ kind: 'text', language: 'latex' });
+        expect(typeOfFile('job.slurm', held)).toEqual({ kind: 'text', language: 'bash' });
+        expect(typeOfFile('View.svelte', held)).toEqual({ kind: 'text', language: 'xml' });
+        expect(typeOfFile('notes.txt', held)).toEqual({ kind: 'text', language: 'plaintext' });
     });
 
     it('reads a language off a whole name for a file that carries no extension', () => {
-        expect(typeOfFile('Makefile')).toEqual({ kind: 'text', language: 'makefile' });
-        expect(typeOfFile('code/makefile')).toEqual({ kind: 'text', language: 'makefile' });
+        const held = bytes('all:\n');
+        expect(typeOfFile('Makefile', held)).toEqual({ kind: 'text', language: 'makefile' });
+        expect(typeOfFile('code/makefile', held)).toEqual({ kind: 'text', language: 'makefile' });
     });
 
-    it('leaves anything else as a name, a size and a link', () => {
+    it('reads the bytes and not the name, so a name says nothing about what is in the file', () => {
+        // An archive somebody called a text file, and a script nobody gave an extension.
+        const archive = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x00, 0x08, 0x00]);
+        expect(typeOfFile('data.txt', archive).kind).toBe('other');
+        expect(typeOfFile('run.py', archive).kind).toBe('other');
+        expect(typeOfFile('build', bytes('#!/bin/sh\n')).kind).toBe('text');
+    });
+
+    it('reads a file of accented letters as text and one with a zero byte in it as not', () => {
+        expect(typeOfFile('names.csv', bytes('Linkoeping, Twente, Munchen\n')).kind).toBe('text');
+        expect(typeOfFile('names.csv', bytes('Link\u00f6ping, M\u00fcnchen\n')).kind).toBe('text');
+        const zeroed = bytes('a'.repeat(100) + '\u0000' + 'b'.repeat(100));
+        expect(zeroed[100]).toBe(0);
+        expect(typeOfFile('notes.txt', zeroed).kind).toBe('other');
+    });
+
+    it('reads an empty file as text, and a file whose bytes have not been read as a download', () => {
+        expect(typeOfFile('empty.txt', new Uint8Array(0)).kind).toBe('text');
         expect(typeOfFile('archive.tar.gz').kind).toBe('other');
         expect(typeOfFile('data.npz').kind).toBe('other');
     });
@@ -658,5 +682,104 @@ describe('the store reading the endpoints', () => {
         expect(reads.filter((url) => url.startsWith('/api/file/'))).toEqual([]);
         expect(reads.filter((url) => url.includes('bookmarks=1'))).toEqual([]);
         expect(reads.filter((url) => url === FS_PATH)).toEqual([]);
+    });
+    // What a file opens as, through the one caller the file browser and the file view both use.
+    describe('what a file opens as', () => {
+        /** A response of one file's bytes, which is all a kind read asks for. */
+        function bytesOf(body: Uint8Array): Response {
+            return new Response(body.buffer as ArrayBuffer, { status: 200 });
+        }
+
+        it('reads the head once a round and answers the asks after it from what it holds', async () => {
+            serving(() => bytesOf(new TextEncoder().encode('print("one")\n')));
+
+            const first = client.fs.readFileKind('hub', 'code/run.py');
+            const second = client.fs.readFileKind('hub', 'code/run.py');
+            expect(await first).toEqual({ kind: 'text', language: 'python' });
+            expect(await second).toEqual({ kind: 'text', language: 'python' });
+            // The three asks a double click makes, and the file view's own, share one request.
+            expect(await client.fs.readFileKind('hub', 'code/run.py')).toEqual({
+                kind: 'text',
+                language: 'python'
+            });
+            expect(asked).toEqual(['/api/file/hub/code/run.py']);
+            expect(client.fs.heldFileKind('hub', 'code/run.py')).toEqual({
+                kind: 'text',
+                language: 'python'
+            });
+        });
+
+        it('holds a head the read failed on as the download, so the view stops reading', async () => {
+            serving(() => {
+                throw new Error('stream broke');
+            });
+            const kind = { kind: 'other', language: 'plaintext' };
+            expect(await client.fs.readFileKind('hub', 'code/broken.dat')).toEqual(kind);
+            expect(client.fs.heldFileKind('hub', 'code/broken.dat')).toEqual(kind);
+            expect(asked).toEqual(['/api/file/hub/code/broken.dat']);
+        });
+
+        it('asks again after a write has moved the round on', async () => {
+            serving(() => bytesOf(new TextEncoder().encode('one\n')));
+            await client.fs.readFileKind('hub', 'notes.txt');
+            expect(asked).toHaveLength(1);
+
+            client.fs.invalidate();
+            expect(client.fs.heldFileKind('hub', 'notes.txt')).toBeNull();
+            await client.fs.readFileKind('hub', 'notes.txt');
+            expect(asked).toHaveLength(2);
+        });
+
+        it('answers a name the browser draws itself without asking at all', async () => {
+            serving(() => bytesOf(new Uint8Array(0)));
+
+            expect(await client.fs.readFileKind('hub', 'docs/plot.png')).toEqual({
+                kind: 'image',
+                language: 'plaintext'
+            });
+            expect(client.fs.heldFileKind('hub', 'paper.pdf')).toEqual({
+                kind: 'pdf',
+                language: 'plaintext'
+            });
+            expect(asked).toEqual([]);
+        });
+
+        it('reads a file whose character straddles the end of the window as text', async () => {
+            // The window is 8192 bytes and the read is one more, so the two bytes of the accented
+            // letter fall on either side of it: the cut is the window's and not the file's.
+            const body = new TextEncoder().encode(
+                'a'.repeat(8191) + '\u00e9' + 'more text after it\n'
+            );
+            serving(() => bytesOf(body));
+
+            expect(await client.fs.readFileKind('hub', 'long.csv')).toEqual({
+                kind: 'text',
+                language: 'plaintext'
+            });
+        });
+
+        it('reads a file whose bytes are not text as a download, whatever its name says', async () => {
+            serving(() =>
+                bytesOf(new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x01, 0x02, 0x03]))
+            );
+
+            expect(await client.fs.readFileKind('hub', 'data.txt')).toEqual({
+                kind: 'other',
+                language: 'plaintext'
+            });
+        });
+
+        it('answers a download for a file the route refused, and holds it for the round', async () => {
+            serving(() => new Response('no', { status: 403 }));
+
+            expect(await client.fs.readFileKind('hub', 'secret.txt')).toEqual({
+                kind: 'other',
+                language: 'plaintext'
+            });
+            expect(client.fs.heldFileKind('hub', 'secret.txt')).toEqual({
+                kind: 'other',
+                language: 'plaintext'
+            });
+        });
     });
 });

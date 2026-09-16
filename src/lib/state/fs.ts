@@ -5,8 +5,13 @@
 // from the listings the server answered and the set of open folders, what is on screen is state
 // rather than what some component last did to the DOM.
 //
-// A file's type is read from its name alone. The server sends no type with a listing: the same
-// answer has to serve a tree drawn before anything is opened, and a name is what the reader picks by.
+// The formats a browser draws are read from the name: the server sends no type with a listing, the
+// same answer has to serve a tree drawn before anything is opened, and a name is what the reader
+// picks by. Whether anything else is text is the file's own first bytes, through data/text-kind.ts,
+// because a name says nothing reliable about that and a list of extensions is wrong about every
+// name nobody put on it.
+
+import { isTextBytes } from '../data/text-kind.ts';
 
 /**
  * The key the engine's own `config/` folder is served under, which is what the Config view lists and
@@ -44,7 +49,7 @@ export type FileType = { kind: FileKind; language: string };
 /** The largest text a code window draws. A longer file is cut here and the view says so. */
 export const TEXT_LIMIT = 2 * 1024 * 1024;
 
-/** The extensions each language claims. Anything in `TEXT` that is not here is plain text. */
+/** The extensions each language claims. A text file outside this map is painted as plain text. */
 const LANGUAGES: Record<string, string[]> = {
     typescript: ['.ts', '.tsx', '.mts', '.cts'],
     javascript: ['.js', '.jsx', '.mjs', '.cjs'],
@@ -75,9 +80,6 @@ const NAMES: Record<string, string[]> = {
 /** What the highlighter calls a file it has no language for. */
 const PLAIN = 'plaintext';
 
-/** The extensions that open in the code window, over and above the ones a language claims. */
-const TEXT = ['.txt', '.csv', '.tsv', '.log', '.cfg', '.conf', '.c', '.h', '.cpp', '.hpp', '.sql'];
-
 /** The extensions drawn as a picture. */
 const IMAGES = ['.png', '.jpg', '.jpeg', '.gif', '.svg', '.webp'];
 
@@ -105,24 +107,33 @@ export function nameOf(path: string): string {
     );
 }
 
+/** The highlighter's name for a file's language, from its extension or from its whole name. */
+export function languageOf(name: string): string {
+    const suffix = extensionOf(name);
+    for (const [language, list] of Object.entries(LANGUAGES)) {
+        if (list.includes(suffix)) return language;
+    }
+    const bare = nameOf(name).toLowerCase();
+    for (const [language, list] of Object.entries(NAMES)) {
+        if (list.includes(bare)) return language;
+    }
+    return PLAIN;
+}
+
 /**
- * How a file opens, by its name. An SVG is a picture rather than a code window: it is drawn as one
- * everywhere else in the application.
+ * How a file opens. The three formats a browser draws itself are the name's: an SVG is a picture
+ * rather than text, as it is drawn everywhere else in the application. Everything else is text when
+ * its first bytes say so and a download when they do not, so a `.txt` holding an archive is a
+ * download and a script nobody gave an extension is text. A caller with no bytes yet gets `other`,
+ * which is what the file view draws while it has none.
  */
-export function typeOfFile(name: string): FileType {
+export function typeOfFile(name: string, bytes?: Uint8Array): FileType {
     const suffix = extensionOf(name);
     if (PAGES.includes(suffix)) return { kind: 'html', language: PLAIN };
     if (IMAGES.includes(suffix)) return { kind: 'image', language: PLAIN };
     if (suffix === '.pdf') return { kind: 'pdf', language: PLAIN };
-    for (const [language, list] of Object.entries(LANGUAGES)) {
-        if (list.includes(suffix)) return { kind: 'text', language };
-    }
-    const bare = nameOf(name).toLowerCase();
-    for (const [language, list] of Object.entries(NAMES)) {
-        if (list.includes(bare)) return { kind: 'text', language };
-    }
-    if (TEXT.includes(suffix)) return { kind: 'text', language: PLAIN };
-    return { kind: 'other', language: PLAIN };
+    const text = bytes !== undefined && isTextBytes(bytes);
+    return { kind: text ? 'text' : 'other', language: languageOf(name) };
 }
 
 /** Every language the code window registers, which is every one a name can resolve to. */

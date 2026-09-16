@@ -1,7 +1,9 @@
-// The whole-file source write against one synthetic root under the system temporary directory:
-// authentication, root and extension refusals, replacement, and the neighbour-rename result.
+// The source endpoint against one synthetic root under the system temporary directory: what the GET
+// says about a file, and the write's authentication, root, mode and content refusals, its
+// replacement and the neighbour-rename result.
 
 import {
+    chmodSync,
     mkdirSync,
     mkdtempSync,
     readFileSync,
@@ -15,11 +17,10 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterEach, describe, expect, it } from 'vitest';
 import { mintToken, TOKEN_HEADER } from '../../src/lib/server/auth.ts';
-import { handleSource } from '../../src/lib/server/source.ts';
+import { handleSource, handleSourceInfo, isBinaryFile } from '../../src/lib/server/source.ts';
 import { ENGINE_ROOT, engineRoot } from '../../src/lib/server/files.ts';
 import type { Root } from '../../src/lib/server/files.ts';
 
-const EDITABLE = ['.md', '.yml'];
 const HOST = '127.0.0.1:8790';
 const temporary: string[] = [];
 
@@ -61,12 +62,10 @@ describe('POST /api/source', () => {
         const one = fixture();
         const token = mintToken();
         const body = { root: one.root.key, path: 'notes.md', content: 'after\n' };
-        expect(
-            (await handleSource(request(token, body, false), token, [one.root], EDITABLE)).status
-        ).toBe(403);
-        expect(
-            (await handleSource(request('stale', body), token, [one.root], EDITABLE)).status
-        ).toBe(403);
+        expect((await handleSource(request(token, body, false), token, [one.root])).status).toBe(
+            403
+        );
+        expect((await handleSource(request('stale', body), token, [one.root])).status).toBe(403);
         expect(readFileSync(one.file, 'utf8')).toBe('before\n');
     });
 
@@ -76,8 +75,7 @@ describe('POST /api/source', () => {
         const response = await handleSource(
             request(token, { root: one.root.key, path: '../outside.md', content: 'after\n' }),
             token,
-            [one.root],
-            EDITABLE
+            [one.root]
         );
         expect(response.status).toBe(403);
         expect(await response.json()).toEqual({
@@ -88,7 +86,7 @@ describe('POST /api/source', () => {
         expect(readFileSync(one.outside, 'utf8')).toBe('before\n');
     });
 
-    it('refuses an extension outside the configured editable list', async () => {
+    it('writes a file of any name whose bytes are text, since no list says which', async () => {
         const one = fixture();
         const file = join(one.root.dir, 'program.py');
         expect(resolve(file).startsWith(resolve(one.root.dir) + sep)).toBe(true);
@@ -97,16 +95,86 @@ describe('POST /api/source', () => {
         const response = await handleSource(
             request(token, { root: one.root.key, path: 'program.py', content: 'after\n' }),
             token,
-            [one.root],
-            EDITABLE
+            [one.root]
+        );
+        expect(response.status).toBe(200);
+        expect(readFileSync(file, 'utf8')).toBe('after\n');
+    });
+
+    it('refuses a file this machine locks with readonly, and writes nothing', async () => {
+        const one = fixture();
+        chmodSync(one.file, 0o444);
+        const token = mintToken();
+        const response = await handleSource(
+            request(token, { root: one.root.key, path: 'notes.md', content: 'after\n' }),
+            token,
+            [one.root]
         );
         expect(response.status).toBe(403);
         expect(await response.json()).toEqual({
             ok: false,
-            error: 'the extension is not editable',
-            refused: [{ field: 'path', reason: 'the extension is not editable' }]
+            error: 'readonly',
+            refused: [{ field: 'path', reason: 'readonly' }]
         });
-        expect(readFileSync(file, 'utf8')).toBe('before\n');
+        expect(readFileSync(one.file, 'utf8')).toBe('before\n');
+    });
+
+    it('refuses a file whose own bytes are not text with binary, and writes nothing', async () => {
+        const one = fixture();
+        const file = join(one.root.dir, 'data.npz');
+        expect(resolve(file).startsWith(resolve(one.root.dir) + sep)).toBe(true);
+        const held = Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x00, 0x01, 0x02, 0x03]);
+        writeFileSync(file, held);
+        const token = mintToken();
+        const response = await handleSource(
+            request(token, { root: one.root.key, path: 'data.npz', content: 'after\n' }),
+            token,
+            [one.root]
+        );
+        expect(response.status).toBe(403);
+        expect(await response.json()).toEqual({
+            ok: false,
+            error: 'binary',
+            refused: [{ field: 'path', reason: 'binary' }]
+        });
+        expect(readFileSync(file)).toEqual(held);
+    });
+
+    it('writes a file whose character lies across the end of the rule window', async () => {
+        const one = fixture();
+        const file = join(one.root.dir, 'long.csv');
+        expect(resolve(file).startsWith(resolve(one.root.dir) + sep)).toBe(true);
+        // The two bytes of the accented letter fall on either side of byte 8192, which the write
+        // must read as a cut of its own window and not as a file that is not UTF-8.
+        writeFileSync(file, 'a'.repeat(8191) + '\u00e9' + 'more text after it\n');
+        expect(isBinaryFile(file)).toBe(false);
+        const token = mintToken();
+        const response = await handleSource(
+            request(token, { root: one.root.key, path: 'long.csv', content: 'after\n' }),
+            token,
+            [one.root]
+        );
+        expect(response.status).toBe(200);
+        expect(readFileSync(file, 'utf8')).toBe('after\n');
+    });
+
+    it('writes a file it cannot read, since the mode says the write is allowed', async () => {
+        const one = fixture();
+        const file = join(one.root.dir, 'blind.md');
+        expect(resolve(file).startsWith(resolve(one.root.dir) + sep)).toBe(true);
+        writeFileSync(file, 'before\n');
+        chmodSync(file, 0o222);
+        // Nothing is decided about a file nothing could be read from: the mode allows the write.
+        expect(isBinaryFile(file)).toBe(false);
+        const token = mintToken();
+        const response = await handleSource(
+            request(token, { root: one.root.key, path: 'blind.md', content: 'after\n' }),
+            token,
+            [one.root]
+        );
+        expect(response.status).toBe(200);
+        chmodSync(file, 0o644);
+        expect(readFileSync(file, 'utf8')).toBe('after\n');
     });
 
     it('answers 404 for a missing file inside an existing root without creating it', async () => {
@@ -116,8 +184,7 @@ describe('POST /api/source', () => {
             const response = await handleSource(
                 request(token, { root: one.root.key, path, content: 'after' }),
                 token,
-                [one.root],
-                EDITABLE
+                [one.root]
             );
             expect(response.status).toBe(404);
             expect(await response.json()).toEqual({ ok: false, error: 'the file is not there' });
@@ -135,8 +202,7 @@ describe('POST /api/source', () => {
             const response = await handleSource(
                 request(token, { root: one.root.key, path, content: 'after' }),
                 token,
-                [one.root],
-                EDITABLE
+                [one.root]
             );
             expect(response.status).toBe(403);
             expect(await response.json()).toMatchObject({
@@ -157,8 +223,7 @@ describe('POST /api/source', () => {
                 content: 'whole replacement\n'
             }),
             token,
-            [one.root],
-            EDITABLE
+            [one.root]
         );
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({ ok: true });
@@ -167,6 +232,50 @@ describe('POST /api/source', () => {
         expect(
             readdirSync(one.root.dir).filter((name) => name.startsWith('.oculus-write-'))
         ).toEqual([]);
+    });
+});
+
+describe('GET /api/source', () => {
+    /** The GET as the page makes it, which carries no body and no token. */
+    function ask(root: string, path: string, origin = true): { request: Request; url: URL } {
+        const address = new URL(
+            `http://${HOST}/api/source?root=${encodeURIComponent(root)}&path=${encodeURIComponent(path)}`
+        );
+        const headers: Record<string, string> = { host: HOST };
+        if (origin) headers['sec-fetch-site'] = 'same-origin';
+        return { request: new Request(address, { headers }), url: address };
+    }
+
+    it('says a writable file is not read-only and a file of mode 0444 is', async () => {
+        const one = fixture();
+        const open = ask(one.root.key, 'notes.md');
+        expect(await handleSourceInfo(open.request, open.url, [one.root]).json()).toEqual({
+            ok: true,
+            readonly: false
+        });
+
+        chmodSync(one.file, 0o444);
+        const locked = ask(one.root.key, 'notes.md');
+        expect(await handleSourceInfo(locked.request, locked.url, [one.root]).json()).toEqual({
+            ok: true,
+            readonly: true
+        });
+    });
+
+    it('answers 404 for a file that is not there and refuses a path outside the root', () => {
+        const one = fixture();
+        const missing = ask(one.root.key, 'missing.md');
+        expect(handleSourceInfo(missing.request, missing.url, [one.root]).status).toBe(404);
+        const outside = ask(one.root.key, '../outside.md');
+        expect(handleSourceInfo(outside.request, outside.url, [one.root]).status).toBe(403);
+    });
+
+    it('requires the same origin and both of its two parameters', () => {
+        const one = fixture();
+        const other = ask(one.root.key, 'notes.md', false);
+        expect(handleSourceInfo(other.request, other.url, [one.root]).status).toBe(403);
+        const bare = ask('', '');
+        expect(handleSourceInfo(bare.request, bare.url, [one.root]).status).toBe(400);
     });
 });
 
@@ -194,12 +303,7 @@ describe('a config file of the engine', () => {
             path: 'layout.yml',
             content: 'nav_groups:\n  boards: { label: "Boards" }\n'
         };
-        const answer = await handleSource(
-            request(token, body),
-            token,
-            [engineRoot(one.engine)],
-            EDITABLE
-        );
+        const answer = await handleSource(request(token, body), token, [engineRoot(one.engine)]);
 
         expect(answer.status).toBe(200);
         expect(await answer.json()).toEqual({ ok: true });
@@ -210,12 +314,7 @@ describe('a config file of the engine', () => {
         const one = engineFixture();
         const token = mintToken();
         const body = { root: ENGINE_ROOT, path: 'local.yml', content: 'hub: /srv/research-hub\n' };
-        const answer = await handleSource(
-            request(token, body),
-            token,
-            [engineRoot(one.engine)],
-            EDITABLE
-        );
+        const answer = await handleSource(request(token, body), token, [engineRoot(one.engine)]);
 
         expect(answer.status).toBe(200);
         expect(await answer.json()).toEqual({ ok: true });
@@ -230,8 +329,7 @@ describe('a config file of the engine', () => {
         const answer = await handleSource(
             request(token, { root: ENGINE_ROOT, path: 'local.yml', content: 'port: eight\n' }),
             token,
-            [engineRoot(one.engine)],
-            EDITABLE
+            [engineRoot(one.engine)]
         );
 
         expect(answer.status).toBe(400);
@@ -248,8 +346,7 @@ describe('a config file of the engine', () => {
         const answer = await handleSource(
             request(token, { root: ENGINE_ROOT, path: 'layout.yml', content: 'port: eight\n' }),
             token,
-            [engineRoot(one.engine)],
-            EDITABLE
+            [engineRoot(one.engine)]
         );
 
         expect(answer.status).toBe(200);
@@ -262,8 +359,7 @@ describe('a config file of the engine', () => {
         const answer = await handleSource(
             request(token, { root: ENGINE_ROOT, path: '../local.yml', content: 'hub: /taken\n' }),
             token,
-            [engineRoot(one.engine)],
-            EDITABLE
+            [engineRoot(one.engine)]
         );
 
         expect(answer.status).toBe(403);

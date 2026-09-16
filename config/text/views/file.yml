@@ -1,14 +1,10 @@
-# Oculus text owned by the file view: one file of a root drawn by what its name says it is.
+# Oculus text owned by the file view: one file of a root that an editor cannot show.
 text:
     file:
         bookmark: Bookmark this file
         bookmark_failed: 'The bookmark could not be written: {0}'
         bookmark_glyph: star
-        code: '{0}, read only'
         download: Download the file
-        edit: Open in a source tab
-        edit_glyph: edit
-        error: 'The file could not be read: {0}'
         image: '{0}'
         loading: Reading...
         none: No file chosen. Open one from the Files view.

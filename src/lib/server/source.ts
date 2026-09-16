@@ -1,9 +1,19 @@
-// Layer 2, server. The whole-file source write: authenticate one same-origin request, resolve its
-// existing file inside a configured root, allow only configured editable extensions, and replace
-// its text through a temporary neighbour and atomic rename.
+// Layer 2, server. The source endpoint: what one file may be done with, and the whole-file write.
+//
+// The write authenticates one same-origin request, resolves its existing file inside a configured
+// root, and replaces its text through a temporary neighbour and atomic rename. What it may be done
+// to is the file itself and not a list of extensions: a file the mode locks is refused with
+// `readonly`, and a file whose own bytes are not text is refused with `binary`, since replacing
+// those with an editor's text would destroy them. The refusals are single words; the sentence a
+// reader is shown for each is the source tab's, from the catalog.
+//
+// The GET answers the one fact the tab needs before it draws anything, whether the file is writable
+// on this machine, so the editor can say so rather than letting a reader type into something that
+// will refuse the save.
 
-import { extname } from 'node:path';
-import { LOCAL_NAME, checkLocal, engineDir, loadConfig } from '../data/sources/config.ts';
+import { accessSync, closeSync, constants, openSync, readSync } from 'node:fs';
+import { LOCAL_NAME, checkLocal } from '../data/sources/config.ts';
+import { TEXT_SNIFF_READ, isTextBytes } from '../data/text-kind.ts';
 import { hasToken, sameOrigin } from './auth.ts';
 import { ENGINE_ROOT, resolveRootFileResult, resolveRootPath, roots, type Root } from './files.ts';
 import { writeTextAtomic } from './sessions/json.ts';
@@ -21,20 +31,40 @@ function refuse(reason: string): Response {
     return json(403, { ok: false, error: reason, refused: [{ field: 'path', reason }] });
 }
 
-/** A normalised extension list from one merged config key. Invalid entries are ignored. */
-export function extensionList(config: Record<string, unknown>, key: string): string[] {
-    const value = config[key];
-    if (!Array.isArray(value)) return [];
-    return value
-        .filter(
-            (entry): entry is string => typeof entry === 'string' && /^\.[a-z0-9]+$/i.test(entry)
-        )
-        .map((entry) => entry.toLowerCase());
+/** The word a refusal carries, which the source tab has a sentence of its own for. */
+export type SourceRefusal = 'readonly' | 'binary';
+
+/** Whether this machine's mode on the resolved file refuses a write to it. */
+export function isReadonly(path: string): boolean {
+    try {
+        accessSync(path, constants.W_OK);
+        return false;
+    } catch {
+        return true;
+    }
 }
 
-/** The configured writable extensions, read for each request like the configured roots. */
-export function editableExtensions(): string[] {
-    return extensionList(loadConfig(engineDir()).config, 'editable_extensions');
+/**
+ * Whether the file on disk holds bytes no editor could have read, by the rule the browser told the
+ * file's kind by, over the window and the one byte after it the rule reads a cut by.
+ *
+ * A file that cannot be opened for reading is not binary and is not refused here: the mode that
+ * refuses the read either refuses the write too, which answers in the write's own words, or allows
+ * it, and a file this machine says may be written is written. Nothing is decided here about a file
+ * nothing could be read from.
+ */
+export function isBinaryFile(path: string): boolean {
+    let handle: number | null = null;
+    try {
+        handle = openSync(path, 'r');
+        const head = new Uint8Array(TEXT_SNIFF_READ);
+        const read = readSync(handle, head, 0, TEXT_SNIFF_READ, 0);
+        return !isTextBytes(head.subarray(0, read));
+    } catch {
+        return false;
+    } finally {
+        if (handle !== null) closeSync(handle);
+    }
 }
 
 /** A valid whole-file source body, or null when any required field is absent or malformed. */
@@ -66,12 +96,33 @@ function localRefusal(list: Root[], path: string, content: string): string | nul
     return checkLocal(content, LOCAL_NAME);
 }
 
+/**
+ * What the source tab may do with one file: whether this machine's mode on it refuses a write. The
+ * resolver and the origin check are the write's, so the two answer about the same file.
+ */
+export function handleSourceInfo(request: Request, url: URL, rootList: Root[] = roots()): Response {
+    if (!sameOrigin(request, request.headers.get('host') ?? '')) {
+        return json(403, { ok: false, error: 'the request did not come from this page' });
+    }
+    const root = url.searchParams.get('root') ?? '';
+    const path = url.searchParams.get('path') ?? '';
+    if (root === '' || path === '') {
+        return json(400, { ok: false, error: 'root and path are required' });
+    }
+    const resolved = resolveRootFileResult(rootList, root, path);
+    if ('error' in resolved) {
+        return resolved.error === 'missing'
+            ? json(404, { ok: false, error: 'the file is not there' })
+            : refuse('the path is outside the named root');
+    }
+    return json(200, { ok: true, readonly: isReadonly(resolved.path) });
+}
+
 /** Refuse a source write or replace its complete text and answer in the write route's shape. */
 export async function handleSource(
     request: Request,
     token: string,
-    rootList: Root[] = roots(),
-    editable: string[] = editableExtensions()
+    rootList: Root[] = roots()
 ): Promise<Response> {
     if (!sameOrigin(request, request.headers.get('host') ?? '')) {
         return json(403, { ok: false, error: 'the request did not come from this page' });
@@ -97,9 +148,8 @@ export async function handleSource(
             ? json(404, { ok: false, error: 'the file is not there' })
             : refuse('the path is outside the named root');
     }
-    if (!editable.includes(extname(resolved.path).toLowerCase())) {
-        return refuse('the extension is not editable');
-    }
+    if (isReadonly(resolved.path)) return refuse('readonly');
+    if (isBinaryFile(resolved.path)) return refuse('binary');
     const refusal = localRefusal(rootList, resolved.path, body.content);
     if (refusal !== null) return json(400, { ok: false, error: refusal });
     try {

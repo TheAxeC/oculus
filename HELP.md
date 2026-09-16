@@ -100,7 +100,11 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `memories` | Memories | The photo wall, with a control that adds a picture and a click that enlarges one. |
 | `history` | History | Every write oculus made on this machine, newest first, with what each field held before it and a control that puts it back. |
 
-Four views are opened for something rather than listed in the rail: `project` (one project as its own tab), `editor` (its manifest form), `deposit` (its public code deposit) and `doc` (one Markdown document of the hub, from a group of the rail). Three more open from a file: `document` (a local HTML file in a frame), `file` (one file drawn by what its name says it is, with a control that opens a text file the source tab may save in that tab) and `source` (one text file, edited and saved, a Markdown file beside the rendered document its text makes, which a control in the bar takes away). One more opens from a repository: `repositories-diff` (one file's diff, staged or as the worktree has it, or everything a worktree holds that its repository does not).
+Four views are opened for something rather than listed in the rail: `project` (one project as its own tab), `editor` (its manifest form), `deposit` (its public code deposit) and `doc` (one Markdown document of the hub, from a group of the rail). Three more open from a file: `source` (one text file, edited and saved, its text coloured by language while the file is under 64 KB, a Markdown file beside the rendered document its text makes, which a control in the bar takes away), `document` (a local HTML file in a frame) and `file` (a picture, a PDF in a frame, or a name and a link that saves it).
+
+Every text file of the file browser opens in `source`. What counts as text is the file's own first bytes: no extension list decides it, so a script nobody gave an extension opens for editing and an archive somebody called a `.txt` is a download. Whether it can be saved is the file's mode on this machine: a file this machine locks, and one too long to have been read whole, are drawn as a read-only window under a line saying why, and neither takes a keystroke.
+
+A single click in the tree opens a preview tab, drawn in italics: the next single click in that pane is pointed at the file it names instead of opening a second tab, so a walk through a folder leaves one tab and not twenty. Clicking the same file a second time keeps its tab; so do a double click on the tab itself, typing into it, dragging it and splitting the pane around it. A double click on the row keeps it where the tree stays on screen beside the file, in a split pane; in one pane the first click has already put the file where the tree was, so the second click lands on the tab and keeps it the same way.
 
 ## Worktrees and the merge back
 
@@ -126,7 +130,7 @@ The files below sit in the `config/` folder of the engine, `tools/oculus/config/
 | `manifest-schema.yml` | The project.yml edit form as data: its sections, its fields, the widget each field is edited by, and where a widget takes its choices from. |
 | `meta.yml` | The tool identity: the title and the subtitle the window carries. |
 | `present.yml` | The public deck the Present view draws: the deck slides, the domain themes, the tag tones and the order. |
-| `sources.yml` | What the portfolio reads: the scan paths, the registry and collection files, the feeds, the roots a local file is served from, and the extensions a source tab may open and save. |
+| `sources.yml` | What the portfolio reads: the scan paths, the registry and collection files, the feeds, and the roots a local file is served from. |
 | `vocab.yml` | Words and their colours: the palette, the research domains, the status legend, the focus lanes, the venue tiers and the radar buckets. |
 | `local.yml` | This machine's own values, read on their own and never merged into the configuration: the hub path, the port, the ssh alias of the cluster, the Claude command, the account folders and where the machine-local state is kept. |
 

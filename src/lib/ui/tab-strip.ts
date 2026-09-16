@@ -20,6 +20,8 @@ export type Tab = {
     badgeTitle?: string;
     /** Coloured counts after the badge, with each colour already resolved to a theme hue. */
     cells?: { count: number; color: string; label: string }[];
+    /** The tab the next single click replaces: its label is drawn in italics. */
+    preview?: boolean;
 };
 
 /**

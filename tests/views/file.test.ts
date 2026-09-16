@@ -1,16 +1,14 @@
-// One file as its own tab, rendered to HTML on the server: what each type of file is drawn as, and
-// the code window's numbered, highlighted lines.
+// One file as its own tab, rendered to HTML on the server: what the view draws for each of the files
+// an editor cannot show, and the star over the open file.
 //
 // The catalog and the glyphs are the real config; the instance state is synthetic. What this does
-// NOT cover: the fetch state/fs.svelte.ts makes for a text file, which needs a server and is
-// exercised by tests/browser/files.spec.ts, so the text cases here render the code window directly.
+// NOT cover: the handing-on of a text file to the source tab. It runs in an effect over the file's
+// own first bytes, which a server rendering runs neither of; tests/browser/files.spec.ts opens a
+// bookmark of a Markdown file in this view and waits for the source tab it becomes.
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
 import File from '../../src/lib/views/File.svelte';
-import Code from '../../src/lib/views/file/Code.svelte';
-import { codeHtml, lineNumbers, registered } from '../../src/lib/state/languages.ts';
-import { typeOfFile } from '../../src/lib/state/fs.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -65,23 +63,53 @@ describe('one file as its own tab', () => {
         expect(body).toContain('src="/api/file/hub/paper.pdf"');
     });
 
-    it('draws an unknown type as its extension, its size and a link that saves it', () => {
+    it('says it is reading a file until its first bytes say what it is', () => {
         const body = drawn({ root: 'hub', path: 'data/set.npz', label: 'set.npz', size: 2097152 });
+
+        // A download offered over a file that is about to open in an editor would say the wrong
+        // thing for as long as the read takes.
+        expect(body).toContain('Reading...');
+        expect(body).not.toContain('download="set.npz"');
+    });
+
+    it('draws an unknown type as its extension, its size and a link that saves it', async () => {
+        vi.stubGlobal('window', {});
+        vi.stubGlobal('fetch', () =>
+            Promise.resolve(new Response(new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x01])))
+        );
+        const fresh = createClientState();
+        // The bytes are what says it is no text file, so the view is rendered once they are in.
+        expect(await fresh.fs.readFileKind('hub', 'data/set.npz')).toMatchObject({ kind: 'other' });
+        const body = render(File, {
+            context: clientContext(fresh),
+            props: {
+                instance: instance({
+                    root: 'hub',
+                    path: 'data/set.npz',
+                    label: 'set.npz',
+                    size: 2097152
+                })
+            }
+        }).body;
 
         expect(body).toContain('.npz');
         expect(body).toContain('2.0 MB');
         expect(body).toContain('download="set.npz"');
         expect(body).toContain('href="/api/file/hub/data/set.npz"');
-    });
-
-    it('says it is reading a text file while its bytes have not arrived', () => {
-        const body = drawn({ root: 'hub', path: 'code/run.py', label: 'run.py' });
-
-        expect(body).toContain('Reading...');
+        vi.unstubAllGlobals();
     });
 
     it('offers the control that opens the same address in a browser tab', () => {
         expect(drawn({ root: 'hub', path: 'paper.pdf' })).toContain('Open in a browser tab');
+    });
+
+    it('offers no control that opens an editor: every text file opens in one already', () => {
+        const body = drawn({ root: 'hub', path: 'README.md', label: 'README.md' });
+
+        expect(body).not.toContain('source tab');
+        expect(
+            Object.keys(textCatalog(config)).filter((key) => key.startsWith('file.edit'))
+        ).toEqual([]);
     });
 
     it('is one instance per root and path, so opening the same file twice is one tab', () => {
@@ -93,111 +121,6 @@ describe('one file as its own tab', () => {
         expect(first).not.toBe('');
         expect(again).toBe(first);
         expect(other).not.toBe(first);
-    });
-});
-
-describe('the code window', () => {
-    const PYTHON = 'import sys\n\n\ndef main():\n    return "one"\n';
-
-    it('numbers every line of the file', () => {
-        const { body } = render(Code, {
-            props: { text: PYTHON, language: 'python', path: 'code/run.py' }
-        });
-
-        expect(lineNumbers(PYTHON)).toEqual([1, 2, 3, 4, 5, 6]);
-        expect(body).toContain('1\n2\n3\n4\n5\n6');
-    });
-
-    it('paints the highlighter classes the theme colours, and escapes the file text', () => {
-        const painted = codeHtml('if (a < b) return "<b>";\n', 'javascript');
-
-        expect(painted).toContain('hljs-keyword');
-        expect(painted).toContain('hljs-string');
-        expect(painted).not.toContain('<b>');
-        expect(painted).toContain('&lt;b&gt;');
-    });
-
-    it('names the window by the file and says which language it painted', () => {
-        const { body } = render(Code, {
-            props: { text: PYTHON, language: 'python', path: 'code/run.py' }
-        });
-
-        expect(body).toContain('data-fs-code="code/run.py"');
-        expect(body).toContain('data-language="python"');
-        expect(body).toContain('aria-label="code/run.py, read only"');
-    });
-
-    it('draws a language it has none for as plain escaped text', () => {
-        expect(codeHtml('a < b\n', 'klingon')).toBe('a &lt; b\n');
-    });
-});
-
-// What a name of the research tree resolves to, and what the grammars beyond the first set paint.
-// The extension map and the highlighter's registry are two files, so each pair is checked in both.
-describe('the languages a research tree asks for', () => {
-    /** One name per extension the tree holds, with the language the code window paints it as. */
-    const NAMED: [string, string][] = [
-        ['core.lisp', 'lisp'],
-        ['macros.el', 'lisp'],
-        ['boot.scm', 'lisp'],
-        ['solver.ml', 'ocaml'],
-        ['solver.mli', 'ocaml'],
-        ['fit.R', 'r'],
-        ['fit.r', 'r'],
-        ['filter.m', 'matlab'],
-        ['sweep.jl', 'julia'],
-        ['pyproject.toml', 'ini'],
-        ['setup.ini', 'ini'],
-        ['Makefile', 'makefile'],
-        ['code/Makefile', 'makefile'],
-        ['job.slurm', 'bash'],
-        ['refs.bib', 'latex'],
-        ['run.ipynb', 'json'],
-        ['View.svelte', 'xml']
-    ];
-
-    it('opens each of them in the code window under a language the highlighter has registered', () => {
-        for (const [name, language] of NAMED) {
-            expect([name, typeOfFile(name)]).toEqual([name, { kind: 'text', language }]);
-            expect([name, registered().includes(language)]).toEqual([name, true]);
-        }
-    });
-
-    it('paints a Lisp, an OCaml, an R and a MATLAB snippet with the highlighter classes', () => {
-        expect(codeHtml('(defun add (a b) (+ a b))\n', 'lisp')).toContain('hljs-name');
-        expect(codeHtml('let add a b = a + b\n', 'ocaml')).toContain('hljs-keyword');
-        expect(codeHtml('fit <- lm(y ~ x, data = frame)\n', 'r')).toContain('hljs-operator');
-        expect(codeHtml('function y = scale(x)\ny = x * 2;\nend\n', 'matlab')).toContain(
-            'hljs-keyword'
-        );
-    });
-
-    it('paints the three that carry a research tree to its build and its settings', () => {
-        expect(codeHtml('function add(a, b)\nend\n', 'julia')).toContain('hljs-keyword');
-        expect(codeHtml('name = "oculus"\n', 'ini')).toContain('hljs-attr');
-        expect(codeHtml('all:\n\techo one\n', 'makefile')).toContain('hljs-section');
-    });
-});
-
-// The control that hands a file to a source tab is drawn only for a file the configuration lets that
-// tab open; a picture, a PDF, a blocked extension and an empty path draw none.
-describe('the control that opens a source tab', () => {
-    const word = textCatalog(config)['file.edit'];
-
-    it('is drawn for a file the source tab may save, and for nothing else', () => {
-        // The lists of extensions are the configuration's, so the client is handed the real one.
-        client.entities.receive({
-            channel: 'config',
-            version: 1,
-            payload: { config, text: textCatalog(config), findings: [] }
-        });
-        expect(drawn({ root: 'hub', path: 'README.md', label: 'README.md' })).toContain(word);
-        // A file the source tab could only show read-only gets no control: the file view already shows it.
-        expect(drawn({ root: 'hub', path: 'code/run.py', label: 'run.py' })).not.toContain(word);
-        expect(drawn({ root: 'hub', path: 'figure.png', label: 'figure.png' })).not.toContain(word);
-        expect(drawn({ root: 'hub', path: 'paper.pdf', label: 'paper.pdf' })).not.toContain(word);
-        expect(drawn({ root: 'hub', path: 'data.npz', label: 'data.npz' })).not.toContain(word);
-        expect(drawn({ root: 'hub', path: '', label: '' })).not.toContain(word);
     });
 });
 

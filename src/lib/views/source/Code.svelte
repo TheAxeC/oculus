@@ -1,6 +1,8 @@
 <script lang="ts">
-    // Layer 3, partial of views/File.svelte. One read-only code window: the line numbers down the
-    // left and the file's text painted beside them.
+    // Layer 3, partial of views/Source.svelte. One read-only code window: the line numbers down the
+    // left and the file's text painted beside them. It is what the source tab draws instead of an
+    // editor for a file it holds but may not write: one this machine's mode locks, and one too long
+    // for the tab to hold whole.
     //
     // The two columns scroll as one box rather than two synchronised ones, so a long line moves the
     // text under fixed numbers and nothing has to be kept in step by hand. The highlighter's token
@@ -11,7 +13,7 @@
     import { t } from '$lib/state/text';
 
     type Props = {
-        /** The file's text, already cut at the window's limit by the store. */
+        /** The file's text, already cut at the read's limit by the store. */
         text: string;
         /** The highlighter's name for the language, from the file's own extension. */
         language: string;
@@ -29,7 +31,7 @@
     <pre class="gutter" aria-hidden="true">{numbers.join('\n')}</pre>
     <!-- Keep pre and code on one line: a line break inside pre would enter the drawn text. -->
     <!-- eslint-disable-next-line svelte/no-at-html-tags -- highlight.js escapes the file text before it emits its own span classes -->
-    <pre class="text" role="region" aria-label={t('file.code', path)}><code>{@html painted}</code
+    <pre class="text" role="region" aria-label={t('source.code', path)}><code>{@html painted}</code
         ></pre>
 </div>
 

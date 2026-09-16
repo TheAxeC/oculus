@@ -525,13 +525,18 @@ describe('the code window palette', () => {
         expect(tokens.filter((name) => !/^#[0-9a-f]{6}$/i.test(root[name]))).toEqual([]);
     });
 
-    it('paints the code window through those six and nothing else', () => {
-        const source = readFileSync(join(SRC, 'lib', 'views', 'file', 'Code.svelte'), 'utf8');
-        const painted = [...source.matchAll(/color:\s*var\((--c-code-[a-z-]+)-txt\)/g)].map(
-            (found) => found[1]
-        );
-        expect([...new Set(painted)].sort()).toEqual(tokens);
-    });
+    // The code window and the editor's mirror paint the same highlighter's classes, so each must
+    // paint every role and nothing else: a file is coloured the same whether it is read or written.
+    it.each(['Code.svelte', 'Editor.svelte'])(
+        'paints %s through those six and nothing else',
+        (file) => {
+            const source = readFileSync(join(SRC, 'lib', 'views', 'source', file), 'utf8');
+            const painted = [...source.matchAll(/color:\s*var\((--c-code-[a-z-]+)-txt\)/g)].map(
+                (found) => found[1]
+            );
+            expect([...new Set(painted)].sort()).toEqual(tokens);
+        }
+    );
 });
 
 describe('the colour rule', () => {

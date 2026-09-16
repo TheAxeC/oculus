@@ -13,48 +13,48 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One file under one root as its own tab, drawn by what its name says it is: a
-    // code window for text, a picture for an image, a frame for a PDF, and a name with a link for
-    // anything else. An HTML file never reaches here; the file browser opens it in the document
-    // view, which gives it a document of its own so its relative assets resolve.
+    // Layer 3, view. One file under one root as its own tab, for the files an editor cannot show: a
+    // picture, a PDF in a frame, and a name with a link for anything else. An HTML file never reaches
+    // here; the file browser opens it in the document view, which gives it a document of its own so
+    // its relative assets resolve.
+    //
+    // A text file does not stay here either. The file browser opens one in the source tab, and a text
+    // file that reaches this view another way (a bookmark, a saved layout from before, a deep link)
+    // is handed to the source tab and this tab goes: one file is read in one place, whichever way the
+    // reader arrived at it. Which files those are is the file's own first bytes, so a file whose name
+    // does not say what it is reads as being read until they have arrived: a download offered for a
+    // second over a file that is about to open in an editor would be a flicker saying the wrong
+    // thing.
     //
     // Everything is read through api/file, the one route that serves a local file, so the inside-root
-    // check is the same for a code window as it is for a manual's stylesheet. A file longer than the
-    // window draws is cut by the store at the window's limit, the transfer stopped there as well as
-    // the layout, and the window says so, because a browser asked to lay out forty megabytes of text
-    // stops being a browser.
+    // check is the same here as it is for a manual's stylesheet.
     //
     // The PDF frame carries no sandbox: Chrome refuses to run its own PDF viewer inside a sandboxed
     // frame and draws an error page instead, and what the frame shows is a file this server serves
     // from a root it checked, so the frame is as trusted as the page around it.
     //
-    // The star in the toolbar is the reader's own bookmarks over this file: it is set when a
-    // bookmark names this root and this path, and pressing it adds one under the file's own name or
-    // takes that one out again. The rail draws them, and the Files view is where one is renamed.
-    //
-    // The window itself is read only. A file whose extension `editable_extensions` lists is handed to
-    // a source tab by the control beside the star, which is the same handing-on the Config view's
-    // cards make of the engine's own YAML; a file the source tab could only show read only gets no
-    // control, since this window already shows it.
+    // The star in the toolbar is `shared/BookmarkStar.svelte`, which the source tab draws too: a
+    // reader bookmarks the file in front of them, whichever of the two tabs is showing it.
 
+    import { untrack } from 'svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
-    import Code from './file/Code.svelte';
+    import BookmarkStar from './shared/BookmarkStar.svelte';
     import { openSourceFile } from './shared/edit-bar';
     import { humanSize } from '$lib/state/board';
     import { fileBytesUrl } from '$lib/state/fs.svelte';
     import { extensionOf, nameOf, typeOfFile } from '$lib/state/fs';
-    import { sourceAccess } from '$lib/state/source.svelte';
+    import { sourceTabState } from '$lib/state/source.svelte';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
     const client = useState();
     const {
-        fs: { addBookmark, bookmarks, fileText, removeBookmark },
-        selectors: { configMap }
+        fs: { heldFileKind, readFileKind },
+        layout: { closeInstance }
     } = client;
 
     let { instance }: ViewProps = $props();
@@ -66,22 +66,10 @@
     const title = $derived(label === '' ? t('views.file') : label);
     const src = $derived(root === '' || path === '' ? '' : fileBytesUrl(root, path));
     const type = $derived(typeOfFile(path));
-    const held = $derived(type.kind === 'text' ? fileText(root, path) : null);
+    /** What the file opens as once that is known, and null while its first bytes are being read. */
+    const known = $derived(root === '' || path === '' ? null : heldFileKind(root, path));
     /** What the tree knew the file's size to be, which is what an undrawn type reports. */
     const size = $derived(humanSize(number(instance.state, 'size')));
-    /** Whether the configuration lets the source tab open this file at all, to edit or to read. */
-    const openable = $derived(
-        type.kind === 'text' && path !== '' && sourceAccess(path, configMap()) === 'editable'
-    );
-
-    /** The bookmark over this very file, or null when the reader has not made one. */
-    const marked = $derived(
-        bookmarks().entries.find((one) => one.fields.root === root && one.fields.path === path) ??
-            null
-    );
-
-    /** What the last bookmark write failed with, in the endpoint's own words. */
-    let failed = $state('');
 
     function read(state: unknown, key: string): string {
         if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
@@ -95,73 +83,63 @@
         return typeof value === 'number' ? value : 0;
     }
 
-    /** Hand this file on to the source tab, which is where it is edited and saved. */
-    function edit(): void {
-        if (!openable) return;
-        openSourceFile(client, { root, path, label: nameOf(path) });
+    /**
+     * Hand a text file on to the source tab, which is where every text file is read and written.
+     * The preview mark goes with it, so a file opened by a single click stays the tab the next one
+     * replaces; when the source tab took this instance's own place, there is nothing left to close.
+     *
+     * Everything this reads about the instance is taken before the first await. Opening the source
+     * tab makes it the pane's active one, and the props of a component the pane is no longer drawing
+     * are not this tab's any more, so an id read afterwards would name the tab that took its place.
+     */
+    async function handOn(
+        mine: string,
+        own: boolean,
+        fileRoot: string,
+        filePath: string
+    ): Promise<void> {
+        if (fileRoot === '' || filePath === '') return;
+        if (typeOfFile(filePath).kind !== 'other') return;
+        const found = await readFileKind(fileRoot, filePath);
+        if (found.kind !== 'text') return;
+        const opened = openSourceFile(client, sourceTabState(fileRoot, filePath), {
+            preview: own
+        });
+        if (opened !== mine) closeInstance(mine);
     }
+
+    $effect(() => {
+        const mine = instance.id;
+        const own = instance.preview === true;
+        const fileRoot = root;
+        const filePath = path;
+        untrack(() => void handOn(mine, own, fileRoot, filePath));
+    });
 
     /** The same address in a browser tab of its own, which is also how the file is saved. */
     function outside(): void {
         if (src === '') return;
         window.open(src, '_blank', 'noopener');
     }
-
-    /**
-     * Bookmark this file under its own name, or take the bookmark over it out again. A label another
-     * bookmark already holds is refused rather than written over, which the endpoint says in words
-     * and the line under the toolbar repeats; the Files view is where that one is renamed.
-     */
-    async function mark(): Promise<void> {
-        if (root === '' || path === '') return;
-        const answer =
-            marked === null
-                ? await addBookmark({ label: nameOf(path), root, path })
-                : await removeBookmark(marked.id);
-        failed = answer.ok
-            ? answer.refused.map((one) => one.reason).join('; ')
-            : (answer.error ?? '');
-    }
 </script>
 
 {#snippet tools()}
     <Toolbar label={t('file.toolbar')}>
-        <ToolButton
-            label={marked === null ? t('file.bookmark') : t('file.unbookmark')}
-            glyph={t('file.bookmark_glyph')}
-            pressed={marked !== null}
-            active={marked !== null}
-            onclick={() => void mark()}
-        />
-        {#if openable}
-            <ToolButton label={t('file.edit')} glyph={t('file.edit_glyph')} onclick={edit} />
-        {/if}
+        <BookmarkStar {root} {path} />
         <ToolButton label={t('file.open_outside')} onclick={outside} />
     </Toolbar>
 {/snippet}
 
 <Pane {title} toolbar={tools}>
     <div class="file" data-instance={instance.id} data-root={root} data-path={path}>
-        {#if failed !== ''}
-            <p class="failed" aria-live="polite">{t('file.bookmark_failed', failed)}</p>
-        {/if}
         {#if src === ''}
             <Empty message={t('file.none')} glyph={t('file.none_glyph')} />
         {:else if type.kind === 'image'}
             <img class="picture" alt={t('file.image', nameOf(path))} {src} />
         {:else if type.kind === 'pdf'}
             <iframe class="frame" {title} {src}></iframe>
-        {:else if type.kind === 'text'}
-            {#if held !== null && held.error !== ''}
-                <Empty message={t('file.error', held.error)} glyph={t('file.none_glyph')} />
-            {:else if held === null || held.loading}
-                <Empty message={t('file.loading')} glyph={t('file.none_glyph')} />
-            {:else}
-                {#if held.truncated}
-                    <p class="note" aria-live="polite">{t('file.truncated')}</p>
-                {/if}
-                <Code text={held.text} language={type.language} {path} />
-            {/if}
+        {:else if known === null || known.kind === 'text'}
+            <Empty message={t('file.loading')} glyph={t('file.none_glyph')} />
         {:else}
             <div class="other">
                 <Empty
@@ -216,18 +194,6 @@
 
     .download {
         color: var(--accent-txt, var(--accent));
-        font-size: var(--fs-sm);
-    }
-
-    .note {
-        margin: 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-sm);
-    }
-
-    .failed {
-        margin: 0;
-        color: var(--c-red-txt);
         font-size: var(--fs-sm);
     }
 </style>

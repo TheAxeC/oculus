@@ -16,6 +16,7 @@ import type { UiStore } from './ui.svelte.ts';
 import {
     activePath,
     activate,
+    asPreview,
     clearPage,
     closeInstance as removeInstance,
     closePane as removePane,
@@ -28,6 +29,8 @@ import {
     focusedPane,
     fold,
     insertInstance,
+    isPreview,
+    keepInstance,
     panes as panesIn,
     isInstanceOf,
     maximise,
@@ -39,7 +42,9 @@ import {
     paneAt,
     parseLayout,
     parseWorkbench,
+    previewIn,
     restate,
+    retarget,
     restore,
     samePath,
     serialiseLayout,
@@ -94,6 +99,8 @@ export type LayoutStore = {
     restateInstance: (id: string, state: unknown) => void;
     pinInstance: (id: string, session: string, label: string) => void;
     unpinInstance: (id: string) => void;
+    /** Keep a preview tab, which is what a double click, a keystroke, a drag and a split do to one. */
+    keepPreview: (id: string) => void;
     loadLayout: (storage?: Storable) => boolean;
     openArrangement: (raw: unknown, label: string) => boolean;
     openPage: (label: string) => void;
@@ -119,8 +126,17 @@ export type LayoutStore = {
     foldPane: (path: number[], page?: string) => void;
     expandChild: (path: number[], index: number, page?: string) => void;
     focused: (page?: string) => Focus | null;
-    openView: (view: ViewId, state?: unknown, page?: string) => string;
+    openView: (view: ViewId, state?: unknown, page?: string, options?: OpenOptions) => string;
     openBeside: (view: ViewId, state?: unknown, page?: string) => string;
+};
+
+/** What an opener may ask for beyond the view and its state. */
+export type OpenOptions = {
+    /**
+     * Open as the pane's preview tab: the preview tab it already holds is pointed at this view and
+     * state instead, and a pane holding none gains one.
+     */
+    preview?: boolean;
 };
 
 export function createLayout(ui: UiStore): LayoutStore {
@@ -275,6 +291,13 @@ export function createLayout(ui: UiStore): LayoutStore {
     /** Clear the pin and label in place; another unpinned instance of the view may already exist. */
     function unpinInstance(id: string): void {
         restateInstance(id, {});
+    }
+
+    /** Keep a preview tab. A tab that is not one, and an id no page holds, change nothing. */
+    function keepPreview(id: string): void {
+        const page = holding(id);
+        if (page === null) return;
+        change((tree) => keepInstance(tree, id), page.id);
     }
 
     /**
@@ -598,6 +621,8 @@ export function createLayout(ui: UiStore): LayoutStore {
         const to = at(page);
         const from = holding(id);
         if (from === null || to === null) return;
+        // A tab the reader has carried somewhere is a tab they mean to keep.
+        keepPreview(id);
         if (from.id !== to.id) {
             carryToPage(id, from, to, path, (tree, moved) =>
                 insertInstance(tree, path, index, moved)
@@ -616,6 +641,8 @@ export function createLayout(ui: UiStore): LayoutStore {
         const to = at(page);
         const from = holding(id);
         if (from === null || to === null) return;
+        // A pane of its own is not somewhere a tab the next click replaces would sit.
+        keepPreview(id);
         if (from.id !== to.id) {
             const dir: 'row' | 'col' = edge === 'left' || edge === 'right' ? 'row' : 'col';
             const before = edge === 'left' || edge === 'top';
@@ -702,9 +729,13 @@ export function createLayout(ui: UiStore): LayoutStore {
      * record twice activates its existing tab and opening a second record creates another. A state
      * carrying neither retargets the unpinned instance, while pinned instances stay fixed. The returned
      * id names the instance activated or created, so its separate UI state can be updated by the caller.
+     *
+     * `options.preview` opens the view as the pane's preview tab, which is the one a single click in
+     * the file browser opens: the pane's existing preview tab is pointed at this view and state in
+     * place, so walking a tree with single clicks reads one file after another in one tab.
      */
-    function openView(view: ViewId, state?: unknown, page?: string): string {
-        return openInto(view, state, false, page);
+    function openView(view: ViewId, state?: unknown, page?: string, options?: OpenOptions): string {
+        return openInto(view, state, false, page, options?.preview === true);
     }
 
     /**
@@ -723,7 +754,13 @@ export function createLayout(ui: UiStore): LayoutStore {
      * page is the one the reader is in, which is the page shown at the pane holding the keyboard
      * focus and the page on screen when no pane holds it.
      */
-    function openInto(view: ViewId, state: unknown, beside: boolean, page?: string): string {
+    function openInto(
+        view: ViewId,
+        state: unknown,
+        beside: boolean,
+        page?: string,
+        preview = false
+    ): string {
         const held = page === undefined ? touched() : at(page);
         if (held === null) return '';
         const host = held.id;
@@ -740,10 +777,38 @@ export function createLayout(ui: UiStore): LayoutStore {
                 const stated = state === undefined ? current : restate(current, existing.id, state);
                 return activate(expandTo(stated, activePath(stated, existing.id)), existing.id);
             }, host);
+            // Asking for the file the preview tab already holds is asking for it a second time,
+            // which is what the second click of a double click is. It keeps the tab, and it is the
+            // path that holds when the first click has taken the tree off the screen and the second
+            // one lands on the tab the tree opened.
+            if (preview && isPreview(existing)) keepPreview(existing.id);
             return existing.id;
         }
-        const instance = newInstance(view, state ?? {});
         const path = into !== null && inside !== null ? into : activePath(tree, active(host));
+        // A preview open lands in the pane's preview tab when it holds one, wherever that tab came
+        // from: the tab is pointed at the new view and keeps its place in the strip.
+        const replaced = preview ? previewIn(paneAt(tree, path)) : null;
+        if (replaced !== null) {
+            remembered(replaced.id, host);
+            // The instance keeps its id, so what the view it was is holding under that id would be
+            // read by the view it becomes: a draft of the file before this one, a cursor into a list
+            // that is gone. A preview tab never holds an unsaved edit, since typing into one keeps
+            // it, so there is nothing here to lose.
+            ui.clearInstanceState(replaced.id);
+            change(
+                (current) =>
+                    retarget(
+                        expandTo(current, activePath(current, replaced.id)),
+                        replaced.id,
+                        view,
+                        state ?? {}
+                    ),
+                host
+            );
+            return replaced.id;
+        }
+        const fresh = newInstance(view, state ?? {});
+        const instance = preview ? asPreview(fresh) : fresh;
         const aside = beside && inside === null;
         const stack = aside ? besidePath(tree, host) : null;
         if (aside) {
@@ -804,6 +869,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         restateInstance,
         pinInstance,
         unpinInstance,
+        keepPreview,
         loadLayout,
         openArrangement,
         openPage,

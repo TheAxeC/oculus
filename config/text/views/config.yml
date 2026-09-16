@@ -10,7 +10,7 @@ text:
         desc_manifest_schema: 'The project.yml edit form as data: its sections, its fields, the widget each field is edited by, and where a widget takes its choices from.'
         desc_meta: 'The tool identity: the title and the subtitle the window carries.'
         desc_present: 'The public deck the Present view draws: the deck slides, the domain themes, the tag tones and the order.'
-        desc_sources: 'What the portfolio reads: the scan paths, the registry and collection files, the feeds, the roots a local file is served from, and the extensions a source tab may open and save.'
+        desc_sources: 'What the portfolio reads: the scan paths, the registry and collection files, the feeds, and the roots a local file is served from.'
         desc_vocab: 'Words and their colours: the palette, the research domains, the status legend, the focus lanes, the venue tiers and the radar buckets.'
         edit: Edit
         edit_tip: 'Open {0} in a source tab'

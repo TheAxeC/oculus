@@ -51,6 +51,7 @@ export {
     splitLeaf,
     splitPane
 } from './tree.ts';
+export { asPreview, isPreview, keepInstance, previewIn, retarget } from './preview.ts';
 export {
     clearPage,
     containsPage,

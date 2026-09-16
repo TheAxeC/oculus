@@ -21,6 +21,8 @@
         /** A toggle button's current state. Omitted for ordinary action buttons. */
         pressed?: boolean;
         onclick: (event: MouseEvent) => void;
+        /** A second press in quick succession, for a control whose two speeds mean two things. */
+        ondblclick?: (event: MouseEvent) => void;
         /** The tooltip, when it should say more than the label does. A button with none shows none. */
         title?: string;
         /** One of an exclusive group: the button becomes a radio and reports this as its state. */
@@ -57,6 +59,7 @@
         expanded,
         pressed,
         onclick,
+        ondblclick,
         title,
         checked,
         disabled = false,
@@ -100,6 +103,7 @@
         data-card-toggle={dataCardToggle || undefined}
         {disabled}
         {onclick}
+        {ondblclick}
     >
         {#if glyph !== undefined}
             <Glyph name={glyph} />

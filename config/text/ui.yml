@@ -38,6 +38,7 @@ text:
         pane_menu: Pane
         pane_menu_glyph: list
         pane_restore: Restore panes
+        preview_tab: 'The next single click replaces this tab; double-click to keep it.'
         rail: Views
         row_menu: Row actions
         sash: Resize

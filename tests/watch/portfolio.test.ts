@@ -497,8 +497,7 @@ describe('watchPortfolio', () => {
                 })
             }),
             token,
-            [{ key: 'fixture', dir: started.hub }],
-            ['.yml']
+            [{ key: 'fixture', dir: started.hub }]
         );
         expect(response.status).toBe(200);
         expect(await response.json()).toEqual({ ok: true });
@@ -657,8 +656,7 @@ describe('watchPortfolio', () => {
                 body: JSON.stringify({ root: ENGINE_ROOT, path: 'vocab.yml', content: body })
             }),
             token,
-            [engineRoot(started.engine)],
-            ['.yml']
+            [engineRoot(started.engine)]
         );
         expect(response.status).toBe(200);
         expect(readFileSync(file, 'utf8')).toBe(body);

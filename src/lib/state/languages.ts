@@ -1,8 +1,8 @@
 // Layer 2, client state. The highlighter: the core build of highlight.js with the languages the page
 // draws registered by name, and the one call that paints text.
 //
-// It sits in the state layer because two views paint with it, the code window of a file and the diff
-// pane of a repository, and a view may not import another view's partial.
+// It sits in the state layer because two views paint with it, the source tab's code window and editor
+// and the diff pane of a repository, and a view may not import another view's partial.
 //
 // The core build rather than the whole package, which carries close to two hundred languages against
 // the eighteen a research tree actually holds. The registration runs once at load and is never
@@ -39,7 +39,14 @@ import xml from 'highlight.js/lib/languages/xml';
 import yaml from 'highlight.js/lib/languages/yaml';
 
 /** What the highlighter falls back to for a name it has no language for. */
-const PLAIN = 'plaintext';
+export const PLAIN = 'plaintext';
+
+/**
+ * Bytes of text above which the editor's mirror is painted without colour. The mirror is painted
+ * again on every keystroke, and the grammars cost more than a frame on a file past this size, so
+ * a larger file is edited over escaped text; the code window, painted once, colours every size.
+ */
+export const PAINT_LIMIT = 64 * 1024;
 
 /** Every language the window registers. A name outside this map is drawn as plain text. */
 const REGISTERED: Record<string, LanguageFn> = {
