@@ -246,6 +246,9 @@ describe('the Inbox view', () => {
         serve({ status: 'unconfigured', accounts: [], threads: [] });
         const body = draw('inbox-none');
         expect(body).toContain(catalog['inbox.no_accounts']);
+        expect(body).toContain(catalog['inbox.unconfigured']);
+        // The head carries the state word and the body the sentence, so the sentence is drawn once.
+        expect(body.split(catalog['inbox.no_accounts']).length).toBe(2);
         expect(body).not.toContain(catalog['inbox.sec_reply']);
     });
 

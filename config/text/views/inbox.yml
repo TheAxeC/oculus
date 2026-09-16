@@ -58,6 +58,7 @@ text:
         triage_tip: mark triaged / done
         triaged: triaged
         triaged_sec: Triaged
+        unconfigured: not configured
         unsorted: unsorted
     views:
         inbox: Inbox

@@ -26,7 +26,7 @@
 
     function status(): string {
         if (data === null) return t('inbox.polling');
-        if (data.status === 'unconfigured') return t('inbox.no_accounts');
+        if (data.status === 'unconfigured') return t('inbox.unconfigured');
         if (data.status === 'error') return t('inbox.error');
         return t('inbox.live');
     }
