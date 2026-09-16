@@ -34,7 +34,7 @@ dispatch:                                  # D4 + D21 + Q27 in flight; Q23 lande
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q27/report.md
   exit: none
   pid: none
-  session_id: a06859daa93709255            # the Agent tool's id, launched 02:12; reported 02:27 (runs/Q27/report.md, diff.patch 519 lines, 8 files +212 -78; 160,393 tokens, 69 tool uses, 867 s); checks started 02:27 (runs/Q27/checks.sh); reviewer dispatched 02:27 (Agent id aa6024e560d70899d); the orchestrator's read done 02:28 (runs/Q27/read-notes.md: the binding itself is the defect, below)
+  session_id: a06859daa93709255            # the Agent tool's id, launched 02:12; reported 02:27 (runs/Q27/report.md, diff.patch 519 lines, 8 files +212 -78; 160,393 tokens, 69 tool uses, 867 s); checks started 02:27 (runs/Q27/checks.sh); reviewer dispatched 02:27 (Agent id aa6024e560d70899d); the orchestrator's read done 02:28 (runs/Q27/read-notes.md: the binding itself is the defect, below); checks green 02:30 (test 194 files 3,235, check 1,033 files, build, format, lint, ASCII 0, browser 102); review saved 02:34 (agents/reviews/Q27.md; 135,336 tokens, 41 tool uses, 373 s: RailOrder.all left dead, the palette guard untested in one file, the bare-Tab browser half not proving the regression, a nested case that never nests, untested branches, the focus order unmanaged); repair round of ten items sent 02:34 (the rebinding to Ctrl+] and Ctrl+[ plus the review's list; item 9, one tab stop per tablist, goes beyond the list, so a second review follows)
   landing: not-started
 - package: D4
   worker: claude:opus
