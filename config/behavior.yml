@@ -131,3 +131,10 @@ changes:
 # The Changes view asks this model for a suggested commit message. Empty uses the command-line default.
 git:
   message_model: ""
+
+
+# === Search across files ====================================================
+# The Search view runs ripgrep over one served root or all of them. `max_hits` is how many hits one answer carries before it says it was cut; `timeout_s` is how long one root's search is given.
+search:
+  max_hits: 500
+  timeout_s: 10

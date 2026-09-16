@@ -4,16 +4,20 @@
     // one that does not use the same box.
     //
     // Escape clears it, which is the one behaviour a search box is expected to have and the reason
-    // this is a component rather than an input a view writes out itself.
+    // this is a component rather than an input a view writes out itself. Enter is the other: a box
+    // that filters what is already on screen has nothing to do with it, and a box that asks the
+    // server for an answer runs on it, so the caller says whether Enter means anything here.
 
     type Props = {
         value: string;
         /** The placeholder, which is also the box's accessible name. Already translated. */
         placeholder: string;
         oninput: (value: string) => void;
+        /** What Enter does, for a box whose value is asked for rather than filtered with. */
+        onenter?: () => void;
     };
 
-    let { value, placeholder, oninput }: Props = $props();
+    let { value, placeholder, oninput, onenter }: Props = $props();
 
     function typed(event: Event): void {
         const field = event.currentTarget;
@@ -21,6 +25,11 @@
     }
 
     function keys(event: KeyboardEvent): void {
+        if (event.key === 'Enter' && onenter !== undefined) {
+            event.preventDefault();
+            onenter();
+            return;
+        }
         if (event.key !== 'Escape') return;
         event.preventDefault();
         oninput('');

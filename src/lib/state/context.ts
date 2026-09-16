@@ -34,6 +34,7 @@ import { createPresent, type PresentStore } from './present.svelte.ts';
 import { createRailBadges, type RailBadgesStore } from './rail-badges.svelte.ts';
 import { createRepositories, type RepositoriesStore } from './repositories.svelte.ts';
 import { createSelection, type SelectionStore } from './selection.svelte.ts';
+import { createSearch, type SearchStore } from './search.svelte.ts';
 import { createSelectors, type SelectorsStore } from './selectors.svelte.ts';
 import { createSocket, type SocketStore } from './socket.svelte.ts';
 import { createSource, type SourceStore } from './source.svelte.ts';
@@ -69,6 +70,7 @@ export type ClientState = {
     memories: MemoriesStore;
     present: PresentStore;
     repositories: RepositoriesStore;
+    search: SearchStore;
     usageRefresh: UsageRefreshStore;
     selectors: SelectorsStore;
     railBadges: RailBadgesStore;
@@ -110,6 +112,7 @@ export function createClientState(): ClientState {
     const memories = createMemories();
     const present = createPresent(entities);
     const repositories = createRepositories(writes, terminals, layout);
+    const search = createSearch(entities, writes, ui);
     const usageRefresh = createUsageRefresh(entities, writes);
     const selectors = createSelectors(entities, layout, selection);
     const railBadges = createRailBadges(entities, feeds, hpc, calendar, audit, selectors);
@@ -141,6 +144,7 @@ export function createClientState(): ClientState {
         memories,
         present,
         repositories,
+        search,
         usageRefresh,
         selectors,
         railBadges,

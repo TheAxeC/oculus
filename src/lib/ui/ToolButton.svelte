@@ -8,6 +8,7 @@
 
     import Glyph from './Glyph.svelte';
     import Tooltip from './Tooltip.svelte';
+    import type { Snippet } from 'svelte';
 
     type Props = {
         /** The button's words, already translated by the view. */
@@ -59,6 +60,12 @@
         stop?: string;
         /** A key pressed on the button, for a strip that moves its own stop with the arrow keys. */
         onkeydown?: (event: KeyboardEvent) => void;
+        /**
+         * What the button draws in place of its label's words, for a control whose words carry a
+         * mark of their own: a search hit with the match emboldened in its line. `label` is still
+         * the button's accessible name, since a screen reader is given words and not markup.
+         */
+        children?: Snippet;
     };
 
     let {
@@ -81,7 +88,8 @@
         dataCardToggle = false,
         tabindex,
         stop,
-        onkeydown
+        onkeydown,
+        children
     }: Props = $props();
 
     const compactGlyph = $derived(compact && glyph !== undefined);
@@ -108,7 +116,7 @@
         aria-checked={checked}
         aria-expanded={expanded}
         aria-pressed={pressed}
-        aria-label={iconOnly ? label : undefined}
+        aria-label={iconOnly || children !== undefined ? label : undefined}
         data-view={dataView}
         data-bookmark={dataBookmark}
         data-doc={dataDoc}
@@ -124,7 +132,11 @@
             <Glyph name={glyph} />
         {/if}
         {#if !iconOnly}
-            <span class="label">{label}</span>
+            {#if children !== undefined}
+                <span class="label">{@render children()}</span>
+            {:else}
+                <span class="label">{label}</span>
+            {/if}
         {/if}
     </button>
 </Tooltip>

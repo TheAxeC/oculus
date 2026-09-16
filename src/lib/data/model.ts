@@ -357,3 +357,5 @@ export type {
     TurnTool,
     Workspace
 } from './model-sessions.ts';
+
+export type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from './model-search.ts';

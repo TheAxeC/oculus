@@ -82,7 +82,8 @@ describe("oculus's own config directory", () => {
             'notify',
             'notes',
             'changes',
-            'git'
+            'git',
+            'search'
         ],
         'glyphs.yml': ['glyphs', 'ascii'],
         'icons.yml': ['icons'],
@@ -184,6 +185,7 @@ describe("oculus's own config directory", () => {
         'views/projects.yml',
         'views/radar.yml',
         'views/repositories.yml',
+        'views/search.yml',
         'views/session-detail.yml',
         'views/session-list.yml',
         'views/slides.yml',

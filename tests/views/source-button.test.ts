@@ -51,4 +51,15 @@ describe("the control over a view's own file", () => {
         });
         expect(openSourceFile(client, file)).toBe(id);
     });
+
+    it('carries the line a caller named into the tab it opens', () => {
+        client.layout.loadLayout({ getItem: () => null, setItem: noop });
+        const id = openSourceFile(client, { root: 'hub', path: 'src/a.ts', line: 12 });
+        expect(findInstance(client.layout.layout(), id)?.instance.state).toEqual({
+            root: 'hub',
+            path: 'src/a.ts',
+            label: 'a.ts',
+            line: 12
+        });
+    });
 });

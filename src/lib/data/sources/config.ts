@@ -726,6 +726,31 @@ export function calendarSettings(config: Record<string, unknown>): CalendarSetti
     };
 }
 
+/** The search settings of config/behavior.yml, every key required. */
+export type SearchSettings = {
+    /** How many hits one answer carries before it says it was cut. */
+    maxHits: number;
+    /** How long one root's search is given, in seconds. */
+    timeoutS: number;
+};
+
+/** Read `search:` with its two keys, or throw naming the key that is missing or mistyped. */
+export function searchSettings(config: Record<string, unknown>): SearchSettings {
+    const held = config.search;
+    if (typeof held !== 'object' || held === null || Array.isArray(held)) {
+        throw new Error('config/behavior.yml: search must be a map');
+    }
+    const search = held as Record<string, unknown>;
+    const number = (key: string): number => {
+        const value = search[key];
+        if (typeof value !== 'number' || !Number.isFinite(value) || value <= 0) {
+            throw new Error(`config/behavior.yml: search.${key} must be a number above zero`);
+        }
+        return value;
+    };
+    return { maxHits: number('max_hits'), timeoutS: number('timeout_s') };
+}
+
 /** Read `changes.keep`, how many change-log lines are kept, or throw naming what is wrong. */
 export function changesKeep(config: Record<string, unknown>): number {
     const held = config.changes;

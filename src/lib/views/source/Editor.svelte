@@ -14,6 +14,7 @@
     // Every file drawn here can be written: one the tab may not write is the code window under the
     // line that says why, so nothing here draws a Save that would be refused.
 
+    import { untrack } from 'svelte';
     import Preview from './Preview.svelte';
     import Sash from '$lib/ui/Sash.svelte';
     import TextArea from '$lib/ui/TextArea.svelte';
@@ -22,6 +23,7 @@
     import { SASH_PX } from '$lib/ui/sash-size';
     import { PLAIN, codeHtml } from '$lib/state/languages';
     import { languageOf } from '$lib/state/fs';
+    import { lineStart } from '$lib/state/source.svelte';
     import { t } from '$lib/state/text';
     import { useState } from '$lib/state/use';
 
@@ -32,6 +34,11 @@
     type Props = {
         path: string;
         text: string;
+        /**
+         * The line the tab was opened at, and zero for one opened at the file itself. It is acted on
+         * once per line the tab is pointed at: every scroll after that is the reader's own.
+         */
+        line?: number;
         message?: string;
         /** Whether the reader wants the rendered half, for a file that has one. */
         rendered?: boolean;
@@ -44,6 +51,7 @@
 
     let {
         path,
+        line = 0,
         text,
         message = '',
         rendered = true,
@@ -55,6 +63,10 @@
 
     let mirror: HTMLPreElement | undefined = $state();
     let box: HTMLDivElement | undefined = $state();
+    /** The editor's own row, which is where the textarea the line is scrolled to is found. */
+    let wrap: HTMLDivElement | undefined = $state();
+    /** The line already scrolled to, so a redraw does not take the reader back to it. */
+    let placed = $state(0);
     /** The share of the row the editor holds. The rendered half takes what is left. */
     let share = $state(0.5);
     /** How far the editor is scrolled through its text, which is what the rendered half follows. */
@@ -76,6 +88,43 @@
     /** Whether this file has a rendered half at all, which is what a Markdown file has. */
     const markdown = $derived(languageOf(path) === 'markdown');
     const split = $derived(markdown && rendered);
+
+    /**
+     * Put the cursor on the line the tab was opened at and bring it into view. The mirror is moved
+     * with the textarea, as a scroll of the reader's own moves it: the two hold the same text at the
+     * same height, so one scroll position serves both.
+     */
+    $effect(() => {
+        const wanted = line;
+        const held = text;
+        if (wanted === 0 || held === '') return;
+        untrack(() => {
+            if (placed === wanted) return;
+            const area = wrap?.querySelector('textarea');
+            if (!(area instanceof HTMLTextAreaElement)) return;
+            placed = wanted;
+            const at = lineStart(held, wanted);
+            area.focus();
+            area.setSelectionRange(at, at);
+            const step = rowHeight(area);
+            const top = Math.max(0, (rowOf(held, at) - 1) * step - area.clientHeight / 2);
+            area.scrollTop = top;
+            if (mirror !== undefined) mirror.scrollTop = area.scrollTop;
+        });
+    });
+
+    /** One painted line's height, which the mirror and the textarea share. */
+    function rowHeight(area: HTMLTextAreaElement): number {
+        const said = Number.parseFloat(getComputedStyle(area).lineHeight);
+        if (Number.isFinite(said) && said > 0) return said;
+        const size = Number.parseFloat(getComputedStyle(area).fontSize);
+        return Number.isFinite(size) && size > 0 ? size * 1.45 : 18;
+    }
+
+    /** Which line an offset sits on, counting from one, so a line past the end lands on the last. */
+    function rowOf(held: string, at: number): number {
+        return held.slice(0, at).split('\n').length;
+    }
 
     function sync(event: Event): void {
         if (!(event.currentTarget instanceof HTMLTextAreaElement)) return;
@@ -100,7 +149,11 @@
     }
 </script>
 
-<div class="source-editor" data-source-editor={path}>
+<div
+    class="source-editor"
+    data-source-editor={path}
+    data-source-line={line === 0 ? undefined : line}
+>
     <Toolbar label={t('source.edit')}>
         <ToolButton label={t('editor.save')} glyph="check" onclick={onsave} />
         <ToolButton
@@ -121,7 +174,7 @@
         {/if}
     </Toolbar>
     <div class="row" bind:this={box}>
-        <div class="editor-wrap" style="flex: {split ? share : 1} 1 0">
+        <div class="editor-wrap" bind:this={wrap} style="flex: {split ? share : 1} 1 0">
             <!-- Keep pre and code on one line: a line break inside pre would enter the mirror's text. -->
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- highlight.js escapes the file text before it emits its own span classes -->
             <pre class="mirror" bind:this={mirror} aria-hidden="true"><code>{@html painted}</code

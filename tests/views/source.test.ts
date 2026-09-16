@@ -16,7 +16,7 @@ import Source from '../../src/lib/views/Source.svelte';
 import { codeHtml, lineNumbers, registered } from '../../src/lib/state/languages.ts';
 import { paintLimit, requirePaintLimit } from '../../src/lib/data/editor.ts';
 import { TEXT_LIMIT, languageOf } from '../../src/lib/state/fs.ts';
-import { sourceTabState } from '../../src/lib/state/source.svelte.ts';
+import { lineStart, sourceTabState } from '../../src/lib/state/source.svelte.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -338,6 +338,25 @@ describe('a file the source tab may not write', () => {
         expect(body).toContain('data-source-editor="notes.md"');
         expect(body).toContain(`>${catalog['editor.save']}</span>`);
         expect(body).not.toContain(catalog['source.readonly']);
+    });
+
+    it('carries the line a tab was opened at into the editor, and none for a tab opened at none', async () => {
+        const instance = await holding('at-line', 'notes.md', 'one\ntwo\nthree\n', false);
+        const plain = render(Source, { context: clientContext(client), props: { instance } }).body;
+        expect(plain).not.toContain('data-source-line');
+
+        const opened = {
+            ...instance,
+            state: sourceTabState('hub', 'notes.md', 2)
+        };
+        const body = render(Source, {
+            context: clientContext(client),
+            props: { instance: opened }
+        }).body;
+        expect(body).toContain('data-source-line="2"');
+        // The cursor the editor places is the offset of that line, which is what the browser
+        // suite presses through; the offset rule itself is tests/state/source.test.ts.
+        expect(lineStart('one\ntwo\nthree\n', 2)).toBe(4);
     });
 });
 

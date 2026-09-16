@@ -5,6 +5,7 @@ import {
     loadSource,
     sourceFileUrl,
     sourceInfoUrl,
+    lineStart,
     sourceTabState
 } from '../../src/lib/state/source.svelte.ts';
 import { stateId } from '../../src/lib/state/instance.ts';
@@ -61,6 +62,25 @@ describe('source tab state', () => {
         expect(stateId(sourceTabState('hub', 'feeds/literature-radar.yml'))).toBe(
             JSON.stringify(['hub', 'feeds/literature-radar.yml'])
         );
+    });
+
+    it('carries the line a caller opened the file at, and none when no caller named one', () => {
+        expect(sourceTabState('hub', 'src/a.ts', 12)).toEqual({
+            root: 'hub',
+            path: 'src/a.ts',
+            label: 'a.ts',
+            line: 12
+        });
+        expect('line' in sourceTabState('hub', 'src/a.ts')).toBe(false);
+    });
+
+    it('finds where a line begins, and lands on the last line for one past the end', () => {
+        const text = 'one\ntwo\nthree\n';
+        expect(lineStart(text, 1)).toBe(0);
+        expect(lineStart(text, 2)).toBe(4);
+        expect(lineStart(text, 3)).toBe(8);
+        expect(lineStart(text, 400)).toBe(14);
+        expect(lineStart(text, 0)).toBe(0);
     });
 
     it('distinguishes roots, paths, and delimiters in file identities', () => {

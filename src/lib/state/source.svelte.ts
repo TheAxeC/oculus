@@ -16,7 +16,13 @@ import { t } from './text.ts';
 
 export type SourceLoad =
     { ok: true; content: string; truncated: boolean } | { ok: false; error: string };
-export type SourceTabState = { root: string; path: string; label: string };
+export type SourceTabState = {
+    root: string;
+    path: string;
+    label: string;
+    /** The line the tab scrolls to once the draft has loaded, for a tab opened at one. */
+    line?: number;
+};
 
 export type SourceDraft = {
     text: string;
@@ -39,9 +45,29 @@ export type SourceDraft = {
 /** One token per page lifetime: a draft carrying it was read from disk since the page loaded. */
 const LIFETIME = `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 
-/** The state that identifies one source tab and labels it with the file name. */
-export function sourceTabState(root: string, path: string): SourceTabState {
-    return { root, path, label: path.split('/').filter(Boolean).at(-1) ?? path };
+/**
+ * The state that identifies one source tab and labels it with the file name. A caller that knows
+ * which line the reader was sent to names it, and the tab scrolls there once its draft has loaded.
+ */
+export function sourceTabState(root: string, path: string, line?: number): SourceTabState {
+    const state: SourceTabState = {
+        root,
+        path,
+        label: path.split('/').filter(Boolean).at(-1) ?? path
+    };
+    return line === undefined ? state : { ...state, line };
+}
+
+/**
+ * Where one line of a text begins, counting the line from one. A line past the end is the last
+ * line's own beginning, so a stale line number lands at the end of the file rather than nowhere.
+ */
+export function lineStart(text: string, line: number): number {
+    const lines = text.split('\n');
+    const at = Math.min(Math.max(Math.floor(line), 1), lines.length);
+    let offset = 0;
+    for (let index = 0; index < at - 1; index += 1) offset += lines[index].length + 1;
+    return offset;
 }
 
 /** The api/file URL, escaping each path segment without escaping its separators. */

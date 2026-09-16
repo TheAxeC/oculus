@@ -59,6 +59,8 @@
     const root = $derived(read(instance.state, 'root'));
     const path = $derived(read(instance.state, 'path'));
     const label = $derived(read(instance.state, 'label'));
+    /** The line the tab was opened at, and zero for one opened at the file itself. */
+    const line = $derived(number(instance.state, 'line'));
     const title = $derived(label === '' ? t('views.source') : label);
     const draft = $derived(sourceDraft(instance.id));
     const blocked = $derived(root === '' || path === '');
@@ -80,6 +82,12 @@
         if (typeof state !== 'object' || state === null || Array.isArray(state)) return '';
         const value = (state as Record<string, unknown>)[key];
         return typeof value === 'string' ? value : '';
+    }
+
+    function number(state: unknown, key: string): number {
+        if (typeof state !== 'object' || state === null || Array.isArray(state)) return 0;
+        const value = (state as Record<string, unknown>)[key];
+        return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0;
     }
 
     async function save(): Promise<void> {
@@ -114,6 +122,7 @@
         {:else}
             <Editor
                 {path}
+                {line}
                 text={draft.text}
                 message={draft.message}
                 rendered={draft.rendered}

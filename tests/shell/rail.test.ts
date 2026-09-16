@@ -707,7 +707,8 @@ describe('the groups of the real config', () => {
             'code',
             'statements',
             'files',
-            'repositories'
+            'repositories',
+            'search'
         ]);
         expect(order.chords.y).toEqual([
             'status',
@@ -731,10 +732,11 @@ describe('the groups of the real config', () => {
             'code',
             'statements',
             'files',
-            'repositories'
+            'repositories',
+            'search'
         ]);
-        // Six views, so the rail draws Sources as one labelled button with a list beside it, the
-        // shape Sessions and Academic life already have.
+        // More views than GROUP_MAX, so the rail draws Sources as one labelled button with a list
+        // beside it, the shape Sessions and Academic life already have.
         expect(section('Sources').length).toBeGreaterThan(GROUP_MAX);
         expect(section('Sources').map((view) => view.id)).not.toContain('projects');
     });

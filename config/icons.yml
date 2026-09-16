@@ -59,6 +59,7 @@ icons:
     code: code
     changes: git-branch
     repositories: folder-git-2
+    search: file-search
     diff: file-diff
     published: package
     archived: archive

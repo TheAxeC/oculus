@@ -78,6 +78,7 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `statements` | Statements | The reusable boilerplate paragraphs. |
 | `files` | Files | The file browser over the hub, the engine config folder and the configured roots, with saved workspaces. A scratch note's file is made by the first keystroke typed into it, and the delete control in the Notes list is the one thing that takes a note away. |
 | `repositories` | Repositories | Every repository oculus knows, one section each: the branch line, what is changed, the newest twenty commits, the branches, and the worktrees of the root with the controls that make, open, merge back and remove one. |
+| `search` | Search | A pattern across the files of one served root or of all of them, the hits grouped by file, each one opening its file in a source tab at that line. |
 | `funding` | Funding | The funding schemes, their stage and the statement each grant requires. |
 | `events` | Talks & Events | Talks, events and what is coming. |
 | `education` | Education & Service | Teaching and service entries. |
@@ -117,6 +118,16 @@ The LaTeX panel lists a project's main files, which are the `.tex` files directl
 Every text file of the file browser opens in `source`. What counts as text is the file's own first bytes: no extension list decides it, so a script nobody gave an extension opens for editing and an archive somebody called a `.txt` is a download. Whether it can be saved is the file's mode on this machine: a file this machine locks, and one too long to have been read whole, are drawn as a read-only window under a line saying why, and neither takes a keystroke.
 
 A single click in the tree opens a preview tab, drawn in italics: the next single click in that pane is pointed at the file it names instead of opening a second tab, so a walk through a folder leaves one tab and not twenty. Clicking the same file a second time keeps its tab; so do a double click on the tab itself, typing into it, dragging it and splitting the pane around it. A double click on the row keeps it where the tree stays on screen beside the file, in a split pane; in one pane the first click has already put the file where the tree was, so the second click lands on the tab and keeps it the same way.
+
+## Searching the files
+
+The Search view runs one pattern over the files of one root or of every root, and the roots are the file browser's own: the hub, the engine's config folder, the roots `sources.yml` names, and whatever the workspace in force added. Nothing outside those is reachable, and the query never leaves the machine: the search is a local process reading local files, with no index and no service of any kind.
+
+ripgrep does the reading, the copy that comes with oculus rather than one the account happens to have installed, so the version that answers is the one the lockfile pins. What a repository ignores is skipped as ripgrep skips it, and `node_modules`, `.git` and `.svelte-kit` are skipped in every root whether or not a `.gitignore` says so. A hidden file and a hidden directory are skipped the same way, so a `.env`, a `.gitignore` and everything under a `.hidden/` folder are never opened. A file over two megabytes is not opened.
+
+Three toggles decide what the pattern means: `word` matches whole words only, `case` matches the pattern's own upper and lower case, and `regex` reads the pattern as a regular expression rather than as text to find. Finding every reference to a name is `word` over the root that holds the code, which is what a C++ codebase needs and gets without a language server.
+
+Typing runs nothing. Enter in the box and the Search control are the two ways a run starts, and `/` puts the cursor back in the box from anywhere in the results. A result heading opens its file at its first hit and a result row opens it at its own line, both in the source tab. The answer stops at the configured number of hits (`search.max_hits` in `behavior.yml`) and says so when it did; the reading stops there too, so a one-letter pattern over a large root costs what the cap needs and not what the root holds. Each root's search is given `search.timeout_s` seconds, and a root that fails or runs out of time is named under the count rather than passed over in silence. What a tab last found is kept with the tab, so a saved page draws its results again without running the search a second time.
 
 ## Worktrees and the merge back
 
