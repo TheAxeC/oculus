@@ -42,7 +42,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import BookmarkStar from './shared/BookmarkStar.svelte';
-    import { openSourceFile } from './shared/edit-bar';
+    import { openSourceFile } from './shared/source-file';
     import { humanSize } from '$lib/state/board';
     import { fileBytesUrl } from '$lib/state/fs.svelte';
     import { extensionOf, nameOf, typeOfFile } from '$lib/state/fs';

@@ -25,6 +25,7 @@
     import EntryForm from './shared/EntryForm.svelte';
     import Intro from './shared/Intro.svelte';
     import Reveal from './shared/Reveal.svelte';
+    import SourceButton from './shared/SourceButton.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import {
         dismissedCount,
@@ -40,12 +41,14 @@
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
     import { feedIdents } from '$lib/state/palette';
+    import { viewSourceFile } from '$lib/state/view-source';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
     const {
         entities: { config },
         feeds: { feed },
+        selectors: { configMap },
         ui: { instanceState, setInstanceState },
         writes: { addLead }
     } = useState();
@@ -83,6 +86,10 @@
             : []
     );
     const shownLog = $derived(held.logAll ? log : log.slice(0, LOG_LINES));
+    /** The feed file this view is drawn from, offered once the feed says the file is there. */
+    const source = $derived(
+        data === null || data.missing ? null : viewSourceFile('leads', configMap())
+    );
     let said = $state('');
 
     function write(next: Partial<LeadsState>): void {
@@ -120,6 +127,9 @@
                 pressed={held.showDismissed}
                 onclick={() => write(showing(!held.showDismissed))}
             />
+        {/if}
+        {#if source !== null}
+            <SourceButton file={source} />
         {/if}
     </Toolbar>
 {/snippet}

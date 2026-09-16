@@ -3,7 +3,7 @@
 import { render } from 'svelte/server';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import Radar from '../../src/lib/views/Radar.svelte';
-import { openSourceFile } from '../../src/lib/views/shared/edit-bar.ts';
+import { openSourceFile } from '../../src/lib/views/shared/source-file.ts';
 import { findInstance } from '../../src/lib/state/instance.ts';
 import {
     engineDir,
@@ -83,7 +83,7 @@ function serve(body: Record<string, unknown>, _status = 200): void {
 afterEach(() => vi.unstubAllGlobals());
 
 describe('the Lit Watch view', () => {
-    it('opens the bar file as a source tab and reuses the same file instance', () => {
+    it('opens its own feed file as a source tab and reuses the same file instance', () => {
         loadLayout({ getItem: () => null, setItem: noop });
         const file = { root: 'hub', path: 'feeds/literature-radar.yml' };
         const id = openSourceFile(client, file);
@@ -120,9 +120,12 @@ describe('the Lit Watch view', () => {
             context: clientContext(client),
             props: { instance: instance('radar-one') }
         }).body;
-        expect(body).toContain('data-edit-source');
         expect(body).toContain('data-source-root="hub"');
-        expect(body).toContain('data-source-path="feeds/literature-radar.yml"');
+        expect(body).toContain(`data-source-path="${String(config.radar_file)}"`);
+        expect(body).toContain(catalog['views.open_source']);
+        expect(body).toContain(
+            catalog['views.open_source_tip'].replace('{0}', String(config.radar_file))
+        );
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('New-paper radar');
         expect(body).toContain('4 tracked');
@@ -203,6 +206,7 @@ describe('the Lit Watch view', () => {
         }).body;
         expect(missing).toContain('No radar file yet');
         expect(missing).toContain('feeds/literature-radar.yml');
+        expect(missing).not.toContain('data-source-path');
     });
 
     it('draws dismissed string and boolean values open, newest first, with restore actions', () => {

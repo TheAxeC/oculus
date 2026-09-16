@@ -1,0 +1,7 @@
+# Inbox triage (FAKE example data) - one entry per email thread, rendered as a card grouped by what
+# the thread wants: a reply, an action, or nothing. A triaged thread tucks into its own disclosure.
+meta:
+  run: 2026-06-20
+  note: "Nothing on the plate: every thread of the last run was answered or filed."
+
+entries: []

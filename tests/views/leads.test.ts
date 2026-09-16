@@ -229,7 +229,6 @@ describe('the Position Leads view', () => {
             context: clientContext(client),
             props: { instance: instance('leads-one') }
         }).body;
-        expect(body).not.toContain('data-edit-source');
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('2 live');
         expect(body).toContain('3 expired');
@@ -445,5 +444,38 @@ describe('the Position Leads view', () => {
                 props: { instance: instance('leads-missing') }
             }).body
         ).toContain(catalog['leads.no_file']);
+    });
+
+    it('closes its toolbar, after its own controls, with the control over the feed file', () => {
+        serve({
+            ok: true,
+            kind: 'leads',
+            file: 'feeds/position-leads.yml',
+            meta: { log: [] },
+            entries: []
+        });
+        const body = render(Leads, {
+            context: clientContext(client),
+            props: { instance: instance('leads-source') }
+        }).body;
+        expect(body).toContain('data-source-root="hub"');
+        expect(body).toContain(`data-source-path="${String(config.leads_file)}"`);
+        expect(body).toContain(catalog['views.open_source']);
+        expect(body).toContain(
+            catalog['views.open_source_tip'].replace('{0}', String(config.leads_file))
+        );
+        // It is the view's way out rather than one of its actions, so it follows the add control.
+        expect(body.indexOf('data-source-path')).toBeGreaterThan(
+            body.indexOf(catalog['leads.add'])
+        );
+    });
+
+    it('offers no such control while the feed says the file is not on this machine', () => {
+        serve({ ok: true, kind: 'leads', file: 'feeds/position-leads.yml', missing: true });
+        const body = render(Leads, {
+            context: clientContext(client),
+            props: { instance: instance('leads-no-source') }
+        }).body;
+        expect(body).not.toContain('data-source-path');
     });
 });

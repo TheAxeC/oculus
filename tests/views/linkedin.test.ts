@@ -145,6 +145,16 @@ describe('the LinkedIn view', () => {
         expect(openLinkedinSource(client.layout, `${folder}/`, 'xx-zeta.md')).toBe(id);
     });
 
+    // The four views drawn from one file close their toolbar with the control over that file. This
+    // view is drawn from a folder of one Markdown file per post and no index, so it has no such
+    // control and the card's own control above is the way into the text.
+    it('carries no toolbar control over its own source, its cards carrying one each', () => {
+        const body = draw('linkedin-source', entries, '', false);
+        expect(body).not.toContain('data-source-path');
+        expect(body).not.toContain(catalog['views.open_source']);
+        expect(body).toContain(catalog['linkedin.edit']);
+    });
+
     it('draws search, add form, ordered sections, metadata, snippets, and card-scoped actions', () => {
         const body = draw('linkedin-all', entries, '', true);
         expect(body).toContain(catalog['linkedin.search'].replace('&', '&amp;'));

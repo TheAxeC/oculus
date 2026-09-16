@@ -146,10 +146,12 @@ describe('the Config view', () => {
         expect(open).toContain('nav_groups');
     });
 
-    it('offers an edit control naming the file it opens', () => {
+    // The word is the one every view drawn from a file carries over its own file, not a word of the
+    // Config view's own, so a card reads the same as the control closing a feed view's toolbar.
+    it('offers the shared control naming the file it opens', () => {
         const body = drawn([file('layout.yml')]);
 
-        expect(body).toContain('Edit');
+        expect(body).toContain('Open file');
         expect(body).toContain('Open layout.yml in a source tab');
     });
 

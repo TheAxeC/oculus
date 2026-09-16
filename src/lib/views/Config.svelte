@@ -100,9 +100,9 @@
                             <Tag label={t('config.local_tag')} />
                         {/if}
                         <ToolButton
-                            label={t('config.edit')}
+                            label={t('views.open_source')}
                             glyph="edit"
-                            title={t('config.edit_tip', name)}
+                            title={t('views.open_source_tip', name)}
                             onclick={() => edit(name)}
                         />
                     {/snippet}

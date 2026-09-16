@@ -63,6 +63,7 @@
     import EntryForm from './shared/EntryForm.svelte';
     import Intro from './shared/Intro.svelte';
     import Reveal from './shared/Reveal.svelte';
+    import SourceButton from './shared/SourceButton.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import {
         FUNDING,
@@ -79,12 +80,13 @@
     import { cardCursor } from '$lib/state/instance';
     import { lookup, t } from '$lib/state/text';
     import { statusTone } from '$lib/state/tones';
+    import { viewSourceFile } from '$lib/state/view-source';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
     const {
         layout: { openView },
-        selectors: { archiveDead, collectionOf, projects },
+        selectors: { archiveDead, collectionOf, configMap, projects },
         ui: { cardMoveRequested, instanceState, setInstanceState },
         writes: { reorderEntries }
     } = useState();
@@ -104,6 +106,11 @@
 
     /** The statuses a file with no schema offers as buttons: the ones its own entries use. */
     const lifecycle = $derived(schema === undefined ? facets.map((facet) => facet.value) : []);
+
+    /** The collection file this view is drawn from, offered once the file has been read. */
+    const source = $derived(
+        collection === null ? null : viewSourceFile('collection', configMap(), key)
+    );
 
     const all = $derived(projects());
     const unfunded = $derived(
@@ -207,6 +214,9 @@
                 active={adding}
                 onclick={() => (adding = !adding)}
             />
+        {/if}
+        {#if source !== null}
+            <SourceButton file={source} />
         {/if}
     </Toolbar>
 {/snippet}

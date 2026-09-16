@@ -53,3 +53,5 @@ text:
         badge_cell: '{0}: {1}'
         badge_separator: ' | '
         badge_title: '{0} {1}'
+        open_source: Open file
+        open_source_tip: 'Open {0} in a source tab'

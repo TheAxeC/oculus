@@ -90,7 +90,6 @@ text:
             copy_context: copy context
             copy_context_tip: copy this project as context to paste into a chat
             doc_human_tip: human-only - no agent edits this
-            edit_source: 'edit source: {0}'
             folder: folder
             folder_tip: open project folder
             full: Full

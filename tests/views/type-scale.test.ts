@@ -160,7 +160,6 @@ const VIEWS: Record<string, string> = {
     'shared/CardDocs.svelte': '.label=fs-xxs | .frow=fs-md | .capped=fs-xs',
     'shared/CardLinks.svelte': '.kind=fs-xxs',
     'shared/CardSessions.svelte': '.session=fs-sm',
-    'shared/EditBar.svelte': '.edit-bar=fs-sm',
     'shared/EntryForm.svelte': '.label=fs-xs | .said=fs-md',
     'shared/Intro.svelte': '.intro=fs-md',
     'shared/Markdown.svelte':
@@ -169,6 +168,7 @@ const VIEWS: Record<string, string> = {
     'shared/ProjectCard.svelte':
         '.folder=fs-xs | .venue, .authors=fs-sm | .eli5 p=fs-md | .next, .waiting, .ghostmsg=fs-sm | .label=fs-xxs',
     'shared/Reveal.svelte': '',
+    'shared/SourceButton.svelte': '',
     'shared/Subtasks.svelte': '.label=fs-xs | .count, .box=fs-xs | .do=fs-md',
     'source/Code.svelte': '.gutter, .text=fs-sm',
     'source/Editor.svelte': '.message=fs-sm | .mirror=fs-sm | .input :global(.area)=fs-sm',

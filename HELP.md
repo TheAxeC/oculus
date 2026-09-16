@@ -83,10 +83,10 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `collaborations` | Collaborations | The collaborations and their state. |
 | `tasks` | Tasks & Service | The task list. |
 | `present` | Present | The public deck, one slide at a time, with an overview grid. |
-| `radar` | Lit Watch | The literature radar the scout writes. |
-| `leads` | Position Leads | The position leads the scout writes. Dismissing one sets its status to `dismissed` in the feed file, so it leaves the counts and History can undo it; the toolbar toggle shows the dismissed ones and each card's reopen control puts it back on the radar. |
-| `inbox` | Inbox | The private email triage feed. |
-| `linkedin` | LinkedIn | The posts pipeline: what is posted and what is still an idea. |
+| `radar` | Lit Watch | The literature radar the scout writes, the toolbar closing with the control that opens that feed file. |
+| `leads` | Position Leads | The position leads the scout writes, the toolbar closing with the control that opens that feed file. Dismissing one sets its status to `dismissed` in the feed file, so it leaves the counts and History can undo it; the toolbar toggle shows the dismissed ones and each card's reopen control puts it back on the radar. |
+| `inbox` | Inbox | The private email triage feed, the toolbar closing with the control that opens that feed file. |
+| `linkedin` | LinkedIn | The posts pipeline: what is posted and what is still an idea. It is drawn from a folder of one file per post rather than from one file, so the way into the text is each card's own control. |
 | `session-list` | Sessions | Every agent session on this machine, live ones first. |
 | `session-detail` | Session | One session: what it is doing, its model, its workspace and its controls. |
 | `terminal` | Terminal | A terminal running Claude, Codex or a shell inside tmux. |
@@ -100,10 +100,12 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `hpc` | Live HPC | The cluster queue: what is running, what is pending and the quota. |
 | `usage` | Usage | What each agent account has spent. |
 | `help` | Help | This manual. |
-| `config` | Config | The files the configuration is merged from, each with its text and an edit control. |
+| `config` | Config | The files the configuration is merged from, each with its text and the control that opens it. |
 | `audit` | Audit | What the hub is missing, in six sections: open markers, manifest gaps, folders off the tier standard, status chips the project's own tier and type contradict, fields that have stopped being a glance, and the website's publication list against the portfolio. Each finding can be muted. |
 | `memories` | Memories | The photo wall, with a control that adds a picture and a click that enlarges one. |
 | `history` | History | Every write oculus made on this machine, newest first, with what each field held before it and a control that puts it back. |
+
+A view drawn from one file of the hub carries that file's own control, last in its toolbar, which opens the file in a source tab: the three feeds above, the collection views over the YAML their `collections:` entry names (Venues, Data, Pillars and Domains, which have panes of their own, do not carry it yet), and each card of the Config view over the file it draws. The tooltip names the path, so the file the view is drawn from is read without finding it in the file browser first.
 
 Four views are opened for something rather than listed in the rail: `project` (one project as its own tab), `editor` (its manifest form), `deposit` (its public code deposit) and `doc` (one Markdown document of the hub, from a group of the rail). Three more open from a file: `source` (one text file, edited and saved, its text coloured by language while the file is under 64 KB, a Markdown file beside the rendered document its text makes, which a control in the bar takes away), `document` (a local HTML file in a frame) and `file` (a picture, a PDF in a frame, or a name and a link that saves it).
 

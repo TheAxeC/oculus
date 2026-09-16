@@ -20,7 +20,7 @@
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Intro from './shared/Intro.svelte';
-    import EditBar from './shared/EditBar.svelte';
+    import SourceButton from './shared/SourceButton.svelte';
     import Bucket from './radar/Bucket.svelte';
     import RadarCard from './radar/RadarCard.svelte';
     import Reveal from './shared/Reveal.svelte';
@@ -37,13 +37,14 @@
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
     import { feedIdents } from '$lib/state/palette';
-    import { HUB_ROOT } from '$lib/state/collection';
+    import { viewSourceFile } from '$lib/state/view-source';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
     const {
         entities: { config, portfolio },
         feeds: { feed },
+        selectors: { configMap },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -64,6 +65,10 @@
     );
     const lastRun = $derived(data?.meta.last_run ?? '');
     const identOf = $derived(feedIdents('radar', data?.entries ?? []));
+    /** The feed file this view is drawn from, offered once the feed says the file is there. */
+    const source = $derived(
+        data === null || data.missing ? null : viewSourceFile('radar', configMap())
+    );
     let said = $state('');
 
     function write(next: Partial<RadarState>): void {
@@ -78,14 +83,14 @@
             placeholder={t('radar.search')}
             oninput={(search: string) => write({ search })}
         />
+        {#if source !== null}
+            <SourceButton file={source} />
+        {/if}
     </Toolbar>
 {/snippet}
 
 <Pane title={t('views.radar')} toolbar={tools}>
     <div class="radar" data-instance={instance.id}>
-        {#if data !== null && !data.missing}
-            <EditBar files={[{ root: HUB_ROOT, path: data.file }]} />
-        {/if}
         {#if data === null}
             <Empty message={t('app.waiting')} glyph="litwatch" />
         {:else if data.missing}

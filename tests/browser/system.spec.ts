@@ -71,7 +71,7 @@ test('a configuration file opens in a source tab from its card', async ({ page }
     await openView(page, 'config', t('views.config'));
 
     await card(page, 'meta.yml')
-        .getByRole('button', { name: t('config.edit') })
+        .getByRole('button', { name: t('views.open_source') })
         .click();
 
     await expect(page.getByRole('tab', { name: 'meta.yml' })).toBeVisible();
@@ -96,7 +96,7 @@ test('the machine own file is the last card and opens in a source tab', async ({
     expect(names[names.length - 1]).toBe('local.yml');
     expect(names.length).toBeGreaterThan(1);
 
-    await own.getByRole('button', { name: t('config.edit') }).click();
+    await own.getByRole('button', { name: t('views.open_source') }).click();
     await expect(page.getByRole('tab', { name: 'local.yml' })).toBeVisible();
     await expect(page.locator('[data-root="engine"][data-path="local.yml"]')).toBeVisible();
 });

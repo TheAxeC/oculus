@@ -299,6 +299,18 @@ describe('a collection as its own tab', () => {
     it('says which collection it is drawing', () => {
         expect(body).toContain('data-collection="events"');
     });
+
+    it('closes the toolbar, after the add control, with the control over its own file', () => {
+        expect(body).toContain('data-source-root="hub"');
+        expect(body).toContain('data-source-path="network/events.yml"');
+        expect(body).toContain(catalog['views.open_source']);
+        expect(body).toContain(
+            catalog['views.open_source_tip'].replace('{0}', 'network/events.yml')
+        );
+        expect(body.indexOf('data-source-path')).toBeGreaterThan(
+            body.indexOf(catalog['collection.add'])
+        );
+    });
 });
 
 describe('a card', () => {
@@ -408,6 +420,10 @@ describe('a collection the snapshot does not carry', () => {
 
     it('falls back to the name the view is registered under', () => {
         expect(body).toContain(catalog['views.statements']);
+    });
+
+    it('offers no control over a file it has not read', () => {
+        expect(body).not.toContain('data-source-path');
     });
 });
 

@@ -111,7 +111,6 @@ describe('the Inbox view', () => {
             context: clientContext(client),
             props: { instance: instance('inbox-one') }
         }).body;
-        expect(body).not.toContain('data-edit-source');
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('2026-09-12');
         expect(body).toContain(catalog['inbox.triaged_suffix'].replace('{0}', '1'));
@@ -243,5 +242,28 @@ describe('the Inbox view', () => {
         }).body;
         expect(error).toContain('Could not read feeds/inbox.yml: bad YAML');
         expect(error).not.toContain(catalog['inbox.no_file']);
+    });
+
+    it('closes its toolbar with the control over the feed file the configuration names', () => {
+        serve({ ok: true, kind: 'inbox', file: 'feeds/inbox.yml', meta: {}, entries });
+        const body = render(Inbox, {
+            context: clientContext(client),
+            props: { instance: instance('inbox-source') }
+        }).body;
+        expect(body).toContain('data-source-root="hub"');
+        expect(body).toContain(`data-source-path="${String(config.inbox_file)}"`);
+        expect(body).toContain(catalog['views.open_source']);
+        expect(body).toContain(
+            catalog['views.open_source_tip'].replace('{0}', String(config.inbox_file))
+        );
+    });
+
+    it('offers no such control while the feed says the file is not on this machine', () => {
+        serve({ ok: true, kind: 'inbox', file: 'feeds/inbox.yml', missing: true });
+        const body = render(Inbox, {
+            context: clientContext(client),
+            props: { instance: instance('inbox-no-source') }
+        }).body;
+        expect(body).not.toContain('data-source-path');
     });
 });

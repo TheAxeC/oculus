@@ -12,8 +12,6 @@ text:
         desc_present: 'The public deck the Present view draws: the deck slides, the domain themes, the tag tones and the order.'
         desc_sources: 'What the portfolio reads: the scan paths, the registry and collection files, the feeds, and the roots a local file is served from.'
         desc_vocab: 'Words and their colours: the palette, the research domains, the status legend, the focus lanes, the venue tiers and the radar buckets.'
-        edit: Edit
-        edit_tip: 'Open {0} in a source tab'
         failed: 'This file could not be read: {0}'
         intro: "The files the configuration is merged from, in the config folder of the engine. Each one is read on every load, and an edit saved here reaches the page as soon as it lands. The machine-local values, the hub path, the port and the account folders, live in local.yml of the same folder, which is this machine's own: it is read on its own, it is not merged with the rest, and it is not tracked."
         lines: lines

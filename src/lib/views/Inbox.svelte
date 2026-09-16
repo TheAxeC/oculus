@@ -26,6 +26,7 @@
     import InboxCard from './inbox/InboxCard.svelte';
     import Intro from './shared/Intro.svelte';
     import Reveal from './shared/Reveal.svelte';
+    import SourceButton from './shared/SourceButton.svelte';
     import {
         inboxSearch,
         parseInboxState,
@@ -37,11 +38,13 @@
     import { t } from '$lib/state/text';
     import { cardCursor } from '$lib/state/instance';
     import { feedIdents } from '$lib/state/palette';
+    import { viewSourceFile } from '$lib/state/view-source';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
     const {
         feeds: { feed },
+        selectors: { configMap },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -58,6 +61,10 @@
     const triaged = $derived(inboxSearch(split.triaged, held.search));
     const run = $derived(asText(data?.meta.run));
     const liveCount = $derived(split.replies.length + split.actions.length + split.info.length);
+    /** The feed file this view is drawn from, offered once the feed says the file is there. */
+    const source = $derived(
+        data === null || data.missing ? null : viewSourceFile('inbox', configMap())
+    );
     let said = $state('');
 
     function write(next: Partial<InboxState>): void {
@@ -72,6 +79,9 @@
             placeholder={t('inbox.search')}
             oninput={(search: string) => write({ search })}
         />
+        {#if source !== null}
+            <SourceButton file={source} />
+        {/if}
     </Toolbar>
 {/snippet}
 

@@ -1,4 +1,4 @@
-// The source tab: the edit-source bar on Lit Watch opens the feed file as an editable tab, an
+// The source tab: the control closing Lit Watch's toolbar opens the feed file as an editable tab, an
 // unsaved edit survives leaving the tab and coming back, since the shell mounts only the active view
 // and the draft belongs to the instance rather than to the component, and a file this machine's mode
 // locks opens as the code window under the line that says so.
@@ -17,14 +17,14 @@ function scratch(): string {
     return dir;
 }
 
-test('the edit-source bar opens the feed file and an unsaved edit survives a tab switch', async ({
+test('the toolbar control opens the feed file and an unsaved edit survives a tab switch', async ({
     page
 }) => {
     await boot(page);
     await openView(page, 'radar', t('views.radar'));
-    const bar = page.locator('[data-edit-source]');
-    await expect(bar).toBeVisible();
-    await bar.getByRole('button').first().click();
+    const control = page.locator('[data-source-path="feeds/literature-radar.yml"]');
+    await expect(control).toBeVisible();
+    await control.getByRole('button', { name: t('views.open_source') }).click();
     const editor = page.locator('[data-source-editor]');
     await expect(editor).toBeVisible();
     const area = editor.getByRole('textbox');

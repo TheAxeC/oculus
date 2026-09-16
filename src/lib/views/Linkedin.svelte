@@ -15,6 +15,11 @@
 <script lang="ts">
     // Layer 3, view. LinkedIn reads its Markdown-folder feed, draws posting cadence and two card
     // sections, and keeps search plus the add-form disclosure in this view instance's saved state.
+    //
+    // It carries no toolbar control over its own source, which the four views drawn from one file
+    // do: `linkedin_dir` names a folder of one Markdown file per post and no index, so there is no
+    // one file for such a control to open. Each card's own control opens the post it draws, which
+    // is the way into the text from here.
 
     import Empty from '$lib/ui/Empty.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
