@@ -129,6 +129,20 @@ async function until(holds: () => boolean, ms: number): Promise<void> {
     while (!holds() && Date.now() < deadline) await sleep(20);
 }
 
+/** Wait until no message has arrived for a short while, so a count taken after it is a whole one. */
+async function quiet(client: { got: unknown[] }): Promise<void> {
+    let seen = -1;
+    let still = 0;
+    while (still < 3) {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        if (client.got.length === seen) still += 1;
+        else {
+            seen = client.got.length;
+            still = 0;
+        }
+    }
+}
+
 /**
  * Wait until the watch over a repository is delivering events, by writing an untracked file into it
  * until a publish comes back.
@@ -348,6 +362,9 @@ describe('watchGit', () => {
         await arming(first, clock);
         clock.fire();
         await until(() => client.got.some((message) => message.channel === 'files'), WAIT);
+        // The read that fire() opened publishes on two channels, and under load the second lands
+        // after the first; the count below is taken once nothing more is arriving.
+        await quiet(client);
 
         const before = { got: client.got.length, first: reads(first), second: reads(second) };
         put(first, 'loose.txt', 'x\n');

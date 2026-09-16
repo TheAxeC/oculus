@@ -46,7 +46,7 @@ dispatch:                                  # Q25 + D5 in flight, D7 next (D4 lan
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D5/report.md
   exit: none
   pid: none
-  session_id: ac3d755ba41ef700a            # the Agent tool's id, launched 04:09
+  session_id: ac3d755ba41ef700a            # the Agent tool's id, launched 04:09; reported 04:41 (runs/D5/report.md, diff.patch 2,183 lines, 25 files +1,785 -14; 325,195 tokens, 152 tool uses, 1,969 s; one read-only `git status` against the no-git rule, nothing written; the browser case cannot press a build through since the browser layer's tmux fails on purpose); checks started 04:42 (runs/D5/checks.sh); reviewer dispatched 04:42 (Agent id aa637b3df09555c56)
   landing: not-started
 ```
 
@@ -380,6 +380,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 - The boundaries test's rule today (`tests/boundaries.test.ts` 124 to 143): process-wide state forbidden under `src`; the client's state modules are exempt by the state layer's design (the comment at 133 to 135). R17 removes the exemption for the collections it moves and keeps it, or not, for the catalogs (`text.ts`, `tones.ts`, `appearance.ts`), which is the brief's first decision to state.
 
 ## Journal
+- 2026-09-16 04:46: `tests/server/watch/git.test.ts`'s case "publishes one files message naming the root a write landed under" was red under three suites at once (`expected 4 to be 3`) in D4's, Q27's and D5's runs and green alone each time: the read `fire()` opens publishes on two channels and the count was taken before the second landed. Fixed on main as a fix of delivered work (a `quiet()` wait before the count); green alone three times after, the load case not reproduced on purpose.
 - 2026-09-15 15:22: with three workers at once, the browser suites of three worktrees share port 8792 (`playwright.config.ts` and `tests/browser/serve.ts`): O27a's suite in the orchestrator's run found the port taken, then ran against another worktree's server with no `.hub` file of its own (55 of 64 red), and passed 64 of 64 once alone. Rule from here: a browser suite runs only while `lsof -nP -iTCP:8792 -sTCP:LISTEN` prints nothing and no other `serve.ts` is alive; the worker prompts say so, and the orchestrator's check script waits for the port. A per-worktree port is a candidate package (the port read from `local.yml` or an env var in `serve.ts` and the config).
 
 No night log is running. Nothing has been left for Axel to read here.
