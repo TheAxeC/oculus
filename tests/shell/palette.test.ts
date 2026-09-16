@@ -161,4 +161,37 @@ describe('UpdateTray', () => {
         expect(body).toMatch(/class="[^"]*ground[^"]*"[^>]*role="presentation"/);
         expect(body).toMatch(/class="[^"]*tray[^"]*"[^>]*role="dialog"/);
     });
+
+    it('marks no task row as confirming while chat.skip_permissions is off', () => {
+        expect((config as { chat?: Record<string, unknown> }).chat?.skip_permissions).toBe(false);
+        const body = render(UpdateTray, {
+            context: clientContext(client),
+            props: { open: true, onclose: noop }
+        }).body;
+        expect(body).toContain('data-task="litwatch"');
+        expect(body).not.toContain('data-confirms');
+        expect(body).not.toContain(catalog['app.tasks.skip_confirm_ok']);
+    });
+
+    it('marks every task row as confirming while chat.skip_permissions is on', () => {
+        // The setting travels in the merged config the `config` channel carries, so the case turns
+        // it on the way the server would: by pushing a config that holds it. A server render cannot
+        // press, so what is asserted here is the path a press takes; the press itself is
+        // tests/browser/tasks.spec.ts.
+        const skipping = { ...config, chat: { skip_permissions: true } };
+        receive({
+            channel: 'config',
+            version: 8002,
+            payload: { config: skipping, text: catalog, findings: [] }
+        });
+        const body = render(UpdateTray, {
+            context: clientContext(client),
+            props: { open: true, onclose: noop }
+        }).body;
+        for (const kind of ['litwatch', 'scout', 'linkedin', 'inbox']) {
+            expect(body).toMatch(new RegExp(`data-task="${kind}"[^>]*data-confirms="true"`));
+        }
+        // The dialog itself is drawn by a press, so the closed tray carries its words nowhere.
+        expect(body).not.toContain(catalog['app.tasks.skip_confirm_ok']);
+    });
 });

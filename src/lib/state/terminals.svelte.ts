@@ -13,6 +13,7 @@
 // POST carries the token state/writes.svelte.ts holds, and the socket carries it in its subscribe
 // message, which is what lets that socket send input at all.
 
+import { chatSkipPermissions } from '../data/chat.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
 import type { SocketStore } from './socket.svelte.ts';
 import { t } from './text.ts';
@@ -48,7 +49,7 @@ export type TerminalAnswer = {
     error: string;
 };
 
-/** The four unattended update skills accepted by the server's task action. */
+/** The four update skills accepted by the server's task action. */
 export type TaskKind = 'litwatch' | 'scout' | 'linkedin' | 'inbox';
 
 /** What a LaTeX terminal does to one main file: build it, or clear what a build left beside it. */
@@ -175,6 +176,7 @@ export type TerminalsStore = {
     ) => Promise<TerminalAnswer>;
     recoverDataset: (key: string, cols?: number, rows?: number) => Promise<TerminalAnswer>;
     startTask: (kind: TaskKind, cols?: number, rows?: number) => Promise<TerminalAnswer>;
+    taskSkipsPermissions: () => boolean;
     latex: (
         id: string,
         main: string,
@@ -284,6 +286,15 @@ export function createTerminals(
     }
 
     /**
+     * Whether a task started now runs with the CLI's permission prompts turned off. The rule is
+     * data/chat.ts's, the one the server builds the argv from, so what the tray tells the reader and
+     * what the command does are one answer to one configured key.
+     */
+    function taskSkipsPermissions(): boolean {
+        return chatSkipPermissions(entities.config()?.config ?? {});
+    }
+
+    /**
      * Build or clean one main file of a project's manuscript. The page sends the project id and the
      * file's name; the server checks the name against the project's own main files and supplies both
      * the latexmk command and the manuscript folder it runs in.
@@ -382,6 +393,7 @@ export function createTerminals(
         startTerminal,
         recoverDataset,
         startTask,
+        taskSkipsPermissions,
         latex,
         startChat,
         resumeTerminal,

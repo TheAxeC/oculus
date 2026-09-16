@@ -103,7 +103,7 @@ beforeEach(() => {
 function keyEvent(
     key: string,
     ctrlKey = true,
-    held: { shiftKey?: boolean; target?: HTMLElement } = {}
+    held: { shiftKey?: boolean; target?: HTMLElement; defaultPrevented?: boolean } = {}
 ): { event: KeyboardEvent; prevented: ReturnType<typeof vi.fn> } {
     const prevented = vi.fn();
     const event = {
@@ -112,7 +112,7 @@ function keyEvent(
         metaKey: false,
         altKey: false,
         shiftKey: held.shiftKey === true,
-        defaultPrevented: false,
+        defaultPrevented: held.defaultPrevented === true,
         target: held.target ?? null,
         preventDefault: prevented
     };
@@ -130,7 +130,8 @@ function handler(
     path: string,
     page?: string,
     focus: () => null = () => null,
-    overlays: Overlays = {}
+    overlays: Overlays = {},
+    setUpdateOpen: (open: boolean) => void = noop
 ) {
     const element = paneElement(path, 'b', page);
     held.document = fakeDocument(element, overlays.confirm === true);
@@ -145,7 +146,7 @@ function handler(
         updateOpen: () => overlays.tray === true,
         sheetOpen: () => overlays.sheet === true,
         setPaletteOpen: noop,
-        setUpdateOpen: noop,
+        setUpdateOpen,
         setSheetOpen: noop,
         openPalette: noop,
         openDoc: noop
@@ -299,5 +300,37 @@ describe('a pane of a page shown inside another', () => {
         keys.keys(event);
         expect(client.layout.focused(second)).toBe(null);
         expect(prevented).toHaveBeenCalledOnce();
+    });
+});
+
+describe('Escape while the update tray is open', () => {
+    it('closes the tray when nothing is asked over it', () => {
+        const closed = vi.fn();
+        const keys = handler('', undefined, () => null, { tray: true }, closed);
+        const { event, prevented } = keyEvent('Escape', false);
+        keys.keys(event);
+        expect(closed).toHaveBeenCalledWith(false);
+        expect(prevented).toHaveBeenCalledOnce();
+    });
+
+    it('leaves the tray open on the Escape a confirmation over it has already answered', () => {
+        const closed = vi.fn();
+        const keys = handler('', undefined, () => null, { tray: true }, closed);
+        const { event, prevented } = keyEvent('Escape', false, { defaultPrevented: true });
+        keys.keys(event);
+        expect(closed).not.toHaveBeenCalled();
+        // The key stops here, so it reaches no later branch either: no pane is restored by it.
+        expect(prevented).not.toHaveBeenCalled();
+    });
+
+    it('closes the tray on the next Escape, the one no dialog has taken', () => {
+        const closed = vi.fn();
+        const keys = handler('', undefined, () => null, { tray: true }, closed);
+        keys.keys(keyEvent('Escape', false, { defaultPrevented: true }).event);
+        expect(closed).not.toHaveBeenCalled();
+        const second = keyEvent('Escape', false);
+        keys.keys(second.event);
+        expect(closed).toHaveBeenCalledWith(false);
+        expect(second.prevented).toHaveBeenCalledOnce();
     });
 });

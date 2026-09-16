@@ -16,6 +16,7 @@
 // no English the page would have to show raw. The page maps the two keys back through t().
 
 import { join } from 'node:path';
+import { chatSkipPermissions } from '../../data/chat.ts';
 import { scalar } from '../../data/guards.ts';
 import { hasToken, sameOrigin } from '../auth.ts';
 import { loadConfig, loadLocalOrDefaults, textCatalog } from '../../data/sources/config.ts';
@@ -160,23 +161,21 @@ async function recoverDataset(
     return json(200, { ok: true, terminal });
 }
 
-/** The server-built shell command for one unattended Claude task. */
-function taskCommand(binary: string, kind: TaskKind): string {
-    return [
-        binary,
-        '-p',
-        '--output-format',
-        'stream-json',
-        '--verbose',
-        '--include-partial-messages',
-        '--dangerously-skip-permissions',
-        `/research-cockpit ${kind}`
-    ]
-        .map(shellWord)
-        .join(' ');
+/**
+ * The server-built shell command for one update task. It is an ordinary interactive session, the
+ * shape the chat terminal has, so the skill runs in the pty the terminal pane shows and every
+ * permission prompt the CLI raises is answered there by the reader; the skill invocation is the
+ * session's first message, passed as the positional argument. `chat.skip_permissions` puts
+ * `--dangerously-skip-permissions` back, which runs the task unattended instead.
+ */
+function taskCommand(binary: string, kind: TaskKind, skip: boolean): string {
+    const argv = [binary];
+    if (skip) argv.push('--dangerously-skip-permissions');
+    argv.push(`/research-cockpit ${kind}`);
+    return argv.map(shellWord).join(' ');
 }
 
-/** Start one of the four update skills as a Claude terminal in the configured hub root. */
+/** Start one of the four update tasks as a Claude terminal in the configured hub root. */
 async function startTask(
     kind: unknown,
     cols: unknown,
@@ -187,6 +186,7 @@ async function startTask(
         return json(400, { error: `kind must be one of ${TASKS.join(', ')}` });
     }
     const local = options.localFor?.() ?? loadLocalOrDefaults(options.engine);
+    const config = options.configFor?.() ?? loadConfig(options.engine).config;
     const terminal = await startTerminal(
         {
             kind: 'claude',
@@ -195,7 +195,10 @@ async function startTask(
             rows: rows as number,
             name: `task ${kind}`
         },
-        { ...options, command: taskCommand(local.claudeBin, kind as TaskKind) }
+        {
+            ...options,
+            command: taskCommand(local.claudeBin, kind as TaskKind, chatSkipPermissions(config))
+        }
     );
     options.refresh?.();
     return json(200, { ok: true, terminal });

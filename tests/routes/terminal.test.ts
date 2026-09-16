@@ -20,6 +20,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
 import {
     handleTerminal,
@@ -28,9 +29,13 @@ import {
 } from '../../src/lib/server/pty/routes.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { chatIndexPath } from '../../src/lib/server/pty/chat.ts';
+import { chatSkipPermissions } from '../../src/lib/data/chat.ts';
 import { record } from '../sessions-fixture.ts';
 import type { SessionRecord } from '../../src/lib/data/model.ts';
 import { contextFixture } from '../server/context-fixture.ts';
+
+/** This file's own directory, for reading the route module beside the source it tests. */
+const HERE_FILE = fileURLToPath(import.meta.url);
 
 const HOST = '127.0.0.1:8791';
 const SERVER = contextFixture({ token: 'the-write-token-of-this-test' });
@@ -398,25 +403,130 @@ describe('POST /api/terminal, the recover action', () => {
 });
 
 describe('POST /api/terminal, the task action', () => {
-    it('starts every accepted task in the hub with the configured Claude binary and fixed argv', async () => {
+    /** The command the task action built, from the tmux session it was asked to create. */
+    async function taskArgv(
+        kind: string,
+        config?: Record<string, unknown>
+    ): Promise<{ started: string[]; name: string }> {
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({ action: 'task', kind, cols: 92, rows: 27 }),
+            TOKEN,
+            config === undefined
+                ? { engine: TASK_ENGINE, run: driver.run }
+                : { engine: TASK_ENGINE, run: driver.run, configFor: () => config }
+        );
+        expect(response.status).toBe(200);
+        const terminal = (await answer(response)).terminal as { name: string };
+        const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
+        return { started, name: terminal.name };
+    }
+
+    it('starts every accepted task as an interactive session, with no skip and no print-mode flags', async () => {
         for (const kind of ['litwatch', 'scout', 'linkedin', 'inbox']) {
-            const driver = tmux();
-            const response = await handleTerminal(
-                request({ action: 'task', kind, cols: 92, rows: 27 }),
-                TOKEN,
-                { engine: TASK_ENGINE, run: driver.run }
-            );
-            expect(response.status).toBe(200);
-            const terminal = (await answer(response)).terminal as { name: string };
-            expect(terminal.name).toBe(`task ${kind}`);
-            const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
+            const { started, name } = await taskArgv(kind);
+            expect(name).toBe(`task ${kind}`);
             expect(started[started.indexOf('-c') + 1]).toBe(HERE);
             expect(started[started.indexOf('-x') + 1]).toBe('92');
             expect(started[started.indexOf('-y') + 1]).toBe('27');
             expect(started[started.length - 1]).toBe(
-                `'/opt/Claude CLI/claude' '-p' '--output-format' 'stream-json' '--verbose' '--include-partial-messages' '--dangerously-skip-permissions' '/research-cockpit ${kind}'`
+                `'/opt/Claude CLI/claude' '/research-cockpit ${kind}'`
             );
         }
+    });
+
+    it('adds the skip flag and nothing else when chat.skip_permissions is on', async () => {
+        const { started, name } = await taskArgv('litwatch', { chat: { skip_permissions: true } });
+        expect(name).toBe('task litwatch');
+        expect(started[started.indexOf('-c') + 1]).toBe(HERE);
+        expect(started[started.length - 1]).toBe(
+            `'/opt/Claude CLI/claude' '--dangerously-skip-permissions' '/research-cockpit litwatch'`
+        );
+    });
+
+    it('reads a chat.skip_permissions of any other shape, and a missing one, as off', async () => {
+        for (const chat of [
+            { skip_permissions: 'true' },
+            { skip_permissions: 1 },
+            { skip_permissions: null },
+            {}
+        ]) {
+            const { started } = await taskArgv('scout', { chat });
+            expect(started[started.length - 1]).toBe(
+                `'/opt/Claude CLI/claude' '/research-cockpit scout'`
+            );
+        }
+        // A configuration with no `chat:` block at all, which is what the engine of this suite holds.
+        const bare = await taskArgv('scout', {});
+        expect(bare.started[bare.started.length - 1]).toBe(
+            `'/opt/Claude CLI/claude' '/research-cockpit scout'`
+        );
+    });
+
+    it('follows a setting the reader changed while the server runs, with no restart', async () => {
+        // The route's own reader, which reads the engine's config folder on every request rather
+        // than a copy the context took at start: a reader who turns the key off in behavior.yml
+        // sees the tray stop asking, and the next task must be started the same way.
+        const engine = engineWith(
+            'live-engine',
+            `hub: ${HERE}\nclaude_bin: /opt/Claude CLI/claude\n`
+        );
+        const behavior = join(engine, 'config', 'behavior.yml');
+        const live = { engine, configFor: () => loadConfig(engine).config };
+
+        writeFileSync(behavior, 'chat:\n  skip_permissions: true\n');
+        const first = tmux();
+        expect(
+            (
+                await handleTerminal(
+                    request({ action: 'task', kind: 'scout', cols: 80, rows: 24 }),
+                    TOKEN,
+                    {
+                        ...live,
+                        run: first.run
+                    }
+                )
+            ).status
+        ).toBe(200);
+        const on = first.calls.find((args) => args[0] === 'new-session') ?? [];
+        expect(on[on.length - 1]).toBe(
+            `'/opt/Claude CLI/claude' '--dangerously-skip-permissions' '/research-cockpit scout'`
+        );
+
+        writeFileSync(behavior, 'chat:\n  skip_permissions: false\n');
+        const second = tmux();
+        expect(
+            (
+                await handleTerminal(
+                    request({ action: 'task', kind: 'scout', cols: 80, rows: 24 }),
+                    TOKEN,
+                    {
+                        ...live,
+                        run: second.run
+                    }
+                )
+            ).status
+        ).toBe(200);
+        const off = second.calls.find((args) => args[0] === 'new-session') ?? [];
+        expect(off[off.length - 1]).toBe(`'/opt/Claude CLI/claude' '/research-cockpit scout'`);
+    });
+
+    it('is wired to that reader by the route module, not to the context snapshot', () => {
+        // The route is read rather than imported, the reason tests/routes/shape.test.ts gives: a Kit
+        // route pulls its `./$types` in with it. What is asserted is the one line that decides
+        // whether a saved setting takes effect before the next restart.
+        const route = readFileSync(
+            resolve(HERE_FILE, '..', '..', '..', 'src', 'routes', 'api', 'terminal', '+server.ts'),
+            'utf8'
+        );
+        expect(route).toContain('configFor: () => loadConfig(server.engine).config');
+        expect(route).not.toContain('configFor: () => server.config');
+    });
+
+    it('carries chat.skip_permissions on the wire, off in the checked-in configuration', () => {
+        const merged = loadConfig(engineDir()).config as { chat?: Record<string, unknown> };
+        expect(merged.chat?.skip_permissions).toBe(false);
+        expect(chatSkipPermissions(merged as Record<string, unknown>)).toBe(false);
     });
 
     it('refuses another task kind without starting a terminal', async () => {
@@ -439,7 +549,7 @@ describe('POST /api/terminal, the task action', () => {
         );
         expect(response.status).toBe(200);
         const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
-        expect(started[started.length - 1]).toMatch(/^'claude' '-p'/);
+        expect(started[started.length - 1]).toBe(`'claude' '/research-cockpit scout'`);
     });
 });
 

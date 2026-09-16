@@ -4,6 +4,7 @@
 
 import { rmSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { chatModel } from '../../data/chat.ts';
 import { byKey } from '../../data/guards.ts';
 import {
     loadConfig,
@@ -48,14 +49,6 @@ export function words(
         filled = filled.replaceAll(`{${at}}`, String(value));
     }
     return filled;
-}
-
-/** The configured chat model, or no model argument when the CLI should choose. */
-function chatModel(config: Record<string, unknown>): string | null {
-    const chat = config.chat;
-    if (typeof chat !== 'object' || chat === null || Array.isArray(chat)) return null;
-    const model = (chat as Record<string, unknown>).model;
-    return typeof model === 'string' && model.trim() !== '' ? model.trim() : null;
 }
 
 /** The chat index path beside the configured sessions file, under its own retained folder. */

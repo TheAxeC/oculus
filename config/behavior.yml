@@ -86,6 +86,8 @@ slurm:
 
 chat:
   model: "opus"
+  # The four update tasks start as ordinary Claude sessions, so a permission prompt is answered by the reader in the terminal pane. `true` starts them with --dangerously-skip-permissions instead, which runs them unattended; the update tray then asks for a confirmation before each task.
+  skip_permissions: false
 
 
 # === Hook push notifications ================================================

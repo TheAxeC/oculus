@@ -2,7 +2,14 @@
     // Layer 3, shell. The update-task tray. Each task starts the server-built Claude command in a
     // terminal, selects it, and opens the Terminal view; the snapshot's feed summary supplies the
     // last-run value beside each control.
+    //
+    // A task is an ordinary Claude session, so its permission prompts are answered in the terminal
+    // pane and a press starts it straight away. While `chat.skip_permissions` is on there is nobody
+    // to answer them and the session decides for itself, so the press asks first: the confirmation
+    // is the one place a reader is told which of the two a press is about to do. It is asked once
+    // per press and not remembered, since the answer is about this run and not about the setting.
 
+    import Confirm from '$lib/ui/Confirm.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { findView } from '$lib/state/layout';
     import type { TaskKind } from '$lib/state/terminals.svelte';
@@ -13,7 +20,7 @@
         layout: { layout, openView },
         paletteSource: { paletteSource },
         selection: { select },
-        terminals: { startChat, startTask }
+        terminals: { startChat, startTask, taskSkipsPermissions }
     } = useState();
 
     type Props = {
@@ -23,8 +30,10 @@
 
     let { open, onclose }: Props = $props();
     let running: TaskKind | null = $state(null);
+    let asking: TaskKind | null = $state(null);
     let chatting = $state(false);
     let said = $state('');
+    const skipping = $derived(taskSkipsPermissions());
     const current = $derived(paletteSource());
     const summary = $derived(current.snapshot?.entities.feeds);
     const tasks = $derived([
@@ -56,6 +65,20 @@
 
     function terminalOpen(): boolean {
         return findView(layout(), 'terminal', null) !== null;
+    }
+
+    /** One task's words, for a sentence outside the row that draws it. */
+    function taskLabel(kind: TaskKind): string {
+        return tasks.find((task) => task.kind === kind)?.label ?? kind;
+    }
+
+    /** What a press does: start the task, or ask first when the task would run unattended. */
+    function press(kind: TaskKind): void {
+        if (skipping) {
+            asking = kind;
+            return;
+        }
+        void start(kind);
     }
 
     async function start(kind: TaskKind): Promise<void> {
@@ -107,13 +130,13 @@
             </header>
             <div class="tasks">
                 {#each tasks as task (task.kind)}
-                    <div class="task" data-task={task.kind}>
+                    <div class="task" data-task={task.kind} data-confirms={skipping || undefined}>
                         <ToolButton
                             label={task.label}
                             title={task.note}
                             active={running === task.kind}
                             disabled={running !== null || chatting}
-                            onclick={() => start(task.kind)}
+                            onclick={() => press(task.kind)}
                         />
                         <span class="last">{task.last ?? t('app.palette_unavailable')}</span>
                         {#if task.kind === 'inbox'}
@@ -136,6 +159,22 @@
                 <p class="said">{said}</p>
             {/if}
         </div>
+        {#if asking !== null}
+            {@const kind = asking}
+            <Confirm
+                message={t('app.tasks.skip_confirm', taskLabel(kind))}
+                confirm={t('app.tasks.skip_confirm_ok')}
+                cancel={t('ui.confirm_cancel')}
+                onconfirm={() => {
+                    // The kind is read before the dialog is put away: `kind` is the const over
+                    // `asking`, and once that is null there is no task to read from it.
+                    const started = kind;
+                    asking = null;
+                    void start(started);
+                }}
+                oncancel={() => (asking = null)}
+            />
+        {/if}
     </div>
 {/if}
 

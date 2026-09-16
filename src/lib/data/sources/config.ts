@@ -52,7 +52,7 @@ export type LocalConfig = {
      * write path then uses ~/.oculus/changes.jsonl.
      */
     changes?: string;
-    /** Absolute or PATH-resolved Claude CLI used by unattended update-task terminals. */
+    /** Absolute or PATH-resolved Claude CLI the update tasks and the chat terminal are started with. */
     claudeBin: string;
     /** Claude and Codex config folders shown by the Usage view. */
     accounts: UsageAccountConfig[];

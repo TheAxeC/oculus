@@ -74,6 +74,33 @@ export function removeFromHub(relative: string): void {
     rmSync(full, { recursive: true, force: true });
 }
 
+/**
+ * The engine directory this run serves, beside the hub copy under the one temporary directory
+ * `serve.ts` made: it holds the copy of `config/`, so a spec whose subject is a configured setting
+ * edits that copy and never the checkout's. The config folder is asserted to be there.
+ */
+export function servedEngineDir(): string {
+    const dir = join(dirname(hubDir()), 'engine');
+    if (!existsSync(join(dir, 'config'))) throw new Error(`${dir} holds no config folder`);
+    return dir;
+}
+
+/** One file of that engine directory, by its path relative to the engine root. */
+export function readEngineFile(relative: string): string {
+    return readFileSync(join(servedEngineDir(), relative), 'utf8');
+}
+
+/**
+ * Write a file into that engine directory, for a spec whose subject is a setting no control of the
+ * page writes. The path is resolved and asserted to be inside it before anything is written.
+ */
+export function writeEngineFile(relative: string, body: string): void {
+    const root = servedEngineDir();
+    const full = resolve(join(root, relative));
+    if (!full.startsWith(resolve(root) + sep)) throw new Error(`${full} is not inside ${root}`);
+    writeFileSync(full, body);
+}
+
 /** One manifest's `short:`, which is what a board card and a ticker line are named by. */
 export function shortOf(project: string): string {
     const manifest = readHubYaml(`${project}/project.yml`);

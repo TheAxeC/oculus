@@ -31,7 +31,7 @@ text:
         tasks:
             close: Close
             inbox_label: Inbox
-            inbox_note: Gmail triage (needs an interactive session)
+            inbox_note: Gmail triage over the private mailbox
             linkedin_label: LinkedIn
             linkedin_note: draft a post from _linkedin/
             lit_label: Lit Watch
@@ -39,6 +39,8 @@ text:
             note_prefix: '{G.info} {0}'
             scout_label: Scout
             scout_note: academic openings (web | minutes)
+            skip_confirm: 'Start {0} unattended? Its permission prompts are turned off, so it answers them itself.'
+            skip_confirm_ok: Start unattended
             update_tasks: Update tasks
         text_larger: Larger text
         text_reset: Reset text size
