@@ -4,6 +4,7 @@
 
 import type { IncomingMessage } from 'node:http';
 import {
+    calendarSettings,
     iconFindings,
     iconSet,
     type IconMemory,
@@ -16,6 +17,10 @@ import {
 } from '../data/sources/config.ts';
 import type { Finding, Snapshot } from '../data/model.ts';
 import { mintToken } from './auth.ts';
+import { ConnectStates } from './calendar/oauth.ts';
+import { defaultCalendarDir } from './calendar/store.ts';
+import { watchCalendar, type CalendarOptions, type CalendarWatcher } from './calendar/poll.ts';
+import { macOpen, type Opener } from './open.ts';
 import { docFindings, layoutFile } from './docs.ts';
 import { Hub } from './channels.ts';
 import { RateLimiter, notifyConfig, type HookTarget } from './hooks.ts';
@@ -42,6 +47,7 @@ export type ServerContext = {
     hooks: HookTarget;
     git: GitWatcher;
     hpc: HpcWatcher;
+    calendar: CalendarWatcher;
     usage: UsageWatcher;
     usageRefresh: UsageRefreshWatcher;
     token: string;
@@ -53,6 +59,15 @@ export type ServerContext = {
     fsWrites: FsWrites;
     /** The log path found per HPC job id. */
     hpcLogPaths: LogPaths;
+    /** The calendar consents in flight, minted by the connect action and taken by the callback. */
+    calendarConnects: ConnectStates;
+    /** The folder the calendar credential files live in, resolved once for the poller and the routes. */
+    calendarDir: string;
+    /**
+     * How an address reaches the operating system, so the one process that opens anything is this
+     * one and a test is handed a context that opens nothing.
+     */
+    opener: Opener;
     /** The last deposit plan per project. */
     depositPlans: Map<string, Plan>;
     /** The wallpaper pick and the refused directories. */
@@ -90,6 +105,7 @@ export type ContextDependencies = {
     watchSessions: typeof watchSessions;
     watchGit: (hub: Hub, options: GitWatchOptions) => GitWatcher;
     watchHpc: (hub: Hub, options: HpcOptions) => HpcWatcher;
+    watchCalendar: (hub: Hub, options: CalendarOptions) => CalendarWatcher;
     watchUsageRefresh: typeof watchUsageRefresh;
     watchUsage: typeof watchUsage;
 };
@@ -104,6 +120,7 @@ const dependencies: ContextDependencies = {
     watchSessions,
     watchGit: (hub, options) => watchGit(hub, options),
     watchHpc,
+    watchCalendar,
     watchUsageRefresh,
     watchUsage
 };
@@ -117,6 +134,7 @@ export function createServerContext(
     const local = make.loadLocal(engine);
     const config = make.loadConfig(engine).config;
     const slurm = slurmSettings(config);
+    const calendarConfig = calendarSettings(config);
     const tiers = usageTiers(config);
     const hub = make.createHub();
     const terminals = make.createTerminals(hub);
@@ -189,6 +207,17 @@ export function createServerContext(
         logPaths: hpcLogPaths
     });
 
+    // The calendar poller reads the credential files of the folder the machine's own file names, so
+    // a served test run is pointed at a directory of its own and never at the reader's.
+    const calendarDir = local.calendarDir ?? defaultCalendarDir();
+    const calendar = make.watchCalendar(hub, {
+        accounts: local.calendars,
+        dir: calendarDir,
+        pollMin: calendarConfig.pollMin,
+        daysBack: calendarConfig.daysBack,
+        daysAhead: calendarConfig.daysAhead
+    });
+
     let closed = false;
     return {
         hub,
@@ -196,6 +225,7 @@ export function createServerContext(
         hooks,
         git,
         hpc,
+        calendar,
         usage,
         usageRefresh,
         token,
@@ -204,6 +234,9 @@ export function createServerContext(
         engine,
         fsWrites: fsWrites(),
         hpcLogPaths,
+        calendarConnects: new ConnectStates(),
+        calendarDir,
+        opener: macOpen,
         depositPlans: new Map(),
         wallpaper: wallpaperMemory(),
         memories: memoriesMemory(),
@@ -212,6 +245,7 @@ export function createServerContext(
             if (closed) return;
             closed = true;
             usageRefresh.close();
+            calendar.close();
             hpc.close();
             git.close();
             usage.close();

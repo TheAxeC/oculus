@@ -89,6 +89,12 @@ chat:
   # The four update tasks start as ordinary Claude sessions, so a permission prompt is answered by the reader in the terminal pane. `true` starts them with --dangerously-skip-permissions instead, which runs them unattended; the update tray then asks for a confirmation before each task.
   skip_permissions: false
 
+# The read-only calendar connector: the poll cadence in minutes and the agenda window in days.
+calendar:
+  poll_min: 15
+  days_back: 1
+  days_ahead: 14
+
 
 # === Hook push notifications ================================================
 # Hook event names that trigger macOS notifications and their per-session repeat interval.

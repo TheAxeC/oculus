@@ -8,8 +8,11 @@ import { isAbsolute, resolve, sep } from 'node:path';
 import { hasToken, sameOrigin } from './auth.ts';
 import type { Root } from './files.ts';
 
-/** The operating-system operation is injectable so route tests open nothing. */
-export type Opener = (path: string) => Promise<void> | void;
+/**
+ * How one address reaches the operating system: a folder for the file endpoint, an `https` page for
+ * the calendar's consent and event links. It is injectable so route tests open nothing.
+ */
+export type Opener = (target: string) => Promise<void> | void;
 
 function json(status: number, body: unknown): Response {
     return new Response(JSON.stringify(body), {
@@ -44,10 +47,35 @@ function allowed(path: string, roots: Root[]): string | null {
     return null;
 }
 
-/** Open one path in Finder on macOS. */
-export function macOpen(path: string): Promise<void> {
+/**
+ * What macOpen will hand to the operating system, which is its own rule and not its caller's: an
+ * absolute path that is a directory right now, or an `https` address. Anything else is refused here,
+ * so the two call sites (the file endpoint's `allowed`, which resolves a directory inside a
+ * configured root, and the calendar route, which reads a link out of the state it published) are the
+ * narrowing and this is the floor under both. A relative path, a `file:` or `javascript:` address
+ * and an argument `open` would read as an option of its own all fall outside it.
+ */
+export function openable(target: string): boolean {
+    if (target.startsWith('-') || target === '') return false;
+    if (isAbsolute(target)) {
+        try {
+            return statSync(target).isDirectory();
+        } catch {
+            return false;
+        }
+    }
+    try {
+        return new URL(target).protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
+/** Hand one existing folder or `https` address to macOS; anything else is refused unopened. */
+export function macOpen(target: string): Promise<void> {
+    if (!openable(target)) return Promise.reject(new Error('open refused'));
     return new Promise((resolveOpen, reject) => {
-        execFile('open', [path], (error) => {
+        execFile('open', [target], (error) => {
             if (error === null) resolveOpen();
             else reject(error instanceof Error ? error : new Error(scalar(error, 'open refused')));
         });

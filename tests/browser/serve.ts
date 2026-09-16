@@ -14,7 +14,9 @@
 // registry and the byte-offset cache are the fixture's rather than the owner's.
 // PATH puts this run's own `ssh` and `tmux` in front: the Live HPC poller's ssh answers from
 // demo/hpc/ instead of opening a connection, and tmux fails, so no terminal and no usage refresh
-// starts a process on the machine. TMPDIR is passed through when the parent has one, since it is the
+// starts a process on the machine. `calendar_dir` in this run's local.yml is a folder this run made,
+// holding one account's client half and no refresh token, so the calendar poller marks that account
+// not connected and calls no provider. TMPDIR is passed through when the parent has one, since it is the
 // operating system's like the other two and os.tmpdir() in a child without it answers /tmp, which is
 // not where this machine puts a process's temporary files. The server reads no environment variable
 // of its own.
@@ -44,6 +46,9 @@ const MANUAL = 'HELP.md';
 
 /** The ssh alias the Live HPC poller is given, which this run's own ssh answers for. */
 const CLUSTER = 'demo-cluster';
+
+/** The one calendar account this run configures, whose file holds a client half and no token. */
+const CALENDAR = { provider: 'google', label: 'work' };
 
 /** What the fixture transcript carries in place of the moment it was written and the folder it ran in. */
 const WHEN = 'OCULUS_FIXTURE_WHEN';
@@ -87,6 +92,7 @@ const engineConfig = inside(join(runEngine, 'config'), tmpdir());
 const home = inside(join(temp, 'home'), tmpdir());
 const bin = inside(join(temp, 'bin'), tmpdir());
 const local = inside(join(engineConfig, LOCAL_NAME), tmpdir());
+const calendarDir = inside(join(temp, 'calendar'), tmpdir());
 const marker = inside(join(here, '.hub'), engine);
 
 cpSync(join(engine, 'demo'), hub, { recursive: true });
@@ -179,7 +185,28 @@ writeFileSync(
     { mode: 0o755 }
 );
 
-writeFileSync(local, `hub: ${hub}\nport: ${PORT}\nhpc_host: ${CLUSTER}\n`);
+// The calendar connector reads its credential files here, which is this run's own folder and never
+// the owner's ~/.oculus/calendar. The one account holds a client half and no refresh token, so the
+// poller marks it not connected, reaches no provider and the view has an account row to draw.
+mkdirSync(calendarDir, { recursive: true, mode: 0o700 });
+writeFileSync(
+    inside(join(calendarDir, `${CALENDAR.provider}-${CALENDAR.label}.json`), tmpdir()),
+    `${JSON.stringify({ client_id: 'a-browser-layer-client', client_secret: 'not-a-secret' }, null, 4)}\n`,
+    { mode: 0o600 }
+);
+
+writeFileSync(
+    local,
+    [
+        `hub: ${hub}`,
+        `port: ${PORT}`,
+        `hpc_host: ${CLUSTER}`,
+        `calendar_dir: ${calendarDir}`,
+        'calendars:',
+        `  - { provider: ${CALENDAR.provider}, label: ${CALENDAR.label} }`,
+        ''
+    ].join('\n')
+);
 // The specs read the hub's path from here, since a Playwright spec runs in its own process and
 // cannot be handed anything by this one. The file is gitignored.
 writeFileSync(marker, `${hub}\n`);

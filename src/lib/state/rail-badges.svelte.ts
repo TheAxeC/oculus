@@ -5,6 +5,7 @@ import { scalar } from '../data/guards.ts';
 import type { EntitiesStore } from './entities.svelte.ts';
 import type { FeedsStore } from './feeds.svelte.ts';
 import type { AuditStore } from './audit.svelte.ts';
+import type { CalendarStore } from './calendar.svelte.ts';
 import type { HpcStore } from './hpc.svelte.ts';
 import type { SelectorsStore } from './selectors.svelte.ts';
 import { splitPosts } from './linkedin.ts';
@@ -57,14 +58,17 @@ export type RailBadgesStore = {
     auditBadge: () => string;
     boardCells: (view: string) => BadgeCell[];
     queueCells: () => BadgeCell[];
+    calendarCells: () => BadgeCell[];
     boardBadgeTitle: (view: string) => string;
     queueBadgeTitle: () => string;
+    calendarBadgeTitle: () => string;
 };
 
 export function createRailBadges(
     entities: EntitiesStore,
     feeds: FeedsStore,
     hpc: HpcStore,
+    calendar: CalendarStore,
     audit: AuditStore,
     selectors: SelectorsStore
 ): RailBadgesStore {
@@ -200,6 +204,17 @@ export function createRailBadges(
         ];
     }
 
+    /** The one count the Calendar rail badge carries: today's events that have not ended. */
+    function calendarCells(): BadgeCell[] {
+        return [
+            {
+                count: calendar.remaining(),
+                color: statusTone('active'),
+                label: t('calendar.badge_today')
+            }
+        ];
+    }
+
     /** Hover words for one board's split counts. */
     function boardBadgeTitle(view: string): string {
         return cellsTitle(boardCells(view));
@@ -208,6 +223,11 @@ export function createRailBadges(
     /** Hover words for the running and pending queue counts. */
     function queueBadgeTitle(): string {
         return cellsTitle(queueCells());
+    }
+
+    /** Hover words for today's remaining events. */
+    function calendarBadgeTitle(): string {
+        return cellsTitle(calendarCells());
     }
 
     return {
@@ -222,7 +242,9 @@ export function createRailBadges(
         auditBadge,
         boardCells,
         queueCells,
+        calendarCells,
         boardBadgeTitle,
-        queueBadgeTitle
+        queueBadgeTitle,
+        calendarBadgeTitle
     };
 }

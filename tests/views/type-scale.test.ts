@@ -57,6 +57,10 @@ const VIEWS: Record<string, string> = {
     'Help.svelte': '',
     'History.svelte':
         '.when=fs-sm | .kind=fs-xs | .file, .lbl=fs-sm | .what, .value=fs-md | .empty, .said=fs-md | .raw=fs-sm',
+    'Calendar.svelte': 'footer=fs-sm',
+    'calendar/Accounts.svelte': '.provider, .when=fs-sm | .hint=fs-sm',
+    'calendar/Agenda.svelte': 'h3=fs-sm | .where=fs-sm',
+    'calendar/Head.svelte': '.meta=fs-sm',
     'Hpc.svelte': 'footer=fs-sm',
     'Usage.svelte':
         '.window-name, .live-row=fs-sm | .refresher=fs-xs | .live h3, .history h2=fs-sm | .session=fs-xs',

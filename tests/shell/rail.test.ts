@@ -574,9 +574,9 @@ describe('the groups of the real config', () => {
         return sections.find((found) => found.label === label)?.items ?? [];
     }
 
-    it('draws Personal for the wall and its two documents, and puts the third in System', () => {
+    it('draws Personal for the wall, the agenda and its two documents, and puts the third in System', () => {
         const personal = sections.find((found) => found.label === 'Personal');
-        expect(personal?.items.map((view) => view.id)).toEqual(['memories']);
+        expect(personal?.items.map((view) => view.id)).toEqual(['memories', 'calendar']);
         expect(personal?.docs.map((entry) => entry.path)).toEqual([
             'RESEARCH-APPROACH.md',
             'AGENT-APPROACH.md'
@@ -673,7 +673,8 @@ describe('the groups of the real config', () => {
             'leads',
             'inbox',
             'linkedin',
-            'memories'
+            'memories',
+            'calendar'
         ]);
         // The directly drawn groups' documents follow the direct views in the direct chord, so a
         // digit past the last view opens one; the direct list itself holds views alone.

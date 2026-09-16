@@ -1,14 +1,14 @@
 // The authenticated open-folder endpoint against directories under system temporary storage. The
 // opener is a stub, so no application is launched and no path outside the fixture is touched.
 
-import { mkdirSync, mkdtempSync, realpathSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { scalar } from '../../src/lib/data/guards.ts';
 import { invalidateAll } from '$app/navigation';
 import { mintToken } from '../../src/lib/server/auth.ts';
-import { handleOpen } from '../../src/lib/server/open.ts';
+import { handleOpen, openable } from '../../src/lib/server/open.ts';
 import type { Root } from '../../src/lib/server/files.ts';
 import { createClientState, type ClientState } from '../client.ts';
 
@@ -171,5 +171,33 @@ describe('the open client', () => {
         expect((await openFolder(folder)).ok).toBe(true);
         expect(sent).toEqual(['old-token', TOKEN]);
         expect(opener).toHaveBeenCalledOnce();
+    });
+});
+
+describe('what macOpen will hand to the operating system', () => {
+    // The rule alone is read here, never macOpen itself: a call that passed would launch an
+    // application, so what is asserted is the predicate that stands in front of the call.
+    it('takes a path that is a directory right now', () => {
+        const { hub, folder } = fixture();
+        expect(openable(hub)).toBe(true);
+        expect(openable(folder)).toBe(true);
+    });
+
+    it('takes an https address and no other scheme', () => {
+        expect(openable('https://calendar.google.com/event?eid=one')).toBe(true);
+        expect(openable('http://calendar.google.com/event?eid=one')).toBe(false);
+        expect(openable('javascript:alert(1)')).toBe(false);
+        expect(openable('file:///tmp/x')).toBe(false);
+    });
+
+    it('refuses a relative path, an option, an empty argument and a path that is not a directory', () => {
+        const { hub, folder } = fixture();
+        const file = join(folder, 'note.md');
+        writeFileSync(file, 'a file rather than a folder');
+        expect(openable(file)).toBe(false);
+        expect(openable(join(hub, 'nothing-here'))).toBe(false);
+        expect(openable('projects/active/alpha')).toBe(false);
+        expect(openable('-n')).toBe(false);
+        expect(openable('')).toBe(false);
     });
 });

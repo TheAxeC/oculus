@@ -301,6 +301,18 @@ export type {
 } from './model-collections.ts';
 
 export type {
+    CalendarAccount,
+    CalendarAccountConfig,
+    CalendarAccountStatus,
+    CalendarEvent,
+    CalendarEventStatus,
+    CalendarListEntry,
+    CalendarPayload,
+    CalendarProvider,
+    CalendarStatus
+} from './model-calendar.ts';
+
+export type {
     Area,
     FilesPayload,
     GitBranch,

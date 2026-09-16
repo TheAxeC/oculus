@@ -2,6 +2,7 @@
 // opening a watcher, running tmux, reading the real hub, or writing outside a test's own fixture.
 
 import type { LocalConfig } from '../../src/lib/data/sources/config.ts';
+import { ConnectStates } from '../../src/lib/server/calendar/oauth.ts';
 import { Hub } from '../../src/lib/server/channels.ts';
 import type { ServerContext } from '../../src/lib/server/context.ts';
 import { RateLimiter, notifyConfig } from '../../src/lib/server/hooks.ts';
@@ -30,7 +31,8 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         hub: '/fixture/hub',
         port: 8791,
         claudeBin: 'claude',
-        accounts: []
+        accounts: [],
+        calendars: []
     };
     const config = overrides.config ?? {};
     const terminals =
@@ -51,6 +53,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         hooks,
         git: { refresh: noop, close: noop },
         hpc: { refresh: () => Promise.resolve(), close: noop },
+        calendar: { refresh: () => Promise.resolve(), close: noop },
         usage: { refresh: () => Promise.resolve(), close: noop },
         usageRefresh: {
             ready: Promise.resolve(),
@@ -71,6 +74,9 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         engine: overrides.engine ?? '/fixture/engine',
         fsWrites: overrides.fsWrites ?? fsWrites(),
         hpcLogPaths: new Map(),
+        calendarConnects: new ConnectStates(),
+        calendarDir: overrides.calendarDir ?? '/fixture/calendar',
+        opener: noop,
         depositPlans: new Map(),
         wallpaper: wallpaperMemory(),
         icons: { set: {} },

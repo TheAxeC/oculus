@@ -1,0 +1,34 @@
+# Oculus text owned by the calendar view.
+text:
+    calendar:
+        account_error: error
+        agenda_empty: No events in this window.
+        badge_today: left today
+        all_day: all day
+        as_of: as of {0}
+        as_of_late: as of {0}, the next poll is late
+        callback_bad: That link was not recognised. Press Connect again in the Calendar view.
+        callback_ok: The account is connected. This tab can be closed.
+        cancelled: cancelled
+        connect: Connect
+        connected: connected
+        connecting: connecting...
+        error: error
+        every: every {0}m
+        footer: Read-only over {0} days back and {1} days ahead.
+        last_ok: last read {0}
+        live: live
+        needs_file: Put the client id in {0}, then press Connect.
+        no_accounts: No calendar account is configured; local.yml has no calendars rows.
+        not_connected: not connected
+        open_event: open at the provider
+        polling: reading calendars...
+        provider_google: Google
+        provider_microsoft: Microsoft
+        refresh_now: Refresh now
+        retrying: retrying every {0}m
+        tentative: tentative
+        today: today
+    views:
+        calendar: Calendar
+        calendar_glyph: calendar

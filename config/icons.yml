@@ -69,6 +69,7 @@ icons:
     followup: bell
     paper: file-text
     events: calendar
+    calendar: calendar-days
     collab: handshake
     agents: bot
     hpc: server

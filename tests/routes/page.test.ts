@@ -80,6 +80,7 @@ describe('the page subscription', () => {
             'git',
             'files',
             'hpc',
+            'calendar',
             'usage',
             'feeds',
             'audit'

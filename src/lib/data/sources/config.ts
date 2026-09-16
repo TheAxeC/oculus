@@ -13,7 +13,7 @@ import { createRequire } from 'node:module';
 import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
-import type { Finding, UsageAccountConfig } from '../model.ts';
+import type { CalendarAccountConfig, Finding, UsageAccountConfig } from '../model.ts';
 
 export type LocalConfig = {
     /** Absolute path of the research hub whose YAML the portfolio is built from. */
@@ -56,6 +56,13 @@ export type LocalConfig = {
     claudeBin: string;
     /** Claude and Codex config folders shown by the Usage view. */
     accounts: UsageAccountConfig[];
+    /** The calendar accounts the Calendar view reads, empty unless the machine names any. */
+    calendars: CalendarAccountConfig[];
+    /**
+     * Where the per-account calendar credential files live, `calendar_dir` in the file. Absent
+     * unless the machine sets it, and the calendar connector then uses ~/.oculus/calendar.
+     */
+    calendarDir?: string;
 };
 
 /** The default development port; the reserved port 8787 is never used. */
@@ -75,7 +82,9 @@ const LOCAL_KEYS = [
     'notes',
     'changes',
     'claude_bin',
-    'accounts'
+    'accounts',
+    'calendars',
+    'calendar_dir'
 ];
 
 /**
@@ -102,7 +111,8 @@ export function localDefaults(engine: string): LocalConfig {
         accounts: [
             { tool: 'claude', dir: join(homedir(), '.claude'), label: 'claude' },
             { tool: 'codex', dir: join(homedir(), '.codex'), label: 'codex' }
-        ]
+        ],
+        calendars: []
     };
 }
 
@@ -145,6 +155,46 @@ function usageAccounts(value: unknown, file: string, base: string): UsageAccount
             claudeLabels.add(reduced);
         }
         return { tool: tool, dir: accountDir(row.dir, base), label: row.label };
+    });
+}
+
+/**
+ * What a calendar account's label may hold. The label becomes part of the credential file's name,
+ * so a label that could leave the calendar directory, or name a hidden file, is refused here rather
+ * than joined into a path later.
+ */
+const CALENDAR_LABEL = /^[a-z0-9][a-z0-9-]*$/;
+
+/**
+ * The `calendars:` rows: one provider and one label each, the label unique per provider. A bad row
+ * throws the sentence naming the file and the row, as the accounts above do, so a machine whose own
+ * file is wrong is told at the start rather than served an empty view.
+ */
+function calendarAccounts(value: unknown, file: string): CalendarAccountConfig[] {
+    if (!Array.isArray(value)) throw new Error(`${file}: calendars must be a list`);
+    const seen = new Set<string>();
+    return value.map((item, index) => {
+        if (typeof item !== 'object' || item === null || Array.isArray(item)) {
+            throw new Error(`${file}: calendars[${index}] must be a map`);
+        }
+        const row = item as Record<string, unknown>;
+        const provider = row.provider;
+        if (provider !== 'google' && provider !== 'microsoft') {
+            throw new Error(`${file}: calendars[${index}].provider must be google or microsoft`);
+        }
+        if (typeof row.label !== 'string' || !CALENDAR_LABEL.test(row.label)) {
+            throw new Error(
+                `${file}: calendars[${index}].label must be lowercase letters, digits and dashes`
+            );
+        }
+        const key = `${provider}-${row.label}`;
+        if (seen.has(key)) {
+            throw new Error(
+                `${file}: calendars[${index}].label repeats ${row.label} for ${provider}`
+            );
+        }
+        seen.add(key);
+        return { provider, label: row.label };
     });
 }
 
@@ -201,6 +251,7 @@ function applyLocal(
         config.claudeBin = record.claude_bin;
     }
     if (record.accounts !== undefined) config.accounts = usageAccounts(record.accounts, file, base);
+    if (record.calendars !== undefined) config.calendars = calendarAccounts(record.calendars, file);
     // The machine-local state paths are absent unless the machine names them, so a config that says
     // nothing about them leaves the defaults to the modules that own them.
     for (const [key, field] of [
@@ -209,7 +260,8 @@ function applyLocal(
         ['workspaces', 'workspaces'],
         ['bookmarks', 'bookmarks'],
         ['notes', 'notes'],
-        ['changes', 'changes']
+        ['changes', 'changes'],
+        ['calendar_dir', 'calendarDir']
     ] as const) {
         if (record[key] === undefined) continue;
         if (typeof record[key] !== 'string' || record[key] === '') {
@@ -609,6 +661,36 @@ export function slurmSettings(config: Record<string, unknown>): SlurmSettings {
         pollMin: number('poll_min'),
         quotaMin: number('quota_min'),
         prewarm: slurm.prewarm
+    };
+}
+
+/** The calendar connector's settings of config/behavior.yml, every key required. */
+export type CalendarSettings = {
+    pollMin: number;
+    /** Days before now the agenda window opens. */
+    daysBack: number;
+    /** Days after now the agenda window closes. */
+    daysAhead: number;
+};
+
+/** Read `calendar:` with its three keys, or throw naming the key that is missing or mistyped. */
+export function calendarSettings(config: Record<string, unknown>): CalendarSettings {
+    const held = config.calendar;
+    if (typeof held !== 'object' || held === null || Array.isArray(held)) {
+        throw new Error('config/behavior.yml: calendar must be a map');
+    }
+    const calendar = held as Record<string, unknown>;
+    const number = (key: string): number => {
+        const value = calendar[key];
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+            throw new Error(`config/behavior.yml: calendar.${key} must be a number`);
+        }
+        return value;
+    };
+    return {
+        pollMin: number('poll_min'),
+        daysBack: number('days_back'),
+        daysAhead: number('days_ahead')
     };
 }
 

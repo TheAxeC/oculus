@@ -24,7 +24,7 @@ const driver = (close: () => void = noop): TerminalDriver => ({
 
 describe('ServerContext', () => {
     it('builds and closes each process-owned object once and carries its token', () => {
-        const closes = Array.from({ length: 7 }, () => vi.fn());
+        const closes = Array.from({ length: 8 }, () => vi.fn());
         const hub = new Hub();
         const terminals = new Terminals(hub, { driver: driver(closes[6]), poll: 0 });
         const createHub = vi.fn(() => hub);
@@ -55,6 +55,10 @@ describe('ServerContext', () => {
             close: closes[4]
         }));
         const watchUsage = vi.fn(() => ({ refresh: vi.fn(noopAsync), close: closes[5] }));
+        const watchCalendar = vi.fn<ContextDependencies['watchCalendar']>(() => ({
+            refresh: vi.fn(noopAsync),
+            close: closes[7]
+        }));
         const loadConfig = vi.fn(() => ({
             config: {
                 slurm: {
@@ -64,6 +68,7 @@ describe('ServerContext', () => {
                     quota_min: 5,
                     prewarm: false
                 },
+                calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
                 usage_tiers: {},
                 usage_refresh_min: 5,
                 usage_refresh_model: 'model',
@@ -77,7 +82,8 @@ describe('ServerContext', () => {
                 hub: '/hub',
                 port: 8791,
                 claudeBin: 'claude',
-                accounts: []
+                accounts: [],
+                calendars: []
             })),
             loadConfig,
             mintToken: vi.fn(() => 'context-token'),
@@ -87,6 +93,7 @@ describe('ServerContext', () => {
             watchSessions,
             watchGit,
             watchHpc,
+            watchCalendar,
             watchUsageRefresh,
             watchUsage
         });
@@ -99,6 +106,7 @@ describe('ServerContext', () => {
             watchSessions,
             watchGit,
             watchHpc,
+            watchCalendar,
             watchUsageRefresh,
             watchUsage
         ]) {
@@ -117,6 +125,9 @@ describe('ServerContext', () => {
         // One log-path map, two writers: the poller's prewarm fills in what a press has not asked
         // for yet, and the route's log action reads and writes the same object.
         expect(watchHpc.mock.calls[0][1].logPaths).toBe(context.hpcLogPaths);
+        // The calendar poller reads the credential folder the routes read, so the connect action and
+        // the poll are always looking at the same files.
+        expect(watchCalendar.mock.calls[0][1].dir).toBe(context.calendarDir);
         // The icon drawings are read once here, from the config this context was built with, and
         // the watcher is handed the same holder, so a config push replaces what a page load reads.
         expect(Object.keys(context.icons.set)).toEqual(['pin']);
@@ -137,7 +148,8 @@ describe('ServerContext', () => {
                 hub: '/hub',
                 port: 8791,
                 claudeBin: 'claude',
-                accounts: []
+                accounts: [],
+                calendars: []
             }),
             loadConfig: () => ({
                 config: {
@@ -148,6 +160,7 @@ describe('ServerContext', () => {
                         quota_min: 5,
                         prewarm: false
                     },
+                    calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
                     usage_tiers: {},
                     usage_refresh_min: 5,
                     usage_refresh_model: 'model'
@@ -158,6 +171,7 @@ describe('ServerContext', () => {
             createHub: () => new Hub(),
             createTerminals: (hub) => new Terminals(hub, { driver: driver(), poll: 0 }),
             watchPortfolio: () => ({ close: noop }),
+            watchCalendar: () => ({ refresh: noopAsync, close: noop }),
             watchSessions: () => {
                 const listeners = new Set<() => void>();
                 rescans.push(() => {

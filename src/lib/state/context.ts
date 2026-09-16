@@ -16,6 +16,7 @@ import { createRegistry, type RegistryStore } from '../views/registry.ts';
 import { createTipIds, type TipIds } from '../ui/tip-ids.ts';
 import { createChanges, type ChangesStore } from './changes.svelte.ts';
 import { createAudit, type AuditStore } from './audit.svelte.ts';
+import { createCalendar, type CalendarStore } from './calendar.svelte.ts';
 import { createClock, type ClockStore } from './clock.svelte.ts';
 import { createDeposit, type DepositStore } from './deposit.svelte.ts';
 import { createDocs, type DocsStore } from './docs.svelte.ts';
@@ -63,6 +64,7 @@ export type ClientState = {
     source: SourceStore;
     feeds: FeedsStore;
     hpc: HpcStore;
+    calendar: CalendarStore;
     audit: AuditStore;
     memories: MemoriesStore;
     present: PresentStore;
@@ -100,13 +102,14 @@ export function createClientState(): ClientState {
     const source = createSource(writes, ui);
     const feeds = createFeeds(entities);
     const hpc = createHpc(entities, writes);
+    const calendar = createCalendar(entities, writes, clock);
     const audit = createAudit(entities);
     const memories = createMemories();
     const present = createPresent(entities);
     const repositories = createRepositories(writes, terminals, layout);
     const usageRefresh = createUsageRefresh(entities, writes);
     const selectors = createSelectors(entities, layout, selection);
-    const railBadges = createRailBadges(entities, feeds, hpc, audit, selectors);
+    const railBadges = createRailBadges(entities, feeds, hpc, calendar, audit, selectors);
     const paletteSource = createPaletteSource(entities, feeds);
     const registry = createRegistry(layout);
     const tipIds = createTipIds();
@@ -130,6 +133,7 @@ export function createClientState(): ClientState {
         source,
         feeds,
         hpc,
+        calendar,
         audit,
         memories,
         present,
