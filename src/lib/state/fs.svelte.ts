@@ -130,6 +130,14 @@ export type FsStore = {
     heldFileKind: (root: string, path: string) => FileType | null;
     /** Ask again for what is held under one root, at the version of whatever said it had changed. */
     refresh: (root: string, version: number) => void;
+    /**
+     * How many times one file has been said to have been written since the page opened. It rides on
+     * the address the bytes are read at, so a viewer that draws the file itself, a PDF frame above
+     * all, fetches the new bytes instead of the ones the browser has cached under the old address.
+     */
+    fileVersion: (root: string, path: string) => number;
+    /** Say that one file was written, which moves its version and its address with it. */
+    bump: (root: string, path: string) => void;
     /** The reader's own bookmarks, asked for once a round like the workspaces. */
     bookmarks: () => BookmarksState;
     /** Every scratch note, newest first. */
@@ -154,13 +162,19 @@ export type FsStore = {
     invalidate: () => void;
 };
 
-/** The address one file's bytes are read at, each segment escaped without escaping the separators. */
-export function fileBytesUrl(root: string, path: string): string {
+/**
+ * The address one file's bytes are read at, each segment escaped without escaping the separators.
+ * A version above zero rides on the query, which is what makes the address of a rewritten file a
+ * new address: the browser has the old one cached, and a frame pointed at an address it already
+ * holds draws what it holds rather than fetching the new bytes.
+ */
+export function fileBytesUrl(root: string, path: string, version = 0): string {
     const parts = path
         .split('/')
         .filter((part) => part !== '')
         .map((part) => encodeURIComponent(part));
-    return `/api/file/${encodeURIComponent(root)}/${parts.join('/')}`;
+    const at = `/api/file/${encodeURIComponent(root)}/${parts.join('/')}`;
+    return version > 0 ? `${at}?v=${version}` : at;
 }
 
 /** The address one directory's entries are read at. */
@@ -270,9 +284,28 @@ export function createFs(writes: WritesStore): FsStore {
      */
     const refreshed: Record<string, number | undefined> = $state({});
 
+    /**
+     * How many times each file has been said to have been written, by root and path. A rune because
+     * the address a view draws a file at is derived from it, so a bump has to redraw that view.
+     */
+    const written: Record<string, number | undefined> = $state({});
+
     /** The round one root's answers belong to: the shared round, and what refresh() added to it. */
     function roundOf(root: string): number {
         return clock.round + (refreshed[root] ?? 0);
+    }
+
+    /** How many times one file has been bumped, which is 0 for a file nothing has written. */
+    function fileVersion(root: string, path: string): number {
+        if (root === '' || path === '') return 0;
+        return written[treeKey(root, path)] ?? 0;
+    }
+
+    /** Say that one file was written: its version moves, and every address built on it with it. */
+    function bump(root: string, path: string): void {
+        if (root === '' || path === '') return;
+        const key = treeKey(root, path);
+        written[key] = (written[key] ?? 0) + 1;
     }
 
     /**
@@ -699,6 +732,8 @@ export function createFs(writes: WritesStore): FsStore {
         readFileKind,
         heldFileKind,
         refresh,
+        fileVersion,
+        bump,
         bookmarks,
         notes: noteList,
         note,

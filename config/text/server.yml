@@ -13,3 +13,5 @@ text:
             chat_name_focus: '{0}'
             seed_focus: "Ask about {0}: methods, results, what's next..."
             seed_portfolio: Ask about the portfolio, e.g. "what's blocked?", "summarise a project". Runs on your Claude Code / Max plan; I remember this conversation.
+        latex:
+            name: latex {0} {1}/{2}

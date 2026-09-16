@@ -126,6 +126,8 @@ const VIEWS: Record<string, string> = {
     'programs/ArchivalCard.svelte': '',
     'programs/LineCard.svelte': '',
     'programs/OrphansCard.svelte': '',
+    'project/Latex.svelte':
+        '.heading=fs-xs | .failed=fs-md | .nm=fs-md | .ts, .clean, .warns=fs-sm | .issues li=fs-sm',
     'projects/NewIdea.svelte': '',
     'projects/Stats.svelte': '.st=fs-sm',
     'radar/Bucket.svelte': '',

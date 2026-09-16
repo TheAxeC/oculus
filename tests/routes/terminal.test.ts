@@ -443,6 +443,187 @@ describe('POST /api/terminal, the task action', () => {
     });
 });
 
+describe('POST /api/terminal, the latex action', () => {
+    /** A project of the synthetic chat hub whose manuscript holds one main file and one include. */
+    const LATEX_PROJECT = 'projects/active/alpha';
+    mkdirSync(join(CHAT_HUB, LATEX_PROJECT, 'manuscript'), { recursive: true });
+    writeFileSync(
+        join(CHAT_HUB, LATEX_PROJECT, 'manuscript', 'main.tex'),
+        '\\documentclass{article}\n'
+    );
+    writeFileSync(join(CHAT_HUB, LATEX_PROJECT, 'manuscript', 'intro.tex'), '\\section{Intro}\n');
+
+    /** The name the terminals list shows, read through the catalog rather than typed here. */
+    function latexName(step: string, id: string, main: string): string {
+        return CHAT_CATALOG['server.latex.name']
+            .replace('{0}', step)
+            .replace('{1}', id)
+            .replace('{2}', main);
+    }
+
+    function latexOptions(driver: ReturnType<typeof tmux>): TerminalOptions {
+        return {
+            engine: engineDir(),
+            run: driver.run,
+            hubFor: () => CHAT_HUB,
+            configFor: () => BASE_CHAT_CONFIG,
+            projectFor: (id) =>
+                id === 'alpha' ? { title: 'Alpha Study', folder: LATEX_PROJECT } : null
+        };
+    }
+
+    it('builds one main file with latexmk in the manuscript folder', async () => {
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({
+                action: 'latex',
+                id: 'alpha',
+                main: 'main.tex',
+                step: 'build',
+                cols: 88,
+                rows: 25
+            }),
+            TOKEN,
+            latexOptions(driver)
+        );
+        expect(response.status).toBe(200);
+        const terminal = (await answer(response)).terminal as { name: string };
+        expect(terminal.name).toBe(latexName('build', 'alpha', 'main.tex'));
+        const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
+        expect(started[started.indexOf('-c') + 1]).toBe(
+            join(CHAT_HUB, LATEX_PROJECT, 'manuscript')
+        );
+        expect(started[started.indexOf('-x') + 1]).toBe('88');
+        expect(started[started.indexOf('-y') + 1]).toBe('25');
+        expect(started[started.length - 1]).toBe(
+            "latexmk -pdf -interaction=nonstopmode -file-line-error 'main.tex'"
+        );
+    });
+
+    it('cleans one main file with the clean command', async () => {
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({
+                action: 'latex',
+                id: 'alpha',
+                main: 'main.tex',
+                step: 'clean',
+                cols: 80,
+                rows: 24
+            }),
+            TOKEN,
+            latexOptions(driver)
+        );
+        expect(response.status).toBe(200);
+        const terminal = (await answer(response)).terminal as { name: string };
+        expect(terminal.name).toBe(latexName('clean', 'alpha', 'main.tex'));
+        const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
+        expect(started[started.length - 1]).toBe("latexmk -c 'main.tex'");
+    });
+
+    it('refuses a file that is not a main file of the project, before anything runs', async () => {
+        for (const main of ['intro.tex', '../../../etc/passwd', 'main.tex; touch nope']) {
+            const driver = tmux();
+            const response = await handleTerminal(
+                request({ action: 'latex', id: 'alpha', main, step: 'build', cols: 80, rows: 24 }),
+                TOKEN,
+                latexOptions(driver)
+            );
+            expect(response.status).toBe(400);
+            expect((await answer(response)).error).toBe('main is not a main file of this project');
+            expect(driver.calls).toEqual([]);
+        }
+    });
+
+    it('names the terminal from the engine catalog when the caller hands it no config', async () => {
+        const driver = tmux();
+        const routed = latexOptions(driver);
+        delete routed.configFor;
+        const response = await handleTerminal(
+            request({
+                action: 'latex',
+                id: 'alpha',
+                main: 'main.tex',
+                step: 'build',
+                cols: 80,
+                rows: 24
+            }),
+            TOKEN,
+            routed
+        );
+        expect(response.status).toBe(200);
+        const terminal = (await answer(response)).terminal as { name: string };
+        const engine = textCatalog(loadConfig(engineDir()).config);
+        expect(terminal.name).toBe(
+            engine['server.latex.name']
+                .replace('{0}', 'build')
+                .replace('{1}', 'alpha')
+                .replace('{2}', 'main.tex')
+        );
+    });
+
+    it('refuses a project folder that would leave the hub, before anything runs', async () => {
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({
+                action: 'latex',
+                id: 'away',
+                main: 'main.tex',
+                step: 'build',
+                cols: 80,
+                rows: 24
+            }),
+            TOKEN,
+            {
+                engine: ENGINE,
+                run: driver.run,
+                hubFor: () => CHAT_HUB,
+                configFor: () => BASE_CHAT_CONFIG,
+                projectFor: () => ({ title: 'Away', folder: '../elsewhere' })
+            }
+        );
+        expect(response.status).toBe(400);
+        expect((await answer(response)).error).toBe(
+            'the project folder is outside the configured hub'
+        );
+        expect(driver.calls).toEqual([]);
+    });
+
+    it('refuses an id the snapshot does not hold, and a step that is neither', async () => {
+        const driver = tmux();
+        const unknown = await handleTerminal(
+            request({
+                action: 'latex',
+                id: 'nobody',
+                main: 'main.tex',
+                step: 'build',
+                cols: 80,
+                rows: 24
+            }),
+            TOKEN,
+            latexOptions(driver)
+        );
+        expect(unknown.status).toBe(400);
+        expect((await answer(unknown)).error).toBe('id is not a project in the current portfolio');
+
+        const step = await handleTerminal(
+            request({
+                action: 'latex',
+                id: 'alpha',
+                main: 'main.tex',
+                step: 'publish',
+                cols: 80,
+                rows: 24
+            }),
+            TOKEN,
+            latexOptions(driver)
+        );
+        expect(step.status).toBe(400);
+        expect(String((await answer(step)).error)).toContain('step must be one of');
+        expect(driver.calls).toEqual([]);
+    });
+});
+
 describe('POST /api/terminal, the chat action', () => {
     function chatOptions(driver: ReturnType<typeof tmux>): TerminalOptions {
         return {

@@ -13,9 +13,13 @@
 
 <script lang="ts">
     // Layer 3, view. One project as its own tab: the card the board draws, opened out, then the
-    // project's documents, then the sessions working in
+    // manuscript's main files, then the project's documents, then the sessions working in
     // its folder. One instance per project, and the project it is for is the `id` in its instance
     // state, exactly as the editor reads its own.
+    //
+    // The LaTeX panel is project/Latex.svelte, drawn for a project whose folder holds a manuscript
+    // and drawn for no other: what it needs is the id, and everything about the files it lists comes
+    // from api/latex rather than from the snapshot.
     //
     // The card is views/shared/ProjectCard.svelte, the one the board draws, with `deposit` on and no
     // `ontoggle`: this tab's card is always open, so it carries the deposit control and no expand
@@ -33,6 +37,7 @@
     import Segment from '$lib/ui/Segment.svelte';
     import type { SegmentItem } from '$lib/ui/segment-items';
     import { sanitise } from '$lib/ui/html';
+    import Latex from './project/Latex.svelte';
     import ProjectCard from './shared/ProjectCard.svelte';
     import type { BoardItem } from '$lib/state/board';
     import { cardCursor } from '$lib/state/instance';
@@ -182,6 +187,8 @@
                 staleLag={lag}
                 onsaid={(answer: string) => (said = answer)}
             />
+
+            <Latex {id} />
 
             <section class="block">
                 <h3 class="heading">{t('project.documents')}</h3>

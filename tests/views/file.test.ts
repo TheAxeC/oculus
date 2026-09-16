@@ -63,6 +63,15 @@ describe('one file as its own tab', () => {
         expect(body).toContain('src="/api/file/hub/paper.pdf"');
     });
 
+    it('draws a rebuilt PDF at a new address, so the frame fetches it again', () => {
+        const state = { root: 'hub', path: 'paper.pdf', label: 'paper.pdf' };
+        expect(drawn(state)).toContain('src="/api/file/hub/paper.pdf"');
+
+        client.fs.bump('hub', 'paper.pdf');
+
+        expect(drawn(state)).toContain('src="/api/file/hub/paper.pdf?v=1"');
+    });
+
     it('says it is reading a file until its first bytes say what it is', () => {
         const body = drawn({ root: 'hub', path: 'data/set.npz', label: 'set.npz', size: 2097152 });
 

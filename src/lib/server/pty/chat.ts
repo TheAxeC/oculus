@@ -36,7 +36,11 @@ function shellWord(value: string): string {
 }
 
 /** Fill positional placeholders in one flattened catalog entry. */
-function words(catalog: Record<string, string>, key: string, ...args: (string | number)[]): string {
+export function words(
+    catalog: Record<string, string>,
+    key: string,
+    ...args: (string | number)[]
+): string {
     const template = byKey(catalog, key);
     if (template === undefined) throw new Error(`text key not in config: ${key}`);
     let filled = template;
@@ -68,8 +72,12 @@ async function chatNumber(catalog: Record<string, string>, options: StartOptions
     return number;
 }
 
-/** A project folder from the snapshot, resolved beneath the configured hub root. */
-function projectDirectory(hub: string, folder: string): string {
+/**
+ * A project folder from the snapshot, resolved beneath the configured hub root. Every action that
+ * starts a terminal in a project's own folder resolves it here, so the check that it did not leave
+ * the hub exists once.
+ */
+export function projectDirectory(hub: string, folder: string): string {
     const cwd = resolve(hub, folder);
     const within = relative(hub, cwd);
     if (within.startsWith('..') || isAbsolute(within)) {

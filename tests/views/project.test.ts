@@ -6,7 +6,7 @@
 // state/docs.svelte.ts leaves the pair pending and the tab renders its loading line; what api/docs
 // answers is covered by tests/routes/docs.test.ts.
 
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { render } from 'svelte/server';
 import Project from '../../src/lib/views/Project.svelte';
@@ -265,6 +265,106 @@ function segment(body: string): string {
 function chosen(body: string): string {
     const found = /aria-checked="true"[\s\S]*?<span class="label">([^<]+)</.exec(segment(body));
     return found === null ? '' : found[1];
+}
+
+// The LaTeX panel. The rows come from api/latex, so this is the one block of the file with a fetch
+// stub: the first render asks, and the second draws what came back.
+describe('the LaTeX panel of a project tab', () => {
+    /** One main file with a PDF and two errors, and one that has never been built. */
+    const MAINS = [
+        {
+            main: 'main.tex',
+            pdfPath: 'manuscript/main.pdf',
+            pdf: 1757500000000,
+            log: 1757500000000,
+            errors: [
+                { file: 'main.tex', line: 12, message: 'Undefined control sequence.' },
+                { file: 'intro.tex', line: 4, message: 'Missing $ inserted.' }
+            ],
+            warnings: [{ file: '', line: 31, message: 'LaTeX: There were undefined references.' }]
+        },
+        {
+            main: 'supplement.tex',
+            pdfPath: 'manuscript/supplement.pdf',
+            pdf: null,
+            log: null,
+            errors: [],
+            warnings: []
+        }
+    ];
+
+    /** Install a stub answering with the mains given, for the whole of one case. */
+    function answering(mains: unknown[]): void {
+        vi.stubGlobal('fetch', () =>
+            Promise.resolve(
+                new Response(JSON.stringify({ folder: 'projects/manuscripts/alpha', mains }), {
+                    status: 200,
+                    headers: { 'content-type': 'application/json' }
+                })
+            )
+        );
+    }
+
+    /** The tab once the answer has landed: the first render asks and the second draws. */
+    async function settled(): Promise<string> {
+        html('alpha');
+        await new Promise((resolve) => setTimeout(resolve, 0));
+        return html('alpha');
+    }
+
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    it('draws one row per main file, with its PDF time and its error count', async () => {
+        answering(MAINS);
+        const body = await settled();
+
+        expect(body).toContain(catalog['project.latex.heading']);
+        expect(body).toContain('data-main="main.tex"');
+        expect(body).toContain('data-main="supplement.tex"');
+        expect(row(body, 'main.tex')).toContain(catalog['project.latex.errors']);
+        expect(row(body, 'main.tex')).toContain('>2</strong>');
+        expect(row(body, 'main.tex')).toContain(
+            catalog['project.latex.warnings'].replace('{0}', '1')
+        );
+        expect(row(body, 'supplement.tex')).toContain(catalog['project.latex.no_pdf']);
+        expect(row(body, 'supplement.tex')).not.toContain(catalog['project.latex.errors']);
+    });
+
+    it('offers a build and a clean on every row, and the PDF only where there is one', async () => {
+        answering(MAINS);
+        const body = await settled();
+
+        expect(row(body, 'main.tex')).toContain(catalog['project.latex.build']);
+        expect(row(body, 'main.tex')).toContain(catalog['project.latex.clean']);
+        expect(row(body, 'main.tex')).toContain(catalog['project.latex.open_pdf_tip']);
+        expect(row(body, 'supplement.tex')).toContain(catalog['project.latex.build']);
+        expect(row(body, 'supplement.tex')).not.toContain(catalog['project.latex.open_pdf_tip']);
+    });
+
+    it('keeps the errors behind their count until the disclosure is opened', async () => {
+        answering(MAINS);
+        const body = await settled();
+
+        expect(body).not.toContain('Undefined control sequence.');
+    });
+
+    it('draws no panel at all for a project whose folder holds no main file', async () => {
+        answering([]);
+        const body = await settled();
+
+        expect(body).not.toContain(catalog['project.latex.heading']);
+        expect(body).not.toContain('data-latex=');
+    });
+});
+
+/** The markup of one main file's row alone. */
+function row(body: string, main: string): string {
+    const at = body.indexOf(`data-main="${main}"`);
+    expect(at).toBeGreaterThan(0);
+    const next = body.indexOf('data-main="', at + 1);
+    return body.slice(at, next === -1 ? undefined : next);
 }
 
 describe('a software project and the paper it names', () => {

@@ -3,8 +3,8 @@
 // join them, the pattern lib/server/docs.ts and lib/server/writes.ts already hold.
 //
 // A GET lists the terminals and is same-origin only, like every read. A POST starts, stops, resizes
-// or resumes a terminal, starts dataset recovery, or starts an update task, and additionally
-// carries the write token,
+// or resumes a terminal, starts dataset recovery, starts an update task, or builds or cleans one
+// main file of a manuscript, and additionally carries the write token,
 // since it is a write in DESIGN.md's "Auth" sense: it runs a process on the machine.
 //
 // The resume action is DESIGN.md's one explicit migration: an observed session becomes a terminal
@@ -15,10 +15,12 @@
 // A refusal the page has words for travels as the catalog key of those words, so the endpoint holds
 // no English the page would have to show raw. The page maps the two keys back through t().
 
+import { join } from 'node:path';
 import { scalar } from '../../data/guards.ts';
 import { hasToken, sameOrigin } from '../auth.ts';
-import { loadLocalOrDefaults } from '../../data/sources/config.ts';
-import { startChat, type ChatOptions } from './chat.ts';
+import { loadConfig, loadLocalOrDefaults, textCatalog } from '../../data/sources/config.ts';
+import { MANUSCRIPT, mains } from '../latex.ts';
+import { projectDirectory, startChat, words, type ChatOptions } from './chat.ts';
 import {
     KINDS,
     RESUME_TOOLS,
@@ -49,6 +51,10 @@ const NOT_OURS = 'id is not a terminal id: this tmux session was not started by 
 /** The four update skills the palette and tray may start. */
 const TASKS = ['litwatch', 'scout', 'linkedin', 'inbox'] as const;
 type TaskKind = (typeof TASKS)[number];
+
+/** The two things a reader does to one main file of a manuscript. */
+const LATEX_STEPS = ['build', 'clean'] as const;
+type LatexStep = (typeof LATEX_STEPS)[number];
 
 export type TerminalOptions = StartOptions &
     ChatOptions & {
@@ -195,6 +201,68 @@ async function startTask(
     return json(200, { ok: true, terminal });
 }
 
+/**
+ * The exact latexmk command one step runs. `-file-line-error` is what puts a file and a line in
+ * front of every error, which is the form server/latex.ts reads the log back in; the flags are this
+ * module's own words and the file is the one value from the page, so it is the one word quoted.
+ */
+function latexCommand(step: LatexStep, main: string): string {
+    if (step === 'clean') return `latexmk -c ${shellWord(main)}`;
+    return `latexmk -pdf -interaction=nonstopmode -file-line-error ${shellWord(main)}`;
+}
+
+/**
+ * The name the terminals list shows for one step, from the catalog: the reader sees it, so it is
+ * words rather than a literal, as the chat terminals' names are. The route hands the config its
+ * server already holds; a caller that hands none reads the engine's own.
+ */
+function latexName(options: TerminalOptions, step: LatexStep, id: string, main: string): string {
+    const catalog = textCatalog(options.configFor?.() ?? loadConfig(options.engine).config);
+    return words(catalog, 'server.latex.name', step, id, main).slice(0, NAME_MAX);
+}
+
+/**
+ * Build or clean one main file, as a shell terminal in the project's own `manuscript/` folder. The
+ * file is checked against the folder's own main files before a command is built from it, so the
+ * only names that can reach latexmk are the ones the panel offered.
+ */
+async function startLatex(
+    message: Record<string, unknown>,
+    options: TerminalOptions
+): Promise<Response> {
+    const step = message.step as LatexStep;
+    if (!LATEX_STEPS.includes(step)) {
+        return json(400, { error: `step must be one of ${LATEX_STEPS.join(', ')}` });
+    }
+    const id = message.id;
+    if (typeof id !== 'string' || id === '') {
+        return json(400, { error: 'id is not a project id' });
+    }
+    const project = (options.projectFor ?? (() => null))(id);
+    if (project === null) {
+        return json(400, { error: 'id is not a project in the current portfolio' });
+    }
+    const hub =
+        options.hubFor?.() ?? (options.localFor?.() ?? loadLocalOrDefaults(options.engine)).hub;
+    const folder = projectDirectory(hub, project.folder);
+    const main = message.main;
+    if (typeof main !== 'string' || !mains(folder).includes(main)) {
+        return json(400, { error: 'main is not a main file of this project' });
+    }
+    const terminal = await startTerminal(
+        {
+            kind: 'shell',
+            cwd: join(folder, MANUSCRIPT),
+            cols: message.cols as number,
+            rows: message.rows as number,
+            name: latexName(options, step, id, main)
+        },
+        { ...options, command: latexCommand(step, main) }
+    );
+    options.refresh?.();
+    return json(200, { ok: true, terminal });
+}
+
 /** POST /api/terminal: start, stop, resize, resume or recover one terminal. */
 export async function handleTerminal(
     request: Request,
@@ -243,6 +311,9 @@ export async function handleTerminal(
         if (message.action === 'task') {
             return await startTask(message.kind, message.cols, message.rows, options);
         }
+        if (message.action === 'latex') {
+            return await startLatex(message, options);
+        }
         if (message.action === 'chat') {
             const terminal = await startChat(message.id, message.cols, message.rows, options);
             options.refresh?.();
@@ -281,6 +352,6 @@ export async function handleTerminal(
         return json(400, { error: reason(error) });
     }
     return json(400, {
-        error: 'action must be start, stop, resize, resume, recover, task or chat'
+        error: 'action must be start, stop, resize, resume, recover, task, latex or chat'
     });
 }

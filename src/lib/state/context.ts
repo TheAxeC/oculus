@@ -25,6 +25,7 @@ import { createFeeds, type FeedsStore } from './feeds.svelte.ts';
 import { createFiles, type FilesStore } from './files.svelte.ts';
 import { createFs, type FsStore } from './fs.svelte.ts';
 import { createHpc, type HpcStore } from './hpc.svelte.ts';
+import { createLatex, type LatexStore } from './latex.svelte.ts';
 import { createLayout, type LayoutStore } from './layout.svelte.ts';
 import { createMemories, type MemoriesStore } from './memories.svelte.ts';
 import { createPaletteSource, type PaletteSourceStore } from './palette-source.svelte.ts';
@@ -56,6 +57,7 @@ export type ClientState = {
     files: FilesStore;
     fs: FsStore;
     docs: DocsStore;
+    latex: LatexStore;
     deposit: DepositStore;
     transcripts: TranscriptsStore;
     source: SourceStore;
@@ -92,6 +94,7 @@ export function createClientState(): ClientState {
     const files = createFiles(entities);
     const fs = createFs(writes);
     const docs = createDocs(entities);
+    const latex = createLatex(entities, terminals, fs);
     const deposit = createDeposit();
     const transcripts = createTranscripts();
     const source = createSource(writes, ui);
@@ -121,6 +124,7 @@ export function createClientState(): ClientState {
         files,
         fs,
         docs,
+        latex,
         deposit,
         transcripts,
         source,

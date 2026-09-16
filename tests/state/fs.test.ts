@@ -118,11 +118,47 @@ describe('the addresses the store reads', () => {
         expect(fileBytesUrl('hub', 'a/100%25.txt')).toBe('/api/file/hub/a/100%2525.txt');
     });
 
+    it('carries a version above zero on the query, and nothing at version zero', () => {
+        expect(fileBytesUrl('hub', 'a/paper.pdf', 0)).toBe('/api/file/hub/a/paper.pdf');
+        expect(fileBytesUrl('hub', 'a/paper.pdf', 2)).toBe('/api/file/hub/a/paper.pdf?v=2');
+    });
+
     it('escapes the root and the path of a listing', () => {
         expect(listingUrl('game engine', 'a b/c#d')).toBe(
             '/api/fs?root=game%20engine&path=a%20b%2Fc%23d'
         );
         expect(listingUrl('hub', '100%')).toBe('/api/fs?root=hub&path=100%25');
+    });
+});
+
+// The per-file counter a rebuilt file's address is made new by. It is the store's own state, so a
+// client is built for it and nothing is fetched.
+describe('the version one file is read at', () => {
+    it('is zero for a file nothing has written, and moves once per bump', () => {
+        const fresh = createClientState();
+        const { bump, fileVersion } = fresh.fs;
+
+        expect(fileVersion('hub', 'a/paper.pdf')).toBe(0);
+        bump('hub', 'a/paper.pdf');
+        expect(fileVersion('hub', 'a/paper.pdf')).toBe(1);
+        bump('hub', 'a/paper.pdf');
+        expect(fileVersion('hub', 'a/paper.pdf')).toBe(2);
+    });
+
+    it('is one file at a time, and the same path under two roots is two files', () => {
+        const fresh = createClientState();
+        const { bump, fileVersion } = fresh.fs;
+        bump('hub', 'a/paper.pdf');
+
+        expect(fileVersion('hub', 'a/other.pdf')).toBe(0);
+        expect(fileVersion('notes', 'a/paper.pdf')).toBe(0);
+    });
+
+    it('answers zero for an empty root or path rather than counting one', () => {
+        const fresh = createClientState();
+        fresh.fs.bump('', '');
+
+        expect(fresh.fs.fileVersion('', '')).toBe(0);
     });
 });
 

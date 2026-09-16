@@ -51,6 +51,9 @@ export type TerminalAnswer = {
 /** The four unattended update skills accepted by the server's task action. */
 export type TaskKind = 'litwatch' | 'scout' | 'linkedin' | 'inbox';
 
+/** What a LaTeX terminal does to one main file: build it, or clear what a build left beside it. */
+export type LatexStep = 'build' | 'clean';
+
 /** What a `pty:` subscriber is handed: the decoded bytes, and whether they are the scrollback. */
 export type PtyListener = (bytes: Uint8Array, scrollback: boolean) => void;
 
@@ -172,6 +175,13 @@ export type TerminalsStore = {
     ) => Promise<TerminalAnswer>;
     recoverDataset: (key: string, cols?: number, rows?: number) => Promise<TerminalAnswer>;
     startTask: (kind: TaskKind, cols?: number, rows?: number) => Promise<TerminalAnswer>;
+    latex: (
+        id: string,
+        main: string,
+        step: LatexStep,
+        cols?: number,
+        rows?: number
+    ) => Promise<TerminalAnswer>;
     startChat: (id: string | null, cols?: number, rows?: number) => Promise<TerminalAnswer>;
     resumeTerminal: (
         tool: TerminalResume['tool'],
@@ -273,6 +283,21 @@ export function createTerminals(
         return post({ action: 'task', kind, cols, rows });
     }
 
+    /**
+     * Build or clean one main file of a project's manuscript. The page sends the project id and the
+     * file's name; the server checks the name against the project's own main files and supplies both
+     * the latexmk command and the manuscript folder it runs in.
+     */
+    async function latex(
+        id: string,
+        main: string,
+        step: LatexStep,
+        cols: number = COLS,
+        rows: number = ROWS
+    ): Promise<TerminalAnswer> {
+        return post({ action: 'latex', id, main, step, cols, rows });
+    }
+
     /** Start a project-focused or portfolio-wide Claude chat; the server supplies argv and directory. */
     async function startChat(
         id: string | null,
@@ -357,6 +382,7 @@ export function createTerminals(
         startTerminal,
         recoverDataset,
         startTask,
+        latex,
         startChat,
         resumeTerminal,
         stopTerminal,

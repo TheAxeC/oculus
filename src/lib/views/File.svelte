@@ -33,6 +33,10 @@
     // frame and draws an error page instead, and what the frame shows is a file this server serves
     // from a root it checked, so the frame is as trusted as the page around it.
     //
+    // The address carries the file's version from the fs store, so a file written under the open tab,
+    // which is what a LaTeX build does to the PDF it rebuilds, is a new address and the frame fetches
+    // the new bytes instead of drawing the ones the browser cached.
+    //
     // The star in the toolbar is `shared/BookmarkStar.svelte`, which the source tab draws too: a
     // reader bookmarks the file in front of them, whichever of the two tabs is showing it.
 
@@ -53,7 +57,7 @@
 
     const client = useState();
     const {
-        fs: { heldFileKind, readFileKind },
+        fs: { fileVersion, heldFileKind, readFileKind },
         layout: { closeInstance }
     } = client;
 
@@ -64,7 +68,9 @@
     const label = $derived(read(instance.state, 'label'));
 
     const title = $derived(label === '' ? t('views.file') : label);
-    const src = $derived(root === '' || path === '' ? '' : fileBytesUrl(root, path));
+    const src = $derived(
+        root === '' || path === '' ? '' : fileBytesUrl(root, path, fileVersion(root, path))
+    );
     const type = $derived(typeOfFile(path));
     /** What the file opens as once that is known, and null while its first bytes are being read. */
     const known = $derived(root === '' || path === '' ? null : heldFileKind(root, path));

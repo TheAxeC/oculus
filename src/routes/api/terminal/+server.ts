@@ -16,6 +16,7 @@ export const POST: RequestHandler = ({ request, locals }) => {
         datasetIdsFor: () => datasetIds(server.hub),
         hubFor: () => server.local.hub,
         projectFor: (id) => project(server.hub, id),
+        configFor: () => server.config,
         localFor: () => server.local,
         refresh: () => server.terminals.refresh()
     });
