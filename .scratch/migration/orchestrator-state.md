@@ -38,6 +38,19 @@ dispatch:                                  # M2 in flight (dispatched 14:21 from
   session_id: a2a06e07a777f7d1a            # the Agent tool's id, launched 14:21
   round: 0
   landing: not-started
+- package: D16
+  worker: claude:opus
+  worktree: .agents/worktrees/d16
+  base: 8601f148
+  launched: 2026-09-16T14:36
+  prompt: the Agent tool's prompt, the same shape as M2's
+  events: none
+  report: tools/oculus/.scratch/migration/agents/reviews/D16-report.md
+  exit: none
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: pending                       # the Agent tool's id, written after the dispatch
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
