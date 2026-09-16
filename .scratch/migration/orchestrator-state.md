@@ -39,7 +39,7 @@ dispatch:                                  # M2 in flight (dispatched 14:21 from
   round: 2                                  # round 1 sent 14:47, answered 15:00 (agents/reviews/M2-report.md, its round 1 section); the orchestrator read the delta and ran no second review (the delta stays inside the seven findings); round 2 sent 15:00: applyThemeFacets folded once
   reported: 2026-09-16T14:36
   reviewer: ac7686cea24487df7                # claude:opus through the Agent tool, read-only, launched 14:37
-  landing: not-started
+  landing: cherry-picking
 - package: D16
   worker: claude:opus
   worktree: .agents/worktrees/d16

@@ -147,3 +147,50 @@ Run from `tools/oculus` in the worktree unless noted.
 - A theme finding's `entries[i]` index can point to the wrong entry when a malformed list item comes before it (`sources/registries.ts:111-115` drops the item); the people check has the same behaviour. Not fixed.
 - The entry form's `themes` field still shows raw words, per the brief's decision 4.
 - The browser runs and the cockpit commands left only gitignored or temporary files: `test-results/` is deleted, and `tests/browser/.hub` is gone after the runs. The cockpit commands write `cockpit.local.yml`, `AUDIT_AUTO.md`, `dummy/cockpit.html` and `__pycache__`.
+
+
+# Repair round 2
+
+Everything in this round is done; nothing is left undone.
+
+`applyThemeFacets` now exists once, as `applyThemeFacets<T extends { themes: readonly string[] }>(items: T[], off: readonly string[]): T[]` in `src/lib/state/themes.ts`, beside `themeFacets`. It is removed from `state/datasets.ts` and `state/venues.ts` with no re-export. `Data.svelte`, `Venues.svelte` and both state tests import it from `$lib/state/themes` (the tests from `../../src/lib/state/themes.ts`). I kept its test cases where they were, in `tests/state/datasets.test.ts` and `tests/state/venues.test.ts`, because they run against each module's own fixtures. The head comments of `themes.ts` and `datasets.ts` now say what each module holds.
+
+## Commands (from `tools/oculus` in the worktree)
+- `npx vitest run --reporter=dot`: exit 0, `Test Files 229 passed (229)`, `Tests 3809 passed (3809)`.
+  - The first full run had `Tests 1 failed | 3808 passed`. The failure was `tests/server/hpc/ssh.test.ts` "rejects a command that ignores SIGTERM at the budget and ends it within the grace" (`Matcher did not succeed in time`).
+  - Run alone, that file failed once more (`1 failed | 4 passed`), then passed three runs in a row (`Tests 5 passed (5)` each).
+  - This diff touches nothing under `src/lib/server` or `tests/server`: `git diff --stat -- tests/server src/lib/server` prints nothing. The reviewer saw the same timeout in round 1.
+- `npm run check`: exit 0, `COMPLETED 1157 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- `npm run build`: exit 0, `built in 9.95s`, `done`.
+- `npm run format:check`: exit 0, `All matched files use Prettier code style!`.
+- `npm run lint`: exit 0.
+- Perl ASCII gate: prints nothing.
+- `npx playwright test tests/browser/venues-themes.spec.ts`, on the build above: `1 passed (4.7s)`. The lock was free on the first try.
+
+## Files changed by this round (lines added / removed in this round)
+- `src/lib/state/themes.ts`: +13 for the function and its doc comment; the head comment is rewritten (5 lines become 6) and one doc comment line is shortened. The file is now 63 lines.
+- `src/lib/state/datasets.ts`: -6 (the function and its doc comment); 1 line of the head comment changed.
+- `src/lib/state/venues.ts`: -6 (the function and its doc comment).
+- `src/lib/views/Data.svelte`: -1 (the `applyThemeFacets` line in the datasets import); the themes import line changed.
+- `src/lib/views/Venues.svelte`: -1 (same); the themes import line changed.
+- `tests/state/datasets.test.ts`: -1; the themes import line changed.
+- `tests/state/venues.test.ts`: -1; the themes import line changed.
+
+Cumulative `git diff --numstat` against HEAD for the files above: `datasets.ts` 1/22, `venues.ts` 0/18, `Data.svelte` 3/3, `Venues.svelte` 5/3, `tests/state/datasets.test.ts` 12/4, `tests/state/venues.test.ts` 25/7. `themes.ts` is untracked, 63 lines.
+
+## `grep -rn "applyThemeFacets" src tests`
+```
+src/lib/state/themes.ts:57:export function applyThemeFacets<T extends { themes: readonly string[] }>(
+src/lib/views/Data.svelte:33:    import { applyThemeFacets, themeFacets, themeWordLabels } from '$lib/state/themes';
+src/lib/views/Data.svelte:57:    const shown = $derived(applyThemeFacets(datasetSearch(allDatasets, held.search), held.off));
+src/lib/views/Venues.svelte:38:    import { applyThemeFacets, themeFacets, themeWordLabels } from '$lib/state/themes';
+src/lib/views/Venues.svelte:60:    const shown = $derived(applyThemeFacets(venueSearch(allVenues, held.search), held.off));
+tests/state/datasets.test.ts:13:import { applyThemeFacets, themeFacets, themeWordLabels } from '../../src/lib/state/themes.ts';
+tests/state/datasets.test.ts:98:        expect(applyThemeFacets(DATASETS, ['ecg']).map((item) => item.id)).toEqual([
+tests/state/datasets.test.ts:104:        expect(applyThemeFacets(DATASETS, []).length).toBe(DATASETS.length);
+tests/state/venues.test.ts:19:import { applyThemeFacets, themeFacets, themeWordLabels } from '../../src/lib/state/themes.ts';
+tests/state/venues.test.ts:107:        expect(applyThemeFacets(venues, ['clinical', 'imaging']).map((item) => item.id)).toEqual([
+tests/state/venues.test.ts:111:        expect(applyThemeFacets(venues, []).length).toBe(3);
+```
+
+The cockpit commands were not part of this round's list and were not rerun: nothing under `tools/cockpit` changed this round. In round 1, `bash tools/cockpit/tests/run.sh` exited 1 only because `test_presentation.py` cannot import `deck_config`, since this worktree does not check out `tools/present`.

@@ -77,3 +77,14 @@
 - The first-load window before the `config` channel arrives, when `configMap()` is `{}` and facets would show raw words. Not observed; it is the same mechanism `Pillars.svelte:77` uses.
 
 Reviewer usage: about 33 tool uses, about 15 minutes.
+
+## Closed (the orchestrator's read of the repair delta, 2026-09-16 15:05; no second review, since the delta stayed inside the findings sent)
+
+- Spec, `DESIGN.md:310`: closed in round 1; the clause now says the theme words are a listed vocabulary in `vocab.yml`.
+- Proof, the switched-off facet test: closed in round 1; the node test renamed to what it proves and `tests/browser/venues-themes.spec.ts` added, red under `ontoggle(facet.label)` (line 69) and under `off.includes(facet.label)` (line 77) as the builder ran them.
+- Proof, the false "Core ML" limitation: closed in round 1; withdrawn, and a `venueSearch` case finds `Core ML`, `High-end` and `CS`.
+- Standards, `validate-themes.ts:3`: closed in round 1; the head comment names the facet for both registries and the tag for venues only.
+- Standards, `ThemeFacet` and `themeFacets` twice: closed in round 1; one of each in `state/themes.ts`. The same fold `applyThemeFacets`, found twice by the orchestrator's read, closed in round 2.
+- Behaviour, the before and after: closed in round 1's report.
+- Behaviour, a leftover `theme_labels:` silent: closed in round 1; a finding keyed `theme_labels` with a validate case.
+- Behaviour, the theme lists read from the engine's config: ruled by Axel 2026-09-16 14:50, kept as built (plan.md rulings).
