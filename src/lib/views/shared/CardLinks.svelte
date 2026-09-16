@@ -25,6 +25,9 @@
     /** The kind whose entries are projects, opened as a tab rather than in a view of their own. */
     const SOFTWARE = 'software';
 
+    /** The kind whose entries are people, each opening the Person view for its own key. */
+    const COLLABORATORS = 'collaborators';
+
     type Props = {
         /** The joined board item whose cross-links are shown. */
         item: BoardItem;
@@ -59,8 +62,8 @@
             tags: item.datasets
         },
         {
-            key: 'collaborators',
-            label: t('project.card.collaborations'),
+            key: COLLABORATORS,
+            label: t('project.card.collaborators'),
             glyph: t('project.card.collaborator_glyph'),
             tags: item.collaborators
         },
@@ -91,6 +94,8 @@
     function press(kind: Kind, tag: BoardTag): (() => void) | null {
         if (kind.key === SOFTWARE)
             return () => openView('project', { id: tag.id, label: tag.label });
+        if (kind.key === COLLABORATORS)
+            return () => openView('person', { key: tag.id, label: tag.label });
         if (linkView(kind.key) === '') return null;
         return () => goto(client, linkView(kind.key), tag.label);
     }

@@ -14,7 +14,7 @@
 #   select    one of a list | chips several of a list, with a filter | tags several free strings
 #   date      an ISO date | checkbox a flag | keymap a map the form does not write
 # `from:` names where the choices come from: a registry (venues, pillars, funding, datasets,
-# domains), the `collaborations` collection, `projects`, or a vocabulary key of vocab.yml
+# domains), `people`, `organisations`, `projects`, or a vocabulary key of vocab.yml
 # (type_order, status_legend, focus_lanes, priority_levels). `options:` is a literal list instead.
 manifest_schema:
   sections:
@@ -48,8 +48,8 @@ manifest_schema:
     domain:        { label: "Domain", type: select, from: domains, section: Connections }
     pillar:       { label: "Pillars", type: chips, from: pillars, section: Connections, help: "pillars.yml keys" }
     funding:       { label: "Funding", type: chips, from: funding, section: Connections, help: "funding.yml keys (multiple allowed)" }
-    collaborators: { label: "Collaborators", type: chips, from: collaborations, section: Connections, help: "collaborations.yml keys (multiple allowed)" }
-    "waiting-on":  { label: "Waiting on", type: tags, section: Connections, help: "collaborations.yml keys or project ids" }
+    collaborators: { label: "Collaborators", type: chips, from: people, section: Connections, help: "registries/people.yml keys (multiple allowed); the key names the person, not the joint work" }
+    "waiting-on":  { label: "Waiting on", type: tags, section: Connections, help: "registries/people.yml keys or project ids" }
     related:       { label: "Related projects", type: chips, from: projects, section: Connections, help: "project ids" }
     datasets:      { label: "Datasets", type: chips, from: datasets, section: Connections, help: "data.yml keys" }
     deadline:      { label: "Deadline", type: date, section: Dates }

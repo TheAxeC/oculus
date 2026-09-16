@@ -1,0 +1,30 @@
+# Oculus text owned by the person view, the tab one human opens as. The view is opened from a
+# collaborator tag, a joint-work entry and the Map's node, so its words name what the reader came
+# from: the organisation, the joint work, the projects and a student's supervision folder.
+text:
+    views:
+        person: Person
+        person_glyph: collab
+    person:
+        toolbar: Person controls
+        nobody: This tab was opened for nobody. Press a collaborator tag on a project card to open a person.
+        unknown: 'No entry in registries/people.yml carries the key {0}.'
+        self: this is me
+        organisation: Organisation
+        organisation_line: '{0} ({1})'
+        sep: ', '
+        role: Role
+        orcid: ORCID
+        email: Email
+        link: Link
+        joint_work: Joint work
+        no_joint_work: No entry of network/joint-work.yml names this person yet.
+        open_joint_work: Joint work
+        open_joint_work_tip: Open the Joint work view, where these entries are edited.
+        projects: Projects
+        no_projects: No project names this person in its `collaborators:`.
+        open_project: 'Open {0} as its own tab'
+        folder: 'Supervision folder ({0})'
+        folder_loading: Reading the folder ...
+        folder_empty: The folder holds no files.
+        open_file: 'Open {0} in a source tab'

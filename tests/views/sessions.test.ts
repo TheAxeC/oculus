@@ -909,6 +909,8 @@ describe('the pin control over the portfolio', () => {
                 pillars: {},
                 domains: {},
                 funding: {},
+                people: {},
+                organisations: {},
                 collections: {},
                 feeds: NO_FEEDS,
                 career: null
@@ -920,7 +922,11 @@ describe('the pin control over the portfolio', () => {
                 projectPillar: [],
                 projectDomain: [],
                 projectRelated: [],
-                fundingPillar: []
+                fundingPillar: [],
+                projectPerson: [],
+                jointWorkPerson: [],
+                personOrganisation: [],
+                fundingOrganisation: []
             },
             findings: []
         };

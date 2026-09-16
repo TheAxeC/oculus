@@ -4,7 +4,7 @@
 // missing or broken collection costs its own entries and no more.
 //
 // A collection is a hub file of like records: datasets, statements, funding schemes, talks,
-// teaching, applications, collaborations, tasks or repositories. Five are also registries and are
+// teaching, applications, joint work, tasks or repositories. Five are also registries and are
 // carried as entities; this reader knows that the data registry lists records under `datasets:` and
 // every other collection lists them under `entries:`.
 

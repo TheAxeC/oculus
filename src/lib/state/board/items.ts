@@ -4,6 +4,7 @@
 import { byKey } from '../../data/guards.ts';
 import { domainLabel, domainTone, typeTone } from '../tones.ts';
 import type { Id, Project, Snapshot } from '../../data/model.ts';
+import { personNames } from '../person.ts';
 import {
     SESSIONS_NONE,
     authorLine,
@@ -14,14 +15,6 @@ import {
     type BoardTag,
     type SessionsOf
 } from './presets.ts';
-
-function collaboratorNames(snapshot: Snapshot): Record<Id, string> {
-    const names: Record<Id, string> = {};
-    const collection = byKey(snapshot.entities.collections, 'collaborations');
-    if (collection === undefined) return names;
-    for (const entry of collection.entries) names[entry.id] = entry.title;
-    return names;
-}
 
 /** The name a cross-link tag carries: the short handle when the manifest has one, else the title. */
 function tagLabel(project: Project): string {
@@ -152,7 +145,7 @@ export function boardItemFor(
     preset: BoardPreset,
     sessionsOf: SessionsOf = () => SESSIONS_NONE
 ): BoardItem {
-    return itemOf(project, snapshot, preset, collaboratorNames(snapshot), sessionsOf);
+    return itemOf(project, snapshot, preset, personNames(snapshot), sessionsOf);
 }
 
 /**
@@ -164,7 +157,7 @@ export function boardItems(
     preset: BoardPreset,
     sessionsOf: SessionsOf = () => SESSIONS_NONE
 ): BoardItem[] {
-    const names = collaboratorNames(snapshot);
+    const names = personNames(snapshot);
     const items = Object.values(snapshot.entities.projects)
         .filter((project) => preset.tiers.includes(project.tier))
         .map((project) => itemOf(project, snapshot, preset, names, sessionsOf));

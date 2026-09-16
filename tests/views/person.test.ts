@@ -1,0 +1,254 @@
+// One person as their own tab, rendered on the server: the fact strip, the joint work, the projects
+// and a student's supervision folder, and what the tab says when it was opened for nobody.
+//
+// The catalog and the glyphs are the real config; the folder listing comes from the fs store, whose
+// `fetch` is a stub, so the folder block is checked with a real answer behind it rather than with a
+// spinner. Pressing a row is a DOM event no server render fires; opening the tab from a card end to
+// end is tests/browser/person.spec.ts.
+
+import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { render } from 'svelte/server';
+import Person from '../../src/lib/views/Person.svelte';
+import { NO_CAREER, NO_FEEDS } from '../entities-fixture.ts';
+import {
+    engineDir,
+    glyphCatalog,
+    loadConfig,
+    textCatalog
+} from '../../src/lib/data/sources/config.ts';
+import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
+import type { Instance } from '../../src/lib/state/layout/index.ts';
+import type {
+    Collection,
+    Organisation,
+    Person as PersonEntity,
+    Project,
+    Relations,
+    Snapshot
+} from '../../src/lib/data/model.ts';
+import { clientContext, createClientState, type ClientState } from '../client.ts';
+
+const { config } = loadConfig(engineDir());
+const catalog = textCatalog(config);
+setCatalog(catalog);
+setGlyphs(glyphCatalog(config));
+
+let client: ClientState;
+
+beforeEach(() => {
+    client = createClientState();
+    install(client);
+});
+
+const NO_RELATIONS: Relations = {
+    projectVenue: [],
+    projectFunding: [],
+    projectDataset: [],
+    projectPillar: [],
+    projectDomain: [],
+    projectRelated: [],
+    fundingPillar: [],
+    projectPerson: [],
+    jointWorkPerson: [],
+    personOrganisation: [],
+    fundingOrganisation: []
+};
+
+function person(id: string, over: Partial<PersonEntity> = {}): PersonEntity {
+    return { id, name: id, links: [], projectIds: [], jointWorkIds: [], ...over };
+}
+
+function organisation(id: string, over: Partial<Organisation> = {}): Organisation {
+    return { id, name: id, links: [], personIds: [], fundingIds: [], ...over };
+}
+
+function project(id: string, over: Partial<Project> = {}): Project {
+    return {
+        id,
+        tier: 'manuscripts',
+        ghost: false,
+        title: `Project ${id}`,
+        chips: [],
+        results: [],
+        ideas: [],
+        waitingOn: [],
+        followups: [],
+        subtasks: [],
+        relatedIds: [],
+        fundingIds: [],
+        datasetIds: [],
+        pillarIds: [],
+        domainIds: [],
+        collaborators: [],
+        docs: [],
+        folder: `projects/manuscripts/${id}`,
+        file: `/hub/projects/manuscripts/${id}/project.yml`,
+        ...over
+    };
+}
+
+function jointWork(): Collection {
+    const file = '/hub/network/joint-work.yml';
+    return {
+        id: 'joint-work',
+        title: 'Joint work',
+        file,
+        entries: [
+            {
+                id: 'ecg-paper',
+                title: 'The ECG paper',
+                fields: { key: 'ecg-paper', person: 'naesens', status: 'active' },
+                file,
+                index: 0
+            }
+        ]
+    };
+}
+
+function snapshot(): Snapshot {
+    return {
+        version: 1,
+        entities: {
+            projects: { alpha: project('alpha', { short: 'Alpha', collaborators: ['naesens'] }) },
+            venues: {},
+            datasets: {},
+            pillars: {},
+            domains: {},
+            funding: {},
+            people: {
+                naesens: person('naesens', {
+                    name: 'Maarten Naesens',
+                    affiliation: 'ku-leuven',
+                    role: 'host candidate',
+                    email: 'someone@example.invalid',
+                    projectIds: ['alpha'],
+                    jointWorkIds: ['ecg-paper']
+                }),
+                axel: person('axel', { name: 'The Owner', self: true }),
+                ward: person('ward', {
+                    name: 'Ward',
+                    role: 'student',
+                    folder: 'education/student-supervision/ward-2024'
+                })
+            },
+            organisations: {
+                'ku-leuven': organisation('ku-leuven', {
+                    name: 'KU Leuven',
+                    kind: 'university',
+                    country: 'BE',
+                    personIds: ['naesens']
+                })
+            },
+            collections: { 'joint-work': jointWork() },
+            feeds: NO_FEEDS,
+            career: NO_CAREER
+        },
+        relations: {
+            ...NO_RELATIONS,
+            projectPerson: [['alpha', 'naesens']],
+            jointWorkPerson: [['ecg-paper', 'naesens']],
+            personOrganisation: [['naesens', 'ku-leuven']]
+        },
+        findings: []
+    };
+}
+
+function install(fresh: ClientState): void {
+    fresh.entities.receive({ channel: 'portfolio', version: 1, payload: snapshot() });
+    fresh.entities.receive({
+        channel: 'config',
+        version: 1,
+        payload: { config, text: catalog, findings: [] }
+    });
+}
+
+function instance(state: unknown): Instance {
+    return { id: 'person-one', view: 'person', state };
+}
+
+function drawn(fresh: ClientState, state: unknown): string {
+    return render(Person, { context: clientContext(fresh), props: { instance: instance(state) } })
+        .body;
+}
+
+async function settle(): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, 0));
+}
+
+/** The student's tab, with the file store answering one listing of the supervision folder. */
+async function listed(entries: Record<string, unknown>[]): Promise<string> {
+    vi.stubGlobal('window', {});
+    vi.stubGlobal('fetch', () =>
+        Promise.resolve(
+            new Response(JSON.stringify({ entries }), {
+                status: 200,
+                headers: { 'content-type': 'application/json' }
+            })
+        )
+    );
+    const fresh = createClientState();
+    install(fresh);
+    fresh.fs.listing('hub', 'education/student-supervision/ward-2024');
+    await settle();
+    const body = drawn(fresh, { key: 'ward' });
+    vi.unstubAllGlobals();
+    return body;
+}
+
+describe('one person as their own tab', () => {
+    it('says so when the tab was opened for nobody', () => {
+        expect(drawn(client, {})).toContain(catalog['person.nobody']);
+    });
+
+    it('names the key when the registry holds no such person', () => {
+        expect(drawn(client, { key: 'nobody' })).toContain('nobody');
+    });
+
+    it('draws the name, the organisation and the rest of the fact strip', () => {
+        const body = drawn(client, { key: 'naesens' });
+        expect(body).toContain('Maarten Naesens');
+        expect(body).toContain('KU Leuven (university, BE)');
+        expect(body).toContain('host candidate');
+        expect(body).toContain('someone@example.invalid');
+    });
+
+    it('draws the joint work with its status, and the projects that name the person', () => {
+        const body = drawn(client, { key: 'naesens' });
+        expect(body).toContain('The ECG paper');
+        expect(body).toContain('active');
+        expect(body).toContain('Alpha');
+        expect(body).toContain('data-block="joint-work"');
+        expect(body).toContain('data-block="projects"');
+    });
+
+    it('says so on each block a person has nothing under, and marks the hub owner', () => {
+        const body = drawn(client, { key: 'axel' });
+        expect(body).toContain(catalog['person.no_joint_work']);
+        expect(body).toContain(catalog['person.no_projects']);
+        expect(body).toContain(catalog['person.self']);
+        expect(body).not.toContain('data-block="folder"');
+    });
+
+    it('carries the control that opens registries/people.yml', () => {
+        expect(drawn(client, { key: 'naesens' })).toContain(
+            'data-source-path="registries/people.yml"'
+        );
+    });
+
+    it("lists the files of a student's supervision folder and leaves a folder inside it out", async () => {
+        const body = await listed([
+            { name: 'thesis.pdf', kind: 'file', size: 10, mtime: 0 },
+            { name: 'drafts', kind: 'dir', size: 0, mtime: 0 }
+        ]);
+        expect(body).toContain('data-block="folder"');
+        expect(body).toContain('thesis.pdf');
+        // A directory has no bytes for a source tab to hold, so it is not a row at all.
+        expect(body).not.toContain('drafts');
+    });
+
+    it('says the folder is empty when every entry in it is a directory', async () => {
+        const body = await listed([{ name: 'drafts', kind: 'dir', size: 0, mtime: 0 }]);
+        expect(body).toContain(catalog['person.folder_empty']);
+        expect(body).not.toContain('drafts');
+    });
+});

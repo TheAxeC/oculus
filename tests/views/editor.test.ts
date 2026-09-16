@@ -100,6 +100,8 @@ function snapshot(): Snapshot {
             },
             domains: { method: { id: 'method', title: 'Methods', projectIds: [] } },
             funding: {},
+            people: {},
+            organisations: {},
             collections: {}
         },
         relations: {
@@ -109,7 +111,11 @@ function snapshot(): Snapshot {
             projectPillar: [],
             projectDomain: [],
             projectRelated: [],
-            fundingPillar: []
+            fundingPillar: [],
+            projectPerson: [],
+            jointWorkPerson: [],
+            personOrganisation: [],
+            fundingOrganisation: []
         },
         findings: []
     };

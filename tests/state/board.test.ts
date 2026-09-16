@@ -98,7 +98,11 @@ const EMPTY_RELATIONS: Relations = {
     projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingPillar: []
+    fundingPillar: [],
+    projectPerson: [],
+    jointWorkPerson: [],
+    personOrganisation: [],
+    fundingOrganisation: []
 };
 
 function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
@@ -130,17 +134,17 @@ function venue(id: Id, over: Partial<Venue> = {}): Venue {
     return { id, name: id.toUpperCase(), themes: [], ...over };
 }
 
-function collaborations(): Collection {
+function jointWork(): Collection {
     return {
-        id: 'collaborations',
-        title: 'Collaborations',
-        file: '/hub/network/collaborations.yml',
+        id: 'joint-work',
+        title: 'Joint work',
+        file: '/hub/network/joint-work.yml',
         entries: [
             {
                 id: 'someone',
-                title: 'Someone Else',
-                fields: { key: 'someone' },
-                file: '/hub/network/collaborations.yml',
+                title: 'A shared paper',
+                fields: { key: 'someone', person: 'someone' },
+                file: '/hub/network/joint-work.yml',
                 index: 0
             }
         ]
@@ -297,7 +301,17 @@ function snapshot(): Snapshot {
             },
             domains: {},
             funding: {},
-            collections: { collaborations: collaborations() }
+            people: {
+                someone: {
+                    id: 'someone',
+                    name: 'Someone Else',
+                    links: [],
+                    projectIds: [],
+                    jointWorkIds: []
+                }
+            },
+            organisations: {},
+            collections: { 'joint-work': jointWork() }
         },
         relations: EMPTY_RELATIONS,
         findings: []

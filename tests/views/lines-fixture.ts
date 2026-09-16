@@ -173,15 +173,11 @@ export function fixture(): Snapshot {
             pillars: Object.fromEntries(pillars.map((line) => [line.id, line])),
             domains: Object.fromEntries(domains.map((domain) => [domain.id, domain])),
             funding: {},
+            people: {},
+            organisations: {},
             collections: {
                 pillars: collection('pillars', PILLAR_FILE, pillarEntries),
-                domains: collection('domains', DOMAIN_FILE, domainEntries),
-                collaborations: {
-                    id: 'collaborations',
-                    title: 'Collaborations',
-                    file: '/hub/network/collaborations.yml',
-                    entries: []
-                }
+                domains: collection('domains', DOMAIN_FILE, domainEntries)
             },
             feeds: NO_FEEDS,
             career: null
@@ -193,7 +189,11 @@ export function fixture(): Snapshot {
             projectPillar: [],
             projectDomain: [],
             projectRelated: [],
-            fundingPillar: []
+            fundingPillar: [],
+            projectPerson: [],
+            jointWorkPerson: [],
+            personOrganisation: [],
+            fundingOrganisation: []
         },
         findings: []
     });

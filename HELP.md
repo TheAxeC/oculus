@@ -80,7 +80,7 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `events` | Talks & Events | Talks, events and what is coming. |
 | `education` | Education & Service | Teaching and service entries. |
 | `applications` | Applications | Position applications and where each stands. |
-| `collaborations` | Collaborations | The collaborations and their state. |
+| `joint-work` | Joint work | One entry per piece of work with one person, and the pipeline it is in. Who the person is lives in the people registry, and each entry names them by key. |
 | `tasks` | Tasks & Service | The task list. |
 | `present` | Present | The public deck, one slide at a time, with an overview grid. |
 | `radar` | Lit Watch | The literature radar the scout writes, the toolbar closing with the control that opens that feed file. |
@@ -107,7 +107,7 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 
 A view drawn from one file of the hub carries that file's own control, last in its toolbar, which opens the file in a source tab: the three feeds above, the collection views over the YAML their `collections:` entry names (Venues, Data, Pillars and Domains, which have panes of their own, do not carry it yet), and each card of the Config view over the file it draws. The tooltip names the path, so the file the view is drawn from is read without finding it in the file browser first.
 
-Four views are opened for something rather than listed in the rail: `project` (one project as its own tab, with a LaTeX panel over its manuscript), `editor` (its manifest form), `deposit` (its public code deposit) and `doc` (one Markdown document of the hub, from a group of the rail). Three more open from a file: `source` (one text file, edited and saved, its text coloured by language while the file is under 64 KB, a Markdown file beside the rendered document its text makes, which a control in the bar takes away), `document` (a local HTML file in a frame) and `file` (a picture, a PDF in a frame, or a name and a link that saves it).
+Five views are opened for something rather than listed in the rail: `project` (one project as its own tab, with a LaTeX panel over its manuscript), `person` (one human, opened from a collaborator tag on a card, from a joint-work entry and from the Map's node, drawing the organisation they are affiliated to, the joint work that names them, the projects whose `collaborators:` name them and, for a student, the files of their supervision folder), `editor` (a project's manifest form), `deposit` (its public code deposit) and `doc` (one Markdown document of the hub, from a group of the rail). Three more open from a file: `source` (one text file, edited and saved, its text coloured by language while the file is under 64 KB, a Markdown file beside the rendered document its text makes, which a control in the bar takes away), `document` (a local HTML file in a frame) and `file` (a picture, a PDF in a frame, or a name and a link that saves it).
 
 The LaTeX panel lists a project's main files, which are the `.tex` files directly under its `manuscript/` folder that declare a document class: no manifest names them, so a manuscript that gains a supplement or a highlights file is listed the moment it is written. Each row says when its PDF was last built, offers a build and a clean, and shows the errors of the last build as `file:line message` rows under a count. Both steps are terminals running `latexmk` in the manuscript folder, so the output is in the terminal pane while it runs; when a build ends the row redraws, and a PDF tab open on that file draws the new build without a reload.
 
@@ -150,6 +150,8 @@ Every user-facing word lives under `config/text/`, one file per surface, and is 
 ## Where the data comes from
 
 Everything on the boards is read from the research hub, whose absolute path is the `hub` key of `local.yml`. The scan rules of `sources.yml` name the folders projects sit in, and a project is any folder holding a `project.yml`. The registries, the collections and the feeds are single YAML files named in the same place; the manuscripts, READMEs and decks are Markdown in each project's own folder.
+
+People and organisations are two of those registries. `registries/people.yml` holds one entry per human, keyed by a short slug, with a name, an `affiliation:` that is a key of `registries/organisations.yml`, a role, and optionally an ORCID, an email, links and a supervision folder; exactly one entry carries `self: true` and that is the hub's owner. A manifest's `collaborators:` and `waiting-on:` name people by those keys, and an entry of `network/joint-work.yml` names its person by `person:`. A value in any of the four that the registry does not hold is a finding on the Findings view, as is an `affiliation:` or a funding scheme's `funder:` that names no organisation, and an organisation `kind:` outside `university`, `hospital`, `funder`, `company` and `other`.
 
 Nothing is copied into a database. The server reads the files, builds one snapshot of entities and relations, and pushes it over a WebSocket; it watches the hub and the config folder, so a file edited anywhere reaches the page in the same second. The long documents stay out of that snapshot and are fetched one at a time when a tab shows one.
 

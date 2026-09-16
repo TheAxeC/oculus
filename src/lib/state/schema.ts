@@ -2,17 +2,16 @@
 // field is, and what a field of choices may be set to. Pure, so the editor is tested without a
 // browser and the form is changed in the config rather than in a component.
 //
-// The `from` of a field names where its choices come from: one of the five registries, the
-// collaborations collection, the projects themselves, or a vocabulary key of config/vocab.yml. That
-// is the only place a widget learns what to offer, so adding a venue to the registry adds it to the
-// form with no code change.
+// The `from` of a field names where its choices come from: one of the seven registries, the projects
+// themselves, or a vocabulary key of config/vocab.yml. That is the only place a widget learns what to
+// offer, so adding a venue to the registry adds it to the form with no code change.
 //
 // The current values come from the snapshot's Project, which carries what the model declares and no
 // more. Eleven of the schema's fields are not in the model (NOT_IN_MODEL below), so the form opens them
 // empty; the write itself handles them like any other, since it reads the manifest from disk.
 
 import type { Id, Project, Snapshot } from '../data/model.ts';
-import { isMap, byKey, scalar } from '../data/guards.ts';
+import { isMap, scalar } from '../data/guards.ts';
 
 /** One field of the form, in the order config/manifest-schema.yml lists it. */
 export type FormField = {
@@ -147,12 +146,8 @@ export function choicesFor(
     if (from === 'domains') return entityChoices(entities?.domains, ['title']);
     if (from === 'funding') return entityChoices(entities?.funding, ['title']);
     if (from === 'projects') return entityChoices(entities?.projects, ['short', 'title']);
-    if (from === 'collaborations') {
-        const collections = entities?.collections;
-        const entries =
-            collections === undefined ? [] : (byKey(collections, 'collaborations')?.entries ?? []);
-        return entries.map((entry) => ({ id: entry.id, label: entry.title }));
-    }
+    if (from === 'people') return entityChoices(entities?.people, ['name']);
+    if (from === 'organisations') return entityChoices(entities?.organisations, ['name']);
     return vocabChoices(config[from]);
 }
 

@@ -6,16 +6,17 @@ import type { Id, Project } from '../data/model.ts';
 import { byKey } from '../data/guards.ts';
 
 /**
- * A key of the collaborations collection is drawn as that entry's name, another project's id as
- * that project's short name, else its title, and a value that resolves against neither as written,
- * which validate reports as a finding.
+ * A key of the people registry is drawn as that person's name, another project's id as that
+ * project's short name, else its title, and a value that resolves against neither as written, which
+ * validate reports as a finding. The names are handed in rather than read from the snapshot here,
+ * since state/person.ts is the one rule that builds them.
  */
 export function waitingLabel(
     key: Id,
-    collaborators: Record<Id, string>,
+    people: Record<Id, string>,
     projects: Record<Id, Project>
 ): string {
-    const person = byKey(collaborators, key);
+    const person = byKey(people, key);
     if (person !== undefined) return person;
     const project = byKey(projects, key);
     if (project === undefined) return key;

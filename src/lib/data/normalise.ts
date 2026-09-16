@@ -23,6 +23,8 @@ import type {
     Funding,
     Host,
     Id,
+    Organisation,
+    Person,
     PresentSlide,
     Pillar,
     Project,
@@ -78,8 +80,21 @@ export const ENTITY_KINDS = [
     'pillars',
     'domains',
     'funding',
+    'people',
+    'organisations',
     'collections'
 ];
+
+/**
+ * The collection of joint work: one entry per piece of work with one person, whose `person:` field
+ * is a key of the people registry. The key is named here because the relation table is built from
+ * that collection and nowhere else; state/collection.ts holds the same word for the client side,
+ * which may not import this module.
+ */
+export const JOINT_WORK = 'joint-work';
+
+/** The field of a joint-work entry that names its person. */
+export const PERSON_FIELD = 'person';
 
 /** A number value, or undefined. NaN and Infinity are not JSON-safe and are dropped with them. */
 function num(value: unknown): number | undefined {
@@ -354,6 +369,39 @@ function pillar(entry: RawRegistryEntry): Pillar {
     });
 }
 
+/**
+ * One human. `self` is carried only when it is true, so the wire says who the hub belongs to and
+ * says nothing at all about everybody else.
+ */
+function person(entry: RawRegistryEntry): Person {
+    return compact({
+        id: entry.key,
+        name: str(entry.name) ?? '',
+        affiliation: str(entry.affiliation),
+        role: str(entry.role),
+        orcid: str(entry.orcid),
+        email: str(entry.email),
+        links: strings(entry.links),
+        folder: str(entry.folder),
+        self: entry.self === true ? true : undefined,
+        projectIds: [],
+        jointWorkIds: []
+    });
+}
+
+/** One organisation, the thing a person's `affiliation:` and a scheme's `funder:` point at. */
+function organisation(entry: RawRegistryEntry): Organisation {
+    return compact({
+        id: entry.key,
+        name: str(entry.name) ?? '',
+        kind: str(entry.kind),
+        country: str(entry.country),
+        links: strings(entry.links),
+        personIds: [],
+        fundingIds: []
+    });
+}
+
 function domain(entry: RawRegistryEntry): Domain {
     return compact({
         id: entry.key,
@@ -375,6 +423,7 @@ function funding(entry: RawRegistryEntry): Funding {
         deadline: str(entry.deadline),
         note: str(entry.note),
         statement: str(entry.statement),
+        funder: str(entry.funder),
         link: str(entry.link),
         url: str(entry.url),
         snooze: str(entry.snooze),
@@ -458,6 +507,21 @@ function collection(raw: RawCollection): Collection {
         schema,
         entries: raw.entries.map((item, index) => entry(item, index, ident))
     });
+}
+
+/**
+ * Every entry of the joint-work collection that names a person, as the pair the relation is built
+ * from. An entry with no `person:` field, or one whose value is not a string, is no pair here and
+ * is a finding of validate's; it is not repaired.
+ */
+function jointWorkRows(collections: Collection[]): { id: Id; person: Id }[] {
+    const held = collections.find((one) => one.id === JOINT_WORK);
+    const rows: { id: Id; person: Id }[] = [];
+    for (const one of held?.entries ?? []) {
+        const key = str(one.fields[PERSON_FIELD]);
+        if (key !== undefined && key.length > 0) rows.push({ id: one.id, person: key });
+    }
+    return rows;
 }
 
 /**
@@ -599,7 +663,19 @@ function feeds(raw: Feeds): Feeds {
     };
 }
 
-function relations(projects: Project[], entities: Record<string, Set<Id>>): Relations {
+/** What the four person and organisation tables are built from, beside the projects themselves. */
+type Sides = {
+    people: Person[];
+    schemes: Funding[];
+    /** The entries of the joint-work collection, each with the person key its record names. */
+    jointWork: { id: Id; person: Id }[];
+};
+
+function relations(
+    projects: Project[],
+    entities: Record<string, Set<Id>>,
+    sides: Sides
+): Relations {
     const venueTable: [Id, Id][] = [];
     const fundingTable: [Id, Id][] = [];
     const datasetTable: [Id, Id][] = [];
@@ -607,8 +683,15 @@ function relations(projects: Project[], entities: Record<string, Set<Id>>): Rela
     const domainTable: [Id, Id][] = [];
     const relatedTable: [Id, Id][] = [];
     const fundingPillar: [Id, Id][] = [];
+    const projectPerson: [Id, Id][] = [];
+    const jointWorkPerson: [Id, Id][] = [];
+    const personOrganisation: [Id, Id][] = [];
+    const fundingOrganisation: [Id, Id][] = [];
 
     for (const item of projects) {
+        for (const id of item.collaborators) {
+            if (entities.people.has(id)) projectPerson.push([item.id, id]);
+        }
         if (item.venueId !== undefined && entities.venues.has(item.venueId)) {
             venueTable.push([item.id, item.venueId]);
         }
@@ -635,6 +718,20 @@ function relations(projects: Project[], entities: Record<string, Set<Id>>): Rela
         }
     }
 
+    for (const entry of sides.jointWork) {
+        if (entities.people.has(entry.person)) jointWorkPerson.push([entry.id, entry.person]);
+    }
+    for (const one of sides.people) {
+        if (one.affiliation !== undefined && entities.organisations.has(one.affiliation)) {
+            personOrganisation.push([one.id, one.affiliation]);
+        }
+    }
+    for (const scheme of sides.schemes) {
+        if (scheme.funder !== undefined && entities.organisations.has(scheme.funder)) {
+            fundingOrganisation.push([scheme.id, scheme.funder]);
+        }
+    }
+
     return {
         projectVenue: pairs(venueTable),
         projectFunding: pairs(fundingTable),
@@ -642,7 +739,11 @@ function relations(projects: Project[], entities: Record<string, Set<Id>>): Rela
         projectPillar: pairs(pillarTable),
         projectDomain: pairs(domainTable),
         projectRelated: pairs(relatedTable),
-        fundingPillar: pairs(fundingPillar)
+        fundingPillar: pairs(fundingPillar),
+        projectPerson: pairs(projectPerson),
+        jointWorkPerson: pairs(jointWorkPerson),
+        personOrganisation: pairs(personOrganisation),
+        fundingOrganisation: pairs(fundingOrganisation)
     };
 }
 
@@ -664,6 +765,8 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
     const schemes = raw.registries.funding.entries
         .map(funding)
         .filter((scheme) => scheme.id.length > 0);
+    const people = withId(raw.registries.people.entries).map(person);
+    const organisations = withId(raw.registries.organisations.entries).map(organisation);
     const collections = Object.keys(raw.collections).map((key) => collection(raw.collections[key]));
 
     const known: Record<string, Set<Id>> = {
@@ -672,10 +775,16 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
         datasets: new Set(datasets.map((item) => item.id)),
         pillars: new Set(pillars.map((item) => item.id)),
         domains: new Set(domains.map((item) => item.id)),
-        funding: new Set(schemes.map((item) => item.id))
+        funding: new Set(schemes.map((item) => item.id)),
+        people: new Set(people.map((item) => item.id)),
+        organisations: new Set(organisations.map((item) => item.id))
     };
 
-    const tables = relations(projects, known);
+    const tables = relations(projects, known, {
+        people,
+        schemes,
+        jointWork: jointWorkRows(collections)
+    });
 
     for (const item of projects) {
         item.relatedIds = targets(tables.projectRelated, item.id);
@@ -683,6 +792,7 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
         item.datasetIds = targets(tables.projectDataset, item.id);
         item.pillarIds = targets(tables.projectPillar, item.id);
         item.domainIds = targets(tables.projectDomain, item.id);
+        item.collaborators = targets(tables.projectPerson, item.id);
         if (item.venueId !== undefined && !known.venues.has(item.venueId)) delete item.venueId;
     }
     for (const item of datasets) item.projectIds = sources(tables.projectDataset, item.id);
@@ -694,6 +804,18 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
     for (const item of schemes) {
         item.projectIds = sources(tables.projectFunding, item.id);
         item.pillarIds = targets(tables.fundingPillar, item.id);
+        if (item.funder !== undefined && !known.organisations.has(item.funder)) delete item.funder;
+    }
+    for (const item of people) {
+        item.projectIds = sources(tables.projectPerson, item.id);
+        item.jointWorkIds = sources(tables.jointWorkPerson, item.id);
+        if (item.affiliation !== undefined && !known.organisations.has(item.affiliation)) {
+            delete item.affiliation;
+        }
+    }
+    for (const item of organisations) {
+        item.personIds = sources(tables.personOrganisation, item.id);
+        item.fundingIds = sources(tables.fundingOrganisation, item.id);
     }
 
     return {
@@ -705,6 +827,8 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
             pillars: byId(pillars),
             domains: byId(domains),
             funding: byId(schemes),
+            people: byId(people),
+            organisations: byId(organisations),
             collections: byId(collections),
             feeds: feeds(raw.feeds),
             career: career(raw.career)

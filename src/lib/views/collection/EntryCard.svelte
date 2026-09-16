@@ -5,7 +5,9 @@
     //
     // Nothing here knows what a scheme or an event is. Which fields are drawn and in what order is
     // drawnFields() over the file's `schema:`, which projects cross-link is crossLinks() over the
-    // collection key, and every control is one call of the write path.
+    // collection key, and every control is one call of the write path. A field the schema draws its
+    // choices from the people registry for is the one exception in kind rather than in name: it holds
+    // a person's key, so the card draws the control that opens that person by their name.
 
     import Card from '$lib/ui/Card.svelte';
     import Chip from '$lib/ui/Chip.svelte';
@@ -29,11 +31,13 @@
         type Project,
         type SchemaField
     } from '$lib/state/collection';
+    import { personName } from '$lib/state/person';
     import { t } from '$lib/state/text';
     import { statusTone } from '$lib/state/tones';
     import { useState } from '$lib/state/use';
 
     const {
+        entities: { portfolio },
         layout: { openView },
         selectors: { archiveDead },
         writes: { writeEntry }
@@ -104,6 +108,11 @@
     /** One of the file's other lifecycle statuses, on a file that has no schema to edit by. */
     async function setStatus(next: string): Promise<void> {
         said(await writeEntry(collection, entry.id, { status: next }));
+    }
+
+    /** One person as their own tab, the tab a collaborator tag on a project card opens. */
+    function openPerson(key: string): void {
+        openView('person', { key, label: personName(portfolio(), key) });
     }
 
     /** Whether a link names a local HTML file, which the document view can hold as a tab. */
@@ -229,6 +238,16 @@
                         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
                         <p class="body">{@html inlineMarkdown(drawn.values[0])}</p>
                     {/if}
+                {:else if drawn.kind === 'person'}
+                    <div class="row">
+                        <span class="label">{drawn.label}</span>
+                        <ToolButton
+                            label={personName(portfolio(), drawn.values[0])}
+                            glyph={t('collection.person_glyph')}
+                            title={t('collection.open_person')}
+                            onclick={() => openPerson(drawn.values[0])}
+                        />
+                    </div>
                 {:else if drawn.kind === 'link'}
                     {#if isDocument(drawn.values[0])}
                         <!-- A local HTML file opens in the document view; every other link leaves the page. -->

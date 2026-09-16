@@ -45,6 +45,8 @@ const snapshot: Snapshot = {
         pillars: {},
         domains: {},
         funding: {},
+        people: {},
+        organisations: {},
         collections: {},
         feeds: NO_FEEDS,
         career: null
@@ -56,7 +58,11 @@ const snapshot: Snapshot = {
         projectPillar: [],
         projectDomain: [],
         projectRelated: [],
-        fundingPillar: []
+        fundingPillar: [],
+        projectPerson: [],
+        jointWorkPerson: [],
+        personOrganisation: [],
+        fundingOrganisation: []
     },
     findings: []
 };

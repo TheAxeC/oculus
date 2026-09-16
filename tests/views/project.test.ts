@@ -57,7 +57,11 @@ const EMPTY_RELATIONS: Relations = {
     projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingPillar: []
+    fundingPillar: [],
+    projectPerson: [],
+    jointWorkPerson: [],
+    personOrganisation: [],
+    fundingOrganisation: []
 };
 
 /** One project, with two of its Markdown documents present and two of them not. */
@@ -121,6 +125,8 @@ function snapshot(over: Partial<Record_> = {}): Snapshot {
             pillars: {},
             domains: {},
             funding: {},
+            people: {},
+            organisations: {},
             collections: {}
         },
         relations: EMPTY_RELATIONS,

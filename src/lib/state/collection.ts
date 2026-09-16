@@ -22,11 +22,12 @@ export const TITLE_FIELD = 'title';
 export const STATUS_FIELD = 'status';
 
 /** What a card does with one field. The view has one piece of markup per kind and no more. */
-export type FieldKind = 'sub' | 'status' | 'chips' | 'meta' | 'body' | 'link' | 'pairs' | 'text';
+export type FieldKind =
+    'sub' | 'status' | 'chips' | 'meta' | 'body' | 'link' | 'person' | 'pairs' | 'text';
 
 /**
  * One field of one entry, ready to draw: the kind decides the markup, `values` carries the words.
- * A `text`, `sub`, `status`, `body` or `link` field has exactly one value; `chips` has one per tag,
+ * A `text`, `sub`, `status`, `body`, `link` or `person` field has exactly one value; `chips` has one per tag,
  * `meta` one per label-value pair and `pairs` one per key of a map, each already joined, since a
  * Chip takes a label and nothing else.
  */
@@ -86,6 +87,9 @@ export function parseCollectionState(raw: unknown): CollectionState {
     return state;
 }
 
+/** The `options_from:` value of a schema field whose value is a key of the people registry. */
+export const PEOPLE_OPTIONS = 'people';
+
 const CHIP_FIELDS = ['tags', 'related'];
 const BODY_FIELDS = ['note', 'statement'];
 const LINK_FIELDS = ['link', 'url'];
@@ -97,13 +101,19 @@ const PAIR = ': ';
 const JOIN = ' | ';
 
 /**
- * How one field is drawn. The name decides it where the seven files agree on a name, and the type
- * decides it otherwise; a type none of them uses falls through to text, which is the widest of the
- * kinds and loses nothing but the shape.
+ * How one field is drawn. The name decides it where the seven files agree on a name, the registry a
+ * choice is drawn from decides it where the schema names one, and the type decides it otherwise; a
+ * type none of them uses falls through to text, which is the widest of the kinds and loses nothing
+ * but the shape.
+ *
+ * A field whose choices come from the people registry holds a person's key, so the card draws it as
+ * the control that opens that person rather than as the key itself. The rule is the schema's own
+ * `options_from:` and not the field's name, so a second field of people follows it with no change.
  */
-export function kindOf(field: string, type: string): FieldKind {
+export function kindOf(field: string, type: string, optionsFrom?: string): FieldKind {
     if (field === 'sub') return 'sub';
     if (field === STATUS_FIELD) return 'status';
+    if (optionsFrom === PEOPLE_OPTIONS) return 'person';
     if (CHIP_FIELDS.includes(field) || type === 'tags') return 'chips';
     if (field === 'meta' || type === 'metalist') return 'meta';
     if (BODY_FIELDS.includes(field) || type === 'textarea') return 'body';
@@ -189,7 +199,7 @@ export function drawnFields(entry: Entry, schema: SchemaField[] | undefined): Dr
         named.add(field.field);
         if (field.field === TITLE_FIELD) continue;
         const held = entry.fields[field.field];
-        const kind = kindOf(field.field, field.type);
+        const kind = kindOf(field.field, field.type, field.optionsFrom);
         const values = valuesOf(kind, held);
         if (values.length > 0) {
             drawn.push({ field: field.field, label: field.label ?? field.field, kind, values });
@@ -303,8 +313,8 @@ export const NO_FUNDING = 'no-funding';
 /** The collection key whose entries the manifests' `funding:` tags name. */
 export const FUNDING = 'funding';
 
-/** The collection key whose entries the manifests' `collaborators:` tags name. */
-export const COLLABORATIONS = 'collaborations';
+/** The collection key of the joint work, whose entries each name one person. */
+export const JOINT_WORK = 'joint-work';
 
 /** The field an entry is addressed by: the file's own schema's first field, `title` without one. */
 export function identityField(schema: SchemaField[] | undefined): string {
@@ -412,8 +422,8 @@ function typeOf(project: Project): string {
  * The projects that name one entry, grouped by type with a count each.
  *
  * Which projects those are is the collection's own question and has three answers: funding is the
- * manifests' `funding:` tags, collaborations is their `collaborators:` tags, and every other
- * collection has no project-side inverse, so it is the entry's own `related:` list of project ids.
+ * manifests' `funding:` tags, a joint work is the `collaborators:` tags naming its person, and every
+ * other collection has no project-side inverse, so it is the entry's own `related:` list of ids.
  * A related id no project of the snapshot holds is left out rather than drawn as a dead link.
  */
 export function crossLinks(
@@ -425,8 +435,9 @@ export function crossLinks(
     let named: Project[];
     if (collectionKey === FUNDING) {
         named = projects.filter((project) => project.fundingIds.includes(entry.id));
-    } else if (collectionKey === COLLABORATIONS) {
-        named = projects.filter((project) => project.collaborators.includes(entry.id));
+    } else if (collectionKey === JOINT_WORK) {
+        const person = typeof entry.fields.person === 'string' ? entry.fields.person : entry.id;
+        named = projects.filter((project) => project.collaborators.includes(person));
     } else {
         const ids = wordsOf(entry.fields.related);
         named = ids

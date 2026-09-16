@@ -13,6 +13,7 @@
     import { firstSentence, isStale, waitingLine, type BoardItem } from '$lib/state/board';
     import { contextText } from '$lib/state/project-context';
     import { findView } from '$lib/state/layout';
+    import { personNames } from '$lib/state/person';
     import { t } from '$lib/state/text';
     import { chipGlyphName, chipLabel, statusTone } from '$lib/state/tones';
     import { useState } from '$lib/state/use';
@@ -22,7 +23,6 @@
     const {
         entities: { portfolio },
         layout: { layout, openBeside, openView },
-        selectors: { collectionOf },
         selection: { select },
         terminals: { startChat },
         ui: { setInstanceState },
@@ -75,7 +75,7 @@
             : waitingLine(
                   item.project,
                   snapshot.entities.venues,
-                  collaboratorNames(),
+                  personNames(snapshot),
                   snapshot.entities.projects
               )
     );
@@ -163,14 +163,6 @@
         }
         return rows;
     });
-    /** Resolve collaboration ids to the names used by the waiting line. */
-    function collaboratorNames(): Record<string, string> {
-        const names: Record<string, string> = {};
-        for (const entry of collectionOf('collaborations')?.entries ?? []) {
-            names[entry.id] = entry.title;
-        }
-        return names;
-    }
     /** The newest document date used in the stale warning tooltip. */
     function newestDoc(): string {
         const newest = item.project.docs.reduce(

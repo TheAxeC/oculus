@@ -36,15 +36,13 @@ function html(empty = false, state: Record<string, unknown> = {}): string {
     const snapshot = fixture();
     snapshot.entities.projects.alpha.relatedIds = ['old'];
     snapshot.entities.projects.alpha.collaborators = ['person'];
-    snapshot.entities.collections.collaborations.entries = [
-        {
-            id: 'person',
-            title: 'Person Name',
-            fields: { key: 'person', title: 'Person Name' },
-            file: '/hub/network/collaborations.yml',
-            index: 0
-        }
-    ];
+    snapshot.entities.people.person = {
+        id: 'person',
+        name: 'Person Name',
+        links: [],
+        projectIds: ['alpha'],
+        jointWorkIds: []
+    };
     if (empty) {
         for (const project of Object.values(snapshot.entities.projects)) {
             project.pillarIds = [];
@@ -63,15 +61,13 @@ function graphFixture() {
     snapshot.entities.projects.alpha.relatedIds = ['candidate-project', 'outside-project'];
     snapshot.entities.projects.outside.relatedIds = ['alpha'];
     snapshot.entities.projects.alpha.collaborators = ['person'];
-    snapshot.entities.collections.collaborations.entries = [
-        {
-            id: 'person',
-            title: 'Person Name',
-            fields: { key: 'person', title: 'Person Name' },
-            file: '/hub/network/collaborations.yml',
-            index: 0
-        }
-    ];
+    snapshot.entities.people.person = {
+        id: 'person',
+        name: 'Person Name',
+        links: [],
+        projectIds: ['alpha'],
+        jointWorkIds: []
+    };
     return snapshot;
 }
 

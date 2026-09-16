@@ -90,10 +90,10 @@ function vocabKeys(value: unknown): string[] {
 }
 
 /**
- * The portfolio's half of the merged config. The four `*_file` keys give four registry paths and
- * the `collections:` list gives the fifth, since funding/funding.yml is named there and nowhere
- * else. A key the config does not hold falls back to the path the hub uses today, so a config that
- * has moved on in one place still builds.
+ * The portfolio's half of the merged config. The six `*_file` keys give six registry paths and the
+ * `collections:` list gives the seventh, since funding/funding.yml is named there and nowhere else.
+ * A key the config does not hold falls back to the path the hub uses today, so a config that has
+ * moved on in one place still builds.
  */
 export function portfolioConfigFrom(
     merged: Record<string, unknown>,
@@ -109,7 +109,9 @@ export function portfolioConfigFrom(
         datasets: path('datasets_file', REGISTRY_FILES.datasets),
         pillars: path('pillars_file', REGISTRY_FILES.pillars),
         domains: path('domains_file', REGISTRY_FILES.domains),
-        funding: fundingFile ?? REGISTRY_FILES.funding
+        funding: fundingFile ?? REGISTRY_FILES.funding,
+        people: path('people_file', REGISTRY_FILES.people),
+        organisations: path('organisations_file', REGISTRY_FILES.organisations)
     };
 
     const vocab: Vocabulary = {

@@ -251,7 +251,9 @@ describe('namedByConfig', () => {
             datasets: 'registries/data.yml',
             pillars: 'registries/pillars.yml',
             domains: 'registries/domains.yml',
-            funding: 'funding/funding.yml'
+            funding: 'funding/funding.yml',
+            people: 'registries/people.yml',
+            organisations: 'registries/organisations.yml'
         },
         collections: [{ key: 'events', file: 'network/events.yml' }],
         schema: undefined,
@@ -306,7 +308,9 @@ describe('watchedDirectories', () => {
                 datasets: 'registries/data.yml',
                 pillars: 'registries/pillars.yml',
                 domains: 'registries/domains.yml',
-                funding: 'funding/funding.yml'
+                funding: 'funding/funding.yml',
+                people: 'registries/people.yml',
+                organisations: 'registries/organisations.yml'
             },
             collections: [{ key: 'events', file: 'network/events.yml' }],
             schema: undefined,

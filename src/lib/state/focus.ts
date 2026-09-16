@@ -230,12 +230,12 @@ export function venueLabel(venue: Venue | undefined): string {
  * The awaiting-a-response strip. The people and venue tallies are one per live project, the people
  * named in `waiting-on:` first, then the venue holding it when it is `submitted`; the blocked tally
  * is over every project of every tier on its own, whatever else the project is waiting for.
- * A `waiting-on:` value is a collaborations key or another project's id, drawn by waiting.ts.
+ * A `waiting-on:` value is a people key or another project's id, drawn by waiting.ts.
  */
 export function waiting(
     snapshot: Snapshot,
     config: Record<string, unknown>,
-    collaborators: Record<Id, string>
+    names: Record<Id, string>
 ): Waiting {
     const venues = snapshot.entities.venues;
     const projects = snapshot.entities.projects;
@@ -250,7 +250,7 @@ export function waiting(
         if (!live(project)) continue;
         if (project.waitingOn.length > 0) {
             for (const key of project.waitingOn) {
-                const name = waitingLabel(key, collaborators, projects);
+                const name = waitingLabel(key, names, projects);
                 people[name] = (people[name] ?? 0) + 1;
             }
             continue;

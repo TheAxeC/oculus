@@ -72,7 +72,11 @@ const EMPTY_RELATIONS: Relations = {
     projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingPillar: []
+    fundingPillar: [],
+    projectPerson: [],
+    jointWorkPerson: [],
+    personOrganisation: [],
+    fundingOrganisation: []
 };
 
 function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
@@ -234,6 +238,16 @@ function snapshot(): Snapshot {
                     followups: [{ do: 'ask the officer' }]
                 })
             },
+            people: {
+                someone: {
+                    id: 'someone',
+                    name: 'Some One',
+                    links: [],
+                    projectIds: [],
+                    jointWorkIds: []
+                }
+            },
+            organisations: {},
             collections: {
                 funding: collection('funding', [
                     {
@@ -248,8 +262,8 @@ function snapshot(): Snapshot {
                     { title: 'A live position', status: 'active' },
                     { title: 'An applied position', status: 'applied' }
                 ]),
-                collaborations: collection('collaborations', [
-                    { key: 'someone', title: 'Some One', status: 'active' }
+                'joint-work': collection('joint-work', [
+                    { key: 'someone', title: 'A shared paper', person: 'someone', status: 'active' }
                 ]),
                 events: collection(
                     'events',
@@ -315,6 +329,16 @@ function bare(): Snapshot {
             pillars: {},
             domains: {},
             funding: {},
+            people: {
+                someone: {
+                    id: 'someone',
+                    name: 'Some One',
+                    links: [],
+                    projectIds: [],
+                    jointWorkIds: []
+                }
+            },
+            organisations: {},
             collections: {}
         },
         relations: EMPTY_RELATIONS,

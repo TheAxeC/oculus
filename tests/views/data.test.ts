@@ -55,7 +55,11 @@ const RELATIONS: Relations = {
     projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingPillar: []
+    fundingPillar: [],
+    projectPerson: [],
+    jointWorkPerson: [],
+    personOrganisation: [],
+    fundingOrganisation: []
 };
 
 function dataset(
@@ -159,6 +163,8 @@ function snapshot(datasets: Dataset[]): Snapshot {
             pillars: {},
             domains: {},
             funding: {},
+            people: {},
+            organisations: {},
             collections: { data: collection(datasets) },
             feeds: NO_FEEDS,
             career: null

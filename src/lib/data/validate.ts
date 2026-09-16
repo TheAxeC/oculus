@@ -7,9 +7,16 @@
 // is missing, an id that is not its folder name) are passed through untouched, never re-derived:
 // this module never opens a file, so it cannot know those on its own.
 
-import type { Finding, RawManifest, RawPortfolio, ValidationRules, Vocabulary } from './model.ts';
-import { isMap, byKey } from './guards.ts';
-import { collectionSchema } from './normalise.ts';
+import type {
+    Finding,
+    RawManifest,
+    RawPortfolio,
+    RegistryName,
+    ValidationRules,
+    Vocabulary
+} from './model.ts';
+import { isMap, byKey, str } from './guards.ts';
+import { JOINT_WORK, PERSON_FIELD, collectionSchema } from './normalise.ts';
 
 /** Keys the reader itself adds to every manifest record; no schema names them. */
 const PROVENANCE = [
@@ -38,16 +45,20 @@ type IdSets = {
     pillars: Set<string>;
     domains: Set<string>;
     funding: Set<string>;
+    people: Set<string>;
+    organisations: Set<string>;
     projects: Set<string>;
 };
 
+/** The word a finding about a `collaborators:` or `waiting-on:` value uses for one of its people. */
+const PERSON = 'person';
+
 /**
- * The collection whose entry keys a manifest's `collaborators` names, and the word a finding uses
- * for one of its entries. The collaborators are not a registry and their entries are not entities,
- * so the check resolves against the collection's own keys rather than through IdSets.
+ * What an organisation's `kind:` may say. It is a fixed list rather than a configured vocabulary
+ * because it is what the entity means rather than how it is drawn, and nothing in config/vocab.yml
+ * names it.
  */
-const COLLABORATIONS = 'collaborations';
-const COLLABORATOR = 'collaborator';
+const ORGANISATION_KINDS = ['university', 'hospital', 'funder', 'company', 'other'];
 
 /**
  * A manifest key that has been renamed, and the name it is written under now. One word for a thing
@@ -279,23 +290,7 @@ function checkFolderNames(raw: RawPortfolio, findings: Finding[]): void {
     }
 }
 
-/**
- * The keys of the `collaborations` collection. A collection the config does not name reaches here
- * as no keys, and every collaborator a manifest names is then a finding: an id that resolves
- * against nothing is exactly what this check is for, and the reader has already reported the
- * missing file on its own.
- */
-function collaboratorKeys(raw: RawPortfolio): Set<string> {
-    const keys = new Set<string>();
-    const collection = byKey(raw.collections, COLLABORATIONS);
-    if (collection === undefined) return keys;
-    for (const entry of collection.entries) {
-        if (typeof entry.key === 'string' && entry.key.length > 0) keys.add(entry.key);
-    }
-    return keys;
-}
-
-/** Every id in `collaborators` names an entry of the collaborations collection. */
+/** Every id in `collaborators` names an entry of the people registry. */
 function checkCollaborators(manifest: RawManifest, keys: Set<string>, findings: Finding[]): void {
     const value = manifest.collaborators;
     if (!Array.isArray(value)) return;
@@ -304,15 +299,15 @@ function checkCollaborators(manifest: RawManifest, keys: Set<string>, findings: 
         findings.push({
             file: manifest.file,
             key: 'collaborators',
-            message: `collaborators names no ${COLLABORATOR}: ${item}`
+            message: `collaborators names no ${PERSON}: ${item}`
         });
     }
 }
 
 /**
- * `waiting-on` names what a project waits for before it moves: an entry of the collaborations
- * collection, or another project by its id. A value that is neither resolves against nothing, so
- * the strip can only draw it as written and no reader can look it up.
+ * `waiting-on` names what a project waits for before it moves: a person of the people registry, or
+ * another project by its id. A value that is neither resolves against nothing, so the strip can
+ * only draw it as written and no reader can look it up.
  */
 function checkWaitingOn(
     manifest: RawManifest,
@@ -336,7 +331,7 @@ function checkWaitingOn(
         findings.push({
             file: manifest.file,
             key: 'waiting-on',
-            message: `waiting-on names no ${COLLABORATOR} or project: ${item}`
+            message: `waiting-on names no ${PERSON} or project: ${item}`
         });
     }
 }
@@ -437,6 +432,89 @@ function checkEntryIdentity(raw: RawPortfolio, findings: Finding[]): void {
 }
 
 /**
+ * A person's `affiliation:` names an organisation of the registry, and exactly one entry carries
+ * `self: true`. The affiliation is what draws the person's organisation everywhere a person is
+ * shown, so a free string there is a name nothing can be looked up by; `self` is how the hub knows
+ * which entry is its owner, and two of them or none leaves that question unanswered.
+ */
+function checkPeople(raw: RawPortfolio, organisations: Set<string>, findings: Finding[]): void {
+    const entries = raw.registries.people.entries;
+    const selves: number[] = [];
+    entries.forEach((entry, index) => {
+        if (entry.self === true) selves.push(index);
+        const affiliation = entry.affiliation;
+        if (affiliation === undefined || affiliation === null) return;
+        if (typeof affiliation === 'string' && organisations.has(affiliation)) return;
+        findings.push({
+            file: entry.file,
+            key: `entries[${index}].affiliation`,
+            message: `affiliation names no organisation: ${JSON.stringify(affiliation)}`
+        });
+    });
+    if (entries.length === 0 || selves.length === 1) return;
+    const file = entries[0]?.file ?? '';
+    findings.push({
+        file,
+        key: 'entries',
+        message: `${selves.length} people entries carry self: true, and exactly one may`
+    });
+}
+
+/** An organisation's `kind:` is one of the five words the entity is defined over. */
+function checkOrganisations(raw: RawPortfolio, findings: Finding[]): void {
+    raw.registries.organisations.entries.forEach((entry, index) => {
+        const kind = entry.kind;
+        if (kind === undefined) return;
+        if (typeof kind === 'string' && ORGANISATION_KINDS.includes(kind)) return;
+        findings.push({
+            file: entry.file,
+            key: `entries[${index}].kind`,
+            message: `kind ${JSON.stringify(kind)} is not one of the organisation kinds`
+        });
+    });
+}
+
+/**
+ * Every entry of the joint-work collection names a person of the registry. The entry is a piece of
+ * work with one human, so an entry with no `person:` is a card no reader can follow to whoever the
+ * work is with, which is the whole of what the collection is for.
+ */
+function checkJointWork(raw: RawPortfolio, people: Set<string>, findings: Finding[]): void {
+    const collection = byKey(raw.collections, JOINT_WORK);
+    if (collection === undefined) return;
+    collection.entries.forEach((entry, index) => {
+        const key = str(entry[PERSON_FIELD]);
+        if (key !== undefined && people.has(key)) return;
+        const held = entry[PERSON_FIELD];
+        findings.push({
+            file: collection.file,
+            key: `entries[${index}].${PERSON_FIELD}`,
+            message:
+                held === undefined
+                    ? `entry has no ${PERSON_FIELD}`
+                    : `${PERSON_FIELD} names no ${PERSON}: ${JSON.stringify(held)}`
+        });
+    });
+}
+
+/**
+ * A funding scheme's `funder:` names an organisation of the registry. It is the same rule as a
+ * person's affiliation, from the other file: who funds a scheme is an organisation the hub holds.
+ */
+function checkFunders(raw: RawPortfolio, organisations: Set<string>, findings: Finding[]): void {
+    raw.registries.funding.entries.forEach((entry, index) => {
+        const funder = entry.funder;
+        if (funder === undefined || funder === null) return;
+        if (typeof funder === 'string' && organisations.has(funder)) return;
+        findings.push({
+            file: entry.file,
+            key: `entries[${index}].funder`,
+            message: `funder names no organisation: ${JSON.stringify(funder)}`
+        });
+    });
+}
+
+/**
  * A funding entry is known by its `key` when it has one and by its `title` otherwise, so an entry
  * with neither has no identity and normalise cannot carry it. The other four registries require an
  * id and their reader has already reported a missing one, so only funding is checked here.
@@ -487,7 +565,7 @@ function checkFundingStatements(raw: RawPortfolio, findings: Finding[]): void {
 
 /** Which ids exist, by kind. A project is known by its folder name, which is the reader's `id`. */
 function idSets(raw: RawPortfolio): IdSets {
-    const of = (name: 'venues' | 'datasets' | 'pillars' | 'domains' | 'funding'): Set<string> =>
+    const of = (name: RegistryName): Set<string> =>
         new Set(raw.registries[name].entries.map((entry) => entry.key).filter((key) => key !== ''));
     return {
         venues: of('venues'),
@@ -495,6 +573,8 @@ function idSets(raw: RawPortfolio): IdSets {
         pillars: of('pillars'),
         domains: of('domains'),
         funding: of('funding'),
+        people: of('people'),
+        organisations: of('organisations'),
         projects: new Set(raw.manifests.map((manifest) => manifest.id))
     };
 }
@@ -540,7 +620,6 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     const findings: Finding[] = [...raw.findings];
     const schema = schemaKeys(rules.schema);
     const ids = idSets(raw);
-    const collaborators = collaboratorKeys(raw);
     const vocab: Vocabulary = rules.vocab;
 
     for (const manifest of raw.manifests) {
@@ -550,11 +629,15 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
         checkShapes(manifest, findings);
         checkReferences(manifest, ids, findings);
         checkSelfRelated(manifest, findings);
-        checkCollaborators(manifest, collaborators, findings);
-        checkWaitingOn(manifest, collaborators, ids.projects, findings);
+        checkCollaborators(manifest, ids.people, findings);
+        checkWaitingOn(manifest, ids.people, ids.projects, findings);
         checkChips(manifest, vocab.chips, findings);
     }
     checkFolderNames(raw, findings);
+    checkPeople(raw, ids.organisations, findings);
+    checkOrganisations(raw, findings);
+    checkJointWork(raw, ids.people, findings);
+    checkFunders(raw, ids.organisations, findings);
     checkFundingIdentity(raw, findings);
     checkFundingStatements(raw, findings);
     checkEntryStatus(raw, vocab.statuses, findings);

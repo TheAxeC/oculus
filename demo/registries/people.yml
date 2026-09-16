@@ -1,0 +1,33 @@
+# People - one entry per human the hub names: a collaborator a project's `collaborators:` or
+# `waiting-on:` points at, a student whose supervision folder is under education/, and the hub's own
+# owner, the one entry carrying `self: true`. A person's facts live here and nowhere else, so a name
+# is written once and every card, tag and map node that draws one reads it from this file.
+# `affiliation:` is a key of registries/organisations.yml, never a free string.
+
+schema:
+  - { field: key,         type: text,     required: true, label: "Person key" }
+  - { field: name,        type: text,     required: true }
+  - { field: affiliation, type: text,     help: "an organisations.yml key" }
+  - { field: role,        type: text,     help: "what this person is to the hub" }
+  - { field: orcid,       type: text }
+  - { field: email,       type: text }
+  - { field: links,       type: tags }
+  - { field: folder,      type: text,     help: "hub-relative folder of a student's supervision files" }
+  - { field: self,        type: checkbox, help: "true on the hub owner's own entry, exactly one" }
+
+entries:
+  - key: "rivera-lab"
+    name: "Ana Rivera"
+    affiliation: "northwood-university"
+    role: "co-supervisor (streaming systems)"
+
+  - key: "chen-graph"
+    name: "Wei Chen"
+    affiliation: "meridian-institute"
+    role: "co-author (graph transfer)"
+
+  - key: "owner"
+    name: "Dr. Dana Example"
+    affiliation: "northwood-university"
+    role: "principal investigator"
+    self: true

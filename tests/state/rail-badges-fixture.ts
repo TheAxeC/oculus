@@ -54,6 +54,8 @@ export function badgeSnapshot(empty = false): Snapshot {
             pillars: {},
             domains: {},
             funding: {},
+            people: {},
+            organisations: {},
             collections: {
                 funding: {
                     id: 'funding',
@@ -82,7 +84,11 @@ export function badgeSnapshot(empty = false): Snapshot {
             projectPillar: [],
             projectDomain: [],
             projectRelated: [],
-            fundingPillar: []
+            fundingPillar: [],
+            projectPerson: [],
+            jointWorkPerson: [],
+            personOrganisation: [],
+            fundingOrganisation: []
         },
         findings: []
     };

@@ -56,7 +56,11 @@ const RELATIONS: Relations = {
     projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingPillar: []
+    fundingPillar: [],
+    projectPerson: [],
+    jointWorkPerson: [],
+    personOrganisation: [],
+    fundingOrganisation: []
 };
 
 function project(id: string, venueId: string, type: string): Project {
@@ -185,6 +189,8 @@ function snapshot(items: Venue[] = VENUES): Snapshot {
             pillars: {},
             domains: {},
             funding: {},
+            people: {},
+            organisations: {},
             collections: { venues: collection(items.length === 0 ? [] : entries()) }
         },
         relations: RELATIONS,

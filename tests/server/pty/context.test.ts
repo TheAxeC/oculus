@@ -35,7 +35,7 @@ write('registries/pillars.yml', 'pillar: fixture\n');
 write('funding/funding.yml', 'funding: fixture\n');
 write('network/events.yml', 'events: fixture\n');
 write('education/education.yml', 'education: fixture\n');
-write('network/collaborations.yml', 'collaborations: fixture\n');
+write('network/joint-work.yml', 'joint-work: fixture\n');
 write('tasks/tasks.yml', 'tasks: fixture\n');
 
 const config: Record<string, unknown> = {
@@ -48,7 +48,7 @@ const config: Record<string, unknown> = {
     collections: [
         { key: 'tasks', file: 'tasks/tasks.yml' },
         { key: 'applications', file: 'applications/applications.yml' },
-        { key: 'collaborations', file: 'network/collaborations.yml' },
+        { key: 'joint-work', file: 'network/joint-work.yml' },
         { key: 'education', file: 'education/education.yml' },
         { key: 'events', file: 'network/events.yml' },
         { key: 'funding', file: 'funding/funding.yml' }
@@ -72,7 +72,7 @@ describe('portfolioContext', () => {
             '# funding/funding.yml',
             '# network/events.yml',
             '# education/education.yml',
-            '# network/collaborations.yml',
+            '# network/joint-work.yml',
             '# tasks/tasks.yml'
         ];
         let previous = -1;
@@ -86,7 +86,7 @@ describe('portfolioContext', () => {
     });
 
     it('has the exact size of this fixture index', () => {
-        expect(Buffer.byteLength(index)).toBe(469);
+        expect(Buffer.byteLength(index)).toBe(461);
     });
 
     it('ignores a nested scan root manifest while retaining its child projects', () => {

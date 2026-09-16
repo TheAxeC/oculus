@@ -185,6 +185,7 @@ describe('the real registrations', () => {
                 'archive',
                 'coauthor',
                 'project',
+                'person',
                 'editor',
                 'deposit',
                 'document',
@@ -206,7 +207,7 @@ describe('the real registrations', () => {
                 'events',
                 'education',
                 'applications',
-                'collaborations',
+                'joint-work',
                 'tasks',
                 'code'
             ].sort()
@@ -222,7 +223,7 @@ describe('the real registrations', () => {
             changes: { group: 'sessions', order: 5 },
             coauthor: { group: 'boards', order: 2 },
             code: { group: 'sources', order: 2 },
-            collaborations: { group: 'academic', order: 4 },
+            'joint-work': { group: 'academic', order: 4 },
             config: { group: 'system', order: 6 },
             data: { group: 'sources', order: 1 },
             deposit: { group: '', order: 0 },
@@ -247,6 +248,7 @@ describe('the real registrations', () => {
             map: { group: 'structure', order: 2 },
             memories: { group: 'personal', order: 0 },
             note: { group: '', order: 0 },
+            person: { group: '', order: 0 },
             present: { group: 'academic', order: 6 },
             pillars: { group: 'structure', order: 0 },
             project: { group: '', order: 0 },
@@ -362,7 +364,7 @@ describe('the real registrations', () => {
             'events',
             'education',
             'applications',
-            'collaborations',
+            'joint-work',
             'tasks',
             'code'
         ]);
@@ -515,7 +517,7 @@ describe('the real registrations', () => {
         const of = (key: string): string => glyphs[catalog[key]];
         expect(of('sessions.agents_glyph')).toBeDefined();
         expect(of('sessions.changes_glyph')).toBeDefined();
-        expect(of('sessions.agents_glyph')).not.toBe(of('views.collaborations_glyph'));
+        expect(of('sessions.agents_glyph')).not.toBe(of('views.joint-work_glyph'));
         expect(of('sessions.changes_glyph')).not.toBe(of('views.code_glyph'));
     });
 

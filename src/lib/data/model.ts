@@ -10,6 +10,8 @@ import type {
     Finding,
     Funding,
     Id,
+    Organisation,
+    Person,
     PresentSlide,
     Pillar,
     Project,
@@ -118,6 +120,8 @@ export type Entities = {
     pillars: Record<Id, Pillar>;
     domains: Record<Id, Domain>;
     funding: Record<Id, Funding>;
+    people: Record<Id, Person>;
+    organisations: Record<Id, Organisation>;
     collections: Record<Id, Collection>;
     /** What the generated feeds say, which is a summary rather than a set of entities. */
     feeds: Feeds;
@@ -138,6 +142,14 @@ export type Relations = {
     projectDomain: [Id, Id][];
     projectRelated: [Id, Id][];
     fundingPillar: [Id, Id][];
+    /** A project and a person its `collaborators:` names. */
+    projectPerson: [Id, Id][];
+    /** An entry of the joint-work collection and the person its `person:` names. */
+    jointWorkPerson: [Id, Id][];
+    /** A person and the organisation their `affiliation:` names. */
+    personOrganisation: [Id, Id][];
+    /** A funding scheme and the organisation its `funder:` names. */
+    fundingOrganisation: [Id, Id][];
 };
 
 /**
@@ -253,6 +265,8 @@ export type {
     Followup,
     Funding,
     Id,
+    Organisation,
+    Person,
     PresentEli5,
     PresentPanel,
     PresentSlide,

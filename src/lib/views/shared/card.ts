@@ -15,10 +15,14 @@ export function shownTags(tags: BoardTag[], expanded: boolean): BoardTag[] {
     return expanded ? tags : tags.slice(0, SHOWN);
 }
 
-/** The view one tag kind's entries open, and the empty string for a kind that is not a cross-link. */
+/**
+ * The view one tag kind's entries open, and the empty string for a kind that is not a cross-link.
+ * A collaborator tag names a person rather than a record of a collection, so it opens the Person
+ * view for that key; the funding tag opens the collection the scheme is an entry of.
+ */
 export function linkView(kind: string): string {
     if (kind === 'funding') return 'funding';
-    if (kind === 'collaborators') return 'collaborations';
+    if (kind === 'collaborators') return 'person';
     return '';
 }
 

@@ -56,7 +56,11 @@ const EMPTY_RELATIONS: Relations = {
     projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingPillar: []
+    fundingPillar: [],
+    projectPerson: [],
+    jointWorkPerson: [],
+    personOrganisation: [],
+    fundingOrganisation: []
 };
 
 /** The shape the hub's seven files write, with one field of every kind the view draws. */
@@ -210,7 +214,42 @@ function snapshot(projects: Record<string, Project> = PROJECTS): Snapshot {
             pillars: {},
             domains: {},
             funding: {},
+            people: {
+                naesens: {
+                    id: 'naesens',
+                    name: 'Maarten Naesens',
+                    links: [],
+                    projectIds: [],
+                    jointWorkIds: ['ecg-paper']
+                }
+            },
+            organisations: {},
             collections: {
+                'joint-work': {
+                    id: 'joint-work',
+                    title: 'Joint work',
+                    file: '/hub/network/joint-work.yml',
+                    schema: [
+                        { field: 'key', type: 'text' },
+                        { field: 'title', type: 'text' },
+                        { field: 'person', type: 'select', optionsFrom: 'people' },
+                        { field: 'status', type: 'select' }
+                    ],
+                    entries: [
+                        {
+                            id: 'ecg-paper',
+                            title: 'The ECG paper',
+                            fields: {
+                                key: 'ecg-paper',
+                                title: 'The ECG paper',
+                                person: 'naesens',
+                                status: 'active'
+                            },
+                            file: '/hub/network/joint-work.yml',
+                            index: 0
+                        }
+                    ]
+                },
                 events: {
                     id: 'events',
                     title: 'Talks and Events',
@@ -717,5 +756,15 @@ describe('what a reorder and a cleared control send', () => {
         const source = readFileSync('src/lib/views/shared/EntryForm.svelte', 'utf8');
         expect(source).toContain('return clearedValue(field in edits, entry !== null);');
         expect(source).toContain("if (text !== '') return text;");
+    });
+});
+
+describe('a joint-work card', () => {
+    it("draws its person as the control that opens them, by the registry's name", () => {
+        const body = html('joint-work');
+        expect(body).toContain(catalog['collection.open_person']);
+        expect(body).toContain('Maarten Naesens');
+        // The key itself is not what the card draws; the name the registry holds is.
+        expect(body).not.toContain('>naesens<');
     });
 });

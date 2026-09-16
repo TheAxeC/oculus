@@ -11,7 +11,7 @@ import { readCollections } from '../../src/lib/data/sources/collections.ts';
 const FILES: CollectionFile[] = [
     { key: 'data', file: 'registries/data.yml' },
     { key: 'events', file: 'network/events.yml' },
-    { key: 'collaborations', file: 'network/collaborations.yml' },
+    { key: 'joint-work', file: 'network/joint-work.yml' },
     { key: 'tasks', file: 'tasks/tasks.yml' },
     { key: 'code', file: 'registries/repos.yml' },
     { key: 'missing', file: 'nowhere/gone.yml' },
@@ -66,7 +66,7 @@ function buildHub(): string {
     );
     write(
         hub,
-        'network/collaborations.yml',
+        'network/joint-work.yml',
         [
             'title: Collaborations',
             'intro: who the work is with',
@@ -145,13 +145,13 @@ describe('readCollections', () => {
     it('records provenance on every entry and derives no identity', () => {
         const hub = buildHub();
         const { collections } = readCollections(hub, FILES);
-        const file = join(hub, 'network/collaborations.yml');
+        const file = join(hub, 'network/joint-work.yml');
 
-        expect(collections.collaborations.entries[0].provenance).toEqual({ file, index: 0 });
-        expect(collections.collaborations.entries[1].provenance).toEqual({ file, index: 1 });
+        expect(collections['joint-work'].entries[0].provenance).toEqual({ file, index: 0 });
+        expect(collections['joint-work'].entries[1].provenance).toEqual({ file, index: 1 });
         // Keyed by `key` here and by `title` in events; both come back exactly as read.
-        expect(collections.collaborations.entries[0].key).toBe('linkoping');
-        expect(collections.collaborations.entries[0].title).toBe('Linkoping');
+        expect(collections['joint-work'].entries[0].key).toBe('linkoping');
+        expect(collections['joint-work'].entries[0].title).toBe('Linkoping');
         expect(collections.events.entries[0].key).toBeUndefined();
     });
 

@@ -65,6 +65,7 @@ const VIEWS: Record<string, string> = {
     'Linkedin.svelte': 'h3=fs-lg',
     'Map.svelte': '.head=fs-sm | .empty=fs-md',
     'Memories.svelte': '.failed=fs-sm',
+    'Person.svelte': '.facts dt=fs-xxs | .block h3=fs-sm',
     'Present.svelte': '.counter=fs-xs',
     'Pillars.svelte': '.note, .said=fs-md',
     'Project.svelte':

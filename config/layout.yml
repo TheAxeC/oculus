@@ -87,7 +87,7 @@ tab_rollup:
 # Funding tab is the same violet as an in-prep chip on a card. Set `tone:` to force an urgency class
 # (`red` / `amber` / `green`) instead - used where a count means "act", not "here is how many".
 nav_live:
-  collaborations: { match: [exploring], label: exploring }
+  joint-work: { match: [exploring], label: exploring }
   funding:        { match: [in-prep, "in prep", submitted], label: undecided }
   education:      { match: [ongoing], label: ongoing }
   tasks:          { match: [todo, doing], label: open, tone: amber }

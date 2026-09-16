@@ -33,6 +33,7 @@
     import Tasks from './focus/Tasks.svelte';
     import { cardCursor } from '$lib/state/instance';
     import { labelOf, lanes, waiting, type Id, type Project } from '$lib/state/focus';
+    import { personNames } from '$lib/state/person';
     import { ticker } from '$lib/state/ticker';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
@@ -40,7 +41,7 @@
 
     const {
         clock: { minuteNow, startMinuteClock },
-        selectors: { collectionOf, configMap },
+        selectors: { configMap },
         entities: { portfolio },
         layout: { openView }
     } = useState();
@@ -74,20 +75,11 @@
     );
 
     const strip = $derived(
-        snapshot === null ? null : waiting(snapshot, config, collaboratorNames())
+        snapshot === null ? null : waiting(snapshot, config, personNames(snapshot))
     );
 
     /** What the last write on this board answered, whichever partial made it. */
     let said = $state('');
-
-    /** The collaborations file's own names, by the key a manifest waits on them with. */
-    function collaboratorNames(): Record<Id, string> {
-        const names: Record<Id, string> = {};
-        for (const entry of collectionOf('collaborations')?.entries ?? []) {
-            names[entry.id] = entry.title;
-        }
-        return names;
-    }
 
     /** Open one project as its own tab, the same tab a click on a board card opens. */
     function openProject(id: Id): void {

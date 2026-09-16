@@ -115,6 +115,8 @@ describe('attention lines', () => {
                 pillars: {},
                 domains: {},
                 funding: {},
+                people: {},
+                organisations: {},
                 collections: {}
             },
             relations: {
@@ -124,7 +126,11 @@ describe('attention lines', () => {
                 projectPillar: [],
                 projectDomain: [],
                 projectRelated: [],
-                fundingPillar: []
+                fundingPillar: [],
+                projectPerson: [],
+                jointWorkPerson: [],
+                personOrganisation: [],
+                fundingOrganisation: []
             },
             findings: []
         };

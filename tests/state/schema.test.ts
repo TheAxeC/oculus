@@ -45,7 +45,8 @@ const SOURCES = [
     'pillars',
     'domains',
     'funding',
-    'collaborations',
+    'people',
+    'organisations',
     'projects',
     'type_order',
     'status_legend',
@@ -111,22 +112,27 @@ function snapshot(): Snapshot {
                     pillarIds: []
                 }
             },
-            collections: {
-                collaborations: {
-                    id: 'collaborations',
-                    title: 'Collaborations',
-                    file: '/hub/network/collaborations.yml',
-                    entries: [
-                        {
-                            id: 'someone',
-                            title: 'Someone Else',
-                            fields: {},
-                            file: '/hub/network/collaborations.yml',
-                            index: 0
-                        }
-                    ]
+            people: {
+                someone: {
+                    id: 'someone',
+                    name: 'Someone Else',
+                    affiliation: 'twente',
+                    links: [],
+                    projectIds: [],
+                    jointWorkIds: []
                 }
-            }
+            },
+            organisations: {
+                twente: {
+                    id: 'twente',
+                    name: 'University of Twente',
+                    kind: 'university',
+                    links: [],
+                    personIds: ['someone'],
+                    fundingIds: []
+                }
+            },
+            collections: {}
         },
         relations: {
             projectVenue: [],
@@ -135,7 +141,11 @@ function snapshot(): Snapshot {
             projectPillar: [],
             projectDomain: [],
             projectRelated: [],
-            fundingPillar: []
+            fundingPillar: [],
+            projectPerson: [],
+            jointWorkPerson: [],
+            personOrganisation: [],
+            fundingOrganisation: []
         },
         findings: []
     };
@@ -194,7 +204,7 @@ describe('where the choices come from', () => {
         expect(choicesOf('funding')).toEqual([{ id: 'ZonMw', label: 'ZonMw AI' }]);
     });
 
-    it('resolves the collaborations collection and the projects themselves', () => {
+    it('resolves the people registry and the projects themselves', () => {
         expect(choicesOf('collaborators')).toEqual([{ id: 'someone', label: 'Someone Else' }]);
         expect(choicesOf('related')).toEqual([{ id: 'alpha', label: 'A title' }]);
     });

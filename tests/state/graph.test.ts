@@ -76,22 +76,17 @@ function snapshot(): Snapshot {
             },
             domains: {},
             funding: {},
-            collections: {
-                collaborations: {
-                    id: 'collaborations',
-                    title: 'Collaborations',
-                    file: '/hub/network/collaborations.yml',
-                    entries: [
-                        {
-                            id: 'person',
-                            title: 'Person Name',
-                            fields: { key: 'person', title: 'Person Name' },
-                            file: '/hub/network/collaborations.yml',
-                            index: 0
-                        }
-                    ]
+            people: {
+                person: {
+                    id: 'person',
+                    name: 'Person Name',
+                    links: [],
+                    projectIds: [],
+                    jointWorkIds: []
                 }
             },
+            organisations: {},
+            collections: {},
             feeds: NO_FEEDS,
             career: null
         },
@@ -102,7 +97,11 @@ function snapshot(): Snapshot {
             projectPillar: [],
             projectDomain: [],
             projectRelated: [],
-            fundingPillar: []
+            fundingPillar: [],
+            projectPerson: [],
+            jointWorkPerson: [],
+            personOrganisation: [],
+            fundingOrganisation: []
         },
         findings: []
     };

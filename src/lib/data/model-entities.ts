@@ -15,16 +15,19 @@ export type Finding = {
 /** The six scan tiers, the basename of each `dir` in the scan rules. */
 export type Tier = 'ideas' | 'active' | 'manuscripts' | 'software' | 'coauthor' | 'archive';
 
-/** The five registries, one per file readRegistries is given. */
-export type RegistryName = 'venues' | 'datasets' | 'pillars' | 'domains' | 'funding';
+/** The seven registries, one per file readRegistries is given. */
+export type RegistryName =
+    'venues' | 'datasets' | 'pillars' | 'domains' | 'funding' | 'people' | 'organisations';
 
-/** The five hub-relative registry paths, one per registry. Declared here, used by sources/registries. */
+/** The seven hub-relative registry paths, one per registry. Declared here, used by sources/registries. */
 export type RegistryFiles = {
     venues: string;
     datasets: string;
     pillars: string;
     domains: string;
     funding: string;
+    people: string;
+    organisations: string;
 };
 
 /** One entry of the `collections:` list in the layout config: a key and a hub-relative path. */
@@ -440,7 +443,7 @@ export type Project = {
     deadline?: string;
     /**
      * What the project waits for before it moves, the manifest's `waiting-on:`. An entry is a key
-     * of the collaborations collection or the id of another project, and nothing else; validate
+     * of the people registry or the id of another project, and nothing else; validate
      * reports a value that is neither, and the Focus strip draws each by the name it resolves to.
      */
     waitingOn: Id[];
@@ -463,7 +466,7 @@ export type Project = {
     datasetIds: Id[];
     pillarIds: Id[];
     domainIds: Id[];
-    /** Keys of the `collaborations` collection. Not a relation table: the entries are not entities. */
+    /** Keys of the people registry; the `projectPerson` table holds the same pairs from the other side. */
     collaborators: Id[];
     /**
      * The free-text venue prose, for a manifest that names no `venue_id`. The manifest schema does
@@ -560,6 +563,53 @@ export type Domain = {
 };
 
 /**
+ * One human, from registries/people.yml. It is the entity a manifest's `collaborators:`, a joint
+ * work's `person:` and a `waiting-on:` value name, so a person's name is written once and every
+ * surface that draws one reads it here.
+ *
+ * `affiliation` is a key of the organisation registry rather than the organisation itself, which is
+ * what keeps the pair JSON-safe: a person points at an organisation and the organisation lists its
+ * people, and neither holds the other resolved.
+ */
+export type Person = {
+    id: Id;
+    name: string;
+    /** Key of an organisations.yml entry; absent for a person the file records no affiliation for. */
+    affiliation?: Id;
+    /** What the person is to this hub in its own words: co-supervisor, co-author, student. */
+    role?: string;
+    orcid?: string;
+    email?: string;
+    links: string[];
+    /** A student's supervision folder, hub-relative, whose files the Person view lists. */
+    folder?: string;
+    /** True on the one entry that is the hub's owner; absent on every other. */
+    self?: boolean;
+    /** Projects whose `collaborators:` name this person; filled from the other side of the relation. */
+    projectIds: Id[];
+    /** Entries of the joint-work collection whose `person:` is this key, by entry id. */
+    jointWorkIds: Id[];
+};
+
+/**
+ * One organisation, from registries/organisations.yml. A person's `affiliation:` and a funding
+ * scheme's `funder:` are keys into it, so a university, a hospital or a funder is named once and
+ * spelled the same way wherever it is drawn.
+ */
+export type Organisation = {
+    id: Id;
+    name: string;
+    /** One of `university`, `hospital`, `funder`, `company` and `other`; validate checks it. */
+    kind?: string;
+    country?: string;
+    links: string[];
+    /** People whose `affiliation:` is this key. */
+    personIds: Id[];
+    /** Funding schemes whose `funder:` is this key. */
+    fundingIds: Id[];
+};
+
+/**
  * A funding scheme from funding/funding.yml. Its `key` is optional in that file by design, where
  * it is the cross-link anchor manifests name; an entry without one has no relations to resolve.
  */
@@ -573,6 +623,8 @@ export type Funding = {
     note?: string;
     /** The verbatim funder acknowledgment a manuscript pastes. */
     statement?: string;
+    /** Key of an organisations.yml entry: who funds the scheme. */
+    funder?: Id;
     link?: string;
     url?: string;
     /** An ISO date the scheme's own deadline is hidden from the Focus ticker until. */

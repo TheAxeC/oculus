@@ -1,4 +1,4 @@
-// Layer 1, data. Reads the five registry files into raw entries with provenance.
+// Layer 1, data. Reads the seven registry files into raw entries with provenance.
 // Server side only: it reads the filesystem and no client module may import it.
 // It validates nothing and resolves nothing. Every failure is a Finding; nothing here throws, so a
 // missing or broken registry costs its own entries and no more.
@@ -15,7 +15,7 @@ import type {
     RegistryName
 } from '../model.ts';
 
-/** The five hub-relative paths, one per registry; declared with the other types in model.ts. */
+/** The seven hub-relative paths, one per registry; declared with the other types in model.ts. */
 export type { RegistryFiles } from '../model.ts';
 
 /** The paths on the hub today; a caller may pass its own. */
@@ -24,11 +24,13 @@ export const REGISTRY_FILES: RegistryFiles = {
     datasets: 'registries/data.yml',
     pillars: 'registries/pillars.yml',
     domains: 'registries/domains.yml',
-    funding: 'funding/funding.yml'
+    funding: 'funding/funding.yml',
+    people: 'registries/people.yml',
+    organisations: 'registries/organisations.yml'
 };
 
 /**
- * How each file names its entry list and its id field. The four registries keyed by `key` and the
+ * How each file names its entry list and its id field. The six registries keyed by `key` and the
  * venue registry keyed by `id` are what the files hold; funding's `key` is the cross-link anchor a
  * manifest names and its own schema marks it optional, so an entry without one is not a finding.
  */
@@ -37,10 +39,20 @@ const SHAPES: Record<RegistryName, { list: string; idField: string; idRequired: 
     datasets: { list: 'datasets', idField: 'key', idRequired: true },
     pillars: { list: 'entries', idField: 'key', idRequired: true },
     domains: { list: 'entries', idField: 'key', idRequired: true },
-    funding: { list: 'entries', idField: 'key', idRequired: false }
+    funding: { list: 'entries', idField: 'key', idRequired: false },
+    people: { list: 'entries', idField: 'key', idRequired: true },
+    organisations: { list: 'entries', idField: 'key', idRequired: true }
 };
 
-const NAMES: RegistryName[] = ['venues', 'datasets', 'pillars', 'domains', 'funding'];
+const NAMES: RegistryName[] = [
+    'venues',
+    'datasets',
+    'pillars',
+    'domains',
+    'funding',
+    'people',
+    'organisations'
+];
 
 function empty(): RawRegistry {
     return { entries: [], meta: {} };
@@ -115,7 +127,7 @@ function readRegistry(
 }
 
 /**
- * Read the five registries. Each returns its entries and the file's other top-level keys as `meta`,
+ * Read the seven registries. Each returns its entries and the file's other top-level keys as `meta`,
  * both untouched apart from the `registry`, `key` and `file` provenance added to every entry. A file
  * that is missing, does not parse, is not a map, or has no entry list gives an empty list and one
  * finding; nothing here throws and no entry is repaired.

@@ -1,0 +1,74 @@
+// Layer 2, client state. One person, joined to everything the hub knows about them: the registry
+// entry, the organisation they are affiliated to, the joint work that names them, the projects whose
+// `collaborators:` name them, and a student's supervision folder.
+//
+// Pure, so the Person view is tested without a browser: every join reads the snapshot it is given and
+// nothing else. The joins go through the relation tables rather than by scanning, since the tables
+// are what data/normalise.ts already wrote from both sides and a second scan here could disagree
+// with them.
+
+import type { Entry, Id, Organisation, Person, Project, Snapshot } from '../data/model.ts';
+import { byKey } from '../data/guards.ts';
+import { JOINT_WORK } from './collection.ts';
+
+/** One person and what they are joined to; every join is empty for a key the registry does not hold. */
+export type PersonJoin = {
+    person: Person | null;
+    organisation: Organisation | null;
+    /** The entries of the joint-work collection whose `person:` is this key, in the file's order. */
+    jointWork: Entry[];
+    /** The projects whose `collaborators:` name this key, by project id. */
+    projects: Project[];
+    /** A student's supervision folder, hub-relative, and the empty string for anyone else. */
+    folder: string;
+};
+
+/**
+ * Every person's name by their key. It is what a collaborator tag, the waiting line, a lane card and
+ * the Map's node all draw, so the four of them read this one rule and a person renamed in the
+ * registry is renamed on every surface at once.
+ */
+export function personNames(snapshot: Snapshot | null): Record<Id, string> {
+    const names: Record<Id, string> = {};
+    for (const one of Object.values(snapshot?.entities.people ?? {})) {
+        names[one.id] = one.name === '' ? one.id : one.name;
+    }
+    return names;
+}
+
+/** One person's name by their key, and the key itself when the registry holds no such person. */
+export function personName(snapshot: Snapshot | null, key: Id): string {
+    const held = snapshot === null ? undefined : byKey(snapshot.entities.people, key);
+    return held === undefined || held.name === '' ? key : held.name;
+}
+
+/** The joint-work entries naming one person, in the order the collection file writes them. */
+function jointWorkOf(snapshot: Snapshot, key: Id): Entry[] {
+    const collection = byKey(snapshot.entities.collections, JOINT_WORK);
+    const ids = new Set(
+        snapshot.relations.jointWorkPerson.filter((pair) => pair[1] === key).map((pair) => pair[0])
+    );
+    return (collection?.entries ?? []).filter((entry) => ids.has(entry.id));
+}
+
+/** One person joined to their organisation, joint work, projects and folder. */
+export function personJoin(snapshot: Snapshot | null, key: Id): PersonJoin {
+    const person = snapshot === null ? undefined : byKey(snapshot.entities.people, key);
+    if (snapshot === null || person === undefined) {
+        return { person: null, organisation: null, jointWork: [], projects: [], folder: '' };
+    }
+    const affiliation =
+        person.affiliation === undefined
+            ? undefined
+            : byKey(snapshot.entities.organisations, person.affiliation);
+    const projects = person.projectIds
+        .map((id) => byKey(snapshot.entities.projects, id))
+        .filter((project): project is Project => project !== undefined);
+    return {
+        person,
+        organisation: affiliation ?? null,
+        jointWork: jointWorkOf(snapshot, key),
+        projects,
+        folder: person.folder ?? ''
+    };
+}

@@ -604,7 +604,7 @@ describe('the groups of the real config', () => {
             'events',
             'education',
             'applications',
-            'collaborations',
+            'joint-work',
             'tasks',
             'code'
         ]);
@@ -616,7 +616,7 @@ describe('the groups of the real config', () => {
             'events',
             'education',
             'applications',
-            'collaborations',
+            'joint-work',
             'tasks',
             'present'
         ]);
@@ -687,7 +687,7 @@ describe('the groups of the real config', () => {
             'events',
             'education',
             'applications',
-            'collaborations',
+            'joint-work',
             'tasks',
             'present'
         ]);

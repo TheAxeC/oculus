@@ -12,6 +12,7 @@ domain: method
 pillar: [tensors]
 datasets: [stream-bench]
 related: [tensor-sketch, online-clustering]
+collaborators: [rivera-lab]
 deadline: "2026-08-15"
 eli5: Flag anomalies in a fast data stream by tracking a low-rank model of "normal" and watching the residual.
 results:

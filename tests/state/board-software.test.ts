@@ -23,7 +23,11 @@ const NO_RELATIONS: Relations = {
     projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingPillar: []
+    fundingPillar: [],
+    projectPerson: [],
+    jointWorkPerson: [],
+    personOrganisation: [],
+    fundingOrganisation: []
 };
 
 const PRESET: BoardPreset = presetFor('projects');
@@ -78,6 +82,8 @@ function snapshot(): Snapshot {
             pillars: {},
             domains: {},
             funding: {},
+            people: {},
+            organisations: {},
             collections: {}
         },
         relations: { ...NO_RELATIONS, projectRelated: [['kit', 'paper']] },

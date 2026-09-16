@@ -12,7 +12,7 @@ const COLLECTION_ORDER = [
     'events',
     'education',
     'applications',
-    'collaborations',
+    'joint-work',
     'tasks'
 ] as const;
 

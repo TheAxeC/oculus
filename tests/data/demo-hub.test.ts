@@ -4,7 +4,7 @@
 // hub's findings belong to the hub.
 //
 // The counts are pinned here, unlike the real hub's, because this folder does not grow: eleven
-// manifests over the six tiers, the five registries, and the eleven collection files. A count that
+// manifests over the six tiers, the seven registries, and the eleven collection files. A count that
 // moves means the demo changed, which is the thing a test over a fixture is for.
 //
 // The browser layer serves a copy of this folder, so a finding it would raise is caught here, in
@@ -48,26 +48,48 @@ describe('the demo hub', () => {
         expect(tool.relatedIds).toEqual(['graph-bandits', 'graph-transfer']);
     });
 
-    it('holds the five registries', () => {
+    it('holds the seven registries', () => {
         expect({
             venues: Object.keys(snapshot.entities.venues).length,
             datasets: Object.keys(snapshot.entities.datasets).length,
             pillars: Object.keys(snapshot.entities.pillars).length,
             domains: Object.keys(snapshot.entities.domains).length,
-            funding: Object.keys(snapshot.entities.funding).length
-        }).toEqual({ venues: 5, datasets: 5, pillars: 3, domains: 3, funding: 2 });
+            funding: Object.keys(snapshot.entities.funding).length,
+            people: Object.keys(snapshot.entities.people).length,
+            organisations: Object.keys(snapshot.entities.organisations).length
+        }).toEqual({
+            venues: 5,
+            datasets: 5,
+            pillars: 3,
+            domains: 3,
+            funding: 2,
+            people: 3,
+            organisations: 2
+        });
+    });
+
+    it('joins each joint-work entry to its person and each person to their organisation', () => {
+        expect(snapshot.relations.jointWorkPerson).toEqual([
+            ['chen-graph', 'chen-graph'],
+            ['rivera-lab', 'rivera-lab']
+        ]);
+        expect(snapshot.entities.people['rivera-lab'].affiliation).toBe('northwood-university');
+        expect(snapshot.entities.organisations['northwood-university'].personIds).toEqual([
+            'owner',
+            'rivera-lab'
+        ]);
     });
 
     it('holds the twelve collections, including the four editable registries', () => {
         expect(Object.keys(snapshot.entities.collections).sort()).toEqual([
             'applications',
             'code',
-            'collaborations',
             'data',
             'domains',
             'education',
             'events',
             'funding',
+            'joint-work',
             'pillars',
             'statements',
             'tasks',

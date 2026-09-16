@@ -27,7 +27,7 @@ text:
             author_glyph: author
             clipboard_blocked: clipboard blocked
             code_glyph: published
-            collaborations: Collaborations
+            collaborators: Collaborators
             collaborator_glyph: collab
             collapse_glyph: collapse
             copied: copied

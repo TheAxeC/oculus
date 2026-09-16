@@ -195,7 +195,7 @@
         } else if (node.kind === 'line') {
             openView('pillars');
         } else {
-            openView('collaborations');
+            openView('person', { key: node.entityId, label: node.label });
         }
     }
 

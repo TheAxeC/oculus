@@ -60,7 +60,11 @@ const EMPTY_RELATIONS: Relations = {
     projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingPillar: []
+    fundingPillar: [],
+    projectPerson: [],
+    jointWorkPerson: [],
+    personOrganisation: [],
+    fundingOrganisation: []
 };
 
 function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
@@ -169,22 +173,17 @@ function snapshot(): Snapshot {
             },
             domains: {},
             funding: {},
-            collections: {
-                collaborations: {
-                    id: 'collaborations',
-                    title: 'Collaborations',
-                    file: '/hub/network/collaborations.yml',
-                    entries: [
-                        {
-                            id: 'someone',
-                            title: 'Someone Else',
-                            fields: {},
-                            file: '/hub/network/collaborations.yml',
-                            index: 0
-                        }
-                    ]
+            people: {
+                someone: {
+                    id: 'someone',
+                    name: 'Someone Else',
+                    links: [],
+                    projectIds: [],
+                    jointWorkIds: []
                 }
-            }
+            },
+            organisations: {},
+            collections: {}
         },
         relations: EMPTY_RELATIONS,
         findings: []

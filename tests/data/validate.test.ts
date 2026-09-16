@@ -64,6 +64,35 @@ function registry(name: RegistryName, keys: string[]): RawRegistry {
     };
 }
 
+/** The people registry: one entry per key, each affiliated to the one organisation below. */
+function people(keys: string[]): RawRegistry {
+    return {
+        entries: keys.map((key, at) => ({
+            registry: 'people',
+            key,
+            file: '/hub/people.yml',
+            name: 'Someone Else',
+            affiliation: 'twente',
+            ...(at === 0 ? { self: true } : {})
+        })),
+        meta: {}
+    };
+}
+
+/** The organisation registry: one entry per key, each a university. */
+function organisations(keys: string[]): RawRegistry {
+    return {
+        entries: keys.map((key) => ({
+            registry: 'organisations',
+            key,
+            file: '/hub/organisations.yml',
+            name: 'University of Twente',
+            kind: 'university'
+        })),
+        meta: {}
+    };
+}
+
 function collection(key: string, entries: Record<string, unknown>[]): RawCollection {
     const file = `/hub/${key}.yml`;
     return {
@@ -83,11 +112,13 @@ function portfolio(over: Partial<RawPortfolio> = {}): RawPortfolio {
             datasets: registry('datasets', ['mimic']),
             pillars: registry('pillars', ['federated']),
             domains: registry('domains', ['heart']),
-            funding: registry('funding', ['FAIR'])
+            funding: registry('funding', ['FAIR']),
+            people: people(['someone']),
+            organisations: organisations(['twente'])
         },
         collections: {
-            collaborations: collection('collaborations', [
-                { key: 'someone', title: 'Someone Else' }
+            'joint-work': collection('joint-work', [
+                { key: 'someone', title: 'A shared paper', person: 'someone' }
             ])
         },
         feeds: NO_FEEDS,
@@ -240,13 +271,13 @@ describe('validate', () => {
         ]);
     });
 
-    it('reports a collaborator that names no entry of the collaborations collection', () => {
+    it('reports a collaborator that names no entry of the people registry', () => {
         expect(lines({ collaborators: ['someone', 'nobody'] })).toEqual([
-            'collaborators: collaborators names no collaborator: nobody'
+            'collaborators: collaborators names no person: nobody'
         ]);
     });
 
-    it('takes a waiting-on value that is a collaborator key and one that is a project id', () => {
+    it('takes a waiting-on value that is a person key and one that is a project id', () => {
         const held = manifest({ 'waiting-on': ['someone', 'bravo'] }, 'alpha');
         expect(validate(portfolio({ manifests: [held, manifest({}, 'bravo')] }), RULES)).toEqual(
             []
@@ -259,19 +290,21 @@ describe('validate', () => {
         ]);
     });
 
-    it('reports a waiting-on value that names neither a collaborator nor a project', () => {
+    it('reports a waiting-on value that names neither a person nor a project', () => {
         expect(lines({ 'waiting-on': ['someone', 'nobody'] })).toEqual([
-            'waiting-on: waiting-on names no collaborator or project: nobody'
+            'waiting-on: waiting-on names no person or project: nobody'
         ]);
     });
 
-    it('reports every collaborator when the collaborations collection is not there', () => {
+    it('reports every collaborator when the people registry is not there', () => {
+        const held = portfolio();
         const raw = portfolio({
             manifests: [manifest({ collaborators: ['someone'] })],
+            registries: { ...held.registries, people: { entries: [], meta: {} } },
             collections: {}
         });
         expect(validate(raw, RULES).map((finding) => finding.message)).toEqual([
-            'collaborators names no collaborator: someone'
+            'collaborators names no person: someone'
         ]);
     });
 
@@ -385,10 +418,10 @@ describe('validate', () => {
 
     it('reports a collection file whose schema is not a list of field maps', () => {
         const raw = portfolio();
-        raw.collections.collaborations.meta.schema = 'title, status';
+        raw.collections['joint-work'].meta.schema = 'title, status';
         expect(validate(raw, RULES)).toEqual([
             {
-                file: '/hub/collaborations.yml',
+                file: '/hub/joint-work.yml',
                 key: 'schema',
                 message: 'schema a string is not a list of maps naming a field and a type'
             }
@@ -397,7 +430,7 @@ describe('validate', () => {
 
     it('reports nothing for a collection file whose schema is in order, or has none', () => {
         const raw = portfolio();
-        raw.collections.collaborations.meta.schema = [
+        raw.collections['joint-work'].meta.schema = [
             { field: 'title', type: 'text', required: true },
             { field: 'status', type: 'select', options: ['active'] }
         ];
@@ -489,5 +522,112 @@ describe('validate', () => {
             '/hub/projects/active/zulu/project.yml nonesuch',
             '/hub/projects/active/zulu/project.yml type'
         ]);
+    });
+});
+
+describe('validate, the people and organisation registries', () => {
+    /** The messages of one portfolio, so a case asserts the sentences and not the provenance. */
+    function said(raw: RawPortfolio): string[] {
+        return validate(raw, RULES).map((finding) => finding.message);
+    }
+
+    /** A portfolio whose people registry is replaced by the entries given. */
+    function withPeople(entries: Record<string, unknown>[]): RawPortfolio {
+        const held = portfolio();
+        return {
+            ...held,
+            registries: {
+                ...held.registries,
+                people: {
+                    entries: entries.map((one) => ({
+                        registry: 'people',
+                        key: '',
+                        file: '/hub/people.yml',
+                        ...one
+                    })),
+                    meta: {}
+                }
+            }
+        };
+    }
+
+    it('reports an affiliation that names no organisation', () => {
+        const raw = withPeople([
+            { key: 'someone', name: 'Someone Else', affiliation: 'nowhere', self: true }
+        ]);
+        expect(said(raw)).toEqual(['affiliation names no organisation: "nowhere"']);
+    });
+
+    it('takes a person with no affiliation at all', () => {
+        const raw = withPeople([{ key: 'someone', name: 'Someone Else', self: true }]);
+        expect(said(raw)).toEqual([]);
+    });
+
+    it('reports a people registry that carries no self entry, and one that carries two', () => {
+        const none = withPeople([{ key: 'someone', name: 'Someone Else' }]);
+        expect(said(none)).toEqual(['0 people entries carry self: true, and exactly one may']);
+        const two = withPeople([
+            { key: 'someone', name: 'Someone Else', self: true },
+            { key: 'other', name: 'Other One', self: true }
+        ]);
+        expect(said(two)).toEqual(['2 people entries carry self: true, and exactly one may']);
+    });
+
+    it('reports an organisation kind outside the five words', () => {
+        const held = portfolio();
+        const raw: RawPortfolio = {
+            ...held,
+            registries: {
+                ...held.registries,
+                organisations: {
+                    entries: [
+                        {
+                            registry: 'organisations',
+                            key: 'twente',
+                            file: '/hub/organisations.yml',
+                            name: 'University of Twente',
+                            kind: 'institute'
+                        }
+                    ],
+                    meta: {}
+                }
+            }
+        };
+        expect(said(raw)).toContain('kind "institute" is not one of the organisation kinds');
+    });
+
+    it('reports a joint-work entry with no person and one whose person is unknown', () => {
+        const raw = portfolio({
+            collections: {
+                'joint-work': collection('joint-work', [
+                    { key: 'a', title: 'A shared paper' },
+                    { key: 'b', title: 'Another', person: 'nobody' }
+                ])
+            }
+        });
+        expect(said(raw)).toEqual(['entry has no person', 'person names no person: "nobody"']);
+    });
+
+    it('reports a funding scheme whose funder names no organisation', () => {
+        const held = portfolio();
+        const raw: RawPortfolio = {
+            ...held,
+            registries: {
+                ...held.registries,
+                funding: {
+                    entries: [
+                        {
+                            registry: 'funding',
+                            key: 'FAIR',
+                            file: '/hub/funding.yml',
+                            title: 'A grant',
+                            funder: 'nowhere'
+                        }
+                    ],
+                    meta: {}
+                }
+            }
+        };
+        expect(said(raw)).toEqual(['funder names no organisation: "nowhere"']);
     });
 });

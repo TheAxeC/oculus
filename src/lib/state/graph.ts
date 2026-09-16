@@ -3,6 +3,7 @@
 
 import type { Project, Snapshot } from '../data/model.ts';
 import { byKey } from '../data/guards.ts';
+import { personNames } from './person.ts';
 
 export type GraphKind = 'project' | 'line' | 'collaborator';
 export type EdgeKind = 'membership' | 'collaborator' | 'related';
@@ -77,11 +78,6 @@ export const DEFAULT_BOUNDS: Bounds = { width: 1000, height: 680, pad: 48 };
 
 function archived(project: Project): string | undefined {
     return project.tier === 'archive' || project.tier === 'coauthor' ? project.type : undefined;
-}
-
-function collaborationNames(snapshot: Snapshot): Map<string, string> {
-    const collection = byKey(snapshot.entities.collections, 'collaborations');
-    return new Map((collection?.entries ?? []).map((entry) => [entry.id, entry.title || entry.id]));
 }
 
 /** Build only nodes reached by visible projects and only edges whose two ends are visible. */
@@ -177,12 +173,12 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Grap
             radius: 11
         });
     }
-    const names = collaborationNames(snapshot);
+    const names = personNames(snapshot);
     for (const id of collaboratorIds) {
         nodes.push({
             id: `collaborator::${id}`,
             entityId: id,
-            label: names.get(id) ?? id,
+            label: byKey(names, id) ?? id,
             kind: 'collaborator',
             degree: 0,
             radius: 11

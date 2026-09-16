@@ -55,7 +55,7 @@ const COLLECTIONS: Record<string, string> = {
     funding: 'funding',
     event: 'events',
     teaching: 'education',
-    collab: 'collaborations',
+    collab: 'joint-work',
     task: 'tasks',
     position: 'applications'
 };
@@ -248,7 +248,7 @@ export function ticker(snapshot: Snapshot, config: Record<string, unknown>, now:
         else dated.push({ category: 'funding', line });
     }
 
-    /** Talks, teaching, tasks, positions and collaborations: one rule over five files. */
+    /** Talks, teaching, tasks, positions and joint work: one rule over five files. */
     for (const category of ENTRY_CATEGORIES) {
         const key = COLLECTIONS[category];
         const statuses = collectionStatuses(collections[key]);

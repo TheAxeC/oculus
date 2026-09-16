@@ -25,6 +25,8 @@ text:
         fundstmt_tip: verbatim funder acknowledgment - paste into a manuscript's Funding section
         grip_glyph: grip
         link_glyph: link
+        open_person: Open this person as their own tab
+        person_glyph: collab
         meta_add: + add row
         meta_label: Label
         meta_remove: Remove row
@@ -50,8 +52,8 @@ text:
         applications_glyph: inbox
         code: Code
         code_glyph: code
-        collaborations: Collaborations
-        collaborations_glyph: collab
+        joint-work: Joint work
+        joint-work_glyph: collab
         education: Education & Service
         education_glyph: teaching
         events: Talks & Events

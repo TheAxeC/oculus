@@ -21,8 +21,8 @@ function write(hub: string, rel: string, body: string): void {
 }
 
 /**
- * A hub with venues keyed by `id`, datasets under the `datasets` list key, pillars whole,
- * domains unparseable, and funding missing from disk.
+ * A hub with venues keyed by `id`, datasets under the `datasets` list key, pillars whole, domains
+ * unparseable, people and organisations whole, and funding missing from disk.
  */
 function buildHub(): string {
     const hub = scratch();
@@ -59,6 +59,27 @@ function buildHub(): string {
         )
     );
     write(hub, REGISTRY_FILES.domains, 'entries: "unterminated\n  - [\n');
+    write(
+        hub,
+        REGISTRY_FILES.people,
+        [
+            'schema: []',
+            'entries:',
+            '  - { key: naesens, name: Maarten Naesens, affiliation: ku-leuven, role: host }',
+            '  - { key: me, name: The Owner, self: true }',
+            '  - { name: nameless }',
+            ''
+        ].join('\n')
+    );
+    write(
+        hub,
+        REGISTRY_FILES.organisations,
+        [
+            'entries:',
+            '  - { key: ku-leuven, name: KU Leuven, kind: university, country: BE }',
+            ''
+        ].join('\n')
+    );
     return hub;
 }
 
@@ -173,6 +194,36 @@ describe('readRegistries', () => {
             file: join(hub, REGISTRY_FILES.pillars),
             key: 'entries[0]',
             message: 'entry is not a map of keys'
+        });
+    });
+    it('reads the people and organisation registries, keyed by their own `key`', () => {
+        const hub = buildHub();
+        const out = readRegistries(hub);
+
+        expect(out.people.entries.map((entry) => entry.key)).toEqual(['naesens', 'me', '']);
+        expect(out.people.entries[0]).toEqual({
+            key: 'naesens',
+            name: 'Maarten Naesens',
+            affiliation: 'ku-leuven',
+            role: 'host',
+            registry: 'people',
+            file: join(hub, REGISTRY_FILES.people)
+        });
+        expect(out.people.entries[1].self).toBe(true);
+        expect(out.organisations.entries).toEqual([
+            {
+                key: 'ku-leuven',
+                name: 'KU Leuven',
+                kind: 'university',
+                country: 'BE',
+                registry: 'organisations',
+                file: join(hub, REGISTRY_FILES.organisations)
+            }
+        ]);
+        expect(out.findings).toContainEqual({
+            file: join(hub, REGISTRY_FILES.people),
+            key: 'entries[2]',
+            message: 'entry has no string key'
         });
     });
 });

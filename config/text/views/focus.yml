@@ -22,7 +22,7 @@ text:
             conference_call_approx: call closes ~{0}
             days: days
             days_ago: '{0}d ago'
-            dlcat_collab: collaborations
+            dlcat_collab: joint work
             dlcat_conference: conference calls
             dlcat_event_label: talks & events
             dlcat_funding: funding
@@ -73,7 +73,7 @@ text:
             venue_count: '{0} x{1}'
             venue_load_tail: (>={0} in flight - consider spreading)
             word_application: application
-            word_collaboration: collaboration
+            word_collaboration: joint work
             word_commitment: commitment
             word_event: event
             word_task: task

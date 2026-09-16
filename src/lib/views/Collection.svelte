@@ -7,7 +7,7 @@
         events: { group: 'academic', order: 1 },
         education: { group: 'academic', order: 2 },
         applications: { group: 'academic', order: 3 },
-        collaborations: { group: 'academic', order: 4 },
+        'joint-work': { group: 'academic', order: 4 },
         tasks: { group: 'academic', order: 5 },
         code: { group: 'sources', order: 2 },
         statements: { group: 'sources', order: 3 }

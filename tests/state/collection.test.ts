@@ -69,6 +69,35 @@ describe('kindOf', () => {
         expect(kindOf('kind', 'text')).toBe('text');
         expect(kindOf('weight', 'slider')).toBe('text');
     });
+
+    it('draws a field whose choices come from the people registry as a person', () => {
+        expect(kindOf('person', 'select', 'people')).toBe('person');
+        // The rule is the schema's own options_from and not the field's name.
+        expect(kindOf('lead', 'select', 'people')).toBe('person');
+        expect(kindOf('person', 'select')).toBe('text');
+        expect(kindOf('venue_id', 'select', 'venues')).toBe('text');
+    });
+});
+
+describe('drawnFields, a person field', () => {
+    it('carries the person key as its one value, in the schema order', () => {
+        const entry = {
+            id: 'ecg-paper',
+            title: 'The ECG paper',
+            fields: { title: 'The ECG paper', person: 'naesens', status: 'active' },
+            file: '/hub/network/joint-work.yml',
+            index: 0
+        };
+        const schema = [
+            { field: 'title', type: 'text' },
+            { field: 'person', type: 'select', optionsFrom: 'people' },
+            { field: 'status', type: 'select' }
+        ];
+        expect(drawnFields(entry, schema).map((one) => [one.field, one.kind, one.values])).toEqual([
+            ['person', 'person', ['naesens']],
+            ['status', 'status', ['active']]
+        ]);
+    });
 });
 
 describe('raw form fields', () => {
@@ -487,9 +516,9 @@ describe('crossLinks', () => {
         ]);
     });
 
-    it("groups the projects a collaborator's key names", () => {
-        const who = entry(0, { title: 'Naesens' });
-        expect(crossLinks({ ...who, id: 'naesens' }, 'collaborations', projects, [])).toEqual([
+    it("groups the projects a joint-work entry's person names", () => {
+        const who = entry(0, { title: 'A shared paper', person: 'naesens' });
+        expect(crossLinks({ ...who, id: 'naesens-paper' }, 'joint-work', projects, [])).toEqual([
             {
                 type: 'work',
                 count: 1,

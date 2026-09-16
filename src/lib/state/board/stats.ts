@@ -24,19 +24,17 @@ export type WaitingLine = { kind: 'people' | 'review' | 'blocked'; text: string 
 
 /**
  * What a project is waiting on. Explicit people win over submission review, which wins over a
- * generic external block. A `waiting-on:` value is a collaborator drawn by name or another project
+ * generic external block. A `waiting-on:` value is a person drawn by name or another project
  * drawn by its label, through the one rule of waiting.ts.
  */
 export function waitingLine(
     project: Project,
     venues: Record<Id, Venue>,
-    collaborators: Record<Id, string>,
+    people: Record<Id, string>,
     projects: Record<Id, Project> = {}
 ): WaitingLine | null {
     if (project.waitingOn.length > 0) {
-        const names = project.waitingOn
-            .map((id) => waitingLabel(id, collaborators, projects))
-            .join(', ');
+        const names = project.waitingOn.map((id) => waitingLabel(id, people, projects)).join(', ');
         return { kind: 'people', text: t('project.helper.waiting_on', names) };
     }
     if (project.chips.includes('submitted')) {

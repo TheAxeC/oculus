@@ -13,6 +13,7 @@
     // cursor moves over, so a lane card is reachable by key like every card the primitive draws.
 
     import Tag from '$lib/ui/Tag.svelte';
+    import { personNames } from '$lib/state/person';
     import { waitingLabel } from '$lib/state/waiting';
     import Empty from '$lib/ui/Empty.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
@@ -40,7 +41,7 @@
     import { useState } from '$lib/state/use';
 
     const {
-        selectors: { collectionOf, configMap },
+        selectors: { configMap },
         entities: { portfolio },
         writes: { writeManifest },
         layout: { openView }
@@ -77,15 +78,6 @@
     /** The project being dragged, and the lane it came from. */
     let dragging: { id: Id; from: string } | null = null;
 
-    /** The collaborations file's own names, by the key a manifest waits on them with. */
-    function collaboratorNames(): Record<Id, string> {
-        const names: Record<Id, string> = {};
-        for (const entry of collectionOf('collaborations')?.entries ?? []) {
-            names[entry.id] = entry.title;
-        }
-        return names;
-    }
-
     /** The deadline badge of a card: how overdue it is, how long is left, or the date itself. */
     function deadline(project: Project): { label: string; tone?: string } | null {
         const date = project.deadline;
@@ -100,7 +92,7 @@
 
     /** What a card says it is waiting on: the people it names, else the venue, else that it is blocked. */
     function waitLine(project: Project): string {
-        const names = collaboratorNames();
+        const names = personNames(snapshot);
         if (project.waitingOn.length > 0) {
             const held = snapshot?.entities.projects ?? {};
             const who = project.waitingOn.map((key) => waitingLabel(key, names, held)).join(', ');

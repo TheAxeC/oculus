@@ -49,7 +49,11 @@ const EMPTY_RELATIONS: Relations = {
     projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingPillar: []
+    fundingPillar: [],
+    projectPerson: [],
+    jointWorkPerson: [],
+    personOrganisation: [],
+    fundingOrganisation: []
 };
 
 function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
@@ -234,6 +238,8 @@ function snapshot(): Snapshot {
                 }),
                 sent: scheme('sent', { title: 'A grant sent', status: 'submitted' })
             },
+            people: {},
+            organisations: {},
             collections: {
                 funding: collection('funding', [
                     {
@@ -259,8 +265,8 @@ function snapshot(): Snapshot {
                     { title: 'A position', status: 'active', deadline: '2026-09-14' },
                     { title: 'One out for an answer', status: 'applied' }
                 ]),
-                collaborations: collection('collaborations', [
-                    { key: 'someone', title: 'Some One', status: 'active' }
+                'joint-work': collection('joint-work', [
+                    { key: 'someone', title: 'A shared paper', person: 'someone', status: 'active' }
                 ]),
                 tasks: collection(
                     'tasks',

@@ -168,8 +168,25 @@ function portfolio(): RawPortfolio {
             ]),
             domains: entries('domains', [{ key: 'heart', title: 'Cardiology' }]),
             funding: entries('funding', [
-                { key: 'FAIR', title: 'Flanders AI', tags: ['flanders'] },
+                { key: 'FAIR', title: 'Flanders AI', tags: ['flanders'], funder: 'fwo' },
                 { title: 'A scheme with no key' }
+            ]),
+            people: entries('people', [
+                {
+                    key: 'someone',
+                    name: 'Someone Else',
+                    affiliation: 'twente',
+                    role: 'co-author',
+                    orcid: '0000-0000-0000-0000',
+                    email: 'someone@example.invalid',
+                    links: ['https://example.invalid/someone'],
+                    self: true
+                },
+                { key: 'nobody-home', name: 'Nobody Home', affiliation: 'nowhere' }
+            ]),
+            organisations: entries('organisations', [
+                { key: 'twente', name: 'University of Twente', kind: 'university', country: 'NL' },
+                { key: 'fwo', name: 'Research Foundation Flanders', kind: 'funder' }
             ])
         },
         collections: {
@@ -329,7 +346,9 @@ describe('normalise, the field mapping', () => {
                     datasets: entries('datasets', []),
                     pillars: entries('pillars', []),
                     domains: entries('domains', []),
-                    funding: entries('funding', [])
+                    funding: entries('funding', []),
+                    people: entries('people', []),
+                    organisations: entries('organisations', [])
                 },
                 collections: {},
                 feeds: NO_FEEDS,
@@ -498,7 +517,11 @@ describe('normalise, the relations', () => {
             projectPillar: [['alpha', 'federated']],
             projectDomain: [['alpha', 'heart']],
             projectRelated: [['alpha', 'beta']],
-            fundingPillar: [['FAIR', 'federated']]
+            fundingPillar: [['FAIR', 'federated']],
+            projectPerson: [['alpha', 'someone']],
+            jointWorkPerson: [],
+            personOrganisation: [['someone', 'twente']],
+            fundingOrganisation: [['FAIR', 'fwo']]
         });
     });
 

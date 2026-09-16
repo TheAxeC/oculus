@@ -39,7 +39,7 @@ const LABELS = [
     'board.facet_funding',
     'board.facet_pillar',
     'board.facet_dataset',
-    'project.card.collaborations'
+    'project.card.collaborators'
 ].map(word);
 
 /** The fifth line's two labels: the one a paper's card carries and the one a software card does. */
@@ -248,7 +248,7 @@ describe('the card tag lines', () => {
 describe('linkView', () => {
     it('names the view each cross-link kind opens, and nothing for the other two', () => {
         expect(linkView('funding')).toBe('funding');
-        expect(linkView('collaborators')).toBe('collaborations');
+        expect(linkView('collaborators')).toBe('person');
         expect(linkView('pillars')).toBe('');
         expect(linkView('datasets')).toBe('');
     });
