@@ -19,7 +19,7 @@
     // makes the menu the keyboard path: the opener takes focus and Menu already handles arrows and
     // Escape.
 
-    import { EMBED, PAGE, embedPageItems, foldable, pageMoveItems } from '$lib/shell/pane-view';
+    import { EMBED, PAGE, foldable, pageListItems } from '$lib/shell/pane-view';
     import { closeQuestion } from '$lib/shell/closing';
     import Confirm from '$lib/ui/Confirm.svelte';
     import Menu from '$lib/ui/Menu.svelte';
@@ -138,11 +138,12 @@
      */
     let confirming: { message: string; act: () => void } | null = $state(null);
 
-    /** Every page but this pane's own, as the item that moves the active tab onto it. */
-    const elsewhere = $derived<MenuItem[]>(pageMoveItems(pages(), page, t));
-
-    /** Every page this one may show beside the pane, which is the keyboard path to embedding. */
-    const shows = $derived<MenuItem[]>(embedPageItems(pages(), currentPage().id, page, t));
+    /**
+     * The two page choices: every page but this pane's own, as the item that moves the active tab
+     * onto it, and every page this one may show beside the pane, which is the keyboard path to
+     * embedding. Each is one line of the menu that opens its pages in place of the menu's list.
+     */
+    const pageLists = $derived<MenuItem[]>(pageListItems(pages(), currentPage().id, page, t));
 
     const items = $derived<MenuItem[]>([
         { id: 'close', label: t('ui.pane_close') },
@@ -152,8 +153,7 @@
         // The root pane is in no split, and the last open child of a split stays open, so the item
         // is offered only where a fold would change the tree.
         ...(foldable(layout(page), path) ? [{ id: 'fold', label: t('ui.pane_fold') }] : []),
-        ...elsewhere,
-        ...shows,
+        ...pageLists,
         { id: 'split_right', label: t('ui.split_right') },
         { id: 'split_down', label: t('ui.split_down') }
     ]);

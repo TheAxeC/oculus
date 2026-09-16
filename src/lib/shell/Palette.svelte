@@ -1,7 +1,8 @@
 <script lang="ts">
     // Layer 3, shell. The Cmd-K overlay over the workbench. It builds a fresh pure index whenever
     // it opens, then either matches every query word or lists the colon commands; choosing a result
-    // changes layout or appearance state and never mounts a view of its own.
+    // changes layout or appearance state and never mounts a view of its own. Every row is one grid
+    // line: what it is in words, then the control that opens it filling the rest.
 
     import Search from '$lib/ui/Search.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
@@ -9,6 +10,7 @@
     import {
         buildIndex,
         commands,
+        kindWord,
         match,
         parseCommand,
         type PaletteCommand,
@@ -155,6 +157,7 @@
                             role="option"
                             aria-selected={selected === at}
                         >
+                            <span class="kind">{kindWord(item.kind, t)}</span>
                             <ToolButton label={item.label} onclick={() => choose(item)} />
                         </div>
                     {/each}

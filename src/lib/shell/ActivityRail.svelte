@@ -11,16 +11,19 @@
         type NavGroup,
         type Section,
         arrange,
+        TEXT_ROW,
         docState,
         documentState,
-        isFlyout
+        isFlyout,
+        railStop
     } from '$lib/shell/rail';
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu-items';
     import RailAppearance from './RailAppearance.svelte';
+    import RailList from './RailList.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
-    import { heldStop, nextStop } from '$lib/ui/roving';
+    import { heldStop } from '$lib/ui/roving';
     import { t } from '$lib/state/text';
     import { wallpaperOnTheme } from '$lib/state/appearance';
     import { badgeOf, registrationGlyph, registrationLabel } from '$lib/views/registry';
@@ -200,8 +203,8 @@
         'update',
         'theme',
         ...(canShrink ? ['text-smaller'] : []),
-        ...(canGrow ? ['text-larger'] : []),
         ...(canReset ? ['text-reset'] : []),
+        ...(canGrow ? ['text-larger'] : []),
         'crt',
         ...(offersWallpaper ? ['wall'] : []),
         'unicode'
@@ -266,18 +269,19 @@
     }
 
     /**
-     * The keyboard on one control of the ring: the arrow keys carry the stop along the rail,
-     * wrapping at either end. Each control answers for itself, so an open list's own arrows are
+     * The keyboard on one control of the ring: the up and down arrows carry the stop along the rail,
+     * wrapping at either end, and the left and right arrows along the foot's row of text steps, by
+     * `railStop` of shell/rail.ts. Each control answers for itself, so an open list's own arrows are
      * never this, and a key held with a modifier belongs to the shell.
      */
     function ringKeys(id: string): (event: KeyboardEvent) => void {
         return (event: KeyboardEvent) => {
             if (event.metaKey || event.ctrlKey || event.altKey) return;
-            const next = nextStop(event.key, stops.indexOf(id), stops.length, 'column');
+            const next = railStop(event.key, id, stops, TEXT_ROW);
             if (next === null) return;
             event.preventDefault();
-            held = stops[next];
-            focusStop(stops[next]);
+            held = next;
+            focusStop(next);
         };
     }
 
@@ -317,7 +321,7 @@
         onfocusin={entered}
         onfocusout={departed}
     >
-        <div class="views">
+        <RailList>
             <!-- Keyed by position: two config groups may carry the same label, and a duplicate key
              would be an error rather than a repeated heading. -->
             {#each sections as section, index (index)}
@@ -426,7 +430,7 @@
                     </div>
                 {/each}
             {/if}
-        </div>
+        </RailList>
 
         <RailAppearance
             {stopIndex}
@@ -456,34 +460,15 @@
         overflow: visible;
     }
 
-    /* The controls fill the rail between its edges, the views at the top and the appearance
-       controls at the foot, which is the arrangement the rail had before the ring wrapped them. */
+    /* The controls fill the rail between its edges: the list of views at the top and the appearance
+       controls at the foot. */
     .ring {
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
         gap: 8px;
         flex: 1 1 auto;
         min-height: 0;
         overflow: visible;
-    }
-
-    .views {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        min-height: 0;
-    }
-
-    /* The list scrolls on a short window, with no scrollbar drawn: a bar in the rail covers the
-       controls it sits beside, and the wheel and the trackpad reach every entry without it. */
-    .views {
-        overflow-y: auto;
-        scrollbar-width: none;
-    }
-
-    .views::-webkit-scrollbar {
-        display: none;
     }
 
     /* The group's button is a Menu, which is a flex row of its own; this gives it the top margin a

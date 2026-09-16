@@ -1,11 +1,18 @@
 <script lang="ts">
-    // Layer 3, primitive. The words a control shows after the pointer rests on it, or as soon as it
-    // takes focus. It wraps whatever it is given and knows nothing about it: the caller passes the
-    // words, and a caller with none passes the empty string and gets a plain wrapper.
+    // Layer 3, primitive. The words a control shows after the pointer rests on it, or as soon as the
+    // keyboard brings the focus to it. It wraps whatever it is given and knows nothing about it: the
+    // caller passes the words, and a caller with none passes the empty string and gets a plain
+    // wrapper.
     //
     // The browser's own `title` is what this replaces. That one waits about a second, cannot be
     // styled, and never appears for a control reached by keyboard; this waits 150 ms, paints in the
-    // theme's tokens, and shows on focus as well.
+    // theme's tokens, and shows on keyboard focus as well.
+    //
+    // A pointer press puts the bubble away, and it comes back only once the pointer has left the
+    // control and rested on it again. The press also focuses the control, and a bubble shown
+    // for that focus would stay over whatever the press opened for as long as the control kept it,
+    // so focus shows the bubble only when the browser draws the control's focus ring, which is its
+    // answer to whether the focus came from the keyboard.
     //
     // The bubble is positioned in viewport coordinates rather than against the wrapper, because both
     // places it is most needed scroll: the rail's view list and the tab strip both clip their own
@@ -29,7 +36,10 @@
          * describes nothing, so it is for a tooltip that only repeats the control's own name.
          */
         presentational?: boolean;
-        /** Put a wrapper around non-control content in the tab order so its tooltip opens on focus. */
+        /**
+         * Put a wrapper around non-control content in the tab order so its tooltip opens when the
+         * keyboard brings the focus to it, which `:focus-visible` answers; a click on it opens none.
+         */
         focusable?: boolean;
         /** Fill the available width, for a control in the activity rail's fixed-width column. */
         block?: boolean;
@@ -100,6 +110,12 @@
         if (event.key === 'Escape') hide();
     }
 
+    /** Focus shows the words only when it came from the keyboard, which `:focus-visible` answers. */
+    function focused(event: FocusEvent): void {
+        const target = event.target;
+        if (target instanceof Element && target.matches(':focus-visible')) show();
+    }
+
     /**
      * A bubble is shown while the pointer rests on its control, and an overlay opened by a keyboard
      * shortcut takes focus without moving the pointer; the bubble would then paint over it. Focus
@@ -151,7 +167,8 @@
     tabindex={focusable ? 0 : undefined}
     onpointerenter={later}
     onpointerleave={hide}
-    onfocusin={show}
+    onpointerdown={hide}
+    onfocusin={focused}
     onfocusout={hide}
     onkeydown={key}
 >

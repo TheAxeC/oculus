@@ -1,6 +1,8 @@
 // Layer 3, primitive. The tab strip's contract and the arithmetic it is driven by: what one tab
-// holds, where a dropped tab is inserted, what the strip's overflow state is, and which axis of a
-// wheel gesture moves it. Apart from the component so all four can be read without a pointer.
+// holds, where a dropped tab is inserted, what the strip's overflow state is, which axis of a wheel
+// gesture moves it, and where a scroll control or a reveal brings an overflowing strip to rest: a
+// tab's start at its left edge, or the strip's end. Apart from the component so all of it can be read
+// without a pointer.
 
 /** One tab: what it is called, what it is drawn with, and the id the callbacks name it by. */
 export type Tab = {
@@ -59,4 +61,66 @@ export function tabScrollState(
 /** Turn either axis of a wheel gesture into horizontal movement, preserving trackpad intent. */
 export function horizontalWheelDelta(deltaX: number, deltaY: number): number {
     return Math.abs(deltaX) > Math.abs(deltaY) ? deltaX : deltaY;
+}
+
+/** One tab's extent along the strip, in the strip's scroll coordinates. */
+export type TabSpan = { start: number; end: number };
+
+/** How far a measured edge may be off a tab's own edge and still be that edge: rounding. */
+const EDGE_SLACK = 1;
+
+/**
+ * The offsets a strip comes to rest at from a scroll control or a reveal: every tab start the
+ * strip can scroll to, 0, and the browser's largest offset, which is where the strip ends and may
+ * fall short of a tab start.
+ */
+function rests(spans: readonly TabSpan[], max: number): number[] {
+    const found = new Set<number>([0, max]);
+    for (const span of spans) {
+        if (span.start > 0 && span.start < max - EDGE_SLACK) found.add(span.start);
+    }
+    return [...found].sort((left, right) => left - right);
+}
+
+/**
+ * Where a press of a scroll control takes the strip: to the next resting offset past the current one
+ * in the direction pressed, which is the next tab start, or the strip's end past the last start.
+ */
+export function tabEdgeStep(
+    spans: readonly TabSpan[],
+    scrollLeft: number,
+    max: number,
+    direction: -1 | 1
+): number {
+    const all = rests(spans, max);
+    if (direction > 0) return all.find((rest) => rest > scrollLeft + EDGE_SLACK) ?? max;
+    return all.findLast((rest) => rest < scrollLeft - EDGE_SLACK) ?? 0;
+}
+
+/** Whether a tab lies whole inside the visible part at an offset, a pixel of rounding allowed. */
+export function wholeAt(span: TabSpan, scrollLeft: number, width: number): boolean {
+    return span.start >= scrollLeft - EDGE_SLACK && span.end <= scrollLeft + width + EDGE_SLACK;
+}
+
+/**
+ * The resting offset that shows one tab whole: the current offset when it is one already, and
+ * otherwise the one nearest the current offset among those from which the tab lies whole, which is
+ * a tab start except at the strip's end. A tab wider than the visible part is shown from the resting
+ * offset at or before its own start.
+ */
+export function revealOffset(
+    spans: readonly TabSpan[],
+    target: TabSpan,
+    scrollLeft: number,
+    width: number,
+    max: number
+): number {
+    const all = rests(spans, max);
+    const showing = all.filter((rest) => wholeAt(target, rest, width));
+    if (showing.length === 0) {
+        return all.findLast((rest) => rest <= target.start + EDGE_SLACK) ?? 0;
+    }
+    return showing.reduce((best, rest) =>
+        Math.abs(rest - scrollLeft) < Math.abs(best - scrollLeft) ? rest : best
+    );
 }

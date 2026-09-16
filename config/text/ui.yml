@@ -8,14 +8,17 @@ text:
         confirm_cancel: Cancel
         confirm_ok: Confirm
         confirm_stop: Confirm
-        crt_on: crt
+        crt_on: CRT
         crt_title: 'CRT overlay: scanlines + vignette. Cosmetic only.'
         docs: Bookmarks
         drag_hint: Moving {0}
         embed_page: 'Show {0} here'
+        embed_page_list: Show a page here...
         embed_refused: '{0} cannot be shown here'
         embed_refused_glyph: dismiss
+        menu_back: Back
         move_to_page: 'Move tab to {0}'
+        move_to_page_list: Move tab to page...
         page_close_confirm: Close the page {0} and the {1} tabs on it?
         page_default: Page {0}
         page_from: Open {0} as a page
@@ -49,8 +52,8 @@ text:
         tabs_scroll_right: Scroll tabs right
         theme: Theme
         theme_glyph: darkmode
-        unicode: unicode
+        unicode: Glyphs
         unicode_title: Keep the real glyphs on a terminal theme instead of their ASCII stand-ins.
         unknown_view: 'Unknown view: {0}'
-        wallpaper: wallpaper
+        wallpaper: Wallpaper
         wallpaper_title: Wallpaper behind the panels - and the slight transparency that goes with it

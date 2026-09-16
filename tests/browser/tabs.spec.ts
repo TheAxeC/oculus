@@ -1,6 +1,6 @@
 // The tab strip of ui/Tabs.svelte when it overflows: the two scroll controls appear only then, each
-// click moves the strip by one tab's width, the wheel over the strip scrolls it sideways, and the tab
-// that becomes active is scrolled into view. A narrow window makes seven tabs overflow.
+// click moves the strip to the next tab's edge, the wheel over the strip scrolls it sideways, and
+// the tab that becomes active is scrolled into view. A narrow window makes seven tabs overflow.
 //
 // Nothing here writes to the hub; the layout lives in the browser's own storage.
 
@@ -22,7 +22,18 @@ async function scrollLeft(list: Locator): Promise<number> {
     return list.evaluate((node) => node.scrollLeft);
 }
 
-test('the scroll controls appear on overflow, move by one tab, and follow the active tab', async ({
+/** Whether the strip's left edge is a tab's start, the strip's own start included. */
+async function atTabEdge(list: Locator): Promise<boolean> {
+    return list.evaluate((node) => {
+        if (node.scrollLeft <= 1) return true;
+        const left = node.getBoundingClientRect().left;
+        return [...node.querySelectorAll(':scope > .tab')].some(
+            (tab) => Math.abs(tab.getBoundingClientRect().left - left) <= 1
+        );
+    });
+}
+
+test('the scroll controls appear on overflow, move to the next tab start, and follow the active tab', async ({
     page
 }) => {
     await boot(page);
@@ -43,14 +54,11 @@ test('the scroll controls appear on overflow, move by one tab, and follow the ac
     await expect(right).toBeDisabled();
     await expect(left).toBeEnabled();
 
+    // A press moves the strip to the previous tab's edge, so the tab at its left edge is whole.
     const before = await scrollLeft(list);
-    const width = (await list.locator('.tab').first().boundingBox())?.width ?? 0;
-    expect(width).toBeGreaterThan(0);
     await left.click();
     await expect.poll(() => scrollLeft(list)).toBeLessThan(before);
-    await expect
-        .poll(async () => Math.abs(before - (await scrollLeft(list)) - width))
-        .toBeLessThan(6);
+    await expect.poll(() => atTabEdge(list)).toBe(true);
 
     const beforeWheel = await scrollLeft(list);
     const box = await list.boundingBox();

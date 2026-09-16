@@ -6,15 +6,17 @@ Oculus is the private working surface for the research hub: one page in a browse
 
 Down the left is the rail. Across the top of the work area is the page strip. Everything else is the pane tree: one tree per page, made of splits and panes, each pane a stack of tabs, each tab one view.
 
+A control's tooltip opens when the pointer rests on it and when the keyboard brings the focus to it. A click puts it away, and it comes back once the pointer has left the control and rested on it again. Every scrolling box draws a thin scrollbar in the theme's colours, its thumb at 3:1 or more on its track, except the rail's list and the tab strips, which draw none and scroll by wheel, trackpad and their own controls.
+
 ### The rail
 
 The rail draws one button per view, under the heading of the group the view belongs to. A group of more than four entries is drawn as one button with a list beside it instead, so the rail never grows an icon per view. The groups, their order, their letters and the hub documents they carry are the `nav_groups` and `docs` keys of `config/layout.yml`.
 
 A click opens the view where views land, which is the pane whose tab was activated last; a view already open is activated where it is rather than opened twice. A shift-click opens it in a new pane to the right of that one, and the next shift-click joins that pane as a tab while it is still open.
 
-A group also carries the hub documents the `docs` key gives it, drawn after its views and opened as a tab each. Under all the groups sit the bookmarks, the configured ones (a local HTML file under a configured root) and the reader's own from the Files view, each opened as a tab of its own, and at the foot of the rail the appearance controls: the theme list, the two text-size steps and the reset, the CRT overlay, the wallpaper where the theme has one, and the toggle between the glyph vocabulary and its ASCII stand-ins.
+A group also carries the hub documents the `docs` key gives it, drawn after its views and opened as a tab each. Under all the groups sit the bookmarks, the configured ones (a local HTML file under a configured root) and the reader's own from the Files view, each opened as a tab of its own, and at the foot of the rail Search, which opens the palette, Update, which opens the update tray, and the appearance controls, each control drawn with its name under its glyph: Theme, the Text row of smaller, reset and larger, CRT, Wallpaper where the theme has one, and Glyphs, the toggle between the glyph vocabulary and its ASCII stand-ins. A toggle that is on is filled with a tint of the accent. The list above the foot scrolls on its own, and a fade at its top or bottom edge says more entries are past it. In the Text row the left and right arrows move along the row, and the up and down arrows leave it.
 
-At the foot of the rail, beside the appearance controls, one button opens the update tray: the four update tasks (Lit Watch, Scout, LinkedIn and Inbox), each with the date of its last run, and a Chat control that starts a portfolio-wide Claude session. A task runs the `/research-cockpit` skill as an ordinary Claude session in a terminal, so its permission prompts are answered by you in the terminal pane, which is where the tray puts you when the task starts. Setting `skip_permissions: true` under `tasks:` in `config/behavior.yml` starts them with `--dangerously-skip-permissions` instead, which lets a task run unattended and answer its own prompts; while it is on, a press asks for a confirmation first. The key under its old name, `chat.skip_permissions`, is not read, and a file still carrying it gets a finding on the Findings view naming the key that replaced it.
+Update, at the foot of the rail, opens the update tray: the four update tasks (Lit Watch, Scout, LinkedIn and Inbox), each with the date of its last run, and a Chat control that starts a portfolio-wide Claude session. A task runs the `/research-cockpit` skill as an ordinary Claude session in a terminal, so its permission prompts are answered by you in the terminal pane, which is where the tray puts you when the task starts. Setting `skip_permissions: true` under `tasks:` in `config/behavior.yml` starts them with `--dangerously-skip-permissions` instead, which lets a task run unattended and answer its own prompts; while it is on, a press asks for a confirmation first. The key under its old name, `chat.skip_permissions`, is not read, and a file still carrying it gets a finding on the Findings view naming the key that replaced it.
 
 ### Pages and the pane tree
 
@@ -27,6 +29,8 @@ Inside a page:
 - **Maximise.** A pane can be drawn alone, the rest of the tree left where it is, and shown again from the same control.
 - **Drag.** A tab moves inside its pane, to another pane, and to another page by way of the strip.
 - **Show a page.** A leaf of a page's tree can be another page, drawn where it sits with a header naming it. It is the same page, never a copy: a tab opened in it is open wherever that page shows. A page never contains itself and is drawn at most once on a screen.
+- **The pane menu.** Close, maximise or restore, fold where the pane sits in a split, split right and split down, and two choices that open a list of pages in place of the menu, Move tab to page... and Show a page here..., each offered only when there is a page to offer. Back, first in the list, returns to the menu; Escape closes the whole menu.
+- **Tabs past the strip's width.** The strip scrolls rather than shrinking its tabs, and tab names are drawn whole. Its two controls move the left edge to the next tab's start, or to the strip's end past the last one; a tab being shown or pressed is brought in whole, and so is the shown tab when a narrower window crosses it or takes it out of sight. A wheel or trackpad scrolls the strip freely and leaves it where it stops, so a tab may show in part at either edge. The page strip scrolls the same way.
 
 The layout is saved as it is changed, so the window comes back as it was left.
 
@@ -58,6 +62,8 @@ The layout is saved as it is changed, so the window comes back as it was left.
 | Ctrl+Shift+Left / Right | move the page |
 
 Tab and Shift-Tab are the browser's: they move the focus between the controls on the page, as they do everywhere, and reach no binding of this table. The rail is one stop of that order, and each strip of tabs is one stop with its pane menu the stop after it, so Tab steps past a whole strip in one press and the arrow keys move inside it; the stop stays on the tab the arrows left the focus on, and Delete closes the tab the focus is on. A tab holding text no save has taken is closed only after a confirmation, whether the close came from Delete or from the tab's own control. Ctrl and Tab is not the pair that cycles a pane's tabs, because a browser keeps it for its own tabs and never hands it to a page.
+
+Cmd-K opens the palette. With nothing typed it lists the views; a word typed searches the projects, the collection entries and the feed entries as well. Each result names what it is, View, Project, Collection or Feed, before its title.
 
 The sheet itself opens with `?` and closes with `?` or Escape. The letters before a digit are the `direct_chord` of `config/layout.yml` and the `chord` of each group in `nav_groups`. A group's documents follow its views in its chord, so the digit after the group's last view opens its first document; the directly drawn groups' documents follow the direct views under the direct chord the same way.
 

@@ -1,8 +1,9 @@
 <script lang="ts">
     // Layer 3, shell. The appearance controls at the foot of the rail: the two openers the page
     // owns, the theme list, the text-size steps, and the toggles for the CRT overlay, the wallpaper
-    // and the glyph vocabulary. They are the rail's own concern and none of the pane tree's, which
-    // is why they live apart from the view buttons above them.
+    // and the glyph vocabulary, each drawn with its name under its glyph. They are the rail's own
+    // concern and none of the pane tree's, which is why they live apart from the view buttons above
+    // them.
     //
     // The rail is one stop of the browser's focus order and these controls are part of its ring, so
     // their place in it and the keys that move along it are handed down rather than decided here:
@@ -68,7 +69,9 @@
     );
 </script>
 
-<div class="controls">
+<!-- Every control draws its glyph over a short name of its own, so the foot reads without a hover.
+     The three text-size steps share one name and sit in one row under it, as one setting. -->
+<div class="controls" data-foot>
     <div data-action="search">
         <ToolButton
             label={t('app.search')}
@@ -76,6 +79,7 @@
             glyph="cmd"
             compact
             rail
+            stacked
             stop="search"
             tabindex={stopIndex('search')}
             onkeydown={ringKeys('search')}
@@ -84,11 +88,12 @@
     </div>
     <div data-action="update">
         <ToolButton
-            label={t('app.tasks.update_tasks')}
+            label={t('app.update')}
             title={t('app.update_tip')}
             glyph="refresh"
             compact
             rail
+            stacked
             stop="update"
             tabindex={stopIndex('update')}
             onkeydown={ringKeys('update')}
@@ -100,45 +105,52 @@
         glyph={t('ui.theme_glyph')}
         compact
         rail
+        stacked
         stop="theme"
         tabindex={stopIndex('theme')}
         onkeydown={ringKeys('theme')}
         items={themes}
         onpick={(name: string) => setTheme(name)}
     />
-    <ToolButton
-        label={t('app.text_smaller')}
-        glyph="collapse"
-        compact
-        rail
-        stop="text-smaller"
-        tabindex={stopIndex('text-smaller')}
-        onkeydown={ringKeys('text-smaller')}
-        disabled={!canShrink}
-        onclick={() => stepTextScale(-1)}
-    />
-    <ToolButton
-        label={t('app.text_larger')}
-        glyph="expand"
-        compact
-        rail
-        stop="text-larger"
-        tabindex={stopIndex('text-larger')}
-        onkeydown={ringKeys('text-larger')}
-        disabled={!canGrow}
-        onclick={() => stepTextScale(1)}
-    />
-    <ToolButton
-        label={t('app.text_reset')}
-        glyph="refresh"
-        compact
-        rail
-        stop="text-reset"
-        tabindex={stopIndex('text-reset')}
-        onkeydown={ringKeys('text-reset')}
-        disabled={!canReset}
-        onclick={() => setTextScale(null)}
-    />
+    <div class="text" role="group" aria-label={t('app.text')}>
+        <div class="steps">
+            <ToolButton
+                label={t('app.text_smaller')}
+                glyph="collapse"
+                compact
+                rail
+                stop="text-smaller"
+                tabindex={stopIndex('text-smaller')}
+                onkeydown={ringKeys('text-smaller')}
+                disabled={!canShrink}
+                onclick={() => stepTextScale(-1)}
+            />
+            <ToolButton
+                label={t('app.text_reset')}
+                glyph="note_back"
+                compact
+                rail
+                stop="text-reset"
+                tabindex={stopIndex('text-reset')}
+                onkeydown={ringKeys('text-reset')}
+                disabled={!canReset}
+                onclick={() => setTextScale(null)}
+            />
+            <ToolButton
+                label={t('app.text_larger')}
+                glyph="expand"
+                compact
+                rail
+                stop="text-larger"
+                tabindex={stopIndex('text-larger')}
+                onkeydown={ringKeys('text-larger')}
+                disabled={!canGrow}
+                onclick={() => stepTextScale(1)}
+            />
+        </div>
+        <!-- The group is named by its label; this is the same word drawn, so it is not read twice. -->
+        <span class="caption" aria-hidden="true">{t('app.text')}</span>
+    </div>
     <ToolButton
         label={t('ui.crt_on')}
         title={t('ui.crt_title')}
@@ -147,6 +159,7 @@
         pressed={crt()}
         compact
         rail
+        stacked
         stop="crt"
         tabindex={stopIndex('crt')}
         onkeydown={ringKeys('crt')}
@@ -161,6 +174,7 @@
             pressed={wallpaper()}
             compact
             rail
+            stacked
             stop="wall"
             tabindex={stopIndex('wall')}
             onkeydown={ringKeys('wall')}
@@ -175,6 +189,7 @@
         pressed={unicode()}
         compact
         rail
+        stacked
         stop="unicode"
         tabindex={stopIndex('unicode')}
         onkeydown={ringKeys('unicode')}
@@ -192,5 +207,19 @@
         gap: 4px;
         min-height: 0;
         flex-shrink: 0;
+    }
+
+    /* The three steps side by side, each a third of the rail's width, over the one name they share. */
+    .steps {
+        display: flex;
+        gap: 2px;
+    }
+
+    .caption {
+        display: block;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-3xs);
+        line-height: 1.1;
+        text-align: center;
     }
 </style>

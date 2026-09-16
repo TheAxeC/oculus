@@ -7,12 +7,17 @@ import {
     commands,
     feedIdents,
     feedIdentity,
+    kindWord,
     match,
     parseCommand,
     uniqueIdents
 } from '../../src/lib/state/palette.ts';
 import type { Snapshot } from '../../src/lib/data/model.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
+import { setCatalog, t } from '../../src/lib/state/text.ts';
 import { createClientState, type ClientState } from '../client.ts';
+
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 let client: ClientState;
 let receive: ClientState['entities']['receive'];
@@ -150,6 +155,35 @@ describe('match', () => {
             'project:beta'
         ]);
         expect(match(index, 'alpha missing')).toEqual([]);
+    });
+
+    it('lists the views alone for an empty query and for one of spaces only', () => {
+        expect(match(index, '').map((item) => item.id)).toEqual(['view:focus']);
+        expect(match(index, '   ').map((item) => item.id)).toEqual(['view:focus']);
+    });
+
+    it('lists nothing for an empty query over an index that holds no view', () => {
+        expect(match(buildIndex(snapshot, feeds, []), '')).toEqual([]);
+    });
+
+    it('lets a word reach every kind again once one is typed', () => {
+        expect(new Set(match(index, 'a').map((item) => item.kind))).toEqual(
+            new Set(['view', 'project', 'collection', 'feed'])
+        );
+    });
+});
+
+describe('the kind a result row draws', () => {
+    it('names each of the four kinds in its own catalog word', () => {
+        expect(
+            ['view', 'project', 'collection', 'feed'].map((kind) => kindWord(kind as never, t))
+        ).toEqual([
+            t('app.palette.kind_view'),
+            t('app.palette.kind_project'),
+            t('app.palette.kind_collection'),
+            t('app.palette.kind_feed')
+        ]);
+        expect(new Set(index.map((item) => kindWord(item.kind, t))).size).toBe(4);
     });
 });
 

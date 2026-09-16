@@ -1,7 +1,8 @@
 // Every text-on-background pair the tokens declare, under every theme, at 4.5:1 or better.
 //
 // The pairs are the ones a component can actually produce: a `-txt` colour on the page, the panel
-// the card and the chip; a hue's `-txt` on its own tint; and the on-chip ink on its filled chip. A pair below
+// the card and the chip; a hue's `-txt` on its own tint; `--accent-bg-txt` on the pressed-toggle
+// surface `--accent-bg`; and the on-chip ink on its filled chip. A pair below
 // the threshold is printed with its ratio and fails. It is never fixed by loosening the threshold or
 // by editing a colour here: a colour is an authored value in tokens.css or themes.css, and a failure
 // is a finding about that value or about derive.ts, not something this file repairs.
@@ -10,7 +11,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { deriveTokens, ratio } from '../src/lib/themes/derive.ts';
+import { SCROLL_THUMB_RATIO, deriveTokens, ratio } from '../src/lib/themes/derive.ts';
 import { parseBlocks, resolveTheme } from '../src/lib/themes/parse.ts';
 import { engineDir, loadConfig } from '../src/lib/data/sources/config.ts';
 import { setAppearance, themeClass, themes } from '../src/lib/state/appearance.ts';
@@ -48,6 +49,8 @@ function pairs(name: string): Pair[] {
         const own = `${fg.slice(0, -'-txt'.length)}-bg`;
         if (fg.startsWith('--c-') && all[own]) measure(fg, own);
     }
+    // The pressed-toggle surface's own text on that surface, the accent mixed into the page.
+    if (all['--accent-bg-txt'] && all['--accent-bg']) measure('--accent-bg-txt', '--accent-bg');
     for (const fg of Object.keys(derived)) {
         if (!fg.startsWith('--on-c-')) continue;
         const on = `--${fg.slice('--on-'.length)}`;
@@ -73,6 +76,15 @@ describe('contrast', () => {
             expect(failures).toEqual([]);
         });
     }
+
+    it(`keeps the scrollbar thumb at ${SCROLL_THUMB_RATIO}:1 on its track in every theme`, () => {
+        const failures = NAMES.flatMap((name) => {
+            const derived = deriveTokens(resolveTheme(blocks, themeClass(name)));
+            const found = ratio(derived['--scroll-thumb'], derived['--scroll-track']);
+            return found < SCROLL_THUMB_RATIO ? [`${name}: ${found.toFixed(2)}:1`] : [];
+        });
+        expect(failures).toEqual([]);
+    });
 
     it('measured every pair of every theme', () => {
         const total = [...measured.values()].reduce((sum, found) => sum + found.length, 0);

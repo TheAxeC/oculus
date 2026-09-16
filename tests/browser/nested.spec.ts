@@ -1,6 +1,6 @@
-// A page shown inside another page: the pane menu shows one, the leaf draws that page's own panes,
-// a view opened while reading inside it is open on that page when the strip is switched to it, a
-// page that would show itself is never offered, and the leaf's control stops showing it.
+// A page shown inside another page: the pane menu's page list shows one, the leaf draws that page's
+// own panes, a view opened while reading inside it is open on that page when the strip is switched
+// to it, a page that would show itself is never offered, and the leaf's control stops showing it.
 //
 // Nothing here writes to the hub. The layout lives in the browser's own storage, and Playwright
 // gives every test a context of its own, so each test starts from the one default page.
@@ -30,6 +30,7 @@ async function showSecond(page: import('@playwright/test').Page): Promise<void> 
         .first()
         .getByRole('button', { name: t('ui.pane_menu'), exact: true })
         .click();
+    await page.getByRole('menuitem', { name: t('ui.embed_page_list'), exact: true }).click();
     await page
         .getByRole('menuitem', { name: t('ui.embed_page', t('ui.page_default', 2)), exact: true })
         .click();
@@ -56,7 +57,8 @@ test('the pane menu shows the second page in the first, and its control stops sh
     await twoPages(page);
     const pane = page.locator('[data-pane]').first();
     await pane.getByRole('button', { name: t('ui.pane_menu'), exact: true }).click();
-    // The page a pane is in is never offered to itself: only the other page is on the menu.
+    await page.getByRole('menuitem', { name: t('ui.embed_page_list'), exact: true }).click();
+    // The page a pane is in is never offered to itself: only the other page is on the list.
     await expect(
         page.getByRole('menuitem', { name: t('ui.embed_page', t('ui.page_default', 1)) })
     ).toHaveCount(0);
@@ -210,18 +212,21 @@ test('a page that would show itself is offered nowhere', async ({ page }) => {
         .first()
         .getByRole('button', { name: t('ui.pane_menu') })
         .click();
+    await page.getByRole('menuitem', { name: t('ui.embed_page_list'), exact: true }).click();
     await page
         .getByRole('menuitem', { name: t('ui.embed_page', t('ui.page_default', 2)), exact: true })
         .click();
     await expect(page.locator('[data-page-leaf]')).toHaveCount(1);
 
     // Page 1 shows page 2, so the pane inside page 2 offers neither page: not its own, and not the
-    // one that shows it, which would make each page show itself.
+    // one that shows it, which would make each page show itself. With no page to offer, the menu
+    // carries no choice that lists them.
     await page
         .locator('[data-page-leaf] [data-pane]')
         .getByRole('button', { name: t('ui.pane_menu'), exact: true })
         .click();
     await expect(page.getByRole('menuitem', { name: t('ui.pane_maximise') })).toBeVisible();
+    await expect(page.getByRole('menuitem', { name: t('ui.embed_page_list') })).toHaveCount(0);
     await expect(
         page.getByRole('menuitem', { name: t('ui.embed_page', t('ui.page_default', 1)) })
     ).toHaveCount(0);

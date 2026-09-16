@@ -5,6 +5,7 @@
 
 import type { Registration } from '$lib/views/registry';
 import type { RailOrder } from './keys';
+import { nextStop } from '$lib/ui/roving';
 
 /** One configured rail group. View registrations name its stable id and their own order. */
 export type NavGroup = { id: string; label: string; glyph?: string; chord?: string };
@@ -156,4 +157,54 @@ export function railOrder(
         ];
     }
     return { direct, chords };
+}
+
+/** Which edges of the rail's list have more entries past them, each drawn as a fade at that edge. */
+export type ListFade = { above: boolean; below: boolean };
+
+/**
+ * How far past an edge the list must reach before that edge fades. A browser reports a fractional
+ * scroll position at a zoom or a text scale, so a list resting at its end may be a pixel short of it.
+ */
+const FADE_SLACK = 1;
+
+/**
+ * The fades a scrolled list draws, from the three numbers its element reports: whether anything is
+ * above what is shown and whether anything is below it. A list that fits draws neither, and a list
+ * at either end draws no fade at that end.
+ */
+export function listFade(scrollTop: number, scrollHeight: number, clientHeight: number): ListFade {
+    return {
+        above: scrollTop > FADE_SLACK,
+        below: scrollTop + clientHeight < scrollHeight - FADE_SLACK
+    };
+}
+
+/** The foot's text-size steps, drawn side by side in one row in this order. */
+export const TEXT_ROW: readonly string[] = ['text-smaller', 'text-reset', 'text-larger'];
+
+/**
+ * Where an arrow key takes the rail's stop, given the ring of controls in drawn order and the ids
+ * drawn side by side in one row. The column keys move along the ring with the row as one place in
+ * it, entering the row at its first control that is in the ring and leaving it from wherever the
+ * stop is; the row keys move inside the row and stop at its ends, and mean nothing outside it.
+ * Home and End go to the first and last place. Null is a key the rail does not answer.
+ */
+export function railStop(
+    key: string,
+    current: string,
+    ring: readonly string[],
+    row: readonly string[]
+): string | null {
+    const inRow = ring.filter((id) => row.includes(id));
+    const at = inRow.indexOf(current);
+    if (key === 'ArrowLeft' || key === 'ArrowRight') {
+        if (at < 0) return null;
+        const next = at + (key === 'ArrowRight' ? 1 : -1);
+        return next < 0 || next >= inRow.length ? current : inRow[next];
+    }
+    const places = ring.filter((id) => !row.includes(id) || id === inRow[0]);
+    const place = at < 0 ? places.indexOf(current) : places.indexOf(inRow[0]);
+    const next = nextStop(key, place, places.length, 'column');
+    return next === null ? null : places[next];
 }

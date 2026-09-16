@@ -8,11 +8,15 @@
 import { describe, expect, it } from 'vitest';
 import {
     EMBED,
+    EMBED_LIST,
     embedPageItems,
     foldable,
+    MOVE_LIST,
+    pageListItems,
     pageMoveItems,
     PAGE
 } from '../../src/lib/shell/pane-view.ts';
+import { menuLevel, type MenuItem } from '../../src/lib/ui/menu-items.ts';
 import { closeQuestion } from '../../src/lib/shell/closing.ts';
 import { pageName, pageNameOf } from '../../src/lib/shell/page-strip.ts';
 import { pane, split } from '../state/layout-fixture.ts';
@@ -57,6 +61,81 @@ describe('the pane menu move-to-page items', () => {
 
     it('offers nothing when the page on screen is the only one', () => {
         expect(pageMoveItems([page('one', '')], 'one', t)).toEqual([]);
+    });
+});
+
+describe('the pane menu page choices', () => {
+    const seven = ['one', 'two', 'three', 'four', 'five', 'six', 'seven'].map((id) => page(id, ''));
+
+    it('gathers seven pages under two choices, each holding the items it stands for', () => {
+        const found = pageListItems(seven, 'one', 'one', t);
+        expect(found.map((item) => [item.id, item.label])).toEqual([
+            [MOVE_LIST, t('ui.move_to_page_list')],
+            [EMBED_LIST, t('ui.embed_page_list')]
+        ]);
+        expect(found[0].items).toEqual(pageMoveItems(seven, 'one', t));
+        expect(found[1].items).toEqual(embedPageItems(seven, 'one', 'one', t));
+        expect(found[0].items).toHaveLength(6);
+        expect(found[1].items).toHaveLength(6);
+    });
+
+    it('offers neither choice on a layout of one page, and nothing on none', () => {
+        expect(pageListItems([page('one', '')], 'one', 'one', t)).toEqual([]);
+        expect(pageListItems([], 'one', 'one', t)).toEqual([]);
+    });
+
+    it('offers the move choice alone when every other page is already on the screen', () => {
+        const pages = [
+            {
+                id: 'one',
+                label: '',
+                workbench: { root: split('row', [0.5, 0.5], [pane(['a']), pageLeaf('two')]) }
+            },
+            page('two', '')
+        ];
+        expect(pageListItems(pages, 'one', 'one', t).map((item) => item.id)).toEqual([MOVE_LIST]);
+    });
+
+    it('keeps its two ids apart from every page item, whatever a page is called', () => {
+        const odd = [page('one', ''), page(MOVE_LIST, ''), page(EMBED_LIST, '')];
+        const found = pageListItems(odd, 'one', 'one', t);
+        const children = found.flatMap((item) => (item.items ?? []).map((child) => child.id));
+        expect(children).not.toContain(MOVE_LIST);
+        expect(children).not.toContain(EMBED_LIST);
+        expect(new Set(children).size).toBe(children.length);
+    });
+});
+
+describe('the list a menu shows', () => {
+    const inner: MenuItem[] = [{ id: 'page:two', label: 'Two' }];
+    const items: MenuItem[] = [
+        { id: 'close', label: 'Close' },
+        { id: MOVE_LIST, label: 'Move', items: inner },
+        { id: 'empty', label: 'Empty', items: [] }
+    ];
+
+    it('is the menu own list while no choice is open', () => {
+        expect(menuLevel(items, null)).toBeNull();
+    });
+
+    it('is the list of the choice that is open, an empty one included', () => {
+        expect(menuLevel(items, MOVE_LIST)).toBe(inner);
+        expect(menuLevel(items, 'empty')).toEqual([]);
+    });
+
+    it('falls back to the menu own list for a choice that has gone or holds no list', () => {
+        expect(menuLevel(items, 'close')).toBeNull();
+        expect(menuLevel(items, 'gone')).toBeNull();
+        expect(menuLevel(items, '')).toBeNull();
+        expect(menuLevel([], MOVE_LIST)).toBeNull();
+    });
+
+    it('opens the first of two choices that share an id', () => {
+        const twice: MenuItem[] = [
+            { id: 'same', label: 'First', items: inner },
+            { id: 'same', label: 'Second', items: [] }
+        ];
+        expect(menuLevel(twice, 'same')).toBe(inner);
     });
 });
 

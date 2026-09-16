@@ -3,13 +3,18 @@
     // is open and which item has the keyboard: what the choices are and what picking one means
     // belong to the caller.
     //
+    // A choice that holds a list of its own shows that list in place of the menu's when picked, with a
+    // first choice that goes back, so a list that would grow by one line per page stays the length of
+    // its own choices. Opening the menu always starts on its own list.
+    //
     // The list closes on Escape, on a pointer down anywhere outside it, and on a pick. The pointer
     // listener is installed only while the list is open and is removed with it, so a page holding
     // several menus adds one listener at a time and none when they are all closed.
 
-    import { type MenuItem, menuPlacement } from '$lib/ui/menu-items';
+    import { type MenuItem, menuLevel, menuPlacement } from '$lib/ui/menu-items';
     import Glyph from './Glyph.svelte';
     import Tooltip from './Tooltip.svelte';
+    import { t } from '$lib/state/text';
 
     type Props = {
         /** The button's own words. */
@@ -74,6 +79,18 @@
     let button: HTMLButtonElement | undefined = $state();
     let entries: (HTMLButtonElement | undefined)[] = $state([]);
 
+    /** The choice whose own list is showing in place of the menu's, or null for the menu's list. */
+    let opened: string | null = $state(null);
+
+    /** The list inside the choice that is open, or null while the menu shows its own. */
+    const level = $derived(menuLevel(items, opened));
+
+    /** The choices drawn after the Back choice, which is drawn first and only inside a choice. */
+    const shown = $derived(level ?? items);
+
+    /** Where the first of `shown` sits among the drawn entries: after Back, when Back is drawn. */
+    const offset = $derived(level === null ? 0 : 1);
+
     $effect(() => {
         if (!open) return;
         const outside = (event: PointerEvent): void => {
@@ -121,9 +138,27 @@
     function toggle(): void {
         open = !open;
         if (open) {
+            opened = null;
             placed = place();
             focusAt(0);
         }
+    }
+
+    /** A choice with a list of its own opens that list; any other choice is the caller's pick. */
+    function choose(item: MenuItem, event: MouseEvent): void {
+        if (item.items === undefined) {
+            pick(item.id, event);
+            return;
+        }
+        opened = item.id;
+        focusAt(0);
+    }
+
+    /** Back to the menu's own list, the keyboard on the choice that was opened. */
+    function back(): void {
+        const was = items.findIndex((item) => item.id === opened);
+        opened = null;
+        focusAt(Math.max(0, was));
     }
 
     function focusAt(index: number): void {
@@ -147,7 +182,7 @@
         if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
         event.preventDefault();
         const step = event.key === 'ArrowDown' ? 1 : -1;
-        const count = items.length;
+        const count = shown.length + offset;
         if (count === 0) return;
         focusAt((index + step + count) % count);
     }
@@ -190,17 +225,30 @@
             role="menu"
             aria-label={label}
         >
-            {#each items as item, index (item.id)}
+            {#if level !== null}
+                <button
+                    type="button"
+                    class="item back"
+                    role="menuitem"
+                    bind:this={entries[0]}
+                    onclick={back}
+                    onkeydown={(event) => keys(event, 0)}
+                >
+                    <span class="label">{t('ui.menu_back')}</span>
+                </button>
+            {/if}
+            {#each shown as item, index (item.id)}
                 <button
                     type="button"
                     class="item"
                     class:current={item.active === true}
                     role="menuitem"
                     aria-current={item.active === true}
+                    aria-haspopup={item.items === undefined ? undefined : 'menu'}
                     title={item.title}
-                    bind:this={entries[index]}
-                    onclick={(event) => pick(item.id, event)}
-                    onkeydown={(event) => keys(event, index)}
+                    bind:this={entries[index + offset]}
+                    onclick={(event) => choose(item, event)}
+                    onkeydown={(event) => keys(event, index + offset)}
                 >
                     {#if item.tone !== undefined}
                         <span class="dot" style={dotStyle(item.tone)}></span>
@@ -385,6 +433,10 @@
 
     .item:hover {
         background: var(--chip);
+    }
+
+    .item.back {
+        color: var(--muted-txt, var(--muted));
     }
 
     .item.current {

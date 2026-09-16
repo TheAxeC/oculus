@@ -258,8 +258,9 @@ test('a rail control the reader disables hands the stop and the focus to its nei
     await reset.focus();
     await page.keyboard.press('Enter');
     await expect(reset).toBeDisabled();
-    // The control that took its place holds the stop and the keyboard, rather than the document.
-    await expect(rail.locator('[data-stop="crt"]')).toBeFocused();
-    await expect(rail.locator('[data-stop="crt"]')).toHaveAttribute('tabindex', '0');
+    // The control that took its place, the step after it in the Text row, holds the stop and the
+    // keyboard, rather than the document.
+    await expect(rail.locator('[data-stop="text-larger"]')).toBeFocused();
+    await expect(rail.locator('[data-stop="text-larger"]')).toHaveAttribute('tabindex', '0');
     await expect(rail.locator('[data-stop][tabindex="0"]')).toHaveCount(1);
 });

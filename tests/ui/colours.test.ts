@@ -3,7 +3,7 @@
 // That test walks every `--<x>-txt` on `--bg`, `--panel`, `--card` and `--chip`, every `--c-<hue>-txt` on its
 // own tint, and every `--on-c-<hue>` on `--c-<hue>`, under all seventeen themes. A component that only
 // ever paints text with a `-txt` token or an `--on-` token, and only ever fills with a surface or a
-// hue, can produce only pairs out of that set and the six `--on-<surface>` on `--<surface>` pairs
+// hue, can produce only pairs out of that set and the seven `--on-<surface>` on `--<surface>` pairs
 // measured at the foot of this file. It reads the style of every component under ui/, shell/, views/
 // and routes/ and fails on a declaration outside the rule, naming the file, the selector and the
 // declaration.
@@ -12,7 +12,7 @@
 //   color        var(--<x>-txt, ...), var(--on-<x>, ...), inherit or currentColor. A fallback may be
 //                another such token or the bare chrome colour it is derived from, since the fallback
 //                is what paints in the moment before applyTheme has set the derived tokens.
-//   background   a surface (--bg, --panel, --chip, --line, --accent), a hue (--c-<hue>) or its tint
+//   background   a surface (--bg, --panel, --chip, --line, --accent, --accent-bg), a hue (--c-<hue>) or its tint
 //                (--c-<hue>-bg), none, or transparent.
 //   anywhere     no raw colour: no hex, no rgb()/hsl()/lab()/oklch(), no named colour.
 //
@@ -48,7 +48,7 @@ const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src');
 const ROOTS = ['lib/ui', 'lib/shell', 'lib/views', 'routes'];
 
 /** Backgrounds a component may name directly. */
-const SURFACES = ['--bg', '--panel', '--card', '--chip', '--line', '--accent'];
+const SURFACES = ['--bg', '--panel', '--card', '--chip', '--line', '--accent', '--accent-bg'];
 
 /** Keywords that are not a colour. */
 const NEUTRAL = ['none', 'transparent', 'initial', 'unset', 'revert'];

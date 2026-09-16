@@ -17,6 +17,10 @@ text:
         palette:
             cmd_unknown: '# unknown command'
             cmdk_placeholder: Search projects, entries, tabs...
+            kind_collection: Collection
+            kind_feed: Feed
+            kind_project: Project
+            kind_view: View
         palette_empty: No match
         palette_unavailable: Unavailable
         pillars: 'Pillars: {0}'
@@ -42,11 +46,13 @@ text:
             skip_confirm: 'Start {0} unattended? Its permission prompts are turned off, so it answers them itself.'
             skip_confirm_ok: Start unattended
             update_tasks: Update tasks
+        text: Text
         text_larger: Larger text
         text_reset: Reset text size
         text_smaller: Smaller text
         title: oculus
         title_waiting: oculus ({0} waiting) | {1}
+        update: Update
         update_tip: Open the update tasks
         venues: 'Venues: {0}'
         version: Snapshot version {0}

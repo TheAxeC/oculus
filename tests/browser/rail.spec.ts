@@ -142,7 +142,7 @@ test('a card control tooltip is whole, inside the window and on top', async ({ p
 test('a tooltip inside an overlay is drawn over it', async ({ page }) => {
     await board(page);
 
-    await page.getByRole('button', { name: t('app.tasks.update_tasks') }).click();
+    await page.getByRole('button', { name: t('app.update'), exact: true }).click();
     const tray = page.getByRole('dialog', { name: t('app.tasks.update_tasks') });
     await expect(tray).toBeVisible();
     await tray.getByRole('button', { name: t('app.tasks.close') }).hover();

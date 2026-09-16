@@ -163,10 +163,14 @@ export function buildIndex(
     return found;
 }
 
-/** AND-match query words across an item, with more title hits ranked first and stable ties. */
+/**
+ * AND-match query words across an item, with more title hits ranked first and stable ties. With no
+ * word the list is the views alone: every project, collection entry and feed entry together is a
+ * list no reader scans, and a word is what narrows them to the one wanted.
+ */
 export function match(index: PaletteItem[], query: string): PaletteItem[] {
     const words = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
-    if (words.length === 0) return [...index];
+    if (words.length === 0) return index.filter((item) => item.kind === 'view');
     return index
         .map((item, order) => {
             const title = item.title.toLowerCase();
@@ -176,6 +180,17 @@ export function match(index: PaletteItem[], query: string): PaletteItem[] {
         .filter((ranked) => words.every((word) => ranked.text.includes(word)))
         .sort((left, right) => right.hits - left.hits || left.order - right.order)
         .map((ranked) => ranked.item);
+}
+
+/** The word a result row draws for what it is, from the catalog. */
+export function kindWord(
+    kind: PaletteItem['kind'],
+    t: (key: string, ...args: (string | number)[]) => string
+): string {
+    if (kind === 'view') return t('app.palette.kind_view');
+    if (kind === 'project') return t('app.palette.kind_project');
+    if (kind === 'collection') return t('app.palette.kind_collection');
+    return t('app.palette.kind_feed');
 }
 
 /** Split a leading-colon query into the command-name prefix and its argument. */

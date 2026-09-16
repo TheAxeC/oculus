@@ -1,6 +1,7 @@
 // Layer 3, primitive. The compact menu's contract and its placement arithmetic: what one choice
-// holds, and where the fixed-position list sits beside its button or containing rail. Apart from
-// the component so the geometry can be read without a viewport.
+// holds, which list a choice with a list of its own puts in place of the menu's, and where the
+// fixed-position list sits beside its button or containing rail. Apart from the component so the
+// geometry and the level can be read without a viewport.
 
 /** The rectangle fields used to place a compact menu beside its button or containing rail. */
 export type MenuRect = { right: number; top: number; height: number; bottom: number };
@@ -48,4 +49,19 @@ export type MenuItem = {
     badgeTone?: string;
     /** The badge's hover words. */
     badgeTitle?: string;
+    /**
+     * The choices this one stands for. Picking it shows them in place of the list it is in, after a
+     * first choice that goes back, and picking one of them is what the caller is told of.
+     */
+    items?: MenuItem[];
 };
+
+/**
+ * The list a menu shows while the choice `opened` has its own list open: that choice's items, or
+ * null for the menu's own list. A choice that is no longer there, or that holds no list, leaves the
+ * menu on its own list, so a caller whose items change under an open menu never strands it.
+ */
+export function menuLevel(items: readonly MenuItem[], opened: string | null): MenuItem[] | null {
+    if (opened === null) return null;
+    return items.find((item) => item.id === opened)?.items ?? null;
+}

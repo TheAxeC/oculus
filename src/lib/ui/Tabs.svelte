@@ -15,14 +15,15 @@
     // The strip takes part in a drag without knowing what a drag is: a press on a tab face is
     // reported with the point it happened at, the pointer moving over the strip is reported as the
     // index a drop would land at, and `dropIndex` draws the mark at an index the caller chose.
+    //
+    // Whole tabs at the left edge come from the scroll controls, which jump to the next tab start,
+    // and from a tab becoming the shown one, being pressed, or being crossed or hidden by a change of
+    // width, which brings it in whole. A wheel or trackpad scrolls the strip freely and leaves it
+    // where it stops. The strip's end is the browser's largest offset, so a control press or a
+    // reveal there may rest short of a tab start. How it scrolls is ui/tab-scroll.svelte.ts.
 
-    import {
-        type Tab,
-        type TabScrollState,
-        horizontalWheelDelta,
-        insertionIndex,
-        tabScrollState
-    } from '$lib/ui/tab-strip';
+    import { type Tab, insertionIndex } from '$lib/ui/tab-strip';
+    import { createTabScroll } from '$lib/ui/tab-scroll.svelte';
     import { heldStop, nextStop } from '$lib/ui/roving';
     import { type Snippet } from 'svelte';
     import Glyph from './Glyph.svelte';
@@ -70,7 +71,6 @@
     let strip: HTMLDivElement | undefined = $state();
     let opener: HTMLDivElement | undefined = $state();
     let scroller: HTMLDivElement | undefined = $state();
-    let scroll = $state<TabScrollState>({ overflowing: false, atStart: true, atEnd: true });
 
     /**
      * The tab a Delete asked to close, with the ring it asked from. The caller may put a question in
@@ -89,38 +89,32 @@
     let stopped = $derived(active);
     const stop = $derived(tabs.some((tab) => tab.id === stopped) ? stopped : active);
 
-    function measureScroll(): void {
-        // A measure queued before the strip unmounts finds the bindings null, not undefined.
-        if (!scroller || !strip) return;
-        const widthWithoutControls = strip.clientWidth - (opener?.offsetWidth ?? 0);
-        scroll = tabScrollState(
-            scroller.scrollWidth,
-            scroller.clientWidth,
-            scroller.scrollLeft,
-            widthWithoutControls
-        );
-    }
+    const scrolling = createTabScroll({
+        list: () => scroller,
+        strip: () => strip,
+        opener: () => opener,
+        faces: () => faces.slice(0, tabs.length),
+        shown: () => tabs.findIndex((tab) => tab.id === active)
+    });
+    const scroll = $derived(scrolling.state());
 
     $effect(() => {
         const node = scroller;
         const watched = faces.slice(0, tabs.length);
         if (node === undefined || typeof ResizeObserver === 'undefined') return;
-        const observer = new ResizeObserver(measureScroll);
+        const observer = new ResizeObserver(scrolling.resized);
         observer.observe(node);
         if (strip !== undefined) observer.observe(strip);
         if (opener !== undefined) observer.observe(opener);
         for (const face of watched) if (face !== undefined && face !== null) observer.observe(face);
-        queueMicrotask(measureScroll);
+        queueMicrotask(scrolling.scrolled);
         return () => observer.disconnect();
     });
 
     $effect(() => {
         const selected = active;
         const index = tabs.findIndex((tab) => tab.id === selected);
-        queueMicrotask(() => {
-            faces[index]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
-            measureScroll();
-        });
+        queueMicrotask(() => scrolling.reveal(index));
     });
 
     // A tab closed by Delete unmounts its button under the keyboard, which would drop the focus to
@@ -151,19 +145,14 @@
         });
     }
 
-    function scrollOne(direction: -1 | 1): void {
-        if (scroller === undefined) return;
-        const width = faces.find((face) => face !== undefined && face !== null)?.offsetWidth ?? 0;
-        scroller.scrollBy({ left: direction * width, behavior: 'smooth' });
-    }
-
-    function wheel(event: WheelEvent): void {
-        if (scroller === undefined || !scroll.overflowing) return;
-        const delta = horizontalWheelDelta(event.deltaX, event.deltaY);
-        if (delta === 0) return;
-        event.preventDefault();
-        scroller.scrollLeft += delta;
-        measureScroll();
+    /**
+     * A press on a tab face: the caller selects it, and the strip brings it in whole, which a tab
+     * already showing and pressed where the far edge crosses it needs, since its selection changes
+     * nothing the reveal on a change of the showing tab would answer.
+     */
+    function press(index: number): void {
+        onselect(tabs[index].id);
+        queueMicrotask(() => scrolling.reveal(index));
     }
 
     function down(id: string, event: PointerEvent): void {
@@ -185,8 +174,8 @@
         if (next !== null) {
             event.preventDefault();
             stopped = tabs[next].id;
-            heads[next]?.focus();
-            faces[next]?.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+            heads[next]?.focus({ preventScroll: true });
+            scrolling.reveal(next);
             return;
         }
         if (event.key !== 'Delete') return;
@@ -237,12 +226,18 @@
             compact
             tabindex={-1}
             disabled={scroll.atStart}
-            onclick={() => scrollOne(-1)}
+            onclick={() => scrolling.step(-1)}
         />
     </div>
     <!-- The wheel translates vertical wheel travel into the horizontal scrolling this strip already
          owns. -->
-    <div class="tabs" role="tablist" bind:this={scroller} onscroll={measureScroll} onwheel={wheel}>
+    <div
+        class="tabs"
+        role="tablist"
+        bind:this={scroller}
+        onscroll={scrolling.scrolled}
+        onwheel={scrolling.wheel}
+    >
         {#each tabs as tab, index (tab.id)}
             {#if dropIndex === index}
                 <span class="mark" aria-hidden="true"></span>
@@ -264,7 +259,7 @@
                         data-drag-handle={onpointerdown === undefined ? undefined : ''}
                         bind:this={heads[index]}
                         tabindex={tab.id === stop ? 0 : -1}
-                        onclick={() => onselect(tab.id)}
+                        onclick={() => press(index)}
                         ondblclick={() => ondblclick?.(tab.id)}
                         onkeydown={(event) => keys(event, index)}
                         onpointerdown={(event) => down(tab.id, event)}
@@ -327,7 +322,7 @@
             compact
             tabindex={-1}
             disabled={scroll.atEnd}
-            onclick={() => scrollOne(1)}
+            onclick={() => scrolling.step(1)}
         />
     </div>
     {#if menu !== undefined}

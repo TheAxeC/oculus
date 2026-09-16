@@ -6,6 +6,14 @@
 //   --<token>-txt   the token's own hue, nudged in lightness until it clears 4.5:1 on every surface
 //                   it can land on (its own tint first, then the chip, the panel, the page).
 //
+// Beside them the two colours a scrollbar is drawn in, `--scroll-thumb` and `--scroll-track`, taken
+// from the theme's own chrome so a dark theme never draws the browser's light bar: the track is the
+// panel a scrolling view sits on, and the thumb starts halfway between the muted text and the
+// hairline and is nudged in lightness until it clears 3:1 on the track, so it reads as a control
+// without competing with the text beside it. And `--accent-bg`, the
+// surface a pressed toggle fills with: a fifth of the accent in the page's colour, so the pressed
+// state reads as a filled box in the accent's hue under every theme without the solid accent block.
+//
 // The numbers come from the cockpit's build-time tools/cockpit/src/cockpit/contrast.py: the same WCAG
 // relative luminance, the same 0.02 lightness step, the same 50-step bound, the same order of grounds.
 // Nothing here touches the document; ui/theme.ts sets the theme class and applies these tokens.
@@ -23,6 +31,12 @@ const HEX_VALUE = /^#[0-9a-fA-F]{3,6}$/;
 
 /** The tokens a derived token is computed from: the palette hues and the chrome colours. */
 const COLOUR_TOKEN = /^--(?:c-[a-z0-9-]+|accent|muted|ink|line|chip|card|panel|bg)$/;
+
+/** The contrast a scrollbar's thumb keeps against its track: what a control's edge needs to be seen. */
+export const SCROLL_THUMB_RATIO = 3;
+
+/** How much of the accent the pressed-toggle surface carries, the rest being the page. */
+const ACCENT_SHARE = 0.2;
 
 const ONE_THIRD = 1 / 3;
 const ONE_SIXTH = 1 / 6;
@@ -104,6 +118,14 @@ function hlsToRgb(h: number, l: number, s: number): [number, number, number] {
     return [channel(m1, m2, h + ONE_THIRD), channel(m1, m2, h), channel(m1, m2, h - ONE_THIRD)];
 }
 
+/** Two colours mixed channel by channel, `share` of the first: 0.5 is halfway between them. */
+function mix(first: string, second: string, share: number): string {
+    const a = channels(first);
+    const b = channels(second);
+    const at = (index: number): number => (a[index] * share + b[index] * (1 - share)) / 255;
+    return hex(at(0), at(1), at(2));
+}
+
 function hex(r: number, g: number, b: number): string {
     const byte = (v: number): string =>
         Math.trunc(v * 255)
@@ -154,6 +176,9 @@ export function readable(fg: string, bg: string, minimum = 4.5): string {
  * `--card`, `--panel` and `--bg` in turn, so it clears on every surface it can land on rather than only on the
  * tinted pill it was measured against. Hues that are themselves a tint (`-bg`), a derived value
  * (`-txt`, `-on`) or the on-chip ink (`--c-on`) are skipped, since nothing places text on them.
+ * The two scrollbar colours, `--scroll-thumb` and `--scroll-track`, come with them, and so does
+ * `--accent-bg`, the accent mixed into the page, with its `--on-accent-bg` and `--accent-bg-txt`,
+ * the accent made readable on that surface before the others.
  *
  * The input is the whole token map; anything that is not a colour token with a hex value is ignored,
  * so the caller can hand over the theme exactly as parse.ts read it.
@@ -182,7 +207,23 @@ export function deriveTokens(theme: Record<string, string>): Record<string, stri
 
     if (effective['--muted'] && chip) derived['--muted-txt'] = everywhere(effective['--muted']);
     if (effective['--accent'] && chip) derived['--accent-txt'] = everywhere(effective['--accent']);
+
+    // The surface a pressed toggle in the rail fills with: the accent mixed into the page the rail
+    // is drawn on. Its glyph and name take a text colour of their own, readable on that surface
+    // first, as a hue's is on its own tint, so the accent text everywhere else is left as it is.
+    if (effective['--accent'] && page && chip) {
+        const tint = mix(effective['--accent'], page, ACCENT_SHARE);
+        derived['--accent-bg'] = tint;
+        derived['--on-accent-bg'] = contrastOn(tint);
+        derived['--accent-bg-txt'] = everywhere(effective['--accent'], tint);
+    }
     if (effective['--ink'] && chip) derived['--ink-txt'] = everywhere(effective['--ink']);
+
+    if (effective['--muted'] && effective['--line'] && panel) {
+        const thumb = mix(effective['--muted'], effective['--line'], 0.5);
+        derived['--scroll-thumb'] = readable(thumb, panel, SCROLL_THUMB_RATIO);
+        derived['--scroll-track'] = panel;
+    }
 
     for (const key of keys) {
         if (!key.startsWith('--c-')) continue;

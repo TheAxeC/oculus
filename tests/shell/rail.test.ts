@@ -17,6 +17,7 @@ import {
     docState,
     documentState,
     isFlyout,
+    listFade,
     railOrder,
     sectionSize,
     type DocEntry,
@@ -101,6 +102,27 @@ function buttonWith(body: string, attribute: string): string | undefined {
 function doc(path: string, group: string, label = path): DocEntry {
     return { label, path, group };
 }
+
+describe('the fades of the rail list', () => {
+    it('draws neither on a list that fits, or holds nothing', () => {
+        expect(listFade(0, 300, 300)).toEqual({ above: false, below: false });
+        expect(listFade(0, 0, 0)).toEqual({ above: false, below: false });
+    });
+
+    it('fades the bottom alone at the top of a longer list and the top alone at its end', () => {
+        expect(listFade(0, 1000, 400)).toEqual({ above: false, below: true });
+        expect(listFade(600, 1000, 400)).toEqual({ above: true, below: false });
+    });
+
+    it('fades both edges in the middle of the list', () => {
+        expect(listFade(300, 1000, 400)).toEqual({ above: true, below: true });
+    });
+
+    it('takes a list a fraction of a pixel short of either end as at that end', () => {
+        expect(listFade(0.5, 1000, 400)).toEqual({ above: false, below: true });
+        expect(listFade(599.5, 1000, 400)).toEqual({ above: true, below: false });
+    });
+});
 
 describe('arrange', () => {
     it("puts a group's views in the group's own key order, and the rest at the end", () => {
@@ -273,22 +295,48 @@ describe('the rail, drawn', () => {
         expect(body).toMatch(/role="tooltip"[^>]*>Status<\/span>/);
     });
 
-    it('draws the search, update, and three app text controls from the catalog', () => {
-        expect(body).toContain('data-action="search"');
-        expect(body).toContain('data-action="update"');
-        expect(body).toContain(`aria-label="${catalog['app.search']}"`);
-        expect(body).toContain(`aria-label="${catalog['app.tasks.update_tasks']}"`);
-        expect(body).toContain(catalog['app.search_tip']);
-        expect(body).toContain(catalog['app.update_tip']);
-        expect(body).toContain(`aria-label="${catalog['app.text_smaller']}"`);
-        expect(body).toContain(`aria-label="${catalog['app.text_larger']}"`);
-        expect(body).toContain(`aria-label="${catalog['app.text_reset']}"`);
+    it('draws the search and update controls with their names under their glyphs', () => {
+        for (const [action, key, tip] of [
+            ['search', 'app.search', 'app.search_tip'],
+            ['update', 'app.update', 'app.update_tip']
+        ]) {
+            const block = new RegExp(`data-action="${action}"[\\s\\S]*?<\\/button>`).exec(
+                body
+            )?.[0];
+            expect(block).toMatch(/class="[^"]*rail-control[^"]*stacked/);
+            expect(block).toContain(`class="label">${catalog[key]}</span>`);
+            expect(body).toContain(catalog[tip]);
+        }
+    });
+
+    it('draws the three text steps glyph-only in one group named Text, smaller, reset, larger', () => {
+        const group =
+            /role="group" aria-label="([^"]*)"[\s\S]*?class="caption[^"]*"[^>]*>([^<]*)</.exec(
+                body
+            );
+        expect(group?.[1]).toBe(catalog['app.text']);
+        expect(group?.[2]).toBe(catalog['app.text']);
+        const labels = [...(group?.[0] ?? '').matchAll(/<button\b[^>]*aria-label="([^"]*)"/g)].map(
+            (found) => found[1]
+        );
+        expect(labels).toEqual([
+            catalog['app.text_smaller'],
+            catalog['app.text_reset'],
+            catalog['app.text_larger']
+        ]);
         for (const label of ['app.text_smaller', 'app.text_larger', 'app.text_reset']) {
             expect(buttonWith(body, `aria-label="${catalog[label]}"`)).toMatch(
                 /class="[^"]*rail-control/
             );
         }
     });
+
+    /** The foot control carrying one stop name, whole. */
+    function footButton(html: string, stop: string): string | undefined {
+        return [...html.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)]
+            .map(([button]) => button)
+            .find((button) => button.includes(`data-stop="${stop}"`));
+    }
 
     it('draws the three appearance toggles with their own glyphs and short labels', () => {
         setTheme('mocha');
@@ -297,15 +345,14 @@ describe('the rail, drawn', () => {
                 context: clientContext(client),
                 props: { groups }
             }).body;
-            for (const [key, glyph] of [
-                ['ui.crt_on', 'crt'],
-                ['ui.wallpaper', 'wallpaper'],
-                ['ui.unicode', 'unicode']
+            for (const [key, glyph, stop] of [
+                ['ui.crt_on', 'crt', 'crt'],
+                ['ui.wallpaper', 'wallpaper', 'wall'],
+                ['ui.unicode', 'unicode', 'unicode']
             ]) {
-                const button = new RegExp(
-                    `<button[^>]*aria-label="${catalog[key]}"[^>]*>[\\s\\S]*?<\\/button>`
-                ).exec(themed)?.[0];
+                const button = footButton(themed, stop);
                 expect(button).toBeDefined();
+                expect(button).toContain(`class="label">${catalog[key]}</span>`);
                 expect(button).toContain(glyphCatalog(config)[glyph]);
             }
         } finally {
@@ -322,15 +369,14 @@ describe('the rail, drawn', () => {
                 context: clientContext(client),
                 props: { groups }
             }).body;
-            for (const [key, name, standIn] of [
-                ['ui.crt_on', 'crt', '[/]'],
-                ['ui.wallpaper', 'wallpaper', '[w]'],
-                ['ui.unicode', 'unicode', '&lt;>']
+            for (const [key, name, stop, standIn] of [
+                ['ui.crt_on', 'crt', 'crt', '[/]'],
+                ['ui.wallpaper', 'wallpaper', 'wall', '[w]'],
+                ['ui.unicode', 'unicode', 'unicode', '&lt;>']
             ]) {
-                const button = [...themed.matchAll(/<button\b[^>]*>[\s\S]*?<\/button>/g)]
-                    .map(([html]) => html)
-                    .find((html) => html.includes(`aria-label="${catalog[key]}"`));
+                const button = footButton(themed, stop);
                 expect(button).toBeDefined();
+                expect(button).toContain(`class="label">${catalog[key]}</span>`);
                 expect(button).toContain(`>${standIn}</span>`);
                 expect(button).not.toContain(glyphCatalog(config)[name]);
             }

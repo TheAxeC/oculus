@@ -35,6 +35,7 @@ import {
     wallpaperSettings
 } from '../../src/lib/state/appearance.ts';
 import { setAscii, setGlyphMode, setGlyphs } from '../../src/lib/state/text.ts';
+import { parseBlocks } from '../../src/lib/themes/parse.ts';
 
 const THEMES_DIR = resolve(
     dirname(fileURLToPath(import.meta.url)),
@@ -173,5 +174,39 @@ describe('terminalFontPx', () => {
         expect(terminalFontPx()).toBeNull();
         setAppearance({ terminal: {} });
         expect(terminalFontPx()).toBeNull();
+    });
+});
+
+describe('the scrollbar tokens', () => {
+    it('are given on :root the values the default theme derives, for the first paint', () => {
+        const root = parseBlocks(TOKENS)[':root'];
+        const derived = apply('light').set;
+        for (const name of ['--scroll-thumb', '--scroll-track', '--accent-bg', '--accent-bg-txt']) {
+            expect(root[name], name).toBe(derived[name]);
+        }
+    });
+
+    it('gives every theme a thumb and a track of its own, the track the panel', () => {
+        for (const entry of themes()) {
+            const set = apply(entry.name).set;
+            expect(set['--scroll-thumb'], entry.name).toMatch(/^#[0-9a-f]{6}$/);
+            expect(set['--scroll-track'], entry.name).toMatch(/^#[0-9a-f]{3,6}$/i);
+            expect(set['--scroll-thumb'], entry.name).not.toBe(set['--scroll-track']);
+        }
+    });
+
+    it('draws a dark track on a dark theme and a light one on the light theme', () => {
+        const dark = apply('dark').set['--scroll-track'];
+        const light = apply('light').set['--scroll-track'];
+        const level = (hex: string): number =>
+            Number.parseInt(hex.slice(1, 3), 16) +
+            Number.parseInt(hex.slice(3, 5), 16) +
+            Number.parseInt(hex.slice(5, 7), 16);
+        expect(
+            level(dark.length === 4 ? dark.replace(/[0-9a-f]/gi, (c) => c + c) : dark)
+        ).toBeLessThan(3 * 96);
+        expect(
+            level(light.length === 4 ? light.replace(/[0-9a-f]/gi, (c) => c + c) : light)
+        ).toBeGreaterThan(3 * 160);
     });
 });

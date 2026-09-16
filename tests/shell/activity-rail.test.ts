@@ -1,13 +1,15 @@
 // Layer 3, shell test. The rail is one stop of the browser's focus order: rendered to HTML, exactly
 // one of its controls carries tabindex 0 and every other carries -1, and a control that cannot be
-// pressed is no stop at all.
+// pressed is no stop at all. The rule the arrow keys follow along the ring and the foot's row of
+// text steps is plain arithmetic over stop names, read here too.
 //
-// What this does NOT cover: the arrow keys themselves, which need a DOM and are pressed in
-// tests/browser/keyboard.spec.ts.
+// What this does NOT cover: the arrow keys pressed, which need a DOM and are pressed in
+// tests/browser/keyboard.spec.ts and tests/browser/shell-defects.spec.ts.
 
 import { describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import ActivityRail from '../../src/lib/shell/ActivityRail.svelte';
+import { TEXT_ROW, railStop } from '../../src/lib/shell/rail.ts';
 import {
     asciiCatalog,
     engineDir,
@@ -82,5 +84,55 @@ describe('the rail as one stop of the focus order', () => {
         expect(reset?.disabled).toBe(true);
         expect(reset?.tabindex).toBe('-1');
         expect(found.filter((one) => one.disabled && one.tabindex === '0')).toEqual([]);
+    });
+});
+
+describe('the arrow keys along the rail and its row of text steps', () => {
+    const ring = ['view:a', 'theme', 'text-smaller', 'text-reset', 'text-larger', 'crt', 'unicode'];
+
+    it('moves down and up the column with the row as one place, entering it at its first step', () => {
+        expect(railStop('ArrowDown', 'theme', ring, TEXT_ROW)).toBe('text-smaller');
+        expect(railStop('ArrowUp', 'crt', ring, TEXT_ROW)).toBe('text-smaller');
+    });
+
+    it('leaves the row downwards and upwards from any of its steps', () => {
+        for (const step of TEXT_ROW) {
+            expect(railStop('ArrowDown', step, ring, TEXT_ROW)).toBe('crt');
+            expect(railStop('ArrowUp', step, ring, TEXT_ROW)).toBe('theme');
+        }
+    });
+
+    it('moves along the row with left and right and stays at its ends', () => {
+        expect(railStop('ArrowRight', 'text-smaller', ring, TEXT_ROW)).toBe('text-reset');
+        expect(railStop('ArrowRight', 'text-reset', ring, TEXT_ROW)).toBe('text-larger');
+        expect(railStop('ArrowRight', 'text-larger', ring, TEXT_ROW)).toBe('text-larger');
+        expect(railStop('ArrowLeft', 'text-reset', ring, TEXT_ROW)).toBe('text-smaller');
+        expect(railStop('ArrowLeft', 'text-smaller', ring, TEXT_ROW)).toBe('text-smaller');
+    });
+
+    it('answers no left or right outside the row, and no other key', () => {
+        expect(railStop('ArrowLeft', 'theme', ring, TEXT_ROW)).toBeNull();
+        expect(railStop('ArrowRight', 'crt', ring, TEXT_ROW)).toBeNull();
+        expect(railStop('Enter', 'theme', ring, TEXT_ROW)).toBeNull();
+    });
+
+    it('skips a step that is out of the ring, and enters a row whose first step is out at its next', () => {
+        const noReset = ring.filter((id) => id !== 'text-reset');
+        expect(railStop('ArrowRight', 'text-smaller', noReset, TEXT_ROW)).toBe('text-larger');
+        const noSmaller = ring.filter((id) => id !== 'text-smaller');
+        expect(railStop('ArrowDown', 'theme', noSmaller, TEXT_ROW)).toBe('text-reset');
+        expect(railStop('ArrowUp', 'text-larger', noSmaller, TEXT_ROW)).toBe('theme');
+    });
+
+    it('wraps at the ends of the column and goes to either end on Home and End', () => {
+        expect(railStop('ArrowDown', 'unicode', ring, TEXT_ROW)).toBe('view:a');
+        expect(railStop('ArrowUp', 'view:a', ring, TEXT_ROW)).toBe('unicode');
+        expect(railStop('Home', 'text-larger', ring, TEXT_ROW)).toBe('view:a');
+        expect(railStop('End', 'theme', ring, TEXT_ROW)).toBe('unicode');
+    });
+
+    it('starts at the first place for a stop that is nowhere, and answers nothing on an empty ring', () => {
+        expect(railStop('ArrowDown', 'gone', ring, TEXT_ROW)).toBe('view:a');
+        expect(railStop('ArrowDown', 'gone', [], TEXT_ROW)).toBeNull();
     });
 });
