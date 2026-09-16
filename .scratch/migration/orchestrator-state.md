@@ -61,7 +61,7 @@ dispatch:                                  # M2 in flight (dispatched 14:21 from
   report: tools/oculus/.scratch/migration/agents/reviews/Q33-report.md
   exit: none
   pid: none                                 # a native Claude worker has no process of its own
-  session_id: pending                       # the Agent tool's id, written after the dispatch
+  session_id: a582bc338eb45ced0            # the Agent tool's id, launched 14:36
   round: 0
   landing: not-started
 ```
