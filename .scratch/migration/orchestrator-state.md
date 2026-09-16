@@ -34,7 +34,7 @@ dispatch:                                  # Q29 + D12 + D9 in flight; PAUSE aft
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q29/report.md
   exit: none
   pid: none                                 # a native Claude worker has no process of its own
-  session_id: a568a37dc8dfaedd3            # the Agent tool's id, launched 11:04; reported 11:51 (runs/Q29/report.md; 448,238 tokens, 282 tool uses, 2,860 s; diff.patch 2,988 lines, 73 files; the six fixes done, four differences: the paint-limit reader in `data/editor.ts` since a state module may not import `data/sources/config`, the pane menu's close asking too, the two organisation headers, `desc_behavior`; seven people gained a second organisation, vandervoort beside the six); checks started 11:52 (runs/Q29/checks.sh); reviewer dispatched 11:53 (Agent id ad26d1b9ecd35b07e)
+  session_id: a568a37dc8dfaedd3            # the Agent tool's id, launched 11:04; reported 11:51 (runs/Q29/report.md; 448,238 tokens, 282 tool uses, 2,860 s; diff.patch 2,988 lines, 73 files; the six fixes done, four differences: the paint-limit reader in `data/editor.ts` since a state module may not import `data/sources/config`, the pane menu's close asking too, the two organisation headers, `desc_behavior`; seven people gained a second organisation, vandervoort beside the six); checks started 11:52 (runs/Q29/checks.sh); reviewer dispatched 11:53 (Agent id ad26d1b9ecd35b07e); the orchestrator's read done 11:54 (runs/Q29/read-notes.md: the source read whole, the six fixes on the tree, the four differences right; to weigh with the review: the plain paint before the config channel's first push, the focus after a cancelled confirmation); checks green 11:57 (test 217 files 3,613, check 1,108, build, format, lint, ASCII 0, browser 122, the cockpit gates); landing after the review
   landing: not-started
 - package: D12
   worker: claude:opus
@@ -46,7 +46,7 @@ dispatch:                                  # Q29 + D12 + D9 in flight; PAUSE aft
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D12/report.md
   exit: none
   pid: none                                 # a native Claude worker has no process of its own
-  session_id: a7c9f1cdd63e315af            # the Agent tool's id, launched 11:10
+  session_id: a7c9f1cdd63e315af            # the Agent tool's id, launched 11:10; reported 12:00 (runs/D12/report.md; 400,388 tokens, 214 tool uses, 3,054 s; diff.patch 3,370 lines, 42 files; six differences: `length` on a hit, the trim rule in `data/search.ts`, `server/search-routes.ts`, the token on the GET, an explicit `.` path since ripgrep with no path reads its stdin pipe, the `/` key through the shell's rule; `ui/ToolButton.svelte` gained a `children` snippet); checks started 12:01 (runs/D12/checks.sh); reviewer dispatched 12:02 (Agent id ab5834927b3f9c479)
   landing: not-started
 - package: D9
   worker: claude:opus
