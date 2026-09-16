@@ -24,7 +24,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # PAUSED 17:36 (Axel, laptop closing in 15 min: "stop them now"): both agents stopped by TaskStop, nothing in flight, no process of theirs left (`ps` and port 8792 checked); M2 landed 15:17; D16 at round 4 answered 17:26, its fourth review stopped before reporting (rerun it on resumption); Q33 at round 4 sent 17:43, its builder stopped mid-round (the worktree holds a partial round 4: 30 files +813/-198 against 133e7c39; on resumption read the diff first, then resume the builder by SendMessage on its id or brief a continuation builder); the set pauses after M2, D16 and Q33 land
+dispatch:                                  # PAUSED 17:36 (Axel, laptop closing in 15 min: "stop them now"): both agents stopped by TaskStop, nothing in flight, no process of theirs left (`ps` and port 8792 checked); M2 landed 15:17; D16 at round 4 answered 17:26, its fourth review stopped before reporting (rerun it on resumption); Q33 at round 4 sent 17:33, its builder stopped mid-round (the worktree holds a partial round 4: 30 files +813/-198 against 133e7c39; on resumption read the diff first, then resume the builder by SendMessage on its id or brief a continuation builder); the set pauses after M2, D16 and Q33 land
 - package: D16
   worker: claude:opus
   worktree: .agents/worktrees/d16
