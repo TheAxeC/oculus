@@ -4,7 +4,7 @@
     //
     // A filter carries how many projects of it the graph holds now, so a reader sees what a press
     // costs before pressing it. A project type keeps the chip capsule its tone belongs to; a
-    // research line and the connected toggle are toolbar controls, since the capsule stands for a
+    // pillar and the connected toggle are toolbar controls, since the capsule stands for a
     // status word and a project type and for nothing else.
     //
     // A line is drawn as the one in force only while it holds a project, so a line another filter

@@ -54,10 +54,10 @@ const EMPTY_RELATIONS: Relations = {
     projectVenue: [],
     projectFunding: [],
     projectDataset: [],
-    projectProgram: [],
+    projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingProgram: []
+    fundingPillar: []
 };
 
 /** One project, with two of its Markdown documents present and two of them not. */
@@ -80,7 +80,7 @@ function project(): Record_ {
         relatedIds: [],
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [
@@ -118,7 +118,7 @@ function snapshot(over: Partial<Record_> = {}): Snapshot {
             projects: byId,
             venues: {},
             datasets: {},
-            programs: {},
+            pillars: {},
             domains: {},
             funding: {},
             collections: {}

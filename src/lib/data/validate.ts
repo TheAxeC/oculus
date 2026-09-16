@@ -35,7 +35,7 @@ type SchemaKeys = {
 type IdSets = {
     venues: Set<string>;
     datasets: Set<string>;
-    programs: Set<string>;
+    pillars: Set<string>;
     domains: Set<string>;
     funding: Set<string>;
     projects: Set<string>;
@@ -49,13 +49,20 @@ type IdSets = {
 const COLLABORATIONS = 'collaborations';
 const COLLABORATOR = 'collaborator';
 
+/**
+ * A manifest key that has been renamed, and the name it is written under now. One word for a thing
+ * means the reader takes the new key alone, so a manifest still carrying the old one is a finding
+ * that names both rather than a value quietly read under two names.
+ */
+export const RENAMED_FIELDS: Record<string, string> = { program: 'pillar' };
+
 /** A relation field of a manifest, the kind it points at, and the set that kind's ids live in. */
 const REFERENCES: { field: string; kind: keyof IdSets; what: string; single: boolean }[] = [
     { field: 'venue_id', kind: 'venues', what: 'venue', single: true },
     { field: 'domain', kind: 'domains', what: 'domain', single: true },
     { field: 'funding', kind: 'funding', what: 'funding scheme', single: false },
     { field: 'datasets', kind: 'datasets', what: 'dataset', single: false },
-    { field: 'program', kind: 'programs', what: 'research line', single: false },
+    { field: 'pillar', kind: 'pillars', what: 'pillar', single: false },
     { field: 'related', kind: 'projects', what: 'project', single: false }
 ];
 
@@ -63,7 +70,7 @@ const REFERENCES: { field: string; kind: keyof IdSets; what: string; single: boo
 const SHAPES: { field: string; kind: 'string' | 'list'; nullable: boolean }[] = [
     { field: 'venue_id', kind: 'string', nullable: true },
     { field: 'domain', kind: 'string', nullable: false },
-    { field: 'program', kind: 'list', nullable: false },
+    { field: 'pillar', kind: 'list', nullable: false },
     { field: 'datasets', kind: 'list', nullable: false },
     { field: 'related', kind: 'list', nullable: false },
     { field: 'collaborators', kind: 'list', nullable: false },
@@ -123,15 +130,21 @@ export function schemaKeys(schema: unknown): SchemaKeys {
 /**
  * Every top-level key is one the schema names, and inside a key the schema gave dotted names to,
  * every key of the map is one of those. A key whose value is not a map is not looked into, which
- * is what keeps a `followup:` written as one line from being reported twice.
+ * is what keeps a `followup:` written as one line from being reported twice. A key RENAMED_FIELDS
+ * names is reported under the name it is written under now, so a manifest written by hand under the
+ * old one says what to write instead.
  */
 function checkKeys(manifest: RawManifest, schema: SchemaKeys, findings: Finding[]): void {
     for (const key of Object.keys(manifest)) {
         if (!schema.top.has(key)) {
+            const renamed = byKey(RENAMED_FIELDS, key);
             findings.push({
                 file: manifest.file,
                 key,
-                message: `key ${key} is not in the manifest schema`
+                message:
+                    renamed === undefined
+                        ? `key ${key} is not in the manifest schema`
+                        : `key ${key} is now ${renamed}: write the tags under ${renamed}:`
             });
             continue;
         }
@@ -474,12 +487,12 @@ function checkFundingStatements(raw: RawPortfolio, findings: Finding[]): void {
 
 /** Which ids exist, by kind. A project is known by its folder name, which is the reader's `id`. */
 function idSets(raw: RawPortfolio): IdSets {
-    const of = (name: 'venues' | 'datasets' | 'programs' | 'domains' | 'funding'): Set<string> =>
+    const of = (name: 'venues' | 'datasets' | 'pillars' | 'domains' | 'funding'): Set<string> =>
         new Set(raw.registries[name].entries.map((entry) => entry.key).filter((key) => key !== ''));
     return {
         venues: of('venues'),
         datasets: of('datasets'),
-        programs: of('programs'),
+        pillars: of('pillars'),
         domains: of('domains'),
         funding: of('funding'),
         projects: new Set(raw.manifests.map((manifest) => manifest.id))

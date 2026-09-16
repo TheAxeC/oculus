@@ -13,7 +13,7 @@
 #   text      one line | textarea several lines | lines one list item per line
 #   select    one of a list | chips several of a list, with a filter | tags several free strings
 #   date      an ISO date | checkbox a flag | keymap a map the form does not write
-# `from:` names where the choices come from: a registry (venues, programs, funding, datasets,
+# `from:` names where the choices come from: a registry (venues, pillars, funding, datasets,
 # domains), the `collaborations` collection, `projects`, or a vocabulary key of vocab.yml
 # (type_order, status_legend, focus_lanes, priority_levels). `options:` is a literal list instead.
 manifest_schema:
@@ -46,7 +46,7 @@ manifest_schema:
     results:       { label: "Results", type: lines, section: Content, help: "one claimable headline per line - NO nulls" }
     ideas:         { label: "Ideas", type: lines, section: Content, help: "one avenue per line" }
     domain:        { label: "Domain", type: select, from: domains, section: Connections }
-    program:       { label: "Research lines", type: chips, from: programs, section: Connections, help: "programs.yml keys" }
+    pillar:       { label: "Pillars", type: chips, from: pillars, section: Connections, help: "pillars.yml keys" }
     funding:       { label: "Funding", type: chips, from: funding, section: Connections, help: "funding.yml keys (multiple allowed)" }
     collaborators: { label: "Collaborators", type: chips, from: collaborations, section: Connections, help: "collaborations.yml keys (multiple allowed)" }
     "waiting-on":  { label: "Waiting on", type: tags, section: Connections, help: "collaborations.yml keys or project ids" }

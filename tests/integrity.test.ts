@@ -45,7 +45,7 @@ const NEVER_DESCEND = ['code', 'attic'];
 const REGISTRY_LISTS: Record<string, string> = {
     venues: 'entries',
     datasets: 'datasets',
-    programs: 'entries',
+    pillars: 'entries',
     domains: 'entries',
     funding: 'entries'
 };

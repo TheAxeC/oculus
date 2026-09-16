@@ -47,7 +47,7 @@ function html(empty = false, state: Record<string, unknown> = {}): string {
     ];
     if (empty) {
         for (const project of Object.values(snapshot.entities.projects)) {
-            project.programIds = [];
+            project.pillarIds = [];
             project.relatedIds = [];
         }
     }
@@ -170,7 +170,7 @@ describe('the Map view', () => {
         expect(body).not.toContain('data-node="collaborator::person"');
     });
 
-    it('draws the catalogued empty state without an SVG when no program or related exists', () => {
+    it('draws the catalogued empty state without an SVG when no pillar or related exists', () => {
         const body = html(true);
         expect(body).toContain(catalog['map.empty']);
         expect(body).not.toContain('data-map-graph');

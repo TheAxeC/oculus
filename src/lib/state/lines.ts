@@ -1,10 +1,10 @@
-// Layer 2, client state. Pure joins for the Programs and Domains views: membership, portfolio
+// Layer 2, client state. Pure joins for the Pillars and Domains views: membership, portfolio
 // status, venue-tier counts and the archival groups. The views receive ready-to-draw lists.
 
-import type { Domain, Program, Project, Venue } from '../data/model.ts';
+import type { Domain, Pillar, Project, Venue } from '../data/model.ts';
 import { realProjects } from './venues.ts';
 
-export type { Domain, Program, Project, Venue } from '../data/model.ts';
+export type { Domain, Pillar, Project, Venue } from '../data/model.ts';
 
 const LIVE = ['active', 'manuscript', 'idea'];
 const FLIGHT = ['active', 'manuscript'];
@@ -12,7 +12,7 @@ const FLIGHT = ['active', 'manuscript'];
 export type TierRow = { key: string; label: string; color?: string };
 export type TierCount = TierRow & { count: number };
 export type ArchiveGroup = { type: string; count: number; projects: Project[] };
-export type ProgramsState = { reveal?: string };
+export type PillarsState = { reveal?: string };
 export type DomainsState = { reveal?: string };
 
 /** The optional palette destination shared by the two registry-line views. */
@@ -22,8 +22,8 @@ function parseRevealState(raw: unknown): { reveal?: string } {
     return typeof reveal === 'string' && reveal !== '' ? { reveal } : {};
 }
 
-/** Saved state of one Programs instance. */
-export function parseProgramsState(raw: unknown): ProgramsState {
+/** Saved state of one Pillars instance. */
+export function parsePillarsState(raw: unknown): PillarsState {
     return parseRevealState(raw);
 }
 
@@ -32,9 +32,9 @@ export function parseDomainsState(raw: unknown): DomainsState {
     return parseRevealState(raw);
 }
 
-/** Real projects that name one research line, preserving project order. */
-export function lineMembers(line: Program, projects: Project[], dead: string[] = []): Project[] {
-    return realProjects(projects, dead).filter((project) => project.programIds.includes(line.id));
+/** Real projects that name one pillar, preserving project order. */
+export function lineMembers(line: Pillar, projects: Project[], dead: string[] = []): Project[] {
+    return realProjects(projects, dead).filter((project) => project.pillarIds.includes(line.id));
 }
 
 /** Active and manuscript projects, the two types counted as currently in flight. */
@@ -59,11 +59,11 @@ export function tierStrip(members: Project[], venues: Venue[], tiers: TierRow[])
         .filter((tier) => tier.count > 0);
 }
 
-/** Real projects whose program tags name no entry in the registry. */
-export function orphans(lines: Program[], projects: Project[], dead: string[] = []): Project[] {
+/** Real projects whose pillar tags name no entry in the registry. */
+export function orphans(lines: Pillar[], projects: Project[], dead: string[] = []): Project[] {
     const known = new Set(lines.map((line) => line.id));
     return realProjects(projects, dead).filter(
-        (project) => !project.programIds.some((id) => known.has(id))
+        (project) => !project.pillarIds.some((id) => known.has(id))
     );
 }
 

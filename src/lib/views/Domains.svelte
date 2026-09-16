@@ -1,5 +1,5 @@
 <script module lang="ts">
-    // Layer 3, view registration. Domains follows Programs in the structure group.
+    // Layer 3, view registration. Domains follows Pillars in the structure group.
     import type { ViewRegistration } from './registry';
     export const registration: ViewRegistration = {
         id: 'domains',

@@ -9,7 +9,7 @@
 # The rail's groups are drawn in this order. A view names its group and position in its registration. A group with no registered views is not drawn. A group holding more than four entries, its views and its documents together, is one labelled button with a flyout, reached only by its `chord`. `glyph` is the flyout button's glyph name, and `chord` is its optional one-letter keyboard prefix.
 nav_groups:
   boards: { label: "Boards" }
-  structure: { label: "Pillars", glyph: program }
+  structure: { label: "Pillars", glyph: pillar }
   sessions: { label: "Sessions", glyph: live, chord: m }
   academic: { label: "Academic life", glyph: scout, chord: c }
   sources: { label: "Sources", glyph: folder, chord: s }
@@ -52,7 +52,7 @@ arrangements:
 # and the synthetic "No funding" aggregate card. The column words map positionally to the fixed span classes.
 board:
   cols_project: [Project, Authors, Venue, Status, Focus, Next]
-  cols_archive: [Paper, Authors, Venue, Domain, Research line, Funding]
+  cols_archive: [Paper, Authors, Venue, Domain, Pillar, Funding]
   search:
     projects: "Search title | eli5 | results | ideas | doc text ..."
     archive:  "Search archive | title | eli5 | outcome | doc text ..."

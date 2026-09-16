@@ -34,7 +34,7 @@ describe('the Domains view', () => {
         expect(body).toContain(catalog['collection.add']);
         expect(body).toContain('data-reveal="heart"');
         expect(body).toContain('Heart <strong>domain</strong>');
-        expect(body).toContain(`2 ${catalog['programs.projects']}`);
+        expect(body).toContain(`2 ${catalog['pillars.projects']}`);
         expect(body).toContain('Heart blurb.');
         expect(body).toContain('class="label">active</span>');
         expect(body).toContain('class="label">published</span>');

@@ -1,6 +1,6 @@
 <script lang="ts">
     // Layer 3, primitive. One tag: a glyph and its words, with no capsule. Everything a card lists
-    // that is not a status word is drawn this way, so a card of datasets, people, programmes and
+    // that is not a status word is drawn this way, so a card of datasets, people, pillars and
     // counts reads as text and the capsule keeps its one meaning.
     //
     // A tag that stands for a state carries that state's hue as the colour of its words and of its

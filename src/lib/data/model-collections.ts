@@ -36,7 +36,7 @@ export type SchemaField = {
  * One collection: a hub file of like records the reader edits through the file's own schema. Its
  * entries are held inline rather than by id, since an entry belongs to exactly one collection and
  * no relation runs the other way, so no cycle can form. Five files are carried as entities too
- * (venues, programs, domains, funding and data), the collection being what their entries are
+ * (venues, pillars, domains, funding and data), the collection being what their entries are
  * edited as. The data file lists its records under `datasets:`; the others use `entries:`.
  */
 export type Collection = {

@@ -44,7 +44,7 @@ function project(id: string, relatedIds: string[], extra: Partial<Project> = {})
         relatedIds,
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],
@@ -57,7 +57,7 @@ function project(id: string, relatedIds: string[], extra: Partial<Project> = {})
 function snapshot(): Snapshot {
     const projects = {
         alpha: project('alpha', ['beta', 'gamma'], {
-            programIds: ['one', 'two'],
+            pillarIds: ['one', 'two'],
             collaborators: ['person']
         }),
         beta: project('beta', ['alpha']),
@@ -70,7 +70,7 @@ function snapshot(): Snapshot {
             projects,
             venues: {},
             datasets: {},
-            programs: {
+            pillars: {
                 one: { id: 'one', title: 'One', fundingIds: [], projectIds: [] },
                 two: { id: 'two', title: 'Two', fundingIds: [], projectIds: [] }
             },
@@ -99,10 +99,10 @@ function snapshot(): Snapshot {
             projectVenue: [],
             projectFunding: [],
             projectDataset: [],
-            projectProgram: [],
+            projectPillar: [],
             projectDomain: [],
             projectRelated: [],
-            fundingProgram: []
+            fundingPillar: []
         },
         findings: []
     };
@@ -196,8 +196,8 @@ describe('relationship graph', () => {
 
     it('drops a project with no membership of a drawn line, and the collaborator left behind', () => {
         const data = snapshot();
-        data.entities.projects.alpha.programIds = ['one'];
-        data.entities.projects.gamma.programIds = ['two'];
+        data.entities.projects.alpha.pillarIds = ['one'];
+        data.entities.projects.gamma.pillarIds = ['two'];
         const whole = buildGraph(data, { collaborators: true });
         expect(ids(whole, 'collaborator')).toEqual(['collaborator::person']);
 

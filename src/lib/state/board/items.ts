@@ -58,7 +58,7 @@ function softwareTags(project: Project, snapshot: Snapshot): BoardTag[] {
 /** Everything the search reads, from the project and from what it was joined with. */
 function haystack(project: Project, item: Omit<BoardItem, 'haystack'>): string {
     const tags = [
-        ...item.programs,
+        ...item.pillars,
         ...item.funding,
         ...item.datasets,
         ...item.collaborators,
@@ -111,9 +111,7 @@ function itemOf(
                       short:
                           venue.short !== undefined && venue.short !== '' ? venue.short : venue.name
                   },
-        programs: project.programIds.map((id) =>
-            tag(id, byKey(entities.programs, id)?.title ?? id)
-        ),
+        pillars: project.pillarIds.map((id) => tag(id, byKey(entities.pillars, id)?.title ?? id)),
         funding: project.fundingIds.map((id) => tag(id, id)),
         datasets: project.datasetIds.map((id) => tag(id, id)),
         collaborators: project.collaborators.map((id) => tag(id, names[id] ?? id)),

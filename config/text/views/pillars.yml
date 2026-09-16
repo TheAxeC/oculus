@@ -1,0 +1,23 @@
+# Oculus text owned by the pillars view.
+text:
+    pillars:
+        archival: Archival
+        archival_blurb: Dead-ends and paused work (no-go / dropped / disproved / abandoned / parked), kept for provenance and excluded from pillar membership.
+        in_flight: in flight
+        intro: My <b>3 research pillars</b> (mirrors the public research statement), plus any <b>provisional</b> line below them. Each shows <b>in-flight</b> vs total projects and the <b>venue-tier</b> spread of its in-flight work; <b>orphans</b> are untagged real projects (everything should map to a pillar, a provisional line, or an off-pillar line). A project joins a pillar through its <code>pillar:</code> method tag. Edit <code>registries/pillars.yml</code>.
+        no_orphans: No orphans
+        no_orphans_blurb: Every project maps to a pillar or an off-pillar line.
+        not_active: '{0} not active'
+        offpillar_h: Off-pillar / archival
+        offpillar_note: Deliberately outside the current programme - kept as an explicit marker so this work files here rather than reading as an orphan.
+        orphans: Orphans
+        orphans_blurb: Real work with <b>no</b> <code>pillar:</code> tag yet - everything should map to a pillar or an off-pillar line. Tag it, or (for in-flight work) make the portfolio-fit call. (Off-pillar-by-design lines are below.)
+        project: project
+        projects: projects
+        provisional_h: Provisional line
+        provisional_note: 'A candidate pillar: a line I am building deliberately but that has not earned promotion yet. Shown separately so it is visible without diluting the 3 pillars. Promotion trigger is in <code>registries/pillars.yml</code>.'
+        total: total
+        untagged: '{0} untagged'
+    views:
+        pillars: Pillars
+        pillars_glyph: pillar

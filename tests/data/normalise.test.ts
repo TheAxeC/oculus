@@ -65,7 +65,7 @@ function collection(key: string, items: Record<string, unknown>[]): RawCollectio
 }
 
 /**
- * Two projects on one research line: alpha names every relation and beta names a venue that is not
+ * Two projects on one pillar: alpha names every relation and beta names a venue that is not
  * in the registry, so one fixture carries both the resolved and the dangling case.
  */
 function portfolio(): RawPortfolio {
@@ -90,7 +90,7 @@ function portfolio(): RawPortfolio {
                     outcome: 'in review',
                     venue_id: 'bspc',
                     domain: 'heart',
-                    program: ['federated'],
+                    pillar: ['federated'],
                     datasets: ['mimic'],
                     funding: ['FAIR'],
                     related: ['beta'],
@@ -163,7 +163,7 @@ function portfolio(): RawPortfolio {
                     themes: ['ecg']
                 }
             ]),
-            programs: entries('programs', [
+            pillars: entries('pillars', [
                 { key: 'federated', title: 'Federated learning', color: '#2563eb' }
             ]),
             domains: entries('domains', [{ key: 'heart', title: 'Cardiology' }]),
@@ -185,9 +185,9 @@ function portfolio(): RawPortfolio {
                     ]
                 }
             },
-            programs: {
-                ...collection('programs', [{ key: 'federated', title: 'Federated learning' }]),
-                meta: { title: 'PROGRAMS', schema: [{ field: 'key', type: 'text' }] }
+            pillars: {
+                ...collection('pillars', [{ key: 'federated', title: 'Federated learning' }]),
+                meta: { title: 'PILLARS', schema: [{ field: 'key', type: 'text' }] }
             },
             domains: {
                 ...collection('domains', [{ key: 'heart', title: 'Cardiology' }]),
@@ -272,7 +272,7 @@ describe('normalise, the field mapping', () => {
             venueId: 'bspc',
             fundingIds: ['FAIR'],
             datasetIds: ['mimic'],
-            programIds: ['federated'],
+            pillarIds: ['federated'],
             domainIds: ['heart'],
             collaborators: ['someone'],
             docs: [
@@ -327,7 +327,7 @@ describe('normalise, the field mapping', () => {
                 registries: {
                     venues: entries('venues', []),
                     datasets: entries('datasets', []),
-                    programs: entries('programs', []),
+                    pillars: entries('pillars', []),
                     domains: entries('domains', []),
                     funding: entries('funding', [])
                 },
@@ -390,7 +390,7 @@ describe('normalise, the field mapping', () => {
             'domains',
             'events',
             'funding',
-            'programs',
+            'pillars',
             'venues'
         ]);
         expect(Object.keys(snapshot.entities.funding)).toEqual(['A scheme with no key', 'FAIR']);
@@ -414,7 +414,7 @@ describe('normalise, the field mapping', () => {
             title: 'BSPC',
             fields: { name: 'BSPC', id: 'bspc' }
         });
-        expect(snapshot.entities.collections.programs.entries[0].id).toBe('federated');
+        expect(snapshot.entities.collections.pillars.entries[0].id).toBe('federated');
         expect(snapshot.entities.collections.domains.entries[0].id).toBe('heart');
         expect(snapshot.entities.collections.data).toMatchObject({
             id: 'data',
@@ -486,8 +486,8 @@ describe("normalise, a collection's schema", () => {
 });
 
 describe('normalise, the relations', () => {
-    it('carries a program registry color into the entity', () => {
-        expect(snapshot.entities.programs.federated.color).toBe('#2563eb');
+    it('carries a pillar registry color into the entity', () => {
+        expect(snapshot.entities.pillars.federated.color).toBe('#2563eb');
     });
 
     it('writes one table per relation, sorted by the pair', () => {
@@ -495,19 +495,19 @@ describe('normalise, the relations', () => {
             projectVenue: [['alpha', 'bspc']],
             projectFunding: [['alpha', 'FAIR']],
             projectDataset: [['alpha', 'mimic']],
-            projectProgram: [['alpha', 'federated']],
+            projectPillar: [['alpha', 'federated']],
             projectDomain: [['alpha', 'heart']],
             projectRelated: [['alpha', 'beta']],
-            fundingProgram: [['FAIR', 'federated']]
+            fundingPillar: [['FAIR', 'federated']]
         });
     });
 
     it('fills the other side of each relation on the entity that is pointed at', () => {
-        expect(snapshot.entities.programs.federated.projectIds).toEqual(['alpha']);
-        expect(snapshot.entities.programs.federated.fundingIds).toEqual(['FAIR']);
+        expect(snapshot.entities.pillars.federated.projectIds).toEqual(['alpha']);
+        expect(snapshot.entities.pillars.federated.fundingIds).toEqual(['FAIR']);
         expect(snapshot.entities.domains.heart.projectIds).toEqual(['alpha']);
         expect(snapshot.entities.funding.FAIR.projectIds).toEqual(['alpha']);
-        expect(snapshot.entities.funding.FAIR.programIds).toEqual(['federated']);
+        expect(snapshot.entities.funding.FAIR.pillarIds).toEqual(['federated']);
     });
 
     it('leaves an id that names nothing out of the table and out of the entity', () => {

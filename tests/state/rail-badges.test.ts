@@ -195,7 +195,7 @@ describe('rail badge counts', () => {
                     projects: {},
                     venues: {},
                     datasets: {},
-                    programs: {},
+                    pillars: {},
                     domains: {},
                     funding: {},
                     collections: {

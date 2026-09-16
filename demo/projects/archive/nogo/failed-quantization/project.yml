@@ -7,6 +7,6 @@ title: Extreme quantization of tensor factors
 lead: A. Example
 authors: [A. Example]
 domain: method
-program: [tensors]
+pillar: [tensors]
 eli5: We tried squeezing tensor factors to 2 bits; accuracy collapsed below any useful threshold.
 outcome: No-go. Below 4 bits the reconstruction error dominated; the compression never beat a smaller full-precision rank. Do not re-attempt without a learned codebook.

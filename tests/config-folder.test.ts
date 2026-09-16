@@ -104,7 +104,7 @@ describe("oculus's own config directory", () => {
             'scan',
             'venues_file',
             'datasets_file',
-            'programs_file',
+            'pillars_file',
             'domains_file',
             'collections',
             'inbox_file',
@@ -171,8 +171,8 @@ describe("oculus's own config directory", () => {
         'views/map.yml',
         'views/memories.yml',
         'views/note.yml',
+        'views/pillars.yml',
         'views/present.yml',
-        'views/programs.yml',
         'views/project.yml',
         'views/projects.yml',
         'views/radar.yml',
@@ -338,7 +338,7 @@ describe("oculus's own config directory", () => {
         const { config } = loadConfig(engineDir());
         const groups = config.nav_groups as Record<string, { label: string; glyph?: string }>;
         expect(groups.boards).toEqual({ label: 'Boards' });
-        expect(groups.structure).toEqual({ label: 'Pillars', glyph: 'program' });
+        expect(groups.structure).toEqual({ label: 'Pillars', glyph: 'pillar' });
         expect(Object.keys(groups).indexOf('structure')).toBe(
             Object.keys(groups).indexOf('boards') + 1
         );

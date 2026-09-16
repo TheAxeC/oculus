@@ -57,10 +57,10 @@ const EMPTY_RELATIONS: Relations = {
     projectVenue: [],
     projectFunding: [],
     projectDataset: [],
-    projectProgram: [],
+    projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingProgram: []
+    fundingPillar: []
 };
 
 function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
@@ -78,7 +78,7 @@ function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
         relatedIds: [],
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],
@@ -113,7 +113,7 @@ function snapshot(): Snapshot {
             venueId: 'bspc',
             fundingIds: ['ZonMw-AI-HCC'],
             datasetIds: ['mimic'],
-            programIds: ['federated'],
+            pillarIds: ['federated'],
             domainIds: ['heart'],
             collaborators: ['someone'],
             docs: [
@@ -159,7 +159,7 @@ function snapshot(): Snapshot {
                 }
             },
             datasets: {},
-            programs: {
+            pillars: {
                 federated: {
                     id: 'federated',
                     title: 'Federated learning',
@@ -331,7 +331,7 @@ describe('a card', () => {
         expect(body).toContain(catalog['project.card.local_label']);
     });
 
-    it('draws the funding, research line, dataset and collaborator tags', () => {
+    it('draws the funding, pillar, dataset and collaborator tags', () => {
         expect(body).toContain('ZonMw-AI-HCC');
         expect(body).toContain('Federated learning');
         expect(body).toContain('>mimic</span>');

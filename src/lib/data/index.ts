@@ -107,7 +107,7 @@ export function portfolioConfigFrom(
     const registries: RegistryFiles = {
         venues: path('venues_file', REGISTRY_FILES.venues),
         datasets: path('datasets_file', REGISTRY_FILES.datasets),
-        programs: path('programs_file', REGISTRY_FILES.programs),
+        pillars: path('pillars_file', REGISTRY_FILES.pillars),
         domains: path('domains_file', REGISTRY_FILES.domains),
         funding: fundingFile ?? REGISTRY_FILES.funding
     };

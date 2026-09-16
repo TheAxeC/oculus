@@ -127,7 +127,7 @@ describe('validating a host status', () => {
             registries: {
                 venues: { entries: [], meta: {} },
                 datasets: { entries: [], meta: {} },
-                programs: { entries: [], meta: {} },
+                pillars: { entries: [], meta: {} },
                 domains: { entries: [], meta: {} },
                 funding: { entries: [], meta: {} }
             },

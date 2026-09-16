@@ -69,7 +69,7 @@ text:
             present: slide
             present_glyph: poster
             present_tip: open the public deck at this project's slide
-            program_glyph: program
+            pillar_glyph: pillar
             repro_glyph: check
             reproduced: Reproduced
             results: Results

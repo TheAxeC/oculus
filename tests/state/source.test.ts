@@ -127,7 +127,7 @@ describe('source tab state', () => {
                 )
             )
         );
-        await loadSourceDraft('one', 'hub', 'program.py');
+        await loadSourceDraft('one', 'hub', 'script.py');
 
         expect(sourceDraft('one')).toMatchObject({
             text: 'locked text\n',
@@ -148,9 +148,9 @@ describe('source tab state', () => {
         );
         vi.stubGlobal('fetch', fetcher);
         setToken('source-token');
-        await loadSourceDraft('one', 'hub', 'program.py');
+        await loadSourceDraft('one', 'hub', 'script.py');
         const before = fetcher.mock.calls.length;
-        await saveSourceDraft('one', 'hub', 'program.py');
+        await saveSourceDraft('one', 'hub', 'script.py');
 
         expect(fetcher.mock.calls.length).toBe(before);
         expect(sourceDraft('one').message).toBe(catalog['source.readonly']);
@@ -225,7 +225,7 @@ describe('source tab state', () => {
         );
         vi.stubGlobal('fetch', fetcher);
         setToken('source-token');
-        await expect(saveSource('hub', 'program.py', 'replacement')).resolves.toMatchObject({
+        await expect(saveSource('hub', 'script.py', 'replacement')).resolves.toMatchObject({
             ok: false,
             refused
         });

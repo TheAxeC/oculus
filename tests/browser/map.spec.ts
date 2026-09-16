@@ -17,11 +17,11 @@ import { t } from './words.ts';
 /** A project of the demo hub that is a member of one line, so another line's filter takes it out. */
 const BANDITS = 'projects/active/graph-bandits';
 
-/** A research line that project is not a member of, read from the hub rather than typed here. */
+/** A pillar that project is not a member of, read from the hub rather than typed here. */
 function otherLine(): string {
-    const manifest = readHubYaml(`${BANDITS}/project.yml`).program;
+    const manifest = readHubYaml(`${BANDITS}/project.yml`).pillar;
     const mine = Array.isArray(manifest) ? manifest.map(String) : [];
-    const entries = readHubYaml('registries/programs.yml').entries;
+    const entries = readHubYaml('registries/pillars.yml').entries;
     const keys = (Array.isArray(entries) ? entries : []).map((entry) =>
         String((entry as Record<string, unknown>).key)
     );

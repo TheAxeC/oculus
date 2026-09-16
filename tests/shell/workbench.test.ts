@@ -146,6 +146,12 @@ describe('the workbench', () => {
         expect(activeLabel(client.registry, null)).toBe('oculus');
     });
 
+    it('names a view id that was renamed the same way, so a saved tab says what it holds', () => {
+        expect(activeLabel(client.registry, { id: 'held', view: 'programs', state: {} })).toBe(
+            'Unknown view: programs'
+        );
+    });
+
     it('builds the active main tab title with the configured host and a leading waiting count', () => {
         expect(windowTitle(0, 'Status')).toBe('axel@research: ~/Status');
         expect(windowTitle(2, 'Status')).toBe('oculus (2 waiting) | axel@research: ~/Status');

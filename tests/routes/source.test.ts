@@ -88,12 +88,12 @@ describe('POST /api/source', () => {
 
     it('writes a file of any name whose bytes are text, since no list says which', async () => {
         const one = fixture();
-        const file = join(one.root.dir, 'program.py');
+        const file = join(one.root.dir, 'script.py');
         expect(resolve(file).startsWith(resolve(one.root.dir) + sep)).toBe(true);
         writeFileSync(file, 'before\n');
         const token = mintToken();
         const response = await handleSource(
-            request(token, { root: one.root.key, path: 'program.py', content: 'after\n' }),
+            request(token, { root: one.root.key, path: 'script.py', content: 'after\n' }),
             token,
             [one.root]
         );

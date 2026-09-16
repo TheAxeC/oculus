@@ -617,6 +617,45 @@ function expect(data: Parsed, path: string[], value: FieldValue): void {
 }
 
 /**
+ * One top-level key written under another name, in the bytes of the key itself.
+ *
+ * Only the key token is replaced, so the value, the comment on the line, the position of the key
+ * among its neighbours and every other byte of the file are the ones the file already had. A file
+ * that does not hold the old key is not a change and is not a refusal. A file that already holds
+ * the new key is refused, since the rename would put two keys of one name in one map.
+ *
+ * The result is verified the way setFields verifies its own: the new text must parse to the old
+ * document with the one key moved, and anything else comes back as the source unchanged.
+ */
+export function renameKey(source: string, from: string, to: string): EditResult {
+    const refusal = (reason: string): EditResult => ({
+        text: source,
+        changed: [],
+        refused: [{ field: from, reason }]
+    });
+    const doc = parseDocument(source);
+    if (doc.errors.length > 0) return refusal('the manifest does not parse');
+    const root = doc.contents;
+    if (root === null || !isMap(root)) return refusal('the manifest is not a map of keys');
+    const pair = pairOf(root, from);
+    if (pair === undefined) return { text: source, changed: [], refused: [] };
+    if (pairOf(root, to) !== undefined) return refusal(`${to} is already a key of the manifest`);
+    const range = rangeOf(pair.key);
+    if (range === null) return refusal('the key has no place in the file');
+
+    const text = splice(source, range[0], range[1], renderScalar(to, pair.key.type));
+    const after = safeParse(text);
+    const wanted = safeParse(source);
+    if (after === null || wanted === null)
+        return refusal('the edit did not verify; nothing was written');
+    wanted[to] = wanted[from];
+    // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
+    delete wanted[from];
+    if (!deepEqual(after, wanted)) return refusal('the edit did not verify; nothing was written');
+    return { text, changed: [from], refused: [] };
+}
+
+/**
  * Set every field of a manifest's text, each in the bytes of its own value.
  *
  * A field whose value the manifest already holds is not a change and is not written. A field this

@@ -28,7 +28,7 @@ function project(id: string, days: number, type = 'active'): Project {
         relatedIds: [],
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],
@@ -48,7 +48,7 @@ function snapshot(): Snapshot {
             projects: {},
             venues: {},
             datasets: {},
-            programs: {},
+            pillars: {},
             domains: {},
             funding: {},
             collections: {},
@@ -59,10 +59,10 @@ function snapshot(): Snapshot {
             projectVenue: [],
             projectFunding: [],
             projectDataset: [],
-            projectProgram: [],
+            projectPillar: [],
             projectDomain: [],
             projectRelated: [],
-            fundingProgram: []
+            fundingPillar: []
         },
         findings: []
     };

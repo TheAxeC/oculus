@@ -67,9 +67,9 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `projects` | Projects | The projects board, as cards or as a list, searchable, with the pin, the stale badge and the card's own controls. |
 | `coauthor` | Coauthor | The same board over the projects someone else leads. |
 | `archive` | Archive | The same board over finished work and dead ends. |
-| `programs` | Pillars | The research programmes and which projects sit under each. |
+| `pillars` | Pillars | The research pillars and which projects sit under each. |
 | `domains` | Domains | The application domains and the projects in each. |
-| `map` | Map | The portfolio as a graph of projects and what links them, filtered by project type, by research line and to the projects that still hold a line membership. |
+| `map` | Map | The portfolio as a graph of projects and what links them, filtered by project type, by pillar and to the projects that still hold a pillar membership. |
 | `venues` | Venues | The venue catalogue with its tiers, deadlines and concentration warning. |
 | `data` | Data | The dataset registry: where each set came from and how it is recovered. |
 | `code` | Code | The repositories registry, what the portfolio says about its own code, and the software projects of the `projects/software` tier with the papers each one names. |

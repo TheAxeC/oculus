@@ -43,7 +43,7 @@ function project(id: string, slides: PresentSlide[], over: Partial<Project> = {}
         relatedIds: [],
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],

@@ -82,7 +82,7 @@ describe('attention lines', () => {
             relatedIds: [],
             fundingIds: [],
             datasetIds: [],
-            programIds: [],
+            pillarIds: [],
             domainIds: [],
             collaborators: [],
             docs: [],
@@ -112,7 +112,7 @@ describe('attention lines', () => {
                     }
                 },
                 datasets: {},
-                programs: {},
+                pillars: {},
                 domains: {},
                 funding: {},
                 collections: {}
@@ -121,10 +121,10 @@ describe('attention lines', () => {
                 projectVenue: [],
                 projectFunding: [],
                 projectDataset: [],
-                projectProgram: [],
+                projectPillar: [],
                 projectDomain: [],
                 projectRelated: [],
-                fundingProgram: []
+                fundingPillar: []
             },
             findings: []
         };

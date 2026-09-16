@@ -189,7 +189,7 @@ export function slideProject(id: string, tier: Tier): Project {
         relatedIds: [],
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],

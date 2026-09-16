@@ -113,7 +113,7 @@
     const lineFilters = $derived.by(() => {
         const counted = lineCounts(graph);
         const present = base.nodes.filter((node) => node.kind === 'line');
-        const order = Object.keys(snapshot?.entities.programs ?? {});
+        const order = Object.keys(snapshot?.entities.pillars ?? {});
         const ids = present.map((node) => node.entityId);
         const listed = [
             ...order.filter((id) => ids.includes(id)),
@@ -129,7 +129,7 @@
 
     const hasRelationships = $derived(
         Object.values(snapshot?.entities.projects ?? {}).some(
-            (project) => project.programIds.length > 0 || project.relatedIds.length > 0
+            (project) => project.pillarIds.length > 0 || project.relatedIds.length > 0
         )
     );
 

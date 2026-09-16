@@ -14,6 +14,7 @@ import {
     defaultWorkbench,
     parseLayout,
     parseWorkbench,
+    type Instance,
     type Layout,
     type Workbench
 } from '../../src/lib/state/layout/index.ts';
@@ -195,6 +196,29 @@ describe('the version 2 envelope, read as one tree', () => {
         expect(parseWorkbench(null)).toBe(null);
         expect(parseWorkbench([1, 2])).toBe(null);
         expect(parseWorkbench(`{"version":${WORKBENCH_VERSION}}`)).toBe(null);
+    });
+});
+
+describe('a saved tab naming a view that has been renamed', () => {
+    it('keeps the tab and the rest of the arrangement, so the loader drops nothing', () => {
+        const held: Instance = { id: 'one', view: 'programs', state: null };
+        const saved = {
+            version: LAYOUT_VERSION,
+            pages: [
+                {
+                    id: 'page-0',
+                    label: 'Page 1',
+                    workbench: bench({ kind: 'pane', tabs: [held], active: 'one' })
+                }
+            ],
+            current: 'page-0'
+        };
+        const read = parseLayout(saved, 'Page 1');
+        expect(read?.pages[0].workbench.root).toEqual({
+            kind: 'pane',
+            tabs: [held],
+            active: 'one'
+        });
     });
 });
 

@@ -53,10 +53,10 @@ const RELATIONS: Relations = {
     projectVenue: [],
     projectFunding: [],
     projectDataset: [],
-    projectProgram: [],
+    projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingProgram: []
+    fundingPillar: []
 };
 
 function project(id: string, venueId: string, type: string): Project {
@@ -77,7 +77,7 @@ function project(id: string, venueId: string, type: string): Project {
         venueId,
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],
@@ -182,7 +182,7 @@ function snapshot(items: Venue[] = VENUES): Snapshot {
             projects,
             venues: Object.fromEntries(items.map((venue) => [venue.id, venue])),
             datasets: {},
-            programs: {},
+            pillars: {},
             domains: {},
             funding: {},
             collections: { venues: collection(items.length === 0 ? [] : entries()) }

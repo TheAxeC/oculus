@@ -102,7 +102,7 @@ deck:
     # Cross-project tables, written by hand. When a project's headline number changes, its row here changes with it.
     summaries:
         summary1:
-            title: 'Active programs, at a glance'
+            title: 'Active pillars, at a glance'
             rows:
                 - {
                       field: 'Liver',

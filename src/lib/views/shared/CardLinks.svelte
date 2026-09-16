@@ -47,10 +47,10 @@
             tags: item.funding
         },
         {
-            key: 'programs',
-            label: t('board.facet_program'),
-            glyph: t('project.card.program_glyph'),
-            tags: item.programs
+            key: 'pillars',
+            label: t('board.facet_pillar'),
+            glyph: t('project.card.pillar_glyph'),
+            tags: item.pillars
         },
         {
             key: 'datasets',

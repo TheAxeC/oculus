@@ -28,8 +28,8 @@ venues_file: registries/venues.yml
 datasets_file: registries/data.yml
 
 
-# Programs registry -> the Programs tab (membership computed from manifests' `program:`). key must match.
-programs_file: registries/programs.yml
+# Pillars registry -> the Pillars tab (membership computed from manifests' `pillar:`). key must match.
+pillars_file: registries/pillars.yml
 
 # Domains tab (group projects by the `domain:` field -> application area). key matches a domain value.
 domains_file: registries/domains.yml
@@ -40,7 +40,7 @@ domains_file: registries/domains.yml
 collections:
   - { key: data,           title: "Data",               file: "registries/data.yml" }
   - { key: venues,         title: "Venues",             file: "registries/venues.yml" }
-  - { key: programs,       title: "Pillars",            file: "registries/programs.yml" }
+  - { key: pillars,       title: "Pillars",            file: "registries/pillars.yml" }
   - { key: domains,        title: "Domains",            file: "registries/domains.yml" }
   - { key: statements,     title: "Statements",          icon: section, file: "registries/boilerplate.yml" }
   - { key: funding,        title: "Funding",             icon: funding, file: "funding/funding.yml" }

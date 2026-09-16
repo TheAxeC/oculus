@@ -22,7 +22,7 @@ export type { RegistryFiles } from '../model.ts';
 export const REGISTRY_FILES: RegistryFiles = {
     venues: 'registries/venues.yml',
     datasets: 'registries/data.yml',
-    programs: 'registries/programs.yml',
+    pillars: 'registries/pillars.yml',
     domains: 'registries/domains.yml',
     funding: 'funding/funding.yml'
 };
@@ -35,12 +35,12 @@ export const REGISTRY_FILES: RegistryFiles = {
 const SHAPES: Record<RegistryName, { list: string; idField: string; idRequired: boolean }> = {
     venues: { list: 'entries', idField: 'id', idRequired: true },
     datasets: { list: 'datasets', idField: 'key', idRequired: true },
-    programs: { list: 'entries', idField: 'key', idRequired: true },
+    pillars: { list: 'entries', idField: 'key', idRequired: true },
     domains: { list: 'entries', idField: 'key', idRequired: true },
     funding: { list: 'entries', idField: 'key', idRequired: false }
 };
 
-const NAMES: RegistryName[] = ['venues', 'datasets', 'programs', 'domains', 'funding'];
+const NAMES: RegistryName[] = ['venues', 'datasets', 'pillars', 'domains', 'funding'];
 
 function empty(): RawRegistry {
     return { entries: [], meta: {} };

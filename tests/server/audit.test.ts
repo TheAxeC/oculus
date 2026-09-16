@@ -81,7 +81,7 @@ function project(over: Partial<Project> = {}): Project {
         relatedIds: [],
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],

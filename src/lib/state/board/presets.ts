@@ -61,7 +61,7 @@ export type BoardItem = {
     domain: { id: Id; label: string; tone: string } | null;
     /** The venue joined through `venue_id`: the card's line and the list row's short name. */
     venue: { id: Id; text: string; short: string } | null;
-    programs: BoardTag[];
+    pillars: BoardTag[];
     funding: BoardTag[];
     datasets: BoardTag[];
     collaborators: BoardTag[];
@@ -176,7 +176,7 @@ const COLUMN_KEY: Record<string, string> = {
 /** The cells each column list holds, in the order the words of `board:` are written in. */
 const COLUMNS: Record<string, string[]> = {
     cols_project: ['title', 'authors', 'venue', 'status', 'focus', 'next'],
-    cols_archive: ['title', 'authors', 'venue', 'domain', 'program', 'funding']
+    cols_archive: ['title', 'authors', 'venue', 'domain', 'pillar', 'funding']
 };
 
 /** Which `*_label_mode` of config/behavior.yml a board starts in. */
@@ -194,7 +194,7 @@ export const FACETS = [
     'category',
     'year',
     'domain',
-    'program',
+    'pillar',
     'funding',
     'dataset',
     'status',

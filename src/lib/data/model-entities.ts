@@ -16,13 +16,13 @@ export type Finding = {
 export type Tier = 'ideas' | 'active' | 'manuscripts' | 'software' | 'coauthor' | 'archive';
 
 /** The five registries, one per file readRegistries is given. */
-export type RegistryName = 'venues' | 'datasets' | 'programs' | 'domains' | 'funding';
+export type RegistryName = 'venues' | 'datasets' | 'pillars' | 'domains' | 'funding';
 
 /** The five hub-relative registry paths, one per registry. Declared here, used by sources/registries. */
 export type RegistryFiles = {
     venues: string;
     datasets: string;
-    programs: string;
+    pillars: string;
     domains: string;
     funding: string;
 };
@@ -402,7 +402,7 @@ export type DeckSlide = {
 
 /**
  * A project. The relation fields hold ids; data/normalise.ts fills them from the manifest's
- * `venue_id`, `funding`, `datasets`, `program` and `domain` keys, and leaves them empty when it has
+ * `venue_id`, `funding`, `datasets`, `pillar` and `domain` keys, and leaves them empty when it has
  * none.
  */
 export type Project = {
@@ -461,7 +461,7 @@ export type Project = {
     venueId?: Id;
     fundingIds: Id[];
     datasetIds: Id[];
-    programIds: Id[];
+    pillarIds: Id[];
     domainIds: Id[];
     /** Keys of the `collaborations` collection. Not a relation table: the entries are not entities. */
     collaborators: Id[];
@@ -538,15 +538,15 @@ export type Dataset = {
     projectIds: Id[];
 };
 
-/** A research line from registries/programs.yml. */
-export type Program = {
+/** A pillar from registries/pillars.yml. */
+export type Pillar = {
     id: Id;
     title: string;
     color?: string;
     kind?: string;
     goal?: string;
     blurb?: string;
-    /** Funding schemes reached through the projects on this line; programs.yml holds no funding key. */
+    /** Funding schemes reached through the projects on this line; pillars.yml holds no funding key. */
     fundingIds: Id[];
     projectIds: Id[];
 };
@@ -583,7 +583,7 @@ export type Funding = {
     subtasks: Subtask[];
     tags: string[];
     projectIds: Id[];
-    programIds: Id[];
+    pillarIds: Id[];
 };
 
 /**

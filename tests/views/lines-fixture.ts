@@ -1,4 +1,4 @@
-// Shared server-render fixture for the Programs, Domains and Map acceptance tests.
+// Shared server-render fixture for the Pillars, Domains and Map acceptance tests.
 
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { scalar } from '../../src/lib/data/guards.ts';
@@ -16,7 +16,7 @@ import type {
     Collection,
     Domain,
     Entry,
-    Program,
+    Pillar,
     Project,
     Snapshot,
     Venue
@@ -37,7 +37,7 @@ export function installConfig(client: ClientState): void {
     });
 }
 
-const PROGRAM_FILE = '/hub/registries/programs.yml';
+const PILLAR_FILE = '/hub/registries/pillars.yml';
 const DOMAIN_FILE = '/hub/registries/domains.yml';
 
 function project(id: string, fields: Partial<Project> = {}): Project {
@@ -58,7 +58,7 @@ function project(id: string, fields: Partial<Project> = {}): Project {
         venueId: undefined,
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],
@@ -72,7 +72,7 @@ function entry(id: string, fields: Record<string, unknown>, file: string, index:
     return { id, title: scalar(fields.title, id), fields: { key: id, ...fields }, file, index };
 }
 
-const programs: Program[] = [
+const pillars: Pillar[] = [
     {
         id: 'pillar',
         title: 'Pillar **One**',
@@ -97,30 +97,30 @@ const domains: Domain[] = [
     { id: 'empty', title: 'Empty domain', projectIds: [] }
 ];
 const projects = {
-    alpha: project('alpha', { programIds: ['pillar'], domainIds: ['heart'], venueId: 'strong' }),
+    alpha: project('alpha', { pillarIds: ['pillar'], domainIds: ['heart'], venueId: 'strong' }),
     old: project('old', {
         tier: 'archive',
         type: 'published',
-        programIds: ['dormant'],
+        pillarIds: ['dormant'],
         domainIds: ['heart']
     }),
     candidate: project('candidate-project', {
         tier: 'ideas',
         type: 'idea',
-        programIds: ['candidate']
+        pillarIds: ['candidate']
     }),
-    outside: project('outside-project', { programIds: ['outside'] }),
+    outside: project('outside-project', { pillarIds: ['outside'] }),
     orphan: project('orphan', { tier: 'manuscripts', type: 'manuscript' }),
     dead: project('dead', {
         tier: 'archive',
         type: 'dropped',
-        programIds: ['pillar'],
+        pillarIds: ['pillar'],
         relatedIds: ['alpha']
     })
 };
 const venues: Venue[] = [{ id: 'strong', name: 'Strong', tier: 'strong', themes: [] }];
 
-const programEntries = programs.map((line, index) =>
+const pillarEntries = pillars.map((line, index) =>
     entry(
         line.id,
         {
@@ -131,7 +131,7 @@ const programEntries = programs.map((line, index) =>
             funding: line.id === 'pillar' ? 'Funded by **Tests**.' : '',
             blurb: line.blurb ?? ''
         },
-        PROGRAM_FILE,
+        PILLAR_FILE,
         index
     )
 );
@@ -147,7 +147,7 @@ function collection(id: string, file: string, entries: Entry[]): Collection {
         schema: [
             { field: 'key', type: 'text', required: true },
             { field: 'title', type: 'text', required: true },
-            ...(id === 'programs'
+            ...(id === 'pillars'
                 ? [
                       {
                           field: 'color',
@@ -170,11 +170,11 @@ export function fixture(): Snapshot {
             projects,
             venues: Object.fromEntries(venues.map((venue) => [venue.id, venue])),
             datasets: {},
-            programs: Object.fromEntries(programs.map((line) => [line.id, line])),
+            pillars: Object.fromEntries(pillars.map((line) => [line.id, line])),
             domains: Object.fromEntries(domains.map((domain) => [domain.id, domain])),
             funding: {},
             collections: {
-                programs: collection('programs', PROGRAM_FILE, programEntries),
+                pillars: collection('pillars', PILLAR_FILE, pillarEntries),
                 domains: collection('domains', DOMAIN_FILE, domainEntries),
                 collaborations: {
                     id: 'collaborations',
@@ -190,10 +190,10 @@ export function fixture(): Snapshot {
             projectVenue: [],
             projectFunding: [],
             projectDataset: [],
-            projectProgram: [],
+            projectPillar: [],
             projectDomain: [],
             projectRelated: [],
-            fundingProgram: []
+            fundingPillar: []
         },
         findings: []
     });

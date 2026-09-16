@@ -32,7 +32,7 @@ test('the scroll controls appear on overflow, move by one tab, and follow the ac
     await expect(left).toBeHidden();
     await expect(right).toBeHidden();
 
-    for (const view of ['focus', 'projects', 'coauthor', 'archive', 'programs', 'domains']) {
+    for (const view of ['focus', 'projects', 'coauthor', 'archive', 'pillars', 'domains']) {
         await openView(page, view, t(`views.${view}`));
     }
     await expect(left).toBeVisible();

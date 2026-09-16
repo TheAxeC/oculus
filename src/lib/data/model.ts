@@ -11,7 +11,7 @@ import type {
     Funding,
     Id,
     PresentSlide,
-    Program,
+    Pillar,
     Project,
     RawCollection,
     RawManifest,
@@ -115,7 +115,7 @@ export type Entities = {
     projects: Record<Id, Project>;
     venues: Record<Id, Venue>;
     datasets: Record<Id, Dataset>;
-    programs: Record<Id, Program>;
+    pillars: Record<Id, Pillar>;
     domains: Record<Id, Domain>;
     funding: Record<Id, Funding>;
     collections: Record<Id, Collection>;
@@ -134,10 +134,10 @@ export type Relations = {
     projectVenue: [Id, Id][];
     projectFunding: [Id, Id][];
     projectDataset: [Id, Id][];
-    projectProgram: [Id, Id][];
+    projectPillar: [Id, Id][];
     projectDomain: [Id, Id][];
     projectRelated: [Id, Id][];
-    fundingProgram: [Id, Id][];
+    fundingPillar: [Id, Id][];
 };
 
 /**
@@ -258,7 +258,7 @@ export type {
     PresentSlide,
     PresentSpec,
     PresentTag,
-    Program,
+    Pillar,
     Project,
     RawCollection,
     RawEntry,

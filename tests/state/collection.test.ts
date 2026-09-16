@@ -403,7 +403,7 @@ function project(id: string, over: Partial<Project> = {}): Project {
         relatedIds: [],
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],

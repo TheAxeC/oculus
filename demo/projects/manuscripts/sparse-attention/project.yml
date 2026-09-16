@@ -10,7 +10,7 @@ status:
   line: Draft parked - waiting on a co-author's compute results.
 venue_id: tmlr
 domain: nlp
-program: [repr]
+pillar: [repr]
 datasets: [toy-embed]
 related: [robust-embeddings]
 eli5: Let the model learn WHICH tokens to attend to, so attention stays cheap at long context.

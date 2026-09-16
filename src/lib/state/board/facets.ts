@@ -22,8 +22,8 @@ export function facetValues(item: BoardItem, facet: string): string[] {
             return [item.year === '' ? NONE : item.year];
         case 'domain':
             return item.domain === null ? [] : [item.domain.id];
-        case 'program':
-            return item.programs.map((tag) => tag.id);
+        case 'pillar':
+            return item.pillars.map((tag) => tag.id);
         case 'funding':
             return item.funding.length === 0 ? [NONE] : item.funding.map((tag) => tag.id);
         case 'dataset':

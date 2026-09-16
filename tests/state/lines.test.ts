@@ -1,4 +1,4 @@
-// Pure Programs and Domains joins over a compact portfolio fixture.
+// Pure Pillars and Domains joins over a compact portfolio fixture.
 
 import { describe, expect, it } from 'vitest';
 import {
@@ -10,13 +10,13 @@ import {
     orphans,
     tierStrip
 } from '../../src/lib/state/lines.ts';
-import type { Domain, Program, Project, Venue } from '../../src/lib/data/model.ts';
+import type { Domain, Pillar, Project, Venue } from '../../src/lib/data/model.ts';
 
 function project(
     id: string,
     type: string,
     tier: Project['tier'],
-    programs: string[],
+    pillars: string[],
     domains: string[] = []
 ): Project {
     return {
@@ -35,7 +35,7 @@ function project(
         venueId: id === 'active' ? 'journal' : undefined,
         fundingIds: [],
         datasetIds: [],
-        programIds: programs,
+        pillarIds: pillars,
         domainIds: domains,
         collaborators: [],
         docs: [],
@@ -44,7 +44,7 @@ function project(
     };
 }
 
-const line: Program = {
+const line: Pillar = {
     id: 'line',
     title: 'Line',
     fundingIds: [],
@@ -61,7 +61,7 @@ const projects = [
 const dead = ['nogo', 'dropped', 'disproved'];
 const venues: Venue[] = [{ id: 'journal', name: 'Journal', tier: 'strong', themes: [] }];
 
-describe('research line joins', () => {
+describe('pillar joins', () => {
     it('keeps real membership and defines in-flight and dormant consistently', () => {
         expect(lineMembers(line, projects, dead).map((item) => item.id)).toEqual([
             'active',

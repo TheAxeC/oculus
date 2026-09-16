@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, Programs partial. Non-real work grouped in archive_dead order, with one collapsible
+    // Layer 3, Pillars partial. Non-real work grouped in archive_dead order, with one collapsible
     // category at a time and project links inside it.
 
     import Card from '$lib/ui/Card.svelte';
@@ -27,14 +27,14 @@
     }
 </script>
 
-<div class="muted" data-program-archival>
-    <Card {id} {cursor} title={t('programs.archival')}>
+<div class="muted" data-pillar-archival>
+    <Card {id} {cursor} title={t('pillars.archival')}>
         {#snippet meta()}
             <Glyph name="archived" />
-            <Tag label={t('programs.not_active', count)} />
+            <Tag label={t('pillars.not_active', count)} />
         {/snippet}
         <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-        <p>{@html inlineMarkdown(t('programs.archival_blurb'))}</p>
+        <p>{@html inlineMarkdown(t('pillars.archival_blurb'))}</p>
         <div class="groups">
             {#each groups as group (group.type)}
                 <div class="group">

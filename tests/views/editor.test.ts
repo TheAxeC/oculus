@@ -76,7 +76,7 @@ function project(): Project {
         venueId: 'bspc',
         fundingIds: [],
         datasetIds: [],
-        programIds: ['tensor'],
+        pillarIds: ['tensor'],
         domainIds: ['method'],
         collaborators: [],
         docs: [],
@@ -95,7 +95,7 @@ function snapshot(): Snapshot {
             projects,
             venues: { bspc: { id: 'bspc', name: 'BSPC', short: 'BSPC', themes: [] } },
             datasets: {},
-            programs: {
+            pillars: {
                 tensor: { id: 'tensor', title: 'Tensors', fundingIds: [], projectIds: [] }
             },
             domains: { method: { id: 'method', title: 'Methods', projectIds: [] } },
@@ -106,10 +106,10 @@ function snapshot(): Snapshot {
             projectVenue: [],
             projectFunding: [],
             projectDataset: [],
-            projectProgram: [],
+            projectPillar: [],
             projectDomain: [],
             projectRelated: [],
-            fundingProgram: []
+            fundingPillar: []
         },
         findings: []
     };

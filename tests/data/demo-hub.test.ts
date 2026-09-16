@@ -52,10 +52,10 @@ describe('the demo hub', () => {
         expect({
             venues: Object.keys(snapshot.entities.venues).length,
             datasets: Object.keys(snapshot.entities.datasets).length,
-            programs: Object.keys(snapshot.entities.programs).length,
+            pillars: Object.keys(snapshot.entities.pillars).length,
             domains: Object.keys(snapshot.entities.domains).length,
             funding: Object.keys(snapshot.entities.funding).length
-        }).toEqual({ venues: 5, datasets: 5, programs: 3, domains: 3, funding: 2 });
+        }).toEqual({ venues: 5, datasets: 5, pillars: 3, domains: 3, funding: 2 });
     });
 
     it('holds the twelve collections, including the four editable registries', () => {
@@ -68,7 +68,7 @@ describe('the demo hub', () => {
             'education',
             'events',
             'funding',
-            'programs',
+            'pillars',
             'statements',
             'tasks',
             'venues'

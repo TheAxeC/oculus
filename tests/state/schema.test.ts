@@ -42,7 +42,7 @@ const TYPES = [
 const SOURCES = [
     'venues',
     'datasets',
-    'programs',
+    'pillars',
     'domains',
     'funding',
     'collaborations',
@@ -69,7 +69,7 @@ function project(over: Partial<Project> = {}): Project {
         relatedIds: ['bravo'],
         fundingIds: ['ZonMw'],
         datasetIds: [],
-        programIds: ['tensor'],
+        pillarIds: ['tensor'],
         domainIds: ['method'],
         collaborators: [],
         docs: [],
@@ -96,7 +96,7 @@ function snapshot(): Snapshot {
                 }
             },
             datasets: { mimic: { id: 'mimic', name: 'MIMIC', themes: [], projectIds: [] } },
-            programs: {
+            pillars: {
                 tensor: { id: 'tensor', title: 'Tensors', fundingIds: [], projectIds: [] }
             },
             domains: { method: { id: 'method', title: 'Methods', projectIds: [] } },
@@ -108,7 +108,7 @@ function snapshot(): Snapshot {
                     subtasks: [],
                     tags: [],
                     projectIds: [],
-                    programIds: []
+                    pillarIds: []
                 }
             },
             collections: {
@@ -132,10 +132,10 @@ function snapshot(): Snapshot {
             projectVenue: [],
             projectFunding: [],
             projectDataset: [],
-            projectProgram: [],
+            projectPillar: [],
             projectDomain: [],
             projectRelated: [],
-            fundingProgram: []
+            fundingPillar: []
         },
         findings: []
     };
@@ -189,7 +189,7 @@ describe('where the choices come from', () => {
     it('resolves each registry to its own entities', () => {
         expect(choicesOf('venue_id')).toEqual([{ id: 'bspc', label: 'BSPC' }]);
         expect(choicesOf('datasets')).toEqual([{ id: 'mimic', label: 'MIMIC' }]);
-        expect(choicesOf('program')).toEqual([{ id: 'tensor', label: 'Tensors' }]);
+        expect(choicesOf('pillar')).toEqual([{ id: 'tensor', label: 'Tensors' }]);
         expect(choicesOf('domain')).toEqual([{ id: 'method', label: 'Methods' }]);
         expect(choicesOf('funding')).toEqual([{ id: 'ZonMw', label: 'ZonMw AI' }]);
     });
@@ -227,7 +227,7 @@ describe('the values a form opens with', () => {
         expect(values['status.line']).toBe('the line');
         expect(values['status.chips']).toEqual(['submitted']);
         expect(values.domain).toBe('method');
-        expect(values.program).toEqual(['tensor']);
+        expect(values.pillar).toEqual(['tensor']);
         expect(values.related).toEqual(['bravo']);
     });
 

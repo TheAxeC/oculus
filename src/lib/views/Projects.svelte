@@ -170,7 +170,7 @@
         if (facet === 'category') return t('board.facet_category');
         if (facet === 'year') return t('board.facet_year');
         if (facet === 'domain') return t('board.facet_domain');
-        if (facet === 'program') return t('board.facet_program');
+        if (facet === 'pillar') return t('board.facet_pillar');
         if (facet === 'funding') return t('board.facet_funding');
         if (facet === 'dataset') return t('board.facet_dataset');
         if (facet === 'status') return t('board.facet_status');
@@ -272,7 +272,7 @@
             focus: item.project.focus ?? '',
             next: next === undefined ? '' : firstSentence(next, ROW_NEXT),
             domain: item.domain?.label ?? '',
-            program: item.programs.map((tag) => tag.label).join(' | '),
+            pillar: item.pillars.map((tag) => tag.label).join(' | '),
             funding: item.funding.map((tag) => tag.label).join(' | ')
         };
     }

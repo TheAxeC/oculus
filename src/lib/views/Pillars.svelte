@@ -1,10 +1,10 @@
 <script module lang="ts">
-    // Layer 3, view registration. Programs opens the structure group.
+    // Layer 3, view registration. Pillars opens the structure group.
     import type { ViewRegistration } from './registry';
     export const registration: ViewRegistration = {
-        id: 'programs',
-        label: 'views.programs',
-        glyph: 'views.programs_glyph',
+        id: 'pillars',
+        label: 'views.pillars',
+        glyph: 'views.pillars_glyph',
         group: 'structure',
         order: 0
     };
@@ -19,17 +19,17 @@
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
     import Intro from '$lib/views/shared/Intro.svelte';
     import Reveal from '$lib/views/shared/Reveal.svelte';
-    import ArchivalCard from '$lib/views/programs/ArchivalCard.svelte';
-    import LineCard from '$lib/views/programs/LineCard.svelte';
-    import OrphansCard from '$lib/views/programs/OrphansCard.svelte';
+    import ArchivalCard from '$lib/views/pillars/ArchivalCard.svelte';
+    import LineCard from '$lib/views/pillars/LineCard.svelte';
+    import OrphansCard from '$lib/views/pillars/OrphansCard.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import { cardCursor } from '$lib/state/instance';
     import {
         archival,
         lineMembers,
         orphans,
-        parseProgramsState,
-        type ProgramsState,
+        parsePillarsState,
+        type PillarsState,
         type TierRow
     } from '$lib/state/lines';
     import { asText } from '$lib/state/schema';
@@ -44,13 +44,13 @@
     } = useState();
 
     let { instance }: ViewProps = $props();
-    const ORPHANS_CARD = 'programs:orphans';
-    const ARCHIVAL_CARD = 'programs:archival';
-    const held = $derived(parseProgramsState(instanceState(instance.id)));
+    const ORPHANS_CARD = 'pillars:orphans';
+    const ARCHIVAL_CARD = 'pillars:archival';
+    const held = $derived(parsePillarsState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
-    const collection = $derived(collectionOf('programs'));
+    const collection = $derived(collectionOf('pillars'));
     const lines = $derived.by(() => {
-        const entities = Object.values(portfolio()?.entities.programs ?? {});
+        const entities = Object.values(portfolio()?.entities.pillars ?? {});
         const byId = new Map(entities.map((line) => [line.id, line]));
         const ordered = (collection?.entries ?? [])
             .map((entry) => byId.get(entry.id))
@@ -87,7 +87,7 @@
     let editing = $state<string | null>(null);
     let said = $state('');
 
-    function write(next: Partial<ProgramsState>): void {
+    function write(next: Partial<PillarsState>): void {
         setInstanceState(instance.id, { ...held, ...next });
     }
 
@@ -107,12 +107,12 @@
     {/if}
 {/snippet}
 
-<Pane title={t('views.programs')}>
-    <div class="programs-view" data-instance={instance.id}>
-        <Intro html={inlineMarkdown(t('programs.intro'))} trusted actions={introActions} />
+<Pane title={t('views.pillars')}>
+    <div class="pillars-view" data-instance={instance.id}>
+        <Intro html={inlineMarkdown(t('pillars.intro'))} trusted actions={introActions} />
         {#if adding && collection?.schema !== undefined}
             <EntryForm
-                collection="programs"
+                collection="pillars"
                 schema={collection.schema}
                 entry={null}
                 onclose={() => (adding = false)}
@@ -145,9 +145,9 @@
 
         {#if provisional.length > 0}
             <section>
-                <h3>{t('programs.provisional_h')}</h3>
+                <h3>{t('pillars.provisional_h')}</h3>
                 <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                <p class="note">{@html inlineMarkdown(t('programs.provisional_note'))}</p>
+                <p class="note">{@html inlineMarkdown(t('pillars.provisional_note'))}</p>
                 <div class="cards">
                     {#each provisional as line (line.id)}
                         <Reveal
@@ -175,9 +175,9 @@
 
         {#if offpillar.length > 0 || archived.length > 0}
             <section>
-                <h3>{t('programs.offpillar_h')}</h3>
+                <h3>{t('pillars.offpillar_h')}</h3>
                 <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                <p class="note">{@html inlineMarkdown(t('programs.offpillar_note'))}</p>
+                <p class="note">{@html inlineMarkdown(t('pillars.offpillar_note'))}</p>
                 <div class="cards">
                     {#each offpillar as line (line.id)}
                         <Reveal
@@ -214,7 +214,7 @@
 </Pane>
 
 <style>
-    .programs-view {
+    .pillars-view {
         min-width: 0;
     }
 

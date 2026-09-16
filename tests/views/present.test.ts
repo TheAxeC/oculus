@@ -79,7 +79,7 @@ const PROJECT: Project = {
     relatedIds: [],
     fundingIds: [],
     datasetIds: [],
-    programIds: [],
+    pillarIds: [],
     domainIds: ['heart'],
     collaborators: [],
     docs: [],
@@ -147,7 +147,7 @@ describe('the Present view', () => {
     it('draws a summary slide as a table with the catalog column names', () => {
         const body = at('summary:summary1');
         expect(body).toContain('data-slide-kind="summary"');
-        expect(body).toContain('Active programs');
+        expect(body).toContain('Active pillars');
         expect(body).toContain(catalog['present.col_mechanism']);
         expect(body).toContain(catalog['present.col_headline']);
         expect(body).toContain('HCCNet-FL');

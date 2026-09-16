@@ -53,10 +53,10 @@ const EMPTY_RELATIONS: Relations = {
     projectVenue: [],
     projectFunding: [],
     projectDataset: [],
-    projectProgram: [],
+    projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingProgram: []
+    fundingPillar: []
 };
 
 /** The shape the hub's seven files write, with one field of every kind the view draws. */
@@ -110,7 +110,7 @@ function project(id: string, over: Partial<Project> = {}): Project {
         relatedIds: [],
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],
@@ -154,9 +154,9 @@ const FUNDING_ENTRIES: Entry[] = [
     },
     {
         id: 'FAIR',
-        title: 'A funded program',
+        title: 'A funded scheme',
         fields: {
-            title: 'A funded program',
+            title: 'A funded scheme',
             status: 'awarded',
             pin: true,
             note: 'what it **is**',
@@ -207,7 +207,7 @@ function snapshot(projects: Record<string, Project> = PROJECTS): Snapshot {
             projects,
             venues: {},
             datasets: {},
-            programs: {},
+            pillars: {},
             domains: {},
             funding: {},
             collections: {
@@ -504,7 +504,7 @@ describe('the funding view', () => {
 
     it('draws the pinned scheme first, marked as pinned', () => {
         const found = cards(body);
-        expect(found[0]).toContain('A funded program');
+        expect(found[0]).toContain('A funded scheme');
         expect(found[0]).toContain('pinned');
         expect(found[1]).toContain('A later scheme');
     });
@@ -623,7 +623,7 @@ describe('the entry form', () => {
     it('fills the controls with what the entry holds, and offers the delete', () => {
         const body = form(FUNDING_ENTRIES[1]);
         expect(body).toContain(catalog['collection.form_edit_title']);
-        expect(body).toContain('A funded program');
+        expect(body).toContain('A funded scheme');
         expect(body).toContain(catalog['collection.form_delete']);
         expect(body).toContain(catalog['collection.form_save']);
     });

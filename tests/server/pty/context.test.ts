@@ -31,7 +31,7 @@ write('projects/active/alpha/project.yml', 'id: alpha\ntitle: Alpha\n');
 write('projects/archive/published/zulu/project.yml', 'id: zulu\ntitle: Zulu\n');
 write('projects/archive/project.yml', 'id: scan-root-decoy\n');
 write('projects/archive/published/zulu/code/project.yml', 'id: decoy\n');
-write('registries/programs.yml', 'program: fixture\n');
+write('registries/pillars.yml', 'pillar: fixture\n');
 write('funding/funding.yml', 'funding: fixture\n');
 write('network/events.yml', 'events: fixture\n');
 write('education/education.yml', 'education: fixture\n');
@@ -44,7 +44,7 @@ const config: Record<string, unknown> = {
         { dir: 'projects/archive', nested: true }
     ],
     venues_file: 'registries/venues.yml',
-    programs_file: 'registries/programs.yml',
+    pillars_file: 'registries/pillars.yml',
     collections: [
         { key: 'tasks', file: 'tasks/tasks.yml' },
         { key: 'applications', file: 'applications/applications.yml' },
@@ -68,7 +68,7 @@ describe('portfolioContext', () => {
             '# PROJECT MANIFESTS (status/venue source of truth)',
             '## projects/active/alpha',
             '## projects/archive/published/zulu',
-            '# registries/programs.yml',
+            '# registries/pillars.yml',
             '# funding/funding.yml',
             '# network/events.yml',
             '# education/education.yml',
@@ -86,7 +86,7 @@ describe('portfolioContext', () => {
     });
 
     it('has the exact size of this fixture index', () => {
-        expect(Buffer.byteLength(index)).toBe(471);
+        expect(Buffer.byteLength(index)).toBe(469);
     });
 
     it('ignores a nested scan root manifest while retaining its child projects', () => {

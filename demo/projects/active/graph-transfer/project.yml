@@ -9,7 +9,7 @@ status:
   chips: [submit-ready]
   line: Draft complete, internal review done; ready to submit.
 domain: graphs
-program: [graphs]
+pillar: [graphs]
 funding: [ecf]
 datasets: [synthgraph]
 related: [graph-bandits, robust-embeddings]

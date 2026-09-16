@@ -18,7 +18,7 @@ text:
         facet_dataset: Datasets
         facet_domain: Domain
         facet_funding: Funding
-        facet_program: Research line
+        facet_pillar: Pillar
         facet_reproduced: Reproduced
         facet_sessions: Sessions
         facet_status: Status

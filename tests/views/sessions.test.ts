@@ -890,7 +890,7 @@ describe('the pin control over the portfolio', () => {
             relatedIds: [],
             fundingIds: [],
             datasetIds: [],
-            programIds: [],
+            pillarIds: [],
             domainIds: [],
             collaborators: [],
             docs: [],
@@ -906,7 +906,7 @@ describe('the pin control over the portfolio', () => {
                 },
                 venues: {},
                 datasets: {},
-                programs: {},
+                pillars: {},
                 domains: {},
                 funding: {},
                 collections: {},
@@ -917,10 +917,10 @@ describe('the pin control over the portfolio', () => {
                 projectVenue: [],
                 projectFunding: [],
                 projectDataset: [],
-                projectProgram: [],
+                projectPillar: [],
                 projectDomain: [],
                 projectRelated: [],
-                fundingProgram: []
+                fundingPillar: []
             },
             findings: []
         };

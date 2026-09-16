@@ -21,7 +21,7 @@ function write(hub: string, rel: string, body: string): void {
 }
 
 /**
- * A hub with venues keyed by `id`, datasets under the `datasets` list key, programs whole,
+ * A hub with venues keyed by `id`, datasets under the `datasets` list key, pillars whole,
  * domains unparseable, and funding missing from disk.
  */
 function buildHub(): string {
@@ -53,7 +53,7 @@ function buildHub(): string {
     );
     write(
         hub,
-        REGISTRY_FILES.programs,
+        REGISTRY_FILES.pillars,
         ['schema: []', 'entries:', '  - { key: federated, title: Federated learning }', ''].join(
             '\n'
         )
@@ -85,8 +85,8 @@ describe('readRegistries', () => {
             }
         ]);
         expect(out.venues.meta).toEqual({ schema: [{ field: 'name', type: 'text' }] });
-        expect(out.programs.entries.map((e) => e.key)).toEqual(['federated']);
-        expect(out.programs.meta).toEqual({ schema: [] });
+        expect(out.pillars.entries.map((e) => e.key)).toEqual(['federated']);
+        expect(out.pillars.meta).toEqual({ schema: [] });
     });
 
     it('reads the dataset registry from its own list key and keeps its other keys as meta', () => {
@@ -158,7 +158,7 @@ describe('readRegistries', () => {
     it('reports a missing entry list and an entry that is not a map', () => {
         const hub = buildHub();
         write(hub, REGISTRY_FILES.domains, 'schema: []\n');
-        write(hub, REGISTRY_FILES.programs, 'entries:\n  - just-a-string\n');
+        write(hub, REGISTRY_FILES.pillars, 'entries:\n  - just-a-string\n');
         const out = readRegistries(hub);
 
         expect(out.domains.entries).toEqual([]);
@@ -168,9 +168,9 @@ describe('readRegistries', () => {
             key: 'entries',
             message: 'entry list entries is missing'
         });
-        expect(out.programs.entries).toEqual([]);
+        expect(out.pillars.entries).toEqual([]);
         expect(out.findings).toContainEqual({
-            file: join(hub, REGISTRY_FILES.programs),
+            file: join(hub, REGISTRY_FILES.pillars),
             key: 'entries[0]',
             message: 'entry is not a map of keys'
         });

@@ -38,7 +38,7 @@ export type Graph = { nodes: GraphNode[]; edges: GraphEdge[] };
 export type GraphFilter = {
     /** The project types drawn. */
     types?: string[];
-    /** The research lines drawn, by their registry key. */
+    /** The pillars drawn, by their registry key. */
     lines?: string[];
     /** Drop a project with no membership edge to a line that is still drawn. */
     connected?: boolean;
@@ -112,7 +112,7 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Grap
     const collaboratorIds = new Set<string>();
 
     for (const project of visible) {
-        for (const line of project.programIds) {
+        for (const line of project.pillarIds) {
             lineIds.add(line);
             edges.push({
                 id: `membership::${project.id}::${line}`,
@@ -167,7 +167,7 @@ export function buildGraph(snapshot: Snapshot, options: GraphOptions = {}): Grap
     }
 
     for (const id of lineIds) {
-        const line = byKey(snapshot.entities.programs, id);
+        const line = byKey(snapshot.entities.pillars, id);
         nodes.push({
             id: `line::${id}`,
             entityId: id,
@@ -654,7 +654,7 @@ export type MapState = GraphFilter & {
     linkMode: boolean;
     /** The project types drawn. Empty is every type, which is what an unfiltered map holds. */
     types: string[];
-    /** The research lines drawn, by their registry key. Empty is every line. */
+    /** The pillars drawn, by their registry key. Empty is every pillar. */
     lines: string[];
     /** Whether a project with no membership edge to a line still drawn is dropped. */
     connected: boolean;

@@ -39,7 +39,7 @@ const LAYOUT = [
     '  - { dir: projects/archive, nested: true }',
     'venues_file: registries/venues.yml',
     'datasets_file: registries/data.yml',
-    'programs_file: registries/programs.yml',
+    'pillars_file: registries/pillars.yml',
     'domains_file: registries/domains.yml',
     'collections:',
     '  - { key: funding, file: funding/funding.yml }',
@@ -110,7 +110,7 @@ function buildHub(): string {
     write(hub, 'projects/active/loewner/project.yml', MANIFEST);
     write(hub, 'registries/venues.yml', 'entries: []\n');
     write(hub, 'registries/data.yml', 'datasets: []\n');
-    write(hub, 'registries/programs.yml', 'entries: []\n');
+    write(hub, 'registries/pillars.yml', 'entries: []\n');
     write(hub, 'registries/domains.yml', 'entries: []\n');
     write(hub, 'funding/funding.yml', 'entries: []\n');
     write(hub, 'network/events.yml', 'title: Talks\nentries: []\n');
@@ -249,7 +249,7 @@ describe('namedByConfig', () => {
         registries: {
             venues: 'registries/venues.yml',
             datasets: 'registries/data.yml',
-            programs: 'registries/programs.yml',
+            pillars: 'registries/pillars.yml',
             domains: 'registries/domains.yml',
             funding: 'funding/funding.yml'
         },
@@ -304,7 +304,7 @@ describe('watchedDirectories', () => {
             registries: {
                 venues: 'registries/venues.yml',
                 datasets: 'registries/data.yml',
-                programs: 'registries/programs.yml',
+                pillars: 'registries/pillars.yml',
                 domains: 'registries/domains.yml',
                 funding: 'funding/funding.yml'
             },

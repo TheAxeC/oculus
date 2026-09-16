@@ -24,7 +24,7 @@ const RULES: ValidationRules = {
         'status.line',
         'venue_id',
         'domain',
-        'program',
+        'pillar',
         'datasets',
         'related',
         'collaborators',
@@ -81,7 +81,7 @@ function portfolio(over: Partial<RawPortfolio> = {}): RawPortfolio {
         registries: {
             venues: registry('venues', ['bspc']),
             datasets: registry('datasets', ['mimic']),
-            programs: registry('programs', ['federated']),
+            pillars: registry('pillars', ['federated']),
             domains: registry('domains', ['heart']),
             funding: registry('funding', ['FAIR'])
         },
@@ -113,7 +113,7 @@ describe('validate', () => {
                 status: { chips: ['lead'], line: 'submitted 2026-09-01' },
                 venue_id: 'bspc',
                 domain: 'heart',
-                program: ['federated'],
+                pillar: ['federated'],
                 datasets: ['mimic'],
                 funding: ['FAIR'],
                 related: ['bravo'],
@@ -129,6 +129,12 @@ describe('validate', () => {
     it('reports a top-level key the schema does not name', () => {
         expect(lines({ nonesuch: 1 })).toEqual([
             'nonesuch: key nonesuch is not in the manifest schema'
+        ]);
+    });
+
+    it('reports a manifest still carrying the old key under the name it is written under now', () => {
+        expect(lines({ program: ['tensor'] })).toEqual([
+            'program: key program is now pillar: write the tags under pillar:'
         ]);
     });
 
@@ -191,7 +197,7 @@ describe('validate', () => {
             lines({
                 venue_id: 'nowhere',
                 domain: 'nothing',
-                program: ['nobody'],
+                pillar: ['nobody'],
                 datasets: ['nodata'],
                 funding: ['nomoney'],
                 related: ['nobody-else']
@@ -200,7 +206,7 @@ describe('validate', () => {
             'datasets: datasets names no dataset: nodata',
             'domain: domain names no domain: nothing',
             'funding: funding names no funding scheme: nomoney',
-            'program: program names no research line: nobody',
+            'pillar: pillar names no pillar: nobody',
             'related: related names no project: nobody-else',
             'venue_id: venue_id names no venue: nowhere'
         ]);
@@ -215,7 +221,7 @@ describe('validate', () => {
             lines({
                 venue_id: 7,
                 domain: null,
-                program: 'federated',
+                pillar: 'federated',
                 datasets: { key: 'mimic' },
                 related: 'alpha',
                 collaborators: 'someone',
@@ -227,7 +233,7 @@ describe('validate', () => {
             'datasets: datasets must be a list, not a map',
             'domain: domain must be a string, not null',
             'funding: funding must be a list or null, not a string',
-            'program: program must be a list, not a string',
+            'pillar: pillar must be a list, not a string',
             'related: related must be a list, not a string',
             'venue_id: venue_id must be a string or null, not a number',
             'waiting-on: waiting-on must be a list, not a string'

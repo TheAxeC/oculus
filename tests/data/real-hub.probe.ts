@@ -18,7 +18,7 @@ import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const REGISTRIES: RegistryName[] = ['venues', 'datasets', 'programs', 'domains', 'funding'];
+const REGISTRIES: RegistryName[] = ['venues', 'datasets', 'pillars', 'domains', 'funding'];
 
 function report(label: string, findings: Finding[]): void {
     console.log(`${label} findings: ${findings.length}`);

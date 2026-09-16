@@ -38,7 +38,7 @@ const MANIFEST = [
     'status:',
     '  chips: [submitted, lead]',
     '  line: "the line"',
-    'program: [tensor]',
+    'pillar: [tensor]',
     ''
 ].join('\n');
 

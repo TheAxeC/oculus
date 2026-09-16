@@ -7,7 +7,7 @@ title: Spectral clustering for evolving interaction graphs
 eli5: A collaborator-led study on clustering graphs that change over time; this contributes the evaluation suite and a cluster-stability metric.
 year: 2025
 domain: graphs
-program: [graphs]
+pillar: [graphs]
 lead: B. Colleague
 authors: [B. Colleague, A. Example]
 venue_id: tmlr

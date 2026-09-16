@@ -25,7 +25,7 @@ const project: Project = {
     venueId: 'jbi',
     fundingIds: [],
     datasetIds: [],
-    programIds: [],
+    pillarIds: [],
     domainIds: [],
     collaborators: [],
     docs: [],
@@ -42,7 +42,7 @@ const snapshot: Snapshot = {
             plain: { id: 'plain', name: 'Plain Journal', short: '', themes: [] }
         },
         datasets: {},
-        programs: {},
+        pillars: {},
         domains: {},
         funding: {},
         collections: {},
@@ -53,10 +53,10 @@ const snapshot: Snapshot = {
         projectVenue: [],
         projectFunding: [],
         projectDataset: [],
-        projectProgram: [],
+        projectPillar: [],
         projectDomain: [],
         projectRelated: [],
-        fundingProgram: []
+        fundingPillar: []
     },
     findings: []
 };

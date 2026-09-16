@@ -14,7 +14,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
-import { NOT_A_FIELD_VALUE, setFields } from '../../src/lib/server/yaml-edit.ts';
+import { NOT_A_FIELD_VALUE, renameKey, setFields } from '../../src/lib/server/yaml-edit.ts';
 import { engineDir, loadConfig, loadLocal } from '../../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 
@@ -22,7 +22,7 @@ const DOC = [
     'id: alpha',
     'title: "A title"',
     'venue_id:',
-    'program: [tensor, sciml]',
+    'pillar: [tensor, sciml]',
     'results:',
     '  - "one"',
     '  - "two"',
@@ -233,8 +233,8 @@ describe('setting a block map', () => {
 
 describe('setting a list', () => {
     it('keeps a flow list flow', () => {
-        const out = setFields(DOC, { program: ['tensor', 'hcc'] });
-        expect(out.text).toBe(withLine(3, 'program: [tensor, hcc]'));
+        const out = setFields(DOC, { pillar: ['tensor', 'hcc'] });
+        expect(out.text).toBe(withLine(3, 'pillar: [tensor, hcc]'));
     });
 
     it('keeps a block list block, at its own indentation and quoting', () => {
@@ -245,8 +245,8 @@ describe('setting a list', () => {
     });
 
     it('writes an empty list as the empty flow list', () => {
-        const out = setFields(DOC, { program: [] });
-        expect(out.text).toBe(withLine(3, 'program: []'));
+        const out = setFields(DOC, { pillar: [] });
+        expect(out.text).toBe(withLine(3, 'pillar: []'));
     });
 });
 
@@ -352,7 +352,7 @@ describe('what is not written', () => {
         const out = setFields(DOC, {
             title: 'A title',
             compute: 'hpc',
-            program: ['tensor', 'sciml'],
+            pillar: ['tensor', 'sciml'],
             'status.line': 'the line'
         });
         expect(out).toEqual({ text: DOC, changed: [], refused: [] });
@@ -373,14 +373,59 @@ describe('what is not written', () => {
     });
 
     it('refuses a list that is neither strings nor maps of strings', () => {
-        const out = setFields(DOC, { program: [1, 2] });
+        const out = setFields(DOC, { pillar: [1, 2] });
         expect(out.text).toBe(DOC);
-        expect(out.refused).toEqual([{ field: 'program', reason: NOT_A_FIELD_VALUE }]);
+        expect(out.refused).toEqual([{ field: 'pillar', reason: NOT_A_FIELD_VALUE }]);
     });
 
     it('refuses everything when the file does not parse', () => {
         const out = setFields('id: [unclosed\n', { title: 'x' });
         expect(out.refused).toEqual([{ field: 'title', reason: 'the manifest does not parse' }]);
+    });
+});
+
+describe('renaming a key', () => {
+    it('writes the new name over the old one and moves no other line', () => {
+        const out = renameKey(DOC, 'pillar', 'strand');
+        expect(out.changed).toEqual(['pillar']);
+        expect(out.text).toBe(withLine(3, 'strand: [tensor, sciml]'));
+        expect(movedLines(DOC, out.text)).toBe(1);
+    });
+
+    it('keeps the value, the comment and the position of a key with a trailing comment', () => {
+        const out = renameKey(DOC, 'compute', 'machine');
+        expect(out.text).toBe(withLine(11, 'machine: hpc      # trailing'));
+    });
+
+    it('keeps a block list and a nested map under their key', () => {
+        const out = renameKey(DOC, 'results', 'findings');
+        expect(out.text).toBe(withLine(4, 'findings:'));
+        expect(parse(out.text)).toMatchObject({ findings: ['one', 'two'] });
+    });
+
+    it('changes nothing when the file does not hold the old key', () => {
+        const out = renameKey(DOC, 'nothing', 'something');
+        expect(out).toEqual({ text: DOC, changed: [], refused: [] });
+    });
+
+    it('is the same file when it is run a second time, which is what makes it idempotent', () => {
+        const once = renameKey(DOC, 'pillar', 'strand');
+        const twice = renameKey(once.text, 'pillar', 'strand');
+        expect(twice.text).toBe(once.text);
+        expect(twice.changed).toEqual([]);
+    });
+
+    it('refuses a rename onto a key the file already holds', () => {
+        const out = renameKey(DOC, 'pillar', 'title');
+        expect(out.text).toBe(DOC);
+        expect(out.refused).toEqual([
+            { field: 'pillar', reason: 'title is already a key of the manifest' }
+        ]);
+    });
+
+    it('refuses a file that does not parse', () => {
+        const out = renameKey('id: [\n', 'id', 'key');
+        expect(out.refused).toEqual([{ field: 'id', reason: 'the manifest does not parse' }]);
     });
 });
 

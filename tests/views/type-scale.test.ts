@@ -66,7 +66,7 @@ const VIEWS: Record<string, string> = {
     'Map.svelte': '.head=fs-sm | .empty=fs-md',
     'Memories.svelte': '.failed=fs-sm',
     'Present.svelte': '.counter=fs-xs',
-    'Programs.svelte': '.note, .said=fs-md',
+    'Pillars.svelte': '.note, .said=fs-md',
     'Project.svelte':
         '.heading=fs-xs | .said, .failed=fs-md | .doc=fs-md | .doc :global(h1)=fs-3xl | .doc :global(h2)=fs-2xl | .doc :global(h3)=fs-xl | .doc :global(h4)=fs-md | .doc :global(code)=fs-sm | .doc :global(table)=fs-md | .nm=fs-md | .meta=fs-sm',
     'Projects.svelte': '.said=fs-md',
@@ -123,9 +123,9 @@ const VIEWS: Record<string, string> = {
     'present/Summary.svelte': '.headline=fs-2xl | .hint=fs-sm',
     'present/Title.svelte': '.kicker=fs-sm | .headline=fs-3xl | .lede=fs-xl | .hint=fs-sm',
     'present/Words.svelte': '.block :global(table)=fs-sm',
-    'programs/ArchivalCard.svelte': '',
-    'programs/LineCard.svelte': '',
-    'programs/OrphansCard.svelte': '',
+    'pillars/ArchivalCard.svelte': '',
+    'pillars/LineCard.svelte': '',
+    'pillars/OrphansCard.svelte': '',
     'project/Latex.svelte':
         '.heading=fs-xs | .failed=fs-md | .nm=fs-md | .ts, .clean, .warns=fs-sm | .issues li=fs-sm',
     'projects/NewIdea.svelte': '',

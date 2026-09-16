@@ -1,5 +1,5 @@
 <script lang="ts">
-    // Layer 3, Programs partial. One research-line card with its portfolio metrics, registry prose,
+    // Layer 3, Pillars partial. One registry-line card with its portfolio metrics, registry prose,
     // project cross-links and the shared schema-driven edit form.
 
     import Card from '$lib/ui/Card.svelte';
@@ -14,7 +14,7 @@
         inFlight,
         isDormant,
         tierStrip,
-        type Program,
+        type Pillar,
         type Project,
         type TierRow,
         type Venue
@@ -23,7 +23,7 @@
     import { t } from '$lib/state/text';
 
     type Props = {
-        line: Program;
+        line: Pillar;
         cursor: boolean;
         projects: Project[];
         venues: Venue[];
@@ -57,11 +57,11 @@
     const tone = $derived(line.color === undefined ? undefined : paletteTone(line.color));
 
     function projectWord(): string {
-        return projects.length === 1 ? t('programs.project') : t('programs.projects');
+        return projects.length === 1 ? t('pillars.project') : t('pillars.projects');
     }
 </script>
 
-<div class:dormant={isDormant(projects)} class:muted data-program={line.id}>
+<div class:dormant={isDormant(projects)} class:muted data-pillar={line.id}>
     <Card id={line.id} {cursor} title={line.title} titleHtml={inlineMarkdown(line.title)} {tone}>
         {#snippet meta()}
             <Tag label={`${projects.length} ${projectWord()}`} />
@@ -78,8 +78,8 @@
 
         {#if !muted}
             <div class="metrics">
-                <strong>{flight.length} {t('programs.in_flight')}</strong>
-                <span class="total">{projects.length} {t('programs.total')}</span>
+                <strong>{flight.length} {t('pillars.in_flight')}</strong>
+                <span class="total">{projects.length} {t('pillars.total')}</span>
                 {#each strip as tier (tier.key)}
                     <Tag
                         label={`${tier.count} ${tier.label}`}
@@ -105,7 +105,7 @@
         {/if}
         <CrossLinks {projects} />
         {#if editing && entry !== null}
-            <EntryForm collection="programs" {schema} {entry} onclose={onedit} {onsaid} />
+            <EntryForm collection="pillars" {schema} {entry} onclose={onedit} {onsaid} />
         {/if}
     </Card>
 </div>

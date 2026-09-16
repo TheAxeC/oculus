@@ -24,7 +24,7 @@ import type {
     Host,
     Id,
     PresentSlide,
-    Program,
+    Pillar,
     Project,
     Reproduced,
     RawCollection,
@@ -46,7 +46,7 @@ import { isMap, str, strings } from './guards.ts';
  * Config registration uses this list to omit their duplicate generic collection views. `funding`
  * remains a generic collection because its editable collection view is its only dedicated view.
  */
-export const REGISTRY_KEYS = ['venues', 'datasets', 'programs', 'domains', 'data'];
+export const REGISTRY_KEYS = ['venues', 'datasets', 'pillars', 'domains', 'data'];
 
 /**
  * The keys of the `collections:` list of config/sources.yml, in the file's order, minus the four
@@ -75,7 +75,7 @@ export const ENTITY_KINDS = [
     'projects',
     'venues',
     'datasets',
-    'programs',
+    'pillars',
     'domains',
     'funding',
     'collections'
@@ -287,7 +287,7 @@ function project(
         venueId: str(manifest.venue_id),
         fundingIds: strings(manifest.funding),
         datasetIds: strings(manifest.datasets),
-        programIds: strings(manifest.program),
+        pillarIds: strings(manifest.pillar),
         domainIds: domain === undefined ? [] : [domain],
         collaborators: strings(manifest.collaborators),
         venue: str(manifest.venue),
@@ -341,7 +341,7 @@ function dataset(entry: RawRegistryEntry): Dataset {
     });
 }
 
-function program(entry: RawRegistryEntry): Program {
+function pillar(entry: RawRegistryEntry): Pillar {
     return compact({
         id: entry.key,
         title: str(entry.title) ?? '',
@@ -382,7 +382,7 @@ function funding(entry: RawRegistryEntry): Funding {
         subtasks: subtasks(entry.subtasks),
         tags: strings(entry.tags),
         projectIds: [],
-        programIds: []
+        pillarIds: []
     });
 }
 
@@ -464,8 +464,8 @@ function collection(raw: RawCollection): Collection {
  * The relation tables. A pair is written only when both ends are entities of the snapshot, so a
  * dangling id (which validate has reported) reaches no table and no entity's id list.
  *
- * `fundingProgram` is the one table with no field behind it: programs.yml carries no funding key,
- * its `funding:` is prose, so a scheme and a research line are related here when at least one
+ * `fundingPillar` is the one table with no field behind it: pillars.yml carries no funding key,
+ * its `funding:` is prose, so a scheme and a pillar are related here when at least one
  * project names them both.
  */
 /** The keys of a host row that are the host itself; every other string key is one of its scores. */
@@ -603,10 +603,10 @@ function relations(projects: Project[], entities: Record<string, Set<Id>>): Rela
     const venueTable: [Id, Id][] = [];
     const fundingTable: [Id, Id][] = [];
     const datasetTable: [Id, Id][] = [];
-    const programTable: [Id, Id][] = [];
+    const pillarTable: [Id, Id][] = [];
     const domainTable: [Id, Id][] = [];
     const relatedTable: [Id, Id][] = [];
-    const fundingProgram: [Id, Id][] = [];
+    const fundingPillar: [Id, Id][] = [];
 
     for (const item of projects) {
         if (item.venueId !== undefined && entities.venues.has(item.venueId)) {
@@ -618,8 +618,8 @@ function relations(projects: Project[], entities: Record<string, Set<Id>>): Rela
         for (const id of item.datasetIds) {
             if (entities.datasets.has(id)) datasetTable.push([item.id, id]);
         }
-        for (const id of item.programIds) {
-            if (entities.programs.has(id)) programTable.push([item.id, id]);
+        for (const id of item.pillarIds) {
+            if (entities.pillars.has(id)) pillarTable.push([item.id, id]);
         }
         for (const id of item.domainIds) {
             if (entities.domains.has(id)) domainTable.push([item.id, id]);
@@ -629,8 +629,8 @@ function relations(projects: Project[], entities: Record<string, Set<Id>>): Rela
         }
         for (const fund of item.fundingIds) {
             if (!entities.funding.has(fund)) continue;
-            for (const line of item.programIds) {
-                if (entities.programs.has(line)) fundingProgram.push([fund, line]);
+            for (const line of item.pillarIds) {
+                if (entities.pillars.has(line)) fundingPillar.push([fund, line]);
             }
         }
     }
@@ -639,10 +639,10 @@ function relations(projects: Project[], entities: Record<string, Set<Id>>): Rela
         projectVenue: pairs(venueTable),
         projectFunding: pairs(fundingTable),
         projectDataset: pairs(datasetTable),
-        projectProgram: pairs(programTable),
+        projectPillar: pairs(pillarTable),
         projectDomain: pairs(domainTable),
         projectRelated: pairs(relatedTable),
-        fundingProgram: pairs(fundingProgram)
+        fundingPillar: pairs(fundingPillar)
     };
 }
 
@@ -659,7 +659,7 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
     );
     const venues = withId(raw.registries.venues.entries).map(venue);
     const datasets = withId(raw.registries.datasets.entries).map(dataset);
-    const programs = withId(raw.registries.programs.entries).map(program);
+    const pillars = withId(raw.registries.pillars.entries).map(pillar);
     const domains = withId(raw.registries.domains.entries).map(domain);
     const schemes = raw.registries.funding.entries
         .map(funding)
@@ -670,7 +670,7 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
         projects: new Set(projects.map((item) => item.id)),
         venues: new Set(venues.map((item) => item.id)),
         datasets: new Set(datasets.map((item) => item.id)),
-        programs: new Set(programs.map((item) => item.id)),
+        pillars: new Set(pillars.map((item) => item.id)),
         domains: new Set(domains.map((item) => item.id)),
         funding: new Set(schemes.map((item) => item.id))
     };
@@ -681,19 +681,19 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
         item.relatedIds = targets(tables.projectRelated, item.id);
         item.fundingIds = targets(tables.projectFunding, item.id);
         item.datasetIds = targets(tables.projectDataset, item.id);
-        item.programIds = targets(tables.projectProgram, item.id);
+        item.pillarIds = targets(tables.projectPillar, item.id);
         item.domainIds = targets(tables.projectDomain, item.id);
         if (item.venueId !== undefined && !known.venues.has(item.venueId)) delete item.venueId;
     }
     for (const item of datasets) item.projectIds = sources(tables.projectDataset, item.id);
     for (const item of domains) item.projectIds = sources(tables.projectDomain, item.id);
-    for (const item of programs) {
-        item.projectIds = sources(tables.projectProgram, item.id);
-        item.fundingIds = sources(tables.fundingProgram, item.id);
+    for (const item of pillars) {
+        item.projectIds = sources(tables.projectPillar, item.id);
+        item.fundingIds = sources(tables.fundingPillar, item.id);
     }
     for (const item of schemes) {
         item.projectIds = sources(tables.projectFunding, item.id);
-        item.programIds = targets(tables.fundingProgram, item.id);
+        item.pillarIds = targets(tables.fundingPillar, item.id);
     }
 
     return {
@@ -702,7 +702,7 @@ export function normalise(raw: RawPortfolio, findings: Finding[], version = 0): 
             projects: byId(projects),
             venues: byId(venues),
             datasets: byId(datasets),
-            programs: byId(programs),
+            pillars: byId(pillars),
             domains: byId(domains),
             funding: byId(schemes),
             collections: byId(collections),

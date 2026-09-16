@@ -11,7 +11,7 @@ status:
 venue_id: jmlr
 year: 2026
 domain: nlp
-program: [repr]
+pillar: [repr]
 funding: [ecf]
 datasets: [toy-embed]
 related: [graph-transfer, sparse-attention]

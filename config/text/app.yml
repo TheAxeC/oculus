@@ -19,7 +19,7 @@ text:
             cmdk_placeholder: Search projects, entries, tabs...
         palette_empty: No match
         palette_unavailable: Unavailable
-        programs: 'Pillars: {0}'
+        pillars: 'Pillars: {0}'
         projects: 'Projects: {0}'
         search: Search
         search_tip: Search projects, entries and tabs (Cmd-K or Ctrl-K)

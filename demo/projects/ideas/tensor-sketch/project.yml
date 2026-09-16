@@ -9,7 +9,7 @@ status:
   chips: [exploring]
   line: New idea - scope + novelty check open.
 domain: method
-program: [tensors]
+pillar: [tensors]
 related: [streaming-anomaly]
 eli5: Can we recover a big tensor's decomposition from a small random sketch, updated online as data streams in?
 next: Scope the idea; run a novelty check against streaming-PARAFAC work.

@@ -46,7 +46,7 @@
      * each rather than maps of entities, so they are not counted.
      */
     type Counted =
-        'projects' | 'venues' | 'datasets' | 'programs' | 'domains' | 'funding' | 'collections';
+        'projects' | 'venues' | 'datasets' | 'pillars' | 'domains' | 'funding' | 'collections';
 
     function count(kind: Counted): number {
         return snapshot === null ? 0 : Object.keys(snapshot.entities[kind]).length;
@@ -74,7 +74,7 @@
                 <li>{t('app.projects', count('projects'))}</li>
                 <li>{t('app.venues', count('venues'))}</li>
                 <li>{t('app.datasets', count('datasets'))}</li>
-                <li>{t('app.programs', count('programs'))}</li>
+                <li>{t('app.pillars', count('pillars'))}</li>
                 <li>{t('app.domains', count('domains'))}</li>
                 <li>{t('app.funding', count('funding'))}</li>
                 <li>{t('app.collections', count('collections'))}</li>

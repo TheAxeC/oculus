@@ -21,7 +21,7 @@ function project(id: string, tier: Tier, type: string, chips: string[] = []): Pr
         relatedIds: [],
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],
@@ -51,7 +51,7 @@ export function badgeSnapshot(empty = false): Snapshot {
             projects: Object.fromEntries(projects.map((item) => [item.id, item])),
             venues: {},
             datasets: {},
-            programs: {},
+            pillars: {},
             domains: {},
             funding: {},
             collections: {
@@ -79,10 +79,10 @@ export function badgeSnapshot(empty = false): Snapshot {
             projectVenue: [],
             projectFunding: [],
             projectDataset: [],
-            projectProgram: [],
+            projectPillar: [],
             projectDomain: [],
             projectRelated: [],
-            fundingProgram: []
+            fundingPillar: []
         },
         findings: []
     };

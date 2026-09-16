@@ -143,7 +143,7 @@ export function choicesFor(
     const entities = snapshot?.entities;
     if (from === 'venues') return entityChoices(entities?.venues, ['short', 'name']);
     if (from === 'datasets') return entityChoices(entities?.datasets, ['name']);
-    if (from === 'programs') return entityChoices(entities?.programs, ['title']);
+    if (from === 'pillars') return entityChoices(entities?.pillars, ['title']);
     if (from === 'domains') return entityChoices(entities?.domains, ['title']);
     if (from === 'funding') return entityChoices(entities?.funding, ['title']);
     if (from === 'projects') return entityChoices(entities?.projects, ['short', 'title']);
@@ -182,7 +182,7 @@ export function fieldValues(project: Project): Record<string, unknown> {
         results: project.results,
         ideas: project.ideas,
         domain: project.domainIds[0],
-        program: project.programIds,
+        pillar: project.pillarIds,
         funding: project.fundingIds,
         collaborators: project.collaborators,
         related: project.relatedIds,

@@ -46,10 +46,10 @@ const EMPTY_RELATIONS: Relations = {
     projectVenue: [],
     projectFunding: [],
     projectDataset: [],
-    projectProgram: [],
+    projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingProgram: []
+    fundingPillar: []
 };
 
 function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
@@ -67,7 +67,7 @@ function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
         relatedIds: [],
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],
@@ -89,7 +89,7 @@ function scheme(id: Id, over: Partial<Funding> = {}): Funding {
         subtasks: [],
         tags: [],
         projectIds: [],
-        programIds: [],
+        pillarIds: [],
         ...over
     };
 }
@@ -223,7 +223,7 @@ function snapshot(): Snapshot {
                 jbi: venue('jbi', { name: 'Journal of Biomedical Informatics', short: 'JBI' })
             },
             datasets: {},
-            programs: {},
+            pillars: {},
             domains: {},
             funding: {
                 prep: scheme('prep', {

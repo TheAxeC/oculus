@@ -9,7 +9,7 @@ status:
   chips: [numbers-pending]
   line: Reviewer comments in hand; revising the experiments.
 domain: method
-program: [tensors]
+pillar: [tensors]
 datasets: [stream-bench]
 related: [tensor-sketch, online-clustering]
 deadline: "2026-08-15"

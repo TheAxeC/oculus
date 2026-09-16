@@ -666,7 +666,7 @@ describe('the groups of the real config', () => {
             'projects',
             'coauthor',
             'archive',
-            'programs',
+            'pillars',
             'domains',
             'map',
             'radar',
@@ -759,15 +759,15 @@ describe('the groups of the real config', () => {
         ).toContain('>Feeds</p>');
     });
 
-    it('keeps the four boards together and puts Programs, Domains and Map under Pillars', () => {
+    it('keeps the four boards together and puts Pillars, Domains and Map under Pillars', () => {
         expect(section('Boards').map((view) => view.id)).toEqual([
             'focus',
             'projects',
             'coauthor',
             'archive'
         ]);
-        expect(section('Pillars').map((view) => view.id)).toEqual(['programs', 'domains', 'map']);
-        expect(realGroups().find((group) => group.label === 'Pillars')?.glyph).toBe('program');
+        expect(section('Pillars').map((view) => view.id)).toEqual(['pillars', 'domains', 'map']);
+        expect(realGroups().find((group) => group.label === 'Pillars')?.glyph).toBe('pillar');
     });
 });
 

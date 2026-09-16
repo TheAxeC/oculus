@@ -60,7 +60,7 @@ function installFixture(): void {
                 projects: {},
                 venues: {},
                 datasets: {},
-                programs: {},
+                pillars: {},
                 domains: {},
                 funding: {},
                 collections: {},

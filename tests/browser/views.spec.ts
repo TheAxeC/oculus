@@ -14,7 +14,7 @@ import { t } from './words.ts';
 const BANDITS = 'projects/active/graph-bandits';
 
 /** The demo's long values, each the head of one, which is what makes the cut measurable. */
-const LONG_PROGRAM = 'Graph learning over evolving';
+const LONG_PILLAR = 'Graph learning over evolving';
 const LONG_PROJECT = 'Sketched tensor decompositions';
 
 /** Whether an element's own text is wider than the box it is drawn in, which is the cut itself. */
@@ -69,7 +69,7 @@ test('a tooltip describes the control it wraps, and not the wrapper around it', 
 
 test('a long tag value ends in an ellipsis inside its card', async ({ page }) => {
     const card = await projectCard(page);
-    const label = card.locator('.tag .label').filter({ hasText: LONG_PROGRAM }).first();
+    const label = card.locator('.tag .label').filter({ hasText: LONG_PILLAR }).first();
     await expect(label).toBeVisible();
 
     expect(await clipped(label)).toBe(true);

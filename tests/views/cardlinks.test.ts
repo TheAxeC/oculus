@@ -37,7 +37,7 @@ const more = (count: number): string =>
 /** The four kind labels, in the order the card draws their lines. */
 const LABELS = [
     'board.facet_funding',
-    'board.facet_program',
+    'board.facet_pillar',
     'board.facet_dataset',
     'project.card.collaborations'
 ].map(word);
@@ -61,7 +61,7 @@ function project(tier: Project['tier'] = 'active'): Project {
         relatedIds: [],
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],
@@ -80,7 +80,7 @@ function tags(kind: string, count: number): BoardTag[] {
 
 type Counts = {
     funding: number;
-    programs: number;
+    pillars: number;
     datasets: number;
     collaborators: number;
     /** The software cross-links, which the four-kind cases leave at none. */
@@ -96,7 +96,7 @@ function item(counts: Counts): BoardItem {
         tone: '',
         domain: null,
         venue: null,
-        programs: tags('program', counts.programs),
+        pillars: tags('pillar', counts.pillars),
         funding: tags('fund', counts.funding),
         datasets: tags('data', counts.datasets),
         collaborators: tags('collab', counts.collaborators),
@@ -132,7 +132,7 @@ function labelled(body: string, label: string): boolean {
 
 const FIVE_FUNDING_TWO_DATASETS = item({
     funding: 5,
-    programs: 0,
+    pillars: 0,
     datasets: 2,
     collaborators: 0
 });
@@ -144,29 +144,29 @@ function draw(props: { item: BoardItem }): string {
 describe('the card tag lines', () => {
     it('draws the four kinds in their order, each labelled, with the long ones cut', () => {
         const drawn = lines(
-            draw({ item: item({ funding: 5, programs: 2, datasets: 4, collaborators: 1 }) })
+            draw({ item: item({ funding: 5, pillars: 2, datasets: 4, collaborators: 1 }) })
         );
         expect(drawn.map(kindOf)).toEqual(LABELS);
-        const [funding, programs, datasets, collaborations] = drawn;
+        const [funding, pillars, datasets, collaborations] = drawn;
         expect(funding.match(/class="tag/g)).toHaveLength(SHOWN);
         expect(funding).toContain(`>${more(2)}<`);
         expect(datasets.match(/class="tag/g)).toHaveLength(SHOWN);
         expect(datasets).toContain(`>${more(1)}<`);
-        expect(programs.match(/class="tag/g)).toHaveLength(2);
-        expect(programs).not.toContain('class="tool');
+        expect(pillars.match(/class="tag/g)).toHaveLength(2);
+        expect(pillars).not.toContain('class="tool');
         expect(collaborations.match(/class="tag/g)).toHaveLength(1);
         expect(collaborations).not.toContain('class="tool');
     });
 
     it('draws the cross-link kinds as buttons naming their kind and the rest as plain tags', () => {
-        const [funding, programs, datasets, collaborations] = lines(
-            draw({ item: item({ funding: 1, programs: 1, datasets: 1, collaborators: 1 }) })
+        const [funding, pillars, datasets, collaborations] = lines(
+            draw({ item: item({ funding: 1, pillars: 1, datasets: 1, collaborators: 1 }) })
         );
         expect(funding).toContain(`title="${openIn(LABELS[0])}"`);
         expect(funding).toContain('class="crosslink');
         expect(collaborations).toContain(`title="${openIn(LABELS[3])}"`);
         expect(collaborations).toContain('class="crosslink');
-        expect(programs).not.toContain('class="crosslink');
+        expect(pillars).not.toContain('class="crosslink');
         expect(datasets).not.toContain('class="crosslink');
     });
 
@@ -202,12 +202,12 @@ describe('the card tag lines', () => {
     });
 
     it('draws nothing at all for an item with no tag of any kind', () => {
-        const bare = item({ funding: 0, programs: 0, datasets: 0, collaborators: 0 });
+        const bare = item({ funding: 0, pillars: 0, datasets: 0, collaborators: 0 });
         expect(draw({ item: bare })).not.toContain('class="links');
     });
 
     it("calls the software line Software on a paper's card and Papers on a software project's", () => {
-        const counts = { funding: 0, programs: 0, datasets: 0, collaborators: 0, software: 2 };
+        const counts = { funding: 0, pillars: 0, datasets: 0, collaborators: 0, software: 2 };
         const paper = draw({ item: item(counts) });
         expect(labelled(paper, SOFTWARE)).toBe(true);
         expect(labelled(paper, PAPERS)).toBe(false);
@@ -222,7 +222,7 @@ describe('the card tag lines', () => {
             draw({
                 item: item({
                     funding: 1,
-                    programs: 1,
+                    pillars: 1,
                     datasets: 1,
                     collaborators: 1,
                     software: 2
@@ -249,7 +249,7 @@ describe('linkView', () => {
     it('names the view each cross-link kind opens, and nothing for the other two', () => {
         expect(linkView('funding')).toBe('funding');
         expect(linkView('collaborators')).toBe('collaborations');
-        expect(linkView('programs')).toBe('');
+        expect(linkView('pillars')).toBe('');
         expect(linkView('datasets')).toBe('');
     });
 });

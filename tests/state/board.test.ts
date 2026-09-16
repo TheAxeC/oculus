@@ -72,7 +72,7 @@ setVocab({
 const CONFIG: Record<string, unknown> = {
     board: {
         cols_project: ['Project', 'Authors', 'Venue', 'Status', 'Focus', 'Next'],
-        cols_archive: ['Paper', 'Authors', 'Venue', 'Domain', 'Research line', 'Funding'],
+        cols_archive: ['Paper', 'Authors', 'Venue', 'Domain', 'Pillar', 'Funding'],
         search: { projects: 'Search title | eli5 ...' }
     },
     tab_rollup: {
@@ -95,10 +95,10 @@ const EMPTY_RELATIONS: Relations = {
     projectVenue: [],
     projectFunding: [],
     projectDataset: [],
-    projectProgram: [],
+    projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingProgram: []
+    fundingPillar: []
 };
 
 function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
@@ -116,7 +116,7 @@ function project(id: Id, tier: Tier, over: Partial<Project> = {}): Project {
         relatedIds: [],
         fundingIds: [],
         datasetIds: [],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],
@@ -241,7 +241,7 @@ function snapshot(): Snapshot {
             venueId: 'bspc',
             fundingIds: ['FAIR'],
             datasetIds: ['mimic'],
-            programIds: ['federated'],
+            pillarIds: ['federated'],
             domainIds: ['heart'],
             collaborators: ['someone'],
             docs: [
@@ -257,7 +257,7 @@ function snapshot(): Snapshot {
             compute: 'local',
             codeAvailability: { status: 'review-anon' },
             venueId: 'nowhere',
-            programIds: ['tensor'],
+            pillarIds: ['tensor'],
             domainIds: ['brain'],
             lead: 'Faes'
         }),
@@ -286,7 +286,7 @@ function snapshot(): Snapshot {
                 })
             },
             datasets: {},
-            programs: {
+            pillars: {
                 federated: {
                     id: 'federated',
                     title: 'Federated learning',
@@ -453,8 +453,8 @@ describe('boardItems, the joins', () => {
         expect(item('echo').tone).toBe('grey');
     });
 
-    it('joins the research lines by title and the collaborators by name', () => {
-        expect(item('alpha').programs).toEqual([{ id: 'federated', label: 'Federated learning' }]);
+    it('joins the pillars by title and the collaborators by name', () => {
+        expect(item('alpha').pillars).toEqual([{ id: 'federated', label: 'Federated learning' }]);
         expect(item('alpha').collaborators).toEqual([{ id: 'someone', label: 'Someone Else' }]);
     });
 
@@ -485,9 +485,9 @@ describe('facets', () => {
         expect(facet(PROJECTS, ITEMS, 'year')).toEqual(['2026:1', '2025:1', `${NONE}:4`]);
     });
 
-    it('counts the domains, the research lines and the status chips', () => {
+    it('counts the domains, the pillars and the status chips', () => {
         expect(facet(PROJECTS, ITEMS, 'domain')).toEqual(['brain:1', 'heart:1']);
-        expect(facet(PROJECTS, ITEMS, 'program')).toEqual(['federated:1', 'tensor:1']);
+        expect(facet(PROJECTS, ITEMS, 'pillar')).toEqual(['federated:1', 'tensor:1']);
         expect(facet(PROJECTS, ITEMS, 'status')).toEqual(['lead:2', 'submitted:1']);
     });
 
@@ -511,7 +511,7 @@ describe('facets', () => {
             'category',
             'year',
             'domain',
-            'program',
+            'pillar',
             'funding',
             'dataset',
             'status',

@@ -52,10 +52,10 @@ const RELATIONS: Relations = {
     projectVenue: [],
     projectFunding: [],
     projectDataset: [],
-    projectProgram: [],
+    projectPillar: [],
     projectDomain: [],
     projectRelated: [],
-    fundingProgram: []
+    fundingPillar: []
 };
 
 function dataset(
@@ -107,7 +107,7 @@ function project(id: string): Project {
         relatedIds: [],
         fundingIds: [],
         datasetIds: ['open'],
-        programIds: [],
+        pillarIds: [],
         domainIds: [],
         collaborators: [],
         docs: [],
@@ -156,7 +156,7 @@ function snapshot(datasets: Dataset[]): Snapshot {
             projects: { linked: project('linked') },
             venues: {},
             datasets: Object.fromEntries(datasets.map((item) => [item.id, item])),
-            programs: {},
+            pillars: {},
             domains: {},
             funding: {},
             collections: { data: collection(datasets) },

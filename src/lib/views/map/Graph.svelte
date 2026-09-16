@@ -193,7 +193,7 @@
         if (node.kind === 'project') {
             openView('project', { id: node.entityId, label: node.label });
         } else if (node.kind === 'line') {
-            openView('programs');
+            openView('pillars');
         } else {
             openView('collaborations');
         }

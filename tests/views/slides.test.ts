@@ -50,7 +50,7 @@ const PROJECT: Project = {
     relatedIds: [],
     fundingIds: [],
     datasetIds: [],
-    programIds: [],
+    pillarIds: [],
     domainIds: ['heart'],
     collaborators: [],
     docs: [],
