@@ -18,6 +18,7 @@ import {
     hasStatusField,
     hrefOf,
     identityField,
+    isHubPath,
     identityValue,
     isPinned,
     kindOf,
@@ -284,6 +285,26 @@ describe('parseCollectionState', () => {
         expect(parseCollectionState(undefined)).toEqual(emptyCollectionState());
         expect(parseCollectionState(['talk'])).toEqual(emptyCollectionState());
         expect(parseCollectionState({ search: 7 })).toEqual(emptyCollectionState());
+    });
+});
+
+describe('isHubPath', () => {
+    it('is a path inside the hub for exactly the values hrefOf serves through the hub root', () => {
+        const values = [
+            'network/a-talk/report.docx',
+            'report.docx',
+            'https://example.org/report.docx',
+            'mailto:someone@example.org',
+            '/api/file/cathedra/manual.html',
+            ''
+        ];
+        expect(values.filter((one) => isHubPath(one))).toEqual([
+            'network/a-talk/report.docx',
+            'report.docx'
+        ]);
+        for (const one of values.filter((value) => value !== '')) {
+            expect(isHubPath(one), one).toBe(hrefOf(one).startsWith('/api/file/hub/'));
+        }
     });
 });
 

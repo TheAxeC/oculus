@@ -8,6 +8,12 @@
     // collection key, and every control is one call of the write path. A field the schema draws its
     // choices from the people registry for is the one exception in kind rather than in name: it holds
     // a person's key, so the card draws the control that opens that person by their name.
+    //
+    // A link is one of three things: a local HTML file opens in the document view, a path inside the
+    // hub whose extension `open.program_ext` of config/behavior.yml names an application for (a
+    // `.docx`, an `.xlsx`) is `shared/ProgramButton.svelte`, which hands the file to that application,
+    // since a link to it would only download it, and everything else is a link. A refused or failed
+    // open is said through `onsaid`, the line the collection view shows every write's answer on.
 
     import Card from '$lib/ui/Card.svelte';
     import Chip from '$lib/ui/Chip.svelte';
@@ -16,6 +22,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
     import EntryForm from '../shared/EntryForm.svelte';
+    import ProgramButton from '../shared/ProgramButton.svelte';
     import Subtasks from '../shared/Subtasks.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
     import {
@@ -25,12 +32,14 @@
         entrySubtasks,
         hrefOf,
         HUB_ROOT,
+        isHubPath,
         isPinned,
         identityValue,
         type Entry,
         type Project,
         type SchemaField
     } from '$lib/state/collection';
+    import { opensInProgram } from '$lib/state/fs';
     import { personName } from '$lib/state/person';
     import { t } from '$lib/state/text';
     import { statusTone } from '$lib/state/tones';
@@ -39,7 +48,7 @@
     const {
         entities: { portfolio },
         layout: { openView },
-        selectors: { archiveDead },
+        selectors: { archiveDead, programApps },
         writes: { writeEntry }
     } = useState();
 
@@ -128,6 +137,11 @@
             path: link,
             label: parts[parts.length - 1] ?? link
         });
+    }
+
+    /** Whether a link is a file of the hub the map names an application for. */
+    function programLink(link: string): boolean {
+        return isHubPath(link) && opensInProgram(link, programApps());
     }
 
     function dragstart(): void {
@@ -250,12 +264,21 @@
                     </div>
                 {:else if drawn.kind === 'link'}
                     {#if isDocument(drawn.values[0])}
-                        <!-- A local HTML file opens in the document view; every other link leaves the page. -->
+                        <!-- A local HTML file opens in the document view, a hub file the list lets open opens in its program, and every other link leaves the page. -->
                         <p class="body">
                             <ToolButton
                                 label={drawn.values[0]}
                                 glyph={t('collection.folder_glyph')}
                                 onclick={() => openDocument(drawn.values[0])}
+                            />
+                        </p>
+                    {:else if programLink(drawn.values[0])}
+                        <p class="body">
+                            <ProgramButton
+                                root={HUB_ROOT}
+                                path={drawn.values[0]}
+                                label={drawn.values[0]}
+                                {onsaid}
                             />
                         </p>
                     {:else}

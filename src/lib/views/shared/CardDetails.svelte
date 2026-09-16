@@ -94,7 +94,7 @@
             </div>
         </div>
     {/if}
-    <CardDocs {item} />
+    <CardDocs {item} {onsaid} />
     <Subtasks target={{ id: item.id }} subtasks={item.project.subtasks} {onsaid} />
 </div>
 

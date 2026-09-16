@@ -38,6 +38,9 @@ export type SubtaskTarget = { id: string; collection?: string };
 /** What one subtask button does to its line. */
 export type SubtaskAction = 'done' | 'reopen' | 'snooze' | 'delete';
 
+/** The endpoint that opens a file in its application or reveals a folder, behind the same token. */
+export const OPEN_PATH = '/api/open';
+
 /** The endpoint of the git panel: one action on one workspace, behind the same token. */
 export const GIT_PATH = '/api/git';
 
@@ -55,6 +58,7 @@ export type WritesStore = {
     lastError: () => string | null;
     writeManifest: (id: string, fields: Record<string, unknown>) => Promise<WriteAnswer>;
     openFolder: (path: string) => Promise<WriteAnswer>;
+    openFile: (root: string, path: string) => Promise<WriteAnswer>;
     writeSession: (id: string, fields: SessionFields) => Promise<WriteAnswer>;
     writeEntry: (
         collection: string,
@@ -157,9 +161,18 @@ export function createWrites(): WritesStore {
         return send({ kind: 'manifest', id, fields });
     }
 
-    /** Ask the local server to open one project folder under the hub or another configured root. */
+    /** Ask the local server to reveal one project folder, under the hub or another root. */
     async function openFolder(path: string): Promise<WriteAnswer> {
-        return send({ path }, '/api/open');
+        return send({ path }, OPEN_PATH);
+    }
+
+    /**
+     * Ask the local server to open one file in the application `open.program_ext` names for it, or
+     * reveal one folder, addressed the way the file browser addresses it: the key of a served root and
+     * the path under that root.
+     */
+    async function openFile(root: string, path: string): Promise<WriteAnswer> {
+        return send({ root, path }, OPEN_PATH);
     }
 
     /**
@@ -402,6 +415,7 @@ export function createWrites(): WritesStore {
         lastError,
         writeManifest,
         openFolder,
+        openFile,
         writeSession,
         writeEntry,
         writeSubtask,

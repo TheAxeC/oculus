@@ -379,6 +379,41 @@ describe('a card', () => {
         expect(card).not.toContain('href="/api/file/hub/network/a-talk/slides.html"');
     });
 
+    it('draws a hub link the list lets open as the ui/ToolButton that opens it in its program', () => {
+        const snap = snapshot();
+        snap.version = 7;
+        snap.entities.collections.events.entries = [
+            entry(0, 'A budget', { link: 'network/a-talk/budget.xlsx' }),
+            entry(1, 'A report', { link: 'network/a-talk/report.docx' }),
+            entry(2, 'Some notes', { link: 'network/a-talk/notes.md' }),
+            entry(3, 'A paper', { link: 'network/a-talk/paper.pdf' }),
+            entry(4, 'A script', { link: 'network/a-talk/run.py' }),
+            entry(5, 'A picture', { link: 'network/a-talk/plot.png' }),
+            entry(6, 'An address', { link: 'https://example.org/report.docx' }),
+            entry(7, 'An installer', { link: 'network/a-talk/setup.dmg' })
+        ];
+        receive({ channel: 'portfolio', version: 7, payload: snap });
+        const [budget, report, notes, paper, script, picture, address, installer] = cards(html());
+
+        for (const card of [budget, report]) {
+            expect(card).toContain('<button type="button" class="tool');
+            expect(card).toContain(catalog['file.open_program']);
+            expect(card).not.toContain('href="/api/file/hub/');
+        }
+        const kept: [string, string][] = [
+            [notes, 'href="/api/file/hub/network/a-talk/notes.md"'],
+            [paper, 'href="/api/file/hub/network/a-talk/paper.pdf"'],
+            [script, 'href="/api/file/hub/network/a-talk/run.py"'],
+            [picture, 'href="/api/file/hub/network/a-talk/plot.png"'],
+            [address, 'href="https://example.org/report.docx"'],
+            [installer, 'href="/api/file/hub/network/a-talk/setup.dmg"']
+        ];
+        for (const [card, href] of kept) {
+            expect(card).toContain(href);
+            expect(card).not.toContain(catalog['file.open_program']);
+        }
+    });
+
     it("draws every other link as an anchor into the hub, in a tab of the browser's own", () => {
         const body = html('funding');
         expect(body).toContain('href="https://example.org/call"');

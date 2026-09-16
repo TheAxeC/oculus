@@ -84,7 +84,8 @@ describe("oculus's own config directory", () => {
             'notes',
             'changes',
             'git',
-            'search'
+            'search',
+            'open'
         ],
         'glyphs.yml': ['glyphs', 'ascii'],
         'icons.yml': ['icons'],

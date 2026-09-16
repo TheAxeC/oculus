@@ -75,6 +75,7 @@ describe('ServerContext', () => {
                 },
                 calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
                 editor: { paint_limit_kb: 64 },
+                open: { program_ext: { '.docx': 'com.microsoft.Word' } },
                 mail: { poll_min: 10, per_signal: 25 },
                 usage_tiers: {},
                 usage_refresh_min: 5,
@@ -176,6 +177,7 @@ describe('ServerContext', () => {
                     },
                     calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
                     editor: { paint_limit_kb: 64 },
+                    open: { program_ext: { '.docx': 'com.microsoft.Word' } },
                     mail: { poll_min: 10, per_signal: 25 },
                     usage_tiers: {},
                     usage_refresh_min: 5,
@@ -240,6 +242,43 @@ describe('ServerContext', () => {
 
         first.close();
         second.close();
+    });
+
+    it('stops before building anything when open.program_ext is missing, naming the key', () => {
+        const createHub = vi.fn(() => new Hub());
+        const build = (): unknown =>
+            createServerContext('/engine', {
+                loadLocal: vi.fn(() => ({
+                    hub: '/hub',
+                    port: 8791,
+                    claudeBin: 'claude',
+                    accounts: [],
+                    calendars: [],
+                    mail: []
+                })),
+                loadConfig: vi.fn(() => ({
+                    config: {
+                        slurm: {
+                            host: 'cluster',
+                            days: 2,
+                            poll_min: 1,
+                            quota_min: 5,
+                            prewarm: false
+                        },
+                        calendar: { poll_min: 15, days_back: 1, days_ahead: 14 },
+                        editor: { paint_limit_kb: 64 },
+                        mail: { poll_min: 10, per_signal: 25 },
+                        usage_tiers: {},
+                        usage_refresh_min: 5,
+                        usage_refresh_model: 'model'
+                    },
+                    findings: []
+                })),
+                createHub
+            });
+
+        expect(build).toThrow('open.program_ext');
+        expect(createHub).not.toHaveBeenCalled();
     });
 
     it('reads a carried context and names event.platform.req when it is absent', () => {

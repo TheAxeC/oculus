@@ -49,6 +49,7 @@ text:
             files_loading: reading the folder ...
             files_none: No files in this project.
             files_ph: filter files in this project ...
+            folder_failed: 'The folder could not be shown in Finder: {0}'
             funding_glyph: funding
             ghost_badge_tip: no project.yml - run /project-new
             ghostmsg: No manifest yet - folder discovered by prefix. Add <code>project.yml</code>.
@@ -91,7 +92,7 @@ text:
             copy_context_tip: copy this project as context to paste into a chat
             doc_human_tip: human-only - no agent edits this
             folder: folder
-            folder_tip: open project folder
+            folder_tip: show the project folder in Finder
             full: Full
             short: Short
             under_review_at: under review at {0}

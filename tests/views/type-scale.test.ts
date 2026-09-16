@@ -179,6 +179,7 @@ const VIEWS: Record<string, string> = {
     'shared/NewIdeaForm.svelte': '',
     'shared/ProjectCard.svelte':
         '.folder=fs-xs | .venue, .authors=fs-sm | .eli5 p=fs-md | .next, .waiting, .ghostmsg=fs-sm | .label=fs-xxs',
+    'shared/ProgramButton.svelte': '.failed=fs-sm',
     'shared/Reveal.svelte': '',
     'shared/SourceButton.svelte': '',
     'shared/Subtasks.svelte': '.label=fs-xs | .count, .box=fs-xs | .do=fs-md',

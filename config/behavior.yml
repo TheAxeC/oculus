@@ -72,7 +72,7 @@ file_index:
   enabled: true
   max_per_project: 400
   ext: [".pdf", ".tex", ".bib", ".md", ".yml", ".yaml", ".py", ".sh", ".slurm", ".ipynb",
-        ".csv", ".json", ".png", ".jpg", ".svg", ".txt"]
+        ".csv", ".json", ".png", ".jpg", ".svg", ".txt", ".docx", ".xlsx", ".pptx"]
 
 
 # === Served mode: live SLURM poller and in-page chat =========================
@@ -145,3 +145,18 @@ git:
 search:
   max_hits: 500
   timeout_s: 10
+
+# === Open in its program ====================================================
+# Each extension a file may carry to be handed to a program on this machine, with the bundle id of the one application it opens in. A file of any other extension, and a listed file with an execute bit or marked as a Finder alias, is refused; a folder is shown in Finder rather than opened. Read again at every request.
+open:
+  program_ext:
+    ".docx": com.microsoft.Word
+    ".doc": com.microsoft.Word
+    ".xlsx": com.microsoft.Excel
+    ".xls": com.microsoft.Excel
+    ".pptx": com.microsoft.Powerpoint
+    ".ppt": com.microsoft.Powerpoint
+    ".rtf": com.apple.TextEdit
+    ".pages": com.apple.iWork.Pages
+    ".numbers": com.apple.iWork.Numbers
+    ".key": com.apple.iWork.Keynote

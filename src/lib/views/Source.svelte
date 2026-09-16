@@ -27,7 +27,9 @@
     //
     // The star in the pane's own bar is `shared/BookmarkStar.svelte`, which the file view draws too,
     // so a reader bookmarks the file in front of them whichever of the two tabs is showing it. The
-    // controls that act on the text (Save, Revert, the rendered half) are the editor's own bar.
+    // controls that act on the text (Save, Revert, the rendered half) are the editor's own bar. A file
+    // whose extension `open.program_ext` names an application for, such as a `.rtf` whose bytes are
+    // text, also carries `shared/ProgramButton.svelte` there, the control the file view draws.
 
     import { untrack } from 'svelte';
     import Empty from '$lib/ui/Empty.svelte';
@@ -35,15 +37,17 @@
     import Pane from '$lib/ui/Pane.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import BookmarkStar from './shared/BookmarkStar.svelte';
+    import ProgramButton from './shared/ProgramButton.svelte';
     import Code from './source/Code.svelte';
     import Editor from './source/Editor.svelte';
-    import { languageOf } from '$lib/state/fs';
+    import { languageOf, opensInProgram } from '$lib/state/fs';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
     const {
         layout: { keepPreview },
+        selectors: { programApps },
         source: {
             revertSourceDraft,
             editSourceDraft,
@@ -104,6 +108,9 @@
 {#snippet tools()}
     <Toolbar label={t('source.toolbar')}>
         <BookmarkStar {root} {path} />
+        {#if !blocked && opensInProgram(path, programApps())}
+            <ProgramButton {root} {path} />
+        {/if}
     </Toolbar>
 {/snippet}
 

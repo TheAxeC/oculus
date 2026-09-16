@@ -150,6 +150,23 @@ describe('the source editor', () => {
         expect(body).not.toContain('readonly');
     });
 
+    it('carries the program control in its bar for a listed .rtf, and none for a Markdown file', () => {
+        const tab = (path: string): string =>
+            render(Source, {
+                context: clientContext(client),
+                props: {
+                    instance: {
+                        id: `source-${path}`,
+                        view: 'source',
+                        state: sourceTabState('hub', path)
+                    }
+                }
+            }).body;
+        const words = `<span class="label">${catalog['file.open_program']}</span>`;
+        expect(tab('letters/cover.rtf')).toContain(words);
+        expect(tab('notes.md')).not.toContain(words);
+    });
+
     // The mirror is the code window's highlighter, so a file being written is coloured exactly as the
     // same file shown read only is, for every language the highlighter has registered.
     it('paints the mirror of a writable file through the highlighter of the code window', () => {

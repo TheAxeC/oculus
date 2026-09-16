@@ -1,28 +1,40 @@
 <script lang="ts">
     // Layer 3, shared view. Project document and file rows live here because file browsing changes
     // independently of the project-card frame.
+    //
+    // A file row is one of three things, decided by its name. A name READABLE matches (a Markdown
+    // file, a script, a LaTeX source) opens in the document view. A name whose extension
+    // `open.program_ext` of config/behavior.yml names an application for (a `.docx`, an `.xlsx`) is
+    // `shared/ProgramButton.svelte`, which hands the file to that application, since a link to it
+    // would only download it; a refused or failed open is said through the card's own message line.
+    // Every other file is a link the browser opens or downloads.
 
     import Empty from '$lib/ui/Empty.svelte';
     import Tag from '$lib/ui/Tag.svelte';
     import Search from '$lib/ui/Search.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { humanSize, type BoardItem } from '$lib/state/board';
+    import { opensInProgram } from '$lib/state/fs';
     import { t } from '$lib/state/text';
     import { matching, nameOf, openDocument, subOf, urlOf } from './card';
+    import ProgramButton from './ProgramButton.svelte';
     import { useState } from '$lib/state/use';
 
     const client = useState();
 
     const {
         files: { files },
-        layout: { openView }
+        layout: { openView },
+        selectors: { programApps }
     } = client;
 
     type Props = {
         /** The joined board item whose documents and files are listed. */
         item: BoardItem;
+        /** Show a refused or failed open in the owning board. */
+        onsaid: (said: string) => void;
     };
-    let { item }: Props = $props();
+    let { item, onsaid }: Props = $props();
 
     /** Extensions the document view can render as text. */
     const READABLE = /\.(html?|md|txt|ya?ml|py|sh|slurm|tex|bib|json|csv|r|m|cpp|h|ts|js|css)$/i;
@@ -33,7 +45,7 @@
     const rows = $derived(matching(held.rows, filter));
 
     /** Open a readable row from the file listing. */
-    function openFile(path: string): void {
+    function openReadable(path: string): void {
         openView('document', {
             root: 'hub',
             path: `${held.folder}/${path}`,
@@ -89,9 +101,17 @@
             {#each rows as row (row.path)}
                 <div class="frow">
                     {#if READABLE.test(row.path)}
-                        <button type="button" class="fname" onclick={() => openFile(row.path)}>
-                            {nameOf(row.path)}
-                        </button>
+                        <ToolButton
+                            label={nameOf(row.path)}
+                            onclick={() => openReadable(row.path)}
+                        />
+                    {:else if opensInProgram(row.path, programApps())}
+                        <ProgramButton
+                            root="hub"
+                            path={`${held.folder}/${row.path}`}
+                            label={nameOf(row.path)}
+                            {onsaid}
+                        />
                     {:else}
                         <!-- eslint-disable svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
                         <a
@@ -154,13 +174,7 @@
     }
 
     .fname {
-        border: none;
-        background: none;
         color: var(--accent-txt, var(--accent));
-        font: inherit;
-        padding: 0;
-        cursor: pointer;
-        text-align: left;
         text-decoration: none;
     }
 

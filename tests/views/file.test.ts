@@ -23,11 +23,18 @@ let client: ClientState;
 
 beforeEach(() => {
     client = createClientState();
+    client.entities.receive({
+        channel: 'config',
+        version: 1,
+        payload: { config, text: catalog, findings: [] }
+    });
 });
 
 const { config } = loadConfig(engineDir());
-setCatalog(textCatalog(config));
-setGlyphs(glyphCatalog(config));
+const catalog = textCatalog(config);
+const glyphs = glyphCatalog(config);
+setCatalog(catalog);
+setGlyphs(glyphs);
 
 function instance(state: unknown): Instance {
     return { id: 'file-one', view: 'file', state };
@@ -130,6 +137,98 @@ describe('one file as its own tab', () => {
         expect(first).not.toBe('');
         expect(again).toBe(first);
         expect(other).not.toBe(first);
+    });
+});
+
+// The control that hands the file to its program on this machine. What pressing it posts, and the
+// sentence a refusal leaves, need a DOM and a server: tests/browser/open-file.spec.ts presses it.
+describe('the control that opens a file in its program', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
+    /**
+     * The view over one file whose first bytes the store has already read, as a zip or as text, on a
+     * client holding the given configuration, the checked-in one by default.
+     */
+    async function held(
+        path: string,
+        text: boolean,
+        settings: Record<string, unknown> | null = config
+    ): Promise<string> {
+        vi.stubGlobal('window', {});
+        const zip = new Uint8Array([0x50, 0x4b, 0x03, 0x04, 0x00, 0x01]);
+        vi.stubGlobal('fetch', () =>
+            Promise.resolve(new Response(text ? new TextEncoder().encode('# notes\n') : zip))
+        );
+        const fresh = createClientState();
+        if (settings !== null) {
+            fresh.entities.receive({
+                channel: 'config',
+                version: 1,
+                payload: { config: settings, text: catalog, findings: [] }
+            });
+        }
+        const kind = await fresh.fs.readFileKind('hub', path);
+        expect(kind.kind).toBe(text ? 'text' : 'other');
+        return render(File, {
+            context: clientContext(fresh),
+            props: { instance: instance({ root: 'hub', path, label: path, size: 2048 }) }
+        }).body;
+    }
+
+    /** How many times a rendering draws the control, counted by its words on a button. */
+    function controls(body: string): number {
+        return body.split(`<span class="label">${catalog['file.open_program']}</span>`).length - 1;
+    }
+
+    it('draws it in the toolbar and beside the download for a .docx, as ui/ToolButton', async () => {
+        const body = await held('drafts/report.docx', false);
+
+        expect(controls(body)).toBe(2);
+        const other = body.slice(body.indexOf('class="other'));
+        expect(other).toContain('download="report.docx"');
+        expect(other).toContain(catalog['file.open_program']);
+        for (const at of body.split(catalog['file.open_program']).slice(0, -1)) {
+            expect(at.lastIndexOf('<button type="button" class="tool')).toBeGreaterThan(-1);
+        }
+        expect(body).toContain(glyphs[catalog['file.open_program_glyph']]);
+    });
+
+    it('draws none for a picture and a PDF, whose extensions the checked-in list does not name', () => {
+        expect(controls(drawn({ root: 'hub', path: 'docs/plot.png' }))).toBe(0);
+        expect(controls(drawn({ root: 'hub', path: 'paper.pdf' }))).toBe(0);
+    });
+
+    it('reads the list from the configuration the page holds: one naming .zip offers a .zip', async () => {
+        const zipped = { ...config, open: { program_ext: { '.zip': 'com.apple.archiveutility' } } };
+        expect(controls(await held('bundle.zip', false))).toBe(0);
+        expect(controls(await held('bundle.zip', false, zipped))).toBe(2);
+        expect(controls(await held('drafts/report.docx', false, zipped))).toBe(0);
+    });
+
+    it('draws none for a listed file still being read, nor for a .md handed to the source tab', async () => {
+        expect(controls(drawn({ root: 'hub', path: 'drafts/report.docx' }))).toBe(0);
+        expect(controls(await held('notes.md', true))).toBe(0);
+        expect(controls(drawn({ root: 'hub', path: 'notes.md', label: 'notes.md' }))).toBe(0);
+    });
+
+    it('draws none before the configuration has arrived, and keeps the download', async () => {
+        const body = await held('drafts/report.docx', false, null);
+
+        expect(controls(body)).toBe(0);
+        expect(body).toContain('download="report.docx"');
+    });
+
+    it('draws none for a file off the list, and keeps its download', async () => {
+        const body = await held('dist/installer.dmg', false);
+
+        expect(controls(body)).toBe(0);
+        expect(body).toContain('download="installer.dmg"');
+    });
+
+    it('draws none while no file is chosen', () => {
+        expect(controls(drawn({}))).toBe(0);
     });
 });
 

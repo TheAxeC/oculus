@@ -39,6 +39,15 @@
     //
     // The star in the toolbar is `shared/BookmarkStar.svelte`, which the source tab draws too: a
     // reader bookmarks the file in front of them, whichever of the two tabs is showing it.
+    //
+    // "Open in its program" is `shared/ProgramButton.svelte`, which hands the file to the application
+    // `open.program_ext` of config/behavior.yml names for its extension, so a `.docx` or an `.xlsx`
+    // the page draws no view of opens in the program that edits it. It is offered only for a name with
+    // such an entry, in the toolbar once this view holds the file (a file still being read, or one
+    // about to be handed to the source tab, carries none, for the same reason it carries no download)
+    // and again beside the download; a listed file whose bytes are text is handed to the source tab,
+    // which carries the same control. The server refuses what the name cannot show (an execute bit, a
+    // Finder alias, a file it cannot read) when it is pressed, and each control says so beside it.
 
     import { untrack } from 'svelte';
     import Empty from '$lib/ui/Empty.svelte';
@@ -46,10 +55,11 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import BookmarkStar from './shared/BookmarkStar.svelte';
+    import ProgramButton from './shared/ProgramButton.svelte';
     import { openSourceFile } from './shared/source-file';
     import { humanSize } from '$lib/state/board';
     import { fileBytesUrl } from '$lib/state/fs.svelte';
-    import { extensionOf, nameOf, typeOfFile } from '$lib/state/fs';
+    import { extensionOf, nameOf, opensInProgram, typeOfFile } from '$lib/state/fs';
     import { sourceTabState } from '$lib/state/source.svelte';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
@@ -58,7 +68,8 @@
     const client = useState();
     const {
         fs: { fileVersion, heldFileKind, readFileKind },
-        layout: { closeInstance }
+        layout: { closeInstance },
+        selectors: { programApps }
     } = client;
 
     let { instance }: ViewProps = $props();
@@ -74,6 +85,13 @@
     const type = $derived(typeOfFile(path));
     /** What the file opens as once that is known, and null while its first bytes are being read. */
     const known = $derived(root === '' || path === '' ? null : heldFileKind(root, path));
+    /**
+     * Whether this view holds the file rather than reading it or handing it to the source tab: a
+     * picture or a PDF, which the name says at once, or a file whose first bytes say it is no text.
+     */
+    const holds = $derived(src !== '' && known !== null && known.kind !== 'text');
+    /** Whether the view offers to open the file in its program: it holds it and the map names one. */
+    const openable = $derived(holds && opensInProgram(path, programApps()));
     /** What the tree knew the file's size to be, which is what an undrawn type reports. */
     const size = $derived(humanSize(number(instance.state, 'size')));
 
@@ -133,6 +151,9 @@
     <Toolbar label={t('file.toolbar')}>
         <BookmarkStar {root} {path} />
         <ToolButton label={t('file.open_outside')} onclick={outside} />
+        {#if openable}
+            <ProgramButton {root} {path} />
+        {/if}
     </Toolbar>
 {/snippet}
 
@@ -152,8 +173,13 @@
                     message={t('file.other', extensionOf(path), size)}
                     glyph={t('file.other_glyph')}
                 />
-                <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is the api/file endpoint rather than a route id resolve() takes -->
-                <a class="download" href={src} download={nameOf(path)}>{t('file.download')}</a>
+                <div class="actions">
+                    <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is the api/file endpoint rather than a route id resolve() takes -->
+                    <a class="download" href={src} download={nameOf(path)}>{t('file.download')}</a>
+                    {#if openable}
+                        <ProgramButton {root} {path} />
+                    {/if}
+                </div>
             </div>
         {/if}
     </div>
@@ -196,6 +222,12 @@
         flex-direction: column;
         align-items: flex-start;
         gap: 4px;
+    }
+
+    .actions {
+        display: flex;
+        align-items: center;
+        gap: 8px;
     }
 
     .download {

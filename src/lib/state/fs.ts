@@ -13,6 +13,8 @@
 
 import { isTextBytes } from '../data/text-kind.ts';
 
+export { opensInProgram } from '../data/opens-in-program.ts';
+
 /**
  * The key the engine's own `config/` folder is served under, which is what the Config view lists and
  * opens a file of. It is the client's half of the key lib/server/files.ts serves that folder under,

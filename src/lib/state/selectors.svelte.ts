@@ -23,6 +23,7 @@ import {
 import type { EntitiesStore } from './entities.svelte.ts';
 import { byKey } from '../data/guards.ts';
 import { paintLimit } from '../data/editor.ts';
+import { programApps, type ProgramApps } from '../data/opens-in-program.ts';
 import type { LayoutStore } from './layout.svelte.ts';
 import { choicesFor, formFields, formSections } from './schema.ts';
 import { pinnedSession } from './selection.svelte.ts';
@@ -75,6 +76,7 @@ function inside(path: string | null, folder: string): boolean {
 export type SelectorsStore = {
     configMap: () => Record<string, unknown>;
     paintLimit: () => number | null;
+    programApps: () => ProgramApps;
     boardPreset: (view: string) => BoardPreset;
     board: (preset: BoardPreset) => BoardItem[];
     boardStats: (items: BoardItem[]) => BoardStats;
@@ -121,6 +123,14 @@ export function createSelectors(
      */
     function editorPaintLimit(): number | null {
         return paintLimit(configMap());
+    }
+
+    /**
+     * Each extension a file may carry to be offered to its program, with the application it opens
+     * in: `open.program_ext` of config/behavior.yml, and nothing until the config channel has spoken.
+     */
+    function programAppsOf(): ProgramApps {
+        return programApps(configMap()) ?? {};
     }
 
     /** The preset of one view id, over the config as it currently stands. */
@@ -429,6 +439,7 @@ export function createSelectors(
     return {
         configMap,
         paintLimit: editorPaintLimit,
+        programApps: programAppsOf,
         boardPreset,
         board,
         boardStats,

@@ -215,7 +215,7 @@
     /** Ask the host to reveal the project's folder. */
     async function showFolder(): Promise<void> {
         const answer = await openFolder(item.project.folder);
-        if (!answer.ok) onsaid(t('editor.failed', answer.error ?? ''));
+        if (!answer.ok) onsaid(t('project.card.folder_failed', answer.error ?? ''));
     }
     /** Start a project chat, select it and ensure a terminal view is available. */
     async function ask(): Promise<void> {

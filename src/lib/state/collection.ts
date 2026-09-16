@@ -250,6 +250,11 @@ export function hrefOf(value: string): string {
     return `/api/file/${HUB_ROOT}/${parts.join('/')}`;
 }
 
+/** Whether a `link` or `url` value is a path inside the hub, which hrefOf serves through api/file. */
+export function isHubPath(value: string): boolean {
+    return value !== '' && !ADDRESSED.test(value);
+}
+
 /** The entry's status, when it has one as a word. */
 export function entryStatus(entry: Entry): string | undefined {
     const status = entry.fields[STATUS_FIELD];

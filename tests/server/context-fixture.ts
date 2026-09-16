@@ -81,6 +81,7 @@ export function contextFixture(overrides: Partial<ServerContext> = {}): ServerCo
         mailConnects: new ConnectStates(),
         mailDir: overrides.mailDir ?? '/fixture/mail',
         opener: noop,
+        openPath: noop,
         depositPlans: new Map(),
         wallpaper: wallpaperMemory(),
         icons: { set: {} },

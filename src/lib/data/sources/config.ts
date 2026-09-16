@@ -14,6 +14,7 @@ import { homedir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 import { paintLimit } from '../editor.ts';
+import { programApps, type ProgramApps } from '../opens-in-program.ts';
 import type {
     CalendarAccountConfig,
     ConnectAccountConfig,
@@ -770,6 +771,23 @@ export function searchSettings(config: Record<string, unknown>): SearchSettings 
         return value;
     };
     return { maxHits: number('max_hits'), timeoutS: number('timeout_s') };
+}
+
+/** The open action's settings of config/behavior.yml, every key required. */
+export type OpenSettings = {
+    /** Each extension that may open, lowercased with its dot, to the bundle id it opens in. */
+    programApps: ProgramApps;
+};
+
+/** Read `open:` with its one key, or throw naming the key that is missing or mistyped. */
+export function openSettings(config: Record<string, unknown>): OpenSettings {
+    const apps = programApps(config);
+    if (apps === null) {
+        throw new Error(
+            'config/behavior.yml: open.program_ext must map extensions, each with its dot, to bundle ids'
+        );
+    }
+    return { programApps: apps };
 }
 
 /** The mail connector's settings of config/behavior.yml, every key required. */

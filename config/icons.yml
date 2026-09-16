@@ -17,6 +17,7 @@ icons:
     wallpaper: image
     unicode: type
     launch: external-link
+    open_program: app-window
     copy: copy
     goto: corner-down-right
     note_back: undo-2

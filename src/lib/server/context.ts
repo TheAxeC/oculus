@@ -12,6 +12,7 @@ import {
     loadConfig,
     loadLocal,
     mailSettings,
+    openSettings,
     slurmSettings,
     textCatalog,
     usageTiers,
@@ -24,7 +25,7 @@ import { ConnectStates } from './connect/oauth.ts';
 import { defaultConnectDir } from './connect/store.ts';
 import { watchCalendar, type CalendarOptions, type CalendarWatcher } from './calendar/poll.ts';
 import { watchMail, type MailOptions, type MailWatcher } from './mail/poll.ts';
-import { macOpen, type Opener } from './open.ts';
+import { macOpenAddress, macOpenPath, type Opener, type PathOpener } from './open.ts';
 import { docFindings, layoutFile } from './docs.ts';
 import { Hub } from './channels.ts';
 import { RateLimiter, notifyConfig, type HookTarget } from './hooks.ts';
@@ -73,10 +74,12 @@ export type ServerContext = {
     /** The folder the mail credential files and the triage notes live in, resolved once. */
     mailDir: string;
     /**
-     * How an address reaches the operating system, so the one process that opens anything is this
-     * one and a test is handed a context that opens nothing.
+     * How an `https` address reaches the operating system, so the one process that opens anything is
+     * this one and a test is handed a context that opens nothing.
      */
     opener: Opener;
+    /** How the open endpoint hands a file or a folder to the operating system, injectable the same way. */
+    openPath: PathOpener;
     /** The last deposit plan per project. */
     depositPlans: Map<string, Plan>;
     /** The wallpaper pick and the refused directories. */
@@ -148,9 +151,11 @@ export function createServerContext(
     const calendarConfig = calendarSettings(config);
     const mailConfig = mailSettings(config);
     const tiers = usageTiers(config);
-    // Read for its check alone: the value itself is in the merged configuration the page is sent, and
-    // a missing or mistyped key stops the server here with the key named rather than reaching a tab.
+    // Read for their check alone: each value is in the merged configuration the page is sent, and the
+    // open endpoint reads `open.program_ext` again at every request, so a missing or mistyped key
+    // stops the server here with the key named rather than reaching a tab.
     requirePaintLimit(config);
+    openSettings(config);
     const hub = make.createHub();
     const terminals = make.createTerminals(hub);
     const token = make.mintToken();
@@ -265,7 +270,8 @@ export function createServerContext(
         calendarDir,
         mailConnects: new ConnectStates(),
         mailDir,
-        opener: macOpen,
+        opener: macOpenAddress,
+        openPath: macOpenPath,
         depositPlans: new Map(),
         wallpaper: wallpaperMemory(),
         memories: memoriesMemory(),
