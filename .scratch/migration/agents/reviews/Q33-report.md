@@ -314,3 +314,175 @@ Totals are cumulative against main (`git diff --numstat`); the new file's count 
 - A tab the far edge crosses shows in part and takes the pointer; pressing it brings it in whole.
 - A settle can move the strip back by up to half a tab from where a gesture stopped.
 - The reveal assertions in the browser test did not go red on their own revert (copy r2b); the settle revert made that run red instead.
+
+
+# Repair round 3
+
+Everything in repair round 3 is done.
+
+## Items
+
+| # | Item | State | Proof |
+|---|---|---|---|
+| 1 | Strip end rests on a start | DONE | See item 1 below. The tenth-tab and scroll-control browser tests pass. |
+| 2 | Gesture settle | DONE | See item 2 below. Four browser cases pass. |
+| 3 | Reveal proven on its own | DONE | Three browser cases pass; each revert run (see "Reverts run"). |
+| 4 | Control step proven apart from the settle | DONE | See item 4 below. |
+| 5 | Thumb at 3:1 on its track | DONE | See item 5 below. |
+| 6 | False sentences | DONE | See item 6 below. |
+| 7 | Behaviour and Limitations with before and after | DONE | Below. |
+
+**Item 1, the strip's end.**
+- **Trailing space.** `trailingSpace(spans, width, fits)` in `ui/tab-strip.ts` sizes a `.tail` span after the last tab so the largest scroll offset is a tab's start.
+- **Starts only.** `rests()` holds only tab starts at or below the largest offset, plus 0. `tabEdgeStep`, `tabGestureRest` and `revealOffset` all return from that set.
+- **Measured** on the final build, 10 tabs at 720 px (probe spec, since removed): `at 1036 = max 1036`, and 1036 is tab 8's start (`starts [0,105,207,403,623,815,917,1036,1127,1253]`). Trailing space is 102.28 px.
+- **Edge predicates** in `shell-defects.spec.ts` (`edge()`) and `tabs.spec.ts` (`atTabEdge`) no longer accept `max - 1`.
+- **Tests:**
+  - "the tenth tab opens at the strip end with a tab start at the left edge" asserts offset > 0, left edge on a start, active tab whole, and the right control disabled.
+  - "a scroll control lands the left edge on a tab start at once, to both ends" walks the left control to 0 and the right control to the end, asserting a start after every press.
+
+**Item 2, the gesture settle.** `ui/tab-scroll.svelte.ts`:
+- `wheel()` records `gestureFrom` at the gesture's first event, applies the delta, and restarts a 300 ms timer (`SETTLE_MS`), so a new wheel event cancels a pending settle.
+- `settle()` jumps with `scrollTo({ left })`, no smooth scroll.
+- The destination is `tabGestureRest(spans, from, scrollLeft, max)`:
+  - under 16 px of travel (`GESTURE_MIN`), back to the start the gesture left;
+  - otherwise, the next start in the direction travelled, at or past the current offset.
+- Scroll events no longer start a settle.
+- **Browser cases:**
+  - "a continuous trackpad gesture never steps back and settles on a start past it": 60 events of deltaX 3 every 16 ms; offsets never decrease; the final offset is a start at or past the last one.
+  - "a gesture that pauses for 250 ms is not settled during the pause": 15 events, a 250 ms pause, 15 more. Offsets never decrease; the offset at the pause's end equals where the first half left it; the final offset is a start past that point.
+  - "one wheel notch on a wide tab moves one tab": from Coauthor's start (Coauthor is over 200 px wide), one deltaY 100 event settles on Archive's start.
+  - "a nudge of 10 px returns to the start it left".
+- **Node cases** (`tests/ui/tab-strip.test.ts`): 15 px back, 16 px on, a 100 px notch across a 196 px tab both ways, a gesture ending exactly on a start, and running into either end.
+
+**Item 3, the reveal.**
+- "a tab activated from the rail is brought in whole with a start at the left edge": 720 px, strip at 0, Archive opened from the rail.
+- "the showing tab stays whole when the window narrows from 900 to 640 px" and "…from 720 to 560 px": strip at 0, Map activated from the rail (it lands at the right edge), then the window narrows.
+- `resized()` now reveals the showing tab whenever it was whole at the last measure and is not whole after the resize, crossed or wholly out of view. A scroll by the reader that took it out of view clears that flag, so a later resize leaves it where it is.
+
+**Item 4, the control step.** The step is instant (`scrollTo({ left })` after `tick()`). The control test reads the offset with `expect.poll(..., { timeout: 250 })` straight after each press. Since only wheel events start a settle now, a settle cannot move the strip in that test.
+
+**Item 5, the scrollbar thumb.**
+- `derive.ts` computes `--scroll-thumb = readable(mix(muted, line, 0.5), panel, SCROLL_THUMB_RATIO)`, with `SCROLL_THUMB_RATIO = 3` exported.
+- `tests/contrast.test.ts` "keeps the scrollbar thumb at 3:1 on its track in every theme" checks all 17 themes.
+- Measured by a scratch script over `deriveTokens`: from 3.00 (vscode-dark-modern) to 3.26 (synthwave). Light is 3.12 (`#8593a7` on `#fff`), dark 3.13, solarized 3.06, rosepine 3.17, kanagawa 3.11.
+- The `:root` default in `tokens.css` is now `#8593a7`, matching light's derived value (the first-paint test in `tests/ui/theme.test.ts` passes).
+
+**Item 6, false sentences.**
+- `+layout.svelte`'s comment now says `tokens.css` gives the two tokens the default theme's values on `:root`, so the first paint draws the same bar.
+- `Tabs.svelte`'s head comment states the start-only rest with the trailing space and says the far edge may cross a tab.
+- `tests/ui/colours.test.ts:6` now reads "the seven `--on-<surface>` on `--<surface>` pairs".
+- `tabs.spec.ts`'s title is now "the scroll controls appear on overflow, move to the next tab start, and follow the active tab".
+- The Doc text below cites no prior art.
+
+The scroll mechanics moved out of `Tabs.svelte` (578 to 490 lines) into the new `ui/tab-scroll.svelte.ts` (193 lines): one controller per strip, created by the component, with its state inside the returned object.
+
+## Verification (from `tools/oculus`, final tree)
+
+- `npx vitest run --reporter=dot`: `Test Files 229 passed (229)`, `Tests 3835 passed (3835)`, with no timeouts.
+- `npm run check`: `COMPLETED 1157 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+- `npm run build`: exit 0
+- `npm run format:check`: `All matched files use Prettier code style!`
+- `npm run lint`: exit 0
+- The perl ASCII gate prints 0 lines.
+- `find src tests bin -type f | xargs wc -l | sort -n | tail -3`: `970 tests/state/layout.test.ts`, `979 tests/state/board.test.ts`
+- `npx playwright test` (full suite): `153 passed (2.9m)`
+
+## Reverts run (scratch copies under `scratchpad/q33-builder`, each built with `vite build`, then removed)
+
+**How copies were grouped:** reverts share a copy only when no target test depends on another revert in that copy. For the two resize cases, only the test file was copied again into c2 and c4 and rerun; the builds did not change.
+
+| Revert | Copy | Target test | Result |
+|---|---|---|---|
+| R1: `tail = 0` (no trailing space) | c1 | the tenth tab opens at the strip end… | red |
+| R1 | c1 | a scroll control lands the left edge… | red |
+| R1 | c1 | `tabs.spec.ts` (right control not disabled at the end) | red |
+| R3: settle does nothing | c1 | a continuous trackpad gesture… | red |
+| R2: `step` as `scrollBy` of the first tab's width | c2 | a scroll control lands the left edge… | red (the case's own settle cannot run) |
+| R4: `SETTLE_MS = 120` | c2 | a gesture that pauses for 250 ms… | red |
+| R8: `resized()` never reveals | c2 | both "narrows" cases | red |
+| R5: settle to the nearest start (the round-2 rule) | c3 | one wheel notch on a wide tab moves one tab | red |
+| R7: no reveal when the showing tab changes | c3 | a tab activated from the rail… | red |
+| R6: no 16 px minimum (always the next start) | c4 | a nudge of 10 px returns… | red |
+| R9: `resized()` reveals only a tab still partly in view | c4 | narrows from 720 to 560 px | red |
+| R9 | c4 | narrows from 900 to 640 px | green, as expected: that resize crosses Map, which R9 still reveals |
+
+In c1 to c3, other tab cases also went red through the combined reverts; each row names the case whose only dependency is that revert.
+
+Not run in a copy:
+- **Node cases in `tests/ui/tab-strip.test.ts`:** the 15 px and 16 px settle cases go red without `GESTURE_MIN`. The "never rests at a start past the largest offset" and strip-end cases go red if `rests()` again adds `max` and clamped starts.
+- **Contrast thumb test:** goes red if `readable(..., SCROLL_THUMB_RATIO)` is removed; the pre-change values were 1.70 to 3.13 per the review.
+
+## Behaviour (before this round, then after)
+
+- **Strip end.**
+  - Before: the largest offset was the end of the last tab, so at the end a tab could cross the left edge (10 tabs at 720 px: tab 6 showing 17 px), and the right control's last press could move 16 px.
+  - After: the strip carries empty space after its last tab (102 px in that case), so the end rests with tab 8's start at the left edge, and every press moves to a tab start.
+- **Wheel and trackpad settle.**
+  - Before: 120 ms after any scroll event, a smooth scroll moved the strip to the nearest start. A gesture pausing over 120 ms was pulled back mid-gesture; a notch under half a wide tab returned to where it started.
+  - After: only wheel events start a settle. It runs 300 ms after the last wheel event, as an instant jump. Under 16 px of travel returns to the start the gesture left; 16 px or more goes on to the next start in the direction of travel, so one notch of 100 px always moves at least one tab. The strip can end up to one tab further on than the gesture carried it.
+- **Scroll controls.**
+  - Before: a smooth scroll to the next tab edge.
+  - After: an instant jump to the next tab start.
+- **Resize.**
+  - Before: the showing tab was brought back only when a resize left an edge across it; a narrowing that put it wholly out of view left it there.
+  - After: it is brought back whenever it was whole before the resize and is not after, crossed or out of view. A showing tab the reader scrolled away from stays out of view on resize.
+- **Scrollbar thumb.**
+  - Before: thumb on track from 1.70 to 3.13; light 2.25 (`#a3aebd` on `#fff`).
+  - After: from 3.00 to 3.26; light 3.12 (`#8593a7` on `#fff`). The thumb is darker on light themes and lighter on dark ones.
+
+## Limitations
+
+- **Empty space at the end.** At the end of an overflowing strip, the space after the last tab can be almost as wide as the visible part. The case above leaves 102 px empty to the right of the last tab.
+- **Pauses longer than 300 ms.** A trackpad gesture pausing longer than 300 ms is settled during the pause, as two gestures would be.
+- **Synthetic events only.** The gesture figures and tests use synthetic `WheelEvent`s dispatched on the list; no real trackpad or mouse was used, and momentum scrolling on real hardware is not checked.
+- **Preventing the page scroll.** The wheel handler calls `preventDefault`. Whether it stops the page scrolling under a real wheel over the strip depends on Svelte not attaching the listener as passive; not checked.
+- **The far edge.** The far edge may cross a tab; that tab shows in part and takes the pointer, and a press on it brings it in whole.
+
+## Doc text lines this round changes (in full)
+
+**HELP.md**, new line after line 29. It replaces rounds 1 and 2's "Tabs past the strip's width" line:
+
+> - **Tabs past the strip's width.** The strip scrolls rather than shrinking its tabs, and it rests only with a tab's start at its left edge, keeping empty space after the last tab so its end rests on a start too. Its two controls jump to the next tab start; a wheel or trackpad scroll settles 300 ms after it stops, back to where it began when it moved less than 16 px and on to the next tab start in the direction it moved otherwise; a tab being shown or pressed is brought in whole, and so is the shown tab when a narrower window crosses it or takes it out of sight. The far edge may show part of a tab.
+
+**HELP.md**, the new line after line 7 (the round-1 addition, unchanged apart from the thumb):
+
+> A control's tooltip opens when the pointer rests on it and when the keyboard brings the focus to it. A click puts it away, and it comes back once the pointer has left the control and rested on it again. Every scrolling box draws a thin scrollbar in the theme's colours, its thumb at 3:1 or more on its track, except the rail's list and the tab strips, which draw none and scroll by wheel, trackpad and their own controls.
+
+**DESIGN.md**, line 225 replacement (replaces round 2's):
+
+> …The contrast test walks every text-on-background pair the primitives declare, under every theme, and fails below 4.5:1. `derive.ts` also derives, for every theme:
+> - `--accent-bg`, a fifth of the accent in the page's colour, which a pressed toggle in the rail fills with;
+> - `--accent-bg-txt`, the accent made readable on that surface first, which the toggle's glyph and name are drawn in, so no other accent text changes;
+> - the scrollbar's `--scroll-track`, the panel;
+> - `--scroll-thumb`, halfway between `--muted` and `--line`, nudged in lightness until it clears 3:1 on the track, which the contrast test also measures.
+>
+> `tokens.css` gives those four the default theme's derived values on `:root`, so the first paint draws them before a theme is applied. One rule in the page root draws every scrolling box's thin bar in the two scrollbar tokens. Primitives use tokens only; a raw hex in a component is a test failure.
+
+**DESIGN.md**, new decision line after line 322 (replaces round 2's):
+
+> - 2026-09-16, the shell's defects seen on the page.
+>   - **Tooltip.** A pointer press puts a tooltip away and a focus shows one only when `:focus-visible` holds, so a click never leaves a bubble over what it opened; the bubble returns once the pointer has left the control and rested on it again.
+>   - **Rail list.** The rail's list is `shell/RailList.svelte`: it fills the height above the foot and draws a fade at an edge with more past it, from `listFade` in `shell/rail.ts` over the list's scroll numbers.
+>   - **Rail foot.** The foot's controls are stacked with a visible name, the three text steps one row under one name, answering the left and right arrows inside the row and the up and down arrows to leave it (`railStop` in `shell/rail.ts`), and text reset draws `note_back`.
+>   - **Pressed toggle.** A rail toggle that is on fills with `--accent-bg`, draws its border in the accent and its glyph and name in `--accent-bg-txt`, under every theme.
+>   - **Nested menu.** A `MenuItem` may carry `items`: picking it shows them in `ui/Menu.svelte` in place of the menu's list after a Back choice (`menuLevel` in `ui/menu-items.ts`), and Escape closes the whole menu from either list; this is how the pane menu offers its per-page moves and shows as two choices (`pageListItems` in `shell/pane-view.ts`).
+>   - **Tab strip.** An overflowing tab strip rests only with a tab's start at its left edge, so no name is cut at that edge. It carries empty space after its last tab so its largest offset is a start (`trailingSpace`). A scroll control jumps to the next start (`tabEdgeStep`). A wheel or trackpad gesture settles 300 ms after its last event, back to the start it left when it travelled less than 16 px and on to the next start in its direction otherwise (`tabGestureRest`), so a settle never pulls against the gesture and one notch moves a tab. The shown tab is brought in whole when it changes, when it is pressed, and when a change of width crosses it or takes it out of sight (`revealOffset`). All of this is `ui/tab-strip.ts`'s arithmetic, driven by `ui/tab-scroll.svelte.ts`. The far edge may cross a tab, and tab names are drawn whole.
+>   - **Palette.** The palette's rows draw their kind in words, and an empty query lists the views alone.
+
+The HELP line-15 replacement, pane-menu line and palette line are unchanged from round 1.
+
+## Files this round changed
+
+Line counts; the diffs are against main.
+- `src/lib/ui/tab-scroll.svelte.ts`: new, 193 lines.
+- `src/lib/ui/Tabs.svelte`: 490 lines, +53/-46.
+- `src/lib/ui/tab-strip.ts`: 166 lines, +106/-2.
+- `src/lib/themes/derive.ts`: +41/-0.
+- `src/lib/themes/tokens.css`: +7/-0.
+- `src/routes/+layout.svelte`: +10/-0.
+- `tests/ui/tab-strip.test.ts`: 146 lines.
+- `tests/browser/shell-defects.spec.ts`: 680 lines.
+- `tests/browser/tabs.spec.ts`: +16/-8.
+- `tests/contrast.test.ts`: +14/-2.
+- `tests/ui/colours.test.ts`: +3/-3.
