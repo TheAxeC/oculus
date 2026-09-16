@@ -40,7 +40,7 @@ dispatch:                                  # PAUSED 17:36 (Axel, laptop closing 
   reported: 2026-09-16T14:57
   reviewer: a92a2e3722fc1f4ea                # claude:opus through the Agent tool, read-only, launched 14:57
   reviewer2: a97d43955a764ff3d               # claude:opus through the Agent tool, read-only, the second review, launched 15:47, scratch folder scratchpad/d16-review2
-  landing: not-started
+  landing: cherry-picking
 - package: Q33
   worker: claude:opus
   worktree: .agents/worktrees/q33

@@ -144,3 +144,13 @@ Security probes: `handleOpen` with a recorder opener in both forms, plus `openab
 - A filesystem that marks every file executable.
 
 Reviewer usage: about 45 tool uses, about 12 minutes (16:34 to 16:46).
+
+## Closed (the orchestrator's read of round 4, 2026-09-16 23:21; no fourth review, by Axel's word of the same time: "skip the fourth review, read the round 4 delta, fix what is small at landing")
+
+- The Launch Services choice (Open With attribute, alias flag, symlink to a folder, package folders, the live list): closed by Axel's ruling (a) as built in round 4: `open -b <bundle id> <real path>` for a file, `open -R <real path>` for a folder, `com.apple.FinderInfo` alias flag refused through `xattr -px`, the map read from the configuration on disk at every request (`server/open.ts`, `routes/api/open/+server.ts`).
+- The project card's superseded press: closed; the guard is one, in `views/shared/ProgramButton.svelte`, and the browser case "a project card's refusal that lands after a later press..." was run red under R8 by the builder.
+- The unpinned `mark` bytes, asked-name half and no-control-before-config: closed with P1, P2 and F0 as the builder ran them.
+- The false sentences in `open.ts`, `opens-in-program.ts`, `behavior.yml`: closed; the head comments read true against the code read at 23:21.
+- `desc_behavior`: applied at landing together with HELP.md:149 (a fix at landing).
+- A listed `.rtf` whose bytes read as text: closed; `Source.svelte` draws the control.
+- Unshown shapes: closed by Axel's rulings (office files on cards, one refusal sentence, the 404) and the ruling of the named program (folders revealed, the folder control's words).
