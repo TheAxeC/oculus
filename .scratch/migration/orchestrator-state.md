@@ -36,6 +36,18 @@ dispatch:                                  # Q26 + D8 in flight, M2 next (M1 dis
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a5f43b9f606db1f9c            # the Agent tool's id, launched 06:15; reported 06:38 (runs/Q26/report.md; 239,641 tokens, 140 tool uses, 1,382 s; diff.patch 619 lines, 14 files; `data/chat.ts` new with the boundary row widened, the confirm inside the tray's ground, `data-confirms`; the setting scopes the four tasks and not the chat terminal, its key under `chat:`, to book); checks started 06:39 (runs/Q26/checks.sh); reviewer dispatched 06:41 (Agent id a1cd2166ac10899dc)
   landing: not-started
+- package: D8
+  worker: claude:opus
+  worktree: .agents/worktrees/d8
+  base: 3bf66d6e
+  launched: 2026-09-16T06:48
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D8/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D8/report.md
+  exit: none
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: pending                       # the Agent tool's id, written after the dispatch
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
