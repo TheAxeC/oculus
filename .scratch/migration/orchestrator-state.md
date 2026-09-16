@@ -24,6 +24,18 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 
 ```yaml
 dispatch:                                  # Q29 next (green light 11:00 for the rest of the queue: Q29 + M2 + D12; D9 + Q30 + D16; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; then R2, O29, O30, X2) (D8 dispatched 06:48 from 3bf66d6e and landed 08:06; Q26 dispatched 06:15 from 477a0754 and landed 07:05; M1 dispatched 05:17 from 9a64308a and landed 06:14; D7 dispatched 05:10 from 7130862a and landed 06:47; D4 landed 03:10, Q27 landed 04:08, D5 dispatched 04:08 from 5def0882, Q21 landed 04:24, Q25 dispatched 04:25 from 173f6896 and landed 05:08; Q21 dispatched 03:12 from e0656c5c, D21 landed 03:18, Q24 dispatched 03:20 from 6a91cde1 and landed 04:02; Q21 was waiting on it, since both edit context.ts, pty/routes.ts and files.ts; Q24 at the following landing)
+- package: Q29
+  worker: claude:opus
+  worktree: .agents/worktrees/q29
+  base: 0a9baf02
+  launched: 2026-09-16T11:03
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q29/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q29/report.md
+  exit: none
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: pending                       # the Agent tool's id, written after the dispatch
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
