@@ -34,7 +34,7 @@ dispatch:                                  # Q26 + D8 in flight, M2 next (M1 dis
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q26/report.md
   exit: none
   pid: none                                 # a native Claude worker has no process of its own
-  session_id: a5f43b9f606db1f9c            # the Agent tool's id, launched 06:15; reported 06:38 (runs/Q26/report.md; 239,641 tokens, 140 tool uses, 1,382 s; diff.patch 619 lines, 14 files; `data/chat.ts` new with the boundary row widened, the confirm inside the tray's ground, `data-confirms`; the setting scopes the four tasks and not the chat terminal, its key under `chat:`, to book); checks started 06:39 (runs/Q26/checks.sh); reviewer dispatched 06:41 (Agent id a1cd2166ac10899dc)
+  session_id: a5f43b9f606db1f9c            # the Agent tool's id, launched 06:15; reported 06:38 (runs/Q26/report.md; 239,641 tokens, 140 tool uses, 1,382 s; diff.patch 619 lines, 14 files; `data/chat.ts` new with the boundary row widened, the confirm inside the tray's ground, `data-confirms`; the setting scopes the four tasks and not the chat terminal, its key under `chat:`, to book); checks started 06:39 (runs/Q26/checks.sh); reviewer dispatched 06:41 (Agent id a1cd2166ac10899dc); checks green 06:43 (test 205 files 3,471, check 1,071, build, format, lint, ASCII 0, browser 118, the cockpit gates); review saved 06:49 (agents/reviews/Q26.md; 147,323 tokens, 44 tool uses, 445 s: the route reads a start-time config snapshot while the tray reads the live one, so the flag can stay on after the key is turned off; `inbox_note` stale; Escape closing the tray through the confirm; the browser press with the setting on missing; the key under `chat:` scoping the tasks alone, a shape for Axel); repair round sent 06:49 (the live config read with a case, the note, the Escape guard with a case, the browser press against the served copy); landing after the repaired diff, the delta and the checks
   landing: not-started
 - package: D8
   worker: claude:opus
@@ -46,7 +46,7 @@ dispatch:                                  # Q26 + D8 in flight, M2 next (M1 dis
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D8/report.md
   exit: none
   pid: none                                 # a native Claude worker has no process of its own
-  session_id: pending                       # the Agent tool's id, written after the dispatch
+  session_id: a6f40a7b3f2a43a5c            # the Agent tool's id, launched 06:48
   landing: not-started
 ```
 
@@ -149,6 +149,7 @@ dispatch:                                  # Q26 + D8 in flight, M2 next (M1 dis
 - D7, one affiliation per person (raised 2026-09-16 06:18 by D7's review, before its landing): shape 1 of the D7 brief made `affiliation:` one organisation key, so the migration kept the first organisation of each Institution row and four of the eight organisations (`mst`, `region-ostergotland`, `zol-genk`, `uz-leuven`) have nobody pointing at them; the second halves (Guichelaar's MST, Ekstedt's Region Ostergotland, the four KU Leuven clinicians' UZ Leuven) are in git history of `network/collaborations.yml`. Recommended: `affiliation:` becomes a list (`affiliations:`, first entry the primary) in a follow-up fix of delivered work, the script re-run over the history's rows; until his word the singular stands.
 - D7, the finding sentences as literals (raised 2026-09-16 06:08 by D7's report, confirmed by the review): every finding message of the data layer (27 in `validate.ts` and the source readers') is a literal, `validate()` reads no catalog, and the brief's premise that the five new sentences live in `config/text/server.yml` was wrong; built as literals like the rest. Recommended: keep; cataloguing the layer's findings is a package of its own if he wants the sentences in `config/text/`.
 - D7, a demo fixture edited beyond the brief's paths (raised 2026-09-16 06:18 by D7's review): `demo/projects/active/streaming-anomaly/project.yml` gained `collaborators: [rivera-lab]` so the browser spec has a tag to press; no hub manifest was edited. Recommended: keep.
+- Q26, `chat.skip_permissions` under `chat:` (raised 2026-09-16 06:49 by Q26's review, before its landing): the key changes the four update tasks alone and the chat terminal never reads it, while its place under `chat:` beside `model` reads as if it did; the brief's decision 2 and the plan line put it there. Recommended: keep the key where it is with HELP.md and the `behavior.yml` comment saying the scope (both do); moving it out of `chat:` is his call.
 
 ## Verification, every package
 
