@@ -103,3 +103,143 @@ Rename grep (`grep -rn "move_to_page\|embed_page\|pageMoveItems\|embedPageItems\
 - The stacked Menu opener (Theme) keeps its fixed 34 px height; its label fits at text scale 1. Larger text scales were not measured.
 - The whole browser suite (141) was not rerun after the last ToolButton selector change; the ten specs above were (53 passed).
 - A scratch copy of main's src, used to show each test failing at main, was built under the scratchpad and has been removed.
+
+
+# Repair round 1
+
+Everything in repair round 1 is done. The only departure from a ruling is item 1: the strip hides the one tab its far edge crosses, a mechanism the ruling does not name (reason and reversal under decision D1).
+
+The node suite was red on two runs before a clean one, each time on one timing test in an untouched file:
+- `tests/server/git.test.ts` timed out at 5000 ms in the run after the full browser suite.
+- `tests/server/hpc/ssh.test.ts`'s SIGTERM-budget case failed in the next run.
+- Load average was 18.29 when measured (`uptime`).
+- The two files run alone: `Test Files 2 passed`, `Tests 36 passed`. The third full run: `229 passed`, `3831 passed`.
+- `git diff HEAD -- tests/server src/lib/server` is empty.
+
+## Items
+
+| # | Item | State | Proof |
+|---|---|---|---|
+| 1 | Tabs: cut removed, strip rests on whole tabs | DONE | `LABEL_FLOOR`, `labelHead`, `ui.tab_cut`, `ui.tab_hint`, the `aria-label` change and `flex: 0 0 auto` are gone; `Tabs.svelte`, `tab-strip.ts`, `workbench.test.ts` and `primitives.test.ts` restart from main. Browser test "an overflowing strip rests on whole tabs after each scroll control and a wheel" passes; node tests: `tests/ui/tab-strip.test.ts`, 16 pass. |
+| 2 | Pressed rail toggle draws a tinted surface | DONE | Two browser tests "under the light theme / under a terminal theme a pressed toggle fills with the accent tint and names itself in the accent text" pass. The contrast test measures `--accent-txt` on `--accent-bg` in all 17 themes. |
+| 3 | Overlap assertion named an audit | DONE | Split into "under X the list fades at an edge with more entries past it" (proof) and "audit: under X the last entry, scrolled to, ends above the foot". |
+| 4 | Text row arrow keys | DONE | Browser test "left and right move along the Text row, up and down leave it" passes; 7 node cases in `tests/shell/activity-rail.test.ts` pass. |
+| 5 | Stale comments | DONE | `Tooltip.svelte` head comment and `focusable` doc rewritten. The three `ActivityRail.svelte` comment hunks match main word for word; `git diff -U0` hunks are now only the import, the stop order, `<RailList>` open and close, and the `.ring` and `.views` styles. |
+| 6 | Tooltip returns after leave and re-enter | DONE | Kept as it was. Stated in `Tooltip.svelte`'s head comment, under Behaviour and in the Doc text. |
+| 7 | First-paint token defaults | DONE | `tokens.css` `:root` sets `--accent-bg: #e6d6d2`, `--scroll-thumb: #a3aebd`, `--scroll-track: #fff`. The node test "are given on :root the values the default theme derives, for the first paint" compares all three to `applyTheme('light')`. |
+| 8 | Doc text | DONE | Below. |
+| 9 | Behaviour before and after | DONE | Below. |
+
+## Verification (all from `tools/oculus` in the q33 worktree)
+
+1. `npx vitest run --reporter=dot`: `Test Files 229 passed (229)`, `Tests 3831 passed (3831)`.
+2. `npm run check`: `COMPLETED 1156 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+3. `npm run build`: exit 0.
+4. `npm run format:check`: `All matched files use Prettier code style!`
+5. `npm run lint`: exit 0.
+6. The ASCII gate (perl form): 0 lines.
+7. `find src tests bin -type f | xargs wc -l | sort -n | tail -3`: `970 tests/state/layout.test.ts`, `979 tests/state/board.test.ts`. Largest changed component is `Tabs.svelte`, 585 lines.
+8. `npx playwright test`, the whole suite on the final build: `145 passed (3.3m)`.
+
+## Reverts per new or changed test
+
+Reverts A, B and C were applied together in one scratch copy, and D and E together in a second; each copy was built and `shell-defects.spec.ts` run on it. Both copies are removed.
+- **Revert A:** delete the `opacity: 0; pointer-events: none` body of `.tab.cut` in `Tabs.svelte`. Result: "an overflowing strip rests on whole tabs..." red (`whole: false`).
+- **Revert B:** delete `.tool.rail-control.active :global(.label)` in `ToolButton.svelte`. Result: both pressed-toggle tests red (`crt.name` `rgb(95, 111, 133)` against `rgb(149, 73, 44)` on light; `rgb(144, 148, 169)` against `rgb(245, 169, 127)` on mocha).
+- **Revert C:** `ringKeys` back to `nextStop(..., 'column')`. Result: "left and right move along the Text row..." red (text-reset not focused after ArrowRight).
+- **Revert D:** `scrollOne` back to one first-tab width, and the settle timer removed. Result: the whole-tab test red (`whole: false`).
+- **Revert E:** unrevert A, B, C in that copy. Result: the other 16 tests stayed green.
+
+Reverts named but not run in a copy:
+- `tests/ui/tab-strip.test.ts` goes red if `tabEdgeStep`, `tabEdgeRest`, `revealOffset` or `cutTabs` return the unsnapped offset or an all-false mask.
+- `tests/shell/activity-rail.test.ts` arrow cases go red if `railStop` is replaced by `nextStop` over the flat ring.
+- The first-paint test in `tests/ui/theme.test.ts` goes red if any of the three `:root` lines in `tokens.css` is removed or changed.
+- The contrast pair goes red for a theme where `everywhere(accent, tint)` in `derive.ts` loses the tint argument. Computed with the tint: ratios 4.51 (gruvboxlight) to 6.60 (rosepine). Without it the current test still passes, since that pair is new. Not run.
+- `tabs.spec.ts`'s changed assertion goes red if `scrollOne` is reverted to the one-width scroll, whenever the first tab and the tab it lands on differ in width. Not run in a copy.
+- `keyboard.spec.ts:262` (stop passes to text-larger) and `nested.spec.ts` (the list choice) are unchanged from round 0.
+
+## Behaviour: every user-visible change, before (main) and after
+
+- **Tooltip after a press.**
+  - Before: a click focused the control and its bubble stayed while it held focus; picking a theme left a "Theme" bubble.
+  - After: a press hides the bubble. It returns only after the pointer leaves and rests on the control again (as VS Code does). Keyboard focus (`:focus-visible`) still shows it.
+- **Scrollbars.**
+  - Before: every scrolling box drew the browser's default light bar on every theme.
+  - After: every box draws a thin bar, thumb halfway between `--muted` and `--line`, track the panel, set for all 17 themes and on `:root` for the first paint. The rail list and the tab strip draw no bar.
+- **Rail list.**
+  - Before: the list was cut at its bottom edge with no sign it scrolled.
+  - After: it fills the height above the foot, with a 28 px fade at the top or bottom edge while more entries are past that edge (none at the ends). The bottom fade is visible at 800 px on the demo under light and mocha.
+- **Rail foot.**
+  - Before: glyphs alone, names in tooltips, update and text reset both drew `refresh`. Keyboard order was smaller, larger, reset, and ArrowDown walked them.
+  - After:
+    - each control draws its glyph over a visible name: Search, Update, Theme, CRT, Wallpaper, Glyphs;
+    - the three text steps sit in one row under "Text" in the order smaller, reset, larger, and text reset draws `note_back`;
+    - ArrowLeft and ArrowRight move along the row and stop at its ends; ArrowDown and ArrowUp leave it, entering it from above or below at its first step.
+  - The Update button's accessible name changed from "Update tasks" to "Update".
+  - Foot height at 1280x800: 300 to 233.34 px (default theme), 338 to 270.80 px (mocha). Measured before the tint change, which does not change heights.
+- **Pressed rail toggle.**
+  - Before: light and dark themes drew a solid accent block with a black glyph; terminal themes drew no fill and an accent glyph.
+  - After, every theme: a fill of `--accent-bg` (20% accent into the page), a 1 px accent border, and glyph and name in `--accent-txt`. Light: fill `#e6d6d2`, text `#95492c`, ratio 4.56. Mocha: fill `#443537`, text `#f5a97f`, ratio 6.00.
+  - Unpressed toggles keep a transparent fill.
+  - Side effect: `--accent-txt` is now made readable on that tint first, which darkens it slightly where the old value fell short on the tint. Light `#ad5533` to `#95492c`; vscode-light-modern `#005fb8` to `#0059ad`; latte `#b64300` to `#a23b00`; gruvboxlight `#af3a03` to `#a43602`; dark `#ce7a59` to `#cd7959`; vscode-dark-modern `#008ffc` to `#0893fe`. The other eleven themes are unchanged. This colours every accent-coloured text in the app, not only the rail.
+- **Terminal-theme brackets.** Rail controls no longer draw the `[ ]` pair. Before, the foot's glyph-only controls drew `[ glyph ]`; after, the stand-in draws alone.
+- **Pane menu.**
+  - Before: one "Move tab to <page>" and one "Show <page> here" per page (16 items at seven pages on a root pane).
+  - After: the fixed items plus "Move tab to page..." and "Show a page here...", each only when it has a page to offer (6 items at seven pages). Picking one replaces the list with Back and the same per-page items as before.
+  - Escape anywhere, the nested list included, closes the whole menu and returns focus to the opener, which then shows its "Pane" bubble. No key goes back; only the Back entry does.
+- **Tab strip.**
+  - Before: scroll controls moved by the first tab's width, the wheel stopped anywhere, and revealing the active tab used `scrollIntoView` nearest, so tabs were sliced at both edges.
+  - After:
+    - a control moves the left edge to the next tab's start (or the strip's end);
+    - a wheel or trackpad scroll settles 120 ms after it stops on the next tab edge in the direction it moved;
+    - the active tab, and a tab reached with the arrow keys, is brought in whole;
+    - the one tab the far edge still crosses is not drawn (opacity 0, no pointer) and stays in the tab list and the focus order.
+  - Tab names, tooltips and accessible names are as on main.
+- **Palette.**
+  - Before: every row was a lone button in the 5rem column, and an empty query listed every view, project, collection entry and feed entry.
+  - After: each row draws its kind in words (View, Project, Collection, Feed), then the label button filling the row. An empty query lists the views alone; typing a word adds the rest.
+
+## Decisions the orchestrator may reverse
+
+1. **D1, hiding the edge tab.** The strip hides the one tab its far edge crosses. With tabs of unequal width, resting on a tab edge can make only one edge whole, and the ruling's test requires no cut at either edge. Reversal: drop `.tab.cut`; the left edge is then always whole and the right edge may cut a tab.
+2. **Settle timing and direction.** The strip settles 120 ms after the last scroll event, in the direction last moved, so a small wheel nudge moves a whole tab.
+3. **The tint.** `--accent-bg` is 20% accent mixed into `--bg`, not into the rail's translucent panel over a wallpaper. Terminal themes take the fill and a 1 px accent border too.
+4. **`--on-accent-bg`.** It is derived only so the colours test's surface rule covers `--accent-bg`; nothing paints with it.
+5. **Arrow rule.** The row does not wrap under Left and Right. Entering the row from above or below lands on its first step in the ring.
+
+## Doc text
+
+**HELP.md**
+- **Line 15, replace** "…and at the foot of the rail the appearance controls: the theme list, the two text-size steps and the reset, the CRT overlay, the wallpaper where the theme has one, and the toggle between the glyph vocabulary and its ASCII stand-ins." **with** "…and at the foot of the rail the appearance controls, each drawn with its name under its glyph: Search, Update, Theme, the Text row of smaller, reset and larger, CRT, Wallpaper where the theme has one, and Glyphs, the toggle between the glyph vocabulary and its ASCII stand-ins. A toggle that is on is filled with a tint of the accent. The list above the foot scrolls on its own, and a fade at its top or bottom edge says more entries are past it. In the Text row the left and right arrows move along the row, and the up and down arrows leave it."
+- **New line after line 7** ("Down the left is the rail. …"): "A control's tooltip opens when the pointer rests on it and when the keyboard brings the focus to it. A click puts it away, and it comes back once the pointer has left the control and rested on it again. Every scrolling box draws a thin scrollbar in the theme's colours, except the rail's list and the tab strips, which draw none and scroll by wheel, trackpad and their own controls."
+- **New line after line 29** ("- **Show a page.** …"): "- **The pane menu.** Close, maximise or restore, fold where the pane sits in a split, split right and split down, and two choices that open a list of pages in place of the menu, Move tab to page... and Show a page here..., each offered only when there is a page to offer. Back, first in the list, returns to the menu; Escape closes the whole menu."
+- **New line after the line above:** "- **Tabs past the strip's width.** The strip scrolls rather than shrinking its tabs, and it rests only on whole tabs: its two controls move to the next tab's edge, a wheel or trackpad scroll settles on a tab's edge when it stops, and the tab being shown is brought in whole. A tab the far edge would cut is not drawn until the strip moves to it."
+- **New line after line 60** ("Tab and Shift-Tab are the browser's: …"): "Cmd-K opens the palette. With nothing typed it lists the views; a word typed searches the projects, the collection entries and the feed entries as well. Each result names what it is, View, Project, Collection or Feed, before its title."
+
+**DESIGN.md**
+- **Line 225, replace** "…The contrast test walks every text-on-background pair the primitives declare, under every theme, and fails below 4.5:1. Primitives use tokens only; a raw hex in a component is a test failure." **with** "…The contrast test walks every text-on-background pair the primitives declare, under every theme, and fails below 4.5:1. `derive.ts` also derives three surfaces for every theme: `--accent-bg`, a fifth of the accent in the page's colour, which a pressed toggle in the rail fills with and on which `--accent-txt` is made readable first; and the scrollbar's `--scroll-thumb`, halfway between `--muted` and `--line`, and `--scroll-track`, the panel. `tokens.css` gives the three the default theme's derived values on `:root`, so the first paint draws them before a theme is applied. One rule in the page root draws every scrolling box's thin bar in the two scrollbar tokens. Primitives use tokens only; a raw hex in a component is a test failure."
+- **New line after line 322** (the last decision line): "- 2026-09-16, the shell's defects seen on the page. A pointer press puts a tooltip away and a focus shows one only when `:focus-visible` holds, so a click never leaves a bubble over what it opened; the bubble returns once the pointer has left the control and rested on it again. The rail's list is `shell/RailList.svelte`: it fills the height above the foot and draws a fade at an edge with more past it, from `listFade` in `shell/rail.ts` over the list's scroll numbers. The foot's controls are stacked with a visible name, the three text steps one row under one name, answering the left and right arrows inside the row and the up and down arrows to leave it (`railStop` in `shell/rail.ts`), and text reset draws `note_back`. A rail toggle that is on fills with `--accent-bg`, draws its border in the accent and its glyph and name in `--accent-txt`, under every theme. A `MenuItem` may carry `items`: picking it shows them in `ui/Menu.svelte` in place of the menu's list after a Back choice (`menuLevel` in `ui/menu-items.ts`), and Escape closes the whole menu from either list; this is how the pane menu offers its per-page moves and shows as two choices (`pageListItems` in `shell/pane-view.ts`). An overflowing tab strip rests only on whole tabs: a scroll control moves to the next tab's edge, a free scroll settles on the next edge in the direction it moved, the shown tab is revealed whole, and the one tab the far edge still crosses is not drawn, all by `tabEdgeStep`, `tabEdgeRest`, `revealOffset` and `cutTabs` in `ui/tab-strip.ts`; tab names are drawn whole. The palette's rows draw their kind in words, and an empty query lists the views alone."
+
+## Files changed (lines added / removed)
+
+- **New:** `src/lib/shell/RailList.svelte` (120), `tests/browser/shell-defects.spec.ts` (555), `tests/ui/tab-strip.test.ts` (111).
+- **Config:** `config/text/app.yml` +6/-0, `config/text/ui.yml` +6/-3.
+- **Shell:** `src/lib/shell/ActivityRail.svelte` +16/-31, `src/lib/shell/Palette.svelte` +4/-1, `src/lib/shell/PaneView.svelte` +8/-8, `src/lib/shell/RailAppearance.svelte` +66/-37, `src/lib/shell/pane-view.ts` +33/-2, `src/lib/shell/rail.ts` +51/-0.
+- **State and themes:** `src/lib/state/palette.ts` +17/-2, `src/lib/themes/derive.ts` +37/-1, `src/lib/themes/tokens.css` +6/-0.
+- **UI:** `src/lib/ui/Menu.svelte` +58/-6, `src/lib/ui/Tabs.svelte` +110/-8, `src/lib/ui/ToolButton.svelte` +20/-3, `src/lib/ui/Tooltip.svelte` +23/-6, `src/lib/ui/menu-items.ts` +18/-2, `src/lib/ui/tab-strip.ts` +93/-2.
+- **Routes:** `src/routes/+layout.svelte` +9/-0.
+- **Browser specs:** `tests/browser/keyboard.spec.ts` +4/-3, `tests/browser/nested.spec.ts` +10/-5, `tests/browser/rail.spec.ts` +1/-1, `tests/browser/tabs.spec.ts` +16/-7 (the one-tab-width assertion is now "the left edge rests on a tab's start or the strip's end").
+- **Node tests:** `tests/contrast.test.ts` +4/-1, `tests/shell/activity-rail.test.ts` +55/-3, `tests/shell/paneview.test.ts` +79/-0, `tests/shell/rail.test.ts` +70/-24, `tests/state/palette.test.ts` +34/-0, `tests/ui/colours.test.ts` +2/-2 (`--accent-bg` added to the fill surfaces), `tests/ui/glyph.test.ts` +2/-1, `tests/ui/theme.test.ts` +35/-0.
+- **Back to main's content:** `src/lib/shell/PaneView.svelte`'s tab hint, `tests/ui/primitives.test.ts`, `tests/shell/workbench.test.ts`.
+
+## Limitations
+
+- **Gap at the strip's far edge.** Hiding the edge-crossing tab leaves a gap up to one tab wide beside the scroll control. During a smooth scroll, tabs appear and disappear as they cross an edge.
+- **Settle timing.** A trackpad fling that stops is moved again, 120 ms later, to the next edge in its direction, so the strip can travel up to one tab further than the gesture.
+- **Pressed toggle over a wallpaper.** `--accent-bg` is an opaque fill, so over a wallpaper a pressed toggle is a solid box on the translucent rail. Not checked visually beyond the light and dark screenshots.
+- **Accent text shift.** The tint-first derivation shifts `--accent-txt` in six themes app-wide (listed above). The contrast test passes for all 17 themes; no visual pass beyond the rail was made.
+- **Round 0 limitations still true:**
+  - the item-3 overlap does not reproduce on the demo (the audit test records it);
+  - "one page offers neither item" and the keyboard-focus tooltip test are guards;
+  - the scrollbar track is opaque over a wallpaper.
+- **Reviewer's stray symlink.** The reviewer's report says it left `.agents/worktrees/d16/tools/oculus/node_modules/node_modules`. I did not touch it; it is outside this worktree.
