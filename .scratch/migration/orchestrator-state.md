@@ -39,7 +39,7 @@ dispatch:                                  # D16 landed 23:27; Q33 landing next;
   round: 4                                  # sent 15:45: nine rulings on agents/reviews/Q33-refuter.md (the tab cut out and whole-tab scrolling per Axel's (a), a tinted pressed rail toggle, the audit named, the Text row's arrows, stale comments, first-paint scrollbar tokens, Doc text); answered 16:14; round 2 sent 16:14: no hidden edge tab, settle to the nearest edge, the pressed toggle's text on a token of its own so `--accent-txt` stays as on main; a second review follows; round 2 answered 16:29; second review a43f75e15147291a8 (claude:opus, read-only, scratch folder scratchpad/q33-review2) launched 16:30; second review answered 16:44 (agents/reviews/Q33-refuter2.md); round 3 sent 16:45: trailing space so the strip's end is a tab start, the settle after 300 ms without fighting a gesture, the reveal, step and resize proven apart, a 3:1 scrollbar thumb, four false sentences; round 3 answered 17:03; third review a5d8753248bbb08d9 (claude:opus, read-only, scratch folder scratchpad/q33-review3) launched 17:05; third review answered 17:25 (agents/reviews/Q33-refuter3.md); round 4 sent 17:33: Axel's option (2), free wheel with no settle and no trailing space, widening measured fresh, HELP.md:17, the page strip
   reported: 2026-09-16T15:25
   reviewer: af6d7fc40614f38ae                # claude:opus through the Agent tool, read-only, launched 15:26
-  landing: not-started
+  landing: cherry-picking
 ```
 
 ## The standing demands (from Axel, in force)

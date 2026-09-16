@@ -140,3 +140,11 @@ Report figures:
 - The page strip's widening case.
 
 Reviewer usage: about 45 tool uses, about 19 minutes (17:05 to 17:24).
+
+## Closed (the orchestrator's read of the partial round 4, 2026-09-16 23:32; no fourth review and no builder, by Axel's word of the same time)
+
+- The partial round 4 is usable: `ui/tab-scroll.svelte.ts`, `ui/tab-strip.ts` and `ui/Tabs.svelte` already carry Axel's option (2): no settle, no trailing space, the wheel scrolling the strip freely, the controls and the reveal resting on a tab start or the browser's end, every resize measured again from the tabs. On the worktree: `npx vitest run --reporter=dot` 229 files 3,829 tests passed, `npm run check` 0 errors, `npm run lint` and `npm run format:check` clean.
+- Six browser cases still tested round 3's settle and tail; the orchestrator rewrote them at landing to option (2) (the tenth tab whole with the right control disabled; a control press rests on a start or the end; a gesture and a vertical notch scroll freely and stay where they stop) and added the widening case (widening to 2400 px hides the controls and leaves nothing to scroll); `npx playwright test tests/browser/shell-defects.spec.ts tests/browser/tabs.spec.ts` 25 passed. The reverts of the rewritten cases were not run.
+- Spec 1 (the end off a tab start after widening): the end is allowed short of a start under option (2), as the plan's ruling says. Behaviour 1 (controls left showing after widening until the tabs fit): closed with the tail gone, the case above. Behaviour 3 (line-mode deltas): the wheel is added as travel as on main. Behaviour 4 (a pause over 300 ms): closed, no settle.
+- Standards 1 and 2: closed with the tab head comments rewritten by the builder in round 4 (read at 23:32); Standards 3 (HELP.md:17) is carried in the Doc text applied at landing.
+- Not done, booked for Axel: the page strip's control-step case and the reverts of the rewritten cases.
