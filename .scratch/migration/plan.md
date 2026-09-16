@@ -178,7 +178,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 ## Could run in parallel
 
 - The feature stretch after R17, three in flight at all times (Axel 2026-09-14 17:50 for three at a time; 2026-09-15 19:58 for the rolling window: one new package dispatched at each landing, cut at main's head, its paths checked against the two still running). Alone by nature: Q18, R10, R13a, R13b, K1, R17, L1, L2 before it; R2, O29, O30, X2 after it.
-- The queue, in order (rewritten 2026-09-16 01:20 for disjoint paths: Q21 threads the engine through the server files D4 and Q26 edit, so it runs beside view-only packages): D4 + D21 + Q23; Q21 + Q24 + Q27; D5 + D7 + Q25; M1 + Q26 + D8; Q29 + M2 + D12; D9 + Q30 + D16; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; then R2, O29, O30, X2 (the queue of 11:00, Q29 and Q30 added at Axel's rulings).
+- The queue, in order (rewritten 2026-09-16 14:16 at Axel's ruling; the sets before it landed): M2 + D16, then Q30 once M2 has landed; the pause; Q31 to Q35; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; then R2, O29, O30, X2.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
@@ -194,6 +194,7 @@ Independent of each other; two may run side by side under R9's rule when their b
 - 2026-09-16 11:00, Axel (2 of 2, green light for the rest of the queue): the finding sentences catalogued as a package after M2 (Q30); `chat.skip_permissions` becomes `tasks.skip_permissions`; D8's shapes kept with the Google calendar rule said on the page; M2's mapping table as recommended; the fixes as Q29 first.
 - 2026-09-16 12:34, Axel: the ruling of 00:40 on M2 is reversed; venues' and datasets' theme words are not mapped onto the twelve project domains. The M2 brief of 11:10 is withdrawn; at 12:38 he agreed the small package the M2 line now states. Also 12:30: Q31 booked (unsaved edits of the entry form and the manifest editor), D9's shapes agreed, the reviewer-definition item removed.
 - 2026-09-16 14:10, Axel: the orchestrator switches to Claude Opus 5 for the next set of three (M2, Q30, D16), a trial booked as the skill asks, the reviewer stage kept and the usage rows compared with the Fable rows; the top tier returns for R2 and O29. The pause holds until he says to continue.
+- 2026-09-16 14:16, Axel: builders dispatched as the plan says, the global no-sub-agents rule not applying to this plan's builders; D12's search shapes agreed as built; Q31 to Q35 run after M2, Q30 and D16 and before D11; the plan pauses once M2, Q30 and D16 have landed.
 - 2026-09-15 23:30, Axel (1 of 2): D7 as recommended (people.yml a registry of persons, collaboration entries point at one with `person:`, manifests unchanged); the audit messages reworded to the prose rule; a same-named upload refused; the shapes D1, O28b and D3 add as built.
 - 2026-09-15 23:30, Axel (2 of 2): D4's three shapes and D5's main-file rule explained again, his yes still open; D10 stays gated on a second person unless he lifts it.
 - 2026-09-15 20:15, Axel: Q20, Q21 and Q22 agreed as booked; then "let the current agents finish and then pause" (the pause's terms in the state file's standing demands).
