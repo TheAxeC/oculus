@@ -84,3 +84,66 @@ Not everything passes. `bash tools/cockpit/tests/run.sh` exits 1 because `tools/
 - I did not run the browser suite.
 
 Nothing in the brief was wrong: its line numbers, counts, file paths and the `theme_labels` block all matched the tree.
+
+
+# Repair round 1
+
+Everything in the brief is done, and all seven repair items are done. One command on the brief's list still fails for a reason outside this change: `bash tools/cockpit/tests/run.sh` exits 1 because `test_presentation.py` cannot import `deck_config` (line 12). That module lives in `tools/present`, which this sparse worktree does not check out. Every other suite in `run.sh` passes.
+
+## The seven repair items
+
+| # | Item | State | Proof |
+|---|---|---|---|
+| 1 | `DESIGN.md:310` clause | DONE | It now reads "the theme words of venues and datasets are a listed vocabulary in `vocab.yml` (M2)"; the rest of the line is unchanged. `grep -rn "domain key" DESIGN.md HELP.md README.md` prints nothing. The "theme" hits in DESIGN.md and HELP.md either describe the new vocabulary or are about UI themes and the deck's domain themes; README.md has none. The M2 decision line (DESIGN.md:324) now also records the new `theme_labels` finding. |
+| 2 | Node test renamed; browser spec added | DONE | The node test is now "filters the cards by a held off word while the facet draws its label". The new `tests/browser/venues-themes.spec.ts` gives `jmlr` and `neurips` the word `systems` and `tmlr` the word `core-ml` in the run's copy of the demo `registries/venues.yml`, and restores the file in `afterAll`. It opens Venues and checks the button `Systems 2` (label read from `venue_themes` through `vocabulary()`) is shown and on. One press hides the jmlr and neurips cards, keeps tmlr and turns the facet off; a second press brings all three back and turns it on. Run after `npm run build`: `1 passed`. Revert `onclick={() => ontoggle(facet.label)}` in `venues/Facets.svelte`, rebuild, rerun: `1 failed` at line 69, `[data-card="jmlr"]` expected count 0, received 1. Revert `active={!off.includes(facet.label)}`, rebuild, rerun: `1 failed` at line 77, `not.toHaveClass(/(^|\s)active(\s|$)/)`. After restoring the source and rebuilding, the spec passes again. The first attempt on the current build hit port 8792 in use, and the retry passed. |
+| 3 | Head comment of `validate-themes.ts` | DONE | It now says an off-list word draws its view's facet, "and on a venue card its tag", under the bare word. |
+| 4 | One `ThemeFacet` and one `themeFacets` | DONE | Both now live only in `src/lib/state/themes.ts`, as `themeFacets(items: readonly { themes: readonly string[] }[], labels)`. They are removed from `state/datasets.ts` and `state/venues.ts`, with no re-export. `Data.svelte`, `Venues.svelte`, `data/Facets.svelte` and `venues/Facets.svelte` import from `$lib/state/themes`, and the two state tests import from `themes.ts`. `grep -rn "themeFacets\|ThemeFacet" src tests` finds them only in `themes.ts`, the four view files and the two tests. `applyThemeFacets` is still written twice, once in each state module; it was not in the ruling and is unchanged. |
+| 5 | Finding for a leftover `theme_labels` | DONE | `checkThemes` now takes `rules`. When the datasets registry's top-level map holds `theme_labels` (checked with `Object.hasOwn`), it pushes `{ file: rules.datasetsFile ?? '', key: 'theme_labels', message: 'theme_labels is not read; the labels are data_themes in config/vocab.yml' }`. `ValidationRules.datasetsFile` is new; `buildPortfolio` sets it to `join(hub, config.registries.datasets)`, the same way `careerFile` is passed. The new validate case expects one finding when present and none when absent: `npx vitest run tests/data/validate.test.ts tests/integrity.test.ts` gives `Tests 56 passed (56)`. |
+| 6 | False limitation dropped; search test added | DONE | The "Core ML" limitation is withdrawn. New case in `tests/state/venues.test.ts`, "finds a venue by a theme label typed as the facet draws it": `venueSearch` finds `Core ML`, `High-end` and `CS`. It is part of the full suite run below. |
+| 7 | What the reader sees, before and after | DONE | See the next section. |
+
+## What the reader sees, before and after
+Counts come from `yaml.safe_load` over the worktree registries; labels come from `vocab.yml`.
+- **Venues facets.** Before, each button showed the raw word: `core-ml 29`, `clinical 28`, `high-end 21`, `signal 15`, `theory 13`, `informatics 10`, `federated 9`, `imaging 9`, `neuro 9`, `bio 5`, `cs 4`, `method 2`, `systems 2`. After, each shows its label: `Core ML 29`, `Clinical 28`, `High-end 21`, `Signal 15`, `Theory 13`, `Informatics 10`, `Federated 9`, `Imaging 9`, `Neuro 9`, `Bio 5`, `CS 4`, `Method 2`, `Systems 2`. The order is unchanged, because the sort is still on count and then the word.
+- **Venue card tags.** Before, each tag showed the word (`core-ml`); now it shows the label (`Core ML`).
+- **Data facets.** Unchanged: `Single-cell 12`, `EEG 9`, `MRI imaging 8`, `BCI / ECoG 6`, `ECG 5`, `Survival (tabular) 5`, `Clinical EHR 4`, `PDE operator 3`, `CT imaging 1`, `Mammography 1`, `Simulated (copula) 1`. The labels come from `data_themes` now instead of `theme_labels`.
+- **Cockpit Data tab.** Unchanged: rendering `datasets_tab_html` gives the same 11 labels and counts.
+- **Toggles.** They still hold the word, as the browser spec shows.
+
+## Verification list
+Run from `tools/oculus` in the worktree unless noted.
+1. `npx vitest run --reporter=dot`: `Test Files 229 passed (229)`, `Tests 3809 passed (3809)`.
+2. `npm run check`: exit 0, `COMPLETED 1157 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+3. `npm run build`: exit 0, `built in 4.85s`, `done`.
+4. `npm run format:check`: exit 0, `All matched files use Prettier code style!`.
+5. `npm run lint`: exit 0.
+6. The perl ASCII gate prints nothing.
+7. `find src tests bin -type f | xargs wc -l | sort -n | tail -3` gives `970 tests/state/layout.test.ts`, `979 tests/state/board.test.ts`, `153480 total`.
+8. From the worktree root:
+   - `python3 tools/cockpit/build.py --selftest`: exit 0, `SELFTEST PASS`.
+   - `python3 tools/cockpit/build.py --dummy`: exit 0, `built the example -> dummy/cockpit.html`.
+   - `bash tools/cockpit/tests/run.sh`: exit 1, NOT PASSING. The only failure is `test_presentation.py`: `ModuleNotFoundError: No module named 'deck_config'`, raised before any cockpit import. `test_engine` passes, the other three suites print `OK` (29, 24 and 19 tests), and the JS test passes.
+9. The `yaml.safe_load` one-liner prints nothing and exits 0.
+10. Browser: `npx playwright test tests/browser/venues-themes.spec.ts` gives `1 passed`. Earlier in this round, `boot.spec.ts` and `nested.spec.ts` ran with it on an earlier build: `10 passed`.
+
+`git diff --numstat` for the two registry files is still `1 17 registries/data.yml` and `1 1 registries/venues.yml`, the same hunks as before.
+
+## Files changed (added / removed lines from `git diff --numstat`)
+- **Hub registries:** `registries/data.yml` 1/17, `registries/venues.yml` 1/1.
+- **Cockpit:** `tools/cockpit/data/config/vocab.yml` 14/0, `src/cockpit/config.py` 9/1, `src/cockpit/render/collections.py` 4/4.
+- **oculus docs and config:** `DESIGN.md` 6/4, `HELP.md` 1/1, `config/text/views/config.yml` 1/1, `config/vocab.yml` 30/0.
+- **oculus data layer:** `src/lib/data/index.ts` 6/1, `model-collections.ts` 0/2, `model.ts` 12/0, `normalise.ts` 0/8, `validate.ts` 2/0.
+- **oculus state:** `src/lib/state/datasets.ts` 0/15, `state/venues.ts` 0/12.
+- **oculus views:** `views/Data.svelte` 3/2, `views/Venues.svelte` 5/2, `views/data/Facets.svelte` 2/2, `views/venues/Facets.svelte` 5/4, `views/venues/VenueCard.svelte` 16/3.
+- **oculus tests:** `config-folder.test.ts` 52/0, `data/collections.test.ts` 0/2, `data/normalise.test.ts` 0/2, `data/registries.test.ts` 0/2, `data/validate.test.ts` 110/0, `state/datasets.test.ts` 12/3, `state/venues.test.ts` 25/6, `views/data.test.ts` 17/1, `views/venues.test.ts` 45/2.
+- **New files:** `src/lib/data/validate-themes.ts` 58 lines, `src/lib/state/themes.ts` 50, `tests/state/themes.test.ts` 59, `tests/browser/venues-themes.spec.ts` 82.
+
+## Decisions the orchestrator may reverse
+- The `theme_labels` finding takes its file from the new `ValidationRules.datasetsFile`, with `''` when a caller does not pass it, the same way `careerFile` works. A caller that builds rules by hand without `datasetsFile` gets an empty file on that finding.
+- The browser spec asserts the facet's on/off state through the `active` class that `ui/ToolButton.svelte` sets, since that is the only on/off state `venues/Facets.svelte` passes to the button.
+
+## Limitations
+- `applyThemeFacets` is still written twice, once in `state/datasets.ts` and once in `state/venues.ts`.
+- A theme finding's `entries[i]` index can point to the wrong entry when a malformed list item comes before it (`sources/registries.ts:111-115` drops the item); the people check has the same behaviour. Not fixed.
+- The entry form's `themes` field still shows raw words, per the brief's decision 4.
+- The browser runs and the cockpit commands left only gitignored or temporary files: `test-results/` is deleted, and `tests/browser/.hub` is gone after the runs. The cockpit commands write `cockpit.local.yml`, `AUDIT_AUTO.md`, `dummy/cockpit.html` and `__pycache__`.
