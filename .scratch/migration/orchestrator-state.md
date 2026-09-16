@@ -36,7 +36,7 @@ dispatch:                                  # M2 landed 15:16; D16 (repair round 
   exit: none
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a1ec09e6af440704d            # the Agent tool's id, launched 14:33
-  round: 1                                  # sent 15:10: the ten rulings on agents/reviews/D16-refuter.md (executables refused, card and File view presses proven in the browser, FIFO cases, per-test reverts, own glyph, text rows, two false comments, the folder failure line)
+  round: 2                                  # round 1 sent 15:10 (ten rulings on agents/reviews/D16-refuter.md), answered 15:36 (agents/reviews/D16-report.md, its round 1 section); round 2 sent 15:33: the unreachable refusal-key guard removed; a second review follows, since round 1 went well beyond a small delta
   reported: 2026-09-16T14:57
   reviewer: a92a2e3722fc1f4ea                # claude:opus through the Agent tool, read-only, launched 14:57
   landing: not-started
@@ -698,5 +698,6 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - M2, the bar: first report did not pass (8 findings over two rounds, none at landing); orchestrator claude:opus (the trial), from the go at 14:16 to the landing commit at 15:16, shared with D16's and Q33's briefs, dispatches and D16's review in the same window; its own tokens not separated per step.
 - D16, worker claude:opus through the Agent tool, first run: 243,380 tokens, 73 tool uses, 1,487 s (14:33 to 14:57); one brief premise found wrong (DESIGN.md names no open action; the doc text adds a sentence to the roots paragraph).
 - D16, reviewer claude:opus through the Agent tool, read-only: 165,715 tokens, 49 tool uses, 662 s (14:58 to 15:09); 10 rulings sent back in round 1.
+- D16, worker round 1: 369,396 tokens (cumulative on the thread), 129 tool uses (cumulative), about 26 min (15:10 to 15:36); nine of ten rulings done, the tenth's R7 half found unreachable; added `.docx`, `.xlsx`, `.pptx` to `file_index.ext` so the card control can show.
 - Q33, worker claude:opus through the Agent tool, first run: 389,452 tokens, 155 tool uses, 3,005 s (14:36 to 15:26); two brief premises reported wrong (tabs never shrank; the orange is every rail toggle's filled active state).
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
