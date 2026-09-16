@@ -222,7 +222,6 @@ function portfolio(): RawPortfolio {
                 ]),
                 meta: {
                     intro: 'dataset registry',
-                    theme_labels: { ecg: 'ECG' },
                     schema: [
                         { field: 'key', type: 'text' },
                         { field: 'retrieval', type: 'raw' }
@@ -438,7 +437,6 @@ describe('normalise, the field mapping', () => {
         expect(snapshot.entities.collections.data).toMatchObject({
             id: 'data',
             intro: 'dataset registry',
-            themeLabels: { ecg: 'ECG' },
             schema: [
                 { field: 'key', type: 'text' },
                 { field: 'retrieval', type: 'raw' }

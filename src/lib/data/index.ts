@@ -128,6 +128,10 @@ export function portfolioConfigFrom(
     if (lanes.length > 0) {
         vocab.lanes = merged.holding_color === undefined ? lanes : [...lanes, BACKLOG];
     }
+    const venueThemes = vocabKeys(merged.venue_themes);
+    if (venueThemes.length > 0) vocab.venueThemes = venueThemes;
+    const dataThemes = vocabKeys(merged.data_themes);
+    if (dataThemes.length > 0) vocab.dataThemes = dataThemes;
 
     const feeds: FeedFiles = {
         leads: path('leads_file', FEED_FILES.leads),
@@ -221,7 +225,8 @@ export function buildPortfolio(hub: string, config: PortfolioConfig, version = 0
     const findings = validate(raw, {
         schema: config.schema,
         vocab: config.vocab,
-        careerFile: join(hub, config.career)
+        careerFile: join(hub, config.career),
+        datasetsFile: join(hub, config.registries.datasets)
     });
     return normalise(raw, findings, version);
 }

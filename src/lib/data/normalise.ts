@@ -502,18 +502,10 @@ export function collectionSchema(value: unknown): SchemaField[] | undefined {
 function collection(raw: RawCollection): Collection {
     const schema = collectionSchema(raw.meta.schema);
     const ident = schema?.[0]?.field ?? 'title';
-    const labels = isMap(raw.meta.theme_labels)
-        ? Object.fromEntries(
-              Object.entries(raw.meta.theme_labels).filter(
-                  (item): item is [string, string] => typeof item[1] === 'string'
-              )
-          )
-        : undefined;
     return compact({
         id: raw.key,
         title: str(raw.meta.title) ?? raw.key,
         intro: str(raw.meta.intro),
-        themeLabels: labels,
         file: raw.file,
         schema,
         entries: raw.entries.map((item, index) => entry(item, index, ident))

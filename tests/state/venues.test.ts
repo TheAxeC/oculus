@@ -3,7 +3,6 @@
 
 import { describe, expect, it } from 'vitest';
 import {
-    applyThemeFacets,
     freeTone,
     isBiennial,
     monthIndex,
@@ -11,13 +10,13 @@ import {
     quartileTone,
     realProjects,
     sparkline,
-    themeFacets,
     timeline,
     venueSearch,
     venueUsers,
     type Project,
     type Venue
 } from '../../src/lib/state/venues.ts';
+import { applyThemeFacets, themeFacets, themeWordLabels } from '../../src/lib/state/themes.ts';
 
 function project(id: string, over: Partial<Project> = {}): Project {
     return {
@@ -87,11 +86,20 @@ describe('theme facets and search', () => {
         venue('three', { name: 'Imaging Venue', themes: ['imaging'] })
     ];
 
-    it('counts themes most frequent first', () => {
-        expect(themeFacets(venues)).toEqual([
-            { theme: 'ml', count: 2 },
-            { theme: 'clinical', count: 1 },
-            { theme: 'imaging', count: 1 }
+    it('counts themes most frequent first, each under its venue_themes label or its word', () => {
+        const labels = themeWordLabels([
+            { key: 'clinical', label: 'Clinical' },
+            { key: 'imaging', label: 'Imaging' }
+        ]);
+        expect(themeFacets(venues, labels)).toEqual([
+            { theme: 'ml', label: 'ml', count: 2 },
+            { theme: 'clinical', label: 'Clinical', count: 1 },
+            { theme: 'imaging', label: 'Imaging', count: 1 }
+        ]);
+        expect(themeFacets(venues).map((facet) => facet.label)).toEqual([
+            'ml',
+            'clinical',
+            'imaging'
         ]);
     });
 
@@ -106,6 +114,16 @@ describe('theme facets and search', () => {
     it('searches names, short names, scope and themes with every word', () => {
         expect(venueSearch(venues, 'clinical care').map((item) => item.id)).toEqual(['one']);
         expect(venueSearch(venues, ['ml', 'methods']).map((item) => item.id)).toEqual(['two']);
+    });
+
+    it('finds a venue by a theme label typed as the facet draws it', () => {
+        const themed = [
+            venue('learning', { themes: ['core-ml', 'high-end'] }),
+            venue('systems', { themes: ['cs', 'systems'] })
+        ];
+        expect(venueSearch(themed, 'Core ML').map((item) => item.id)).toEqual(['learning']);
+        expect(venueSearch(themed, 'High-end').map((item) => item.id)).toEqual(['learning']);
+        expect(venueSearch(themed, 'CS').map((item) => item.id)).toEqual(['systems']);
     });
 });
 

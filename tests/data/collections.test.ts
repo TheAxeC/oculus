@@ -42,7 +42,6 @@ function buildHub(): string {
         'registries/data.yml',
         [
             'intro: dataset registry',
-            'theme_labels: { ecg: ECG }',
             'schema:',
             '  - { field: key, type: text }',
             'datasets:',
@@ -110,7 +109,6 @@ describe('readCollections', () => {
         expect(collections.data.entries[0].source).toBe('https://example.invalid/mimic');
         expect(collections.data.meta).toEqual({
             intro: 'dataset registry',
-            theme_labels: { ecg: 'ECG' },
             schema: [{ field: 'key', type: 'text' }]
         });
         expect(findings.filter((finding) => finding.file.endsWith('registries/data.yml'))).toEqual(

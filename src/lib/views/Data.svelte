@@ -26,12 +26,11 @@
     import DatasetCard from '$lib/views/data/DatasetCard.svelte';
     import {
         accessSummary,
-        applyThemeFacets,
         datasetSearch,
         parseDataState,
-        themeFacets,
         type DataState
     } from '$lib/state/datasets';
+    import { applyThemeFacets, themeFacets, themeWordLabels } from '$lib/state/themes';
     import { inlineMarkdown } from '$lib/ui/html';
     import { cardCursor } from '$lib/state/instance';
     import { t } from '$lib/state/text';
@@ -53,7 +52,8 @@
     const allProjects = $derived(projects());
     const held = $derived(parseDataState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
-    const facets = $derived(themeFacets(allDatasets, collection?.themeLabels));
+    const labels = $derived(themeWordLabels(configMap().data_themes));
+    const facets = $derived(themeFacets(allDatasets, labels));
     const shown = $derived(applyThemeFacets(datasetSearch(allDatasets, held.search), held.off));
 
     let adding = $state(false);

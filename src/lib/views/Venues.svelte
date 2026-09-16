@@ -28,15 +28,14 @@
     import Ribbon from '$lib/views/venues/Ribbon.svelte';
     import VenueCard from '$lib/views/venues/VenueCard.svelte';
     import {
-        applyThemeFacets,
         parseVenuesState,
         realProjects,
-        themeFacets,
         venueSearch,
         venueUsers,
         type VenuesState
     } from '$lib/state/venues';
     import { cardCursor } from '$lib/state/instance';
+    import { applyThemeFacets, themeFacets, themeWordLabels } from '$lib/state/themes';
     import { t } from '$lib/state/text';
     import { viewSourceFile } from '$lib/state/view-source';
     import type { ViewProps } from './registry';
@@ -56,7 +55,8 @@
     const allProjects = $derived(realProjects(projects(), archiveDead()));
     const held = $derived(parseVenuesState(instanceState(instance.id)));
     const cursor = $derived(cardCursor(instance.state));
-    const facets = $derived(themeFacets(allVenues));
+    const labels = $derived(themeWordLabels(configMap().venue_themes));
+    const facets = $derived(themeFacets(allVenues, labels));
     const shown = $derived(applyThemeFacets(venueSearch(allVenues, held.search), held.off));
     const journals = $derived(shown.filter((venue) => venue.category === 'journal'));
     const conferences = $derived(shown.filter((venue) => venue.category === 'conference'));
@@ -153,6 +153,7 @@
                                         cursor={cursor === venue.id}
                                         projects={use.projects}
                                         concentrated={use.concentrated}
+                                        {labels}
                                         entry={entryFor(venue.id)}
                                         schema={collection?.schema}
                                         editing={editing === venue.id}
@@ -192,6 +193,7 @@
                                         cursor={cursor === venue.id}
                                         projects={use.projects}
                                         concentrated={use.concentrated}
+                                        {labels}
                                         entry={entryFor(venue.id)}
                                         schema={collection?.schema}
                                         editing={editing === venue.id}

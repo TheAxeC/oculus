@@ -1,10 +1,9 @@
-// Layer 2, client state. Pure dataset summaries, filters, facets, tones and recovery command.
+// Layer 2, client state. Pure dataset summaries, search, tones, saved state and recovery command.
 // The Data view receives records ready to draw and keeps only search words and disabled facets.
 
 import { dataAccessTone } from './tones.ts';
 import type { Dataset } from '../data/model.ts';
 
-export type ThemeFacet = { theme: string; label: string; count: number };
 export type DataState = { search: string; off: string[]; reveal?: string };
 
 function strings(value: unknown): string[] {
@@ -29,26 +28,6 @@ export function accessSummary(datasets: Dataset[]): string {
 /** The configured tone of an access value, with an unknown value in grey. */
 export function accessTone(access: string | undefined): string {
     return dataAccessTone(access ?? '');
-}
-
-/** Theme words with display labels and counts, most frequent first and lexical inside a tie. */
-export function themeFacets(
-    datasets: Dataset[],
-    labels: Record<string, string> = {}
-): ThemeFacet[] {
-    const counts = new Map<string, number>();
-    for (const dataset of datasets) {
-        for (const theme of dataset.themes) counts.set(theme, (counts.get(theme) ?? 0) + 1);
-    }
-    return [...counts]
-        .map(([theme, count]) => ({ theme, label: labels[theme] ?? theme, count }))
-        .sort((a, b) => b.count - a.count || a.theme.localeCompare(b.theme));
-}
-
-/** Datasets with at least one theme whose toggle remains on. */
-export function applyThemeFacets(datasets: Dataset[], off: string[]): Dataset[] {
-    if (off.length === 0) return datasets;
-    return datasets.filter((dataset) => dataset.themes.some((theme) => !off.includes(theme)));
 }
 
 /** Search key, name, description, modality and access using every supplied word. */

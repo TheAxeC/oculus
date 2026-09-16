@@ -3,7 +3,6 @@
 
 import type { Project, Venue } from '../data/model.ts';
 
-export type ThemeFacet = { theme: string; count: number };
 export type VenueUse = { projects: Project[]; concentrated: boolean };
 export type TimelineChip = { venue: Venue; biennial: boolean };
 export type TimelineMonth = {
@@ -49,23 +48,6 @@ export function venueUsers(venue: Venue, projects: Project[]): VenueUse {
         projects: users,
         concentrated: users.filter((project) => LIVE_TYPES.includes(project.type ?? '')).length >= 2
     };
-}
-
-/** Theme words with counts, most frequent first and lexical inside a tie. */
-export function themeFacets(venues: Venue[]): ThemeFacet[] {
-    const counts = new Map<string, number>();
-    for (const venue of venues) {
-        for (const theme of venue.themes) counts.set(theme, (counts.get(theme) ?? 0) + 1);
-    }
-    return [...counts]
-        .map(([theme, count]) => ({ theme, count }))
-        .sort((a, b) => b.count - a.count || a.theme.localeCompare(b.theme));
-}
-
-/** Venues with at least one theme whose toggle remains on. */
-export function applyThemeFacets(venues: Venue[], off: string[]): Venue[] {
-    if (off.length === 0) return venues;
-    return venues.filter((venue) => venue.themes.some((theme) => !off.includes(theme)));
 }
 
 /** Tone of a venue's rank, kept for the card's hue although the rank is drawn as a plain tag. */

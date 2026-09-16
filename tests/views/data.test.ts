@@ -142,7 +142,6 @@ function collection(datasets: Dataset[]): Collection {
         id: 'data',
         title: 'Data',
         intro: 'Registry **intro** from the file.',
-        themeLabels: { ecg: 'ECG' },
         file: FILE,
         schema: [
             { field: 'key', type: 'text', required: true },
@@ -276,6 +275,23 @@ describe('the Data view', () => {
         }).body;
         expect(html).toContain('No datasets yet - add some to registries/data.yml.');
         expect(html).not.toContain('data-dataset=');
+    });
+});
+
+describe('the dataset facets under their data_themes labels', () => {
+    it('draws a facet under its label, and a word with no row as the word', () => {
+        const rows = config.data_themes as { key: string; label: string }[];
+        const ecg = rows.find((row) => row.key === 'ecg')?.label ?? '';
+        expect(ecg).not.toBe('');
+        expect(ecg).not.toBe('ecg');
+        receive({ channel: 'portfolio', version: 32, payload: snapshot(DATASETS) });
+        const html = render(Data, {
+            context: clientContext(client),
+            props: { instance: instance() }
+        }).body;
+        expect(html).toContain(`${ecg} 3`);
+        expect(html).not.toContain('ecg 3');
+        expect(html).toContain('scans 2');
     });
 });
 

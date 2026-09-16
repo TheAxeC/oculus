@@ -5,13 +5,12 @@ import { beforeAll, describe, expect, it } from 'vitest';
 import {
     accessSummary,
     accessTone,
-    applyThemeFacets,
     datasetSearch,
     parseDataState,
     recoveryCommand,
-    themeFacets,
     type Dataset
 } from '../../src/lib/state/datasets.ts';
+import { applyThemeFacets, themeFacets, themeWordLabels } from '../../src/lib/state/themes.ts';
 import { engineDir, loadConfig, vocabCatalog } from '../../src/lib/data/sources/config.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 
@@ -78,11 +77,20 @@ describe('dataset summaries and tones', () => {
 });
 
 describe('dataset facets and search', () => {
-    it('counts themes by frequency and applies configured labels', () => {
-        expect(themeFacets(DATASETS, { ecg: 'ECG' })).toEqual([
+    it('counts themes by frequency and applies the data_themes labels', () => {
+        const labels = themeWordLabels([{ key: 'ecg', label: 'ECG' }]);
+        expect(themeFacets(DATASETS, labels)).toEqual([
             { theme: 'ecg', label: 'ECG', count: 3 },
             { theme: 'signals', label: 'signals', count: 3 },
             { theme: 'private-theme', label: 'private-theme', count: 1 }
+        ]);
+    });
+
+    it('draws every word as itself when no label list is given', () => {
+        expect(themeFacets(DATASETS).map((facet) => facet.label)).toEqual([
+            'ecg',
+            'signals',
+            'private-theme'
         ]);
     });
 

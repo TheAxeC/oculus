@@ -240,8 +240,49 @@ describe('the Venues controls and facets', () => {
         expect(body).toContain('data-reveal="journal"');
         expect(body).toContain('Search Venues ...');
         expect(body).toContain(catalog['venues.themes_facet']);
-        expect(body.indexOf('ml 2')).toBeLessThan(body.indexOf('systems 1'));
+        expect(body.indexOf('ml 2')).toBeLessThan(body.indexOf('Systems 1'));
         expect(body).toMatch(/class="tool [^"]*active"/);
+    });
+});
+
+describe('the theme words under their venue_themes labels', () => {
+    /** The label config/vocab.yml gives a word, read from the config the view is drawn with. */
+    function label(word: string): string {
+        const rows = config.venue_themes as { key: string; label: string }[];
+        const row = rows.find((item) => item.key === word);
+        expect(row).toBeDefined();
+        return row?.label ?? '';
+    }
+
+    it('draws a facet under its label, and a word with no row as the word', () => {
+        const body = html();
+        const row = /<div class="facets[^"]*"[\s\S]*?<\/div>/.exec(body)?.[0] ?? '';
+        expect(label('clinical')).not.toBe('clinical');
+        expect(row).toContain(`${label('clinical')} 2`);
+        expect(row).toContain(`${label('systems')} 1`);
+        expect(row).not.toContain('clinical 2');
+        expect(row).toContain('ml 2');
+    });
+
+    it('draws a venue card theme tag under its label', () => {
+        const card = venueCard(html(), 'untimed');
+        expect(card).toContain(`>${label('systems')}</span>`);
+        expect(card).not.toContain('>systems</span>');
+    });
+
+    it('filters the cards by a held off word while the facet draws its label', () => {
+        receive({ channel: 'portfolio', version: 25, payload: snapshot() });
+        setInstanceState(INSTANCE, {
+            search: '',
+            off: ['systems'],
+            journalsOpen: true,
+            conferencesOpen: true
+        });
+        const instance: Instance = { id: INSTANCE, view: 'venues', state: {} };
+        const body = render(Venues, { context: clientContext(client), props: { instance } }).body;
+        expect(body).toContain(`${label('systems')} 1`);
+        expect(body).not.toContain('data-card="untimed"');
+        expect(body).toContain('data-card="timed"');
     });
 });
 
@@ -267,7 +308,9 @@ describe('the journal section and venue card', () => {
         expect(journal).toContain('aria-expanded="false"');
         expect(journal).not.toContain('>ALPHA</span>');
         expect(journal).not.toContain('>BETA</span>');
-        expect(body).toContain('>clinical</span>');
+        expect(journal).toContain('>Clinical</span>');
+        expect(journal).toContain('>ml</span>');
+        expect(journal).not.toContain('>clinical</span>');
     });
 
     it('draws the concentration legend with its explanation', () => {

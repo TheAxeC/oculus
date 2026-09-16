@@ -17,6 +17,7 @@ import type {
 } from './model.ts';
 import { isMap, byKey, str } from './guards.ts';
 import { JOINT_WORK, PERSON_FIELD, collectionSchema } from './normalise.ts';
+import { checkThemes } from './validate-themes.ts';
 
 /** Keys the reader itself adds to every manifest record; no schema names them. */
 const PROVENANCE = [
@@ -657,6 +658,7 @@ export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     checkEntryIdentity(raw, findings);
     checkCollectionSchema(raw, findings);
     checkHostStatus(raw, rules, findings);
+    checkThemes(raw, rules, findings);
 
     return sortFindings(findings);
 }

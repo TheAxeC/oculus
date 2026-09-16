@@ -13,6 +13,7 @@
     import { groupProjects, type Entry, type SchemaField } from '$lib/state/collection';
     import { t } from '$lib/state/text';
     import { freeTone, quartileTone, type Project, type Venue } from '$lib/state/venues';
+    import { themeWordLabel, type ThemeWordLabels } from '$lib/state/themes';
     import { useState } from '$lib/state/use';
 
     const {
@@ -25,6 +26,8 @@
         cursor: boolean;
         projects: Project[];
         concentrated: boolean;
+        /** The labels of `venue_themes`, which the theme tags draw in place of the word. */
+        labels: ThemeWordLabels;
         entry: Entry | null;
         schema: SchemaField[] | undefined;
         editing: boolean;
@@ -32,8 +35,18 @@
         onsaid: (said: string) => void;
     };
 
-    let { venue, cursor, projects, concentrated, entry, schema, editing, onedit, onsaid }: Props =
-        $props();
+    let {
+        venue,
+        cursor,
+        projects,
+        concentrated,
+        labels,
+        entry,
+        schema,
+        editing,
+        onedit,
+        onsaid
+    }: Props = $props();
 
     const groups = $derived(groupProjects(projects, archiveDead()));
     const metadata = $derived(
@@ -129,7 +142,7 @@
         {#if venue.themes.length > 0}
             <div class="themes">
                 {#each venue.themes as theme (theme)}
-                    <Tag label={theme} />
+                    <Tag label={themeWordLabel(labels, theme)} />
                 {/each}
             </div>
         {/if}

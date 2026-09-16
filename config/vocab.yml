@@ -260,6 +260,36 @@ venue_tiers:
   - { key: specialist, color: "#0891b2", label: "specialist" }
   - { key: unrated,    color: "#94a3b8", label: "unrated", assignable: false }
 
+# The theme words a venue's `themes:` may use (registries/venues.yml) and the label each is drawn with; a word used in the registry and missing here is a finding.
+venue_themes:
+  - { key: core-ml,     label: "Core ML" }
+  - { key: clinical,    label: "Clinical" }
+  - { key: high-end,    label: "High-end" }
+  - { key: signal,      label: "Signal" }
+  - { key: theory,      label: "Theory" }
+  - { key: informatics, label: "Informatics" }
+  - { key: federated,   label: "Federated" }
+  - { key: neuro,       label: "Neuro" }
+  - { key: imaging,     label: "Imaging" }
+  - { key: bio,         label: "Bio" }
+  - { key: cs,          label: "CS" }
+  - { key: systems,     label: "Systems" }
+  - { key: method,      label: "Method" }
+
+# The theme words a dataset's `themes:` may use (registries/data.yml) and the label each is drawn with; a word used in the registry and missing here is a finding.
+data_themes:
+  - { key: single-cell,      label: "Single-cell" }
+  - { key: eeg,              label: "EEG" }
+  - { key: mri-imaging,      label: "MRI imaging" }
+  - { key: bci-ecog,         label: "BCI / ECoG" }
+  - { key: ecg,              label: "ECG" }
+  - { key: survival-tabular, label: "Survival (tabular)" }
+  - { key: clinical-ehr,     label: "Clinical EHR" }
+  - { key: pde-operator,     label: "PDE operator" }
+  - { key: ct-imaging,       label: "CT imaging" }
+  - { key: mammography,      label: "Mammography" }
+  - { key: simulated-copula, label: "Simulated (copula)" }
+
 
 # Lit-Watch radar buckets: (key, glyph name, label, colour). New papers per project are classified into one
 # of these; `glyph` is a `glyphs:` key. Edit a label/colour HERE (was hardcoded in config.py before 2026-07).

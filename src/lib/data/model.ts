@@ -77,6 +77,13 @@ export type Vocabulary = {
      * silence.
      */
     lanes?: string[];
+    /**
+     * The keys of `venue_themes`, the words a venue's `themes:` may use. Absent when the config holds
+     * no such list, and a venue theme is then not checked, as `chips` above.
+     */
+    venueThemes?: string[];
+    /** The keys of `data_themes`, the words a dataset's `themes:` may use; absent as `venueThemes`. */
+    dataThemes?: string[];
 };
 
 /**
@@ -91,6 +98,11 @@ export type ValidationRules = {
      * in. The raw career record is the parsed map alone and carries no provenance of its own.
      */
     careerFile?: string;
+    /**
+     * Absolute path of the dataset registry, so a finding about the file's own top-level keys names
+     * it even when the file lists no dataset.
+     */
+    datasetsFile?: string;
 };
 
 /** Everything buildPortfolio needs: where to read, and what to check what it read against. */

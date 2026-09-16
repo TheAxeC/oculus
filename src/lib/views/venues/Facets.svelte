@@ -1,11 +1,12 @@
 <script lang="ts">
-    // Layer 3, Venues view partial. The theme toggle row, with counts from the pure venue state.
-    // It owns no selection: the view passes what is off and receives each toggle.
+    // Layer 3, Venues view partial. The theme toggle row, each with its venue_themes label and count
+    // from the pure venue state. It owns no selection: the view passes what is off and receives each
+    // toggle.
 
     import type { Snippet } from 'svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { t } from '$lib/state/text';
-    import type { ThemeFacet } from '$lib/state/venues';
+    import type { ThemeFacet } from '$lib/state/themes';
 
     type Props = {
         facets: ThemeFacet[];
@@ -23,7 +24,7 @@
         <span class="label">{t('venues.themes_facet')}</span>
         {#each facets as facet (facet.theme)}
             <ToolButton
-                label={`${facet.theme} ${facet.count}`}
+                label={`${facet.label} ${facet.count}`}
                 active={!off.includes(facet.theme)}
                 onclick={() => ontoggle(facet.theme)}
             />

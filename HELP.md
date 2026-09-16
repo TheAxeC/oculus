@@ -154,7 +154,7 @@ The files below sit in the `config/` folder of the engine, `tools/oculus/config/
 | `meta.yml` | The tool identity: the title and the subtitle the window carries. |
 | `present.yml` | The public deck the Present view draws: the deck slides, the domain themes, the tag tones and the order. |
 | `sources.yml` | What the portfolio reads: the scan paths, the registry and collection files, the feeds, and the roots a local file is served from. |
-| `vocab.yml` | Words and their colours: the palette, the research domains, the status legend, the focus lanes, the venue tiers and the radar buckets. |
+| `vocab.yml` | Words and their colours: the palette, the research domains, the status legend, the focus lanes, the venue tiers, the venue and dataset theme words and the radar buckets. |
 | `local.yml` | This machine's own values, read on their own and never merged into the configuration: the hub path, the port, the ssh alias of the cluster, the Claude command, the account folders, the calendar accounts, the mail accounts and where the machine-local state is kept. |
 
 Every user-facing word lives under `config/text/`, one file per surface, and is read by its dotted key. Those files merge with the rest, so a word is changed there and nowhere else.

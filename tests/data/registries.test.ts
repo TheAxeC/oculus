@@ -43,7 +43,6 @@ function buildHub(): string {
         REGISTRY_FILES.datasets,
         [
             'intro: the local caches',
-            'theme_labels: { eeg: EEG }',
             'schema: []',
             'datasets:',
             '  - { key: mimic, name: MIMIC-IV, source: https://example.invalid/mimic }',
@@ -120,7 +119,6 @@ describe('readRegistries', () => {
         expect(out.datasets.entries[0].source).toBe('https://example.invalid/mimic');
         expect(out.datasets.meta).toEqual({
             intro: 'the local caches',
-            theme_labels: { eeg: 'EEG' },
             schema: []
         });
     });

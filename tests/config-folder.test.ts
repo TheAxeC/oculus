@@ -144,6 +144,8 @@ describe("oculus's own config directory", () => {
             'data_access',
             'venue_categories',
             'venue_tiers',
+            'venue_themes',
+            'data_themes',
             'radar_buckets'
         ]
     };
@@ -200,6 +202,56 @@ describe("oculus's own config directory", () => {
 
     it('merges without a finding, so no key is defined in two files', () => {
         expect(loadConfig(engineDir()).findings).toEqual([]);
+    });
+
+    it('reads the venue and dataset theme words into the vocabulary validate checks', () => {
+        const { vocab } = portfolioConfigFrom(loadConfig(engineDir()).config, engineDir());
+        expect(vocab.venueThemes).toEqual([
+            'core-ml',
+            'clinical',
+            'high-end',
+            'signal',
+            'theory',
+            'informatics',
+            'federated',
+            'neuro',
+            'imaging',
+            'bio',
+            'cs',
+            'systems',
+            'method'
+        ]);
+        expect(vocab.dataThemes).toEqual([
+            'single-cell',
+            'eeg',
+            'mri-imaging',
+            'bci-ecog',
+            'ecg',
+            'survival-tabular',
+            'clinical-ehr',
+            'pde-operator',
+            'ct-imaging',
+            'mammography',
+            'simulated-copula'
+        ]);
+    });
+
+    it('leaves the theme lists absent when the config holds none, or none with a key', () => {
+        const merged = loadConfig(engineDir()).config;
+        const without = Object.fromEntries(
+            Object.entries(merged).filter(
+                ([key]) => key !== 'venue_themes' && key !== 'data_themes'
+            )
+        );
+        const bare = portfolioConfigFrom(without, engineDir()).vocab;
+        expect(bare).not.toHaveProperty('venueThemes');
+        expect(bare).not.toHaveProperty('dataThemes');
+        const empty = portfolioConfigFrom(
+            { ...without, venue_themes: [], data_themes: [{ label: 'No key' }] },
+            engineDir()
+        ).vocab;
+        expect(empty).not.toHaveProperty('venueThemes');
+        expect(empty).not.toHaveProperty('dataThemes');
     });
 
     it('names the six scan tiers, the software one flat, typed and optional', () => {

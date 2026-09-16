@@ -44,8 +44,6 @@ export type Collection = {
     id: Id;
     title: string;
     intro?: string;
-    /** Optional display words keyed by a collection-specific facet token. */
-    themeLabels?: Record<string, string>;
     /** Absolute path of the collection file. */
     file: string;
     /**

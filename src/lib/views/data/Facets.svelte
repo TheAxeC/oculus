@@ -1,10 +1,10 @@
 <script lang="ts">
-    // Layer 3, Data view partial. The modality toggles with counts and registry display labels.
+    // Layer 3, Data view partial. The modality toggles with counts and the data_themes labels.
     // It owns no selection: the view passes disabled facets and receives each toggle.
 
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { t } from '$lib/state/text';
-    import type { ThemeFacet } from '$lib/state/datasets';
+    import type { ThemeFacet } from '$lib/state/themes';
 
     type Props = {
         facets: ThemeFacet[];

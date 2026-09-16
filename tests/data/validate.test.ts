@@ -655,3 +655,113 @@ describe('validate, the people and organisation registries', () => {
         expect(said(raw)).toEqual(['funder names no organisation: "nowhere"']);
     });
 });
+
+describe('validate, the theme words of venues and datasets', () => {
+    const THEMED: ValidationRules = {
+        schema: RULES.schema,
+        vocab: {
+            ...RULES.vocab,
+            venueThemes: ['core-ml', 'clinical'],
+            dataThemes: ['ecg', 'eeg']
+        }
+    };
+
+    /** A portfolio whose venue and dataset entries carry the themes given, one entry per list. */
+    function themed(venues: unknown[], datasets: unknown[]): RawPortfolio {
+        const held = portfolio();
+        const entries = (name: RegistryName, file: string, lists: unknown[]) =>
+            lists.map((themes, at) => ({ registry: name, key: `${name}-${at}`, file, themes }));
+        return {
+            ...held,
+            registries: {
+                ...held.registries,
+                venues: { entries: entries('venues', '/hub/venues.yml', venues), meta: {} },
+                datasets: { entries: entries('datasets', '/hub/data.yml', datasets), meta: {} }
+            }
+        };
+    }
+
+    it('reports a venue word off the venue list with its file, key and message', () => {
+        const raw = themed([['core-ml'], ['clinical', 'astrology']], []);
+        expect(validate(raw, THEMED)).toEqual([
+            {
+                file: '/hub/venues.yml',
+                key: 'entries[1].themes[1]',
+                message: 'theme "astrology" is not one of the venue themes'
+            }
+        ]);
+    });
+
+    it('reports a dataset word off the dataset list with its file, key and message', () => {
+        const raw = themed([], [['ecg'], ['eeg'], ['mri']]);
+        expect(validate(raw, THEMED)).toEqual([
+            {
+                file: '/hub/data.yml',
+                key: 'datasets[2].themes[0]',
+                message: 'theme "mri" is not one of the dataset themes'
+            }
+        ]);
+    });
+
+    it('reports nothing for words on their lists, and checks each word against its own list', () => {
+        expect(validate(themed([['core-ml', 'clinical']], [['ecg', 'eeg']]), THEMED)).toEqual([]);
+        expect(validate(themed([['ecg']], [['clinical']]), THEMED)).toEqual([
+            {
+                file: '/hub/data.yml',
+                key: 'datasets[0].themes[0]',
+                message: 'theme "clinical" is not one of the dataset themes'
+            },
+            {
+                file: '/hub/venues.yml',
+                key: 'entries[0].themes[0]',
+                message: 'theme "ecg" is not one of the venue themes'
+            }
+        ]);
+    });
+
+    it('checks nothing when the config holds no theme lists', () => {
+        expect(validate(themed([['astrology']], [['mri']]), RULES)).toEqual([]);
+    });
+
+    it('reports each bad word of one entry once, at its own index', () => {
+        const raw = themed([['physics', 'core-ml', 'chemistry']], []);
+        expect(validate(raw, THEMED).map((finding) => finding.key)).toEqual([
+            'entries[0].themes[0]',
+            'entries[0].themes[2]'
+        ]);
+    });
+
+    it('reports a word naming a property of every plain object, and a duplicated bad word twice', () => {
+        const raw = themed([['constructor', '__proto__']], [['mri', 'mri']]);
+        expect(validate(raw, THEMED).map((finding) => finding.key)).toEqual([
+            'datasets[0].themes[0]',
+            'datasets[0].themes[1]',
+            'entries[0].themes[0]',
+            'entries[0].themes[1]'
+        ]);
+    });
+
+    it('reports a dataset registry still holding theme_labels, and nothing without it', () => {
+        const rules: ValidationRules = { ...THEMED, datasetsFile: '/hub/registries/data.yml' };
+        const held = themed([], [['ecg']]);
+        const stale: RawPortfolio = {
+            ...held,
+            registries: {
+                ...held.registries,
+                datasets: { ...held.registries.datasets, meta: { theme_labels: { ecg: 'ECG' } } }
+            }
+        };
+        expect(validate(stale, rules)).toEqual([
+            {
+                file: '/hub/registries/data.yml',
+                key: 'theme_labels',
+                message: 'theme_labels is not read; the labels are data_themes in config/vocab.yml'
+            }
+        ]);
+        expect(validate(held, rules)).toEqual([]);
+    });
+
+    it('passes over a themes value that is not a list and an item that is not a string', () => {
+        expect(validate(themed(['core-ml', [7, null]], [{ ecg: true }]), THEMED)).toEqual([]);
+    });
+});
