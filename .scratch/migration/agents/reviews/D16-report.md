@@ -729,3 +729,361 @@ Replacement:
 - **Unverified mount.** On a filesystem that marks every file executable, every file is refused. Not verified.
 - **Scratch folder.** Scratch copies for this round are under `scratchpad/d16-builder` only. I deleted my round 1 and 2 backup copies and scripts from the scratchpad root.
 - **Unrun suites.** The full browser suite was not run; only the three specs above.
+
+
+# Repair round 4
+
+Everything in repair round 4 is done. One instruction clashed with a green suite: I could not carry `desc_behavior` in `config/text/views/config.yml` in this round. `tests/views/help.test.ts` ("describes every configuration file in the words the Config view shows") requires that line to be byte-equal to HELP.md:149, and HELP.md stays unedited, so changing only the catalog line turns the suite red. The line is unchanged, and its new text is under Doc text, to be applied together with HELP.md:149 at landing.
+
+## Items
+
+| # | Item | State | Proof |
+|---|---|---|---|
+| 1 | The program is named | DONE | `config/behavior.yml` `open.program_ext` is now a map (see Doc text). Bundle ids read with `/usr/libexec/PlistBuddy -c 'Print CFBundleIdentifier' <app>/Contents/Info.plist`: Word `com.microsoft.Word`, Excel `com.microsoft.Excel`, PowerPoint `com.microsoft.Powerpoint`, Keynote `com.apple.iWork.Keynote`, TextEdit `com.apple.TextEdit`. `mdls -name kMDItemCFBundleIdentifier` answered "could not find" for every app here. Pages and Numbers are not installed (`ls /Applications`), so their ids are the ruling's and unverified. No LibreOffice or OpenOffice is installed, so I found no bundle id and `.odt .ods .odp` are left out. The file opener runs `execFile('/usr/bin/open', ['-b', id, realPath])`. `man open` documents no `--` separator, so none is passed; the real path is absolute, starts with `/`, and is never read as an option, and the id must match `^[A-Za-z0-9-]+(\.[A-Za-z0-9-]+)+$`. Kept refusals: both the asked and the real extension must have an entry (the real one's app is used), no execute bit, no `book`/`mark` head. Added: `readFinderInfo` runs `execFile('/usr/bin/xattr', ['-px', 'com.apple.FinderInfo', path])` with no shell. Absence (stderr "No such xattr") counts as not flagged. Any other failure, including `[Errno 13] Permission denied` on a mode-000 file (seen by running xattr on such a file), refuses. Bit 0x80 of byte 8 refuses. Proof: `npx vitest run tests/routes/open-program.test.ts` gives 24 passed, `tests/data/opens-in-program.test.ts` 6 passed. |
+| 2 | Folders are revealed | DONE | A directory always becomes `{ kind: 'folder' }`, and the opener runs `['-R', realPath]`. The package-suffix rule and the `Contents/Info.plist` check are gone. `Tool.app` holding `Contents/Info.plist`, `Pane.prefPane` and a plain folder are all revealed ("reveals a plain folder, an application bundle and a folder holding Contents/Info.plist"). A symlink `linkdir.docx -> sub` is revealed as the folder `sub` (case "reveals a symlink named like a document that points at a folder, as that folder"). No folder can be refused by the program rule, so the refusal sentence keeps "the file would run rather than open" and applies to files only. The folder control's words were untrue after the change; this is a user-visible change: `project.helper.folder_tip` goes from "open project folder" to "show the project folder in Finder", and `project.card.folder_failed` becomes "The folder could not be shown in Finder: {0}". |
+| 3 | Live map on each request | DONE | The route passes `() => openSettings(loadConfig(locals.server.engine).config).programApps` and `locals.server.openPath`, and `handleOpen` calls it once per request. The context keeps `openSettings(config)` at start as a check only, and gains `openPath: macOpenPath` (the https `opener` is now `macOpenAddress`). Case "reads open.program_ext from the configuration on disk at every request" rewrites the engine's `config/behavior.yml` between four POSTs through the real route: `.xlsx` to Excel gives 200 with Excel; `.xlsx` to Numbers gives 200 with Numbers; `.docx` only gives 403; an unusable list gives 500 naming the key. The injected `openPath` records both targets. |
+| 4 | Smaller findings | DONE | See "Item 4 in detail" below. |
+| 5 | Before and after, wire answers, Doc text | DONE | See those sections below. |
+
+## Item 4 in detail
+
+- **Project card superseded press.** New browser case "a project card's refusal that lands after a later press has opened the file is never said". R8 turns it red. R8 now reverts the one guard in `ProgramButton.svelte`, which all four places use.
+- **Pinned `mark`.** Case "opens a file that starts with book but has no mark after it". P1 turns it red.
+- **Pinned asked-name half.** Case "refuses a symlink whose asked name has no application, pointing at a listed file". P2 turns it red.
+- **Pinned no-control-before-config.** `file.test.ts` "draws none before the configuration has arrived, and keeps the download" and `card-docs.test.ts` "draws no program control before the configuration has arrived". F0 (selector fallback `?? { '.docx': ... }`) turns both red.
+- **False sentences fixed.** `open.ts` is rewritten, the old :92-95 claim is gone and its head now states the reveal rule. The `opens-in-program.ts` head says what the page can and cannot see, and that the page's hide happens before the server's refusal. `behavior.yml`'s comment now reads: "A file of any other extension, and a listed file with an execute bit or marked as a Finder alias, is refused; a folder is shown in Finder rather than opened. Read again at every request."
+- **`desc_behavior`.** Not carried; see the first paragraph.
+- **Listed `.rtf` whose bytes are text.** The source tab now draws the same control in its bar for a listed extension: `Source.svelte`, `{#if !blocked && opensInProgram(path, programApps())}`. Case "carries the program control in its bar for a listed .rtf, and none for a Markdown file"; S1 and S2 turn it red.
+- **One shared control.** The four copies of the press are now `views/shared/ProgramButton.svelte`: the per-control supersede counter, and a failure said through `onsaid` on the cards or inline beside the control in the File view and source tab. Consequence: the File view's two controls each keep their own counter and failure line.
+- **Card failure line.** The card browser cases now assert the refusal on the view's `p.said` line. Rc and R4 (dropping `{onsaid}`) turn them red.
+- **Refusal sentence.** See item 2.
+- **Rename grep.** `grep -rn "runsWhenOpened\|runs-when-opened\|bundleRunsWhenOpened\|drawnInPage\|DRAWN_TEXT\|macOpen\b\|macOpener\|programExt\b\|programExtensions\|isPackageName" src tests config HELP.md DESIGN.md README.md` printed nothing (exit 0). A fixture parameter hit was renamed to `map`.
+- **Open-names grep.** `grep -rn "open-folder\|openFolder\|api/open" src tests config HELP.md DESIGN.md README.md` hits:
+  - `writes.svelte.ts:42,60,165,417`
+  - `ProjectCard.svelte:29,217`
+  - `ProgramButton.svelte:3` (head comment)
+  - `tests/browser/open-file.spec.ts:8,75,89,175,180,228,233,288,293`
+  - `tests/routes/open-fixture.ts:104`
+  - `tests/routes/open.test.ts:14,29,35,414,451,481,515`
+
+  No hits in HELP.md, DESIGN.md, README.md or config.
+
+## Verification (from `tools/oculus` in the worktree)
+
+1. `npm test -- --reporter=dot`: `Test Files 231 passed (231)`, `Tests 3852 passed (3852)`.
+2. `npm run check`: `COMPLETED 1160 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+3. `npm run build`: exit 0, `✓ built in 6.11s`.
+4. `npm run format:check`: `All matched files use Prettier code style!`
+5. `npm run lint`: exit 0, no problems printed.
+6. Perl ASCII gate: printed nothing.
+7. `find src tests bin -type f | xargs wc -l | sort -n | tail -3`: `970 tests/state/layout.test.ts`, `979 tests/state/board.test.ts`, `155119 total`.
+8. `npx playwright test tests/browser/open-file.spec.ts tests/browser/board.spec.ts tests/browser/collection.spec.ts`, after that build: `18 passed (33.0s)` (8 open-file, 5 board, 5 collection).
+
+No test runs macOS `open`: every route and endpoint case injects the opener, the browser spec answers `/api/open` with a Playwright route, and the floor tests call `openable`/`openArgs` only. One revert was not run for that reason: the route passing no `openPath` would fall back to `macOpenPath` and launch Excel. The route case asserts the injected `openPath` was called, and that stands as the proof that the route uses it.
+
+## Reverts run per new or changed test
+
+Each revert was applied, its test file run, and the source restored. Scripts and logs are under `scratchpad/d16-builder`.
+
+**Node revert keys** (`server/open.ts` unless named):
+- P1 no `mark` check
+- P2 asked-name check dropped
+- P3 app taken from the asked name
+- P4 execute bit dropped in `safeFile`
+- P4b same, run against the floor tests
+- P5 bookmark head dropped
+- P6 alias flag dropped
+- P7 FinderInfo read failure not refused
+- P8 absence of FinderInfo throws
+- P9 alias bit 0x04
+- P10 folders refused
+- P11 `.app` folders refused
+- P12 no `-b`
+- P13 no `-R`
+- P14 floor without realpath
+- P15 floor without bundle-id check
+- P16 floor accepts any folder
+- P17 address takes any scheme
+- P18 map read throws instead of 500
+- P19 route reads the start config
+- P20 unreadable file not counted as a bookmark
+- P21 floor absolute and dash check dropped
+- P22 `openTarget` catch reveals
+- A-dir-only
+- A-missing-outside
+- A-outside-404
+- A-no-root-loop
+- A-unknown-root
+- A-no-path-type
+- A-no-token
+- A-500-words
+- A-R5 rooted unnarrowed
+- A-R6 plain unnarrowed
+- A-route-roots
+- A-client-body
+- D1 entry check dropped
+- D2 no lowercase
+- D3 keys not lowercased
+- D4 no bundle-id check in the reader
+- D5 loose bundle-id pattern
+- D6 settings never throw
+- D7 `.key` dropped from `behavior.yml`
+- D8 every name has an app
+- K1 context skips `openSettings`
+- F0 selector fallback map
+- F1 File view fixed map
+- F2 other-block control off
+- F3 `holds = src !== ''`
+- F4 toolbar control always
+- F5 `ProgramButton` `.failed` size removed
+- S1 source control off
+- S2 source control for every file
+- C1 card program branch off
+- C2 readable branch off
+- C3 card fixed map
+- C4 card program branch always
+- E1 entry program branch off
+- E2 entry drops `isHubPath`
+- B1 boundaries row removed
+
+**Browser revert keys:**
+- R1 card path without the folder
+- R2 card `root=""`
+- Rc card drops `{onsaid}`
+- R3 entry `root=""`
+- R4 entry drops `{onsaid}`
+- R8 supersede guard removed in `ProgramButton`
+- R12 folder words back to `editor.failed`
+- B-body `openFile` posts `{ path }`
+- B-span `ProgramButton` failure line never drawn
+
+**`tests/routes/open.test.ts`:**
+- requires the write token: A-no-token
+- requires a path: A-no-path-type
+- directory outside every root: A-no-root-loop
+- hub-relative folder: P10
+- file by root and path: A-dir-only
+- workspace root key: A-dir-only
+- folder by root and path: P10
+- hub-relative and absolute file: A-dir-only
+- engine root: A-dir-only
+- saved workspace root: A-dir-only
+- hands the route the file browser's roots: A-route-roots, A-missing-outside, P19
+- reads open.program_ext at every request: P19, P18, A-route-roots
+- missing file: A-missing-outside
+- `..`: A-outside-404, A-no-root-loop
+- symlink outside: A-outside-404, A-no-root-loop
+- absolute path with root: A-outside-404
+- root keys: A-unknown-root
+- path not a string: A-no-path-type
+- no token on a file: A-no-token
+- 500 wording: A-500-words
+- client posts root and path: A-client-body
+- client unknown root: A-client-body, A-unknown-root
+- client outside root: A-no-root-loop
+- both stale-token cases: A-no-token, P10
+
+**`tests/routes/open-program.test.ts`:**
+- every listed extension: P8, D8, A-dir-only
+- mixed case: D2, P8
+- 0644 `.docx`: P8, D8
+- double extension and off-map types: D8
+- executable, and listed with execute bit: P4, P4b
+- bookmark head: P5
+- `book` without `mark`: P1
+- alias flag: P6, P9
+- FinderInfo read failure: P6, P7
+- `readFinderInfo`: P8
+- asked name off map: P2
+- listed name to off-map file: P3
+- unreadable listed file: audit for P20 alone (24 passed), because the FinderInfo read of that file also fails (Errno 13, seen above); A-dir-only red
+- `.txt` map: P8, D8
+- reveals folders including bundles: P10, P11
+- document-named symlink to a folder: P10
+- 500 when the map cannot be read: P18
+- FIFO: A-R5, A-R6
+- `openArgs`: P12, P13
+- floor takes a folder and a listed file: P8
+- floor refusals: P15, P16, P4b
+- floor resolves the path first: P14
+- floor relative, option, missing: audit (P21 24 passed; the real-path check refuses them too)
+- `openableAddress`: P17
+
+`openTarget`'s catch is an audit too: P22 gives 24 passed, since the path was just resolved and a stat fails only in a race.
+
+**`tests/data/opens-in-program.test.ts`:**
+- application per extension in any case: D2, D7, D8
+- none for double extension and off-map: D8, D1
+- inherited key and empty map: D1, D2, D8. Replacing `Object.hasOwn` with an `undefined` check alone stays green, because every key carries a dot.
+- reader lowercases and nulls: D3, D4
+- bundle-id shape: D5
+- required at start: D6
+
+**Other node test files:**
+- `tests/server/context.test.ts`, stops before building: K1
+- `tests/views/file.test.ts`:
+  - `.docx` two controls: F2
+  - none for picture/PDF: F4
+  - `.zip` map from config: F1, F2, F4
+  - none while reading and for `.md`: F3, F4
+  - none before config: F0, F1, F4
+  - none off the map: F4
+  - none with no file: F4
+- `tests/views/type-scale.test.ts`, `shared/ProgramButton.svelte`: F5
+- `tests/views/source.test.ts`, `.rtf` control: S1, S2
+- `tests/views/card-docs.test.ts`:
+  - `.docx`/`.xlsx`: C1
+  - `.md`: C2
+  - picture/PDF links: C4
+  - off-map links: C4
+  - `.log` map from config: C1, C3, C4
+  - none before config: F0, C3, C4
+  - no raw button: not rerun this round (C5 in round 3)
+- `tests/views/collection.test.ts`: E1, E2
+- `tests/boundaries.test.ts`: B1
+
+**`tests/browser/open-file.spec.ts`** (8 cases):
+1. `.docx` from the File view: B-body (the run with B-body gave `3 failed, 5 passed`; I did not capture which three)
+2. refusal said and cleared: B-span
+3. File view superseded: R8
+4. project card `.docx`: R1, R2, Rc
+5. project card superseded: R2, R8
+6. folder words: R12
+7. collection card `.xlsx`: R3, R4
+8. collection card superseded: R3, R8
+
+## Before (main at 8601f148) and after, for every user-visible change of the step
+
+- **Project card folder control.**
+  - Before: `open <folder>` under the hub, the engine config folder and the configured roots only. Finder opened a window on the folder, and a package folder was launched. Tooltip "open project folder". Failure "not saved: the folder could not be opened: ...".
+  - After: `open -R <real folder>`: Finder selects the folder in its parent's window and nothing is launched. Also works under a saved workspace's roots. Tooltip "show the project folder in Finder". Failure "The folder could not be shown in Finder: ...".
+- **Project card file list.**
+  - Before: readable rows (READABLE) were accent-coloured raw buttons that opened the document view. Every other listed row was a link. No office file was listed.
+  - After: readable rows are bordered `ToolButton`s that open the document view. `file_index.ext` also lists `.docx .xlsx .pptx`. A row whose extension `open.program_ext` maps is a bordered control with the `open_program` glyph (Lucide `app-window`) and the tooltip "Open in its program"; it opens the file in the named application, and the card offers no download of it. Every other row is a link.
+- **Collection card `link` to a hub file.**
+  - Before: an `<a>` to `/api/file/hub/...`.
+  - After: for an extension the map names, the same control as the project card row; any other link is unchanged.
+- **File view.**
+  - Before: Download and "Open in a browser tab".
+  - After: "Open in its program" in the toolbar and beside Download, for a held file (its bytes are known not to be text) whose extension is mapped. A refusal is said beside the control.
+- **Source tab.**
+  - Before: no such control.
+  - After: "Open in its program" in its bar for a mapped extension, for example a `.rtf` whose bytes are text.
+- **Refusals the reader sees.** Before, there was no file open. After, "The file could not be opened: the file would run rather than open" for a mapped file with an execute bit, a bookmark head, an alias flag or a FinderInfo read failure. The page cannot see these, so the control is drawn and the refusal comes when it is pressed.
+- **Config.**
+  - Before: no `open` key.
+  - After: `open.program_ext` map in `behavior.yml`. The server refuses to start without a usable map. An edit applies to the endpoint at the next request, and to the page when the config channel pushes it.
+- **Glyph.** New `open_program` in `glyphs.yml` (ascii `[o]`) and `icons.yml` (`app-window`).
+- **Not offered.** `.odt .ods .odp` get no control and are refused. Pages and Numbers files are offered, but if the app is missing `open -b` fails and the answer is the 500 below; that failure was not run.
+
+## Wire answers of `POST /api/open` now
+
+- 403 `the request did not come from this page`
+- 403 `the write token is missing or stale`
+- 400 `the body is not JSON`
+- 400 `the path is required`
+- 500 `config/behavior.yml: open.program_ext must map extensions, each with its dot, to bundle ids`, when the map on disk cannot be read. It is checked before the path is resolved.
+- 400, `refused` on `root`: `the root names no served root`
+- 403, `refused` on `path`: `the path is outside the configured roots`. The `{ path }` form also answers this for a missing path, or one that is neither a file nor a folder.
+- 404, `refused` on `path`: `there is no file or folder at the path` (`{ root, path }` form only)
+- 403, `refused` on `path`: `the file would run rather than open`, for a regular file whose asked or real extension has no entry, with an execute bit, with a bookmark head, with the FinderInfo alias flag, or whose FinderInfo read fails for any reason but absence, or which cannot be read. A folder is never refused here.
+- 500 `the path could not be opened: <reason>`, when the opener fails; for `open` the reason is its stderr.
+- 200 `{ ok: true, changed: [], refused: [] }`. The opener was handed `{ kind: 'file', path, app }` (`open -b app path`) or `{ kind: 'folder', path }` (`open -R path`).
+
+## Doc text
+
+**HELP.md line 69**, current:
+
+`| `projects` | Projects | The projects board, as cards or as a list, searchable, with the pin, the stale badge and the card's own controls. |`
+
+Replacement:
+
+`| `projects` | Projects | The projects board, as cards or as a list, searchable, with the pin, the stale badge and the card's own controls. An opened card lists the project's files of the extensions `file_index.ext` in `behavior.yml` names: a Markdown file, a script or a LaTeX source opens as a document tab, a file whose extension `open.program_ext` maps to an application (a `.docx`, an `.xlsx`, a `.pptx`) opens in that application on this machine, and any other file is a link the browser opens or saves. The folder control shows the project folder in Finder. |`
+
+**HELP.md line 114.** The current line ends:
+
+`... `document` (a local HTML file in a frame) and `file` (a picture, a PDF in a frame, or a name and a link that saves it).`
+
+Replace that ending with:
+
+`... `document` (a local HTML file in a frame) and `file` (a picture, a PDF in a frame, or a name and a link that saves it). A file whose extension `open.program_ext` in `behavior.yml` maps to an application opens in that application on this machine, and in no other: the control "Open in its program" is in the file view's bar and beside its link once the view holds the file, in the source tab's bar for such a file whose bytes are text (a `.rtf`), on a project card's file list and on a collection card's link to a file of the hub. No other file is offered. The page cannot see a file's mode or its Finder attributes, so a mapped file with an execute bit or marked as a Finder alias is refused when the control is pressed, and the view says so.`
+
+**HELP.md line 149**, current:
+
+`| `behavior.yml` | Thresholds, horizons and cadences: read limits, stale days, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, the update tasks' `tasks.skip_permissions`, git and chat. |`
+
+Replacement:
+
+`| `behavior.yml` | Thresholds, horizons and cadences: read limits, stale days, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, the update tasks' `tasks.skip_permissions`, the application `open.program_ext` names for each extension that may open, git and chat. |`
+
+**`config/text/views/config.yml` line 5**, to be applied together with HELP.md:149 (`tests/views/help.test.ts` holds them equal). Current:
+
+`        desc_behavior: "Thresholds, horizons and cadences: read limits, stale days, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, the update tasks' `tasks.skip_permissions`, git and chat."`
+
+Replacement:
+
+`        desc_behavior: "Thresholds, horizons and cadences: read limits, stale days, the context window, the Live HPC settings, the audit's waiting statuses and mute list, the source editor's `editor.paint_limit_kb`, the update tasks' `tasks.skip_permissions`, the application `open.program_ext` names for each extension that may open, git and chat."`
+
+**DESIGN.md**, the paragraph starting "Paths resolve without environment variables" (line 124 in the worktree, 125 on main). Current:
+
+`Paths resolve without environment variables: the command-line argument `--engine <dir>`, then `local.yml`, then a default derived from the file's own location. The hub path is the one value every machine must set and it lives in `config/local.yml`, gitignored and left out of the merge, so the tree carries no machine path. Roots the file browser may serve (step 7) are set in the app and stored in config; nothing outside a root is ever served.`
+
+Replacement:
+
+`Paths resolve without environment variables: the command-line argument `--engine <dir>`, then `local.yml`, then a default derived from the file's own location. The hub path is the one value every machine must set and it lives in `config/local.yml`, gitignored and left out of the merge, so the tree carries no machine path. Roots the file browser may serve (step 7) are set in the app and stored in config; nothing outside a root is ever served. The open action, `POST /api/open`, works on those same roots, `browserRoots` with the saved workspace's own: a folder under them is revealed in Finder and a file is opened in the one application `open.program_ext` of `behavior.yml` names for its extension. The boundary is the roots, so a dotfile the tree leaves out of its listing is resolved like any other path under a root.`
+
+**DESIGN.md decision line:**
+
+`- 2026-09-16, a file opens in the program its extension names: `POST /api/open` takes `{ path }`, absolute or relative to the hub, or `{ root, path }`, the key of a served root and a path under it, resolved through `resolveRootPath` with realpath on both ends over `browserRoots`. A folder is revealed, `/usr/bin/open -R <real path>`, so Finder selects it in its parent's window and no application or installer bundle is ever launched; a symlink named like a file that points at a folder is revealed as that folder. A file is opened only by `/usr/bin/open -b <bundle id> <real path>`, the bundle id `open.program_ext` of `behavior.yml` maps its extension to (`.docx .doc` Word, `.xlsx .xls` Excel, `.pptx .ppt` PowerPoint, `.rtf` TextEdit, `.pages .numbers .key` iWork, checked in; no `--`, since `open`'s manual documents none and the real path starts with `/`), so neither a per-file Open With choice nor the machine's default for the type picks the program; the extension of the asked name and of the real name must both be mapped, and the real one's application is used. A mapped file is still refused when its mode has an execute bit, when its first bytes are a Finder bookmark (`book`, four bytes, `mark`, at most 16 bytes read), or when `com.apple.FinderInfo`, read with `/usr/bin/xattr -px` and no shell, carries the alias flag (bit 0x80 of byte 8); an absent attribute is not flagged and any other read failure refuses. The map is read from the configuration on disk at every request, through `openSettings` beside `searchSettings`, and the server also requires it at start; `data/opens-in-program.ts` holds `programApps`, `programFor`, `opensInProgram` and `isBundleId`, which the page reads out of the configuration it was sent. The answers are 400 on `root` for a key no root carries, 403 on `path` outside the roots, 404 on `path` for nothing at a rooted path (the `{ path }` form answers that 403), 403 on `path` with `the file would run rather than open` for every file the rule refuses, 500 naming the key when the map cannot be read, and 500 when `open` fails. `macOpenPath`, the context's `openPath`, holds a floor of its own: `openable` requires the path to be its own real path, a folder for a folder, and for a file no execute bit, no bookmark head, no alias flag and an application named by a bundle id; the calendar and mail links go through `macOpenAddress`, `https` only. `views/shared/ProgramButton.svelte` is the one control, offered for a mapped name in the file view's bar and beside its download once the view holds the file, in the source tab's bar, on a project card's file row and on a collection card's hub-relative link; `file_index.ext` lists `.docx`, `.xlsx` and `.pptx` so a card shows them. Its glyph is `open_program`, Lucide `app-window`. A refused open is said beside the control, or on a card through its `onsaid` line; an answer a later press of the same control superseded is dropped. The project card's folder control says `show the project folder in Finder` and a failure `The folder could not be shown in Finder`. Package D16.`
+
+## Files changed (whole step against base 8601f148, `git diff --numstat`; new files by `wc -l`)
+
+- `config/behavior.yml` +16/-1
+- `config/glyphs.yml` +2/-0
+- `config/icons.yml` +1/-0
+- `config/text/views/file.yml` +3/-0
+- `config/text/views/project.yml` +2/-1
+- `src/lib/data/sources/config.ts` +18/-0
+- `src/lib/server/context.ts` +12/-6
+- `src/lib/server/open.ts` +270/-41 (354 lines)
+- `src/lib/state/collection.ts` +5/-0
+- `src/lib/state/fs.ts` +2/-0
+- `src/lib/state/selectors.svelte.ts` +11/-0
+- `src/lib/state/writes.svelte.ts` +16/-2
+- `src/lib/views/File.svelte` +36/-4
+- `src/lib/views/Source.svelte` +9/-2
+- `src/lib/views/collection/EntryCard.svelte` +25/-2
+- `src/lib/views/shared/CardDetails.svelte` +1/-1
+- `src/lib/views/shared/CardDocs.svelte` +26/-12
+- `src/lib/views/shared/ProjectCard.svelte` +1/-1
+- `src/routes/api/open/+server.ts` +10/-3
+- `tests/boundaries.test.ts` +21/-18
+- `tests/config-folder.test.ts` +2/-1
+- `tests/routes/open.test.ts` +387/-71 (519 lines)
+- `tests/server/context-fixture.ts` +1/-0
+- `tests/server/context.test.ts` +39/-0
+- `tests/state/collection.test.ts` +21/-0
+- `tests/views/collection.test.ts` +35/-0
+- `tests/views/file.test.ts` +101/-2
+- `tests/views/source.test.ts` +17/-0
+- `tests/views/type-scale.test.ts` +1/-0
+- New:
+  - `src/lib/data/opens-in-program.ts` (70)
+  - `src/lib/views/shared/ProgramButton.svelte` (67)
+  - `tests/routes/open-fixture.ts` (125)
+  - `tests/routes/open-program.test.ts` (350)
+  - `tests/data/opens-in-program.test.ts` (99)
+  - `tests/views/card-docs.test.ts` (218)
+  - `tests/browser/open-file.spec.ts` (301)
+
+## Limits and decisions
+
+- **Not run.** What `open -b` and `open -R` do was not run, and neither was what happens when a mapped app (Pages, Numbers) is not installed.
+- **Alias detection.** It covers the bookmark head in the data fork and the FinderInfo alias flag. A legacy alias with neither was not produced and is not covered.
+- **Cost.** `xattr` is spawned once per file open request; not measured.
+- **Races.** A path swapped between the checks and `open` is not covered.
+- **Two File view controls.** Each keeps its own supersede counter and failure line, since they are two `ProgramButton`s.
+- **Test fixtures.** The open tests moved into `open-fixture.ts` and a second file, `open-program.test.ts`, to keep `open.test.ts` under the size its concern needs.
+- **Not booked.** The unbooked user-visible shapes the third review names still need booking by the orchestrator: the `file_index.ext` default, the refusal sentence, the 404 rooted-missing answer and the `open_program` glyph. This round adds more: the map-shaped `open.program_ext`, the reveal of folders, and the folder control's new words.
+- **Not run.** The full browser suite; only the three specs above.
+- **Scratchpad.** Scratch files for this round are only under `scratchpad/d16-builder`.
