@@ -5,10 +5,19 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import MapView from '../../src/lib/views/Map.svelte';
 import Graph from '../../src/lib/views/map/Graph.svelte';
 import { writeRelated } from '../../src/lib/views/map/edge-write.ts';
-import { buildGraph, parseMapState } from '../../src/lib/state/graph.ts';
+import {
+    DEFAULT_PHYSICS,
+    buildGraph,
+    layoutKey,
+    mapLayout,
+    parseMapState,
+    tunedFor
+} from '../../src/lib/state/graph.ts';
+import type { Graph as BuiltGraph, Physics } from '../../src/lib/state/graph.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
 import { catalog, fixture, install } from './lines-fixture.ts';
 import { clientContext, createClientState, type ClientState } from '../client.ts';
+import { noop } from '../doubles.ts';
 
 let client: ClientState;
 let setInstanceState: ClientState['ui']['setInstanceState'];
@@ -99,6 +108,35 @@ function nodes(body: string): number {
     return (body.match(/data-node="/g) ?? []).length;
 }
 
+/** Where the drawn project circles sit, which is the layout the component actually ran. */
+function circles(body: string): string[] {
+    return [...body.matchAll(/<circle\b[^>]*>/g)].map((tag) => {
+        const cx = /cx="([^"]*)"/.exec(tag[0])?.[1] ?? '';
+        const cy = /cy="([^"]*)"/.exec(tag[0])?.[1] ?? '';
+        return `${cx},${cy}`;
+    });
+}
+
+/** Where the pure rule puts those same circles under the parameters the pane hands down. */
+function placed(graph: BuiltGraph, tuned: Physics | null): string[] {
+    return mapLayout(graph, tuned)
+        .nodes.filter((node) => node.kind === 'project')
+        .map((node) => `${node.x},${node.y}`);
+}
+
+/** The graph drawn with the parameters a pane saved, and the callback it reports a tuning through. */
+function drawGraph(
+    client: ClientState,
+    graph: BuiltGraph,
+    tuned: Physics | null,
+    ontuned: (params: Physics) => void = noop
+): string {
+    return render(Graph, {
+        context: clientContext(client),
+        props: { graph, instanceId: 'map-layout', linkMode: false, tuned, ontuned }
+    }).body;
+}
+
 describe('the Map view', () => {
     it('draws the catalogued edge failure when the manifest write refuses related', async () => {
         const write = () =>
@@ -142,7 +180,13 @@ describe('the Map view', () => {
         const graph = buildGraph(graphFixture());
         const body = render(Graph, {
             context: clientContext(client),
-            props: { graph, instanceId: 'map-markers', linkMode: false }
+            props: {
+                graph,
+                instanceId: 'map-markers',
+                linkMode: false,
+                tuned: null,
+                ontuned: noop
+            }
         }).body;
         const oneWay = edgeTag(body, 'related::alpha::candidate-project');
         const mutual = edgeTag(body, 'related::alpha::outside-project');
@@ -220,6 +264,46 @@ describe('the Map view', () => {
         expect(pressed(body, counted('pillar', 0))).toBe('true');
     });
 
+    it('places under the parameters it is handed, and tunes its own when it is handed none', () => {
+        const graph = buildGraph(graphFixture());
+        const fresh = mapLayout(graph, null);
+
+        const tuning = drawGraph(client, graph, null);
+        expect(circles(tuning)).toEqual(placed(graph, null));
+        expect(nodes(tuning)).toBe(graph.nodes.length);
+
+        const held = drawGraph(client, graph, fresh.params);
+        expect(circles(held)).toEqual(placed(graph, fresh.params));
+        expect(nodes(held)).toBe(graph.nodes.length);
+        expect(circles(held)).not.toEqual(circles(tuning));
+
+        // There is no DOM in this suite, so onMount does not run and the callback cannot fire here:
+        // what it would be handed is the rule below, and the press itself is in tests/browser.
+        expect(mapLayout(graph, null).tuned).toEqual(fresh.params);
+        expect(mapLayout(graph, fresh.params).tuned).toBeNull();
+    });
+
+    it('draws the saved tuning, and lays the map out again once the re-tune control clears it', () => {
+        expect(html()).toContain(catalog['map.retune']);
+        const graph = buildGraph(graphFixture());
+        const first = mapLayout(graph, null);
+        const saved = parseMapState({
+            tuned: { key: layoutKey(graph.nodes), params: first.params }
+        });
+
+        const held = drawGraph(client, graph, tunedFor(saved, graph.nodes));
+        expect(circles(held)).toEqual(placed(graph, first.params));
+
+        // What the control writes: the same state with the tuning dropped, so the map tunes again.
+        const cleared = parseMapState({ ...saved, tuned: undefined });
+        expect(cleared.tuned).toBeUndefined();
+        expect(tunedFor(cleared, graph.nodes)).toBeNull();
+
+        const again = drawGraph(client, graph, tunedFor(cleared, graph.nodes));
+        expect(circles(again)).toEqual(placed(graph, null));
+        expect(circles(again)).not.toEqual(circles(held));
+    });
+
     it('draws a collaborator only when the graph option is on', () => {
         const snapshot = graphFixture();
         const hidden = render(Graph, {
@@ -227,7 +311,9 @@ describe('the Map view', () => {
             props: {
                 graph: buildGraph(snapshot),
                 instanceId: 'map-collaborators-off',
-                linkMode: false
+                linkMode: false,
+                tuned: null,
+                ontuned: noop
             }
         }).body;
         const shown = render(Graph, {
@@ -235,7 +321,9 @@ describe('the Map view', () => {
             props: {
                 graph: buildGraph(snapshot, { collaborators: true }),
                 instanceId: 'map-collaborators-on',
-                linkMode: false
+                linkMode: false,
+                tuned: null,
+                ontuned: noop
             }
         }).body;
         expect(hidden).not.toContain('data-node="collaborator::person"');
@@ -287,6 +375,22 @@ describe('the Map instance state', () => {
             types: ['idea'],
             lines: ['pillar']
         });
+    });
+
+    it('keeps a tuning a map could be laid out from, and drops one it could not', () => {
+        const params = { ...DEFAULT_PHYSICS, repulse: 7777 };
+        const key = layoutKey(buildGraph(fixture()).nodes);
+        expect(parseMapState({ tuned: { key, params } }).tuned).toEqual({ key, params });
+        expect(parseMapState({ tuned: { key: 7, params } }).tuned).toBeUndefined();
+        expect(
+            parseMapState({ tuned: { key, params: { ...params, cool: 'fast' } } }).tuned
+        ).toBeUndefined();
+        expect(
+            parseMapState({ tuned: { key, params: { ...params, repulse: Number.NaN } } }).tuned
+        ).toBeUndefined();
+        expect(parseMapState({ tuned: { params } }).tuned).toBeUndefined();
+        expect(parseMapState({ tuned: key }).tuned).toBeUndefined();
+        expect(parseMapState({}).tuned).toBeUndefined();
     });
 
     it('draws the collaborators toggle from the instance state, so a reopened tab keeps it', () => {

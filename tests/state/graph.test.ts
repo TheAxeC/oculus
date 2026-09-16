@@ -2,13 +2,17 @@
 
 import { describe, expect, it } from 'vitest';
 import {
+    DEFAULT_BOUNDS,
     DEFAULT_PHYSICS,
     bestLayout,
     buildGraph,
     crossings,
     filterGraph,
     layoutKey,
+    layoutSeed,
+    mapLayout,
     optimize,
+    parseMapState,
     placeInit,
     physics,
     presentFilter,
@@ -16,6 +20,7 @@ import {
     seededRandom,
     settle,
     toggleFilter,
+    tunedFor,
     typeCounts
 } from '../../src/lib/state/graph.ts';
 import type { GraphEdge, PointNode } from '../../src/lib/state/graph.ts';
@@ -355,5 +360,35 @@ describe('relationship graph', () => {
         expect(tuned.nodes).not.toEqual(first);
         expect(tuned.score).toBeLessThanOrEqual(baseline.score);
         expect(layoutKey(graph.nodes)).toBe(layoutKey([...graph.nodes].reverse()));
+    });
+
+    it('answers the parameters saved for the node set drawn now, and nothing for another set', () => {
+        const data = snapshot();
+        data.entities.projects.beta.type = 'idea';
+        const whole = buildGraph(data);
+        const ideas = filterGraph(whole, { types: ['idea'] });
+        const params = { ...DEFAULT_PHYSICS, repulse: 7777 };
+        const saved = parseMapState({ tuned: { key: layoutKey(whole.nodes), params } });
+
+        expect(layoutKey(ideas.nodes)).not.toBe(layoutKey(whole.nodes));
+        expect(tunedFor(saved, whole.nodes)).toEqual(params);
+        expect(tunedFor(saved, ideas.nodes)).toBeNull();
+        expect(tunedFor(parseMapState({}), whole.nodes)).toBeNull();
+    });
+
+    it('tunes a layout when the pane saved none, and places under the saved one when it did', () => {
+        const graph = buildGraph(snapshot());
+        const seed = layoutSeed(graph.nodes);
+
+        const fresh = mapLayout(graph, null);
+        expect(fresh.tuned).toEqual(fresh.params);
+        expect(fresh.nodes).toEqual(optimize(graph, seededRandom(seed), 12, DEFAULT_BOUNDS).nodes);
+
+        const held = mapLayout(graph, fresh.params);
+        expect(held.tuned).toBeNull();
+        expect(held.params).toEqual(fresh.params);
+        expect(held.nodes).toEqual(
+            bestLayout(graph, seededRandom(seed), 8, 150, fresh.params, DEFAULT_BOUNDS).nodes
+        );
     });
 });

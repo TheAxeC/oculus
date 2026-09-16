@@ -72,7 +72,8 @@ export const DEFAULT_PHYSICS: Physics = {
     cool: 0.992
 };
 
-const DEFAULT_BOUNDS: Bounds = { width: 1000, height: 680, pad: 48 };
+/** The box the Map draws into, which is the box every layout rule below places nodes in. */
+export const DEFAULT_BOUNDS: Bounds = { width: 1000, height: 680, pad: 48 };
 
 function archived(project: Project): string | undefined {
     return project.tier === 'archive' || project.tier === 'coauthor' ? project.type : undefined;
@@ -311,7 +312,7 @@ export function lineCounts(graph: Graph): Record<string, number> {
     return counted;
 }
 
-/** Stable localStorage suffix for one visible node set. */
+/** Stable name for one visible node set, which is what a saved layout is held under. */
 export function layoutKey(nodes: GraphNode[]): string {
     let hash = 5381;
     const text = nodes
@@ -599,6 +600,50 @@ export function optimize(
     return { params: bestParams, ...best };
 }
 
+/** Whether a saved value is a whole set of finite physics parameters. */
+export function isPhysics(value: unknown): value is Physics {
+    if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
+    const record = value as Record<string, unknown>;
+    return ['linkLength', 'linkStrength', 'repulse', 'collide', 'center', 'damping', 'cool'].every(
+        (name) => typeof record[name] === 'number' && Number.isFinite(record[name])
+    );
+}
+
+/** The seed one visible node set starts from, so the same set is placed the same way every time. */
+export function layoutSeed(nodes: GraphNode[]): number {
+    const key = layoutKey(nodes);
+    let sum = 0;
+    for (let index = 0; index < key.length; index += 1) sum += key.charCodeAt(index);
+    return sum;
+}
+
+/** Where a Map's nodes go, and the parameters it had to tune when the pane carried none. */
+export type MapLayout = {
+    /** The placed nodes, ready to draw. */
+    nodes: PointNode[];
+    /** The parameters the placement ran under. */
+    params: Physics;
+    /** The parameters when this call tuned them, and null when it was handed them. */
+    tuned: Physics | null;
+};
+
+/**
+ * Place a graph under the parameters a pane saved for it, and tune a set of its own when it saved
+ * none. The tuned set comes back so the caller can keep it; nothing here reads or writes any store.
+ */
+export function mapLayout(graph: Graph, tuned: Physics | null): MapLayout {
+    const rng = seededRandom(layoutSeed(graph.nodes));
+    if (tuned === null) {
+        const found = optimize(graph, rng, 12, DEFAULT_BOUNDS);
+        return { nodes: found.nodes, params: found.params, tuned: found.params };
+    }
+    return {
+        nodes: bestLayout(graph, rng, 8, 150, tuned, DEFAULT_BOUNDS).nodes,
+        params: tuned,
+        tuned: null
+    };
+}
+
 /** What one Map instance holds of its own: which nodes it shows and whether links are being drawn. */
 export type MapState = GraphFilter & {
     /** Whether collaboration nodes join the graph. */
@@ -613,11 +658,30 @@ export type MapState = GraphFilter & {
     lines: string[];
     /** Whether a project with no membership edge to a line still drawn is dropped. */
     connected: boolean;
+    /** The parameters last tuned, under the name of the node set they were tuned for. */
+    tuned?: { key: string; params: Physics };
 };
 
 /** The strings of a saved list, and an empty list for anything that was not one. */
 function stringList(raw: unknown): string[] {
     return Array.isArray(raw) ? raw.filter((one): one is string => typeof one === 'string') : [];
+}
+
+/** A saved tuning, and nothing for a value the layout could not be run from. */
+function savedTuning(raw: unknown): { key: string; params: Physics } | undefined {
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return undefined;
+    const held = raw as Record<string, unknown>;
+    if (typeof held.key !== 'string' || !isPhysics(held.params)) return undefined;
+    return { key: held.key, params: held.params };
+}
+
+/**
+ * The parameters a pane saved for the node set it is drawing now, and null when it saved none or
+ * saved them for another set, which is what makes an added project re-tune once.
+ */
+export function tunedFor(state: MapState, nodes: GraphNode[]): Physics | null {
+    if (state.tuned === undefined) return null;
+    return state.tuned.key === layoutKey(nodes) ? state.tuned.params : null;
 }
 
 /** The saved state of one Map instance, with anything that is not the shape above replaced by it. */
@@ -626,12 +690,14 @@ export function parseMapState(raw: unknown): MapState {
         typeof raw === 'object' && raw !== null && !Array.isArray(raw)
             ? (raw as Record<string, unknown>)
             : {};
+    const tuned = savedTuning(held.tuned);
     return {
         collaborators: held.collaborators === true,
         enabled: stringList(held.enabled),
         linkMode: held.linkMode === true,
         types: stringList(held.types),
         lines: stringList(held.lines),
-        connected: held.connected === true
+        connected: held.connected === true,
+        ...(tuned === undefined ? {} : { tuned })
     };
 }

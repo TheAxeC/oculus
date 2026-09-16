@@ -5,12 +5,10 @@
     import { onMount } from 'svelte';
     import { writeRelated } from './edge-write';
     import {
+        DEFAULT_BOUNDS,
         DEFAULT_PHYSICS,
-        bestLayout,
-        layoutKey,
-        optimize,
+        mapLayout,
         physics,
-        seededRandom,
         type Graph,
         type GraphNode,
         type Physics,
@@ -27,39 +25,25 @@
         writes: { writeManifest }
     } = useState();
 
-    type Props = { graph: Graph; instanceId: string; linkMode: boolean };
-    let { graph, instanceId, linkMode }: Props = $props();
+    type Props = {
+        graph: Graph;
+        instanceId: string;
+        linkMode: boolean;
+        /** The parameters the pane saved for this node set, and null when it saved none. */
+        tuned: Physics | null;
+        /** Where parameters tuned here are handed back, for the pane to keep with its own state. */
+        ontuned: (params: Physics) => void;
+    };
+    let { graph, instanceId, linkMode, tuned, ontuned }: Props = $props();
 
-    const WIDTH = 1000;
-    const HEIGHT = 680;
-    const BOUNDS = { width: WIDTH, height: HEIGHT, pad: 48 };
-    const key = $derived(layoutKey(graph.nodes));
+    const WIDTH = DEFAULT_BOUNDS.width;
+    const HEIGHT = DEFAULT_BOUNDS.height;
 
-    function numericSeed(value: string): number {
-        let sum = 0;
-        for (let index = 0; index < value.length; index += 1) sum += value.charCodeAt(index);
-        return sum;
-    }
-
-    const seed = $derived(numericSeed(key));
-
-    function isPhysics(value: unknown): value is Physics {
-        if (typeof value !== 'object' || value === null || Array.isArray(value)) return false;
-        const record = value as Record<string, unknown>;
-        return [
-            'linkLength',
-            'linkStrength',
-            'repulse',
-            'collide',
-            'center',
-            'damping',
-            'cool'
-        ].every((name) => typeof record[name] === 'number' && Number.isFinite(record[name]));
-    }
+    // Read before the first paint and again on mount, so what is drawn and what the simulation
+    // carries on from are the one placement rather than two.
+    const chosen = $derived(mapLayout(graph, tuned));
     let placed = $state<PointNode[] | null>(null);
-    const positions = $derived(
-        placed ?? bestLayout(graph, seededRandom(seed), 8, 120, DEFAULT_PHYSICS, BOUNDS).nodes
-    );
+    const positions = $derived(placed ?? chosen.nodes);
     let params: Physics = DEFAULT_PHYSICS;
     let alpha = 0.12;
     let frame: number | null = null;
@@ -153,7 +137,7 @@
     }
 
     function step(): void {
-        placed = physics(positions, graph.edges, alpha, params, BOUNDS, drag?.id);
+        placed = physics(positions, graph.edges, alpha, params, DEFAULT_BOUNDS, drag?.id);
         alpha *= params.cool;
         frame = alpha > 0.03 ? requestAnimationFrame(step) : null;
     }
@@ -240,27 +224,9 @@
     }
 
     onMount(() => {
-        let cached: Physics | null;
-        try {
-            const raw = localStorage.getItem(key);
-            const parsed: unknown = raw === null ? null : JSON.parse(raw);
-            cached = isPhysics(parsed) ? parsed : null;
-        } catch {
-            cached = null;
-        }
-        if (cached === null) {
-            const tuned = optimize(graph, seededRandom(seed), 12, BOUNDS);
-            params = tuned.params;
-            placed = tuned.nodes;
-            try {
-                localStorage.setItem(key, JSON.stringify(params));
-            } catch {
-                // A private browser may refuse this convenience cache; the tuned layout still works.
-            }
-        } else {
-            params = cached;
-            placed = bestLayout(graph, seededRandom(seed), 8, 150, params, BOUNDS).nodes;
-        }
+        params = chosen.params;
+        placed = chosen.nodes;
+        if (chosen.tuned !== null) ontuned(chosen.tuned);
         frame = requestAnimationFrame(step);
         return () => {
             if (frame !== null) cancelAnimationFrame(frame);

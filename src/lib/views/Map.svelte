@@ -25,10 +25,11 @@
         lineCounts,
         presentFilter,
         toggleFilter,
+        tunedFor,
         typeCounts
     } from '$lib/state/graph';
     import { t } from '$lib/state/text';
-    import { parseMapState, type MapState } from '$lib/state/graph';
+    import { parseMapState, type MapState, type Physics } from '$lib/state/graph';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
@@ -90,6 +91,8 @@
     const types = $derived(kept.types);
     const lines = $derived(kept.lines);
     const graph = $derived(filterGraph(base, kept));
+    /** The parameters this pane tuned for the set of nodes it is drawing, where it has them. */
+    const tuned = $derived(tunedFor(held, graph.nodes));
 
     const typeFilters = $derived.by(() => {
         const order = configMap().type_order;
@@ -136,8 +139,13 @@
         });
     }
 
+    /** Keep what the graph tuned, so the pane draws the same picture the next time it is opened. */
+    function keepTuned(params: Physics): void {
+        write({ tuned: { key: layoutKey(graph.nodes), params } });
+    }
+
     function retune(): void {
-        if (typeof localStorage !== 'undefined') localStorage.removeItem(layoutKey(graph.nodes));
+        write({ tuned: undefined });
         generation += 1;
     }
 </script>
@@ -175,7 +183,7 @@
             <p class="empty">{t('map.empty_filtered')}</p>
         {:else}
             {#key `${layoutKey(graph.nodes)}-${generation}`}
-                <Graph {graph} instanceId={instance.id} {linkMode} />
+                <Graph {graph} instanceId={instance.id} {linkMode} {tuned} ontuned={keepTuned} />
             {/key}
         {/if}
     </div>
