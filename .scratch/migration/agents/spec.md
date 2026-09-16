@@ -50,6 +50,10 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 - The browser suite (`tests/browser/*.spec.ts`, with its helpers `rail.ts`, `hub.ts`, `words.ts`, `serve.ts`) is run by the orchestrator after you report, and its selectors are load-bearing: a `data-view`, `data-group`, `data-entry`, `data-lead`, `data-reveal` or class it selects on, and a control name it clicks, is part of the tree's contract. Before you change the rail, a card's markup, a tab or a control's name, read `grep -rn 'data-\|locator(\|getByRole' tests/browser` and keep every selector resolving, or change the spec with the markup and say so in the report.
 - A test never asserts a known defect. A threshold is never loosened to make a check pass; a check that only passes after loosening is a finding to report.
 - The cockpit under `tools/cockpit` is a cautionary reference for what its code got wrong, never a justification. Port its facts (the transcript format, the registry, the grouping clamp, the four git commands), not its structure.
+- A behaviour that needs a DOM (a press, a focus, an effect) is proven in the browser suite. The node suite renders to a string, so an assertion over source text, over a label alone or over a constant proves nothing and is reported as an audit, never as coverage. Every new or changed test names the revert that turns it red.
+- After changing a name, a construct or a shape, grep it across `src`, `tests`, `config`, `HELP.md`, `DESIGN.md` and `README.md`, carry the change to every hit or say why not, and quote that grep in the report. A sentence in a document or a head comment that the change makes false is a defect of the change.
+- Every id or key a package introduces is exercised empty, duplicated, and colliding with a configured or reserved key. Every asynchronous path is exercised in flight, after close, and superseded by a later one. A value from the hub or a feed that reaches HTML or a shell is untrusted.
+- A write that edits a file's text re-parses its own result and refuses when the reparse is not what was asked. A write that cannot verify itself does not land.
 
 ## Verify before you report
 
