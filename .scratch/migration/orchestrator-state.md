@@ -37,6 +37,8 @@ dispatch:                                  # M2 in flight (dispatched 14:21 from
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a2a06e07a777f7d1a            # the Agent tool's id, launched 14:21
   round: 0
+  reported: 2026-09-16T14:36
+  reviewer: ac7686cea24487df7                # claude:opus through the Agent tool, read-only, launched 14:39
   landing: not-started
 - package: D16
   worker: claude:opus
@@ -688,4 +690,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - D9, worker claude:opus through the Agent tool, first run: 495,789 tokens, 232 tool uses, 3,831 s (11:13 to 12:16); repair round: 579,981 tokens, 45 tool uses, 951 s (12:45 to 13:03).
 - D9, reviewer claude:opus through the Agent tool, read-only: 224,347 tokens, 54 tool uses, 570 s (12:19 to 12:28).
 - D9, orchestrator Claude Fable 5.1 (this session): the diff read 12:22, the delta read 13:09, the listing-order fix in the worktree 13:10, six conflicts resolved 13:26, the check set on main, the catalog fix, the booking 13:32.
+- M2, worker claude:opus through the Agent tool, first run: 221,629 tokens, 79 tool uses, 885 s (14:21 to 14:36); +354 -70 over 30 files; orchestrator claude:opus (the trial), from the go at 14:16.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
