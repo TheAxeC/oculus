@@ -124,12 +124,12 @@ export function arrange(
 }
 
 /**
- * The rail's directly drawn views in their numbered order, every view in display order, and the
- * lists a one-letter chord counts into. `directChord` is the letter the directly drawn views are
- * reached under; a group that names the same letter takes it, since a group's own configuration is
- * the more specific one. A group's documents follow its views in its chord, as `docPick` entries,
- * so the digit after a group's last view opens its first document; the directly drawn groups'
- * documents follow the direct views the same way. `direct` and `all` hold views alone.
+ * The rail's directly drawn views in their numbered order, and the lists a one-letter chord counts
+ * into. `directChord` is the letter the directly drawn views are reached under; a group that names
+ * the same letter takes it, since a group's own configuration is the more specific one. A group's
+ * documents follow its views in its chord, as `docPick` entries, so the digit after a group's last
+ * view opens its first document; the directly drawn groups' documents follow the direct views the
+ * same way. `direct` holds views alone.
  */
 export function railOrder(
     registrations: Registration[],
@@ -141,7 +141,6 @@ export function railOrder(
     const direct = sections
         .filter((section) => !isFlyout(section))
         .flatMap((section) => section.items.map((view) => view.id));
-    const all = sections.flatMap((section) => section.items.map((view) => view.id));
     const chords: Record<string, string[]> = {};
     if (directChord !== undefined && direct.length > 0) {
         const documents = sections
@@ -156,5 +155,5 @@ export function railOrder(
             ...section.docs.map(docPick)
         ];
     }
-    return { direct, all, chords };
+    return { direct, chords };
 }

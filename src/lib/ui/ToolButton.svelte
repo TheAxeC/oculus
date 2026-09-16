@@ -50,6 +50,15 @@
         dataDoc?: string;
         /** Marks the project-card control the keyboard cursor activates when its title is plain. */
         dataCardToggle?: boolean;
+        /**
+         * The button's place in the browser's focus order, for a strip that is one stop: 0 for the
+         * control at the stop and -1 for the rest. A button with none is an ordinary stop.
+         */
+        tabindex?: number;
+        /** This control's name in the strip that carries the stop, rendered for that strip to read. */
+        stop?: string;
+        /** A key pressed on the button, for a strip that moves its own stop with the arrow keys. */
+        onkeydown?: (event: KeyboardEvent) => void;
     };
 
     let {
@@ -69,7 +78,10 @@
         dataView,
         dataBookmark,
         dataDoc,
-        dataCardToggle = false
+        dataCardToggle = false,
+        tabindex,
+        stop,
+        onkeydown
     }: Props = $props();
 
     const compactGlyph = $derived(compact && glyph !== undefined);
@@ -101,9 +113,12 @@
         data-bookmark={dataBookmark}
         data-doc={dataDoc}
         data-card-toggle={dataCardToggle || undefined}
+        data-stop={stop}
+        {tabindex}
         {disabled}
         {onclick}
         {ondblclick}
+        {onkeydown}
     >
         {#if glyph !== undefined}
             <Glyph name={glyph} />

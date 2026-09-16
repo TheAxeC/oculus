@@ -3,7 +3,7 @@
 
 import type { DragStore } from '$lib/state/drag.svelte';
 import type { LayoutStore } from '$lib/state/layout.svelte';
-import type { Focus, Instance } from '$lib/state/layout';
+import type { Focus, Instance, Pane } from '$lib/state/layout';
 import { cardCursor, paneAt, reconcileCardCursor, withCardCursor } from '$lib/state/layout';
 import type { UiStore } from '$lib/state/ui.svelte';
 import { activateCursor, focusSearch, scrollContainer, scrollRegion } from './key-dom';
@@ -106,7 +106,6 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             event,
             options.navigation(),
             {
-                currentView: pane?.dataset.paneView ?? null,
                 cursorActive: cursorIn(pane) !== null,
                 typing: typingIn(event.target),
                 paletteOpen: options.paletteOpen(),
@@ -167,6 +166,8 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
             return options.layout.pageShortcut(action.index);
         } else if (action.kind === 'tab') {
             return activateTab(pane, action.index);
+        } else if (action.kind === 'cycle-tab') {
+            return cycleTab(pane, action.by);
         } else if (action.kind === 'sheet') {
             clearCursor();
             options.setSheetOpen(!options.sheetOpen());
@@ -177,21 +178,43 @@ export function createWorkbenchKeys(options: Options): WorkbenchKeys {
     }
 
     /**
-     * Activate the numbered tab of the focused pane. The element carries the path, so the pane
-     * under the keyboard is the pane in the store; a pane holding fewer tabs than the digit counts
-     * to keeps the tab it has and leaves the key to whatever else wants it.
+     * The pane of the store the focused element names. The element carries the path and the page,
+     * so the pane under the keyboard is the pane in the store; an element naming no pane, or a path
+     * the tree does not hold, answers with nothing and leaves the key to whatever else wants it.
+     */
+    function paneNode(pane: HTMLElement | null): Pane | null {
+        const raw = pane?.dataset.panePath;
+        if (raw === undefined) return null;
+        const path = raw === '' ? [] : raw.split('.').map(Number);
+        if (path.some((step) => !Number.isInteger(step))) return null;
+        return paneAt(options.layout.layout(pane?.dataset.panePage), path);
+    }
+
+    /**
+     * Activate the numbered tab of the focused pane. A pane holding fewer tabs than the digit
+     * counts to keeps the tab it has.
      */
     function activateTab(pane: HTMLElement | null, index: number): boolean {
-        const raw = pane?.dataset.panePath;
-        if (raw === undefined) return false;
-        const path = raw === '' ? [] : raw.split('.').map(Number);
-        if (path.some((step) => !Number.isInteger(step))) return false;
-        const page = pane?.dataset.panePage;
-        const node = paneAt(options.layout.layout(page), path) ?? undefined;
-        const tab = node?.tabs.at(index - 1);
-        if (tab === undefined) return false;
+        const tab = paneNode(pane)?.tabs.at(index - 1);
+        return tab === undefined ? false : showTab(pane, tab.id);
+    }
+
+    /**
+     * Carry the focused pane one tab along, wrapping at either end, so a pane of two tabs swaps
+     * between them on the same key. A pane with no tab has nothing to show.
+     */
+    function cycleTab(pane: HTMLElement | null, by: 1 | -1): boolean {
+        const node = paneNode(pane);
+        if (node === null || node.tabs.length === 0) return false;
+        const current = node.tabs.findIndex((tab) => tab.id === node.active);
+        const from = current < 0 ? 0 : current;
+        return showTab(pane, node.tabs[(from + by + node.tabs.length) % node.tabs.length].id);
+    }
+
+    /** Show one tab of the focused pane, in the page that pane belongs to. */
+    function showTab(pane: HTMLElement | null, id: string): boolean {
         clearCursor();
-        options.layout.activateInstance(tab.id, page);
+        options.layout.activateInstance(id, pane?.dataset.panePage);
         return true;
     }
 

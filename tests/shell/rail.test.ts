@@ -177,7 +177,7 @@ describe('arrange', () => {
         expect(found[1].glyph).toBe(undefined);
     });
 
-    it('exposes direct digits, full display order, and configured flyout chords', () => {
+    it('exposes direct digits and configured flyout chords', () => {
         const registrations = [
             probe('a', 'direct', 1),
             probe('b', 'direct', 0),
@@ -189,7 +189,6 @@ describe('arrange', () => {
         ]);
         expect(found).toEqual({
             direct: ['b', 'a'],
-            all: ['b', 'a', 'c', 'd', 'e', 'f', 'g'],
             chords: { c: ['c', 'd', 'e', 'f', 'g'] }
         });
     });
@@ -683,7 +682,6 @@ describe('the groups of the real config', () => {
             'doc:RESEARCH-APPROACH.md',
             'doc:AGENT-APPROACH.md'
         ]);
-        expect(order.all).toContain('funding');
         expect(order.chords.c).toEqual([
             'funding',
             'events',

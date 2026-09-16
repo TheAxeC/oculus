@@ -441,12 +441,15 @@ describe('the real registrations', () => {
         expect(missing.map((view) => `${view.id}: ${view.glyph}`)).toEqual([]);
     });
 
-    /** The rail draws the listed registrations in order, so a dropped view leaves this list. */
+    /**
+     * The rail draws the listed registrations in order, so a dropped view leaves this list. With no
+     * group configured every registration is drawn directly, which is the whole of the rail.
+     */
     function railIds(): string[] {
         return railOrder(
             views().filter((view) => view.listed !== false),
             []
-        ).all;
+        ).direct;
     }
 
     it('drops the collections whose keys a later call no longer lists', () => {

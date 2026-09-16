@@ -3,12 +3,10 @@
 
 export type RailOrder = {
     direct: string[];
-    all: string[];
     chords: Record<string, string[] | undefined>;
 };
 
 export type KeyContext = {
-    currentView: string | null;
     cursorActive: boolean;
     typing: boolean;
     paletteOpen: boolean;
@@ -35,6 +33,7 @@ export type KeyAction =
     | { kind: 'open'; view: string }
     | { kind: 'page'; index: number }
     | { kind: 'tab'; index: number }
+    | { kind: 'cycle-tab'; by: 1 | -1 }
     | { kind: 'cursor'; direction: 'left' | 'right' | 'up' | 'down' }
     | { kind: 'move'; direction: 'left' | 'right' }
     | { kind: 'activate' }
@@ -80,7 +79,7 @@ export function rowCursor(rects: CardRect[], current: number, direction: -1 | 1)
     return best < 0 ? current : best;
 }
 
-/** Resolve one unmodified workbench key, retaining only the two short-lived chord timestamps. */
+/** Resolve one workbench key, retaining only the two short-lived chord timestamps. */
 export function resolveKey(
     event: KeyEventLike,
     order: RailOrder,
@@ -88,21 +87,30 @@ export function resolveKey(
     state: KeyState,
     now: number
 ): KeyResult {
-    // A modifier chord is not typing, so the tab keys answer with a field focused and under an
-    // overlay; Cmd plus a digit is left to the browser, which has its own use for it.
+    // A modifier chord is not typing, so the numbered tab keys answer with a field focused and
+    // under an overlay; Cmd plus a digit is left to the browser, which has its own use for it.
     if (event.ctrlKey === true && event.metaKey !== true && /^[1-9]$/.test(event.key)) {
         return { action: { kind: 'tab', index: Number(event.key) }, state };
     }
+    const held = context.typing || context.paletteOpen || context.trayOpen || context.confirmOpen;
+    // Ctrl and a bracket carry the focused pane one tab along, the left one backwards. The browser
+    // keeps Ctrl and Tab for its own tabs and never hands it to a page, so the pair is the brackets,
+    // which Chrome binds to nothing. A field, a textarea and an overlay keep the keyboard while they
+    // hold it, and Cmd and a bracket is left alone, being a browser's own navigation.
     if (
-        context.typing ||
-        context.paletteOpen ||
-        context.trayOpen ||
-        context.confirmOpen ||
-        event.defaultPrevented ||
-        event.metaKey ||
-        event.ctrlKey ||
-        event.altKey
+        (event.key === ']' || event.key === '[') &&
+        event.ctrlKey === true &&
+        event.metaKey !== true &&
+        event.altKey !== true &&
+        event.defaultPrevented !== true &&
+        !held
     ) {
+        return {
+            action: { kind: 'cycle-tab', by: event.key === ']' ? 1 : -1 },
+            state: { ...state, chord: '' }
+        };
+    }
+    if (held || event.defaultPrevented || event.metaKey || event.ctrlKey || event.altKey) {
         return { action: null, state };
     }
 
@@ -112,21 +120,6 @@ export function resolveKey(
     if (event.key === '?') {
         return { action: { kind: 'sheet' }, state: { ...state, chord: '' } };
     }
-    if (event.key === 'Tab') {
-        if (order.all.length === 0) return { action: null, state: { ...state, chord: '' } };
-        const current = context.currentView === null ? -1 : order.all.indexOf(context.currentView);
-        const index =
-            current < 0
-                ? event.shiftKey
-                    ? order.all.length - 1
-                    : 0
-                : (current + (event.shiftKey ? -1 : 1) + order.all.length) % order.all.length;
-        return {
-            action: { kind: 'open', view: order.all[index] },
-            state: { ...state, chord: '' }
-        };
-    }
-
     if (Object.hasOwn(order.chords, event.key)) {
         return { action: null, state: { ...state, chord: event.key, chordAt: now } };
     }

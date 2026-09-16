@@ -18,9 +18,11 @@
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu-items';
+    import RailAppearance from './RailAppearance.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import { heldStop, nextStop } from '$lib/ui/roving';
     import { t } from '$lib/state/text';
-    import { themes as themeList, wallpaperOnTheme } from '$lib/state/appearance';
+    import { wallpaperOnTheme } from '$lib/state/appearance';
     import { badgeOf, registrationGlyph, registrationLabel } from '$lib/views/registry';
     import { useState } from '$lib/state/use';
 
@@ -28,19 +30,7 @@
 
     const {
         layout: { openBeside, openView },
-        ui: {
-            crt,
-            setCrt,
-            setTextScale,
-            setTheme,
-            setUnicode,
-            setWallpaper,
-            theme,
-            textScale,
-            unicode,
-            wallpaper,
-            stepTextScale
-        },
+        ui: { theme, textScale },
         registry: { views }
     } = client;
 
@@ -110,14 +100,6 @@
             groups,
             docs
         )
-    );
-
-    const themes = $derived(
-        themeList().map((entry) => ({
-            id: entry.name,
-            label: entry.label,
-            active: entry.name === theme()
-        }))
     );
 
     /** A plain click opens the view where a view lands; a shift-click opens it in a pane beside. */
@@ -192,192 +174,269 @@
 
     /** The wallpaper toggle is drawn only where there is one to switch: it is config and a theme. */
     const offersWallpaper = $derived(wallpaperOnTheme(theme()));
+
+    /** The two text steps say what they cannot do, and a control that cannot be pressed is no stop. */
+    const canShrink = $derived((textScale() ?? 1) > 0.7);
+    const canGrow = $derived((textScale() ?? 1) < 1.6);
+    const canReset = $derived(textScale() !== null);
+
+    /**
+     * Every control of the rail that takes the keyboard, in the order they are drawn. The rail is
+     * one stop of the browser's focus order, so this list is the ring the arrow keys move along and
+     * the name of each entry is what its button renders for this component to find it by. A control
+     * that is not pressable is left out, since focus put on it would land nowhere.
+     */
+    const stops = $derived([
+        ...sections.flatMap((section, index) =>
+            section.label !== null && isFlyout(section)
+                ? [`group:${index}`]
+                : [
+                      ...section.items.map((view) => `view:${view.id}`),
+                      ...section.docs.map((entry) => `doc:${entry.path}`)
+                  ]
+        ),
+        ...marks.map((_, at) => `mark:${at}`),
+        'search',
+        'update',
+        'theme',
+        ...(canShrink ? ['text-smaller'] : []),
+        ...(canGrow ? ['text-larger'] : []),
+        ...(canReset ? ['text-reset'] : []),
+        'crt',
+        ...(offersWallpaper ? ['wall'] : []),
+        'unicode'
+    ]);
+
+    /** The control the rail's stop is on. A stop whose control has gone falls back to the first. */
+    let held = $state('');
+    const current = $derived(stops.includes(held) ? held : (stops[0] ?? ''));
+
+    let box: HTMLElement | undefined = $state();
+
+    /** Whether the rail holds the keyboard, which decides who gets the focus back when a control goes. */
+    let holding = false;
+
+    /** The ring as it stood at the last change, so a control leaving it can be told from one arriving. */
+    let ring: string[] = [];
+
+    // A control the reader's own press makes unavailable (the reset once the text size is back, a
+    // step at its end, the wallpaper toggle under a theme without one) leaves the ring under the
+    // focus, and the browser drops the focus to the document. The stop moves to the control that
+    // took its place and takes the keyboard back with it.
+    $effect(() => {
+        const now = stops;
+        const was = ring;
+        ring = now;
+        // `held` and not `current`, which has already fallen back to the first control by here.
+        if (held === '' || was.length === 0 || now.includes(held)) return;
+        const moved = heldStop(was, now, held);
+        held = moved;
+        if (holding) recoverStop(moved);
+    });
+
+    /** One control's place in the browser's focus order: the stop is reached by Tab, the rest by the arrows. */
+    function stopIndex(id: string): number {
+        return id === current ? 0 : -1;
+    }
+
+    /**
+     * Take the keyboard back for the stop, and only where nothing else holds it. A control disabled
+     * under the focus is left holding it until the browser hands it to the document, so both that
+     * control and the document count as nothing.
+     */
+    function recoverStop(id: string): void {
+        queueMicrotask(() => {
+            const at = document.activeElement;
+            const loose =
+                at === null || at === document.body || !at.isConnected || at.matches('[disabled]');
+            if (loose) focusStop(id);
+        });
+    }
+
+    /** Put the keyboard on one control of the rail, once the update that moved the stop is drawn. */
+    function focusStop(id: string): void {
+        queueMicrotask(() => {
+            for (const node of box?.querySelectorAll<HTMLElement>('[data-stop]') ?? []) {
+                if (node.dataset.stop === id) {
+                    node.focus();
+                    return;
+                }
+            }
+        });
+    }
+
+    /**
+     * The keyboard on one control of the ring: the arrow keys carry the stop along the rail,
+     * wrapping at either end. Each control answers for itself, so an open list's own arrows are
+     * never this, and a key held with a modifier belongs to the shell.
+     */
+    function ringKeys(id: string): (event: KeyboardEvent) => void {
+        return (event: KeyboardEvent) => {
+            if (event.metaKey || event.ctrlKey || event.altKey) return;
+            const next = nextStop(event.key, stops.indexOf(id), stops.length, 'column');
+            if (next === null) return;
+            event.preventDefault();
+            held = stops[next];
+            focusStop(stops[next]);
+        };
+    }
+
+    /** A control reached by the pointer becomes the stop, so the arrows carry on from where the reader is. */
+    function entered(event: FocusEvent): void {
+        holding = true;
+        const target = event.target;
+        if (!(target instanceof HTMLElement)) return;
+        const id = target.closest<HTMLElement>('[data-stop]')?.dataset.stop;
+        if (id !== undefined && stops.includes(id)) held = id;
+    }
+
+    /**
+     * The focus going to another control is the reader leaving the rail, and so is the focus going
+     * nowhere from a control that can still be pressed, which is a click on the page's blank space.
+     * The one departure the rail keeps holding through is a control disabled under the keyboard,
+     * whose focus the browser hands to the document on its own.
+     */
+    function departed(event: FocusEvent): void {
+        const from = event.target;
+        const disabled = from instanceof HTMLElement && from.matches('[disabled]');
+        if (event.relatedTarget !== null || !disabled) holding = false;
+    }
 </script>
 
 <nav class="rail" data-rail aria-label={t('ui.rail')}>
-    <div class="views">
-        <!-- Keyed by position: two config groups may carry the same label, and a duplicate key
+    <!-- The controls are one stop of the browser's focus order with a ring inside it, which is what
+         a toolbar is: the role tells a reader the arrow keys move along it, and it sits inside the
+         landmark rather than on it so the rail is still a navigation region. The arrows are
+         answered by each control, so this element needs no tabindex and takes no focus of its own. -->
+    <div
+        class="ring"
+        role="toolbar"
+        aria-orientation="vertical"
+        aria-label={t('ui.rail')}
+        bind:this={box}
+        onfocusin={entered}
+        onfocusout={departed}
+    >
+        <div class="views">
+            <!-- Keyed by position: two config groups may carry the same label, and a duplicate key
              would be an error rather than a repeated heading. -->
-        {#each sections as section, index (index)}
-            {@const label = section.label}
-            <!-- A large group is one button with a list beside it, so the rail does not grow an
+            {#each sections as section, index (index)}
+                {@const label = section.label}
+                <!-- A large group is one button with a list beside it, so the rail does not grow an
                  icon per view; a small one stays a heading over its buttons. The list opens where
                  the theme menu at the foot does, since `compact` is what fixes it beside the rail. -->
-            {#if label !== null && isFlyout(section)}
-                <div class="flyout" data-group={label} data-chord={section.chord}>
-                    <p class="group">{label}</p>
-                    <Menu
-                        {label}
-                        glyph={groupGlyph(section)}
-                        compact
-                        rail
-                        stacked
-                        items={groupItems(section)}
-                        onpick={(id: string, event: MouseEvent) => pick(section, id, event)}
-                    />
-                </div>
-            {:else}
-                {#if label !== null}
-                    <p class="group">{label}</p>
-                {/if}
-                {#each section.items as view (view.id)}
-                    {@const badge = badgeOf(view, client)}
-                    <div class="control">
-                        <ToolButton
-                            label={registrationLabel(view)}
-                            glyph={registrationGlyph(view)}
-                            dataView={view.id}
+                {#if label !== null && isFlyout(section)}
+                    <div class="flyout" data-group={label} data-chord={section.chord}>
+                        <p class="group">{label}</p>
+                        <Menu
+                            {label}
+                            glyph={groupGlyph(section)}
                             compact
                             rail
                             stacked
-                            onclick={(event: MouseEvent) => open(view.id, event)}
+                            stop={`group:${index}`}
+                            tabindex={stopIndex(`group:${index}`)}
+                            onkeydown={ringKeys(`group:${index}`)}
+                            items={groupItems(section)}
+                            onpick={(id: string, event: MouseEvent) => pick(section, id, event)}
                         />
-                        {#if badge.glyph !== ''}
-                            <span
-                                class="badge"
-                                style={badgeStyle(badge.tone)}
-                                title={badge.title}
-                                aria-hidden="true"
-                            >
-                                <Glyph name={badge.glyph} />{badge.text}
-                            </span>
-                        {:else if badge.text !== ''}
-                            <span
-                                class="badge"
-                                style={badgeStyle(badge.tone)}
-                                title={badge.title}
-                                aria-hidden="true"
-                            >
-                                {badge.text}
-                            </span>
-                        {/if}
                     </div>
-                {/each}
-                <!-- The group's documents, after its views: a configured hub document is not a
+                {:else}
+                    {#if label !== null}
+                        <p class="group">{label}</p>
+                    {/if}
+                    {#each section.items as view (view.id)}
+                        {@const badge = badgeOf(view, client)}
+                        <div class="control">
+                            <ToolButton
+                                label={registrationLabel(view)}
+                                glyph={registrationGlyph(view)}
+                                dataView={view.id}
+                                compact
+                                rail
+                                stacked
+                                stop={`view:${view.id}`}
+                                tabindex={stopIndex(`view:${view.id}`)}
+                                onkeydown={ringKeys(`view:${view.id}`)}
+                                onclick={(event: MouseEvent) => open(view.id, event)}
+                            />
+                            {#if badge.glyph !== ''}
+                                <span
+                                    class="badge"
+                                    style={badgeStyle(badge.tone)}
+                                    title={badge.title}
+                                    aria-hidden="true"
+                                >
+                                    <Glyph name={badge.glyph} />{badge.text}
+                                </span>
+                            {:else if badge.text !== ''}
+                                <span
+                                    class="badge"
+                                    style={badgeStyle(badge.tone)}
+                                    title={badge.title}
+                                    aria-hidden="true"
+                                >
+                                    {badge.text}
+                                </span>
+                            {/if}
+                        </div>
+                    {/each}
+                    <!-- The group's documents, after its views: a configured hub document is not a
                      registration, so it is drawn here rather than by the loop above. -->
-                {#each section.docs as entry (entry.path)}
+                    {#each section.docs as entry (entry.path)}
+                        <div class="control">
+                            <ToolButton
+                                label={entry.label}
+                                glyph={t('views.doc_glyph')}
+                                dataDoc={entry.path}
+                                compact
+                                rail
+                                stacked
+                                stop={`doc:${entry.path}`}
+                                tabindex={stopIndex(`doc:${entry.path}`)}
+                                onkeydown={ringKeys(`doc:${entry.path}`)}
+                                onclick={(event: MouseEvent) => openDoc(entry, event)}
+                            />
+                        </div>
+                    {/each}
+                {/if}
+            {/each}
+
+            <!-- The reader's own bookmarks. They are not registrations, so they sit under a heading of
+             their own rather than in a section arrange() built. -->
+            {#if marks.length > 0}
+                <p class="group">{t('ui.docs')}</p>
+                <!-- Keyed by position, as the sections above are: two of the reader's own bookmarks may
+                 name one file under two labels, and a duplicate key would be an error rather than a
+                 second button. -->
+                {#each marks as mark, at (at)}
                     <div class="control">
                         <ToolButton
-                            label={entry.label}
-                            glyph={t('views.doc_glyph')}
-                            dataDoc={entry.path}
+                            label={mark.label}
+                            glyph={t('views.document_glyph')}
+                            dataBookmark={`${mark.root}/${mark.path}`}
                             compact
                             rail
                             stacked
-                            onclick={(event: MouseEvent) => openDoc(entry, event)}
+                            stop={`mark:${at}`}
+                            tabindex={stopIndex(`mark:${at}`)}
+                            onkeydown={ringKeys(`mark:${at}`)}
+                            onclick={() => openMark(mark)}
                         />
                     </div>
                 {/each}
             {/if}
-        {/each}
-
-        <!-- The reader's own bookmarks. They are not registrations, so they sit under a heading of
-             their own rather than in a section arrange() built. -->
-        {#if marks.length > 0}
-            <p class="group">{t('ui.docs')}</p>
-            <!-- Keyed by position, as the sections above are: two of the reader's own bookmarks may
-                 name one file under two labels, and a duplicate key would be an error rather than a
-                 second button. -->
-            {#each marks as mark, at (at)}
-                <div class="control">
-                    <ToolButton
-                        label={mark.label}
-                        glyph={t('views.document_glyph')}
-                        dataBookmark={`${mark.root}/${mark.path}`}
-                        compact
-                        rail
-                        stacked
-                        onclick={() => openMark(mark)}
-                    />
-                </div>
-            {/each}
-        {/if}
-    </div>
-
-    <div class="controls">
-        <div data-action="search">
-            <ToolButton
-                label={t('app.search')}
-                title={t('app.search_tip')}
-                glyph="cmd"
-                compact
-                rail
-                onclick={onsearch}
-            />
         </div>
-        <div data-action="update">
-            <ToolButton
-                label={t('app.tasks.update_tasks')}
-                title={t('app.update_tip')}
-                glyph="refresh"
-                compact
-                rail
-                onclick={onupdate}
-            />
-        </div>
-        <Menu
-            label={t('ui.theme')}
-            glyph={t('ui.theme_glyph')}
-            compact
-            rail
-            items={themes}
-            onpick={(name: string) => setTheme(name)}
-        />
-        <ToolButton
-            label={t('app.text_smaller')}
-            glyph="collapse"
-            compact
-            rail
-            disabled={(textScale() ?? 1) <= 0.7}
-            onclick={() => stepTextScale(-1)}
-        />
-        <ToolButton
-            label={t('app.text_larger')}
-            glyph="expand"
-            compact
-            rail
-            disabled={(textScale() ?? 1) >= 1.6}
-            onclick={() => stepTextScale(1)}
-        />
-        <ToolButton
-            label={t('app.text_reset')}
-            glyph="refresh"
-            compact
-            rail
-            disabled={textScale() === null}
-            onclick={() => setTextScale(null)}
-        />
-        <ToolButton
-            label={t('ui.crt_on')}
-            title={t('ui.crt_title')}
-            glyph="crt"
-            active={crt()}
-            pressed={crt()}
-            compact
-            rail
-            onclick={() => setCrt(!crt())}
-        />
-        {#if offersWallpaper}
-            <ToolButton
-                label={t('ui.wallpaper')}
-                title={t('ui.wallpaper_title')}
-                glyph="wallpaper"
-                active={wallpaper()}
-                pressed={wallpaper()}
-                compact
-                rail
-                onclick={() => setWallpaper(!wallpaper())}
-            />
-        {/if}
-        <ToolButton
-            label={t('ui.unicode')}
-            title={t('ui.unicode_title')}
-            glyph="unicode"
-            active={unicode()}
-            pressed={unicode()}
-            compact
-            rail
-            onclick={() => setUnicode(!unicode())}
+
+        <RailAppearance
+            {stopIndex}
+            {ringKeys}
+            {canShrink}
+            {canGrow}
+            {canReset}
+            {offersWallpaper}
+            {onsearch}
+            {onupdate}
         />
     </div>
 </nav>
@@ -386,8 +445,6 @@
     .rail {
         display: flex;
         flex-direction: column;
-        justify-content: space-between;
-        gap: 8px;
         flex: 0 0 auto;
         width: var(--rail-width);
         padding: 6px 4px;
@@ -399,8 +456,19 @@
         overflow: visible;
     }
 
-    .views,
-    .controls {
+    /* The controls fill the rail between its edges, the views at the top and the appearance
+       controls at the foot, which is the arrangement the rail had before the ring wrapped them. */
+    .ring {
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        gap: 8px;
+        flex: 1 1 auto;
+        min-height: 0;
+        overflow: visible;
+    }
+
+    .views {
         display: flex;
         flex-direction: column;
         gap: 4px;
@@ -416,13 +484,6 @@
 
     .views::-webkit-scrollbar {
         display: none;
-    }
-
-    /* On a short window the view list is what gives way, and it scrolls. Without this the foot
-       shrinks with it, its buttons pile over each other and the last ones fall below the window,
-       which leaves the theme menu unreachable. */
-    .controls {
-        flex-shrink: 0;
     }
 
     /* The group's button is a Menu, which is a flex row of its own; this gives it the top margin a

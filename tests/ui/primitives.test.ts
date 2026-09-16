@@ -21,8 +21,10 @@ import { sheetRows } from '../../src/lib/ui/key-rows.ts';
 import Meter from '../../src/lib/ui/Meter.svelte';
 import { menuPlacement } from '../../src/lib/ui/menu-items.ts';
 import Pane from '../../src/lib/ui/Pane.svelte';
+import { heldStop, nextStop } from '../../src/lib/ui/roving.ts';
 import Search from '../../src/lib/ui/Search.svelte';
 import Segment from '../../src/lib/ui/Segment.svelte';
+import Tabs from '../../src/lib/ui/Tabs.svelte';
 import Table from '../../src/lib/ui/Table.svelte';
 import { order, type Column } from '../../src/lib/ui/table-rows.ts';
 import Ticker from '../../src/lib/ui/Ticker.svelte';
@@ -659,5 +661,69 @@ describe('Confirm', () => {
         const body = html(Confirm, { ...props, detail: '' });
         expect(body).not.toContain('There is no undo.');
         expect(body).toContain('Throw the change away?');
+    });
+});
+
+describe('one strip, one stop of the focus order', () => {
+    it('steps along the row and wraps at both ends', () => {
+        expect(nextStop('ArrowRight', 0, 3, 'row')).toBe(1);
+        expect(nextStop('ArrowRight', 2, 3, 'row')).toBe(0);
+        expect(nextStop('ArrowLeft', 0, 3, 'row')).toBe(2);
+        expect(nextStop('ArrowLeft', 1, 3, 'row')).toBe(0);
+    });
+
+    it('answers the column keys for a strip drawn downward and not the row keys', () => {
+        expect(nextStop('ArrowDown', 0, 3, 'column')).toBe(1);
+        expect(nextStop('ArrowUp', 0, 3, 'column')).toBe(2);
+        expect(nextStop('ArrowRight', 0, 3, 'column')).toBe(null);
+        expect(nextStop('ArrowDown', 0, 3, 'row')).toBe(null);
+    });
+
+    it('lands on the ends for Home and End, and on the first from nowhere', () => {
+        expect(nextStop('Home', 2, 3, 'row')).toBe(0);
+        expect(nextStop('End', 0, 3, 'row')).toBe(2);
+        expect(nextStop('ArrowLeft', -1, 3, 'row')).toBe(0);
+        expect(nextStop('ArrowRight', 9, 3, 'row')).toBe(0);
+    });
+
+    it('answers nothing for a key the strip does not own, or for an empty strip', () => {
+        expect(nextStop('a', 0, 3, 'row')).toBe(null);
+        expect(nextStop('Tab', 0, 3, 'row')).toBe(null);
+        expect(nextStop('ArrowRight', 0, 0, 'row')).toBe(null);
+        expect(nextStop('Home', 0, 0, 'row')).toBe(null);
+    });
+
+    it('holds the stop where the ring changed under it, and gives it up with the ring', () => {
+        expect(heldStop(['a', 'b', 'c'], ['a', 'b', 'c'], 'b')).toBe('b');
+        // The control after the one that went now sits where it sat.
+        expect(heldStop(['a', 'b', 'c'], ['a', 'c'], 'b')).toBe('c');
+        // The last one hands the stop back rather than forward.
+        expect(heldStop(['a', 'b', 'c'], ['a', 'b'], 'c')).toBe('b');
+        expect(heldStop(['a', 'b', 'c'], ['b'], 'c')).toBe('b');
+        expect(heldStop(['a', 'b', 'c'], [], 'b')).toBe('');
+        expect(heldStop(['a', 'b'], ['a', 'b'], 'zz')).toBe('a');
+    });
+
+    it('gives the whole tab strip one stop, the scroll controls and close controls included', () => {
+        const body = html(Tabs, {
+            tabs: [
+                { id: 'one', label: 'One' },
+                { id: 'two', label: 'Two' },
+                { id: 'three', label: 'Three' }
+            ],
+            active: 'two',
+            onselect: noop,
+            onclose: noop
+        });
+        // Every control the strip draws: three tab faces, three close controls, two scroll controls.
+        const controls = [...body.matchAll(/<button[^>]*/g)].map((found) => found[0]);
+        expect(controls).toHaveLength(8);
+        const stops = controls.filter((control) => control.includes('tabindex="0"'));
+        expect(stops).toHaveLength(1);
+        expect(stops[0]).toContain('role="tab"');
+        expect(stops[0]).toContain('aria-selected="true"');
+        expect(controls.filter((control) => control.includes('tabindex="-1"'))).toHaveLength(7);
+        // Nothing in the strip is left without a place in the order.
+        expect(controls.filter((control) => !/tabindex="(0|-1)"/.test(control))).toEqual([]);
     });
 });

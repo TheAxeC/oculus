@@ -43,6 +43,15 @@
         rail?: boolean;
         /** Draw a compact rail glyph above its visible label instead of hiding the label. */
         stacked?: boolean;
+        /**
+         * The opener's place in the browser's focus order, for a strip that is one stop: 0 for the
+         * control at the stop and -1 for the rest. An opener with none is an ordinary stop.
+         */
+        tabindex?: number;
+        /** This opener's name in the strip that carries the stop, rendered for that strip to read. */
+        stop?: string;
+        /** A key pressed on the opener, for a strip that moves its own stop with the arrow keys. */
+        onkeydown?: (event: KeyboardEvent) => void;
     };
 
     let {
@@ -54,7 +63,10 @@
         placement = 'up',
         align = 'left',
         rail = false,
-        stacked = false
+        stacked = false,
+        tabindex,
+        stop,
+        onkeydown
     }: Props = $props();
 
     let open = $state(false);
@@ -155,7 +167,10 @@
             aria-haspopup="menu"
             aria-expanded={open}
             aria-label={label}
+            data-stop={stop}
+            {tabindex}
             onclick={toggle}
+            {onkeydown}
         >
             {#if glyph !== undefined}
                 <Glyph name={glyph} />

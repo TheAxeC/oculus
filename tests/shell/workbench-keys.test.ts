@@ -1,6 +1,7 @@
 // Layer 3, shell tests. The DOM half of the workbench keyboard: the pane the keys act on is found
-// from the document, its path is read off the element, and the tab the digit names is activated in
-// the store. The document and the element are plain stand-ins, so this runs in the node
+// from the document, its path is read off the element, and the tab the digit names, or the one
+// Ctrl and a bracket counts to, is activated in the store. A bare Tab is left to the browser here
+// as it is in the resolver. The document and the element are plain stand-ins, so this runs in node
 // environment; what it does NOT cover is focus, scrolling and event defaults in a browser, which
 // tests/browser/keyboard.spec.ts presses for real, nor the other ways the handler finds its pane
 // (the pane focused last, the maximised pane, the pane holding the active instance): every case
@@ -24,14 +25,21 @@ import { createClientState, type ClientState } from '../client.ts';
 class PaneStandin {
     dataset: Record<string, string>;
     isConnected = true;
+    field: boolean;
 
-    constructor(path: string, active: string, page?: string) {
-        this.dataset = { panePath: path, paneActive: active, paneView: 'projects' };
+    constructor(path: string, active: string, page?: string, field = false) {
+        this.dataset = { panePath: path, paneActive: active };
         if (page !== undefined) this.dataset.panePage = page;
+        this.field = field;
     }
 
     closest(): this {
         return this;
+    }
+
+    /** The handler asks a key target whether it is a field keeping ordinary typing for itself. */
+    matches(): boolean {
+        return this.field;
     }
 
     querySelectorAll(): PaneStandin[] {
@@ -43,11 +51,26 @@ function paneElement(path: string, active: string, page?: string): HTMLElement {
     return new PaneStandin(path, active, page) as unknown as HTMLElement;
 }
 
-/** A document holding one focused pane, which is all focusedPaneElement() reads. */
-function fakeDocument(focused: HTMLElement): Document {
+/** A focused element inside no pane: it carries no path, which is what the handler reads for one. */
+function strayElement(): HTMLElement {
+    const element = new PaneStandin('', '');
+    delete element.dataset.panePath;
+    return element as unknown as HTMLElement;
+}
+
+/** A key target the handler reads as a text field, which keeps the keyboard for itself. */
+function fieldElement(): HTMLElement {
+    return new PaneStandin('', '', undefined, true) as unknown as HTMLElement;
+}
+
+/**
+ * A document holding one focused pane, which is all focusedPaneElement() reads, and an answer for
+ * the one query the handler makes of it: whether a confirmation is open.
+ */
+function fakeDocument(focused: HTMLElement | null, confirming = false): Document {
     return {
         activeElement: focused,
-        querySelector: (): unknown => null,
+        querySelector: (): unknown => (confirming ? {} : null),
         querySelectorAll: (): unknown[] => []
     } as unknown as Document;
 }
@@ -79,7 +102,8 @@ beforeEach(() => {
 /** One key event as the handler reads one, beside the call that swallows it. */
 function keyEvent(
     key: string,
-    ctrlKey = true
+    ctrlKey = true,
+    held: { shiftKey?: boolean; target?: HTMLElement } = {}
 ): { event: KeyboardEvent; prevented: ReturnType<typeof vi.fn> } {
     const prevented = vi.fn();
     const event = {
@@ -87,31 +111,39 @@ function keyEvent(
         ctrlKey,
         metaKey: false,
         altKey: false,
-        shiftKey: false,
+        shiftKey: held.shiftKey === true,
         defaultPrevented: false,
-        target: null,
+        target: held.target ?? null,
         preventDefault: prevented
     };
     return { event: event as unknown as KeyboardEvent, prevented };
 }
 
+/** The overlays the handler asks about, every one closed unless a case opens it. */
+type Overlays = { palette?: boolean; tray?: boolean; sheet?: boolean; confirm?: boolean };
+
 /**
  * The handler, with the pane at `path` focused in a document of its own. The focus is reported to
  * the handler as the browser reports it, which is what tells it the page the reader is in.
  */
-function handler(path: string, page?: string, focus: () => null = () => null) {
+function handler(
+    path: string,
+    page?: string,
+    focus: () => null = () => null,
+    overlays: Overlays = {}
+) {
     const element = paneElement(path, 'b', page);
-    held.document = fakeDocument(element);
+    held.document = fakeDocument(element, overlays.confirm === true);
     const keys = createWorkbenchKeys({
         drag: client.drag,
         layout: client.layout,
         ui: client.ui,
-        navigation: () => ({ direct: [], all: [], chords: {} }),
+        navigation: () => ({ direct: [], chords: {} }),
         activeMain: () => null,
         focus,
-        paletteOpen: () => false,
-        updateOpen: () => false,
-        sheetOpen: () => false,
+        paletteOpen: () => overlays.palette === true,
+        updateOpen: () => overlays.tray === true,
+        sheetOpen: () => overlays.sheet === true,
         setPaletteOpen: noop,
         setUpdateOpen: noop,
         setSheetOpen: noop,
@@ -149,6 +181,84 @@ describe('the numbered tab of the focused pane', () => {
     });
 });
 
+describe('cycling the tabs of the focused pane', () => {
+    it('carries the pane one tab along on Ctrl and the right bracket, wrapping at the last', () => {
+        client.layout.apply({ root: pane(['a', 'b', 'c']) });
+        const keys = handler('');
+        expect(paneAt(client.layout.layout(), [])?.active).toBe('a');
+        const first = keyEvent(']');
+        keys.keys(first.event);
+        expect(paneAt(client.layout.layout(), [])?.active).toBe('b');
+        expect(first.prevented).toHaveBeenCalledOnce();
+        keys.keys(keyEvent(']').event);
+        keys.keys(keyEvent(']').event);
+        expect(paneAt(client.layout.layout(), [])?.active).toBe('a');
+    });
+
+    it('carries it back on Ctrl and the left bracket, wrapping at the first', () => {
+        client.layout.apply({ root: pane(['a', 'b', 'c']) });
+        const keys = handler('');
+        keys.keys(keyEvent('[').event);
+        expect(paneAt(client.layout.layout(), [])?.active).toBe('c');
+        keys.keys(keyEvent('[').event);
+        expect(paneAt(client.layout.layout(), [])?.active).toBe('b');
+    });
+
+    it('starts at the first tab when the pane shows one its tab list does not hold', () => {
+        client.layout.apply({ root: pane(['a', 'b', 'c'], 'gone') });
+        const keys = handler('');
+        keys.keys(keyEvent(']').event);
+        expect(paneAt(client.layout.layout(), [])?.active).toBe('b');
+    });
+
+    it.each([false, true])('leaves a bare Tab to the browser with shift=%s', (shiftKey) => {
+        const keys = handler('1');
+        const { event, prevented } = keyEvent('Tab', false, { shiftKey });
+        keys.keys(event);
+        expect(paneAt(client.layout.layout(), [1])?.active).toBe('b');
+        expect(prevented).not.toHaveBeenCalled();
+    });
+
+    it('leaves a bare Tab to the browser while the key sheet is open', () => {
+        const keys = handler('1', undefined, () => null, { sheet: true });
+        const { event, prevented } = keyEvent('Tab', false);
+        keys.keys(event);
+        expect(paneAt(client.layout.layout(), [1])?.active).toBe('b');
+        expect(prevented).not.toHaveBeenCalled();
+    });
+
+    it.each([
+        { name: 'a field', overlays: {}, target: fieldElement() },
+        { name: 'the palette', overlays: { palette: true }, target: undefined },
+        { name: 'the update tray', overlays: { tray: true }, target: undefined },
+        { name: 'a confirmation', overlays: { confirm: true }, target: undefined }
+    ])('leaves the chord alone while $name holds the keyboard', ({ overlays, target }) => {
+        const keys = handler('1', undefined, () => null, overlays);
+        const { event, prevented } = keyEvent(']', true, { target });
+        keys.keys(event);
+        expect(paneAt(client.layout.layout(), [1])?.active).toBe('b');
+        expect(prevented).not.toHaveBeenCalled();
+    });
+
+    it('leaves the chord alone when the focused element names no pane', () => {
+        const keys = handler('1');
+        held.document = fakeDocument(strayElement());
+        const { event, prevented } = keyEvent(']');
+        keys.keys(event);
+        expect(paneAt(client.layout.layout(), [1])?.active).toBe('b');
+        expect(prevented).not.toHaveBeenCalled();
+    });
+
+    it('leaves the chord alone in a pane that holds no tab', () => {
+        client.layout.apply({ root: split('row', [0.5, 0.5], [pane(['a']), pane([])]) });
+        const keys = handler('1');
+        const { event, prevented } = keyEvent(']');
+        keys.keys(event);
+        expect(paneAt(client.layout.layout(), [1])?.tabs).toEqual([]);
+        expect(prevented).not.toHaveBeenCalled();
+    });
+});
+
 // A pane of a page shown inside the page on screen carries that page beside its path, so the digit
 // and the Escape act on the page the reader is in and not on the one the strip is on.
 describe('a pane of a page shown inside another', () => {
@@ -168,6 +278,14 @@ describe('a pane of a page shown inside another', () => {
         const second = nested();
         const keys = handler('', second);
         keys.keys(keyEvent('2').event);
+        expect(paneAt(client.layout.layout(second), [])?.active).toBe('e');
+        expect(paneAt(client.layout.layout(), [0])?.active).toBe('a');
+    });
+
+    it('cycles the tabs of the nested page, in that page tree', () => {
+        const second = nested();
+        const keys = handler('', second);
+        keys.keys(keyEvent(']').event);
         expect(paneAt(client.layout.layout(second), [])?.active).toBe('e');
         expect(paneAt(client.layout.layout(), [0])?.active).toBe('a');
     });

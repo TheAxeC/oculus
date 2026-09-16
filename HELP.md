@@ -34,12 +34,15 @@ The layout is saved as it is changed, so the window comes back as it was left.
 |---|---|
 | 1-9 | switch page |
 | Ctrl+1-9 | switch tab in the focused pane |
+| Ctrl+] / Ctrl+[ | next / previous tab in the focused pane |
+| arrows | along the rail or a tab strip, when one holds the focus |
+| Home / End | first / last control of the rail or a tab strip |
+| Delete | close the focused tab |
 | v1-v9 | open a view of the rail by its place |
 | c1-c9 | open a view of the Academic life group |
 | m1-m9 | open a view of the Sessions group |
 | s1-s9 | open a view of the Sources group |
 | y1-y9 | open a view of the System group |
-| Tab / Shift-Tab | next / previous tab |
 | j / k | move the card cursor left / right |
 | J / K | carry the card under the cursor left / right |
 | i / o | move the card cursor up / down a row |
@@ -51,6 +54,8 @@ The layout is saved as it is changed, so the window comes back as it was left.
 | : | command line |
 | Esc | clear the cursor |
 | Ctrl+Shift+Left / Right | move the page |
+
+Tab and Shift-Tab are the browser's: they move the focus between the controls on the page, as they do everywhere, and reach no binding of this table. The rail is one stop of that order, and each strip of tabs is one stop with its pane menu the stop after it, so Tab steps past a whole strip in one press and the arrow keys move inside it; the stop stays on the tab the arrows left the focus on, and Delete closes the tab the focus is on. Ctrl and Tab is not the pair that cycles a pane's tabs, because a browser keeps it for its own tabs and never hands it to a page.
 
 The sheet itself opens with `?` and closes with `?` or Escape. The letters before a digit are the `direct_chord` of `config/layout.yml` and the `chord` of each group in `nav_groups`. A group's documents follow its views in its chord, so the digit after the group's last view opens its first document; the directly drawn groups' documents follow the direct views under the direct chord the same way.
 

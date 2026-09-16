@@ -17,7 +17,6 @@ import {
 
 const order: RailOrder = {
     direct: ['focus', 'projects', 'archive'],
-    all: ['focus', 'projects', 'funding', 'events', 'archive'],
     chords: {
         v: ['focus', 'projects', 'archive'],
         c: ['funding', 'events', 'doc:GUIDE.md'],
@@ -26,7 +25,6 @@ const order: RailOrder = {
 };
 
 const context: KeyContext = {
-    currentView: 'focus',
     cursorActive: false,
     typing: false,
     paletteOpen: false,
@@ -118,35 +116,68 @@ describe('digit and chord navigation', () => {
     });
 });
 
-describe('display-order cycling', () => {
-    it('cycles forward and backward through direct and flyout views', () => {
-        expect(press('Tab', initialKeyState(), 1000, { currentView: 'projects' }).action).toEqual({
-            kind: 'open',
-            view: 'funding'
-        });
+describe('the tab keys of the focused pane', () => {
+    it('leaves a bare Tab and a bare Shift+Tab to the browser, which moves the focus', () => {
+        expect(press('Tab').action).toBe(null);
+        expect(press('Tab', initialKeyState(), 1000, {}, { shiftKey: true }).action).toBe(null);
+    });
+
+    it('leaves Ctrl and Tab to the browser, which never hands that pair to a page', () => {
+        expect(press('Tab', initialKeyState(), 1000, {}, { ctrlKey: true }).action).toBe(null);
         expect(
-            press('Tab', initialKeyState(), 1000, { currentView: 'focus' }, { shiftKey: true })
+            press('Tab', initialKeyState(), 1000, {}, { ctrlKey: true, shiftKey: true }).action
+        ).toBe(null);
+    });
+
+    it('cycles the focused pane on Ctrl and a bracket, the left one backwards', () => {
+        expect(press(']', initialKeyState(), 1000, {}, { ctrlKey: true }).action).toEqual({
+            kind: 'cycle-tab',
+            by: 1
+        });
+        expect(press('[', initialKeyState(), 1000, {}, { ctrlKey: true }).action).toEqual({
+            kind: 'cycle-tab',
+            by: -1
+        });
+    });
+
+    it('answers a bare bracket with nothing, so the key is only the chord', () => {
+        expect(press(']').action).toBe(null);
+        expect(press('[').action).toBe(null);
+    });
+
+    it.each([
+        { name: 'a field being typed in', guard: { typing: true } },
+        { name: 'the palette', guard: { paletteOpen: true } },
+        { name: 'the update tray', guard: { trayOpen: true } },
+        { name: 'a confirmation', guard: { confirmOpen: true } }
+    ] satisfies { name: string; guard: Partial<KeyContext> }[])(
+        'says nothing for Ctrl and a bracket under $name',
+        ({ guard }) => {
+            expect(press(']', initialKeyState(), 1000, guard, { ctrlKey: true }).action).toBe(null);
+        }
+    );
+
+    it('leaves Cmd and Alt with a bracket to the browser and the window manager', () => {
+        expect(
+            press(']', initialKeyState(), 1000, {}, { ctrlKey: true, metaKey: true }).action
+        ).toBe(null);
+        expect(press(']', initialKeyState(), 1000, {}, { metaKey: true }).action).toBe(null);
+        expect(
+            press(']', initialKeyState(), 1000, {}, { ctrlKey: true, altKey: true }).action
+        ).toBe(null);
+    });
+
+    it('says nothing for a chord a child handler already consumed', () => {
+        expect(
+            press(']', initialKeyState(), 1000, {}, { ctrlKey: true, defaultPrevented: true })
                 .action
-        ).toEqual({ kind: 'open', view: 'archive' });
+        ).toBe(null);
     });
 
-    it('starts at the applicable end when the current view is outside the rail', () => {
-        expect(press('Tab', initialKeyState(), 1000, { currentView: 'detail' }).action).toEqual({
-            kind: 'open',
-            view: 'focus'
-        });
-        expect(
-            press('Tab', initialKeyState(), 1000, { currentView: null }, { shiftKey: true }).action
-        ).toEqual({ kind: 'open', view: 'archive' });
-    });
-
-    it.each([false, true])('cycles from the focused pane with shift=%s', (shiftKey) => {
-        expect(
-            press('Tab', initialKeyState(), 1000, { currentView: 'projects' }, { shiftKey }).action
-        ).toEqual({
-            kind: 'open',
-            view: shiftKey ? 'focus' : 'funding'
-        });
+    it('clears a pending chord letter, so a lapsed letter counts into nothing', () => {
+        const started = press('c', initialKeyState(), 2000);
+        const cycled = press(']', started.state, 2100, {}, { ctrlKey: true });
+        expect(cycled.state.chord).toBe('');
     });
 });
 
@@ -214,24 +245,24 @@ describe('search, scroll, and sheet routing', () => {
 
 describe('shortcut guards', () => {
     it.each([
-        { typing: true },
-        { paletteOpen: true },
-        { trayOpen: true },
-        { confirmOpen: true }
-    ] satisfies Partial<KeyContext>[])(
-        'does nothing under the $typing$paletteOpen$trayOpen$confirmOpen guard',
-        (guard) => {
+        { name: 'a field being typed in', guard: { typing: true } },
+        { name: 'the palette', guard: { paletteOpen: true } },
+        { name: 'the update tray', guard: { trayOpen: true } },
+        { name: 'a confirmation', guard: { confirmOpen: true } }
+    ] satisfies { name: string; guard: Partial<KeyContext> }[])(
+        'does nothing under $name',
+        ({ guard }) => {
             expect(press('/', initialKeyState(), 1000, guard).action).toBe(null);
         }
     );
 
     it.each([
-        { metaKey: true },
-        { ctrlKey: true },
-        { altKey: true }
-    ] satisfies Partial<KeyEventLike>[])(
-        'does nothing while a blocking modifier is held',
-        (modifier) => {
+        { name: 'Cmd', modifier: { metaKey: true } },
+        { name: 'Ctrl', modifier: { ctrlKey: true } },
+        { name: 'Alt', modifier: { altKey: true } }
+    ] satisfies { name: string; modifier: Partial<KeyEventLike> }[])(
+        'does nothing while $name is held',
+        ({ modifier }) => {
             expect(press('/', initialKeyState(), 1000, {}, modifier).action).toBe(null);
         }
     );
