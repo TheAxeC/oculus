@@ -385,3 +385,29 @@ Replacement:
 - A race between the path check and `open` (a component swapped for a symlink after resolution) is not covered.
 - The browser spec appends an entry to the run's copy of `network/events.yml` and restores the file in `afterAll`. If the run is killed before that, the copy keeps the entry. The copy is under the system temporary directory and the layer removes it on exit.
 - The full browser suite was not run. `board.spec.ts` asserts `Files (3)` for graph-bandits; that still holds because the spec removes its `.docx` afterwards, but it was not rerun.
+
+
+# Repair round 2
+
+Everything in repair round 2 is done.
+
+## Change
+- `src/lib/views/File.svelte`: the refusal key guard is removed. `refusal` (`{ key, reason }`), the `held` key and the `refusal.key === held` comparison are gone. `failed` is now plain `$state('')`, cleared at each press and set only when the answer is not ok and no later press has superseded it. The `presses` rule stays: `if (mine !== presses || answer.ok) return;`. Head comment, lines 52-53, now reads: "What a refused or failed open said is shown in the toolbar until the next press, and an answer a later press has superseded is dropped, so a slow refusal never lands over a later open."
+- `tests/browser/open-file.spec.ts`: case 4 ("a refusal about one file is not shown once the tab shows another") is dropped, not reduced. What it still proved, that a refusal is shown and then cleared, is already covered by case 2. The helper `openFixture(page, name)` had only `.docx` callers left, so it became `openReport(page)`. The spec head comment is still true, because `budget.xlsx` is still the collection card's link.
+- R8 still turns the superseded-press case red on the reduced code. I applied `mine !== presses ||` removed, ran `npm run build` and `npx playwright test tests/browser/open-file.spec.ts`: `1 failed, 5 passed (16.9s)`, the failure at line 187 of "a refusal that lands after a later press has opened the file is never shown". Then I restored the file and rebuilt.
+
+## Commands (from `tools/oculus` in the worktree)
+- `npx vitest run --reporter=dot`: `Test Files 230 passed (230)`, `Tests 3829 passed (3829)`
+- `npm run check`: `COMPLETED 1157 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+- `npm run build`: exit 0, `✓ built in 15.12s`, `✔ done`. Run again after the R8 restore: exit 0.
+- `npm run format:check`: `All matched files use Prettier code style!`
+- `npm run lint`: exit 0, no problems printed
+- Perl ASCII gate: printed nothing
+- `npx playwright test tests/browser/open-file.spec.ts tests/browser/board.spec.ts`: `11 passed (16.8s)`. After the R8 restore and rebuild, run again: `11 passed (14.3s)`. The 11 are board.spec's 5 cases and open-file.spec's 6. Earlier attempts in the retry loop hit "http://127.0.0.1:8792/ is already used", and several hit "You are calling test() from an async test.describe() block. Only sync ones are supported" while the port was held. I did not find the cause of that second message; it did not appear in the runs that passed.
+
+## Files changed this round
+- `src/lib/views/File.svelte`: 272 lines. Against base: +71/-4.
+- `tests/browser/open-file.spec.ts`: 249 lines (new file; was 261).
+
+## Doc text
+Unchanged except the DESIGN.md decision line, which never named the key guard. No line of the HELP.md or DESIGN.md text changes.

@@ -36,7 +36,7 @@ dispatch:                                  # M2 landed 15:16; D16 (repair round 
   exit: none
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a1ec09e6af440704d            # the Agent tool's id, launched 14:33
-  round: 2                                  # round 1 sent 15:10 (ten rulings on agents/reviews/D16-refuter.md), answered 15:36 (agents/reviews/D16-report.md, its round 1 section); round 2 sent 15:33: the unreachable refusal-key guard removed; a second review follows, since round 1 went well beyond a small delta
+  round: 2                                  # round 1 sent 15:10 (ten rulings on agents/reviews/D16-refuter.md), answered 15:36 (agents/reviews/D16-report.md, its round 1 section); round 2 sent 15:33: the unreachable refusal-key guard removed; a second review follows, since round 1 went well beyond a small delta; answered 15:47; the second review dispatched 15:47
   reported: 2026-09-16T14:57
   reviewer: a92a2e3722fc1f4ea                # claude:opus through the Agent tool, read-only, launched 14:57
   landing: not-started
