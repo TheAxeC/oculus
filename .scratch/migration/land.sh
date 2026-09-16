@@ -155,7 +155,7 @@ if [ "$landing_worktree_branch" != "$landing_pkg" ]; then
 fi
 
 wait_for_index "$landing_worktree"
-run_step "worktree git add" sh -c 'cd "$1" && git add -A tools/oculus' land "$landing_worktree"
+run_step "worktree git add" sh -c 'cd "$1" && git add -A .' land "$landing_worktree"
 
 wait_for_index "$landing_worktree"
 run_step "worktree git commit" sh -c 'cd "$1" && git commit -q -m wip' land "$landing_worktree"
