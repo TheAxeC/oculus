@@ -28,13 +28,13 @@ dispatch:                                  # D4 + D21 + Q27 in flight; Q23 lande
   worker: claude:opus
   worktree: .agents/worktrees/q27
   base: 8855579b
-  launched: 2026-09-16T02:13+0200
+  launched: 2026-09-16T02:12+0200
   prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q27/prompt.md
   events: none
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q27/report.md
   exit: none
   pid: none
-  session_id: pending                    # the Agent tool's id, written the moment it is returned
+  session_id: a06859daa93709255            # the Agent tool's id, launched 02:13
   landing: not-started
 - package: D4
   worker: claude:opus
