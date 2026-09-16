@@ -34,7 +34,7 @@ dispatch:                                  # D7 + D5 in flight, M1 next (D7 disp
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D7/report.md
   exit: none
   pid: none
-  session_id: pending                      # the Agent tool's id, written the moment it is known
+  session_id: ab8fa2e72050e1faa            # the Agent tool's id, launched 05:10
   landing: not-started
 - package: D5
   worker: claude:opus
