@@ -24,6 +24,30 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 
 ```yaml
 dispatch:                                  # Q21 + D5 in flight, Q25 next (D4 landed 03:10, Q27 landed 04:08, D5 dispatched 04:08 from 5def0882; Q21 dispatched 03:12 from e0656c5c, D21 landed 03:18, Q24 dispatched 03:20 from 6a91cde1 and landed 04:02; Q21 was waiting on it, since both edit context.ts, pty/routes.ts and files.ts; Q24 at the following landing)
+- package: D5
+  worker: claude:opus
+  worktree: .agents/worktrees/d5
+  base: 5def0882
+  launched: 2026-09-16T04:08+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D5/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D5/report.md
+  exit: none
+  pid: none
+  session_id: ac3d755ba41ef700a            # the Agent tool's id, launched 04:09
+  landing: not-started
+- package: Q21
+  worker: claude:opus
+  worktree: .agents/worktrees/q21
+  base: e0656c5c
+  launched: 2026-09-16T03:12+0200
+  prompt: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q21/prompt.md
+  events: none
+  report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/Q21/report.md
+  exit: none
+  pid: none
+  session_id: a925f3cf487395220            # the Agent tool's id, launched 03:12; reported 03:52 (runs/Q21/report.md, diff.patch 2,694 lines, 63 files +594 -420; 357,693 tokens, 150 tool uses, 2,386 s: one difference of substance, `roots()` in server/files.ts keeping its engineDir() default because D21's source.ts calls it with no argument, to drop at D21's landing, which has landed since); checks started 03:53 (runs/Q21/checks.sh); reviewer dispatched 03:53 (Agent id aa10a60cd3214f8d6); the orchestrator's read done 03:54 (runs/Q21/read-notes.md: the roots() default and TMPDIR to settle at landing); checks green 03:58 (test 197 files 3,308, check 1,048 files, build, format, lint, ASCII 0, browser 104); review saved 04:08 (agents/reviews/Q21.md; 217,379 tokens, 78 tool uses, 772 s: knownIds in deposit-routes.ts swallowing the new throw so a deposit action 404s before the first publish, the DESIGN.md sentence on engineDir() false against the tree, HELP.md's absolute sentence and demo/README.md's stale OCULUS_LOCAL instruction, two parser cases missing, a dead export, TMPDIR); repair round of five items sent 04:08 (knownIds with its case, the two manual lines, the two parser cases with a `--engine --flag` refusal, the export, TMPDIR through the spawn), the roots() default and source.ts's two defaults and the DESIGN.md sentence left for the orchestrator at landing over D21's source.ts
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
