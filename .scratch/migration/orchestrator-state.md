@@ -58,7 +58,7 @@ dispatch:                                  # D4 + D21 + Q27 in flight; Q23 lande
   report: /private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/7907f736-9403-4955-8040-3e24f032eaeb/scratchpad/runs/D21/report.md
   exit: none
   pid: none
-  session_id: a83c7ded45f30be3b            # the Agent tool's id, launched 01:18
+  session_id: a83c7ded45f30be3b            # the Agent tool's id, launched 01:18; reported 02:15 (runs/D21/report.md, diff.patch 3,492 lines, 46 files +1,551 -557; 457,457 tokens, 278 tool uses, 3,441 s); checks started 02:15 (runs/D21/checks.sh); reviewer dispatched 02:15 (Agent id a779986095bed6514); the orchestrator's read done 02:16 (runs/D21/read-notes.md: three defects to send back, a retargeted preview tab keeping the old file's draft, the editor's mirror uncoloured for code, the download block drawn before the kind is known); checks green 02:18 (test 196 files 3,249, check 1,036 files, build, format, lint, ASCII 0, browser 103)
   landing: not-started
 ```
 
