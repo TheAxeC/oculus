@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57, Q32 landed 13:26; Q30 (review) in flight; Q34 dispatched 13:00 from 22ef9103; Q41 next; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57, Q32 landed 13:26; Q30 (review), Q34 (dispatched 13:00 from 22ef9103) and Q41 (dispatched 13:28 from 21fd6359) in flight; Q42 next; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q30
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -40,6 +40,8 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/Q30-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a71da6eb3c7470b27            # the Agent tool id, launched 12:48
+  reported: 2026-09-17T13:18
+  reviewer: a195a1ac96a9c20c2                # claude:opus through the Agent tool, read-only, launched 13:20, scratch folder scratchpad/q30-review (review earned: the brief touches the data layer and server modules)
   round: 0
   landing: not-started
 - package: Q34
@@ -52,6 +54,19 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/Q34-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a1fae161c84d38fc1            # the Agent tool id, launched 13:00
+  paths_note: 13:27, told by message to leave state/focus.ts, views/focus/Lanes.svelte, Band.svelte, LaneHead.svelte, state/tones.ts and config/vocab.yml unedited, which Q41 edits
+  round: 0
+  landing: not-started
+- package: Q41
+  executor: agent                          # the configuration default, chosen for the step
+  worker: claude:opus
+  worktree: .agents/worktrees/q41
+  base: 21fd6359
+  launched: 2026-09-17T13:28
+  prompt: the Agent tool's prompt, the shape of M2's with the brief's own paths
+  report: tools/oculus/.scratch/migration/agents/reviews/Q41-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: a1f9bd02947543e64            # the Agent tool id, launched 13:28
   round: 0
   landing: not-started
 ```
