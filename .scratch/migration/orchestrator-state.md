@@ -42,6 +42,7 @@ dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12
   session_id: a1f9bd02947543e64            # the Agent tool id, launched 13:28
   reported: 2026-09-17T13:55                # a premise found wrong: the lane colours against their meanings, a stop booked in the open items; the review waits for Axel's ruling
   ruling: 2026-09-17 15:30, Axel's (b) sent to the builder as the rest of its build (not the repair round): LANE_SHARE 0.35 in themes/derive.ts, the lane colours back on their meanings, Review off violet, Focus.svelte's comment; paths widened by themes/derive.ts and views/Focus.svelte (its comment)
+  choice_a: 2026-09-17 16:08 sent; built 16:25 at LANE_SHARE 0.5 (Review slate, De-risk honey, Jobs grey-d, the 22 pairs held); tests/contrast.test.ts red in 7 themes on -lane-txt measured against page surfaces it is never painted on; 16:31 the builder told to measure lane text on its own lane only, per the test's stated rule, with a check that no other place paints it
   round: 0
   landing: not-started
 - package: Q43

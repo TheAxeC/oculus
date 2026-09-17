@@ -418,3 +418,167 @@ Over all 17 themes and every lane hue, unrounded (`textmin.ts`). No lane text pa
 | 0.5 | 4.5000 | latte, teal |
 | 0.6 | 4.5005 | vscode-dark-modern, lime |
 | 0.7 | 4.5012 | vscode-dark-modern, code-number |
+
+
+NOT done: `tests/contrast.test.ts` fails at 0.5 in 7 themes (mocha, nord, synthwave, tokyoneon, everforest, dracula, kanagawa), 200 pairs in all. Every failing pair is a `--c-<hue>-lane-txt` measured against a page surface (`--bg`, `--panel`, `--card`, `--chip`). None is lane text on its own lane surface, and no other token fails.
+
+Why this is a decision for you, and what I did not do:
+- `LaneHead.svelte:42` is the only place `--c-<hue>-lane-txt` is painted, and it sits on `--lane`. The failing pairs are drawn nowhere.
+- At half share, the lane surface in a dark theme is light enough that `readable()` turns its text dark. That dark text fails on the page colours the test also measures it against.
+- The possible fix is to have the test measure lane text only on its own lane surface. That narrows the check's rule, so I left the threshold and the test's pairs untouched.
+
+Hues whose lane text fails on the page surfaces:
+- mocha: cyan, gold, green, lime, pink, red-t, sky, teal
+- nord: amber, cyan, gold, green, honey, lime, sky, teal
+- synthwave: amber, blue, brass, cyan, cyan-d, gold, green, green-d, honey, lime, sky, teal
+- tokyoneon: green, green-d, lime
+- everforest: amber, brass, gold, honey
+- dracula: amber, brass, cyan, cyan-d, gold, green, green-d, honey, lime, orange, sky, teal
+- kanagawa: brass, gold, honey
+
+Proof: `npx vitest run tests/contrast.test.ts`, 7 failed; 200 `+` lines, all of the form `--c-<hue>-lane-txt on --<surface>`, zero on `--c-*`.
+
+## After Axel's choice (a)
+
+### DONE / NOT DONE
+| Item | State | Proof |
+|---|---|---|
+| 1 `LANE_SHARE` 0.5 | DONE | `src/lib/themes/derive.ts:51` |
+| 2 Distance test holds 22 pairs of three named kinds | DONE | `npx vitest run tests/lane-distance.test.ts`: 20 passed |
+| 3 Colours, with Review, De-risk and Jobs chosen deliberately | DONE | `git diff config/vocab.yml` |
+| 4 `tests/contrast.test.ts` at 0.5 | NOT DONE (red, see above) | 7 failed |
+| `npx vitest run --reporter=dot` | Test Files 1 failed, 239 passed; Tests 7 failed, 4043 passed | the 7 are the contrast cases |
+| `npm run check` | 1193 FILES 0 ERRORS 0 WARNINGS | |
+| `npm run build` | exit 0 | |
+| `npm run format:check` | All matched files use Prettier code style | |
+| `npm run lint` | exit 0 | |
+| ASCII gate (perl command in the brief) | 0 lines | |
+| `yaml.safe_load` on vocab.yml | exit 0 | |
+| `npx playwright test` on focus-look, focus-buttons, focus-drag | 8 passed | after two 45 s waits for another run's port |
+
+### The distance test
+- **Layout read from the markup:** `rows()` puts each cluster's lanes three to a row (`.lanes`, three columns), the Ideas lane alone across the width (`.lanes.one`), then the band's Funding, Jobs and Teaching.
+- **The three kinds, named in the head comment and in every failure line:**
+  - "next in drawing order": 12 pairs
+  - "stacked in one column": 6 pairs, asserted as run/review, push/blocked, revise/backburner, review/scope, blocked/derisk, backburner/build
+  - "beside the full-width Ideas lane": 4 pairs, asserted as holding/scope, holding/derisk, holding/jobs, holding/teaching
+  - build/holding and holding/funding are already "next" pairs, so each is counted once.
+- **Failure line format:** "`<theme>: stacked in one column review (slate) / scope (cyan-d) = 8.93`".
+
+### Review, De-risk and Jobs
+Candidates are the hues that keep all 22 pairs at 10 or more under every theme, with every other header fixed (`scratchpad/q41-builder/choose05.ts`).
+- **Review:**
+  - Ranked: slate, grey-d, grey (used by Backburner).
+  - **Choice: slate (#475569).** It is the quiet blue-grey of work sitting out of your hands, and no other header uses it. Worst pair: 10.28 against Scope in everforest.
+- **De-risk:**
+  - Ranked: honey, amber (used by Revise), brass, gold (used by Funding), slate, grey-d, grey (used).
+  - **Choice: honey (#f59e0b).** It is the clearest caution colour, warm and well apart from Scope's cyan-d and Build's teal, and unused. Worst pair: 17.97 against Build in everforest.
+- **Jobs:**
+  - Ranked: slate, grey-d, grey (used by Backburner). No violet-like hue fits.
+  - **Choice: grey-d.** It is the only fit left unused once Review takes slate. Worst pair: 10.94 against Ideas in synthwave.
+
+### Colour per header
+| Header | Before my build | Now |
+|---|---|---|
+| Run | #16a34a green | #16a34a green |
+| Push | #2563eb blue | #2563eb blue |
+| Revise | #b45309 amber | #b45309 amber |
+| Review | #7c5cff violet | #475569 slate |
+| Blocked | #dc2626 red | #dc2626 red |
+| Backburner | #64748b grey (palette `muted`) | #9ca3af grey |
+| Scope | #0e7490 cyan-d | #0e7490 cyan-d |
+| De-risk | #6366f1 indigo | #f59e0b honey |
+| Build | #0d9488 teal | #0d9488 teal |
+| Ideas | #b5638a mauve | #b5638a mauve (not changed) |
+| Funding | gold | gold |
+| Jobs | violet | grey-d |
+| Teaching | teal | teal |
+
+### Shared hues
+- **By name:** only Build and Teaching share one (teal). They do not touch: Build is in the incubate row, Teaching in the band, with the Ideas lane between.
+- **Same colour under a different name** (from the dracula screenshot's header colours): Push, Review and Backburner are one colour; Scope, Build and Teaching are one; De-risk and Funding are one. None of those pairs touch.
+
+### Smallest distance per theme over the 22 pairs
+| Theme | Distance | Pair |
+|---|---|---|
+| light | 13.06 | stacked review/scope |
+| dark | 11.41 | stacked review/scope |
+| vscode-dark-modern | 12.16 | stacked review/scope |
+| vscode-light-modern | 13.06 | stacked review/scope |
+| mocha | 12.74 | stacked review/scope |
+| gruvbox | 12.44 | stacked review/scope |
+| nord | 10.22 | stacked backburner/build |
+| synthwave | 10.94 | Ideas/jobs |
+| tokyoneon | 20.34 | Ideas/jobs |
+| tokyonight | 15.40 | Ideas/jobs |
+| rosepine | 13.99 | Ideas/jobs |
+| everforest | 10.28 | next backburner/scope |
+| dracula | 21.88 | Ideas/jobs |
+| kanagawa | 13.97 | next jobs/teaching |
+| solarized | 11.51 | next backburner/scope |
+| latte | 18.06 | Ideas/jobs |
+| gruvboxlight | 11.09 | stacked run/review |
+
+### Lowest lane text contrast per theme (lane text on its own lane)
+From `scratchpad/q41-builder/lanetxt05.ts`, which reads `deriveTokens` at 0.5. Each cell is over every hue / over the hues the headers use.
+
+| Theme | All hues / used hues |
+|---|---|
+| light | 4.55 gold / 4.55 gold |
+| dark | 4.51 grey / 4.51 grey |
+| vscode-dark-modern | 4.50 crimson / 4.50 gold |
+| vscode-light-modern | 4.55 gold / 4.55 gold |
+| mocha | 4.50 purple / 4.52 gold |
+| gruvbox | 4.50 purple / 4.51 gold |
+| nord | 4.51 code-meta / 4.52 honey |
+| synthwave | 4.50 grey / 4.50 grey |
+| tokyoneon | 4.52 orange / 4.54 teal |
+| tokyonight | 4.51 teal / 4.51 teal |
+| rosepine | 4.50 green / 4.50 green |
+| everforest | 4.51 amber / 4.51 amber |
+| dracula | 4.50 code-number / 4.55 red |
+| kanagawa | 4.51 code-name / 4.51 green |
+| solarized | 4.50 indigo / 4.52 blue |
+| latte | 4.50 teal / 4.50 teal |
+| gruvboxlight | 4.57 orange / 4.65 red |
+
+### Reverts run (each restored and compared equal with `cmp`)
+- **Share back to 0.35 with these colours:** 7 failed, naming 19 pairs. Stacked-pair examples: "dark: stacked in one column review (slate) / scope (cyan-d) = 8.93", "nord: stacked in one column backburner (grey) / build (teal) = 7.56", "everforest: stacked in one column review (slate) / scope (cyan-d) = 7.03", "gruvboxlight: stacked in one column run (green) / review (slate) = 8.20". The failures also include next-in-order and Ideas pairs.
+- **Review set to Run's hue (#16a34a):** 18 failed: all 17 themes plus the closest-pair case. Each theme prints "stacked in one column run (green) / review (green) = 0.00".
+
+### Screenshots
+Taken at 1600 wide from this build, on port 8792, through the browser suite's `tests/browser/serve.ts` started as this script's own child:
+- `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/536c7cbc-bb5a-4968-922a-974ba41d1544/scratchpad/q41-builder/shots05/focus-light.png`
+- `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/536c7cbc-bb5a-4968-922a-974ba41d1544/scratchpad/q41-builder/shots05/focus-dark.png`
+- `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/536c7cbc-bb5a-4968-922a-974ba41d1544/scratchpad/q41-builder/shots05/focus-dracula.png`
+
+The header colours read from the page confirm the half share. For example, light Run is rgb(138,209,164), and 0.5 x 22 + 0.5 x 255 = 138.
+
+**An earlier attempt reached another run's server.** On port 8792, a server started by another step answered while mine had exited: my build was older than `derive.ts` after the reverts. That attempt opened Focus there in a fresh browser and switched it to dark and dracula. Whether that theme choice was written into that run's temporary appearance store is not verified. The screenshots from that attempt showed the 0.2 colours and were deleted. `shots3.ts` now waits for a free port and refuses a server that is not its own.
+
+### Doc text
+**HELP.md**, append to the `focus` row (line 74):
+"The Awaiting a response strip counts the people and venues of every project a board card stands for: the ideas, active and manuscripts projects, and a project of any other tier on a lane. Each lane header and each Funding, Jobs and Teaching header has a colour chosen to differ from every header it touches under every theme: the next one drawn, the one stacked above or below it, and the full-width Ideas lane."
+
+**DESIGN.md**, four changes:
+- Line 228: "a fifth of the hue in the panel" becomes "half the hue in the panel".
+- Append to the same paragraph: "The lane surfaces are also measured against each other: `tests/lane-distance.test.ts` derives every theme through `tests/themes.ts`, the derivation the contrast test reads, reads the rows Lanes.svelte and Band.svelte draw, and holds every pair of headers that touch at a CIEDE2000 of 10 or more: each header and the next one drawn, a header and the one stacked below it in the three-column layout, and the full-width Ideas lane against the rows above and below it."
+- Add under `tests/` after line 111: `    lane-distance.test.ts      Focus lane headers that touch, every theme, CIEDE2000 at least 10`
+- New log entry, which supersedes the tallies clause at line 330: "- 2026-09-17, Axel: the awaiting strip counts what the board shows, and lane headers that touch are told apart. `waiting()` tallies the people and venues of every live project and of every project `laneItems` draws on a lane, whatever its tier; a project of another tier in holding or on no lane is not counted. A lane header's surface is half its hue and half the panel (`LANE_SHARE` in `themes/derive.ts`). The lane colours are Run green, Push blue, Revise amber, Review slate, Blocked red, Backburner grey, Scope cyan-d, De-risk honey, Build teal, with the Ideas lane mauve and the columns Funding gold, Jobs grey-d and Teaching teal, so every pair of headers that touch (next in drawing order, stacked in one column, beside the full-width Ideas lane) stays a CIEDE2000 of 10 or more apart under every theme, which `tests/lane-distance.test.ts` holds. Package Q41."
+
+### Files changed
+All under `tools/oculus/`:
+- `config/vocab.yml` (+6 -5)
+- `src/lib/state/focus.ts` (+20 -9)
+- `src/lib/themes/derive.ts` (+9 -3)
+- `src/lib/views/Focus.svelte` (+3 -3), comment only
+- `tests/config-folder.test.ts` (+1 -1), Jobs tone grey-d
+- `tests/contrast.test.ts` (+5 -20)
+- `tests/state/focus.test.ts` (+45 -5)
+- `tests/lane-distance.test.ts`, new, 290 lines
+- `tests/themes.ts`, new, 34 lines
+
+### Limitations
+- **Duplicate colours:** in dracula, several headers that do not touch are one colour (see Shared hues).
+- **Dark-theme header text:** it is now dark on a lighter strip, which the contrast failure above reflects.
+- **Hidden band columns:** the distance test covers the layout with all three band columns drawn. When a column is empty and hidden, the pairs that form are not held.
