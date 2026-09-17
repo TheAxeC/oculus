@@ -7,10 +7,10 @@
 // made. Nothing reaches the machine's own checkout.
 
 import { expect, test, type Page } from '@playwright/test';
-import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
+import { gitIn } from './git.ts';
 import { boot, openView } from './rail.ts';
 import { hubDir } from './hub.ts';
 import { t } from './words.ts';
@@ -20,30 +20,6 @@ const CHANGED = 'feeds/position-leads.yml';
 
 /** The name the case makes its worktree under, and where the view says it will go. */
 const NAME = 'browser-case';
-
-/**
- * One git command in a repository this spec made under the temporary directory, with the identity on
- * the command line so no git configuration of the machine is read or written.
- */
-function gitIn(dir: string, ...args: string[]): void {
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    const done = spawnSync(
-        'git',
-        [
-            '-c',
-            'user.email=nobody@example.invalid',
-            '-c',
-            'user.name=Oculus Repositories Spec',
-            '-c',
-            'commit.gpgsign=false',
-            '-C',
-            dir,
-            ...args
-        ],
-        { encoding: 'utf8', timeout: 60000 }
-    );
-    expect(done.status, done.stderr).toBe(0);
-}
 
 /** Pick one repository by the name the picker lists it under. */
 async function pick(page: Page, name: string): Promise<void> {

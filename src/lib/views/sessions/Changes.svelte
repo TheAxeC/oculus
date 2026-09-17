@@ -27,6 +27,7 @@
     import type { ViewProps } from '$lib/views/registry';
     import ChangesRepo from './ChangesRepo.svelte';
     import ChangesTouched from './ChangesTouched.svelte';
+    import { repoShape } from './repo-shape';
     import { useState } from '$lib/state/use';
 
     const {
@@ -44,6 +45,8 @@
     const workspace = $derived(record?.workspace ?? '');
     const files = $derived(record?.files ?? []);
     const repo = $derived(workspace === '' ? null : gitFor(workspace));
+    const shape = $derived(repoShape(workspace, repo));
+    const readable = $derived(shape === 'readable' ? repo : null);
     let message = $state('');
     let branchName = $state('');
     let outcome = $state('');
@@ -51,6 +54,10 @@
     let suggesting = $state(false);
     let asking: Ask | null = $state(null);
     let branches: Branch[] = $state([]);
+    // Each listing asked for takes the next number, and only the newest one may write `branches`: a
+    // listing that answers after the workspace changed, or after a later listing was asked for, is
+    // for a state the panel no longer draws.
+    let asked = 0;
     const staged = $derived(repo?.staged ?? []);
     const current = $derived(branches.find((one) => one.current) ?? null);
     const upstream = $derived(current?.upstream ?? '');
@@ -66,8 +73,11 @@
 
     $effect(() => {
         const root = workspace;
+        // The state itself is read, so every state the channel sends lists again: a commit or a
+        // switch made elsewhere changes the branches without changing the shape.
         const state = repo;
-        if (root === '' || state?.error !== null) {
+        if (repoShape(root, state) !== 'readable') {
+            asked += 1;
             branches = [];
             return;
         }
@@ -75,13 +85,17 @@
     });
 
     async function load(root: string): Promise<void> {
+        asked += 1;
+        const mine = asked;
+        let listed: Branch[];
         try {
             const response = await fetch(`/api/git?root=${encodeURIComponent(root)}`);
             const body = (await response.json()) as { branches?: Branch[] };
-            branches = Array.isArray(body.branches) ? body.branches : [];
+            listed = Array.isArray(body.branches) ? body.branches : [];
         } catch {
-            branches = [];
+            listed = [];
         }
+        if (mine === asked) branches = listed;
     }
 
     function shared(path: string): string[] {
@@ -94,7 +108,9 @@
         if (state.detached) bits.push(t('sessions.ch_detached'));
         if (state.ahead > 0) bits.push(t('sessions.ch_ahead', state.ahead));
         if (state.behind > 0) bits.push(t('sessions.ch_behind', state.behind));
-        if (bits.length === 0) bits.push(t('sessions.ch_insync'));
+        // In step only with an upstream there is: a branch with none, a repository with no commit
+        // among them, has no distance to state, and the push line says why.
+        if (bits.length === 0 && state.upstream === true) bits.push(t('sessions.ch_insync'));
         return bits.join(` ${t('sessions.meta_sep')} `);
     }
 
@@ -203,14 +219,29 @@
             <Empty message={t('sessions.detail_empty')} glyph={t('sessions.empty_glyph')} />
         {:else}
             <ChangesTouched recordId={record.id} {files} {workspace} />
-            {#if repo?.error !== null}
-                <section class="repo">
+            {#if shape === 'unplaced'}
+                <section class="repo" data-repo="unplaced">
+                    <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
+                    <p class="none">{t('sessions.ch_noworkspace')}</p>
+                </section>
+            {:else if shape === 'none'}
+                <section class="repo" data-repo="none">
                     <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
                     <p class="none" title={repo?.error ?? undefined}>{t('sessions.ch_norepo')}</p>
                 </section>
-            {:else}
+            {:else if shape === 'failed'}
+                <section class="repo" data-repo="failed">
+                    <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
+                    <p class="none failed">{t('sessions.ch_failed', repo?.error ?? '')}</p>
+                </section>
+            {:else if shape === 'reading'}
+                <section class="repo" data-repo="reading">
+                    <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
+                    <p class="none">{t('sessions.ch_reading')}</p>
+                </section>
+            {:else if readable !== null}
                 <ChangesRepo
-                    state={repo}
+                    state={readable}
                     {branchItems}
                     {upstream}
                     {busy}
@@ -270,6 +301,9 @@
         margin: 2px 0 0;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
+    }
+    .none.failed {
+        color: var(--c-red-txt);
     }
     :global(body.rice) .changes {
         font-family: var(--font-mono);

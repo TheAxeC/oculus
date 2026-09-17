@@ -12,7 +12,6 @@ import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Agents from '../../src/lib/views/sessions/Agents.svelte';
-import Changes from '../../src/lib/views/sessions/Changes.svelte';
 import SessionDetail from '../../src/lib/views/sessions/SessionDetail.svelte';
 import SessionList from '../../src/lib/views/sessions/SessionList.svelte';
 import { sessionRowItems, terminalRowItems } from '../../src/lib/views/sessions/session-list.ts';
@@ -499,118 +498,6 @@ describe('the transcript view', () => {
         const body = html(SessionDetail);
         expect(body).toContain(catalog['sessions.transcript_open']);
         expect(body).toContain(catalog['sessions.transcript_open_tip']);
-    });
-});
-
-/** How many controls carry exactly these words, which is how many rows drew that control. */
-function count(body: string, label: string): number {
-    return [...body.matchAll(new RegExp(`>${label}<`, 'g'))].length;
-}
-
-describe('the changes view', () => {
-    it('offers pin and unpin in place', () => {
-        select('live-one');
-        expect(html(Changes)).toContain(catalog['sessions.pin_pane']);
-        expect(html(Changes, { session: 'ended-one', label: 'The ended one' })).toContain(
-            catalog['sessions.unpin_pane']
-        );
-    });
-
-    it('lists the files the session touched, relative to its workspace', () => {
-        select('live-one');
-        const body = html(Changes);
-        expect(body).toContain(catalog['sessions.ch_touched']);
-        expect(body).toContain('projects/manuscripts/alpha/code/run.py');
-        expect(body).toContain(catalog['sessions.ch_times'].replace('{0}', '3'));
-    });
-
-    it('marks a file another live session is holding open, and names it', () => {
-        select('live-one');
-        const body = html(Changes);
-        expect(body).toContain(catalog['sessions.ch_shared']);
-        expect(body).toContain(
-            catalog['sessions.ch_shared_tip'].replace('{0}', 'The other live one')
-        );
-    });
-
-    it('draws the branch line and the three git groups with their letters', () => {
-        select('live-one');
-        const body = html(Changes);
-        expect(body).toContain(catalog['sessions.ch_ahead'].replace('{0}', '1'));
-        expect(body).toContain(catalog['sessions.ch_staged']);
-        expect(body).toContain(catalog['sessions.ch_untracked']);
-        expect(body).toContain('>M</span>');
-        expect(body).toContain('>?</span>');
-        expect(body).toContain(catalog['sessions.ch_added'].replace('{0}', '4'));
-        expect(body).toContain(catalog['sessions.ch_binary']);
-    });
-
-    it('says a workspace is not a repository, with git own reason in the tooltip', () => {
-        select('bare-one');
-        const body = html(Changes);
-        expect(body).toContain(catalog['sessions.ch_norepo']);
-        expect(body).toContain('title="not a git repository"');
-    });
-
-    it('draws a control on every row: unstage on a staged one, stage and discard on a changed one', () => {
-        select('live-one');
-        const body = html(Changes);
-        expect(body).toContain(catalog['git.unstage']);
-        expect(body).toContain(catalog['git.stage']);
-        expect(body).toContain(catalog['git.discard']);
-        // The reason a control gives is drawn as a Tooltip bubble rather than a title attribute.
-        expect(body).toContain(catalog['git.discard_title']);
-        // Three rows carry a stage (two changed, one untracked) and one carries the unstage.
-        expect(count(body, catalog['git.stage'])).toBe(3);
-        expect(count(body, catalog['git.unstage'])).toBe(1);
-        // An untracked row offers no discard, so only the two changed rows carry one.
-        expect(count(body, catalog['git.discard'])).toBe(2);
-    });
-
-    it('marks a git row another live session is holding open', () => {
-        select('live-one');
-        const body = html(Changes);
-        expect(body).toContain('projects/manuscripts/alpha/manuscript/main.tex');
-        const marks = [...body.matchAll(new RegExp(catalog['sessions.ch_shared'], 'g'))];
-        expect(marks.length).toBeGreaterThan(1);
-    });
-
-    it('disables the push button with its reason while the branch has no upstream', () => {
-        select('live-one');
-        const body = html(Changes);
-        expect(body).toContain(catalog['git.push']);
-        expect(body).toContain(catalog['git.push_none']);
-        expect(body).not.toContain(catalog['git.push_pending']);
-        expect(body).toContain('disabled');
-    });
-
-    it('says the upstream is being looked up, not that there is none, before git has answered', () => {
-        const other = git({ branch: '', repository: false, error: 'not a git repository' });
-        receive({
-            channel: 'git',
-            version: 3,
-            payload: { [HUB]: { ...HUB_GIT, upstream: null }, '/other': other }
-        });
-        select('live-one');
-        const body = html(Changes);
-        expect(body).toContain(catalog['git.push_pending']);
-        expect(body).not.toContain(catalog['git.push_none']);
-        expect(body).toContain('disabled');
-        receive({ channel: 'git', version: 4, payload: { [HUB]: HUB_GIT, '/other': other } });
-    });
-
-    it('draws the commit box with its suggest and commit controls', () => {
-        select('live-one');
-        const body = html(Changes);
-        expect(body).toContain(`aria-label="${catalog['git.commit_label']}"`);
-        expect(body).toContain(catalog['git.suggest']);
-        expect(body).toContain(catalog['git.commit']);
-        expect(body).toContain(catalog['git.branch_new']);
-    });
-
-    it('shows its empty state with nothing selected', () => {
-        select(null);
-        expect(html(Changes)).toContain(catalog['sessions.detail_empty']);
     });
 });
 

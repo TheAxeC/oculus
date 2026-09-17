@@ -102,7 +102,7 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 | `terminal` | Terminal | A terminal running Claude, Codex or a shell inside tmux. |
 | `transcript` | Transcript | One session's turns as they were written. |
 | `timeline` | Timeline | One session's turns over time. |
-| `changes` | Changes | The git state of the workspace a session works in. |
+| `changes` | Changes | The git state of the workspace a session works in: its branch, its changes and the commit box, a repository with no commit yet included; or one line saying the session names no workspace folder, that the folder is not a git repository, that git could not read the repository and why, or that git has not read the workspace yet. |
 | `agents` | Agents | The agents a session has running under it. |
 | `status` | Status | Whether the socket is up, which snapshot the page holds and how much is in it. |
 | `findings` | Findings | Every problem the data layer found in the hub's files, each naming its file and key. |

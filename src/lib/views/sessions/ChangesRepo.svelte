@@ -79,7 +79,7 @@
     {/if}
 {/snippet}
 
-<section class="sec">
+<section class="sec" data-repo="readable">
     <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
     <div class="branch">
         <span class="lb">{t('sessions.ch_branch')}</span>

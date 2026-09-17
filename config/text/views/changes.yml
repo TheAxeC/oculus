@@ -42,9 +42,12 @@ text:
         ch_deleted: -{0}
         ch_detached: detached
         ch_elide: ...{0}
+        ch_failed: 'git could not read this repository: {0}'
         ch_group_empty: nothing
         ch_insync: in step with the upstream
         ch_norepo: This workspace is not a git repository.
+        ch_noworkspace: This session names no workspace folder.
+        ch_reading: git has not read this workspace yet.
         ch_repo: The repository
         ch_shared: also open
         ch_shared_tip: also touched by {0}

@@ -89,3 +89,92 @@ Cross-spec check: `npx playwright test tests/browser/changes.spec.ts tests/brows
 - Two live Changes instances over one workspace were read in the source (each component instance holds its own `asked` and `branches`) but not exercised in the browser.
 
 Reviewer usage: tokens not known to the reviewer, 32 tool uses, about 32 minutes.
+
+## Repair round 1, refuted
+
+```
+$ npx vitest run --reporter=dot
+ Test Files  250 passed (250)
+      Tests  4200 passed (4200)          Duration 46.97s   (nothing rerun alone, nothing timed out)
+
+$ npm run check
+1789670161452 COMPLETED 1221 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+
+$ npm run lint
+(no output, exit 0)
+
+$ npm run format:check
+All matched files use Prettier code style!
+
+$ LC_ALL=C perl -ne '...' $(find src tests bin config -type f ! -name glyphs.yml)
+(printed nothing, exit 0)
+
+$ find src tests bin -type f | xargs wc -l | sort -n | tail -3
+     970 tests/state/layout.test.ts
+     980 tests/state/board.test.ts
+  170759 total                            (no file over 980; sessions.test.ts 831, changes.test.ts 309)
+
+$ python3 -c "import yaml; yaml.safe_load(open('config/text/views/changes.yml'))"
+(exit 0)
+
+$ npm run build
+(exit 0)
+
+$ npx playwright test tests/browser/changes.spec.ts tests/browser/repositories.spec.ts tests/browser/sanitise.spec.ts
+run 1:  1 failed | 15 passed (48.9s)      changes.spec.ts:192 "keeps the newest branch listing when an older one
+                                          answers after it": locator('.row').filter({hasText:'Changes spec
+                                          superseded'}) not found in 15000ms
+run 2: 16 passed (24.3s)
+run 3: 16 passed (24.1s)
+$ npx playwright test tests/browser/changes.spec.ts        (x3, alone)   2 passed each
+
+Delta read: round-1 tree rebuilt in the scratch folder from 8d90177f + tracked.patch + untracked.tar,
+`diff -ru round1 now` = 444 lines over 9 files; whole diff read as `git diff 8d90177f` + the 4 untracked files.
+
+Reverts and forced failures, in my own clone of tools/oculus under the scratch folder:
+1. repo-shape.ts `workspace === ''` -> 'none'            -> changes.test.ts 1 failed | 15 passed
+                                                            ("says a session with no workspace names no folder")
+2. Changes.svelte, the `unplaced` markup branch dropped  -> changes.test.ts 1 failed | 15 passed (same case;
+                                                            the render, not the repoShape assertion, is what fails)
+3. Changes.svelte `{:else if shape === 'reading'}` -> `{:else if repo === null}`
+                                                         -> changes.test.ts 16 passed (GREEN)
+4. ruling 6, `throw new Error('midway')` after the second folder is made, rebuilt, playwright run
+                                                         -> 1 failed | 1 passed; `ls $TMPDIR | grep oculus-changes-spec` = NONE
+5. the same throw with round 1's shape restored (no push in `folder()`, `made.push(...)` after all four)
+                                                         -> leftovers: oculus-changes-spec-committed-xrdmtB,
+                                                            oculus-changes-spec-fresh-pNYEGy
+6. ruling 8, serve.ts `join(temp,'home')` -> `join(temp,'home-elsewhere')`, rebuilt, playwright run
+                                                         -> Error: the served run has no session store at
+                                                            /var/folders/.../T/oculus-browser-yGnddj/home/.claude/projects
+7. probe, boot then write a session in a fresh repository and poll 20s for `[data-repo]`
+                                                         -> sequence [] (the row never appeared)
+8. probe, statusFor() on a path that does not exist       -> {"repository":false,"error":"no such directory"},
+                                                            repoShape -> 'none'
+$ cmp base sessions.test.ts:587-600  vs  changes.test.ts:281-294   -> identical
+$ diff -u base tests/browser/repositories.spec.ts   -> the `./git.ts` import for the `spawnSync` import,
+                                                       and its own `gitIn` removed; nothing else
+```
+
+- `tests/browser/changes.spec.ts:192`: the new case is intermittently red. One of three runs of the three specs failed with the session row for "Changes spec superseded" never appearing inside 15 s; five further runs (two of the trio, three of the spec alone) were green. Case 2 writes its transcript into the store folder the previous case's `afterEach` (line 123) has just removed, and a probe that wrote a transcript into that folder after boot never saw the session at all in 20 s, so the store's removal and remaking is what is not always picked up. Under Proof.
+- `src/lib/views/sessions/repo-shape.ts:12,18`: the doc comments read "The four drawings of the repository section", "the other three are one sentence each" and "Which of the four a workspace and the state ... come to" over a union of five (`unplaced | reading | none | failed | readable`, line 16); the builder's own report says "The five drawings now". The head comment at line 7 was carried to the fifth shape and these three were not; a comment the change makes false. Under Standards.
+- `src/lib/views/sessions/Changes.svelte:230`: a workspace the user deleted reads "This workspace is not a git repository.", its real reason only in the `title`. `src/lib/server/git.ts:111` returns `empty('no such directory')` with `repository: false` for it (probe 8), `repo-shape.ts:22` makes that `'none'`, and `src/lib/views/repositories/Repo.svelte:103-105` draws the same `GitState` as "git could not read this repository: no such directory". Two views, one state, two sentences, and the false one is the state the step exists to stop being drawn as "not a git repository". Under Behaviour.
+- `src/lib/views/sessions/Changes.svelte:223` against `src/lib/views/repositories/Repo.svelte:104`: `data-repo="unplaced|none|failed|reading|readable"` beside `data-repo-failed` for the same fact under a different spelling. Raised by the first refuter, not among the nine rulings, and `plan.md:141`'s Q52 books only `Repo.svelte`'s second `branchState`, so this one is neither closed nor booked. Under Standards.
+- `src/lib/views/sessions/Changes.svelte:237`: ruling 5's closure has no check. Putting the branch back on its own predicate (`{:else if repo === null}`) leaves `changes.test.ts` at 16 passed, because `shape === 'unplaced'` catches the empty workspace first and the two predicates cannot disagree. The ruling is done in the source; nothing would catch its undoing. Under Proof.
+- `tests/browser/git.ts:20`: the shared helper commits as "Oculus Browser Spec"; `repositories.spec.ts` committed as "Oculus Repositories Spec" before. No assertion reads the author (`grep -rn "Repositories Spec" tests` finds none) and the spec is green, but it is a change to another spec's behaviour that the report's before-and-after does not carry. Under Behaviour.
+- `agents/reviews/Q47-report.md`, "On every newly selected session the panel shows 'git has not read this workspace yet.'": the git watcher reads and publishes every session workspace together (`src/lib/server/watch/git.ts:283-306`) and `gitFor` answers from that one payload (`src/lib/state/selectors.svelte.ts:397-399`), so a session whose workspace is already on the channel draws no `reading` sentence on selection. The window exists only for a workspace the channel has not carried yet, and I could not reach it in the served run at all (probe 7). Under Behaviour.
+
+Closures reproduced, each by its own run: ruling 1 and 3 (reverts 1 and 2, the render load-bearing), ruling 2 (`git status --short` lists no `views/repositories/Repo.svelte`; the in-step rule named in the report's Doc text), ruling 4 (`repo-shape.ts` 24 lines with its own head comment, `changes.test.ts:14` imports it plainly, `npm run check` 1221 files 0 errors), ruling 6 (reverts 4 and 5), ruling 7 (`tests/browser/git.ts` imported by both specs, `repositories.spec.ts` against the base is the import swap and the removal of its own copy), ruling 8 (revert 6), ruling 9 (831 lines; the restored case byte-identical by `cmp`; all eleven base cases of the changes describe present in `changes.test.ts` with five added; `count()` used only by the moved block).
+
+Not checked within the time box: the rest of the browser suite; whether the intermittent failure of `changes.spec.ts:192` is the sessions watcher losing the store folder (only its symptom was reproduced); the proposed HELP.md and DESIGN.md sentences, which the brief reserves; `RepoShape` is exported with no consumer outside its own file, which no rule of the tree names.
+
+Reviewer usage: tokens not known to the reviewer, 35 tool uses, about 62 minutes.
+
+## Closed at landing
+
+- `repo-shape.ts:7,12,18`, comments saying four shapes over a union of five: closed, the three sentences name five.
+- `tests/browser/changes.spec.ts:192`, the intermittently red case: closed. The `afterEach` now empties the spec's session store rather than removing the folder, since the session watcher does not always see a directory removed and remade before the next case asks; `npx playwright test tests/browser/changes.spec.ts --repeat-each=3` gives 6 passed.
+- `Changes.svelte:230`, a workspace the reader deleted reading "This workspace is not a git repository.": booked as Q57. Telling it apart from a folder that is no repository needs the server to say which, which is a wire change and not a landing fix.
+- `Changes.svelte:237`, ruling 5's closure with no check: recorded. `shape === 'reading'` and `repo === null` cannot disagree, because a session with no workspace derives a null state and `unplaced` catches it first; the branch reads the shape, and no test can tell the two apart.
+- `tests/browser/git.ts:20`, the shared helper's commit author: recorded. No assertion reads it and both specs are green.
+- `data-repo` beside `views/repositories/Repo.svelte`'s `data-repo-failed`: added to Q52, which already covers that file's second `branchState`.
+- The report's sentence about the `reading` line on every newly selected session: corrected by the reviewer's probe. The git watcher publishes every session workspace together, so a session whose workspace is already on the channel draws no `reading` line; the window exists only for a workspace the channel has not carried yet.
