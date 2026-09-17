@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57, Q32 landed 13:26, Q30 landed 14:28; Q30 (the run over its round), Q34 (repair round), Q42 (repair round) and Q43 (dispatched 14:30 from 17e22699) in flight; Q41 built, waiting on Axel's ruling on the lane colours; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57, Q32 landed 13:26, Q30 landed 14:28; Q30 (the run over its round), Q34 (repair round), Q42 (the run over its round) and Q43 (dispatched 14:30 from 17e22699) in flight; Q41 built, waiting on Axel's ruling on the lane colours; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q34
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -71,6 +71,8 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46,
   reported: 2026-09-17T14:08
   reviewer: a43aebd3d656fc74f                # claude:opus through the Agent tool, read-only, launched 14:10, scratch folder scratchpad/q42-review (review earned: a state layer)
   round: 1                                  # sent 14:27: six rulings on agents/reviews/Q42-refuter.md (the in-flight source save guarded, the tab walk shared in state/instance.ts, the browser case over every tab by ids from the page, two comments, the HELP.md sentence); round base: scratchpad/q42-round1; paths widened by state/source.svelte.ts, state/instance.ts, shell/page-strip.ts, state/context.ts
+  reported2: 2026-09-17T14:38                # the round's report, appended to agents/reviews/Q42-report.md; all six rulings done
+  reviewer2: a13e4ea744dd5516b               # the run over round 1, claude:opus, read-only, launched 14:40, scratch folder scratchpad/q42-review2
   landing: not-started
 - package: Q43
   executor: agent                          # the configuration default, chosen for the step
@@ -800,4 +802,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q42, worker claude:opus through the Agent tool, first run: 182,290 tokens, 47 tool uses, 622 s (13:57 to 14:08); everything done, an older leak found outside its paths.
 - Q42, reviewer claude:opus through the Agent tool, read-only: 184,280 tokens, 61 tool uses, 954 s (14:10 to 14:26); six rulings sent in the one repair round.
 - Q34, reviewer claude:opus through the Agent tool, read-only: 295,065 tokens, 92 tool uses, 2,024 s (14:04 to 14:37); eleven rulings sent in the one repair round, one step booked (Q46).
+- Q42, worker round 1 claude:opus: 234,188 tokens (cumulative on the thread), 34 tool uses, 647 s (14:27 to 14:38); six rulings done.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
