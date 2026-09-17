@@ -255,6 +255,8 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
+- 2026-09-18 00:15. Landed on 2026-09-17: Q37, Q31, Q39, Q32, Q30, Q42, Q34, Q43, Q44, Q45, Q41, D22, Q38, Q46 and Q47, fifteen steps. In flight: Q48 (its one repair round, nine rulings), R14 (the eleven checks of the recurring pass) and Q49 (the ticker's hidden buttons). Briefs written and committed ahead of the queue: Q36, Q50, Q51, Q52, Q53, Q54, Q56, Q57, Q58, Q59, Q60, Q61, Q62, Q63. The ledger's three lists are separated: open items hold only what Axel must rule on and are empty; the booked list holds four entries, each a step; the closed list is the log. Every finding in every report is accounted for: the closure audit of 23:42 read 38 reports and judged 967 findings, and the twenty it found unbooked are Q61, Q62 and Q63.
+
 - 2026-09-10. C1 to C13, R1 and O0 are done and committed: fc6d299 (C12 and C13, one commit because H1 and H2 both touched eight of the same files) and f8af492 (R1 and O0). Working tree clean after both.
 - Verified before fc6d299: `python3 build.py --selftest` PASS, `python3 build.py --dummy` builds, `bash tests/run.sh` PASS (5 + 29 + 24 + 19 Python tests, 11 JS modules). `grep -rn os.environ tools/cockpit/src tools/cockpit/build.py` finds only the `ANTHROPIC_API_KEY` read. The 8787 server answers 200 with zero `COCKPIT_` variables in its environment.
 - S1 landed 2026-09-10, commit 7c0ab4f (worktree `s1`, wip ec22009, cherry-pick onto main); the skill's file-tool rule was removed afterwards by Axel's instruction (5aaa29e, 72dd725). The skill is visible to the harness as `plan-orchestration`.
