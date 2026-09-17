@@ -68,7 +68,9 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/Q42-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: aa3e13607c19eb8db            # the Agent tool id, launched 13:57
-  round: 0
+  reported: 2026-09-17T14:08
+  reviewer: a43aebd3d656fc74f                # claude:opus through the Agent tool, read-only, launched 14:10, scratch folder scratchpad/q42-review (review earned: a state layer)
+  round: 1                                  # sent 14:37: six rulings on agents/reviews/Q42-refuter.md (the in-flight source save guarded, the tab walk shared in state/instance.ts, the browser case over every tab by ids from the page, two comments, the HELP.md sentence); round base: scratchpad/q42-round1; paths widened by state/source.svelte.ts, state/instance.ts, shell/page-strip.ts, state/context.ts
   landing: not-started
 ```
 
@@ -783,4 +785,6 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q30, run over round 1, claude:opus read-only: 151,229 tokens, 45 tool uses, 784 s (13:46 to 13:59); six findings, four fixed at landing, one booked as Q45, one noted.
 - Q34, worker claude:opus through the Agent tool, first run: 465,103 tokens, 177 tool uses, 3,642 s (13:00 to 14:01); everything done by its report, four new files outside its paths, six visible decisions to confirm.
 - Q30, orchestrator claude:opus (this session), `land/templates/usage.py` from Q32's landing (2026-09-17T13:26:33+02:00) to 14:28: 47 messages, 44515 output tokens, 100688 cache-write tokens, 20861202 cache-read tokens, 102 fresh input tokens, 62 minutes; shared with Q41's brief, stop and dispatch, Q42's brief and dispatch, Q34's report and its reviewer's dispatch, Q42's report and its reviewer's dispatch.
+- Q42, worker claude:opus through the Agent tool, first run: 182,290 tokens, 47 tool uses, 622 s (13:57 to 14:08); everything done, an older leak found outside its paths.
+- Q42, reviewer claude:opus through the Agent tool, read-only: 184,280 tokens, 61 tool uses, 954 s (14:10 to 14:26); six rulings sent in the one repair round.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
