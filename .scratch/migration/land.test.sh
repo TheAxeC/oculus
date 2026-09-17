@@ -86,10 +86,10 @@ JSONL
 {"type":"turn.completed","usage":{"input_tokens":15,"cached_input_tokens":8,"output_tokens":1,"reasoning_output_tokens":1}}
 {"type":"item.completed","item":{"type":"command_execution"}}
 JSONL
-    cat >"$runs_root/review-events-2.jsonl" <<'JSONL'
-{"type":"turn.completed","usage":{"input_tokens":10,"cached_input_tokens":5,"output_tokens":1,"reasoning_output_tokens":1}}
-{"type":"turn.completed","usage":{"input_tokens":20,"cached_input_tokens":10,"output_tokens":2,"reasoning_output_tokens":1}}
-{"type":"item.completed","item":{"type":"command_execution"}}
+    cat >"$runs_root/session.jsonl" <<'JSONL'
+{"type":"assistant","timestamp":"2026-09-16T10:05:00.000Z","message":{"id":"msg_a","usage":{"output_tokens":10,"cache_creation_input_tokens":100,"cache_read_input_tokens":1000,"input_tokens":5}}}
+{"type":"assistant","timestamp":"2026-09-16T10:05:01.000Z","message":{"id":"msg_a","usage":{"output_tokens":10,"cache_creation_input_tokens":100,"cache_read_input_tokens":1000,"input_tokens":5}}}
+{"type":"assistant","timestamp":"2026-09-16T10:30:00.000Z","message":{"id":"msg_b","usage":{"output_tokens":20,"cache_creation_input_tokens":0,"cache_read_input_tokens":2000,"input_tokens":3}}}
 JSONL
     : >"$runs_root/pid.txt"
     : >"$runs_root/exit.txt"
@@ -97,16 +97,12 @@ JSONL
     : >"$runs_root/repair-exit.txt"
     : >"$runs_root/review-pid.txt"
     : >"$runs_root/review-exit.txt"
-    : >"$runs_root/review-pid-2.txt"
-    : >"$runs_root/review-exit-2.txt"
     touch -t 202609140100.00 "$runs_root/pid.txt"
     touch -t 202609140101.05 "$runs_root/exit.txt"
     touch -t 202609140200.00 "$runs_root/repair-pid.txt"
     touch -t 202609140200.10 "$runs_root/repair-exit.txt"
     touch -t 202609140300.00 "$runs_root/review-pid.txt"
     touch -t 202609140300.20 "$runs_root/review-exit.txt"
-    touch -t 202609140400.00 "$runs_root/review-pid-2.txt"
-    touch -t 202609140400.30 "$runs_root/review-exit-2.txt"
 }
 
 clean_repo=$test_root/clean
@@ -128,7 +124,7 @@ write_events "$clean_runs"
 
 (
     cd "$clean_repo" || exit 1
-    sh "$land_script" clean "$clean_base" "$clean_runs" --no-browser
+    sh "$land_script" clean "$clean_base" "$clean_runs" --no-browser --session "$clean_runs/session.jsonl" --since 2026-09-16T12:00:00+02:00
 ) >"$test_root/clean.out" 2>&1
 clean_status=$?
 clean_output=$(cat "$test_root/clean.out")
@@ -143,10 +139,17 @@ if [ "$clean_staged" != "$clean_expected" ]; then
     fail "clean staged paths differ: [$clean_staged]"
 fi
 assert_contains "$clean_output" "clean, worker codex:gpt-5.6-sol at high, first run: 300 in / 150 cached / 30 out (7 reasoning), 2 items, 65 s (01:00:00 to 01:01:05); repair round on the same thread: 30 in / 15 cached / 3 out (2 reasoning), 1 items, 10 s; +2 -0 over 2 files; first report passed its bar: <yes or no>; <N> fixes at landing" "worker row"
-assert_contains "$clean_output" "clean, reviewer codex:gpt-5.6-sol at high, read-only: first review 20 in / 10 cached / 2 out, 1 items, 20 s; second review 30 in / 15 cached / 3 out, 1 items, 30 s" "reviewer row"
+assert_contains "$clean_output" "clean, reviewer codex:gpt-5.6-sol at high, read-only: review 20 in / 10 cached / 2 out, 1 items, 20 s" "reviewer row"
+case "$clean_output" in
+    *"second review"*)
+        fail "reviewer row still carries a second review"
+        ;;
+esac
+assert_contains "$clean_output" "Orchestrator row (2026-09-16T12:00:00+02:00 to " "orchestrator row window"
+assert_contains "$clean_output" "): 2 messages, 30 output tokens, 100 cache-write tokens, 3000 cache-read tokens, 8 fresh input tokens, " "orchestrator row"
 assert_contains "$clean_output" "tools/oculus/committed.txt" "booking paths"
 assert_contains "$clean_output" "tools/oculus/pending.txt" "booking paths"
-printf 'clean: exit 0, staged paths and usage rows verified\n'
+printf 'clean: exit 0, staged paths, usage rows and the orchestrator row verified\n'
 
 conflict_repo=$test_root/conflict
 initialise_repo "$conflict_repo"

@@ -7,7 +7,7 @@ PATH=$HOME/.nvm/versions/node/v24.21.0/bin:$PATH
 export PATH
 
 usage() {
-    printf 'Usage: %s <pkg> <base> <runs dir> [--no-browser]\n' "$0" >&2
+    printf 'Usage: %s <pkg> <base> <runs dir> [--no-browser] [--session <session log> --since <ISO time>]\n' "$0" >&2
     exit 64
 }
 
@@ -16,7 +16,7 @@ fail() {
     exit "${2:-1}"
 }
 
-if [ "$#" -lt 3 ] || [ "$#" -gt 4 ]; then
+if [ "$#" -lt 3 ]; then
     usage
 fi
 
@@ -24,6 +24,8 @@ landing_pkg=$1
 landing_base=$2
 landing_runs=$3
 landing_browser=1
+landing_session=''
+landing_since=''
 
 case "$landing_pkg" in
     '' | *[!A-Za-z0-9._-]*)
@@ -37,11 +39,36 @@ case "$landing_base" in
         ;;
 esac
 
-if [ "$#" -eq 4 ]; then
-    if [ "$4" != "--no-browser" ]; then
-        usage
-    fi
-    landing_browser=0
+shift 3
+while [ "$#" -gt 0 ]; do
+    case "$1" in
+        --no-browser)
+            landing_browser=0
+            shift
+            ;;
+        --session)
+            [ "$#" -ge 2 ] || usage
+            landing_session=$2
+            shift 2
+            ;;
+        --since)
+            [ "$#" -ge 2 ] || usage
+            landing_since=$2
+            shift 2
+            ;;
+        *)
+            usage
+            ;;
+    esac
+done
+if [ -n "$landing_session" ] && [ -z "$landing_since" ]; then
+    fail "arguments failed: --session needs --since, the previous landing commit's git log -1 --format=%cI" 64
+fi
+if [ -z "$landing_session" ] && [ -n "$landing_since" ]; then
+    fail "arguments failed: --since needs --session, the running session's own log" 64
+fi
+if [ -n "$landing_session" ] && [ ! -f "$landing_session" ]; then
+    fail "arguments failed: session log not found: $landing_session" 64
 fi
 
 landing_root=$(pwd -P)
@@ -277,14 +304,6 @@ function requiredFiles(prefix) {
     };
 }
 
-function secondReviewFiles() {
-    return {
-        events: path.join(runsDir, "review-events-2.jsonl"),
-        pid: path.join(runsDir, "review-pid-2.txt"),
-        exit: path.join(runsDir, "review-exit-2.txt"),
-    };
-}
-
 function existsAny(files) {
     return Object.values(files).some((file) => fs.existsSync(file));
 }
@@ -361,7 +380,6 @@ function reviewerPart(label, usage) {
 const firstFiles = requiredFiles("");
 const repairFiles = requiredFiles("repair-");
 const reviewFiles = requiredFiles("review-");
-const reviewTwoFiles = secondReviewFiles();
 const tail = `; +${additions} -${deletions} over ${files} files; first report passed its bar: <yes or no>; <N> fixes at landing`;
 
 let worker;
@@ -378,12 +396,9 @@ worker += tail;
 
 let reviewer;
 if (existsAny(reviewFiles)) {
-    reviewer = `${pkg}, reviewer codex:gpt-5.6-sol at high, read-only: ${reviewerPart("first review", readUsage(reviewFiles, "first review"))}`;
-    if (existsAny(reviewTwoFiles)) {
-        reviewer += `; ${reviewerPart("second review", readUsage(reviewTwoFiles, "second review"))}`;
-    }
+    reviewer = `${pkg}, reviewer codex:gpt-5.6-sol at high, read-only: ${reviewerPart("review", readUsage(reviewFiles, "review"))}`;
 } else {
-    reviewer = `${pkg}, reviewer <harness:model>, read-only: first review <tokens> / <tool uses> / <seconds> s; second review <the same, or none> (from the runner's result; no event log)`;
+    reviewer = `${pkg}, reviewer <harness:model>, read-only: review <tokens> / <tool uses> / <seconds> s (from the runner's result; no event log)`;
 }
 
 console.log(worker);
@@ -400,6 +415,26 @@ printf 'Diff stat against %s:\n' "$landing_base"
 cat "$landing_tmp/diff-stat.txt"
 printf '%s\n' 'Usage rows:'
 cat "$landing_tmp/usage.txt"
+if [ -n "$landing_session" ]; then
+    # The orchestrator's row, from its own session log between the previous landing and now. The
+    # script is looked for beside this one, then in the land skill's templates of this repository.
+    landing_usage_script=''
+    landing_script_dir=$(CDPATH= cd "$(dirname "$0")" && pwd -P)
+    if [ -f "$landing_script_dir/usage.py" ]; then
+        landing_usage_script=$landing_script_dir/usage.py
+    else
+        landing_script_repo=$(cd "$landing_script_dir" && git rev-parse --show-toplevel 2>/dev/null)
+        if [ -n "$landing_script_repo" ] && [ -f "$landing_script_repo/.agents/skills/land/templates/usage.py" ]; then
+            landing_usage_script=$landing_script_repo/.agents/skills/land/templates/usage.py
+        fi
+    fi
+    [ -n "$landing_usage_script" ] || fail "booking usage failed: usage.py not found beside this script or in .agents/skills/land/templates"
+    landing_now=$(date -Iseconds)
+    landing_row=$(python3 "$landing_usage_script" "$landing_session" "$landing_since" "$landing_now") || fail "booking usage failed: usage.py on $landing_session"
+    printf 'Orchestrator row (%s to %s): %s\n' "$landing_since" "$landing_now" "$landing_row"
+else
+    printf '%s\n' 'Orchestrator row: not produced; pass --session <session log> --since <previous landing commit time>'
+fi
 printf '%s\n' 'Staged paths:'
 cat "$landing_tmp/staged-paths.txt"
 printf '%s\n' '=== end booking ==='
