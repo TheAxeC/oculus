@@ -33,7 +33,7 @@ dispatch:                                  # Q37, Q31 and Q32 in flight (dispatc
   prompt: the Agent tool's prompt, the shape of M2's with the brief's own paths
   report: tools/oculus/.scratch/migration/agents/reviews/Q37-report.md
   pid: none                                 # a native Claude worker has no process of its own
-  session_id: pending
+  session_id: a732fe3f2691cdf00            # the Agent tool id, launched 10:51
   round: 0
   landing: not-started
 - package: Q31
@@ -44,7 +44,7 @@ dispatch:                                  # Q37, Q31 and Q32 in flight (dispatc
   prompt: the Agent tool's prompt, the shape of M2's with the brief's own paths
   report: tools/oculus/.scratch/migration/agents/reviews/Q31-report.md
   pid: none                                 # a native Claude worker has no process of its own
-  session_id: pending
+  session_id: a2f475d563e0e580f            # the Agent tool id, launched 10:51
   round: 0
   landing: not-started
 - package: Q32
@@ -55,7 +55,7 @@ dispatch:                                  # Q37, Q31 and Q32 in flight (dispatc
   prompt: the Agent tool's prompt, the shape of M2's with the brief's own paths
   report: tools/oculus/.scratch/migration/agents/reviews/Q32-report.md
   pid: none                                 # a native Claude worker has no process of its own
-  session_id: pending
+  session_id: ad29e581e565309d1            # the Agent tool id, launched 10:51
   round: 0
   landing: not-started
 ```
