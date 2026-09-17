@@ -46,6 +46,7 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   round: 1                                  # sent 23:55: nine rulings (the sweep moved out of the mounted view, the on-disk case out of scope and booked as Q64, Save disabled while its request is out, the kept exemption tied to a save in flight, an add form that saves again after its entry was added, the replaced guarantee, the markKept record trimmed, a test with no revert, and the retyped-draft decision kept); round base: scratchpad/q48-round1; paths widened by state/context.ts and state/fs.svelte.ts
   reported2: 2026-09-18T00:45                # the round's report, appended to agents/reviews/Q48-report.md: all nine rulings done; the `kept` mark became a `saving` mark, the sweep moved into the fs store over every file browser the layout holds, and the Save control is disabled while its save is out. One premise of ruling 4 was wrong on this tree, and the builder says so: nothing refreshes the bookmarks list mid-flight, so a rename now closes its form when the answer lands and the text typed during the save goes with it
   reviewer2: a4941917f7bedef93               # the run over round 1, claude:opus, read-only, launched 00:45, scratch folder scratchpad/q48-review2
+  round2: 1                                 # sent 01:21, under the cap's one exception (an acceptance item of the brief unbuilt, too large for a landing fix): five rulings (the form carried onto the renamed entry with its draft, `landed` kept across a tab switch, an add form that adds rather than renames, the entry addressed by its id rather than its identity value, and three smaller findings closed or stated)
   landing: not-started
 - package: R14
   executor: agent                          # the configuration default, chosen for the step
@@ -71,6 +72,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   session_id: ab29cfa8299cdf7f4            # the Agent tool id, launched 23:43
   reported: 2026-09-18T00:52                # everything in the brief done; the name goes from 158.30 px to 301.09 px at a 760 px window. Three sharp edges stated: the revealed buttons cover the end of the name and take a press there, slivers of the name show between them, and in a pane narrower than the group they overflow past the row's left edge
   reviewer: a06055ffd67be60c3                # claude:opus through the Agent tool, read-only, launched 00:52, scratch folder scratchpad/q49-review (review earned: a primitive every board reads)
+  reviewer_done: 2026-09-18T01:12            # the review found the step traded one defect for another: at 900 and 480 the revealed buttons cover the whole name, they spill up to 104 px past the row over the activity rail, one button cannot be pointed at, the focus ring is drawn behind the rail, a tap at a name's end writes a status, and the kept button moved from second to last in the Tab order
+  round: 1                                  # sent 01:21: seven rulings (the group clamped inside the row, the name clipped rather than covered, the kept button back in its markup place, no press at a name's end reaching a button, the comments and Doc text made true, the cases run at four widths and two themes, and the reviewer's four reproductions as the acceptance); round base: scratchpad/q49-round1
   landing: not-started
 ```
 

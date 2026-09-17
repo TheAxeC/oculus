@@ -85,3 +85,78 @@ Every verification command reproduces the builder's reported output, and every r
 - A/B against staged base binaries, and any look at the views on screen: not part of this run.
 
 Reviewer usage: about 175k tokens, 34 tool uses, about 40 minutes.
+
+## Repair round 1, refuted
+
+```
+npx vitest run --reporter=dot                (worktree)
+  Test Files  249 passed (249)
+       Tests  4213 passed (4213)
+    Duration  91.82s          (no test timed out; no rerun needed)
+
+npm run check
+  1789685332415 COMPLETED 1217 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+
+npm run lint
+  > eslint .   (no output, exit 0)
+
+npm run format:check
+  All matched files use Prettier code style!
+
+LC_ALL=C perl -ne '... ' $(find src tests bin config -type f ! -name glyphs.yml)
+  (no output, exit 0)
+
+find src tests bin -type f | xargs wc -l | sort -n | tail -3
+       970 tests/state/layout.test.ts
+       980 tests/state/board.test.ts
+    171977 total
+  wc -l src/lib/views/Files.svelte src/lib/state/fs.svelte.ts -> 577, 859 (both figures the report quotes reproduce)
+  the only component over 560 lines besides Files.svelte is ui/Tabs.svelte at 596
+
+npm run build
+  exit 0
+
+npx playwright test tests/browser/files-forms.spec.ts tests/browser/unsaved-forms.spec.ts tests/browser/files.spec.ts tests/browser/cards.spec.ts
+  69 passed (3.5m)        (the report's figure)
+
+git status --short (from inside the worktree): the same ten modified files, no new file; the ten
+  +/- pairs of the report's "Files changed" table match git diff ac11faae --stat exactly.
+
+Reverts, each in the reviewer's own clone under scratchpad/q48-review2/clone, rebuilt before each browser run:
+  editedGone drops `saving`                       -> npx vitest run tests/state/explorer.test.ts: 1 failed | 21 passed
+  endFormSave leaves the form in the record       -> tests/state/form-drafts.test.ts: 1 failed | 30 passed,
+                                                     "marks a form while a save from it is out, one form and one instance at a time"
+  EntryForm addresses every add through addFromForm (drop `landed`)
+                                                  -> unsaved-forms.spec.ts: 2 failed | 16 passed, :435 and :459
+  EntryForm without disabled={busy} and without `if (busy) return;`
+                                                  -> unsaved-forms.spec.ts: 1 failed | 17 passed, :485,
+                                                     Error: expect(locator).toBeDisabled() failed
+  closeGoneForms made inert                       -> files-forms.spec.ts: 6 failed | 9 passed, :420 :458 :507 :553 :587 (+1)
+
+Reviewer probes, own clone, removed after the run:
+  P1 tab switch between the add and its answer / P2 identity retyped after the add / P3, P4 bookmark reads
+     -> 3 passed, 1 passed; outputs quoted in the findings below
+  node probe over the venues shape (createEntry then writeEntry addressed by the identity value)
+     -> addressed by the identity value: {"found":false,"changed":[],"refused":[]}
+        addressed by the entry id:       {"found":true,"changed":["name"],...}
+```
+
+- `src/lib/views/shared/EntryForm.svelte:255` against the brief's item 3 and the plan's Q48 line ("the Files gone-bookmark close keeps a value typed during a rename save"): as built the value is kept only while the request is out and is discarded when it lands. Reproduced by the case the builder wrote and my run passes, `tests/browser/files-forms.spec.ts:458`: after the answer the instance holds `{form:'',editing:''}`, `draftKeys` is `[]` and the edit form is drawn nowhere, and the typed Path was never in the request, so it is on screen nowhere and in the drafts record nowhere. The reader loses what they typed. Nothing carries the form onto the bookmark's new id. It follows from ruling 4 and the builder states it; the brief's acceptance item is not met in the end state. Under Spec.
+
+- `src/lib/views/shared/EntryForm.svelte:119` (`let landed = $state('')`) with `:255`: `landed` lives in the component, so a tab switch between the add and its answer loses it and the defect ruling 5 closed is reachable again. Probe P1: title typed, Save pressed, `kind` filled, the Tasks tab switched away before the answer landed, then back. The add form is still open holding `kind = "typed while the save was out"`, the next Save answers `not saved: title: an entry with that title is already in the file`, the file holds one entry carrying only the title, and the draft stays (`["...#forms"]`). The report's decision 5 justifies the placement by a form "closed and reopened", and does not name the tab switch; `agents/spec.md` asks every asynchronous path to be exercised "in flight, after close, and superseded by a later one". Under Behaviour.
+
+- `src/lib/views/shared/EntryForm.svelte:251-257`: the add form left open by its answer renames the entry it added when the reader retypes the identity field, instead of adding the second entry they mean, and the form still reads as an add (`data-form="add"`). Probe P2: title retyped to "A second task the reader means to add" while the first save was out; after Save the answer is `saved title`, the first title is gone from the file (0 entries) and one entry stands under the new title. Before this round that second Save was an add. Not in the report's corrected before-and-after table. Under Behaviour.
+
+- `src/lib/views/shared/EntryForm.svelte:255` with `src/lib/server/writes/entries.ts:160-168` and `:318`: `landed` is the identity field's own value, but the server finds an entry by `entryId`, which prefers `id`, then `key`, then `title`, and only then the identity field. The node probe above adds `{name, id}` to a venues-shaped file and then addresses it by the name: `found:false`, which `src/lib/server/writes.ts:267-269` turns into `404 no entry <name> in venues`. `registries/venues.yml:15-16` on this hub is exactly that shape (schema opens with `name`, carries `id`) and its entries carry `id:`, so the report's limitation "no collection in the tree is shaped that way" does not hold, and the reader who types into a venues add form while its save is out cannot save those words from that form at all. `demo/registries/venues.yml` opens with `id`, so the browser suite cannot reach it. Under Proof.
+
+- `src/lib/state/fs.svelte.ts:642`: the `closeGoneForms(held.bookmarks)` in the not-ok branch can close nothing. `editedGone` answers false whenever `marks.error !== ''` (`src/lib/state/fs.ts:443`) and that branch always sets a non-empty error (`typeof body.error === 'string' ? body.error : String(response.status)`, and every error body `src/lib/server/fs.ts:313-374` answers is a non-empty word). If a not-ok body ever carried `error: ""` the call would instead sweep every bookmark form against `NO_BOOKMARKS.entries`, which is `[]` (`src/lib/state/fs.svelte.ts:140`), and close them all over a read that failed. Under Standards.
+
+- `src/lib/state/context.ts:152-155`: the instance-state merge is copied from `patchAt` (`src/lib/views/Files.svelte:212-215`) rather than reused, a third copy beside `src/lib/views/Repositories.svelte:86` (`grep -rn "Array.isArray(kept)" src/lib` gives those three). The round moved `shiftAt` out of the view and left the four lines behind it duplicated. Under Standards.
+
+- `src/lib/state/writes.svelte.ts:363-408` with `src/lib/views/shared/EntryForm.svelte:361-362`: a save that never answers leaves the Save control disabled for good. `send` has no timeout and no abort, so `busy` never clears; Cancel still closes the form and forgets the draft, and a reload frees the control because the mark is not persisted. The report's corrected Limitations do not name it. Under Behaviour.
+
+Checked and not findings: the `saving` mark over two forms of one instance, a tab closed mid-flight and a page closed mid-flight (`forgetForms` reaches all four close paths through the wrapper at `src/lib/state/context.ts:119-123`, and `endFormSave` returns early for an instance that is gone); an answer that throws (`send` catches everything and resolves with `ok:false`, and `.finally` clears the mark either way). Ruling 3's keyboard case: `EntryForm.svelte` has no `<form>`, no `onsubmit` and no `onkeydown`, so Enter in a field never saves, and a native disabled button takes no keyboard press; the dispatched click is covered by `:485`. `closeGoneForms` with two Files views mounted runs once, since `schedule` (`src/lib/state/fs.svelte.ts:377-384`) dedupes by `<round>:bookmarks`. A Files instance restored with a stale `editing` is swept: probe P4 counted one `GET /api/fs?bookmarks=1` at boot with only the Status tab on the page and one more over a reload, because `src/routes/+page.svelte:99` reads the bookmarks for the rail whatever is drawn. The sweep's move rule exists once: `bookmarkLeft` is called only at `context.ts:146`, and `Files.svelte:372` goes through `shiftForms`; `Files.svelte:341`'s `patchAt` is the root and workspace line form, not the bookmark form. `t('editor.saving')` is an existing key in a group the form already reads (`config/text/views/editor.yml:21`), and `ToolButton` takes `title` (`src/lib/ui/ToolButton.svelte:28,133`).
+
+Not checked: an A/B against the staged base binaries; any look at the views on screen; `HELP.md:65` and `DESIGN.md:334`, which brief decision 2 keeps out of the step and whose replacement text the report carries.
+
+Reviewer usage: 42 tool uses, about 30 minutes (00:45 to 01:12).
