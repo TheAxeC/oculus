@@ -10,6 +10,7 @@ Every agent dispatched on an oculus package runs under this file plus one brief 
 
 ## The working rules that bind every package (from the hub's CLAUDE.md)
 
+- Never take the lazy option. The lazy option is the one that costs less to do now and leaves the work undone: a limitation written instead of a fix, a case deferred, a check loosened, a test fitted to its revert, a sentence that excuses an absence, a smaller job than the brief. Work inside the brief is done in the step, never handed back as a gap or a later item; work outside it is named in the report with what it is and why it is outside. A shortcut is a finding against the step that took it.
 - A report states the end state: what is NOT done first, then a DONE / NOT DONE ledger naming the command that proves each row. No narration of wrong turns taken and backed out. Never present partial work as complete; never state a measurement not taken.
 - Every claim about behaviour, cost or timing names the command that produced it, or says "not verified".
 - A test never asserts a known defect, and no threshold is loosened to make a check pass; a check that passes only after loosening is a finding to report.

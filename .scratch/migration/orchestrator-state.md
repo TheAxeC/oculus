@@ -55,7 +55,7 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/R14-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: af48364f53f2b699f            # the Agent tool id, launched 23:18
-  reported: 2026-09-18T00:24                # the report: nine items done, two halves stopped on a path clash (the scratch leak of item 5 and the 495 comments of item 7 reach dozens of files outside the step's paths, several of them Q48's). Ruled 00:25: both are their own steps, Q65 and Q66; R14 lands with its checks as a ratchet over allow lists that are floors and ceilings, not lists of deliberate shares
+  reported: 2026-09-18T00:24                # the report: nine items done, two halves stopped on a path clash (the scratch leak of item 5 and the 495 comments of item 7 reach dozens of files outside the step's paths, several of them Q48's). Ruled 00:31, correcting the 00:25 ruling that booked them as Q65 and Q66, which was the lazy option and is withdrawn: R14's paths widen to every file under tests/ and bin/, and the same builder finishes both halves, leaving only the four test files Q48 holds, whose share is done at Q48's landing
   landing: not-started
 - package: Q49
   executor: agent                          # the configuration default, chosen for the step
