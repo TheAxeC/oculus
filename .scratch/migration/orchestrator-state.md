@@ -44,7 +44,7 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   reviewer: ad096f6b7af64b81f                # claude:opus through the Agent tool, read-only, launched 17:57, scratch folder scratchpad/q38-review (review earned: shell and ui primitives)
   round: 1                                  # sent 18:14: eight rulings on agents/reviews/Q38-refuter.md (the accent on the active pane's shown tab only, one bare button look through ToolButton and Menu props with no :global reach, the sash look in ui/Sash.svelte for every sash with a reach off the pane bodies, a dirty tab's spoken name and a page tab's dot, untested or redundant rules, tokens and merged blocks, the kept differences named, the Doc text); round base: scratchpad/q38-round1; paths widened by ui/Sash.svelte, ui/ToolButton.svelte, ui/Menu.svelte
   reported2: 2026-09-17T19:37                # the round's report, appended to agents/reviews/Q38-report.md; all eight rulings done, the whole browser suite 227 passed in the worktree; the builder's first pass ended its turn while its suite ran and was resumed at 19:04
-  reviewer2: a04dcd8c1a06a6aa0               # the run over round 1, claude:opus, read-only, launched 19:40, scratch folder scratchpad/q38-review2
+  reviewer2: a04dcd8c1a06a6aa0               # the run over round 1, claude:opus, read-only, launched 19:38, scratch folder scratchpad/q38-review2
   landing: not-started
 - package: Q46
   executor: agent                          # the configuration default, chosen for the step
@@ -57,18 +57,18 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a898406cee2e0f9b9            # the Agent tool id, launched 19:10
   reported: 2026-09-17T19:38                # everything in the brief done; bound three to one, listing 1.8 ms median over the 16 demo pictures
-  reviewer: a0449c003d4d09150                # claude:opus through the Agent tool, read-only, launched 19:46, scratch folder scratchpad/q46-review (review earned: a server module and a wire shape)
+  reviewer: a0449c003d4d09150                # claude:opus through the Agent tool, read-only, launched 19:39, scratch folder scratchpad/q46-review (review earned: a server module and a wire shape)
   landing: not-started
 - package: Q47
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
   worktree: .agents/worktrees/q47
   base: 8d90177f
-  launched: 2026-09-17T19:46
+  launched: 2026-09-17T19:39
   prompt: the Agent tool's prompt, the shape of Q46's with the brief's own paths
   report: tools/oculus/.scratch/migration/agents/reviews/Q47-report.md
   pid: none                                 # a native Claude worker has no process of its own
-  session_id: a321b30c366302d74            # the Agent tool id, launched 19:46
+  session_id: a321b30c366302d74            # the Agent tool id, launched 19:39
   landing: not-started
 ```
 
