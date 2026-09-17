@@ -69,6 +69,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/Q49-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: ab29cfa8299cdf7f4            # the Agent tool id, launched 23:43
+  reported: 2026-09-18T00:52                # everything in the brief done; the name goes from 158.30 px to 301.09 px at a 760 px window. Three sharp edges stated: the revealed buttons cover the end of the name and take a press there, slivers of the name show between them, and in a pane narrower than the group they overflow past the row's left edge
+  reviewer: a06055ffd67be60c3                # claude:opus through the Agent tool, read-only, launched 00:52, scratch folder scratchpad/q49-review (review earned: a primitive every board reads)
   landing: not-started
 ```
 
