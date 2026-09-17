@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; in flight: D22 (the run over its round) and Q38 (repair round), both from 91fb46cb; next: Q45, Q46, Q47, Q48, Q49, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; Q45 18:50, Q41 19:01; in flight: D22 (landing) and Q38 (repair round), both from 91fb46cb, and Q46 from 8eed7e03; next: Q47, Q48, Q49, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: D22
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -59,6 +59,17 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   reported: 2026-09-17T17:56
   reviewer: ad096f6b7af64b81f                # claude:opus through the Agent tool, read-only, launched 17:57, scratch folder scratchpad/q38-review (review earned: shell and ui primitives)
   round: 1                                  # sent 18:14: eight rulings on agents/reviews/Q38-refuter.md (the accent on the active pane's shown tab only, one bare button look through ToolButton and Menu props with no :global reach, the sash look in ui/Sash.svelte for every sash with a reach off the pane bodies, a dirty tab's spoken name and a page tab's dot, untested or redundant rules, tokens and merged blocks, the kept differences named, the Doc text); round base: scratchpad/q38-round1; paths widened by ui/Sash.svelte, ui/ToolButton.svelte, ui/Menu.svelte
+  landing: not-started
+- package: Q46
+  executor: agent                          # the configuration default, chosen for the step
+  worker: claude:opus
+  worktree: .agents/worktrees/q46
+  base: 8eed7e03
+  launched: 2026-09-17T19:10
+  prompt: the Agent tool's prompt, the shape of Q45's with the brief's own paths
+  report: tools/oculus/.scratch/migration/agents/reviews/Q46-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: a898406cee2e0f9b9            # the Agent tool id, launched 19:10
   landing: not-started
 ```
 
