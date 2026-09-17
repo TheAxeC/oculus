@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40; in flight: Q48 from ac11faae, taken over by a continuation builder at 22:28 after Axel stopped the first, and the recurring-findings pass; next: Q49, Q50, Q51, Q52, Q53, Q54, Q55, Q56, Q57, Q35, Q36, R12, R13; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40; in flight: Q48 (review) from ac11faae and R14 (the eleven checks of the pass) from ec7bc6e5; next: Q49, Q50, Q51, Q52, Q53, Q54, Q55, Q56, Q57, Q35, Q36, R12, R13; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q48
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -41,6 +41,18 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a32e96803d5984c22            # the Agent tool id, launched 21:11
   reported: 2026-09-17T22:50                # the continuation builder's report; the stopped builder had built everything but the one `save()` branch in EntryForm.svelte, which this one wrote, then ran every command and seven reverts
+  reviewer: acf063d6cb85d74f6                # claude:opus through the Agent tool, read-only, launched 23:14, scratch folder scratchpad/q48-review
+  landing: not-started
+- package: R14
+  executor: agent                          # the configuration default, chosen for the step
+  worker: claude:opus
+  worktree: .agents/worktrees/r14
+  base: ec7bc6e5
+  launched: 2026-09-17T23:18
+  prompt: the Agent tool's prompt, the shape of Q48's with the brief's own paths and the pass as its second reading
+  report: tools/oculus/.scratch/migration/agents/reviews/R14-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: af48364f53f2b699f            # the Agent tool id, launched 23:18
   landing: not-started
 ```
 
@@ -73,7 +85,7 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
 - `plan.md` stays lean (Axel, 2026-09-13, after two rounds of bloat): a package line is one sentence, the decision, its date and the pointer to its brief, at most 400 characters; a ruling line the same; every explanation, rationale, line number, premise and landing detail lives in the brief or in this file's landing notes, never in `plan.md`. Before any commit that touches `plan.md`: `awk 'length > 400' tools/oculus/.scratch/migration/plan.md` must print nothing but the header paragraph. And not one piece of information may be lost by shortening (Axel, 2026-09-13 22:10): when a `plan.md` line is shortened or rewritten, its previous text is first appended whole to the package's `agents/briefs/<package>.md` (a ruling's or a note's to the section "Rulings in full" below), and the commit that shortens it carries both; a line whose previous text is not in a file of this ledger is not shortened. The check: every line of the committed `plan.md` before the change is found verbatim in the ledger after it.
 
 ## Open items (repeated in every report until closed; Axel, 2026-09-14 00:05: a reported gap is booked here the same moment, never mentioned once and dropped)
-- The eleven recurring causes and their proposals (booked 2026-09-17 22:50 from `agents/reviews/recurring-2026-09-17.md`, each waiting on Axel's ruling): 1 a revert-check command for every named revert; 2 a head-comment print of every changed file; 3 a duplication test over eight-line blocks; 4 a citation check over the report's `file:line`; 5 a scratch-directory count around the suites; 6 a size check at 900 lines and 540 for a component, red today on seven files; 7 a negatives test over absence assertions; 8 a boundaries case against `:global` into a primitive; 9 an audits test over cases that render nothing; 10 a config-diff print for silent user-visible keys; 11 a spec line making a look run under a rice theme and the largest text scale. Nothing is applied until he rules on each.
+- The eleven recurring causes and their proposals (booked 2026-09-17 22:50 from `agents/reviews/recurring-2026-09-17.md`, each waiting on Axel's ruling): 1 a revert-check command for every named revert; 2 a head-comment print of every changed file; 3 a duplication test over eight-line blocks; 4 a citation check over the report's `file:line`; 5 a scratch-directory count around the suites; 6 a size check at 900 lines and 540 for a component, red today on seven files; 7 a negatives test over absence assertions; 8 a boundaries case against `:global` into a primitive; 9 an audits test over cases that render nothing; 10 a config-diff print for silent user-visible keys; 11 a spec line making a look run under a rice theme and the largest text scale. Nothing is applied until he rules on each. Ruled 2026-09-17 23:18, Axel: build all eleven. Booked as R14, with the files already over the size line booked as Q58 behind it.
 - Q48's own sharp edges, raised by its builder 2026-09-17 22:50 and to close at its landing: the gone-bookmark sweep needs one Files view mounted somewhere, so with no Files tab shown anywhere no instance's form is closed until one mounts; `src/lib/views/Files.svelte` is now 619 lines, past the component guide; the `kept` mark is per form key, so two saves out from one form at once leave one mark, which no path in the tree can reach today.
 - The steps a review booked rather than a brief (kept here because the skill books a finding beyond a brief in this list, and plan.md alone is not read in a report): Q49 a ticker row's hidden buttons take no room; Q50 a web address in a path field is not a hub path; Q51 `state/layout.svelte.ts` split; Q52 one branch-state sentence for the two git views, with the `data-repo` spelling; Q53 the accent line across nested pages and a folded pane; Q54 `ui/Tabs.svelte` split; Q55 the pane menu behind the pane body under the rice themes; Q56 the Files view retries a failed read; Q57 a workspace that is gone is not "not a git repository". Each is a fix of delivered work and needs no ruling; they are worked in queue order.
 - The Files view keeps a failed read on screen after the cause is gone (seen 2026-09-17 22:25 on the TEST page while looking at Q43): the bookmarks section read "The bookmarks could not be read: Failed to fetch" while `GET /api/fs?bookmarks=1` answered 200, and only a reload cleared it; nothing retries the read and no control offers to. The same shape as the `no-roots` line D22 fixed at its landing. A fix of delivered work, no ruling needed: booked as Q56, after Q48.
