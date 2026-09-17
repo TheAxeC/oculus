@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04; in flight: Q34 (the run over its round, from 22ef9103), Q43 (the run over its round, from 17e22699), Q44 (review, from a05037a9); Q41 building Axel's ruling (b) on the lane colours; next: Q45, Q46, then D22 and Q38 once Q34 has landed; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); the queue: Q38; D22; Q43; Q44; Q45; Q46; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04; in flight: Q34 (the run over its round, from 22ef9103), Q43 (the run over its round, from 17e22699), Q44 (repair round, from a05037a9); Q41 building Axel's ruling (b) on the lane colours; next: Q45, Q46, then D22 and Q38 once Q34 has landed; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); the queue: Q38; D22; Q43; Q44; Q45; Q46; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q34
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -89,7 +89,7 @@ dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12
   session_id: afc1b468bd84a4257            # the Agent tool id, launched 15:06
   reported: 2026-09-17T15:28
   reviewer: a6f99803527e9af27                # claude:opus through the Agent tool, read-only, launched 15:29, scratch folder scratchpad/q44-review (review earned: a server module)
-  round: 0
+  round: 1                                  # sent 15:53: nine rulings on agents/reviews/Q44-refuter.md (a --git-dir timeout is no answer, the error row's tone kept, the branch and path lines kept above it, a case for the failed branch read, two sessions fixtures corrected, the browser case's scratch folder removed, branch pinned in the gate and its comments, a no-commit repository's branches line and New branch control, the Doc text); round base: scratchpad/q44-round1 (tracked.patch, no untracked files); the Sessions Changes panel booked as Q47
   landing: not-started
 ```
 
@@ -817,5 +817,6 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q34, worker round 1 claude:opus: 550,186 tokens (cumulative on the thread), 69 tool uses, about 44 min (14:39 to 15:22); eleven rulings done.
 - Q44, worker claude:opus through the Agent tool, first run: 174,661 tokens, 57 tool uses, 936 s (15:06 to 15:22); everything done, two files outside its paths, one wrong sentence in the Sessions Changes panel left outside its paths.
 - Q43, worker round 1 claude:opus: 316,438 tokens (cumulative on the thread), 37 tool uses, about 24 min (15:11 to 15:35); eight rulings done, one in part.
+- Q44, reviewer claude:opus through the Agent tool, read-only: 168,216 tokens, 61 tool uses, 1,460 s (15:29 to 15:53); nine rulings sent in the one repair round, one step booked (Q47).
 - Q41, worker after the ruling claude:opus: the thread's tokens and time are in its notification when it closes; reported 15:41.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
