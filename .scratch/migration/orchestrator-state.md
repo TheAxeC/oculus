@@ -59,6 +59,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   pid: none                                 # a native Claude worker has no process of its own
   session_id: af48364f53f2b699f            # the Agent tool id, launched 23:18
   reported: 2026-09-18T00:24                # the report: nine items done, two halves stopped on a path clash (the scratch leak of item 5 and the 495 comments of item 7 reach dozens of files outside the step's paths, several of them Q48's). Ruled 00:31, correcting the 00:25 ruling that booked them as Q65 and Q66, which was the lazy option and is withdrawn: R14's paths widen to every file under tests/ and bin/, and the same builder finishes both halves, leaving only the four test files Q48 holds, whose share is done at Q48's landing
+  reported2: 2026-09-18T01:49                # both widened halves finished: 88 scratch call sites moved onto one `tests/scratch.ts` helper with a guard test, 82 suites registering the sweep, the count equal around both suites (647,280 before and after, 473 s), and 447 absence comments in 75 files, leaving only the four files Q48 holds; 153 files changed
+  reviewer: ad9532c3ae27a1e0e                # claude:opus through the Agent tool, read-only, launched 01:50, scratch folder scratchpad/r14-review (the first review of the whole step; the earlier one was stopped before it read anything)
   landing: not-started
 - package: Q49
   executor: agent                          # the configuration default, chosen for the step
