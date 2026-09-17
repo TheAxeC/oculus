@@ -250,3 +250,94 @@ All under `tools/oculus/`:
 - The closest-pair test only prints and asserts a distance above 0.
 - The per-theme lane text contrasts come from a scratch script. The tree's check is `tests/contrast.test.ts`, which asserts 4.5:1 for every lane pair and passed.
 - The larger share makes every lane header a stronger tint in all 17 themes, including the pressed-free default light theme; I have looked at light and dracula only.
+
+
+Measurement only. Nothing in the worktree changed; the scratch scripts are kept in `scratchpad/q41-builder/`. The search tries all 26 lane hues for each header. At 0.35 it uses the lane colours `derive.ts` produces (`cmp` confirmed the scratch mix gives identical results at 0.35). At 0.45 and 0.5 it uses the same mix at those shares.
+
+## Wide layout search
+
+**Pairs held (22):**
+- The 12 in drawing order.
+- The 6 stacked in the same column: run/review, push/blocked, revise/backburner, review/scope, blocked/derisk, backburner/build.
+- The full-width Ideas lane against Scope, De-risk, Build, Funding, Jobs and Teaching: 4 new pairs, since build/holding and holding/funding are already in drawing order.
+
+**Scoring:** an assignment scores by how many headers keep Axel's meaning colours (Run green, Push blue, Revise amber, Blocked red, Backburner grey, Scope cyan-d, De-risk indigo, Build teal, Funding gold, Jobs violet, Teaching teal); ties go to more of the four named lanes kept. The search is exhaustive with pruning. Among equal scores it keeps the first assignment found, so other assignments with the same count may exist. Ideas stayed mauve at every share.
+
+### 1. Does any assignment hold all 22 pairs?
+Yes, at all three shares: 0.35, 0.45 and 0.5 (`node wide.ts`, `SHARE=0.45 node wide.ts`, `SHARE=0.5 node wide.ts`).
+
+### 2. Best assignment at each share
+All three keep Run green, Push blue, Revise amber and Blocked red.
+
+| Header | 0.35 | 0.45 | 0.5 |
+|---|---|---|---|
+| Run | green | green | green |
+| Push | blue | blue | blue |
+| Revise | amber | amber | amber |
+| Review | blue | blue | grey |
+| Blocked | red | red | red |
+| Backburner | blue | grey | grey |
+| Scope | amber | amber | cyan-d |
+| De-risk | cyan | blue | amber |
+| Build | amber | amber | teal |
+| Ideas | mauve | mauve | mauve |
+| Funding | gold | gold | gold |
+| Jobs | cyan | blue | grey |
+| Teaching | amber | amber | teal |
+| Meaning colours kept | 5 of 11 | 6 of 11 | 9 of 11 |
+
+- **0.35 and 0.45 repeat hues heavily:** amber is on 4 headers at 0.35, and blue on 4 at 0.45.
+- **0.5:** only De-risk (amber, not indigo) and Jobs (grey, not violet) are off their meaning colours. Review, Backburner and Jobs are all grey.
+
+**Smallest distance of the 22 pairs, per theme:**
+
+| Theme | 0.35 | 0.45 | 0.5 |
+|---|---|---|---|
+| light | 17.12 build/holding | 20.72 build/holding | 16.02 backburner/scope |
+| dark | 18.87 build/holding | 20.25 derisk/holding | 14.91 blocked/derisk |
+| vscode-dark-modern | 19.35 build/holding | 22.20 derisk/holding | 14.90 blocked/derisk |
+| vscode-light-modern | 17.12 build/holding | 20.72 build/holding | 16.02 backburner/scope |
+| mocha | 12.65 build/holding | 15.70 build/holding | 15.19 holding/jobs |
+| gruvbox | 20.03 funding/jobs | 24.86 backburner/scope | 16.89 backburner/scope |
+| nord | 17.43 derisk/holding | 14.73 derisk/holding | 10.22 jobs/teaching |
+| synthwave | 10.66 run/push | 13.33 run/push | 10.94 holding/jobs |
+| tokyoneon | 24.40 scope/derisk | 18.33 derisk/holding | 20.34 holding/jobs |
+| tokyonight | 16.92 derisk/holding | 10.96 derisk/holding | 15.40 holding/jobs |
+| rosepine | 11.25 run/push | 14.92 run/push | 13.99 holding/jobs |
+| everforest | 10.25 run/push | 11.85 run/push | 10.28 backburner/scope |
+| dracula | 22.41 funding/jobs | 20.52 derisk/holding | 21.88 holding/jobs |
+| kanagawa | 18.13 build/holding | 18.28 backburner/scope | 13.97 jobs/teaching |
+| solarized | 21.51 scope/derisk | 26.63 backburner/scope | 11.51 backburner/scope |
+| latte | 17.76 build/holding | 20.33 build/holding | 18.06 holding/jobs |
+| gruvboxlight | 14.42 scope/derisk | 10.88 backburner/scope | 11.09 run/review |
+
+### 3. When no assignment holds everything
+Does not apply: a full assignment exists at every share.
+
+### 4. Lowest lane text contrast per theme
+From `lanelxt2.ts`, which recomputes each lane and its text the way `derive.ts` does. Its 0.35 figures match the ones measured through `derive.ts` itself. Each cell gives the lowest over every hue, then the lowest over the hues that share's assignment uses. Nothing is below 4.50.
+
+| Theme | 0.35 | 0.45 | 0.5 |
+|---|---|---|---|
+| light | 4.51 amber-s / 4.52 red | 4.52 amber / 4.52 amber | 4.55 gold / 4.55 gold |
+| dark | 4.50 code-number / 4.51 cyan | 4.51 grey / 4.51 grey | 4.51 grey / 4.51 grey |
+| vscode-dark-modern | 4.50 grey / 4.51 blue | 4.50 honey / 4.51 amber | 4.50 crimson / 4.50 gold |
+| vscode-light-modern | 4.51 amber-s / 4.52 red | 4.52 amber / 4.52 amber | 4.55 gold / 4.55 gold |
+| mocha | 4.51 teal / 4.55 green | 4.50 code-comment / 4.52 green | 4.50 purple / 4.52 gold |
+| gruvbox | 4.51 cyan / 4.51 cyan | 4.50 cyan / 4.52 gold | 4.50 purple / 4.51 gold |
+| nord | 4.50 pink / 4.52 mauve | 4.50 amber / 4.50 amber | 4.51 code-meta / 4.54 mauve |
+| synthwave | 4.50 brass / 4.50 gold | 4.51 code-comment / 4.53 gold | 4.50 grey / 4.50 grey |
+| tokyoneon | 4.50 orange / 4.51 red | 4.53 teal / 4.55 green | 4.52 orange / 4.54 teal |
+| tokyonight | 4.52 grey / 4.54 green | 4.51 mauve / 4.51 mauve | 4.51 teal / 4.51 teal |
+| rosepine | 4.50 grey / 4.51 amber | 4.52 crimson / 4.52 red | 4.50 green / 4.50 green |
+| everforest | 4.51 code-meta / 4.52 blue | 4.51 crimson / 4.51 red | 4.51 amber / 4.51 amber |
+| dracula | 4.51 cyan / 4.51 cyan | 4.51 green / 4.51 green | 4.50 code-number / 4.55 red |
+| kanagawa | 4.51 orange / 4.56 blue | 4.50 brass / 4.50 gold | 4.51 code-name / 4.51 green |
+| solarized | 4.52 code-comment / 4.52 blue | 4.52 code-string / 4.54 red | 4.50 indigo / 4.52 blue |
+| latte | 4.53 indigo / 4.61 cyan | 4.56 code-meta / 4.61 blue | 4.50 teal / 4.50 teal |
+| gruvboxlight | 4.51 orange / 4.57 amber | 4.52 amber / 4.52 amber | 4.57 orange / 4.65 red |
+
+**Scratch scripts:**
+- `wide.ts`: the search, with `SHARE`, `HOLDFREE` and `MAXCSP` switches.
+- `lanetxt2.ts`: lane text contrast at a given share.
+- `measure.ts`: lane colours per theme, and the CIEDE2000 function.
