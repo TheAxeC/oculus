@@ -147,3 +147,112 @@ Keys by group: file 5, collections 2, registries 2, feeds 1, docs 1, manifests 3
 - boundaries: +6/-2
 - config-folder: +3/-1
 - real-hub.probe: +3/-3
+
+
+Everything in the brief is done, and all nine repair rulings are done. One more copy of the placeholder fill turned up outside the paths I was given:
+- **Where:** `src/lib/server/pty/chat.ts:40`, `export function words(...)`, with its own `replaceAll` loop and a throw on a missing key. `server/pty/routes.ts:224` uses it too.
+- **Not touched:** ruling 6 cleared me to edit only `server/audit.ts`.
+- **Head comment:** so it stays true, the head comment of `data/finding-text.ts` no longer says the rule "lives here once". It now says `t()` uses the same `fillPlaceholders` and the audit scan calls `findingText`.
+- **Needs a booking:** a ruling on whether `pty/chat.ts` should use `findingText` too.
+
+(The first report, delivered earlier, stands; this is its repair section.)
+
+## Repair round
+
+### Rulings
+| # | Ruling | State | Proof |
+|---|---|---|---|
+| 1 | `findingText` never throws; one formatter | DONE | See the notes below the table. |
+| 2 | Key coverage by literals, whatever the variable is named | DONE | See the notes below the table. |
+| 3 | `text catalog: {0} is not a map` worded through the file | DONE | See the notes below the table. |
+| 4 | `iconFindings` and `behaviorFindings` on the one formatter | DONE | `grep -rn "findingTextOrKey" src tests` prints nothing. |
+| 5 | The missing directory reads `findings.config.directory_missing` | DONE (kept) | The `tests/config.test.ts` expectation stays. It is said again in the Doc text. |
+| 6 | The audit's `words` replaced by `findingText` | DONE | See the notes below the table. |
+| 7 | `order_not_a_map` goes; use the shared key | DONE | `deckFindings` uses `findings.file.not_a_map`. The present group now has 11 keys; the file still has 76 keys. |
+| 8 | A `t()` missing-argument test | DONE | `tests/text.test.ts` "leaves a placeholder with no argument as it is written". |
+| 9 | Doc text corrected | DONE | See Doc text below. |
+
+**Ruling 1, one formatter that never throws**
+- `data/finding-text.ts` exports only `fillPlaceholders` and `findingText`. A key the catalog lacks comes out as the key followed by its arguments, joined by spaces.
+- New watcher case in `tests/watch/portfolio.test.ts`, "publishes a portfolio worded by key over a broken sentence file, and rewords it once repaired":
+  - On a fresh start with `findings.yml` set to `text: [`, the portfolio's findings are `['findings.manifests.id_not_folder "other" loewner', 'findings.registries.file_missing', 'findings.registries.file_missing']`. The fixture hub has no people or organisations registry, which gives the last two.
+  - After the real file is written back, they are `['id "other" is not the folder name loewner', 'registry file does not exist', 'registry file does not exist']`.
+- New doc route case in `tests/routes/docs.test.ts`, "answers 404 for a missing document while the sentence file does not parse": it gets status 404 with the body `{ error: 'findings.docs.missing' }`. It goes through `handleDocs` with `hub=nothing.md`, which reaches `renderHubDoc`.
+- Probe, `node scratchpad/q30-builder/broken.ts broken-engine fixture/hub`: the config finding is `findings.file.does_not_parse Flow sequence ...`, and the snapshot builds with 27 findings where it threw before this round.
+
+**Ruling 2, key coverage by literals**
+- `findingLiterals(root)` in `tests/keys.test.ts` reads every `findings.` string literal under `src`, in any quote, with comments stripped.
+- New case "holds every findings. literal of the source to config/text/findings.yml, both ways": every literal must be a key of the file, every key of the file must appear as a literal, and every key must start with `findings.`.
+- The orphan check now counts those literals as readers.
+- A synthetic case, "reads a findings. literal whatever holds the catalog, and none written in a comment", reads `findingText(rules.text, 'findings.validate.nope')` and `findingText(CATALOG, "findings.config.nope", 3)`, and skips the commented one.
+- The hand-bound `const catalog = rules.text` lines in `validate-themes.ts` and `checkHostStatus` are gone.
+- The regex that matches `findingText(catalog,` is gone from `tests/keys.test.ts`. The `WORDS` scan stays for `server/pty`'s own `words` (7 `server.*` keys depend on it). The audit's documented computed-prefix entry went with the audit's `words`.
+
+**Ruling 3, the not-a-map finding**
+- `flattenText` now throws `TextNotAMap`, an exported class carrying `path`. `mergeText` words it as `findingText(catalog, 'findings.config.text_not_a_map', path)`.
+- New case in `tests/config.test.ts`, "words a catalog block that is not a map from the catalog, naming where it stops":
+  - With the sentence file: `text catalog: app.title is not a map` and `text catalog: root is not a map`.
+  - Without it: `findings.config.text_not_a_map root`.
+
+**Ruling 6, the audit**
+- `server/audit.ts` imports `findingText`, and its local `words` function is deleted.
+- `tests/server/audit.test.ts` passes (it ran in the full suite).
+- A side effect of ruling 1: an audit key the catalog lacks is now written as the key and its arguments, where it used to throw.
+
+### Reverts run (file restored and checked with `cmp` after each)
+- **`findingText` throws on a missing key again:** 7 red. They are the watcher case, the doc route case, the finding-text fallback case, and four config tests (missing directory, not-a-map, broken sentence file, paint limit).
+- **`findingText(rules.text, 'findings.validate.nope');` inserted in `validate()`:** the keys test "holds every findings. literal ... both ways" goes red.
+- **`mergeText` passing `error.message` through:** "words a catalog block that is not a map from the catalog" goes red.
+- **`fillPlaceholders` returning `String(arg)`:** `tests/text.test.ts` "leaves a placeholder with no argument as it is written" goes red.
+- **`present.ts` back on `findings.present.order_not_a_map`:** the keys literal test and the present test "reports an entry with no kind, an unknown kind, and a ref that is missing" go red.
+
+### Verification, rerun (from `tools/oculus` in the worktree)
+- **Node suite:** `npx vitest run --reporter=dot` gives `Test Files 237 passed (237)`, `Tests 3983 passed (3983)`.
+- **Type check:** `npm run check` gives `COMPLETED 1181 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`.
+- **Build:** `npm run build` gives `built in 5.60s`, `done`.
+- **Formatting:** `npm run format:check` gives `All matched files use Prettier code style!`.
+- **Lint:** `npm run lint` exits 0.
+- **ASCII gate:** the perl command prints nothing (exit 0).
+- **YAML:** `python3 -c "import yaml; yaml.safe_load(open('config/text/findings.yml'))"` exits 0.
+- **Browser spec:** after the build, `npx playwright test tests/browser/audit.spec.ts` gives `3 passed (10.0s)`.
+- **Literal sentences:** `grep -n "message: ['\`]" src/lib/data/validate.ts src/lib/data/validate-themes.ts src/lib/data/sources/*.ts` prints nothing.
+- **Sentence comparison:** `node scratchpad/q30-builder/compare.ts` ran again. `diff before.txt after2.txt` is still the one missing-directory line out of 118.
+- **Real hub:** `node dump.ts <hub>` is byte-identical before and after (0 findings on both sides).
+
+### Doc text (updated)
+**HELP.md**, replacing the paragraph at line 166:
+> Every user-facing word lives under `config/text/`, one file per surface, and is read by its dotted key. Those files merge with the rest, so a word is changed there and nowhere else. The sentences of the Findings view are `config/text/findings.yml`, one per problem the readers and the checks report, with `{0}` and `{1}` standing for the values the finding names. A sentence the file does not hold, which is every sentence while the file does not parse, is shown as its key followed by those values. A missing `config/` folder is always shown that way, as `findings.config.directory_missing`, since there is then no file to read the sentence from.
+
+**DESIGN.md**, in the layout tree after `validate-themes.ts`:
+`        finding-text.ts        a finding's sentence by catalog key; the placeholder rule t() shares`
+
+**DESIGN.md** line 123: replace "every user-facing string in `text.yml` read through `t("group.key")`" with:
+> every user-facing string in the catalog fragments under `config/text/`, read through `t("group.key")` on the client and, for the data layer's findings and the audit's, through `findingText` of `data/finding-text.ts` on the server
+
+**DESIGN.md**, Validate paragraph (line 133), appended:
+> A finding's sentence is a key of `config/text/findings.yml`, worded on the server before the snapshot carries it as a plain `message`, so a sentence is reworded in that file alone.
+
+**DESIGN.md**, decision line, in the form of the dated lines beside it:
+> - 2026-09-17, the data layer's finding sentences are catalog text. Every sentence a source reader, a validation rule or `loadConfig` reports is a key of `config/text/findings.yml` (`findings.<source>.*`, the sentences several readers share under `findings.file.*`, the shape words under `findings.shape.*`), worded on the server by `findingText(catalog, key, ...args)` of `data/finding-text.ts`, which the audit scan also words its findings with and whose `fillPlaceholders` is what `t()` fills a string with. The readers take the catalog as a parameter and the rules as `ValidationRules.text`, both from `PortfolioConfig.text`; the wire shape of a finding is unchanged. `findingText` never throws: a key the catalog lacks is written as the key followed by its arguments, so a sentence file that does not parse costs the wording and never the portfolio, a document read or a write, and a missing `config/` folder, which has no catalog at all, is always shown as `findings.config.directory_missing`. A key misspelt in the code is caught by `tests/keys.test.ts`, which holds every `findings.` literal under `src` to the file and every key of the file to a literal.
+
+### Files changed this round
+- `src/lib/data/finding-text.ts`: now 42 lines, with one formatter.
+- `src/lib/data/sources/config.ts`: `TextNotAMap`, `mergeText`, one formatter; now 902 lines.
+- `src/lib/data/sources/present.ts`: uses the shared not-a-map key.
+- `src/lib/data/validate.ts` (826 lines) and `src/lib/data/validate-themes.ts`: the catalog binds removed.
+- `src/lib/server/audit.ts`: +2/-11 against base.
+- `config/text/findings.yml`: +`text_not_a_map`, -`order_not_a_map`; 89 lines, 76 keys.
+- `tests/keys.test.ts`: +66/-9 against base.
+- `tests/config.test.ts`: +82/-15 against base.
+- `tests/watch/portfolio.test.ts`: +43/-8 against base.
+- `tests/routes/docs.test.ts`: +25/-2.
+- `tests/text.test.ts`: +6.
+- `tests/data/finding-text.test.ts`: now 57 lines.
+
+Every other file stands as in the first report (`git diff --numstat` against base covers them).
+
+### Limitations
+- **Formatter copy:** the `server/pty/chat.ts` copy described at the top.
+- **File size:** `sources/config.ts` is at 902 lines, about 100 under the cap, as the reviewer noted.
+- **Audit keys:** a missing audit key now shows as the key and its arguments instead of throwing.
+- **What the new cases do not exercise:** a manifest write over a broken sentence file. `writeManifest` reaches `readManifests`, which now words by key and cannot throw there; that is from reading the code, not from a test.

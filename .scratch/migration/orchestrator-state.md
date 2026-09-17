@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57, Q32 landed 13:26; Q30 (repair round), Q34 (dispatched 13:00 from 22ef9103) and Q41 (dispatched 13:28 from 21fd6359) in flight; Q42 next; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57, Q32 landed 13:26; Q30 (the run over its round), Q34 (dispatched 13:00 from 22ef9103) and Q41 (dispatched 13:28 from 21fd6359) in flight; Q42 next; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q30
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -43,6 +43,8 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46,
   reported: 2026-09-17T13:18
   reviewer: a195a1ac96a9c20c2                # claude:opus through the Agent tool, read-only, launched 13:20, scratch folder scratchpad/q30-review (review earned: the brief touches the data layer and server modules)
   round: 1                                  # sent 13:36: nine rulings on agents/reviews/Q30-refuter.md (findingText never throws, a key the catalog lacks written as key and arguments everywhere, decision 3 reversed; the key test over string literals; the not-a-map sentence worded; one formatter for icon and behaviour findings; directory_missing accepted as a key; audit.ts words replaced; the shared not_a_map key; a t() missing-argument case; the Doc text); round base: scratchpad/q30-round1 (tracked.patch against 115da2e7, untracked.tar); server/audit.ts added to the paths
+  reported2: 2026-09-17T13:45                # the round's report, appended to agents/reviews/Q30-report.md; all nine rulings done, a copy of the placeholder fill left in server/pty/chat.ts named
+  reviewer2: ab79a4808cb815c12               # the run over round 1, claude:opus, read-only, launched 13:46, scratch folder scratchpad/q30-review2
   landing: not-started
 - package: Q34
   executor: agent                          # the configuration default, chosen for the step
@@ -775,4 +777,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q32, orchestrator claude:opus (this session), `land/templates/usage.py` from Q39's landing (2026-09-17T12:57:14+02:00) to 13:26: 79 messages, 55967 output tokens, 134414 cache-write tokens, 25650853 cache-read tokens, 160 fresh input tokens, 29 minutes; shared with Q34's brief and dispatch, the rulings and the skill update, Q31's look, Q30's report and its refuter's dispatch.
 - Q30, worker claude:opus through the Agent tool, first run: 345,995 tokens, 106 tool uses, 1,822 s (12:48 to 13:18); a brief conflict reported (the missing directory's sentence), edits outside its paths named.
 - Q30, reviewer claude:opus through the Agent tool, read-only: 231,956 tokens, 58 tool uses, 710 s (13:20 to 13:35); nine rulings sent in the one repair round.
+- Q30, worker round 1 claude:opus: 405,548 tokens (cumulative on the thread), 32 tool uses, 570 s (13:36 to 13:45); nine rulings done.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
