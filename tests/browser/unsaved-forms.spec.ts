@@ -4,7 +4,9 @@
 // between) and after a reload; the tab holding it asks before it closes, measured against the entry
 // as the file holds it now; Cancel, the view's Add and Edit toggles and a save take the question
 // away, and they and a delete leave no draft in the browser's storage. A value typed while an edit's
-// save is on its way stays in the open form; an add form closes once its entry is added.
+// save is on its way stays in the open form; an add form closes once its entry is added. A pane
+// closed from its menu takes the drafts and the records of every tab in it out of the browser's
+// storage.
 //
 // The drafts are the ui store's, kept in the browser's own storage. The writes here go to the
 // temporary copy of demo/, and every file a case writes is put back before the case ends.
@@ -157,6 +159,64 @@ test('a tab holding a typed add form asks before it closes; Cancel and the Add t
     await close.click();
     await expect(asked).toHaveCount(0);
     await expect(page.getByRole('tab', { name: t('views.tasks'), exact: true })).toHaveCount(0);
+});
+
+/** The keys of every instance record the ui store holds in the browser's storage. */
+async function instanceKeys(page: Page): Promise<string[]> {
+    const raw = await page.evaluate(() => localStorage.getItem('oculus.ui.v1'));
+    if (raw === null) return [];
+    const held = JSON.parse(raw) as { instances?: Record<string, unknown> };
+    return Object.keys(held.instances ?? {});
+}
+
+/** Show one tab of a pane and read the instance id its view draws, once that view is the one drawn. */
+async function instanceOf(pane: Locator, label: string, body: string): Promise<string> {
+    await pane.getByRole('tab', { name: label, exact: true }).click();
+    const view = pane.locator(body);
+    await expect(view).toHaveCount(1);
+    const id = await view.getAttribute('data-instance');
+    expect(id).not.toBeNull();
+    return id ?? '';
+}
+
+test("a pane closed from its menu over a typed add form leaves none of its tabs' records in storage", async ({
+    page
+}) => {
+    // Revert: drop `forgetTabs(pane.tabs)` from closePane in state/layout.svelte.ts.
+    await boot(page);
+    await typeTask(page);
+    const pane = page.locator('[data-pane]', {
+        has: page.getByRole('tab', { name: t('views.tasks'), exact: true })
+    });
+    // A collection's search box writes the instance's own record, beside the form draft's. The pane
+    // holds three tabs: Tasks with both records, Venues with its own, and Status, which writes none.
+    await pane.getByRole('searchbox').fill('a');
+    await expect(titleBox(page)).toHaveValue(TYPED);
+    await openView(page, 'venues', t('views.venues'));
+    await pane.getByRole('searchbox').fill('a');
+    const tasks = await instanceOf(pane, t('views.tasks'), '[data-collection="tasks"]');
+    await expect(titleBox(page)).toHaveValue(TYPED);
+    const venues = await instanceOf(pane, t('views.venues'), '.venues[data-instance]');
+    const status = await instanceOf(pane, t('views.status'), '.view[data-instance]');
+    const ids = [status, tasks, venues];
+    expect(new Set(ids).size).toBe(3);
+    await expect
+        .poll(() => instanceKeys(page))
+        .toEqual(expect.arrayContaining([tasks, `${tasks}#forms`, venues]));
+
+    await pane.getByRole('button', { name: t('ui.pane_menu'), exact: true }).click();
+    await page.getByRole('menuitem', { name: t('ui.pane_close'), exact: true }).click();
+    const asked = page.getByRole('alertdialog');
+    await expect(asked).toBeVisible();
+    await asked.getByRole('button', { name: t('ui.confirm_ok'), exact: true }).click();
+    await expect(page.getByRole('tab', { name: t('views.tasks'), exact: true })).toHaveCount(0);
+
+    expect(await draftKeys(page)).toEqual([]);
+    const left = await instanceKeys(page);
+    for (const id of ids) {
+        expect(left).not.toContain(id);
+        expect(left).not.toContain(`${id}#forms`);
+    }
 });
 
 test('an edit typed back to the entry asks once the file has changed under it', async ({

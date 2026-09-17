@@ -84,5 +84,6 @@ export {
     panes,
     reconcileCardCursor,
     stateId,
+    tabsOf,
     withCardCursor
 } from '../instance.ts';

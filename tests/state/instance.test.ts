@@ -11,6 +11,7 @@ import {
     panes,
     reconcileCardCursor,
     stateId,
+    tabsOf,
     withCardCursor
 } from '../../src/lib/state/instance.ts';
 import { instance, pane, split, three } from './layout-fixture.ts';
@@ -20,6 +21,22 @@ describe('instance identity and lookups', () => {
     it('lists every pane with its path, depth first', () => {
         expect(panes(three()).map((found) => found.path)).toEqual([[0], [1, 0], [1, 1]]);
         expect(panes(pane([])).map((found) => found.path)).toEqual([[]]);
+    });
+
+    it('lists every tab of a tree at any depth of splits, and none of a page a leaf shows', () => {
+        // Revert: make tabsOf return the first pane's tabs only. That a closed page keeps the tabs of a
+        // page its leaf shows is tests/state/layout-close.test.ts.
+        const tree = split(
+            'row',
+            [0.5, 0.5],
+            [
+                pane(['a']),
+                split('col', [0.5, 0.5], [pane(['b', 'c']), { kind: 'page', page: 'other' }])
+            ]
+        );
+        expect(tabsOf(tree).map((tab) => tab.id)).toEqual(['a', 'b', 'c']);
+        expect(tabsOf(pane([]))).toEqual([]);
+        expect(tabsOf({ kind: 'page', page: 'other' })).toEqual([]);
     });
 
     it('finds an instance, its pane and its index', () => {

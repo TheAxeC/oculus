@@ -138,6 +138,14 @@ export function panes(layout: Layout): { path: number[]; pane: Pane }[] {
     return found;
 }
 
+/**
+ * Every tab of one tree, pane by pane in the order panes walks them. A page leaf contributes none:
+ * the tabs it shows belong to the page it names, and are that page's tree's tabs.
+ */
+export function tabsOf(layout: Layout): Instance[] {
+    return panes(layout).flatMap(({ pane }) => pane.tabs);
+}
+
 /** The instance with this id, the path of the pane holding it and its index in that pane's tabs. */
 export function findInstance(
     layout: Layout,

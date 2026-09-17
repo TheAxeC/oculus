@@ -54,6 +54,7 @@ import {
     stateId,
     showable,
     showsPage,
+    tabsOf,
     unembedPage as unembedIn,
     type Edge,
     type Focus,
@@ -404,27 +405,31 @@ export function createLayout(ui: UiStore): LayoutStore {
     /**
      * Close a page, with every tab on it. The page after it becomes current, or the one before it when
      * it was the last in the strip; closing the only page leaves one fresh default page, since a
-     * workbench with no page to render is nothing at all.
+     * workbench with no page to render is nothing at all. Every tab of the page's own tree is
+     * forgotten as its own close would forget it; a page one of its leaves shows is still in the
+     * strip, so the tabs of that page are not the closed page's and keep what they hold.
      */
     function closePage(id: string): void {
         const held = store.current.pages;
         const at = held.findIndex((page) => page.id === id);
-        if (at < 0) return;
+        const closing = item(held, at);
+        if (closing === undefined) return;
         // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
         delete lastActive[id];
         lastBeside.delete(id);
         const left = held.filter((page) => page.id !== id);
         if (left.length === 0) {
             savePages(defaultPages(t('ui.page_default', 1)));
-            return;
+        } else {
+            const next =
+                store.current.current === id
+                    ? left[Math.min(at, left.length - 1)].id
+                    : store.current.current;
+            // A page that is gone is shown nowhere: every leaf naming it is taken out, so no tree is
+            // left pointing at a page the strip no longer holds.
+            savePages(clearPage({ pages: left, current: next }, id));
         }
-        const next =
-            store.current.current === id
-                ? left[Math.min(at, left.length - 1)].id
-                : store.current.current;
-        // A page that is gone is shown nowhere: every leaf naming it becomes an empty pane, so no
-        // tree is left pointing at a page the strip no longer holds.
-        savePages(clearPage({ pages: left, current: next }, id));
+        forgetTabs(tabsOf(closing.workbench.root));
     }
 
     /**
@@ -487,11 +492,8 @@ export function createLayout(ui: UiStore): LayoutStore {
      */
     function closeInstancesOfView(view: ViewId): void {
         for (const page of store.current.pages) {
-            for (const { pane } of panesIn(page.workbench.root)) {
-                for (const tab of pane.tabs) {
-                    if (tab.view !== view) continue;
-                    closeInstanceAnywhere(tab.id);
-                }
+            for (const tab of tabsOf(page.workbench.root)) {
+                if (tab.view === view) closeInstanceAnywhere(tab.id);
             }
         }
     }
@@ -503,11 +505,8 @@ export function createLayout(ui: UiStore): LayoutStore {
      */
     function closeRecord(view: ViewId, id: string): void {
         for (const page of store.current.pages) {
-            for (const { pane } of panesIn(page.workbench.root)) {
-                for (const tab of pane.tabs) {
-                    if (!isInstanceOf(tab, view, id)) continue;
-                    closeInstanceAnywhere(tab.id);
-                }
+            for (const tab of tabsOf(page.workbench.root)) {
+                if (isInstanceOf(tab, view, id)) closeInstanceAnywhere(tab.id);
             }
         }
     }
@@ -588,7 +587,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         ui.clearInstanceState(id);
     }
 
-    /** Close a whole pane, with every tab it holds. */
+    /** Close a whole pane, with every tab it holds, each forgotten as its own close would forget it. */
     function closePane(path: number[], page?: string): void {
         const id = at(page)?.id;
         if (id === undefined) return;
@@ -598,6 +597,15 @@ export function createLayout(ui: UiStore): LayoutStore {
         const held = active(id);
         if (held !== null && pane.tabs.some((tab) => tab.id === held)) remembered(null, id);
         apply(settleFocus({ ...current, root: removePane(current.root, path) }), id);
+        forgetTabs(pane.tabs);
+    }
+
+    /**
+     * Forget what closed tabs held: a source draft, manifest edits and entry form drafts all live
+     * under the instance id, and the forget the store is handed takes every one of them.
+     */
+    function forgetTabs(tabs: readonly Instance[]): void {
+        for (const tab of tabs) ui.clearInstanceState(tab.id);
     }
 
     /**

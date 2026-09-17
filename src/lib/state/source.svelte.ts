@@ -246,6 +246,10 @@ export function createSource(writes: WritesStore, ui: UiStore): SourceStore {
         const content = draft.text;
         updateDraft(id, { message: t('source.saving') });
         const answer = await saveSource(root, path, content);
+        // The answer belongs to the draft it was sent from. A tab closed while the save was out has
+        // no record left to write into, and a preview tab pointed at another file while it was out
+        // holds that file's draft, so either way the answer writes nothing.
+        if (ui.instanceState(id) === undefined || sourceDraft(id).file !== draft.file) return;
         if (answer.ok) {
             updateDraft(id, { saved: content, message: t('source.saved') });
             return;

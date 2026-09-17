@@ -101,9 +101,10 @@ export function createClientState(): ClientState {
     const socket = createSocket(entities, writes);
     const ui = createUi();
     const formDrafts = createFormDrafts(ui, snapshotEntries(entities.portfolio));
-    // A tab's close forgets its instance's state, and the layout is the one store that knows a tab
-    // closed. The entry forms of an instance keep their drafts in an entry of their own beside that
-    // state, so the layout is handed a forget that takes both.
+    // A tab's close, a pane's close and a page's close forget the state of every instance they take
+    // away, and the layout is the one store that knows an instance closed. The entry forms of an
+    // instance keep their drafts in an entry of their own beside that state, so the layout is handed
+    // a forget that takes both.
     const layout = createLayout({
         ...ui,
         clearInstanceState: (id: string) => {

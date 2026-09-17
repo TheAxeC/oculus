@@ -92,3 +92,58 @@ I reran R1 to R4 in my own copy (`scratchpad/q42-review/oculus`, an APFS clone).
 - The full browser suite.
 
 Reviewer usage: about 45 tool uses, about 35 minutes.
+
+
+## Repair round 1, refuted
+```
+From tools/oculus in the worktree:
+npx vitest run --reporter=dot: Test Files 240 passed (240), Tests 4038 passed (4038); no timing test needed a rerun
+npm run check: 1192 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+npm run lint: exit 0, nothing printed
+npm run format:check: All matched files use Prettier code style!
+ASCII gate (perl form): printed nothing, exit 0
+find src tests bin -type f | xargs wc -l | sort -n | tail -3: 970 tests/state/layout.test.ts, 979 tests/state/board.test.ts
+npm run build, then npx playwright test tests/browser/unsaved-forms.spec.ts tests/browser/pages.spec.ts tests/browser/tabs.spec.ts tests/browser/layout.spec.ts: 23 passed (33.3s); all four files exist, the lock was free
+git status --short after every run: the same 10 M and 1 ?? paths as before
+
+Round delta: the base and round-1 trees were rebuilt in scratchpad/q42-review2 (patch -R of git diff 8986cc4a, then q42-round1/tracked.patch plus untracked.tar), then diff -ru against the worktree.
+
+Reverts, in an APFS clone at scratchpad/q42-review2/oculus. Each ran source, layout-close, instance, layout-saved and layout.test.ts, and each file was restored and cmp-checked:
+V1 drop `ui.instanceState(id) === undefined ||`: 1 failed (never-read closed tab case)
+V2 drop `|| sourceDraft(id).file !== draft.file`: 1 failed (preview tab pointed at b.md)
+V3 drop the whole save guard: 3 failed (the three new source cases)
+V4 drop the read's `sourceDraft(id).file !== file` return: 1 failed (layout-close in-flight read case)
+V5 tabsOf returns the first pane's tabs only: 3 failed (instance tabsOf case, page-leaf page case, only-page case)
+V6 closePage also forgets the tabs of pages its leaves name: 1 failed (keeps x and y)
+V7 closePane forgets pane.tabs.slice(0, -1): 3 failed
+V8 closePane forgets nothing: 3 failed
+Browser V9 closePane forgets every tab but Venues, rebuilt, -g "a pane closed from its menu": 1 failed at unsaved-forms.spec.ts:217 (`Expected value: not "8a7a..."`, the Venues id); restored and cmp-checked
+Probe, saved.ts at the base (copied in as saved-base.ts) against saved.ts now, equal results with toEqual, 2 passed:
+  - parseWorkbench and parseLayout over 10 docked workbenches: empty panel, hidden, bottom, a panel of empty panes, a panel that is a page leaf, a page leaf beside an empty pane, a page leaf beside a pane with a panel focus, a page leaf in main, a duplicate id
+  - parseLayout and checkPages over 6 page sets (v4 and v3), with page leaves, a root that is a page leaf and real duplicates across pages
+  - checkPages flagged "instance a/b is on two pages" identically in both
+Probe, failed save with the tab still open: P1 server refusal -> message "{G.cross} boom"; P2 network failure -> "save failed"; P3 readonly refusal after moveInstanceToPage and more typing -> readonly true with the readonly message; P4 refused save whose tab closed -> instanceState undefined
+Probe files removed from the clone afterwards.
+```
+- `src/lib/state/source.svelte.ts:252`: ruling 1 closure (a save landing after a close or a retarget writes nothing) reproduced. V1, V2 and V3 each turn only the case they name red. Case "writes nothing under a tab its pane closed" stays green under V1 and under V2 alone, as its comment says. The guard does not swallow a failed save's message while the tab is open (probes P1 to P3). Reading the code: in the app, a closed tab's draft is caught by the file check. After the close, `sourceDraft(id).file` is `''` and the sent draft's file is not. The record check only decides the never-read case, which `Source.svelte:82` makes unreachable from the view, as the report states. No defect under Behaviour.
+- `src/lib/state/instance.ts:145`: ruling 2 closure (one tab walk) reproduced. The only `panes(...).flatMap(pane.tabs)` left in `src` is `tabsOf` itself. `tabsOf` goes through `panes`, which stops at a page leaf (`instance.ts:130-132`). That is correct at every caller:
+  - `closePage` should not reach into a shown page, and V6 proves it does not.
+  - `closeInstancesOfView`, `closeRecord` and `checkPages` walk every page themselves, so walking into a leaf would visit or count a page's tabs twice.
+  - `pageInstanceIds` and the docked-panel `held` keep the same set as before.
+  None under Spec or Behaviour.
+- `src/lib/state/layout.svelte.ts:495,508` and `src/lib/state/layout/saved.ts:241,347`: the builder also moved these loops onto `tabsOf`, beyond the two copies ruling 2 named. The change is disclosed and inside the brief's `src/lib/state/layout/` path. The saved-layout checks match the base exactly, including page leaves and docked panels (the saved.ts probe above). The layout is replaced immutably (`apply`, `savePages`), so iterating a flattened snapshot visits the same tabs in the same order as the nested loop did; `tests/state/pages.test.ts:395,405` pass in the full run. None under Spec.
+- `tests/browser/unsaved-forms.spec.ts:172-221`: ruling 3 closure reproduced. Ids are read from `data-instance` in the page, and the three ids must be distinct. V9 shows the new per-tab assertion catches a Venues record left behind, which the round-1 test could not. The Status id check cannot fail, because Status writes no record; the comment at `:191-192` says so. None under Proof.
+- `tests/state/layout-close.test.ts:95-97`: ruling 4 closure reproduced; V4 turns the case red. `tests/state/instance.test.ts:27`: the named revert (V5) turns it red. None.
+- `src/lib/state/context.ts:104-107`: ruling 5 closure. The comment is now true for the tab, pane and page closes. None.
+- `Q42-report.md` Doc text (the HELP.md sentence, ruling 6): true against `layout.svelte.ts:600,432` and V6. None.
+- `Q42-report.md` Doc text: new gap under Standards. The report carries no DESIGN.md line for the new save rule, which is visible to the reader: a save that lands after its tab closed or was pointed at another file writes nothing, and shows no message. DESIGN.md:312 states only the read's version ("a read that lands after the tab was pointed at another file is thrown away"). No existing sentence is made false, so this is a line to add when the doc lines are carried, not a defect in the code.
+- Cited lines, line counts and +/- counts in the round's report: all reproduced (`layout.svelte.ts:432,495,508,528,587,600,805`, `source.svelte.ts:252`, `instance.ts:145`, `index.ts:87`, `saved.ts:241,347`, `page-strip.ts:30`, `unsaved-forms.spec.ts:173,182`; wc 909/293/160/400/31/193/436/108/428). None.
+
+Not checked: a source save in flight across a close in the browser (store level only, as in the report); an edit-form save in flight across a close; the full browser suite.
+
+Reviewer usage: about 35 tool uses, about 18 minutes.
+
+## Closed
+
+- The first review's findings: closed by the round's six rulings, each reproduced by the run over the round (V1 to V9).
+- The run over the round's one gap (no DESIGN.md line for the save rule): a sentence added to DESIGN.md's source-tab paragraph at landing, beside the read's rule, saying a save that lands after its tab closed or was pointed at another file writes nothing and shows no message.

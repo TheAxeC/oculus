@@ -1,7 +1,7 @@
 // Layer 2, client state. Layout invariants and saved-form parsing live here because changes to the
 // persisted shape do not change workbench operations.
 
-import { panes } from '../instance.ts';
+import { tabsOf } from '../instance.ts';
 import {
     LAYOUT_VERSION,
     MIN_SIZE,
@@ -238,13 +238,11 @@ export function checkPages(pages: Pages): string[] {
         for (const problem of checkWorkbench(page.workbench, pages, page.id)) {
             problems.push(`page ${JSON.stringify(page.label)} ${problem}`);
         }
-        for (const { pane } of panes(page.workbench.root)) {
-            for (const tab of pane.tabs) {
-                if (instances.has(tab.id)) {
-                    problems.push(`instance ${JSON.stringify(tab.id)} is on two pages`);
-                }
-                instances.add(tab.id);
+        for (const tab of tabsOf(page.workbench.root)) {
+            if (instances.has(tab.id)) {
+                problems.push(`instance ${JSON.stringify(tab.id)} is on two pages`);
             }
+            instances.add(tab.id);
         }
     }
     if (!ids.has(pages.current)) {
@@ -346,7 +344,7 @@ function readDockedWorkbench(value: unknown): Workbench | null {
     const dock = value.dock;
     if (dock !== 'right' && dock !== 'bottom' && dock !== 'hidden') return null;
     if (main === null || panel === null || problems.length > 0) return null;
-    const held = panes(panel).some(({ pane }) => pane.tabs.length > 0);
+    const held = tabsOf(panel).length > 0;
     const focus = readDockedFocus(value.focus);
     if (!held) {
         const only: Workbench = { root: main };

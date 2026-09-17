@@ -339,3 +339,98 @@ describe('the unsaved-text rule a close asks', () => {
         expect(client.ui.unsaved('another-view')).toBe(false);
     });
 });
+
+// A save's answer belongs to the draft it was sent from: a tab closed while the save was out, and a
+// preview tab pointed at another file while it was out, take no write from it when it lands.
+describe('a save whose draft went while it was out', () => {
+    /** A fetch that reads every file as its own path and holds every save until it is released. */
+    function heldSaves(): (answer: Response) => void {
+        const post = Promise.withResolvers<Response>();
+        vi.stubGlobal('fetch', (url: string, init?: RequestInit) =>
+            init === undefined ? Promise.resolve(new Response(`on disk at ${url}`)) : post.promise
+        );
+        setToken('source-token');
+        return post.resolve;
+    }
+
+    it('writes nothing under a tab its pane closed', async () => {
+        // Revert: drop the whole guard after the save's await in saveSourceDraft. Either half holds
+        // this case alone: the record is gone, and the draft left names no file.
+        const release = heldSaves();
+        client.layout.apply({
+            root: {
+                kind: 'split',
+                dir: 'row',
+                sizes: [0.5, 0.5],
+                children: [
+                    {
+                        kind: 'pane',
+                        tabs: [{ id: 'one', view: 'source', state: null }],
+                        active: 'one'
+                    },
+                    {
+                        kind: 'pane',
+                        tabs: [{ id: 'two', view: 'status', state: null }],
+                        active: 'two'
+                    }
+                ]
+            }
+        });
+        await loadSourceDraft('one', 'hub', 'notes.md');
+        editSourceDraft('one', 'sent copy');
+        const saving = saveSourceDraft('one', 'hub', 'notes.md');
+
+        client.layout.closePane([0]);
+        expect(client.ui.instanceState('one')).toBeUndefined();
+        release(new Response(JSON.stringify({ ok: true })));
+        await saving;
+
+        expect(client.ui.instanceState('one')).toBeUndefined();
+    });
+
+    it('writes nothing under a closed tab whose draft was never read, so names no file', async () => {
+        // Revert: drop `ui.instanceState(id) === undefined ||` from saveSourceDraft's guard.
+        const release = heldSaves();
+        client.layout.apply({
+            root: {
+                kind: 'pane',
+                tabs: [{ id: 'one', view: 'source', state: null }],
+                active: 'one'
+            }
+        });
+        editSourceDraft('one', 'typed before any read');
+        const saving = saveSourceDraft('one', 'hub', 'notes.md');
+
+        client.layout.closeInstance('one');
+        expect(client.ui.instanceState('one')).toBeUndefined();
+        release(new Response(JSON.stringify({ ok: true })));
+        await saving;
+
+        expect(client.ui.instanceState('one')).toBeUndefined();
+    });
+
+    it("leaves the next file's draft alone in a preview tab pointed at it", async () => {
+        // Revert: drop `|| sourceDraft(id).file !== draft.file` from saveSourceDraft's guard.
+        const release = heldSaves();
+        const state = (path: string) => ({ root: 'hub', path, label: path });
+        const tab = client.layout.openView('source', state('a.md'), undefined, { preview: true });
+        await loadSourceDraft(tab, 'hub', 'a.md');
+        editSourceDraft(tab, 'typed into a.md');
+        const saving = saveSourceDraft(tab, 'hub', 'a.md');
+
+        expect(client.layout.openView('source', state('b.md'), undefined, { preview: true })).toBe(
+            tab
+        );
+        await loadSourceDraft(tab, 'hub', 'b.md');
+        release(new Response(JSON.stringify({ ok: true })));
+        await saving;
+
+        expect(sourceDraft(tab)).toMatchObject({
+            file: 'hub/b.md',
+            text: 'on disk at /api/file/hub/b.md',
+            saved: 'on disk at /api/file/hub/b.md',
+            message: ''
+        });
+        expect(sourceDirty(tab)).toBe(false);
+    });
+});
