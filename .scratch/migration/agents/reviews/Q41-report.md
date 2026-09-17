@@ -341,3 +341,80 @@ From `lanelxt2.ts`, which recomputes each lane and its text the way `derive.ts` 
 - `wide.ts`: the search, with `SHARE`, `HOLDFREE` and `MAXCSP` switches.
 - `lanetxt2.ts`: lane text contrast at a given share.
 - `measure.ts`: lane colours per theme, and the CIEDE2000 function.
+
+
+Measurement only. Nothing in any worktree changed.
+
+**Method.** At each share, the lane colours come from a scratch copy of `derive.ts` (the q41 worktree's) with only the `LANE_SHARE` line changed; the 0.35 copy is byte-identical to the file (`cmp`). The search covers all 26 lane hues. It finds every largest set of hue names whose colours are pairwise at a CIEDE2000 of 10 or more under all 17 themes, then ranks those sets by the expected colours they keep: Run green, Push blue, Revise amber and Blocked red first, then Backburner grey, Scope cyan-d, Build or Teaching teal, Funding gold and Jobs violet. Ideas was free to take any hue. Scripts are kept in `scratchpad/q41-builder/`: `distinct.ts`, `pertheme.ts`, `textmin.ts`, `derive-<share>.ts`; outputs are in `distinct-<share>.out` and `pertheme-<share>.out`.
+
+## Distinct headers search
+
+### No full assignment exists at any share
+Thirteen headers (nine lanes, Ideas, Funding, Jobs, Teaching) with distinct hue names, every pair at 10 or more under all themes, cannot be had at 0.35, 0.45, 0.5, 0.6 or 0.7.
+
+**Why no share can fix it.** Some themes give different hue names the identical colour, and a share cannot separate identical colours. Counting identical colours as one, rosepine, dracula and everforest each have only 8 distinct lane hues, so at most 8 headers can be distinct there at any share. Reaching 13 would need new colours in those themes' blocks in `themes.css`.
+
+### Largest distinct set per share
+| Share | Largest distinct set | Best set and the headers it serves | Headers that must share |
+|---|---|---|---|
+| 0.35 | 3 (169 sets) | amber Revise, blue Push, red Blocked | the other 10 |
+| 0.45 | 4 (91 sets) | amber Revise, red Blocked, teal Build, grey-d Backburner | the other 9 |
+| 0.5 | 5 (34 sets) | green Run, grey Backburner, cyan-d Scope, mauve Ideas, orange De-risk | Push, Revise, Review, Blocked, Build, Funding, Jobs, Teaching |
+| 0.6 | 7 (63 sets) | green Run, crimson Blocked, grey Backburner, cyan-d Scope, gold Funding, mauve Ideas, orange De-risk | Push, Revise, Review, Build, Jobs, Teaching |
+| 0.7 | 7 (495 sets) | green Run, red Blocked, grey Backburner, cyan-d Scope, gold Funding, violet Jobs, orange De-risk | Push, Revise, Review, Build, Ideas, Teaching |
+
+At 0.35, blue/green/red scores the same as the set shown.
+
+### Per theme: how many hue names that theme alone keeps pairwise at 10 or more
+The last column counts the theme's distinct lane colours, with identical colours counted once; it is the same at every share.
+
+| Theme | 0.35 | 0.45 | 0.5 | 0.6 | 0.7 | Distinct colours |
+|---|---|---|---|---|---|---|
+| light | 10 | 12 | 14 | 16 | 16 | 26 |
+| dark | 11 | 13 | 14 | 14 | 16 | 26 |
+| vscode-dark-modern | 10 | 13 | 14 | 15 | 15 | 26 |
+| vscode-light-modern | 10 | 12 | 14 | 16 | 16 | 26 |
+| mocha | 9 | 11 | 12 | 14 | 14 | 23 |
+| gruvbox | 9 | 10 | 11 | 11 | 11 | 20 |
+| nord | 9 | 9 | 11 | 12 | 13 | 23 |
+| synthwave | 8 | 8 | 8 | 8 | 9 | 11 |
+| tokyoneon | 8 | 9 | 9 | 10 | 10 | 10 |
+| tokyonight | 7 | 8 | 8 | 9 | 9 | 11 |
+| rosepine | 7 | 8 | 8 | 8 | 8 | 8 |
+| everforest | 5 | 5 | 6 | 7 | 7 | 8 |
+| dracula | 8 | 8 | 8 | 8 | 8 | 8 |
+| kanagawa | 7 | 8 | 9 | 9 | 10 | 11 |
+| solarized | 6 | 7 | 7 | 9 | 9 | 9 |
+| latte | 9 | 10 | 10 | 11 | 12 | 12 |
+| gruvboxlight | 4 | 6 | 7 | 8 | 8 | 9 |
+
+**Hue names given the identical colour, for the three 8-colour themes:**
+- **rosepine:** amber=brass=gold=honey, blue=cyan=cyan-d, crimson=magenta=red=red-d, green=green-d=sky=teal, grey=grey-d=slate, indigo=mauve=purple=violet, orange=pink=rose
+- **dracula:** amber=orange, blue=grey=grey-d=slate, brass=gold=honey, crimson=red=red-d, cyan=cyan-d=sky=teal, green=green-d=lime, indigo=purple=violet, magenta=mauve=pink=rose
+- **everforest:** amber=brass=gold=honey, blue=cyan=cyan-d=sky, crimson=red=red-d, green=green-d=lime, grey=grey-d=slate, indigo=magenta=mauve=pink=purple=rose=violet
+
+### At 0.7, why each sharing header cannot keep its expected hue
+Each line gives the theme and the set colour it comes too close to (or matches).
+- **Revise amber,** in 16 of 17 themes:
+  - identical to gold in tokyoneon, tokyonight, rosepine, everforest, solarized, latte and gruvboxlight
+  - identical to orange in mocha and dracula
+  - below 10 against gold or orange in light, dark, both VS Code themes, gruvbox, nord and kanagawa
+- **Push blue:** identical to cyan-d in rosepine and everforest, identical to grey in dracula; also fails in dark (violet 9.5), gruvbox (cyan-d 8.6) and synthwave (cyan-d 4.6).
+- **Ideas mauve:** identical to violet in gruvbox, nord, rosepine and everforest; also fails in mocha (red 7.4), synthwave (violet 9.6), tokyonight (violet 5.7) and gruvboxlight (violet 8.3).
+- **Build or Teaching teal:** identical to cyan-d in synthwave, dracula, solarized and gruvboxlight, identical to green in rosepine; also fails in everforest (green 7.7).
+
+The same breakdown for the other shares is in `pertheme-<share>.out`.
+
+### Review and De-risk
+Both ranked lists are empty at every share. The best set at each share is already the largest possible, so no further hue sits at 10 or more from all its members under every theme, and there is no fitting hue for either header to rank. I have not chosen a hue for either.
+
+### Lowest header text contrast per share
+Over all 17 themes and every lane hue, unrounded (`textmin.ts`). No lane text pair falls below 4.5 at any share.
+
+| Share | Lowest | Where |
+|---|---|---|
+| 0.35 | 4.5006 | vscode-dark-modern, grey |
+| 0.45 | 4.5001 | mocha, code-comment |
+| 0.5 | 4.5000 | latte, teal |
+| 0.6 | 4.5005 | vscode-dark-modern, lime |
+| 0.7 | 4.5012 | vscode-dark-modern, code-number |

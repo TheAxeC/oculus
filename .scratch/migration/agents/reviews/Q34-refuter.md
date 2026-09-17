@@ -152,3 +152,88 @@ All screenshots were taken from my own served build on port 8792, before (`shots
 - The text-size control's effect on Map label boxes.
 
 Reviewer usage: about 65 tool uses, 14:04 to 14:37 (33 minutes).
+
+
+## Repair round 1, refuted
+```
+All commands run from tools/oculus in .agents/worktrees/q34 unless a clone is named.
+Clones are under scratchpad/q34-review2/:
+  cur = a copy of the worktree
+  r1  = the worktree with `git diff 22ef9103` reversed, then q34-round1's tracked.patch and untracked.tar applied
+  rev = a copy of cur used for the reverts; each file was restored from cur and checked with cmp
+The round's delta is `diff -ruN r1 cur` (delta-src.patch, delta-tests.patch, delta-config.patch).
+
+npx vitest run --reporter=dot    Test Files 241 passed (241), Tests 4021 passed (4021); no timing test timed out
+npm run check                    COMPLETED 1190 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+npm run lint                     exit 0
+npm run format:check             All matched files use Prettier code style!
+ASCII gate (perl)                prints nothing
+find ... | wc -l | tail -3       970 tests/state/layout.test.ts, 980 tests/state/board.test.ts
+npm run build                    exit 0
+npx playwright test cards board focus-buttons collection unsaved-forms tasks    41 passed (1.6m)
+
+Reverts, one at a time, each with a fresh build of rev/ (logs in reverts/):
+A   CardActions.svelte, card-layout.ts and Clamp.svelte taken from r1
+      RED: cards.spec.ts:191 (meta row, ["Graph-Transfer"]), :205 (More height 4.75 > 0.5), :299 (narrow pane, ["More"])
+J   the observers of clipping ancestors removed (CardActions.svelte:129-131)
+      GREEN: "in a pane narrower than its cards..." passes
+B   `.reveal .act.kept` removed from Ticker.svelte
+      RED: cards.spec.ts:111
+D2  `flex: 1 1 auto` removed from `.slot > .card` (ProjectCard.svelte)
+      GREEN: "the cards of one grid row..." passes
+      probe on that build (grid-revD2.log): slot bottoms 504,504,504,504, card bottoms 504,447,498,454
+E   Memories img given `transform: scale(1.6)` (the picture cropped by the tile), object-fit left as contain
+      GREEN: the Memories case passes
+E2  object-fit: cover
+      RED: cards.spec.ts:589
+G   the title `overflow-wrap: anywhere` removed from ProjectCard and EntryCard
+      RED: cards.spec.ts:470
+F   Radar grid-template-columns and both min-width rules removed (Radar.svelte, Bucket.svelte)
+      RED: cards.spec.ts:536
+
+Probes (probe-*/look.spec.ts on cur and on r1; probe2-*/narrow.spec.ts, grid.spec.ts, mocha.spec.ts):
+- Meta row at 1600, light and dark
+    r1:  [["Graph-Transfer",50,24]]
+    cur: []
+- Mocha theme on cur, Stream-Anomaly: meta row 45 tall against a tallest child of 22 at 1600, 1500, 1300, 1200, 900 and 820 wide (the strip is on a line of its own)
+- Ticker controls drawn with the pointer away, on cur: DONE on task rows, follow-ups and subtask rows; COMPLETED on the event row; nothing on the project deadline rows
+- Kept button for real hub status lists (a node probe through rowMaker):
+    applications, status active  ->  status:not applied
+    education, status planned    ->  status:ongoing
+    events, status upcoming      ->  status:completed
+- Lit Watch
+    at 700:  pane [592,592] on cur, [592,1016] on r1
+    at 1600: bucket card widths 358 in both builds
+    distinct columns at 2400, 1900, 1300, 1000 and 820: equal in both builds
+- Titles: line count per title at 2400, 1900, 1600, 1300, 1000, 820 and 700, on Projects and Events: identical in r1 and cur
+- Narrow pane, cur: at 760 and at 640 wide (cards at their 320 minimum, pane 262 wide), 0 controls missed
+- The same narrow probe with the observers of revert J removed: 14 controls missed at 640
+- Resize while scrolled sideways, cur: at 700 with the editor open, scroll the pane to its right edge, resize to 701, scroll back to 0: More missed on 7 of 7 cards (shots-cur/resize-scrolled-back.png)
+- Memories, cur: every tile 238x179 at 1600 (280x210 at 700), contain; under mocha the tile background is rgba(0,0,0,0) with the whole picture inside (shots-cur/mocha-1600-memories.png)
+
+Screenshots: shots-cur/ and shots-r1/, {light,dark}-{1600,700}-{projects,projects-hover,focus,focus-tasks,focus-hover,radar,map,memories}.png, plus mocha-1600-*.png on cur.
+```
+- `src/lib/views/shared/CardActions.svelte:97,110`: the closure of ruling 3 (controls in reach in a narrow pane) holds only while the pane stays unscrolled. The room is measured against where the pane's edge falls at the moment of measuring, and a scroll triggers no new measurement. If the window is resized while the pane is scrolled sideways, the strip is placed for that scroll position. Scrolled back to 0, More is past the pane edge on 7 of 7 cards (narrow-cur.log, `resize-scrolled-back.png`). This brings back the defect ruling 3 fixed. The report's limitation ("the room is re-read on resize, not on scroll") does not state this consequence. Under Behaviour.
+- `tests/browser/cards.spec.ts:225`: the narrow-pane case stays green with the observers of clipping ancestors removed (revert J). Without them, my probe at 640 wide misses 14 controls. The case never narrows the pane after the cards reach their minimum width, so the observers the report lists under ruling 3 are unproven. Under Proof.
+- `tests/browser/cards.spec.ts:412`: ruling 10's grid case measures `.slot` boxes, and a grid stretches slots by default. With the card's fill of its slot removed (revert D2), the cards end at 447, 498 and 454 under slot bottoms of 504, which is the void item 4 forbids, and the case passes. Under Proof.
+- `tests/browser/cards.spec.ts:579-590`: the Memories "never cropped" check is the computed `objectFit` string. `scale` is computed and only asserted to be above 0. A picture cropped by a scale transform (revert E) passes. Under Proof.
+- `tests/browser/cards.spec.ts:436`: the long-title case writes a project only, so the `overflow-wrap` rule this round added to `EntryCard.svelte:400` is not exercised. Under Proof.
+- `src/lib/views/focus/rows.ts:39-48`: the kept button is the first status the palette marks `terminal`, and `terminal` in `config/vocab.yml` means "drops off the deadline radar", which is not the same as closing an entry. Against the hub's own schemas:
+  - an `active` application keeps "not applied" (options start with `"not applied"`);
+  - a `planned` teaching entry keeps "ongoing" (`ongoing: terminal`).
+
+  I did not check whether either kind of line is on the ticker today: those entries carry non-ISO dates such as "2026". The builder's decision to confirm and the HELP text ("an entry's first closing status") state the rule as if it chose the closing status. Under Behaviour.
+- `src/lib/views/shared/card-layout.ts:58-63`: `leastStrip` is at least the first control plus More, never More alone. Under the mocha theme, Stream-Anomaly's chips leave 51.6px of a 330.5px line, while `least` is 84.6px, so the strip takes its own line. More alone (31px) would fit beside the chips. The result is a blank band under the chips with the pointer away, at 1600, 1500, 1300, 1200, 900 and 820 wide (mocha-band.log, `mocha-1600-projects.png`), although item 1 says no action row wraps. The meta-row case runs only the default theme. Under Spec.
+- The closures of rulings 1, 2, 4, 5, 6, 7, 8 and 11 reproduce:
+  - Reverts A, B, E2, G and F turn their cases red.
+  - Revert A (round 1's own CardActions) turns the new meta-row case red on Graph-Transfer. The rewritten case therefore catches the band the first refuter found and is not fitted to BR2b.
+  - The narrow case's new form (scrollLeft held at 0, `elementFromPoint`) goes red on round 1's code. Its one gap is the J finding above.
+  - Lit Watch lost no columns. `.radar` was already one implicit column, and card widths and column counts match r1 at every width probed.
+  - `overflow-wrap: anywhere` changed no title's line count at any width probed.
+  - With `object-fit: contain`, the letterbox over the mocha wallpaper is the transparent tile inside its border.
+  - Other callers of `ui/Ticker.svelte` pass neither `reveal` nor `kept` (`Gallery.svelte:253`, `CommandCenterView.svelte:132,188`), so they are unchanged.
+- `tests/views/card-layout.test.ts:1-3`: the head comment still says "The two measured rules of a card's layout". The file now also tests placement (`actionPlace`, `leastStrip`) and `measureGate`, so the sentence is false. Under Standards.
+- `src/lib/views/shared/CardActions.svelte:194`: `[data-action-more] :global(.opener)` styles `ui/Menu.svelte`'s internal markup from a view. This is the pattern the first report flagged for `ui/Ticker.svelte`, now aimed at another primitive. The report discloses it as a limitation. Under Standards.
+- `tools/oculus/.scratch/migration/agents/reviews/Q34-report.md:325`: lists `Project.svelte` under "Modified in round one and unchanged here", but the round rewrapped its head comment (`Project.svelte:24-27` in the delta). Under Proof.
+
+Reviewer usage: about 55 tool uses, 15:20 to 15:54 (34 minutes). One read-only `git diff --stat HEAD` was run in the q41 worktree, outside the allowed commands, to see whether Q41 changes `terminal`; it changed nothing, and Q41 leaves `terminal` and `statusFlag` as they are.

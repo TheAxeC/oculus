@@ -110,3 +110,91 @@ Every row below was measured on my served builds through the suite's `serve.ts` 
 - A screenshot look at the forms.
 
 Reviewer usage: about 50 tool uses, about 16 minutes (14:53 to 15:09).
+
+
+## Repair round 1, refuted
+```
+Worktree tools/oculus (the round's delta was rebuilt as scratchpad/q43-review2/r1 from q43-round1 and diffed against the worktree: delta.patch, 1154 lines, 9 files)
+npx vitest run --reporter=dot: Test Files 1 failed | 239 passed (240), Tests 1 failed | 4053 passed (4054). The failure is tests/server/mail/poll.test.ts "makes the mail folder when it is not there" (a timing poll, poll.test.ts:54). Rerun alone: Tests 10 passed (10). The file is not one this step touches.
+npm run check: COMPLETED 1197 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+npm run lint: printed nothing, exit 0
+npm run format:check: All matched files use Prettier code style!
+ASCII gate (perl form): printed nothing
+find src tests bin -type f | xargs wc -l | sort -n | tail -3: 970 tests/state/layout.test.ts, 979 tests/state/board.test.ts, 164494 total. Files.svelte 588, fs.ts 485, files-forms.spec.ts 408.
+npm run build: exit 0
+npx playwright test tests/browser/files.spec.ts tests/browser/files-forms.spec.ts tests/browser/unsaved-forms.spec.ts: 45 passed (1.3m). The first try was refused by the 8792 lock; it passed on the retry.
+Merge check, git merge-file of main HEAD / base 17e22699 / step: context.ts 0 conflicts; unsaved-forms.spec.ts 1 conflict (the head comment, lines 7-10).
+
+Node reverts in scratchpad/q43-review2/node, npx vitest run tests/state/explorer.test.ts (unchanged: 21 passed):
+N1 formSettled without the opening compare: red (1 case)
+N2 filesLineTyped without the view check: red (2 cases)
+N3 editedGone without the loading/error check: red (1)
+N4 context.ts reporter answers false: red (1)
+N4b reporter treats every view as 'files': red (1)
+N5 filesViewOf takes any number as opening: red (1)
+N6 filesLineTyped trims (a whitespace-only line not asked about): green, 21 passed. Nothing decides the whitespace case either way.
+
+Browser reverts in scratchpad/q43-review2/oculus, rebuilt before each run, files-forms.spec.ts (10 cases) unless named:
+RA confirm() settles through instance.id instead of owner: 1 failed, 9 passed. Red: :243 root switched away.
+RB BookmarkForm closes with the owner prop instead of opened.owner: 4 failed. Red on its own assertion: :272 bookmark switched away (toMatchObject form ''). :340, :364 and :384 are red only because :272 left notes.md bookmarked.
+RC formSettled without the opening compare: 1 failed. Red: :309 root reopened.
+RD key block back to {#key view.editing}: files + files-forms + unsaved-forms, 45 passed.
+RH key block removed: 2 failed. Red: :364 edit from add, Cancel ([data-form] count 1). :384 is red only because of what :364 left behind.
+RE gone-bookmark $effect disabled: 1 failed. Red: :384.
+RG toggleEdit dropped in shift(): 3 failed. Red: :340 (draftKeys not []). :364 and :384 are red only because of what :340 left behind.
+RF context.ts reporter answers false, unsaved-forms.spec.ts: 1 failed, 11 passed. Red: :357 root line close question.
+
+Probes on the step build (zz-probe.spec.ts, zz-probe2.spec.ts in my copy):
+P1 bookmark add form closed and reopened during a held add save, 'second typed' typed, answer released: form count 1, Label '' (empty), drafts []. The builder's report reproduces.
+P2 root line '   ' typed, the tab's close pressed: dialog count 1.
+P3 edit form over tool.py, Label changed to renamed.py, write held, 'typed/during/save' typed into Path, answer released: answer ok, changed [label]; edit form count 0; drafts []; record form ''. With RE: form count 0, record form 'bookmark' editing 'tool.py', draft {path: typed/during/save} kept.
+P4 two Files instances in one pane (page 2's Files moved to page 1), each with a typed add form, then Cancel on the second: step build and RD build are identical. Tab 0 shows 'first label' and tab 1 'second label'. Cancel closes only the shown instance's form. The other tab keeps its form and its label.
+```
+- `tools/oculus/tests/browser/unsaved-forms.spec.ts:7-8` (merge with main): this is a textual conflict with main's head comment from Q42 (main lines 7-10). Both sides append a sentence to the same comment line, so the resolution keeps both sentences. context.ts merges clean. After the merge, main's own `instanceKeys` (main `unsaved-forms.spec.ts:165-170`) repeats the raw storage parse that the new `tests/browser/forms.ts` `uiInstances` holds. Main's pane-close case calls `draftKeys`, which the merged file then gets from the forms.ts import. The fix at landing is `instanceKeys` as `Object.keys(await uiInstances(page))`, or dropping it; Standards.
+- `src/lib/views/shared/EntryForm.svelte:231-233` (ruling 2, reported NOT DONE): P1 reproduces it. **It is a defect, not the written rule working as meant.** The rule lives in EntryForm's comment at 189-195 and in the revert note at `unsaved-forms.spec.ts:305-306`. Its purpose is that text typed into the opening that sent the add must not stay, or a second Save adds a second entry. Text typed into a new opening, after the Files toggle forgot the old draft (`Files.svelte:380-381`), is a new add, not a duplicate. The clear hits it only because both openings share `formKey('bookmarks', null)`.
+  - **Smallest fix:** an optional EntryForm prop the host answers ("is the opening that saved still open"). The add branch runs `into.clear(which)` only when that answer is true, or the prop is absent.
+  - **Files touched:** BookmarkForm passes it, built from the `opened` forms it already holds plus a Files function doing the `formSettled(filesViewOf(instanceState(owner)), forms) !== null` test that `settle` makes. Add P1 as a case in `files-forms.spec.ts`.
+  - **Effect on other views:** the collection views pass nothing and keep today's behaviour.
+  - **Does it need Axel's ruling?** No. It adds no user-visible shape, it stays inside ruling 2, and the rule clash dissolves once the rule's scope is read as the opening. It does touch a shared component outside the step's paths.
+  - **Related hazard outside this brief:** Collection, Leads, Domains, Pillars, Venues, Data and Linkedin close through `onclose={() => write({ adding: false })}` (e.g. `Collection.svelte:258`). An earlier add's answer there closes a reopened add form and clears its text. It needs booking.
+  - Behaviour.
+- `tools/oculus/tests/browser/files-forms.spec.ts:10-11` and the builder's updated HELP.md text ("closed and opened the same form again ... closes only the form it was sent from"): for the bookmark add form, the reopened form stays open but its Label is emptied (P1). The Doc text states a closure the build does not have for that form; Behaviour.
+- `src/lib/state/fs.ts:286-287` (`filesLineTyped`, ruling 6): a line of spaces asks before the tab closes (P2, dialog 1).
+  - Entry forms decide unsaved text through `savedValue`, which trims (`form-values.ts:54`, `sameSaved` at 63-70).
+  - The server trims the root dir (`src/lib/server/fs.ts:362`), so a blank line saves nothing.
+  - The builder's HELP text calls it "a folder or workspace name typed". No test pins either answer (N6 stays green).
+  - Fix: `typed.trim() !== ''` plus one node case. Behaviour.
+- `src/lib/views/Files.svelte:397-399` (the gone-bookmark `$effect`, ruling 5): the closure reproduces (RE turns :384 red).
+  - A bookmark renamed by its own edit save while a value is typed during the save: the effect closes the form and forgets the value, with no question (P3). With RE, the draft is kept under a hidden form.
+  - This matches the written form-drafts rule for a renamed entry (`form-drafts.svelte.ts:21-23`: never counted, dropped).
+  - It also breaks EntryForm's "an edit's save keeping what was typed after it went" (`EntryForm.svelte:192-193`) for a label change.
+  - Before: hidden draft, tab asks. After: value dropped silently. The report does not state it. Behaviour.
+- `src/lib/views/Files.svelte:397-399` (ruling 5, the builder's limitation): the close lives only in the mounted component. A bookmark removed while the Files tab is not shown leaves the record and the draft, and closing that unshown tab asks about text that goes away on its next showing. Confirmed by reading; not measured. Behaviour.
+- `src/lib/views/Files.svelte:450` (`{#key \`${instance.id} ${view.opening}\`}`, rulings 2 and 4):
+  - RD (key back to `view.editing`) leaves all 45 browser cases green.
+  - P4 shows the same correct result on RD for two Files tabs in one pane.
+  - The builder's claim that "keying on the instance also covers a pane that reuses the Files component for another Files tab" is not reproduced: the instance and opening parts of the key change no measured behaviour and no test covers them.
+  - `explorer.test.ts:10` ("the form remounted per opening") overstates what the Cancel case at `files-forms.spec.ts:364` proves: it goes red only with the key removed.
+  - Proof.
+- `src/lib/state/context.ts:145-149` (the `registerUnsaved` reporter): no defect found.
+  - **Cost:** it runs only on a close press, in `PaneView.svelte:186`, `PaneView.svelte:251-254` and `PageStrip.svelte:111`, and `closeQuestion` answers 'many' before asking when more than one id goes (`closing.ts:22-23`). Its cost is one walk of every page's panes per asked id.
+  - **Nested pages:** `panes()` skips page leaves (`instance.ts:132-134`), but every page is walked in its own right through `layout.pages()`, so an instance of an embedded page is found in its own page.
+  - **DRY:** the walk repeats the layout store's private `holding` + `findInstance` (`layout.svelte.ts:217-222`, `266-267`). A `LayoutStore` accessor would remove it; `state/layout*` is outside the step's paths. Standards, minor.
+- `opening` counter (`fs.ts:235-238`, `formShown`/`editShown`/`formSettled`): no defect found.
+  - **Reload:** the count is kept in the `oculus.ui.v1` instance record, and no request survives the reload.
+  - **Two Files tabs:** P4 shows separate records and a correct Cancel.
+  - **Saved layout:** instance state is not in the layout envelope, and an opened arrangement gets fresh ids (`arrangement.ts:15-16`).
+  - **Closed tab:** removing the record reads as form '' (N1 case at `explorer.test.ts`), so a stale count cannot match.
+- `tools/oculus/tests/browser/files-forms.spec.ts:243-408`: each case removes its bookmarks at the end of its own body, not in `afterEach` or a `finally`. One red case therefore turns later cases red (RB 1+3, RG 1+2, RH 1+1), so a revert's red count overstates the cases that guard it. Proof, minor.
+- Closures reproduced with no finding:
+  - ruling 1 (RA, RB red on their own cases);
+  - ruling 2 for the root/workspace line (RC, N1);
+  - ruling 3 (RG);
+  - ruling 4 (RH);
+  - ruling 5 for a bookmark removed by the star (RE, N3);
+  - ruling 6 (RF, N2, N4, N4b);
+  - ruling 8: one shared `forms.ts`, `grep` of `draftRecords` finds none;
+  - ruling 7: the comments now match the code (Files.svelte:26-36, 150-155; BookmarkForm.svelte:1-11).
+- `src/lib/views/Files.svelte`: 588 lines against the ~600 component guide in spec.md. The next addition needs a split first; Standards, note.
+
+Reviewer usage: about 60 tool uses, about 24 minutes (15:35 to 15:59).
