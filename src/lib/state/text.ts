@@ -7,6 +7,7 @@
 // generation, state/generation.svelte.ts: that is what a template's own effect depends on, and what
 // makes a string drawn before a push redraw with the string the push installed.
 
+import { fillPlaceholders } from '../data/finding-text.ts';
 import { configGeneration } from './generation.svelte.ts';
 import { glyphMode } from './glyphmode.svelte.ts';
 
@@ -75,11 +76,7 @@ export function resolveGlyphTokens(value: string): string {
  * A key that is not in the catalog throws, so a typo fails loudly instead of rendering blank.
  */
 export function t(key: string, ...args: (string | number)[]): string {
-    const template = catalogEntry(key);
-    return template.replace(/\{(\d+)\}/g, (placeholder, index: string) => {
-        const arg = args.at(Number(index));
-        return arg === undefined ? placeholder : String(arg);
-    });
+    return fillPlaceholders(catalogEntry(key), args);
 }
 
 /**

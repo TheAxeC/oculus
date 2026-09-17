@@ -114,7 +114,7 @@ export function manifestValue(
     id: string,
     field: string
 ): { found: boolean; value: unknown } {
-    const { manifests } = readManifests(hub, config.scan);
+    const { manifests } = readManifests(hub, config.scan, config.text);
     const manifest = manifests.find((one) => one.id === id);
     if (manifest === undefined) return { found: false, value: null };
     const value = currentOf(manifest, field);
@@ -138,7 +138,7 @@ export function writeManifest(
     id: string,
     fields: Record<string, unknown>
 ): WriteOutcome {
-    const { manifests } = readManifests(hub, config.scan);
+    const { manifests } = readManifests(hub, config.scan, config.text);
     const manifest = manifests.find((one) => one.id === id);
     if (manifest === undefined) return { found: false, changed: [], refused: [] };
     if (!insideHub(hub, config, manifest.file)) {

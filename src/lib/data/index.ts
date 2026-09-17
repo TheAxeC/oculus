@@ -14,9 +14,10 @@ import { CAREER_FILE, readCareer } from './sources/career.ts';
 import { readFeeds } from './sources/feeds.ts';
 import { projectDocs } from './sources/docs.ts';
 import { deckFindings, readPresent } from './sources/present.ts';
-import { configDir } from './sources/config.ts';
+import { configDir, textCatalog } from './sources/config.ts';
 import { normalise } from './normalise.ts';
 import { validate } from './validate.ts';
+import type { TextCatalog } from './finding-text.ts';
 import type {
     CollectionFile,
     DocPresence,
@@ -92,7 +93,8 @@ function vocabKeys(value: unknown): string[] {
  * The portfolio's half of the merged config. The six `*_file` keys give six registry paths and the
  * `collections:` list gives the seventh, since funding/funding.yml is named there and nowhere else.
  * A key the config does not hold falls back to the path the hub uses today, so a config that has
- * moved on in one place still builds.
+ * moved on in one place still builds. The text catalog travels with it, since every reader words its
+ * findings from config/text/findings.yml.
  */
 export function portfolioConfigFrom(
     merged: Record<string, unknown>,
@@ -149,7 +151,8 @@ export function portfolioConfigFrom(
         schema: merged.manifest_schema,
         vocab,
         deck: merged.deck,
-        deckFile: join(configDir(engine), DECK_FILE)
+        deckFile: join(configDir(engine), DECK_FILE),
+        text: textCatalog(merged)
     };
 }
 
@@ -167,12 +170,17 @@ function documents(hub: string, manifests: RawManifest[]): Record<Id, DocPresenc
 function slides(
     hub: string,
     manifests: RawManifest[],
-    equationsDir: string
+    equationsDir: string,
+    catalog: TextCatalog
 ): { present: Record<Id, PresentSlide[]>; findings: Finding[] } {
     const present: Record<Id, PresentSlide[]> = {};
     const findings: Finding[] = [];
     for (const manifest of manifests) {
-        const read = readPresent({ hub, folder: manifest.folder, equationsDir }, manifest.id);
+        const read = readPresent(
+            { hub, folder: manifest.folder, equationsDir },
+            manifest.id,
+            catalog
+        );
         present[manifest.id] = read.slides;
         findings.push(...read.findings);
     }
@@ -191,16 +199,17 @@ function equationsDirOf(deck: unknown): string {
  * turns it into the wire model with the findings carried inside it.
  */
 export function buildPortfolio(hub: string, config: PortfolioConfig, version = 0): Snapshot {
-    const manifests = readManifests(hub, config.scan);
-    const registries = readRegistries(hub, config.registries);
-    const collections = readCollections(hub, config.collections);
-    const feeds = readFeeds(hub, config.feeds);
-    const career = readCareer(hub, config.career);
-    const present = slides(hub, manifests.manifests, equationsDirOf(config.deck));
+    const manifests = readManifests(hub, config.scan, config.text);
+    const registries = readRegistries(hub, config.registries, config.text);
+    const collections = readCollections(hub, config.collections, config.text);
+    const feeds = readFeeds(hub, config.feeds, config.text);
+    const career = readCareer(hub, config.career, config.text);
+    const present = slides(hub, manifests.manifests, equationsDirOf(config.deck), config.text);
     const deck = deckFindings(
         config.deck,
         Object.values(present.present).flatMap((list) => list.map((one) => one.id)),
-        config.deckFile
+        config.deckFile,
+        config.text
     );
 
     const raw: RawPortfolio = {
@@ -226,7 +235,8 @@ export function buildPortfolio(hub: string, config: PortfolioConfig, version = 0
         schema: config.schema,
         vocab: config.vocab,
         careerFile: join(hub, config.career),
-        datasetsFile: join(hub, config.registries.datasets)
+        datasetsFile: join(hub, config.registries.datasets),
+        text: config.text
     });
     return normalise(raw, findings, version);
 }

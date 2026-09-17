@@ -6,6 +6,10 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { REGISTRY_FILES, readRegistries } from '../../src/lib/data/sources/registries.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
+
+/** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
+const CATALOG = textCatalog(loadConfig(engineDir()).config);
 
 function scratch(): string {
     const dir = mkdtempSync(join(tmpdir(), 'oculus-registries-'));
@@ -85,7 +89,7 @@ function buildHub(): string {
 describe('readRegistries', () => {
     it('reads entries with their provenance and returns the other keys as meta', () => {
         const hub = buildHub();
-        const out = readRegistries(hub);
+        const out = readRegistries(hub, REGISTRY_FILES, CATALOG);
 
         expect(out.venues.entries).toEqual([
             {
@@ -111,7 +115,7 @@ describe('readRegistries', () => {
 
     it('reads the dataset registry from its own list key and keeps its other keys as meta', () => {
         const hub = buildHub();
-        const out = readRegistries(hub);
+        const out = readRegistries(hub, REGISTRY_FILES, CATALOG);
 
         expect(out.datasets.entries.map((e) => e.name)).toEqual(['MIMIC-IV', 'nameless']);
         expect(out.datasets.entries[0].registry).toBe('datasets');
@@ -125,7 +129,7 @@ describe('readRegistries', () => {
 
     it('reports an entry with no id field and keeps it with an empty key', () => {
         const hub = buildHub();
-        const out = readRegistries(hub);
+        const out = readRegistries(hub, REGISTRY_FILES, CATALOG);
 
         expect(out.datasets.entries[1].key).toBe('');
         expect(out.findings).toContainEqual({
@@ -137,7 +141,7 @@ describe('readRegistries', () => {
 
     it('reports a file that does not parse and one that is missing, with empty lists', () => {
         const hub = buildHub();
-        const out = readRegistries(hub);
+        const out = readRegistries(hub, REGISTRY_FILES, CATALOG);
 
         expect(out.domains.entries).toEqual([]);
         expect(out.domains.meta).toEqual({});
@@ -165,7 +169,7 @@ describe('readRegistries', () => {
                 ''
             ].join('\n')
         );
-        const out = readRegistries(hub);
+        const out = readRegistries(hub, REGISTRY_FILES, CATALOG);
 
         expect(out.funding.entries.map((e) => e.key)).toEqual(['', 'FAIR']);
         expect(out.funding.meta).toEqual({ title: 'Funding' });
@@ -178,7 +182,7 @@ describe('readRegistries', () => {
         const hub = buildHub();
         write(hub, REGISTRY_FILES.domains, 'schema: []\n');
         write(hub, REGISTRY_FILES.pillars, 'entries:\n  - just-a-string\n');
-        const out = readRegistries(hub);
+        const out = readRegistries(hub, REGISTRY_FILES, CATALOG);
 
         expect(out.domains.entries).toEqual([]);
         expect(out.domains.meta).toEqual({ schema: [] });
@@ -196,7 +200,7 @@ describe('readRegistries', () => {
     });
     it('reads the people and organisation registries, keyed by their own `key`', () => {
         const hub = buildHub();
-        const out = readRegistries(hub);
+        const out = readRegistries(hub, REGISTRY_FILES, CATALOG);
 
         expect(out.people.entries.map((entry) => entry.key)).toEqual(['naesens', 'me', '']);
         expect(out.people.entries[0]).toEqual({

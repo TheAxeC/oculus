@@ -201,7 +201,7 @@ function mapOf(value: unknown): Record<string, unknown> {
 /** The deposit of one project, or null when the hub holds no project with that id. */
 function depositFor(id: string, options: DepositOptions): Deposit | null {
     const { mirrors, into, where } = settings(options);
-    const { manifests } = readManifests(into.hub, into.config.scan);
+    const { manifests } = readManifests(into.hub, into.config.scan, into.config.text);
     const manifest = manifests.find((one) => one.id === id);
     if (manifest === undefined) return null;
     const code = mapOf(manifest.code_availability);
@@ -235,7 +235,9 @@ function depositFor(id: string, options: DepositOptions): Deposit | null {
 /** Every project id the hub holds. POST /api/deposit refuses any other id with a 404. */
 export function projectIds(options: DepositOptions = {}): string[] {
     const { into } = settings(options);
-    return readManifests(into.hub, into.config.scan).manifests.map((one) => one.id);
+    return readManifests(into.hub, into.config.scan, into.config.text).manifests.map(
+        (one) => one.id
+    );
 }
 
 /** Where the mirror of one project is, or the empty string when the hub holds no such project. */

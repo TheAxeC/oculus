@@ -6,8 +6,12 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { readManifests } from '../../src/lib/data/sources/manifests.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import type { RawManifest, ScanRule } from '../../src/lib/data/model.ts';
 import { present } from '../present.ts';
+
+/** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
+const CATALOG = textCatalog(loadConfig(engineDir()).config);
 
 const SCAN: ScanRule[] = [
     { dir: 'projects/ideas', type: 'idea' },
@@ -111,7 +115,7 @@ describe('readManifests', () => {
     it('keeps a ghost folder id while removing its filing prefix from the title', () => {
         const hub = buildHub();
         mkdirSync(join(hub, 'projects/ideas/[IDEA] New method'), { recursive: true });
-        const { manifests } = readManifests(hub, SCAN);
+        const { manifests } = readManifests(hub, SCAN, CATALOG);
         expect(byId(manifests, '[IDEA] New method')).toMatchObject({
             id: '[IDEA] New method',
             title: 'New method',
@@ -122,7 +126,7 @@ describe('readManifests', () => {
 
     it('reads every tier, includes a ghost folder and skips nested decoys', () => {
         const hub = buildHub();
-        const { manifests } = readManifests(hub, SCAN);
+        const { manifests } = readManifests(hub, SCAN, CATALOG);
 
         expect(manifests.map((m) => m.folder)).toEqual([
             'projects/active/loewner',
@@ -141,7 +145,7 @@ describe('readManifests', () => {
 
     it('builds a ghost from the folder and scan rule without treating parse failures as ghosts', () => {
         const hub = buildHub();
-        const { manifests, findings } = readManifests(hub, SCAN);
+        const { manifests, findings } = readManifests(hub, SCAN, CATALOG);
         expect(byId(manifests, 'empty-folder')).toEqual({
             file: join(hub, 'projects/ideas/empty-folder/project.yml'),
             folder: 'projects/ideas/empty-folder',
@@ -157,7 +161,7 @@ describe('readManifests', () => {
 
     it('carries the provenance of a flat project', () => {
         const hub = buildHub();
-        const { manifests } = readManifests(hub, SCAN);
+        const { manifests } = readManifests(hub, SCAN, CATALOG);
         const project = byId(manifests, 'btfno');
 
         expect(project.file).toBe(join(hub, 'projects/manuscripts/btfno/project.yml'));
@@ -172,7 +176,7 @@ describe('readManifests', () => {
 
     it('takes a nested project type from the manifest and the category from its first folder', () => {
         const hub = buildHub();
-        const { manifests } = readManifests(hub, SCAN);
+        const { manifests } = readManifests(hub, SCAN, CATALOG);
 
         const coauthor = byId(manifests, 'clinical-hccnet');
         expect(coauthor.tier).toBe('coauthor');
@@ -192,7 +196,7 @@ describe('readManifests', () => {
 
     it('reports an id that is not the folder name and keeps both values', () => {
         const hub = buildHub();
-        const { manifests, findings } = readManifests(hub, SCAN);
+        const { manifests, findings } = readManifests(hub, SCAN, CATALOG);
         const renamed = byId(manifests, 'renamed');
 
         expect(renamed.id).toBe('renamed');
@@ -206,7 +210,7 @@ describe('readManifests', () => {
 
     it('reports a manifest that does not parse or is not a map, and omits its record', () => {
         const hub = buildHub();
-        const { manifests, findings } = readManifests(hub, SCAN);
+        const { manifests, findings } = readManifests(hub, SCAN, CATALOG);
 
         expect(manifests.map((m) => m.folder)).not.toContain('projects/ideas/broken');
         expect(manifests.map((m) => m.folder)).not.toContain('projects/ideas/listy');
@@ -231,7 +235,7 @@ describe('readManifests', () => {
             'projects/active/mislabelled/project.yml',
             'id: mislabelled\ntype: idea\ntitle: Mislabelled\n'
         );
-        const { manifests, findings } = readManifests(hub, SCAN);
+        const { manifests, findings } = readManifests(hub, SCAN, CATALOG);
 
         expect(byId(manifests, 'mislabelled').type).toBe('active');
         expect(findings).toContainEqual({
@@ -243,10 +247,11 @@ describe('readManifests', () => {
 
     it('reports a scan directory that does not exist and reads the rest', () => {
         const hub = buildHub();
-        const { manifests, findings } = readManifests(hub, [
-            ...SCAN,
-            { dir: 'projects/nowhere', type: 'ghost' }
-        ]);
+        const { manifests, findings } = readManifests(
+            hub,
+            [...SCAN, { dir: 'projects/nowhere', type: 'ghost' }],
+            CATALOG
+        );
 
         expect(manifests.length).toBe(8);
         expect(findings).toContainEqual({
@@ -258,7 +263,7 @@ describe('readManifests', () => {
 
     it('says nothing about an optional scan directory the hub does not have', () => {
         const hub = buildHub();
-        const { manifests, findings } = readManifests(hub, SCAN);
+        const { manifests, findings } = readManifests(hub, SCAN, CATALOG);
         expect(findings.some((item) => item.key === 'scan')).toBe(false);
         expect(manifests.some((item) => item.tier === 'software')).toBe(false);
     });
@@ -270,7 +275,7 @@ describe('readManifests', () => {
             'projects/software/graphkit/project.yml',
             'id: graphkit\ntype: software\ntitle: GraphKit\nrelated: [btfno]\n'
         );
-        const { manifests, findings } = readManifests(hub, SCAN);
+        const { manifests, findings } = readManifests(hub, SCAN, CATALOG);
         const tool = byId(manifests, 'graphkit');
 
         expect(tool.tier).toBe('software');
@@ -287,7 +292,7 @@ describe('readManifests', () => {
             'projects/software/mislabelled/project.yml',
             'id: mislabelled\ntype: manuscript\ntitle: Mislabelled\n'
         );
-        const { manifests, findings } = readManifests(hub, SCAN);
+        const { manifests, findings } = readManifests(hub, SCAN, CATALOG);
 
         expect(byId(manifests, 'mislabelled').type).toBe('software');
         expect(findings).toContainEqual({
@@ -299,8 +304,8 @@ describe('readManifests', () => {
 
     it('gives the same order on every run', () => {
         const hub = buildHub();
-        const first = readManifests(hub, SCAN);
-        const second = readManifests(hub, SCAN);
+        const first = readManifests(hub, SCAN, CATALOG);
+        const second = readManifests(hub, SCAN, CATALOG);
         expect(second.manifests.map((m) => m.folder)).toEqual(first.manifests.map((m) => m.folder));
         expect(second.findings).toEqual(first.findings);
     });

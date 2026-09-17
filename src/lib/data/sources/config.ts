@@ -15,6 +15,7 @@ import { fileURLToPath } from 'node:url';
 import { parse } from 'yaml';
 import { paintLimit } from '../editor.ts';
 import { programApps, type ProgramApps } from '../opens-in-program.ts';
+import { findingText, type TextCatalog } from '../finding-text.ts';
 import type {
     CalendarAccountConfig,
     ConnectAccountConfig,
@@ -353,6 +354,12 @@ export function checkLocal(text: string, file: string = LOCAL_NAME): string | nu
 /** The one top-level key more than one file may carry. Catalog fragments merge by dotted leaf. */
 export const TEXT_KEY = 'text';
 
+/**
+ * A finding of loadConfig before its words are known. The catalog is what loadConfig is reading, so
+ * each finding is worded only once every file is merged, from the catalog that merge produced.
+ */
+type PendingFinding = { file: string; key: string; words: (catalog: TextCatalog) => string };
+
 /** Fold one catalog fragment into the flat dotted map, naming any key read twice. */
 function mergeText(
     config: Record<string, unknown>,
@@ -360,27 +367,37 @@ function mergeText(
     name: string,
     file: string,
     from: Record<string, string>,
-    findings: Finding[]
+    pending: PendingFinding[]
 ): void {
     let flat: Record<string, string>;
     try {
         flat = flattenText(value);
     } catch (error) {
-        findings.push({
-            file,
-            key: TEXT_KEY,
-            message: error instanceof Error ? error.message : String(error)
-        });
+        if (error instanceof TextNotAMap) {
+            const path = error.path;
+            pending.push({
+                file,
+                key: TEXT_KEY,
+                words: (catalog) => findingText(catalog, 'findings.config.text_not_a_map', path)
+            });
+            return;
+        }
+        // Anything else (a fragment whose aliases loop, say) is reported in the parser's own words,
+        // so one bad fragment is a finding rather than a failed request.
+        const message = error instanceof Error ? error.message : String(error);
+        pending.push({ file, key: TEXT_KEY, words: () => message });
         return;
     }
     const held = (config[TEXT_KEY] ??= {}) as Record<string, string>;
     for (const [key, entry] of Object.entries(flat)) {
         const dotted = `${TEXT_KEY}.${key}`;
         if (key in held) {
-            findings.push({
+            const earlier = from[dotted];
+            pending.push({
                 file,
                 key: dotted,
-                message: `key ${dotted} is already defined in ${from[dotted]}; ${name} wins`
+                words: (catalog) =>
+                    findingText(catalog, 'findings.config.defined_twice', dotted, earlier, name)
             });
         }
         held[key] = entry;
@@ -436,6 +453,10 @@ export function configDir(engine: string): string {
  * local.yml is not one of them. A duplicate top-level key or catalog leaf is a finding and the later
  * file wins. Invalid files are findings and contribute nothing; a missing config directory is a
  * finding and an empty map.
+ *
+ * Every finding is worded after the merge, from the catalog the merge produced. A finding key that
+ * catalog lacks (config/text/findings.yml itself does not parse, or there is no config directory to
+ * hold it) is written as the key followed by its arguments, so the finding still names what broke.
  */
 export function loadConfig(engine: string): {
     config: Record<string, unknown>;
@@ -443,7 +464,7 @@ export function loadConfig(engine: string): {
 } {
     const dir = configDir(engine);
     const config: Record<string, unknown> = {};
-    const findings: Finding[] = [];
+    const pending: PendingFinding[] = [];
     /** Which file each top-level key came from, so a clash can name both sides. */
     const from: Record<string, string> = {};
 
@@ -451,8 +472,12 @@ export function loadConfig(engine: string): {
     try {
         names = configNames(dir);
     } catch {
-        findings.push({ file: dir, key: '', message: 'config directory does not exist' });
-        return { config, findings };
+        pending.push({
+            file: dir,
+            key: '',
+            words: (catalog) => findingText(catalog, 'findings.config.directory_missing')
+        });
+        return { config, findings: worded(pending, config) };
     }
 
     for (const name of names) {
@@ -462,23 +487,33 @@ export function loadConfig(engine: string): {
             parsed = parse(readFileSync(file, 'utf8')) ?? {};
         } catch (error) {
             const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-            findings.push({ file, key: '', message: `does not parse: ${message}` });
+            pending.push({
+                file,
+                key: '',
+                words: (catalog) => findingText(catalog, 'findings.file.does_not_parse', message)
+            });
             continue;
         }
         if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-            findings.push({ file, key: '', message: 'is not a map of keys' });
+            pending.push({
+                file,
+                key: '',
+                words: (catalog) => findingText(catalog, 'findings.file.not_a_map')
+            });
             continue;
         }
         for (const [key, value] of Object.entries(parsed as Record<string, unknown>)) {
             if (key === TEXT_KEY) {
-                mergeText(config, value, name, file, from, findings);
+                mergeText(config, value, name, file, from, pending);
                 continue;
             }
             if (key in config) {
-                findings.push({
+                const earlier = from[key];
+                pending.push({
                     file,
                     key,
-                    message: `key ${key} is already defined in ${from[key]}; ${name} wins`
+                    words: (catalog) =>
+                        findingText(catalog, 'findings.config.defined_twice', key, earlier, name)
                 });
             }
             config[key] = value;
@@ -486,14 +521,33 @@ export function loadConfig(engine: string): {
         }
     }
 
-    return { config, findings };
+    return { config, findings: worded(pending, config) };
+}
+
+/** loadConfig's findings in the words of the catalog its merge produced, in the order raised. */
+function worded(pending: PendingFinding[], config: Record<string, unknown>): Finding[] {
+    const catalog = textCatalog(config);
+    return pending.map(({ file, key, words }) => ({ file, key, message: words(catalog) }));
+}
+
+/**
+ * What flattenText throws for a catalog node that is neither a string nor a map, with the node's
+ * dotted path (`root` for the whole block), so loadConfig can word the finding from the catalog.
+ */
+class TextNotAMap extends Error {
+    readonly path: string;
+
+    constructor(path: string) {
+        super(`text catalog: ${path} is not a map`);
+        this.path = path;
+    }
 }
 
 /** Flatten a nested map of strings to dotted keys. Values are strings; anything else is an error. */
 export function flattenText(node: unknown, prefix = ''): Record<string, string> {
     const flat: Record<string, string> = {};
     if (typeof node !== 'object' || node === null || Array.isArray(node)) {
-        throw new Error(`text catalog: ${prefix || 'root'} is not a map`);
+        throw new TextNotAMap(prefix || 'root');
     }
     for (const [key, value] of Object.entries(node as Record<string, unknown>)) {
         const dotted = prefix === '' ? key : `${prefix}.${key}`;
@@ -594,26 +648,37 @@ function iconFile(icon: string): string | null {
  * Every way the icon map and the glyph vocabulary can drift apart, as findings: a glyph name with
  * no row, a row naming something that is not a glyph name, and a row naming an icon the package
  * does not ship. The package is a fact about this machine's install rather than about the merged
- * files, which is why this is separate from loadConfig and takes the engine directory.
+ * files, which is why this is separate from loadConfig and takes the engine directory. Like
+ * loadConfig's own findings, these are worded from the merged catalog, and a key it lacks is written
+ * as the key and its arguments.
  */
 export function iconFindings(engine: string, config: Record<string, unknown>): Finding[] {
     const file = join(configDir(engine), 'icons.yml');
     const map = iconCatalog(config);
     const glyphs = glyphCatalog(config);
+    const catalog = textCatalog(config);
     const findings: Finding[] = [];
     for (const name of Object.keys(glyphs)) {
         if (name in map) continue;
-        findings.push({ file, key: name, message: `glyph ${name} has no icon` });
+        findings.push({
+            file,
+            key: name,
+            message: findingText(catalog, 'findings.config.glyph_no_icon', name)
+        });
     }
     for (const [name, icon] of Object.entries(map)) {
         if (!(name in glyphs)) {
             findings.push({
                 file,
                 key: name,
-                message: `${name} is not a name in config/glyphs.yml`
+                message: findingText(catalog, 'findings.config.icon_not_glyph', name)
             });
         } else if (iconFile(icon) === null) {
-            findings.push({ file, key: name, message: `the icon package ships no ${icon}.svg` });
+            findings.push({
+                file,
+                key: name,
+                message: findingText(catalog, 'findings.config.icon_not_shipped', icon)
+            });
         }
     }
     return findings;
@@ -625,9 +690,11 @@ export function iconFindings(engine: string, config: Record<string, unknown>): F
  * take the page down with it: a key still written under a name the tree no longer reads, which is
  * ignored where it stands so the block runs on its default, and a key the editor needs that no
  * longer names a size, which leaves the editor painting without colour and says nothing about why.
+ * They are worded from the merged catalog, as iconFindings' are.
  */
 export function behaviorFindings(engine: string, config: Record<string, unknown>): Finding[] {
     const file = join(configDir(engine), 'behavior.yml');
+    const catalog = textCatalog(config);
     const findings: Finding[] = [];
     const chat = config.chat;
     if (typeof chat === 'object' && chat !== null && !Array.isArray(chat)) {
@@ -635,7 +702,7 @@ export function behaviorFindings(engine: string, config: Record<string, unknown>
             findings.push({
                 file,
                 key: 'chat.skip_permissions',
-                message: 'chat.skip_permissions is not read; the key is tasks.skip_permissions'
+                message: findingText(catalog, 'findings.config.skip_permissions_retired')
             });
         }
     }
@@ -643,8 +710,7 @@ export function behaviorFindings(engine: string, config: Record<string, unknown>
         findings.push({
             file,
             key: 'editor.paint_limit_kb',
-            message:
-                'editor.paint_limit_kb must be a number above zero; the editor paints without colour until it is'
+            message: findingText(catalog, 'findings.config.paint_limit')
         });
     }
     return findings;

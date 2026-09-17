@@ -6,6 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
+import { findingText, type TextCatalog } from '../finding-text.ts';
 import type {
     Finding,
     RawRegistry,
@@ -18,7 +19,7 @@ import type {
 /** The seven hub-relative paths, one per registry; declared with the other types in model.ts. */
 export type { RegistryFiles } from '../model.ts';
 
-/** The paths on the hub today; a caller may pass its own. */
+/** The paths on the hub today, which the config falls back to for a key it does not hold. */
 export const REGISTRY_FILES: RegistryFiles = {
     venues: 'registries/venues.yml',
     datasets: 'registries/data.yml',
@@ -59,12 +60,20 @@ function empty(): RawRegistry {
 }
 
 /** Read and parse one registry file. A map is returned; anything else is a finding and null. */
-function readFile(file: string, findings: Finding[]): Record<string, unknown> | null {
+function readFile(
+    file: string,
+    catalog: TextCatalog,
+    findings: Finding[]
+): Record<string, unknown> | null {
     let text: string;
     try {
         text = readFileSync(file, 'utf8');
     } catch {
-        findings.push({ file, key: '', message: 'registry file does not exist' });
+        findings.push({
+            file,
+            key: '',
+            message: findingText(catalog, 'findings.registries.file_missing')
+        });
         return null;
     }
     let parsed: unknown;
@@ -72,11 +81,15 @@ function readFile(file: string, findings: Finding[]): Record<string, unknown> | 
         parsed = parse(text);
     } catch (error) {
         const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-        findings.push({ file, key: '', message: `does not parse: ${message}` });
+        findings.push({
+            file,
+            key: '',
+            message: findingText(catalog, 'findings.file.does_not_parse', message)
+        });
         return null;
     }
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        findings.push({ file, key: '', message: 'is not a map of keys' });
+        findings.push({ file, key: '', message: findingText(catalog, 'findings.file.not_a_map') });
         return null;
     }
     return parsed as Record<string, unknown>;
@@ -87,11 +100,12 @@ function readRegistry(
     hub: string,
     name: RegistryName,
     relPath: string,
+    catalog: TextCatalog,
     findings: Finding[]
 ): RawRegistry {
     const shape = SHAPES[name];
     const file = join(hub, relPath);
-    const data = readFile(file, findings);
+    const data = readFile(file, catalog, findings);
     if (data === null) return empty();
 
     const meta: RegistryMeta = {};
@@ -101,8 +115,11 @@ function readRegistry(
 
     const list = data[shape.list];
     if (!Array.isArray(list)) {
-        const had = shape.list in data ? 'is not a list' : 'is missing';
-        findings.push({ file, key: shape.list, message: `entry list ${shape.list} ${had}` });
+        const message =
+            shape.list in data
+                ? findingText(catalog, 'findings.file.list_not_a_list', shape.list)
+                : findingText(catalog, 'findings.file.list_missing', shape.list);
+        findings.push({ file, key: shape.list, message });
         return { entries: [], meta };
     }
 
@@ -110,7 +127,11 @@ function readRegistry(
     list.forEach((item: unknown, index: number) => {
         const where = `${shape.list}[${index}]`;
         if (typeof item !== 'object' || item === null || Array.isArray(item)) {
-            findings.push({ file, key: where, message: 'entry is not a map of keys' });
+            findings.push({
+                file,
+                key: where,
+                message: findingText(catalog, 'findings.file.entry_not_a_map')
+            });
             return;
         }
         const raw = item as Record<string, unknown>;
@@ -118,7 +139,11 @@ function readRegistry(
         let key = '';
         if (typeof id === 'string' && id.length > 0) key = id;
         else if (shape.idRequired) {
-            findings.push({ file, key: where, message: `entry has no string ${shape.idField}` });
+            findings.push({
+                file,
+                key: where,
+                message: findingText(catalog, 'findings.registries.entry_no_id', shape.idField)
+            });
         }
         entries.push({ ...raw, registry: name, key, file });
     });
@@ -134,12 +159,13 @@ function readRegistry(
  */
 export function readRegistries(
     hub: string,
-    files: RegistryFiles = REGISTRY_FILES
+    files: RegistryFiles,
+    catalog: TextCatalog
 ): Record<RegistryName, RawRegistry> & { findings: Finding[] } {
     const findings: Finding[] = [];
     const out = {} as Record<RegistryName, RawRegistry>;
     for (const name of NAMES) {
-        out[name] = readRegistry(hub, name, files[name], findings);
+        out[name] = readRegistry(hub, name, files[name], catalog, findings);
     }
     return { ...out, findings };
 }

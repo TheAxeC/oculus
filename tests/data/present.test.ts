@@ -6,6 +6,10 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { deckFindings, equationIsImage, readPresent } from '../../src/lib/data/sources/present.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
+
+/** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
+const CATALOG = textCatalog(loadConfig(engineDir()).config);
 
 function scratch(): string {
     const dir = mkdtempSync(join(tmpdir(), 'oculus-present-'));
@@ -64,14 +68,18 @@ describe('readPresent', () => {
     it('has no slides and no findings for a folder with no PRESENT.md', () => {
         const hub = scratch();
         expect(
-            readPresent({ hub, folder: 'projects/active/alpha', equationsDir: '' }, 'alpha')
+            readPresent(
+                { hub, folder: 'projects/active/alpha', equationsDir: '' },
+                'alpha',
+                CATALOG
+            )
         ).toEqual({ slides: [], findings: [] });
     });
 
     it('reads the front matter into one slide under the project id', () => {
         const paths = project(RICH);
         write(paths.hub, join('tools', 'present', 'equations', 'eq_one.png'), 'not really a png');
-        const { slides, findings } = readPresent(paths, 'alpha');
+        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
         expect(findings).toEqual([]);
         expect(slides).toHaveLength(1);
         expect(slides[0]).toMatchObject({
@@ -104,7 +112,7 @@ describe('readPresent', () => {
             '---',
             ''
         ]);
-        const { slides, findings } = readPresent(paths, 'alpha');
+        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
         expect(findings).toEqual([]);
         expect(slides.map((slide) => slide.id)).toEqual(['alpha', 'alpha/data', 'alpha/method']);
         expect(slides.map((slide) => slide.projectId)).toEqual(['alpha', 'alpha', 'alpha']);
@@ -113,7 +121,7 @@ describe('readPresent', () => {
 
     it('gives a file with no front matter one slide carrying its narrative', () => {
         const paths = project(['# PRESENT, a project', '', 'Only the narrative.', '']);
-        const { slides, findings } = readPresent(paths, 'alpha');
+        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
         expect(findings).toEqual([]);
         expect(slides).toHaveLength(1);
         expect(slides[0]).toMatchObject({ id: 'alpha', specs: [], panels: [] });
@@ -130,7 +138,7 @@ describe('readPresent', () => {
             '---',
             ''
         ]);
-        const { slides, findings } = readPresent(paths, 'alpha');
+        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
         expect(slides.map((slide) => slide.id)).toEqual(['alpha', 'alpha/data']);
         expect(slides[1].title).toBe('The second');
         expect(findings).toEqual([
@@ -144,7 +152,7 @@ describe('readPresent', () => {
 
     it('reports an entry of the slides list that names no id', () => {
         const paths = project(['---', 'slides:', '  - { title: No id here }', '---', '']);
-        const { findings } = readPresent(paths, 'alpha');
+        const { findings } = readPresent(paths, 'alpha', CATALOG);
         expect(findings).toEqual([{ file: doc(paths), key: 'slides[0]', message: 'has no id' }]);
     });
 
@@ -159,7 +167,7 @@ describe('readPresent', () => {
             ''
         ]);
         write(paths.hub, join(paths.folder, 'present', 'there.png'), 'not really a png');
-        const { slides, findings } = readPresent(paths, 'alpha');
+        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
         expect(slides[0].panels.map((panel) => panel.figure)).toEqual(['there.png', 'missing.png']);
         expect(slides[0].panels.map((panel) => panel.missing)).toEqual([undefined, true]);
         expect(findings).toEqual([
@@ -182,7 +190,7 @@ describe('readPresent', () => {
             'The narrative stands.',
             ''
         ]);
-        const { slides, findings } = readPresent(paths, 'alpha');
+        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
         expect(findings).toHaveLength(1);
         expect(findings[0].key).toBe('frontmatter');
         expect(slides).toHaveLength(1);
@@ -206,7 +214,7 @@ describe('the equation image', () => {
         const paths = project(SLIDE);
         write(paths.hub, join('tools', 'present', 'equations', 'eq_one.png'), 'shared');
         write(paths.hub, join(paths.folder, 'present', 'eq_one.png'), 'own');
-        const { slides, findings } = readPresent(paths, 'alpha');
+        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
         expect(findings).toEqual([]);
         expect(slides[0].equationImage).toBe('tools/present/equations/eq_one.png');
     });
@@ -214,14 +222,14 @@ describe('the equation image', () => {
     it("falls back to the project's own present folder", () => {
         const paths = project(SLIDE);
         write(paths.hub, join(paths.folder, 'present', 'eq_one.png'), 'own');
-        const { slides, findings } = readPresent(paths, 'alpha');
+        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
         expect(findings).toEqual([]);
         expect(slides[0].equationImage).toBe('projects/active/alpha/present/eq_one.png');
     });
 
     it('marks and reports an image neither place holds', () => {
         const paths = project(SLIDE);
-        const { slides, findings } = readPresent(paths, 'alpha');
+        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
         expect(slides[0].equationImage).toBe(undefined);
         expect(slides[0].equationMissing).toBe(true);
         expect(findings).toEqual([
@@ -236,7 +244,7 @@ describe('the equation image', () => {
 
     it('leaves LaTeX alone', () => {
         const paths = project(['---', 'present: { equation: "\\\\min_{x} f(x)" }', '---', '']);
-        const { slides, findings } = readPresent(paths, 'alpha');
+        const { slides, findings } = readPresent(paths, 'alpha', CATALOG);
         expect(findings).toEqual([]);
         expect(slides[0].equation).toBe('\\min_{x} f(x)');
         expect(slides[0].equationImage).toBe(undefined);
@@ -260,16 +268,16 @@ const DECK = {
 
 describe('deckFindings', () => {
     it('finds nothing wrong with an order whose every entry resolves', () => {
-        expect(deckFindings(DECK, ['alpha'], 'config/present.yml')).toEqual([]);
+        expect(deckFindings(DECK, ['alpha'], 'config/present.yml', CATALOG)).toEqual([]);
     });
 
     it('says nothing about an order entry naming a project slide this hub does not declare', () => {
-        expect(deckFindings(DECK, [], 'config/present.yml')).toEqual([]);
+        expect(deckFindings(DECK, [], 'config/present.yml', CATALOG)).toEqual([]);
     });
 
     it('reports a project slide whose id is a deck-level key', () => {
         const ids = ['title', 'ideas', 'closing', 'framing:engine', 'summary:one', 'alpha'];
-        expect(deckFindings({ order: [] }, ids, 'config/present.yml')).toEqual(
+        expect(deckFindings({ order: [] }, ids, 'config/present.yml', CATALOG)).toEqual(
             ['closing', 'framing:engine', 'ideas', 'summary:one', 'title'].map((id) => ({
                 file: 'config/present.yml',
                 key: 'deck',
@@ -286,7 +294,7 @@ describe('deckFindings', () => {
                 { slide: 'summary', ref: 'nowhere' }
             ]
         };
-        expect(deckFindings(deck, [], 'config/present.yml')).toEqual([
+        expect(deckFindings(deck, [], 'config/present.yml', CATALOG)).toEqual([
             {
                 file: 'config/present.yml',
                 key: 'deck.order[0]',
@@ -304,7 +312,9 @@ describe('deckFindings', () => {
         const deck = {
             order: [{}, { slide: 'interlude' }, { slide: 'project' }, { slide: 'framing' }, 'text']
         };
-        expect(deckFindings(deck, [], 'config/present.yml').map((one) => one.message)).toEqual([
+        expect(
+            deckFindings(deck, [], 'config/present.yml', CATALOG).map((one) => one.message)
+        ).toEqual([
             'names no slide kind',
             'unknown slide kind interlude',
             'names no project slide',
@@ -315,6 +325,6 @@ describe('deckFindings', () => {
 
     it('says nothing about a saved selection or order naming a slide that is gone', () => {
         const deck = { order: [], selection: ['alpha'], slide_order: ['beta'] };
-        expect(deckFindings(deck, [], 'config/present.yml')).toEqual([]);
+        expect(deckFindings(deck, [], 'config/present.yml', CATALOG)).toEqual([]);
     });
 });

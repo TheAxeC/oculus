@@ -10,7 +10,11 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { readFeeds } from '../../src/lib/data/sources/feeds.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import type { FeedFiles } from '../../src/lib/data/model.ts';
+
+/** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
+const CATALOG = textCatalog(loadConfig(engineDir()).config);
 
 const FILES: FeedFiles = {
     leads: 'feeds/position-leads.yml',
@@ -77,7 +81,7 @@ describe('the three feeds, all present', () => {
         'site/_linkedin/02-b.md': NEWER,
         'site/_linkedin/xx-idea.md': IDEA
     });
-    const { feeds, findings } = readFeeds(dir, FILES);
+    const { feeds, findings } = readFeeds(dir, FILES, CATALOG);
 
     it('keeps the live leads with the ISO date inside their deadline text, dismissed ones out', () => {
         expect(feeds.leads).toEqual([
@@ -105,7 +109,7 @@ describe('the three feeds, all present', () => {
 
 describe('a hub with no feeds at all', () => {
     const dir = hub({});
-    const { feeds, findings } = readFeeds(dir, FILES);
+    const { feeds, findings } = readFeeds(dir, FILES, CATALOG);
 
     it('answers null for every feed, which is not the same as an empty one', () => {
         expect(feeds).toEqual({
@@ -126,7 +130,7 @@ describe('a feed that is there and broken', () => {
         'feeds/literature-radar.yml': '- a list, not a map\n',
         'feeds/position-leads.yml': 'meta: {}\n'
     });
-    const { feeds, findings } = readFeeds(dir, FILES);
+    const { feeds, findings } = readFeeds(dir, FILES, CATALOG);
 
     it('is a finding, and costs that feed alone', () => {
         expect(findings).toHaveLength(1);
@@ -142,7 +146,7 @@ describe('a feed that is there and broken', () => {
 
 describe('a LinkedIn folder with no dated post', () => {
     const dir = hub({ 'site/_linkedin/xx-idea.md': IDEA });
-    const { feeds } = readFeeds(dir, FILES);
+    const { feeds } = readFeeds(dir, FILES, CATALOG);
 
     it('says the folder is there and holds no post date', () => {
         expect(feeds.linkedin).toEqual({ lastPost: null });

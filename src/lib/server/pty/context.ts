@@ -36,7 +36,7 @@ export function portfolioContext(
     const parts: string[] = [];
     addFile(parts, hub, config.registries.venues, ' (venue catalogue)');
     parts.push('# PROJECT MANIFESTS (status/venue source of truth)\n');
-    const { manifests } = readManifests(hub, config.scan);
+    const { manifests } = readManifests(hub, config.scan, config.text);
     for (const { file, folder, ghost } of manifests) {
         if (ghost) continue;
         parts.push(`## ${folder}\n${readFileSync(file, 'utf8')}`);

@@ -7,6 +7,10 @@ import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import type { CollectionFile } from '../../src/lib/data/sources/collections.ts';
 import { readCollections } from '../../src/lib/data/sources/collections.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
+
+/** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
+const CATALOG = textCatalog(loadConfig(engineDir()).config);
 
 const FILES: CollectionFile[] = [
     { key: 'data', file: 'registries/data.yml' },
@@ -103,7 +107,7 @@ function buildHub(): string {
 describe('readCollections', () => {
     it('reads the data registry from its datasets list and keeps its metadata', () => {
         const hub = buildHub();
-        const { collections, findings } = readCollections(hub, FILES);
+        const { collections, findings } = readCollections(hub, FILES, CATALOG);
 
         expect(collections.data.entries.map((entry) => entry.key)).toEqual(['mimic']);
         expect(collections.data.entries[0].source).toBe('https://example.invalid/mimic');
@@ -118,7 +122,7 @@ describe('readCollections', () => {
 
     it('reads a title-keyed collection with its entries in file order', () => {
         const hub = buildHub();
-        const { collections } = readCollections(hub, FILES);
+        const { collections } = readCollections(hub, FILES, CATALOG);
         const events = collections.events;
 
         expect(events.key).toBe('events');
@@ -129,7 +133,7 @@ describe('readCollections', () => {
 
     it('keeps every top-level key other than entries as meta, untouched', () => {
         const hub = buildHub();
-        const { collections } = readCollections(hub, FILES);
+        const { collections } = readCollections(hub, FILES, CATALOG);
 
         expect(collections.events.meta).toEqual({
             title: 'Talks & Events',
@@ -142,7 +146,7 @@ describe('readCollections', () => {
 
     it('records provenance on every entry and derives no identity', () => {
         const hub = buildHub();
-        const { collections } = readCollections(hub, FILES);
+        const { collections } = readCollections(hub, FILES, CATALOG);
         const file = join(hub, 'network/joint-work.yml');
 
         expect(collections['joint-work'].entries[0].provenance).toEqual({ file, index: 0 });
@@ -155,7 +159,7 @@ describe('readCollections', () => {
 
     it('reports a file that is not on disk and gives an empty collection', () => {
         const hub = buildHub();
-        const { collections, findings } = readCollections(hub, FILES);
+        const { collections, findings } = readCollections(hub, FILES, CATALOG);
         const file = join(hub, 'nowhere/gone.yml');
 
         expect(collections.missing).toEqual({ key: 'missing', file, meta: {}, entries: [] });
@@ -168,7 +172,7 @@ describe('readCollections', () => {
 
     it('reports an entries key that is not a list, and keeps the meta it did read', () => {
         const hub = buildHub();
-        const { collections, findings } = readCollections(hub, FILES);
+        const { collections, findings } = readCollections(hub, FILES, CATALOG);
 
         expect(collections.listless.entries).toEqual([]);
         expect(collections.listless.meta).toEqual({ title: 'Listless' });
@@ -181,7 +185,7 @@ describe('readCollections', () => {
 
     it('reports an entry that is not a map and keeps the entries around it', () => {
         const hub = buildHub();
-        const { collections, findings } = readCollections(hub, FILES);
+        const { collections, findings } = readCollections(hub, FILES, CATALOG);
 
         expect(collections.code.entries.map((e) => e.title)).toEqual(['bttrlib', 'oculus']);
         expect(collections.code.entries[1].provenance).toEqual({
@@ -198,9 +202,11 @@ describe('readCollections', () => {
     it('reports a file that does not parse and gives an empty collection', () => {
         const hub = buildHub();
         write(hub, 'odd/broken.yml', 'title: "unterminated\n  - [\n');
-        const { collections, findings } = readCollections(hub, [
-            { key: 'broken', file: 'odd/broken.yml' }
-        ]);
+        const { collections, findings } = readCollections(
+            hub,
+            [{ key: 'broken', file: 'odd/broken.yml' }],
+            CATALOG
+        );
 
         expect(collections.broken.entries).toEqual([]);
         expect(collections.broken.meta).toEqual({});
@@ -212,9 +218,11 @@ describe('readCollections', () => {
     it('reports a file that parses to something other than a map', () => {
         const hub = buildHub();
         write(hub, 'odd/listy.yml', '- one\n- two\n');
-        const { collections, findings } = readCollections(hub, [
-            { key: 'listy', file: 'odd/listy.yml' }
-        ]);
+        const { collections, findings } = readCollections(
+            hub,
+            [{ key: 'listy', file: 'odd/listy.yml' }],
+            CATALOG
+        );
 
         expect(collections.listy.entries).toEqual([]);
         expect(findings).toContainEqual({
@@ -226,10 +234,14 @@ describe('readCollections', () => {
 
     it('reports a key asked for twice and keeps the later file', () => {
         const hub = buildHub();
-        const { collections, findings } = readCollections(hub, [
-            { key: 'events', file: 'network/events.yml' },
-            { key: 'events', file: 'tasks/tasks.yml' }
-        ]);
+        const { collections, findings } = readCollections(
+            hub,
+            [
+                { key: 'events', file: 'network/events.yml' },
+                { key: 'events', file: 'tasks/tasks.yml' }
+            ],
+            CATALOG
+        );
 
         expect(collections.events.file).toBe(join(hub, 'tasks/tasks.yml'));
         expect(findings).toContainEqual({
@@ -241,8 +253,8 @@ describe('readCollections', () => {
 
     it('gives the same result on every run', () => {
         const hub = buildHub();
-        const first = readCollections(hub, FILES);
-        const second = readCollections(hub, FILES);
+        const first = readCollections(hub, FILES, CATALOG);
+        const second = readCollections(hub, FILES, CATALOG);
         expect(second.collections).toEqual(first.collections);
         expect(second.findings).toEqual(first.findings);
     });

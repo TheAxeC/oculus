@@ -103,6 +103,8 @@ export type ValidationRules = {
      * it even when the file lists no dataset.
      */
     datasetsFile?: string;
+    /** The flat text catalog every finding's sentence is read from, by its `findings.` key. */
+    text: Record<string, string>;
 };
 
 /** Everything buildPortfolio needs: where to read, and what to check what it read against. */
@@ -122,6 +124,11 @@ export type PortfolioConfig = {
     deck: unknown;
     /** The file the deck was read from, so a finding about the deck names it. */
     deckFile: string;
+    /**
+     * The flat text catalog of the merged config, which the readers and the validation rules word
+     * their findings from.
+     */
+    text: Record<string, string>;
 };
 
 /** The entities of one snapshot, each kind keyed by its own id. */

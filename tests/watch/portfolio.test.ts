@@ -97,13 +97,13 @@ function buildEngine(): string {
     write(engine, 'config/vocab.yml', VOCAB);
     write(engine, 'config/manifest-schema.yml', SCHEMA);
     write(engine, 'config/text.yml', TEXT);
-    // The audit's words are the engine's own catalog file, so the scan the watcher runs has the
-    // messages it writes its findings in rather than a copy of them typed into this file.
+    // The audit's words and the data layer's finding sentences are the engine's own catalog files,
+    // so the scan and the build the watcher runs have the messages they write their findings in
+    // rather than a copy of them typed into this file.
     mkdirSync(join(engine, 'config', 'text', 'views'), { recursive: true });
-    cpSync(
-        join(engineDir(), 'config', 'text', 'views', 'audit.yml'),
-        join(engine, 'config', 'text', 'views', 'audit.yml')
-    );
+    for (const name of ['views/audit.yml', 'findings.yml']) {
+        cpSync(join(engineDir(), 'config', 'text', name), join(engine, 'config', 'text', name));
+    }
     return engine;
 }
 
@@ -263,7 +263,8 @@ describe('namedByConfig', () => {
         schema: undefined,
         vocab: { types: [], statuses: [] },
         deck: undefined,
-        deckFile: '/hub/config/present.yml'
+        deckFile: '/hub/config/present.yml',
+        text: {}
     };
 
     it('names a manifest, a PRESENT.md and what the audit reads under a scan tier', () => {
@@ -319,7 +320,8 @@ describe('watchedDirectories', () => {
             schema: undefined,
             vocab: { types: [], statuses: [] },
             deck: undefined,
-            deckFile: '/hub/config/present.yml'
+            deckFile: '/hub/config/present.yml',
+            text: {}
         });
         expect(dirs.sort()).toEqual([
             join('/hub', 'feeds'),
@@ -822,6 +824,39 @@ describe('watchPortfolio', () => {
         expect((last.payload as ConfigPayload).text['app.title']).toBe('oculus, live');
         expect(on(started.got, 'portfolio').length).toBe(portfolioBefore + 1);
         expect(on(started.got, 'feeds').length).toBe(feedsBefore + 1);
+    });
+
+    it('publishes a portfolio worded by key over a broken sentence file, and rewords it once repaired', async () => {
+        const sentences = join(engineDir(), 'config', 'text', 'findings.yml');
+        const started = start((hub, engine) => {
+            write(engine, 'config/text/findings.yml', 'text: [\n');
+            write(
+                hub,
+                'projects/active/loewner/project.yml',
+                MANIFEST.replace('id: loewner', 'id: other')
+            );
+        });
+        const messages = (): string[] => {
+            const portfolio = on(started.got, 'portfolio');
+            const last = portfolio.at(-1)?.payload as Snapshot | undefined;
+            return last?.findings.map((finding) => finding.message) ?? [];
+        };
+        await until(() => messages().length > 0, 3000);
+        // The fixture hub keeps no people or organisations registry, which is two findings of its own.
+        expect(messages()).toEqual([
+            'findings.manifests.id_not_folder "other" loewner',
+            'findings.registries.file_missing',
+            'findings.registries.file_missing'
+        ]);
+        await quiet(started.got);
+
+        write(started.engine, 'config/text/findings.yml', readFileSync(sentences, 'utf8'));
+        await until(() => messages()[0] === 'id "other" is not the folder name loewner', 3000);
+        expect(messages()).toEqual([
+            'id "other" is not the folder name loewner',
+            'registry file does not exist',
+            'registry file does not exist'
+        ]);
     });
 
     it('publishes an empty portfolio, not a crash, when the config names no scan rule', async () => {

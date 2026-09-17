@@ -8,9 +8,10 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
+import { findingText, type TextCatalog } from '../finding-text.ts';
 import type { Finding } from '../model.ts';
 
-/** The path on the hub today; a caller may pass its own. */
+/** The path on the hub today, which the config falls back to when it names none. */
 export const CAREER_FILE = 'CAREER.yml';
 
 /**
@@ -19,7 +20,8 @@ export const CAREER_FILE = 'CAREER.yml';
  */
 export function readCareer(
     hub: string,
-    file: string = CAREER_FILE
+    file: string,
+    catalog: TextCatalog
 ): { career: Record<string, unknown> | null; findings: Finding[] } {
     const findings: Finding[] = [];
     const path = join(hub, file);
@@ -34,11 +36,19 @@ export function readCareer(
         parsed = parse(text);
     } catch (error) {
         const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-        findings.push({ file: path, key: '', message: `does not parse: ${message}` });
+        findings.push({
+            file: path,
+            key: '',
+            message: findingText(catalog, 'findings.file.does_not_parse', message)
+        });
         return { career: null, findings };
     }
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        findings.push({ file: path, key: '', message: 'is not a map of keys' });
+        findings.push({
+            file: path,
+            key: '',
+            message: findingText(catalog, 'findings.file.not_a_map')
+        });
         return { career: null, findings };
     }
     return { career: parsed as Record<string, unknown>, findings };

@@ -12,6 +12,7 @@
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
+import { findingText, type TextCatalog } from '../finding-text.ts';
 import type { DocPresence, Finding } from '../model.ts';
 
 /** One Markdown document: its body, and the leading YAML block when it had one. */
@@ -83,18 +84,18 @@ function fileStat(path: string): { present: boolean; mtime: number } {
  * frontmatter. A file that cannot be read, or whose block does not parse or does not parse to a
  * map, is a Finding; nothing here throws and nothing is repaired.
  */
-export function readDoc(path: string): DocRead {
+export function readDoc(path: string, catalog: TextCatalog): DocRead {
     let text: string;
     try {
         text = readFileSync(path, 'utf8');
     } catch {
-        return { file: path, key: '', message: 'document does not exist' };
+        return { file: path, key: '', message: findingText(catalog, 'findings.docs.missing') };
     }
 
     const { block, body } = splitFrontmatter(text);
     if (block === null) return { text, frontmatter: null };
 
-    const read = readFrontmatter(block, path);
+    const read = readFrontmatter(block, path, catalog);
     if ('message' in read) return read;
     return { text: body, frontmatter: read.frontmatter };
 }
@@ -105,17 +106,26 @@ export function readDoc(path: string): DocRead {
  */
 export function readFrontmatter(
     block: string,
-    path: string
+    path: string,
+    catalog: TextCatalog
 ): { frontmatter: Record<string, unknown> } | Finding {
     let parsed: unknown;
     try {
         parsed = parse(block) ?? {};
     } catch (error) {
         const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-        return { file: path, key: 'frontmatter', message: `does not parse: ${message}` };
+        return {
+            file: path,
+            key: 'frontmatter',
+            message: findingText(catalog, 'findings.file.does_not_parse', message)
+        };
     }
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        return { file: path, key: 'frontmatter', message: 'is not a map of keys' };
+        return {
+            file: path,
+            key: 'frontmatter',
+            message: findingText(catalog, 'findings.file.not_a_map')
+        };
     }
     return { frontmatter: parsed as Record<string, unknown> };
 }

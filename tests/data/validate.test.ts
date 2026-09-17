@@ -4,6 +4,7 @@
 import { describe, expect, it } from 'vitest';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import { validate } from '../../src/lib/data/validate.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import type {
     Finding,
     RawCollection,
@@ -13,6 +14,9 @@ import type {
     RegistryName,
     ValidationRules
 } from '../../src/lib/data/model.ts';
+
+/** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
+const CATALOG = textCatalog(loadConfig(engineDir()).config);
 
 const RULES: ValidationRules = {
     schema: [
@@ -40,7 +44,8 @@ const RULES: ValidationRules = {
         statuses: ['planned', 'done'],
         chips: ['lead', 'submitted'],
         lanes: ['run', 'push', 'holding']
-    }
+    },
+    text: CATALOG
 };
 
 /** One manifest record with the provenance a reader would have added, plus the keys the test needs. */
@@ -184,7 +189,7 @@ describe('validate', () => {
     });
 
     it('reports every key when the schema names nothing', () => {
-        const empty: ValidationRules = { schema: null, vocab: RULES.vocab };
+        const empty: ValidationRules = { schema: null, vocab: RULES.vocab, text: CATALOG };
         expect(lines({ title: 'Alpha' }, empty)).toEqual([
             'title: key title is not in the manifest schema'
         ]);
@@ -193,7 +198,8 @@ describe('validate', () => {
     it('reads the field names out of a schema written as a map of fields', () => {
         const rules: ValidationRules = {
             schema: { sections: { Core: 'Core' }, fields: { title: { label: 'Title' } } },
-            vocab: { types: ['active'], statuses: [] }
+            vocab: { types: ['active'], statuses: [] },
+            text: CATALOG
         };
         expect(lines({}, rules)).toEqual([]);
     });
@@ -216,7 +222,8 @@ describe('validate', () => {
     it('leaves focus unchecked when the vocabulary names no lanes', () => {
         const rules: ValidationRules = {
             schema: RULES.schema,
-            vocab: { types: RULES.vocab.types, statuses: RULES.vocab.statuses }
+            vocab: { types: RULES.vocab.types, statuses: RULES.vocab.statuses },
+            text: CATALOG
         };
         expect(validate(portfolio({ manifests: [manifest({ focus: 'submit' })] }), rules)).toEqual(
             []
@@ -317,7 +324,8 @@ describe('validate', () => {
     it('leaves chips unchecked when the config holds no chip vocabulary', () => {
         const free: ValidationRules = {
             schema: RULES.schema,
-            vocab: { types: RULES.vocab.types, statuses: RULES.vocab.statuses }
+            vocab: { types: RULES.vocab.types, statuses: RULES.vocab.statuses },
+            text: CATALOG
         };
         expect(lines({ status: { chips: ['unheard-of'] } }, free)).toEqual([]);
     });
@@ -663,7 +671,8 @@ describe('validate, the theme words of venues and datasets', () => {
             ...RULES.vocab,
             venueThemes: ['core-ml', 'clinical'],
             dataThemes: ['ecg', 'eeg']
-        }
+        },
+        text: CATALOG
     };
 
     /** A portfolio whose venue and dataset entries carry the themes given, one entry per list. */

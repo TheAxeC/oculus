@@ -53,6 +53,12 @@ describe('t', () => {
         expect(t('audit.count', 3, 'venues.yml')).toBe('3 findings in venues.yml');
     });
 
+    it('leaves a placeholder with no argument as it is written', () => {
+        setCatalog({ 'audit.count': '{0} findings in {1}' });
+        expect(t('audit.count', 3)).toBe('3 findings in {1}');
+        expect(t('audit.count')).toBe('{0} findings in {1}');
+    });
+
     it('throws on a key that is not in the catalog', () => {
         setCatalog({});
         expect(() => t('app.missing')).toThrow(/app\.missing/);

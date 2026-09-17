@@ -1,9 +1,9 @@
 // loadLocal, checkLocal and loadConfig against synthetic files in a temporary directory. The config
 // folder oculus ships is read by tests/config-folder.test.ts.
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { dirname, join, resolve, sep } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockInstance } from 'vitest';
 import {
@@ -14,11 +14,13 @@ import {
     configDir,
     engineDir,
     loadConfig,
-    loadLocal
+    loadLocal,
+    textCatalog
 } from '../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../src/lib/data/index.ts';
 import { ENGINE_ROOT, engineRoot, rootsFile } from '../src/lib/server/files.ts';
 import { layoutFile } from '../src/lib/server/docs.ts';
+import { parse } from 'yaml';
 import { noop } from './doubles.ts';
 
 function scratch(): string {
@@ -41,12 +43,24 @@ const DEFAULT_ACCOUNTS = [
     { tool: 'codex', dir: join(homedir(), '.codex'), label: 'codex' }
 ];
 
+/** The sentence file oculus ships, which loadConfig words its own findings from. */
+const FINDINGS_FILE = join(engineDir(), 'config', 'text', 'findings.yml');
+
+/** The flat catalog entries of that file, as a merged `text` map holds them. */
+const SENTENCES = textCatalog(
+    parse(readFileSync(FINDINGS_FILE, 'utf8')) as Record<string, unknown>
+);
+
+/** Give a synthetic engine the shipped sentence file, so its findings read in their own words. */
+function withSentences(engine: string): void {
+    writeConfig(engine, join('text', 'findings.yml'), readFileSync(FINDINGS_FILE, 'utf8'));
+}
+
 /** Write one file into <engine>/config, creating the directory the first time. */
 function writeConfig(engine: string, name: string, body: string): string {
-    const dir = join(engine, 'config');
-    const file = join(dir, name);
+    const file = join(engine, 'config', name);
     expect(resolve(file).startsWith(resolve(engine) + sep)).toBe(true);
-    mkdirSync(dir, { recursive: true });
+    mkdirSync(dirname(file), { recursive: true });
     writeFileSync(file, body);
     return file;
 }
@@ -391,6 +405,7 @@ describe('loadConfig', () => {
 
     it('reports a top-level key two files define and takes the value from the later one', () => {
         const engine = scratch();
+        withSentences(engine);
         writeConfig(engine, 'a-first.yml', 'palette: [teal]\nonly_here: 1\n');
         const later = writeConfig(engine, 'b-later.yml', 'palette: [amber]\n');
 
@@ -408,6 +423,7 @@ describe('loadConfig', () => {
 
     it('reports a catalog key two owner files define and takes the later value', () => {
         const engine = scratch();
+        withSentences(engine);
         const dir = join(engine, 'config', 'text');
         mkdirSync(dir, { recursive: true });
         writeFileSync(join(dir, 'app.yml'), 'text: { app: { title: first } }\n');
@@ -415,7 +431,7 @@ describe('loadConfig', () => {
         writeFileSync(later, 'text: { app: { title: second } }\n');
 
         const { config, findings } = loadConfig(engine);
-        expect(config.text).toEqual({ 'app.title': 'second' });
+        expect(config.text).toEqual({ ...SENTENCES, 'app.title': 'second' });
         expect(findings).toEqual([
             {
                 file: later,
@@ -427,11 +443,12 @@ describe('loadConfig', () => {
 
     it('reports a file that does not parse and merges the rest', () => {
         const engine = scratch();
+        withSentences(engine);
         writeConfig(engine, 'broken.yml', 'title: "unterminated\n  - [\n');
         writeConfig(engine, 'good.yml', 'text: { app: { title: oculus } }\n');
 
         const { config, findings } = loadConfig(engine);
-        expect(config.text).toEqual({ 'app.title': 'oculus' });
+        expect(config.text).toEqual({ ...SENTENCES, 'app.title': 'oculus' });
         expect(findings.length).toBe(1);
         expect(findings[0].file).toBe(join(engine, 'config', 'broken.yml'));
         expect(findings[0].message).toMatch(/^does not parse: /);
@@ -439,11 +456,12 @@ describe('loadConfig', () => {
 
     it('reports a file that is not a map and treats an empty file as no keys', () => {
         const engine = scratch();
+        withSentences(engine);
         writeConfig(engine, 'listy.yml', '- one\n- two\n');
         writeConfig(engine, 'nothing.yml', '');
 
         const { config, findings } = loadConfig(engine);
-        expect(config).toEqual({});
+        expect(config).toEqual({ text: SENTENCES });
         expect(findings).toEqual([
             {
                 file: join(engine, 'config', 'listy.yml'),
@@ -472,6 +490,8 @@ describe('loadConfig', () => {
         }
     });
 
+    // With no config directory there is no catalog to word the finding from, so it is written as
+    // its catalog key, which is what the Findings view shows for this one case.
     it('reports a missing config directory and returns an empty map', () => {
         const engine = scratch();
         const { config, findings } = loadConfig(engine);
@@ -481,15 +501,74 @@ describe('loadConfig', () => {
             {
                 file: join(engine, 'config'),
                 key: '',
-                message: 'config directory does not exist'
+                message: 'findings.config.directory_missing'
             }
         ]);
+    });
+
+    it('words a catalog block that is not a map from the catalog, naming where it stops', () => {
+        const engine = scratch();
+        withSentences(engine);
+        const root = writeConfig(engine, join('text', 'root.yml'), 'text: 5\n');
+        const inner = writeConfig(
+            engine,
+            join('text', 'inner.yml'),
+            'text: { app: { title: ~ } }\n'
+        );
+
+        const { findings } = loadConfig(engine);
+        expect(findings).toEqual([
+            { file: inner, key: 'text', message: 'text catalog: app.title is not a map' },
+            { file: root, key: 'text', message: 'text catalog: root is not a map' }
+        ]);
+        // Without the sentence file the same finding is its key and the path, so the words above are
+        // the catalog's and not the thrown error's.
+        const bare = scratch();
+        const alone = writeConfig(bare, join('text', 'root.yml'), 'text: 5\n');
+        expect(loadConfig(bare).findings).toEqual([
+            { file: alone, key: 'text', message: 'findings.config.text_not_a_map root' }
+        ]);
+    });
+
+    // Revert: rethrow in mergeText every error flattenText raises that is not the not-a-map one.
+    it('reports a catalog block whose aliases loop as a finding rather than throwing', () => {
+        const engine = scratch();
+        withSentences(engine);
+        const looped = writeConfig(engine, join('text', 'loop.yml'), 'text: &x\n  a: *x\n');
+        const { findings } = loadConfig(engine);
+        expect(findings).toHaveLength(1);
+        expect(findings[0].file).toBe(looped);
+        expect(findings[0].key).toBe('text');
+        expect(findings[0].message).not.toBe('');
+    });
+
+    // The sentence file is one of the files loadConfig reads, so when it is the one that breaks, its
+    // own finding and every other is worded by key and arguments rather than thrown on.
+    it('names a sentence file that does not parse by its key and arguments, without throwing', () => {
+        const engine = scratch();
+        cpSync(join(engineDir(), 'config'), join(engine, 'config'), {
+            recursive: true,
+            filter: (source) => !source.endsWith(LOCAL_NAME)
+        });
+        const broken = writeConfig(engine, join('text', 'findings.yml'), 'text: [\n');
+        const listy = writeConfig(engine, 'listy.yml', '- one\n');
+
+        const { config, findings } = loadConfig(engine);
+        expect(findings.map((one) => one.file)).toEqual([listy, broken]);
+        expect(findings[0].message).toBe('findings.file.not_a_map');
+        expect(findings[1].message).toMatch(/^findings\.file\.does_not_parse \S/);
+        // The rest of the copy still merges, the words of every other owner file among it.
+        expect(textCatalog(config)['app.chat']).toBe('Chat');
+        expect(textCatalog(config)['findings.file.not_a_map']).toBe(undefined);
     });
 });
 
 describe('behaviorFindings', () => {
+    /** The merged catalog these findings are worded from, as the server's merged config holds it. */
+    const WORDS = { text: loadConfig(engineDir()).config.text };
+
     /** The keys a configuration needs to draw no finding of its own, beside whatever a case adds. */
-    const SOUND = { editor: { paint_limit_kb: 64 } };
+    const SOUND = { ...WORDS, editor: { paint_limit_kb: 64 } };
 
     it('names the key that replaced a retired one, against behavior.yml', () => {
         const engine = scratch();
@@ -511,10 +590,10 @@ describe('behaviorFindings', () => {
         const named = [
             'editor.paint_limit_kb: editor.paint_limit_kb must be a number above zero; the editor paints without colour until it is'
         ];
-        expect(said({})).toEqual(named);
-        expect(said({ editor: {} })).toEqual(named);
-        expect(said({ editor: { paint_limit_kb: '64' } })).toEqual(named);
-        expect(said({ editor: { paint_limit_kb: 0 } })).toEqual(named);
+        expect(said({ ...WORDS })).toEqual(named);
+        expect(said({ ...WORDS, editor: {} })).toEqual(named);
+        expect(said({ ...WORDS, editor: { paint_limit_kb: '64' } })).toEqual(named);
+        expect(said({ ...WORDS, editor: { paint_limit_kb: 0 } })).toEqual(named);
         expect(behaviorFindings(engine, {})[0].file).toBe(join(engine, 'config', 'behavior.yml'));
     });
 

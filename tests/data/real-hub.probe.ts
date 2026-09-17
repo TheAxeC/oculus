@@ -35,7 +35,7 @@ const portfolio = portfolioConfigFrom(config.config, engine);
 const SCAN = portfolio.scan;
 const COLLECTIONS = portfolio.collections;
 
-const { manifests, findings } = readManifests(hub, SCAN);
+const { manifests, findings } = readManifests(hub, SCAN, portfolio.text);
 console.log(`manifests: ${manifests.length}`);
 for (const rule of SCAN) {
     const tier = rule.dir.split('/').pop();
@@ -43,7 +43,7 @@ for (const rule of SCAN) {
 }
 report('manifest', findings);
 
-const registries = readRegistries(hub, portfolio.registries);
+const registries = readRegistries(hub, portfolio.registries, portfolio.text);
 for (const name of REGISTRIES) {
     const reg = registries[name];
     console.log(
@@ -52,7 +52,7 @@ for (const name of REGISTRIES) {
 }
 report('registry', registries.findings);
 
-const collections = readCollections(hub, COLLECTIONS);
+const collections = readCollections(hub, COLLECTIONS, portfolio.text);
 console.log('collections:');
 for (const asked of COLLECTIONS) {
     const coll = collections.collections[asked.key];

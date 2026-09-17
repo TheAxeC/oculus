@@ -227,9 +227,13 @@ export function renderMarkdown(
     return reader.parse(text, { async: false });
 }
 
-/** One read file as the endpoint's answer, or the 404 the read failed with. */
-function answer(path: string, base: { root: string; folder: string } | null): Response {
-    const read = readDoc(path);
+/** One read file as the endpoint's answer, or the 404 the read failed with, in the catalog's words. */
+function answer(
+    path: string,
+    base: { root: string; folder: string } | null,
+    catalog: Record<string, string>
+): Response {
+    const read = readDoc(path, catalog);
     if (isFinding(read)) return json(404, { error: read.message });
     const body: DocAnswer = {
         html: renderMarkdown(read.text, base),
@@ -253,7 +257,7 @@ export function renderDoc(into: DocTarget, id: string, name: string): Response {
     const path = join(into.hub, folder, name);
     if (escapes(path, into.hub)) return json(404, { error: 'the document is not inside the hub' });
 
-    return answer(path, { root: HUB_ROOT, folder: dirname(join(folder, name)) });
+    return answer(path, { root: HUB_ROOT, folder: dirname(join(folder, name)) }, into.config.text);
 }
 
 /**
@@ -269,7 +273,7 @@ export function renderHubDoc(into: DocTarget, path: string): Response {
     }
     const full = join(into.hub, path);
     if (escapes(full, into.hub)) return json(404, { error: 'the document is not inside the hub' });
-    return answer(full, { root: HUB_ROOT, folder: dirname(path) });
+    return answer(full, { root: HUB_ROOT, folder: dirname(path) }, into.config.text);
 }
 
 /**
@@ -375,7 +379,7 @@ export const MANUAL = 'HELP.md';
  * config folder alone, so the manual has no other way to the page.
  */
 export function renderManual(into: DocTarget): Response {
-    return answer(join(into.engine, MANUAL), null);
+    return answer(join(into.engine, MANUAL), null, into.config.text);
 }
 
 /**

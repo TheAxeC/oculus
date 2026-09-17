@@ -19,6 +19,7 @@ import type { Feeds, FeedFiles, Finding, Lead, RawFeeds } from '../model.ts';
 // a lead reads it in data/leads.ts.
 import { isMap, text as str } from '../guards.ts';
 import { isLeadClosed } from '../leads.ts';
+import { findingText, type TextCatalog } from '../finding-text.ts';
 
 /** An ISO date anywhere inside a string; the leads feed writes prose around its dates. */
 const DATE = /\d{4}-\d{2}-\d{2}/;
@@ -44,7 +45,11 @@ function entriesOf(data: Record<string, unknown>): Record<string, unknown>[] {
  * Read and parse one feed file. A file that is not there is null with no finding, which is what
  * separates this from sources/registries.ts: a registry is part of the hub and a feed is generated.
  */
-function readFeed(file: string, findings: Finding[]): Record<string, unknown> | null {
+function readFeed(
+    file: string,
+    catalog: TextCatalog,
+    findings: Finding[]
+): Record<string, unknown> | null {
     let text: string;
     try {
         text = readFileSync(file, 'utf8');
@@ -56,11 +61,15 @@ function readFeed(file: string, findings: Finding[]): Record<string, unknown> | 
         parsed = parse(text);
     } catch (error) {
         const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-        findings.push({ file, key: '', message: `does not parse: ${message}` });
+        findings.push({
+            file,
+            key: '',
+            message: findingText(catalog, 'findings.file.does_not_parse', message)
+        });
         return null;
     }
     if (!isMap(parsed)) {
-        findings.push({ file, key: '', message: 'is not a map of keys' });
+        findings.push({ file, key: '', message: findingText(catalog, 'findings.file.not_a_map') });
         return null;
     }
     return parsed;
@@ -85,9 +94,10 @@ function lead(entry: Record<string, unknown>): Lead {
  */
 function leads(
     file: string,
+    catalog: TextCatalog,
     findings: Finding[]
 ): { leads: Feeds['leads']; scout: Feeds['scout'] } {
-    const data = readFeed(file, findings);
+    const data = readFeed(file, catalog, findings);
     if (data === null) return { leads: null, scout: null };
     const live = entriesOf(data)
         .filter((entry) => !isLeadClosed(entry.status))
@@ -102,8 +112,8 @@ function leads(
 }
 
 /** The Lit Watch radar: the day the last sweep ran. */
-function radar(file: string, findings: Finding[]): Feeds['radar'] {
-    const data = readFeed(file, findings);
+function radar(file: string, catalog: TextCatalog, findings: Finding[]): Feeds['radar'] {
+    const data = readFeed(file, catalog, findings);
     if (data === null) return null;
     const run = str(metaOf(data).last_run);
     return { lastRun: run === '' ? null : run };
@@ -114,7 +124,7 @@ function radar(file: string, findings: Finding[]): Feeds['radar'] {
  * is an unposted idea and carries no date that counts. The folder lives in the website repository
  * beside the hub, which is a separate checkout, so an absent folder is the ordinary case.
  */
-function linkedin(dir: string, findings: Finding[]): Feeds['linkedin'] {
+function linkedin(dir: string, catalog: TextCatalog, findings: Finding[]): Feeds['linkedin'] {
     let names: string[];
     try {
         if (!statSync(dir).isDirectory()) return null;
@@ -133,7 +143,7 @@ function linkedin(dir: string, findings: Finding[]): Feeds['linkedin'] {
             findings.push({
                 file: join(dir, name),
                 key: '',
-                message: `cannot be read: ${message}`
+                message: findingText(catalog, 'findings.feeds.cannot_read', message)
             });
             continue;
         }
@@ -148,14 +158,18 @@ function linkedin(dir: string, findings: Finding[]): Feeds['linkedin'] {
  * Read the three feed sources. Each is independent: a broken radar costs the radar line and nothing
  * else. Nothing here throws and no value is repaired.
  */
-export function readFeeds(hub: string, files: FeedFiles): { feeds: RawFeeds; findings: Finding[] } {
+export function readFeeds(
+    hub: string,
+    files: FeedFiles,
+    catalog: TextCatalog
+): { feeds: RawFeeds; findings: Finding[] } {
     const findings: Finding[] = [];
-    const both = leads(join(hub, files.leads), findings);
+    const both = leads(join(hub, files.leads), catalog, findings);
     const feeds: RawFeeds = {
         leads: both.leads,
-        radar: radar(join(hub, files.radar), findings),
+        radar: radar(join(hub, files.radar), catalog, findings),
         scout: both.scout,
-        linkedin: linkedin(join(hub, files.linkedin), findings)
+        linkedin: linkedin(join(hub, files.linkedin), catalog, findings)
     };
     return { feeds, findings };
 }

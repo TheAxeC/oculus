@@ -1,5 +1,8 @@
 // The catalog key gate in both directions. Every literal reader names a catalog key, and every
-// catalog key is reached by a literal, registration metadata, or one documented computed lookup.
+// catalog key is reached by a literal, registration metadata, or one documented computed lookup. The
+// finding sentences of config/text/findings.yml are held to the source by their literals alone: every
+// `findings.` string literal under src is a key of that file and every key of it is such a literal,
+// whatever expression the formatter is handed the catalog through.
 
 import { statusWordKey } from '../src/lib/state/repositories.ts';
 import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
@@ -7,6 +10,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { beforeEach, describe, expect, it } from 'vitest';
+import { parse } from 'yaml';
 import {
     collectionKeys,
     engineDir,
@@ -33,8 +37,37 @@ const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 /** Readers whose first argument is a catalog key: the client's three and the audit's `sentence`, spread or not. */
 const CALL = /(?<![\w$.])(?:\.\.\.)?(t|lookup|catalogText|sentence)\(/g;
 
-/** Server interpolation takes the catalog before its key. */
+/** Server interpolation takes the catalog before its key: the chat and task-name `words` of server/pty. */
 const WORDS = /(?<![\w$.])words\(\s*catalog\s*,/g;
+
+/** A `findings.` key written as a string literal in any quote, with at least one dot after the group. */
+const FINDING_LITERAL = /(['"`])(findings\.[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+)\1/g;
+
+/** A `findingText` call (not its declaration), up to the end of its key argument. */
+const FINDING_CALL = /(?<![\w$.])(?<!function\s+)findingText\(\s*[^,()]+,\s*([^,)]+)/g;
+
+/** A key argument written as one whole `findings.` string literal. */
+const WHOLE_FINDING_KEY = /^(['"])findings\.[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+\1$/;
+
+/**
+ * The `findingText` calls whose key is not a whole literal, each with the file and the argument text:
+ * the audit's collector words a key its rules named through `sentence(`, which the reader scan holds.
+ */
+const COMPUTED_FINDING_KEYS = [{ file: 'lib/server/audit.ts', key: 'key' }] as const;
+
+/** Every `findingText` call under `root` whose key is not one whole `findings.` literal. */
+export function computedFindingKeys(root: string): { file: string; key: string }[] {
+    const found: { file: string; key: string }[] = [];
+    for (const file of sources(root)) {
+        const source = stripComments(readFileSync(file, 'utf8'));
+        for (const match of source.matchAll(FINDING_CALL)) {
+            const key = match[1].trim();
+            if (!WHOLE_FINDING_KEY.test(key))
+                found.push({ file: file.slice(root.length + 1), key });
+        }
+    }
+    return found;
+}
 
 /** Direct server indexing of the flat catalog, by subscript or through the guarded record reader. */
 const INDEX =
@@ -67,13 +100,6 @@ const COMPUTED_PREFIXES = [
             );
             return [...new Set([...names, LOCAL_NAME])].map((name) => descriptionKey(name));
         }
-    },
-    {
-        // The audit's collector words every finding from the sentence its rule named by key; the
-        // keys are read at the rules' `sentence(` calls, so this computed call covers none itself.
-        file: 'lib/server/audit.ts',
-        start: 'words(catalog, key',
-        keys: () => []
     },
     {
         // One word per kind of write the change log records, keyed by the body kind itself, so a
@@ -155,9 +181,32 @@ export function calls(root: string): Call[] {
     return found;
 }
 
+/** Every `findings.` string literal under `root`, comments left out, with the file it is in. */
+export function findingLiterals(root: string): { file: string; key: string }[] {
+    const found: { file: string; key: string }[] = [];
+    for (const file of sources(root)) {
+        const source = stripComments(readFileSync(file, 'utf8'));
+        for (const match of source.matchAll(FINDING_LITERAL)) {
+            found.push({ file: file.slice(root.length + 1), key: match[2] });
+        }
+    }
+    return found;
+}
+
 const config = loadConfig(engineDir()).config;
 const catalog = textCatalog(config);
 const found = calls(SRC);
+const findingKeys = findingLiterals(SRC);
+
+/** Every key of config/text/findings.yml, read from that file alone rather than the merged map. */
+const SENTENCE_KEYS = Object.keys(
+    textCatalog(
+        parse(readFileSync(join(engineDir(), 'config', 'text', 'findings.yml'), 'utf8')) as Record<
+            string,
+            unknown
+        >
+    )
+);
 
 function documented(call: Call): boolean {
     return COMPUTED_PREFIXES.some(
@@ -204,8 +253,55 @@ describe('text keys', () => {
         for (const entry of COMPUTED_PREFIXES) {
             for (const key of entry.keys()) allowed.add(key);
         }
+        for (const literal of findingKeys) allowed.add(literal.key);
         const orphaned = Object.keys(catalog).filter((key) => !allowed.has(key));
         expect(orphaned).toEqual([]);
+    });
+
+    it('holds every findings. literal of the source to config/text/findings.yml, both ways', () => {
+        expect(findingKeys.length).toBeGreaterThan(0);
+        expect(
+            findingKeys
+                .filter((literal) => !SENTENCE_KEYS.includes(literal.key))
+                .map((literal) => `${literal.file}: ${literal.key}`)
+        ).toEqual([]);
+        const named = new Set(findingKeys.map((literal) => literal.key));
+        expect(SENTENCE_KEYS.filter((key) => !named.has(key))).toEqual([]);
+        expect(SENTENCE_KEYS.filter((key) => !key.startsWith('findings.'))).toEqual([]);
+    });
+
+    // Revert: call findingText(rules.text, 'findings.validate.' + name) anywhere under src.
+    it('reads every findingText key as a whole literal, except where a documented rule computes it', () => {
+        const documented = (call: { file: string; key: string }): boolean =>
+            COMPUTED_FINDING_KEYS.some(
+                (entry) => entry.file === call.file && entry.key === call.key
+            );
+        expect(
+            computedFindingKeys(SRC)
+                .filter((call) => !documented(call))
+                .map((call) => `${call.file}: ${call.key}`)
+        ).toEqual([]);
+    });
+
+    it('reads a findings. literal whatever holds the catalog, and none written in a comment', () => {
+        const dir = mkdtempSync(join(tmpdir(), 'oculus-finding-keys-'));
+        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        const file = join(dir, 'Rules.ts');
+        expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
+        writeFileSync(
+            file,
+            [
+                "const a = findingText(rules.text, 'findings.validate.nope');",
+                'const b = findingText(CATALOG, "findings.config.nope", 3);',
+                '// findingText(catalog, `findings.file.commented`)',
+                "const c = t('views.findings');",
+                ''
+            ].join('\n')
+        );
+        expect(findingLiterals(dir)).toEqual([
+            { file: 'Rules.ts', key: 'findings.validate.nope' },
+            { file: 'Rules.ts', key: 'findings.config.nope' }
+        ]);
     });
 
     it('catches a computed key and a literal key, and reads past neither', () => {

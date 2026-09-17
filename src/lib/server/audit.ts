@@ -24,17 +24,8 @@ import { join } from 'node:path';
 import { parse, stringify } from 'yaml';
 import { localDate } from '../data/dates.ts';
 import { byKey } from '../data/guards.ts';
+import { findingText } from '../data/finding-text.ts';
 import type { AuditFinding, AuditKind, Collection, Project } from '../data/model.ts';
-
-/** The words one message is written in; the catalog is passed in so nothing here is process-wide. */
-function words(catalog: Record<string, string>, key: string, ...args: (string | number)[]): string {
-    const template = byKey(catalog, key);
-    if (template === undefined) throw new Error(`text key not in the catalog: ${key}`);
-    return template.replace(/\{(\d+)\}/g, (placeholder: string, index: string) => {
-        const arg = args.at(Number(index));
-        return arg === undefined ? placeholder : String(arg);
-    });
-}
 
 /** The markers a document is scanned for, as whole words where they are ordinary English. */
 const MARKERS = /%TODO|%VERIFY|%FIXME|\bTODO\b|\bFIXME\b|\bTBD\b|\bXXX\b/g;
@@ -272,7 +263,7 @@ function collector(catalog: Record<string, string>): {
         add({ key, args, ...finding }) {
             found.push({
                 ...finding,
-                message: words(catalog, key, ...args),
+                message: findingText(catalog, key, ...args),
                 signature: signatureOf(finding.scope, finding.where, finding.kind, key, args)
             });
         }

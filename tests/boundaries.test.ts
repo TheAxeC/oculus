@@ -22,7 +22,8 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 //
 // `data/guards`, `data/calendar`, `data/mail`, `data/dates`, `data/deck`, `data/editor`,
 // `data/leads`, `data/worktrees`, `data/text-kind`, `data/opens-in-program`, `data/tasks` and
-// `data/search` join `data/model` in the state row as pure helpers with no reader and no I/O.
+// `data/search` and `data/finding-text` join `data/model` in the state row as pure helpers with no
+// reader and no I/O.
 // `data/calendar` and `data/mail` are there because how a connector account is named, and how old a
 // thread is, are read by the server that builds the credential file and reads the mailbox and by the
 // page that presses Connect and draws the age on a card; `data/deck` because the deck's placement
@@ -39,7 +40,9 @@ const LAYERS = ['data', 'server', 'server/transcripts', 'state', 'ui', 'shell', 
 // start runs unattended; `data/editor`, the server requiring `editor.paint_limit_kb` at start and
 // the source editor reading the same cap out of the configuration it was sent; and `data/search`,
 // the Search view refusing a query before it sends it and the search route refusing the same query
-// when it arrives, from one rule and one argument list. The model's own concern modules
+// when it arrives, from one rule and one argument list; and `data/finding-text`, whose placeholder
+// rule is the one the client's t() fills a catalog string with and the one the server words every
+// finding with before the snapshot carries it. The model's own concern modules
 // (`data/model-*`) are reached through the facade only, which is why they are not listed here.
 //
 // The shell's row names the state modules the workbench is made of, one at a time. The one drag in progress belongs to the shell, as do the theme picker and the configuration it offers; views do not read or write either concern. A shell component reaches those stores through the client object (`state/context`, read with `state/use`), which names every store there is, so the row alone would no longer hold the shell to its own: the stores a shell file may take out of the object are SHELL_STORES below, and the second rule checks each destructuring against that list.
@@ -80,6 +83,7 @@ const ALLOWED: Record<string, string[]> = {
         'data/tasks',
         'data/editor',
         'data/search',
+        'data/finding-text',
         'views/registry',
         'ui/tip-ids'
     ],

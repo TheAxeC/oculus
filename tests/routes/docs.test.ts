@@ -14,13 +14,18 @@
 // what the `docs:` list of config/layout.yml offers in the rail, and the manual, which is the one
 // path of the engine directory this route opens.
 
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, mkdtempSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { handleDocs } from '../../src/lib/server/docs.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
-import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
+import {
+    LOCAL_NAME,
+    engineDir,
+    loadConfig,
+    textCatalog
+} from '../../src/lib/data/sources/config.ts';
 import type { DocTarget } from '../../src/lib/server/docs.ts';
 import type { Project } from '../../src/lib/data/model.ts';
 import { fields } from '../../src/lib/data/guards.ts';
@@ -302,6 +307,24 @@ describe('a document of the hub', () => {
         const into = hubWith({ 'local.yml': 'hub: /elsewhere\n' });
         expect(handleDocs(request('hub=local.yml'), into).status).toBe(404);
         expect(handleDocs(request('hub=nothing.md'), into).status).toBe(404);
+    });
+
+    it('answers 404 for a missing document while the sentence file does not parse', async () => {
+        const engine = mkdtempSync(join(tmpdir(), 'oculus-docs-engine-'));
+        expect(resolve(engine).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        cpSync(join(engineDir(), 'config'), join(engine, 'config'), {
+            recursive: true,
+            filter: (source) => !source.endsWith(LOCAL_NAME)
+        });
+        writeFileSync(join(engine, 'config', 'text', 'findings.yml'), 'text: [\n');
+        const into = hubWith({});
+        const text = textCatalog(loadConfig(engine).config);
+        const response = handleDocs(request('hub=nothing.md'), {
+            ...into,
+            config: { ...into.config, text }
+        });
+        expect(response.status).toBe(404);
+        expect(await response.json()).toEqual({ error: 'findings.docs.missing' });
     });
 });
 

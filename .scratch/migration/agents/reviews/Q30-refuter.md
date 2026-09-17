@@ -89,3 +89,71 @@ All commands run from `tools/oculus` in the worktree.
 - The Findings view was not looked at in a browser; no browser spec of it exists.
 
 Reviewer usage: about 45 tool uses, about 12 minutes (13:23 to 13:35).
+
+
+## Repair round 1, refuted
+```
+All commands from tools/oculus in the worktree (PATH with node v24.21.0). The round's delta = the worktree now against scratchpad/q30-round1 (base 115da2e7 + tracked.patch + untracked.tar), rebuilt under scratchpad/q30-review2/round1; diff -ru covers 13 files (findings.yml, finding-text.ts, sources/config.ts, sources/present.ts, validate-themes.ts, validate.ts, server/audit.ts, tests: config, data/finding-text, keys, routes/docs, text, watch/portfolio).
+
+npx vitest run --reporter=dot                 Test Files 237 passed (237), Tests 3983 passed (3983); no timing failure
+npm run check                                 COMPLETED 1181 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+npm run lint                                  exit 0
+npm run format:check                          All matched files use Prettier code style!
+ASCII gate (perl, from the brief)             prints nothing, exit 0
+python3 -c "import yaml; ...findings.yml"     exit 0
+grep -n "message: ['\`]" validate.ts validate-themes.ts sources/*.ts   prints nothing (exit 1)
+npm run build                                 built in 5.07s, done, exit 0
+npx playwright test tests/browser/audit.spec.ts   3 passed (8.6s), port 8792 free on the first try
+
+Reverts, in scratchpad/q30-review2/copy (a clone of the worktree's tools/oculus), each file restored and cmp-checked; copy1 = the same with the pre-round src/tests/config:
+A findingText throws on a missing key again       7 red: config.test x4 (missing directory, not-a-map, broken sentence file, paint limit), finding-text fallback, routes/docs 404 case, watch/portfolio broken-sentence case. Matches the report.
+B1 now: findingText(rules.text, 'findings.validate.' + 'nope') in validate()      keys.test + validate.test 55 passed (GREEN)
+B2 now: findingText(rules.text, `findings.validate.${String(1)}`)                  55 passed (GREEN)
+B3 now: findingText(rules.text, 'findings.validate.nope')                           keys "holds every findings. literal ... both ways" red
+B1/B2 in copy1 (pre-round, with const catalog = rules.text)                        keys "uses literals except at the documented computed prefixes" + "words every data-layer finding..." red
+C mergeText words: () => error.message             config "words a catalog block that is not a map" red, plus keys x2 (the key goes unused)
+D audit 'audit.msg_markers' misspelt 'audit.msg_markerz'   now: audit.test 3 red, keys.test 2 red; copy1: audit.test 5 red, keys.test 2 red
+E fillPlaceholders returns String(arg)             text.test "leaves a placeholder with no argument as it is written" red
+F present.ts back on findings.present.order_not_a_map   keys literal test + present.test red
+G 'findings.panel.open' const (not a key) added to state/search.ts   keys literal test red, naming it
+H probe-write (engine copy, findings.yml = "text: [", hub with id: other in folder renamed):
+  now:   buildPortfolio builds, messages by key ("findings.manifests.id_not_folder \"other\" renamed", ...); renderHubDoc status 404; writeManifest {"found":true,"changed":["title"]}, file "id: good\ntype: active\ntitle: G2\n"
+  copy1: buildPortfolio threw ...findings.manifests.scan_missing; renderHubDoc threw ...findings.docs.missing; writeManifest threw ...findings.manifests.scan_missing
+I probe-cycle (config/text/zz.yml = "text: &x\n  a: *x\n", yaml parse gives a cyclic map):
+  now:   loadConfig threw RangeError: Maximum call stack size exceeded
+  copy1: loadConfig findings ["Maximum call stack size exceeded"] (base 115da2e7 has the same catch, config.ts:367-374 there)
+J keys.test WORDS regex set to never match      "has a reader for every catalog key" red with 7 orphans: server.chat.chat_focus_note, chat_index_note, chat_instruction, chat_name, chat_name_focus, seed_focus, server.latex.name
+K words vs findingText, catalog 'focus {0} {1} {2}', args id, 'a{2}b', /cwd:
+  words: "focus id a/cwdb /cwd"; findingText: "focus id a{2}b /cwd"; words on a missing key throws "text key not in config: server.chat.nope"; findingText gives "server.chat.nope 1"
+Worktree unchanged by the review: md5 of git diff 115da2e7 equal at start and end.
+```
+- `tests/keys.test.ts:39-43`: the key gate now misses a computed finding key. It is a new defect of ruling 2. The round narrowed `WORDS` to `words(catalog,` and put `FINDING_LITERAL` in its place, and that regex only matches a whole quoted `findings.a.b`. A `findingText` call whose key is a concatenation, a template or a variable is no longer read by any test. Reverts B1 and B2 stay green now, and the same two calls were red before the round under "uses literals except at the documented computed prefixes". Since `findingText` no longer throws, such a key would show on the page as the key and its arguments, and no test would fail. `server/audit.ts:266` `findingText(catalog, key, ...args)` is such a call; it passes only because it is no longer scanned, and the audit's documented computed-prefix entry was deleted along with it. Today no source has a computed `findings.` key (scratchpad/q30-review2/survey.mjs over src lists only the audit call). The ruling asked for coverage "whatever the variable is named"; it did not ask to drop the check on non-literal keys. Proof.
+- `src/lib/data/finding-text.ts:31-32`: the comment says "A key misspelt in the code is caught by tests/keys.test.ts". The builder's DESIGN.md decision line makes the same claim. Per the finding above, it holds only for a key written as a whole literal. Standards.
+- `src/lib/data/sources/config.ts:384`: `if (!(error instanceof TextNotAMap)) throw error;` is a new throw path in `loadConfig`. `flattenText` recurses without a depth guard. A text fragment with a self-referencing YAML alias (`text: &x\n  a: *x`) now makes `loadConfig` throw RangeError (probe I). Before the round, and at base, this was a finding: "Maximum call stack size exceeded". `loadConfig` runs on every request in `hooks.server.ts:14`, so one bad catalog fragment would fail every page load instead of showing as a finding. The ruling asked for the not-a-map sentence to come from the file; it did not ask to rethrow every other error. Behaviour.
+- `src/lib/data/sources/config.ts:531`: `TextNotAMap` is exported, but nothing outside config.ts imports it (`grep -rn TextNotAMap src tests`). Standards (YAGNI), minor.
+- `tests/keys.test.ts:222,235`: in the other direction, any `findings.` string literal now counts as a reader, whether or not it reaches `findingText`. In the other kind of false hit, a `findings.` string that is not a key fails the test loudly and names the file (probe G). No current source string trips it. Behaviour of the gate, noted and not a defect.
+- Closure of ruling 1: reproduced. Revert A gives 7 red, as the report says. Probe H confirms the write the builder had not tested: over a broken sentence file, `writeManifest` writes (`changed: ["title"]`) and `renderHubDoc` answers 404; before the round both threw.
+- Whether the audit's tests still catch a missing audit key: yes. Revert D gives 3 red in `tests/server/audit.test.ts`, down from 5 before the round, because the two signature tests no longer throw. `tests/keys.test.ts` "names a catalog key in every literal read" also goes red. Behaviour change: an audit key missing from the catalog is now shown as the key and its arguments instead of throwing. The report says so.
+- Closures of rulings 3, 7 and 8: reproduced by reverts C, F and E. Ruling 4: `grep -rn findingTextOrKey src tests config DESIGN.md HELP.md` prints nothing.
+- `src/lib/server/pty/chat.ts:40-52` `words`: confirmed as a second copy of the placeholder fill, with its own throw. It differs from `fillPlaceholders` in behaviour, not only in code. It runs `replaceAll` once per argument, so an argument that contains `{n}` is itself filled (probe K: "a{2}b" becomes "a/cwdb"), and it throws on a missing key. Replacing it with `findingText` would touch:
+  - the function and its uses in chat.ts at lines 64, 124, 126, 127, 131, 132, 134 and 135;
+  - `server/pty/routes.ts:24` (the import) and `:224`;
+  - `tests/keys.test.ts:39-40` and the `WORDS` loop at 128-137: those 7 `server.*` keys have no other reader in the gate (probe J), so the regex would have to match `findingText(catalog,` or those keys become orphans;
+  - behaviour: a missing `server.chat.*` or `server.latex.name` key would give the key and its arguments instead of a throw, and the fill would become single-pass.
+
+  The file is outside the brief's paths and the rulings; not done, and a booking is needed. Spec.
+- No history in added lines (`git diff 115da2e7 | grep "^+"` for package ids, dates and history words: nothing). config.ts is 902 lines and validate.ts 826, both under 1000.
+
+Reviewer usage: about 33 tool uses, about 12 minutes (13:46 to 13:58).
+
+## Closed
+
+- The first review's findings: closed by the round's nine rulings, each reproduced by the run over the round (reverts A, C, E, F and probe H).
+- The key gate missing a computed finding key (`tests/keys.test.ts`): a fix at landing adds "reads every findingText key as a whole literal, except where a documented rule computes it", which scans every `findingText(` call (its declaration left out) and requires its key to be one whole `findings.` literal or a documented computed key (`COMPUTED_FINDING_KEYS`, the audit collector's `key`, whose keys the `sentence(` scan holds); red with `findingText(rules.text, 'findings.validate.' + ...)` inserted in `validate()` (1 failed), green restored.
+- `data/finding-text.ts`'s comment on the key gate: now names both checks, so it is true.
+- The rethrow in `mergeText` (`sources/config.ts`): a fix at landing reports any other error `flattenText` raises (a fragment whose aliases loop) as a finding in the error's own words, as before the round; `tests/config.test.ts` "reports a catalog block whose aliases loop as a finding rather than throwing" (red with the rethrow put back: 1 failed).
+- `TextNotAMap` exported with no importer: no longer exported.
+- `server/pty/chat.ts` `words`, a second placeholder fill with its own throw and a fill that runs once per argument: outside the step's paths, and replacing it changes how a chat instruction is filled and the key gate's `WORDS` scan; booked as Q45, a fix of delivered work.
+- The literal scan counting any `findings.` string as a reader: noted by the reviewer as a loud false hit that names its file, not a defect; no change.
+
+After the fixes, in the worktree: `npx vitest run --reporter=dot` 237 files, 3,985 passed; `npm run check` 0 errors; `npm run lint`; `npm run format:check`.

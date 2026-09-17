@@ -6,6 +6,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { parse } from 'yaml';
+import { findingText, type TextCatalog } from '../finding-text.ts';
 import type { Finding, RawManifest, ScanRule, Tier } from '../model.ts';
 
 /** Folder names the walk never descends into: a project's own code and attic hold no manifests. */
@@ -82,17 +83,25 @@ function nestedProjects(base: string, segments: string[] = []): string[][] {
 }
 
 /** Read and parse one project.yml. A map is returned; anything else is a finding and null. */
-function readManifest(file: string, findings: Finding[]): Record<string, unknown> | null {
+function readManifest(
+    file: string,
+    catalog: TextCatalog,
+    findings: Finding[]
+): Record<string, unknown> | null {
     let parsed: unknown;
     try {
         parsed = parse(readFileSync(file, 'utf8'));
     } catch (error) {
         const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-        findings.push({ file, key: '', message: `does not parse: ${message}` });
+        findings.push({
+            file,
+            key: '',
+            message: findingText(catalog, 'findings.file.does_not_parse', message)
+        });
         return null;
     }
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        findings.push({ file, key: '', message: 'is not a map of keys' });
+        findings.push({ file, key: '', message: findingText(catalog, 'findings.file.not_a_map') });
         return null;
     }
     return parsed as Record<string, unknown>;
@@ -109,6 +118,7 @@ function record(
     tier: Tier,
     category: string | undefined,
     ruleType: string | undefined,
+    catalog: TextCatalog,
     findings: Finding[]
 ): RawManifest {
     const file = join(folderPath, MANIFEST);
@@ -119,7 +129,12 @@ function record(
         findings.push({
             file,
             key: 'id',
-            message: `id ${JSON.stringify(data.id)} is not the folder name ${id}`
+            message: findingText(
+                catalog,
+                'findings.manifests.id_not_folder',
+                JSON.stringify(data.id),
+                id
+            )
         });
     }
 
@@ -130,7 +145,12 @@ function record(
             findings.push({
                 file,
                 key: 'type',
-                message: `type ${JSON.stringify(data.type)} is not the tier's ${ruleType}`
+                message: findingText(
+                    catalog,
+                    'findings.manifests.type_not_tier',
+                    JSON.stringify(data.type),
+                    ruleType
+                )
             });
         }
     } else if (typeof data.type === 'string') {
@@ -179,7 +199,8 @@ function ghost(
  */
 export function readManifests(
     hub: string,
-    scan: ScanRule[]
+    scan: ScanRule[],
+    catalog: TextCatalog
 ): { manifests: RawManifest[]; findings: Finding[] } {
     const manifests: RawManifest[] = [];
     const findings: Finding[] = [];
@@ -192,7 +213,7 @@ export function readManifests(
                 findings.push({
                     file: base,
                     key: 'scan',
-                    message: 'scan directory does not exist'
+                    message: findingText(catalog, 'findings.manifests.scan_missing')
                 });
             }
             continue;
@@ -208,10 +229,12 @@ export function readManifests(
                 manifests.push(ghost(hub, folderPath, tier, rule.type));
                 continue;
             }
-            const data = readManifest(join(folderPath, MANIFEST), findings);
+            const data = readManifest(join(folderPath, MANIFEST), catalog, findings);
             if (data === null) continue;
             const category = rule.nested && segments.length > 1 ? segments[0] : undefined;
-            manifests.push(record(hub, folderPath, data, tier, category, rule.type, findings));
+            manifests.push(
+                record(hub, folderPath, data, tier, category, rule.type, catalog, findings)
+            );
         }
     }
 

@@ -11,6 +11,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { byKey } from '../guards.ts';
+import { findingText, type TextCatalog } from '../finding-text.ts';
 import { parse } from 'yaml';
 import type { CollectionFile, Finding, RawCollection, RawEntry } from '../model.ts';
 
@@ -27,12 +28,20 @@ function empty(key: string, file: string): RawCollection {
 }
 
 /** Read and parse one collection file. A map is returned; anything else is a finding and null. */
-function readFile(file: string, findings: Finding[]): Record<string, unknown> | null {
+function readFile(
+    file: string,
+    catalog: TextCatalog,
+    findings: Finding[]
+): Record<string, unknown> | null {
     let text: string;
     try {
         text = readFileSync(file, 'utf8');
     } catch {
-        findings.push({ file, key: '', message: 'collection file does not exist' });
+        findings.push({
+            file,
+            key: '',
+            message: findingText(catalog, 'findings.collections.file_missing')
+        });
         return null;
     }
     let parsed: unknown;
@@ -40,20 +49,29 @@ function readFile(file: string, findings: Finding[]): Record<string, unknown> | 
         parsed = parse(text);
     } catch (error) {
         const message = error instanceof Error ? error.message.split('\n')[0] : String(error);
-        findings.push({ file, key: '', message: `does not parse: ${message}` });
+        findings.push({
+            file,
+            key: '',
+            message: findingText(catalog, 'findings.file.does_not_parse', message)
+        });
         return null;
     }
     if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
-        findings.push({ file, key: '', message: 'is not a map of keys' });
+        findings.push({ file, key: '', message: findingText(catalog, 'findings.file.not_a_map') });
         return null;
     }
     return parsed as Record<string, unknown>;
 }
 
 /** One collection: its entries in file order with provenance, and every other top-level key as meta. */
-function readCollection(hub: string, asked: CollectionFile, findings: Finding[]): RawCollection {
+function readCollection(
+    hub: string,
+    asked: CollectionFile,
+    catalog: TextCatalog,
+    findings: Finding[]
+): RawCollection {
     const file = join(hub, asked.file);
-    const data = readFile(file, findings);
+    const data = readFile(file, catalog, findings);
     if (data === null) return empty(asked.key, file);
     const listName = listKey(asked.key);
 
@@ -64,8 +82,11 @@ function readCollection(hub: string, asked: CollectionFile, findings: Finding[])
 
     const list = data[listName];
     if (!Array.isArray(list)) {
-        const had = listName in data ? 'is not a list' : 'is missing';
-        findings.push({ file, key: listName, message: `entry list ${listName} ${had}` });
+        const message =
+            listName in data
+                ? findingText(catalog, 'findings.file.list_not_a_list', listName)
+                : findingText(catalog, 'findings.file.list_missing', listName);
+        findings.push({ file, key: listName, message });
         return { key: asked.key, file, meta, entries: [] };
     }
 
@@ -75,7 +96,7 @@ function readCollection(hub: string, asked: CollectionFile, findings: Finding[])
             findings.push({
                 file,
                 key: `${listName}[${index}]`,
-                message: 'entry is not a map of keys'
+                message: findingText(catalog, 'findings.file.entry_not_a_map')
             });
             return;
         }
@@ -95,7 +116,8 @@ function readCollection(hub: string, asked: CollectionFile, findings: Finding[])
  */
 export function readCollections(
     hub: string,
-    files: CollectionFile[]
+    files: CollectionFile[],
+    catalog: TextCatalog
 ): { collections: Record<string, RawCollection>; findings: Finding[] } {
     const findings: Finding[] = [];
     const collections: Record<string, RawCollection> = {};
@@ -105,10 +127,15 @@ export function readCollections(
             findings.push({
                 file: join(hub, asked.file),
                 key: asked.key,
-                message: `collection key ${asked.key} is already read from ${seen.file}`
+                message: findingText(
+                    catalog,
+                    'findings.collections.key_read_twice',
+                    asked.key,
+                    seen.file
+                )
             });
         }
-        collections[asked.key] = readCollection(hub, asked, findings);
+        collections[asked.key] = readCollection(hub, asked, catalog, findings);
     }
     return { collections, findings };
 }

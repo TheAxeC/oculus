@@ -51,7 +51,7 @@ export function subtaskHost(
         if (range === null) return null;
         return { file: held.file, source: held.source, range };
     }
-    const { manifests } = readManifests(hub, config.scan);
+    const { manifests } = readManifests(hub, config.scan, config.text);
     const manifest = manifests.find((one) => one.id === target.id);
     if (manifest === undefined || !insideHub(hub, config, manifest.file)) return null;
     try {

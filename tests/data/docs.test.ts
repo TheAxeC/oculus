@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { PROJECT_DOCS, isFinding, projectDocs, readDoc } from '../../src/lib/data/sources/docs.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import type { DocPresence } from '../../src/lib/data/model.ts';
 
 function scratch(): string {
@@ -26,6 +27,9 @@ function present(docs: DocPresence[]): string[] {
     return docs.filter((d) => d.present).map((d) => d.name);
 }
 
+/** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
+const CATALOG = textCatalog(loadConfig(engineDir()).config);
+
 describe('readDoc', () => {
     it('splits a leading frontmatter block from the body', () => {
         const root = scratch();
@@ -37,7 +41,7 @@ describe('readDoc', () => {
             )
         );
 
-        const doc = readDoc(file);
+        const doc = readDoc(file, CATALOG);
         expect(isFinding(doc)).toBe(false);
         if (isFinding(doc)) return;
         expect(doc.frontmatter).toEqual({ title: 'BT-FNO', tags: ['tensor', 'operator'] });
@@ -49,7 +53,7 @@ describe('readDoc', () => {
         const body = ['# Loewner layers', '', 'Three dashes below are not a block.', '', '---', ''];
         const file = write(root, 'without.md', body.join('\n'));
 
-        const doc = readDoc(file);
+        const doc = readDoc(file, CATALOG);
         expect(isFinding(doc)).toBe(false);
         if (isFinding(doc)) return;
         expect(doc.frontmatter).toBeNull();
@@ -60,7 +64,7 @@ describe('readDoc', () => {
         const root = scratch();
         const file = join(root, 'gone.md');
 
-        const doc = readDoc(file);
+        const doc = readDoc(file, CATALOG);
         expect(isFinding(doc)).toBe(true);
         expect(doc).toEqual({ file, key: '', message: 'document does not exist' });
     });
@@ -73,7 +77,7 @@ describe('readDoc', () => {
             ['---', 'title: "unterminated', '---', 'body'].join('\n')
         );
 
-        const doc = readDoc(file);
+        const doc = readDoc(file, CATALOG);
         expect(isFinding(doc)).toBe(true);
         if (!isFinding(doc)) return;
         expect(doc.key).toBe('frontmatter');
@@ -88,7 +92,7 @@ describe('readDoc', () => {
             ['---', '- one', '- two', '---', 'body', ''].join('\n')
         );
 
-        expect(readDoc(file)).toEqual({
+        expect(readDoc(file, CATALOG)).toEqual({
             file,
             key: 'frontmatter',
             message: 'is not a map of keys'
@@ -100,13 +104,13 @@ describe('readDoc', () => {
         const empty = write(root, 'empty.md', ['---', '---', 'body', ''].join('\n'));
         const dots = write(root, 'dots.md', ['---', 'title: Dots', '...', 'body', ''].join('\n'));
 
-        const first = readDoc(empty);
+        const first = readDoc(empty, CATALOG);
         expect(isFinding(first)).toBe(false);
         if (isFinding(first)) return;
         expect(first.frontmatter).toEqual({});
         expect(first.text).toBe('body\n');
 
-        const second = readDoc(dots);
+        const second = readDoc(dots, CATALOG);
         expect(isFinding(second)).toBe(false);
         if (isFinding(second)) return;
         expect(second.frontmatter).toEqual({ title: 'Dots' });
@@ -118,7 +122,7 @@ describe('readDoc', () => {
         const body = ['---', 'title: never closed', 'body', ''].join('\n');
         const file = write(root, 'unclosed.md', body);
 
-        const doc = readDoc(file);
+        const doc = readDoc(file, CATALOG);
         expect(isFinding(doc)).toBe(false);
         if (isFinding(doc)) return;
         expect(doc.frontmatter).toBeNull();

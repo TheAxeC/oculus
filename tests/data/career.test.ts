@@ -5,11 +5,15 @@ import { mkdtempSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { readCareer } from '../../src/lib/data/sources/career.ts';
+import { CAREER_FILE, readCareer } from '../../src/lib/data/sources/career.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { career } from '../../src/lib/data/normalise.ts';
 import { validate } from '../../src/lib/data/validate.ts';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import type { RawPortfolio, ValidationRules } from '../../src/lib/data/model.ts';
+
+/** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
+const CATALOG = textCatalog(loadConfig(engineDir()).config);
 
 const CAREER = `title: Career strategy
 milestone: "FWO Senior - 2 shots left (Nov 2026 and Nov 2027)."
@@ -51,32 +55,36 @@ function hub(body: string | null): string {
 
 describe('reading the career file', () => {
     it('parses it as the map it is, with no key renamed', () => {
-        const { career: raw, findings } = readCareer(hub(CAREER));
+        const { career: raw, findings } = readCareer(hub(CAREER), CAREER_FILE, CATALOG);
         expect(findings).toEqual([]);
         expect(Object.keys(raw ?? {})).toContain('host_criteria');
     });
 
     it('answers null with no finding when the hub holds no career file', () => {
-        const { career: raw, findings } = readCareer(hub(null));
+        const { career: raw, findings } = readCareer(hub(null), CAREER_FILE, CATALOG);
         expect(raw).toBeNull();
         expect(findings).toEqual([]);
     });
 
     it('reports a file that does not parse', () => {
-        const { career: raw, findings } = readCareer(hub('title: [unclosed\n'));
+        const { career: raw, findings } = readCareer(
+            hub('title: [unclosed\n'),
+            CAREER_FILE,
+            CATALOG
+        );
         expect(raw).toBeNull();
         expect(findings).toHaveLength(1);
         expect(findings[0].message.startsWith('does not parse')).toBe(true);
     });
 
     it('reports a file that is not a map of keys', () => {
-        const { findings } = readCareer(hub('- a list\n'));
+        const { findings } = readCareer(hub('- a list\n'), CAREER_FILE, CATALOG);
         expect(findings.map((one) => one.message)).toEqual(['is not a map of keys']);
     });
 });
 
 describe('normalising it', () => {
-    const raw = readCareer(hub(CAREER)).career;
+    const raw = readCareer(hub(CAREER), CAREER_FILE, CATALOG).career;
     const held = career(raw);
 
     it('reads the title, the milestone and the situation strip', () => {
@@ -135,7 +143,7 @@ describe('validating a host status', () => {
             },
             collections: {},
             feeds: NO_FEEDS,
-            career: readCareer(hub(CAREER)).career,
+            career: readCareer(hub(CAREER), CAREER_FILE, CATALOG).career,
             docs: {},
             present: {},
             findings: [],
@@ -150,7 +158,8 @@ describe('validating a host status', () => {
             statuses: [],
             hostStatuses: ['awaiting', 'warm', 'candidate', 'drafted', 'dropped']
         },
-        careerFile: '/hub/CAREER.yml'
+        careerFile: '/hub/CAREER.yml',
+        text: CATALOG
     };
 
     it('reports the one host whose status is outside the vocabulary', () => {
@@ -164,7 +173,11 @@ describe('validating a host status', () => {
     });
 
     it('leaves host statuses unchecked when the config holds no such vocabulary', () => {
-        const bare: ValidationRules = { schema: null, vocab: { types: [], statuses: [] } };
+        const bare: ValidationRules = {
+            schema: null,
+            vocab: { types: [], statuses: [] },
+            text: CATALOG
+        };
         expect(validate(portfolio(), bare)).toEqual([]);
     });
 

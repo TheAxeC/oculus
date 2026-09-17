@@ -170,7 +170,7 @@ function walk(root: string, dir: string, ext: string[], rows: FileRow[]): void {
  */
 export function listFiles(into: FilesTarget, id: string): Response {
     if (id === '') return json(400, { error: 'no project id' });
-    const { manifests } = readManifests(into.hub, into.config.scan);
+    const { manifests } = readManifests(into.hub, into.config.scan, into.config.text);
     const manifest = manifests.find((one) => one.id === id);
     if (manifest === undefined) return json(404, { error: `no project with the id ${id}` });
 

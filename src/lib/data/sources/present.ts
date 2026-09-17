@@ -16,6 +16,7 @@ import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
 import { PRESENT_DOC } from '../deck.ts';
 import { byKey, fields, isMap, str, strings } from '../guards.ts';
+import { findingText, type TextCatalog } from '../finding-text.ts';
 import { readFrontmatter, splitFrontmatter } from './docs.ts';
 import type {
     Finding,
@@ -175,7 +176,13 @@ function equationPath(paths: PresentPaths, name: string): string | undefined {
  * names an image rather than LaTeX. A panel whose figure is not there is marked so the view draws
  * the gap rather than a dead image, and every miss is a finding.
  */
-function resolveFiles(slide: PresentSlide, paths: PresentPaths, file: string, findings: Finding[]) {
+function resolveFiles(
+    slide: PresentSlide,
+    paths: PresentPaths,
+    file: string,
+    catalog: TextCatalog,
+    findings: Finding[]
+) {
     for (const panel of slide.panels) {
         if (panel.figure === undefined) continue;
         if (existsSync(join(paths.hub, paths.folder, PRESENT_DIR, panel.figure))) continue;
@@ -183,7 +190,12 @@ function resolveFiles(slide: PresentSlide, paths: PresentPaths, file: string, fi
         findings.push({
             file,
             key: slide.id,
-            message: `figure ${panel.figure} is not in ${PRESENT_DIR}/`
+            message: findingText(
+                catalog,
+                'findings.present.figure_missing',
+                panel.figure,
+                PRESENT_DIR
+            )
         });
     }
     if (slide.equation === undefined || !equationIsImage(slide.equation)) return;
@@ -196,7 +208,12 @@ function resolveFiles(slide: PresentSlide, paths: PresentPaths, file: string, fi
     findings.push({
         file,
         key: slide.id,
-        message: `equation ${slide.equation} is in neither the deck's equations folder nor ${PRESENT_DIR}/`
+        message: findingText(
+            catalog,
+            'findings.present.equation_missing',
+            slide.equation,
+            PRESENT_DIR
+        )
     });
 }
 
@@ -217,7 +234,8 @@ function collides(id: string): boolean {
  */
 export function readPresent(
     paths: PresentPaths,
-    id: Id
+    id: Id,
+    catalog: TextCatalog
 ): { slides: PresentSlide[]; findings: Finding[] } {
     const folder = join(paths.hub, paths.folder);
     const file = join(folder, PRESENT_DOC);
@@ -227,14 +245,15 @@ export function readPresent(
     try {
         text = readFileSync(file, 'utf8');
     } catch {
-        return { slides: [], findings: [{ file, key: '', message: 'document cannot be read' }] };
+        const message = findingText(catalog, 'findings.present.unreadable');
+        return { slides: [], findings: [{ file, key: '', message }] };
     }
 
     const findings: Finding[] = [];
     const split = splitFrontmatter(text);
     let front: Record<string, unknown> = {};
     if (split.block !== null) {
-        const read = readFrontmatter(split.block, file);
+        const read = readFrontmatter(split.block, file, catalog);
         if ('message' in read) findings.push(read);
         else front = read.frontmatter;
     }
@@ -250,7 +269,11 @@ export function readPresent(
         if (!isMap(item)) continue;
         const slug = str(item.id);
         if (slug === undefined || slug === '') {
-            findings.push({ file, key: `slides[${at}]`, message: 'has no id' });
+            findings.push({
+                file,
+                key: `slides[${at}]`,
+                message: findingText(catalog, 'findings.present.slide_no_id')
+            });
             continue;
         }
         slides.push(slide(`${id}/${slug}`, id, item));
@@ -274,12 +297,16 @@ export function readPresent(
     const kept: PresentSlide[] = [];
     for (const one of slides) {
         if (seen.has(one.id)) {
-            findings.push({ file, key: 'slides', message: `slide id ${one.id} is declared twice` });
+            findings.push({
+                file,
+                key: 'slides',
+                message: findingText(catalog, 'findings.present.slide_twice', one.id)
+            });
             continue;
         }
         seen.add(one.id);
         kept.push(one);
-        resolveFiles(one, paths, file, findings);
+        resolveFiles(one, paths, file, catalog, findings);
     }
 
     return { slides: kept, findings };
@@ -293,7 +320,12 @@ export function readPresent(
  * one: all three are written over one hub and read over whatever the hub holds now, so a key for a
  * slide that is gone places nothing rather than failing the deck.
  */
-export function deckFindings(deck: unknown, slideIds: Iterable<string>, file: string): Finding[] {
+export function deckFindings(
+    deck: unknown,
+    slideIds: Iterable<string>,
+    file: string,
+    catalog: TextCatalog
+): Finding[] {
     const known = new Set(slideIds);
     const map = fields(deck);
     const findings: Finding[] = [];
@@ -304,20 +336,28 @@ export function deckFindings(deck: unknown, slideIds: Iterable<string>, file: st
         findings.push({
             file,
             key: 'deck',
-            message: `project slide ${id} is a deck slide key and cannot be placed`
+            message: findingText(catalog, 'findings.present.slide_is_deck_key', id)
         });
     }
     const raw = Array.isArray(map.order) ? map.order : [];
     for (const [at, item] of raw.entries()) {
         const key = `deck.order[${at}]`;
         if (!isMap(item)) {
-            findings.push({ file, key, message: 'is not a map of keys' });
+            findings.push({
+                file,
+                key,
+                message: findingText(catalog, 'findings.file.not_a_map')
+            });
             continue;
         }
         const kind = str(item.slide);
         const ref = str(item.ref);
         if (kind === undefined) {
-            findings.push({ file, key, message: 'names no slide kind' });
+            findings.push({
+                file,
+                key,
+                message: findingText(catalog, 'findings.present.order_no_kind')
+            });
             continue;
         }
         // A project entry naming a slide this hub does not declare places nothing and is not a
@@ -325,21 +365,39 @@ export function deckFindings(deck: unknown, slideIds: Iterable<string>, file: st
         // same ground the saved selection stands on. An entry naming no slide at all is a finding,
         // because it says nothing a hub could answer.
         if (kind === 'project') {
-            if (ref === undefined) findings.push({ file, key, message: 'names no project slide' });
+            if (ref === undefined) {
+                findings.push({
+                    file,
+                    key,
+                    message: findingText(catalog, 'findings.present.order_no_project')
+                });
+            }
             continue;
         }
         const owner = byKey(DECK_KINDS, kind);
         if (owner === undefined) {
-            findings.push({ file, key, message: `unknown slide kind ${kind}` });
+            findings.push({
+                file,
+                key,
+                message: findingText(catalog, 'findings.present.order_unknown_kind', kind)
+            });
             continue;
         }
         if (owner === 'none') continue;
         if (ref === undefined) {
-            findings.push({ file, key, message: `a ${kind} slide names no ref` });
+            findings.push({
+                file,
+                key,
+                message: findingText(catalog, 'findings.present.order_no_ref', kind)
+            });
             continue;
         }
         if (byKey(fields(map[owner]), ref) === undefined) {
-            findings.push({ file, key, message: `deck.${owner} has no ${ref}` });
+            findings.push({
+                file,
+                key,
+                message: findingText(catalog, 'findings.present.order_ref_missing', owner, ref)
+            });
         }
     }
     return findings;

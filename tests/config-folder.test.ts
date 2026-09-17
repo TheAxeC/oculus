@@ -153,6 +153,7 @@ describe("oculus's own config directory", () => {
 
     const CATALOG_FILES = [
         'app.yml',
+        'findings.yml',
         'server.yml',
         'ui.yml',
         'views/agents.yml',
@@ -473,7 +474,8 @@ describe("oculus's own config directory", () => {
     it('reports a glyph with no icon, a row that is no glyph, and an icon the package has not', () => {
         const drifted = {
             glyphs: { pin: 'P', flag: 'F' },
-            icons: { pin: 'nonesuch-icon', nothing: 'circle' }
+            icons: { pin: 'nonesuch-icon', nothing: 'circle' },
+            text: loadConfig(engineDir()).config.text
         };
         expect(iconFindings(engineDir(), drifted).map((one) => one.message)).toEqual([
             'glyph flag has no icon',

@@ -5,17 +5,30 @@
 // than in it so that file stays one reader's length; validate calls it once per portfolio, and like
 // validate it is pure and repairs nothing.
 
+import { findingText, type TextCatalog } from './finding-text.ts';
 import type { Finding, RawPortfolio, ValidationRules } from './model.ts';
 
 /**
  * The two registries whose entries carry `themes:`, the name of each file's entry list, the
- * vocabulary that lists its words and the words a finding names that vocabulary by. The list names
- * are the ones sources/registries.ts reads the files under, repeated here because this module
- * reads no file and so cannot import the reader.
+ * vocabulary that lists its words and the sentence a word off that vocabulary is reported in. The
+ * list names are the ones sources/registries.ts reads the files under, repeated here because this
+ * module reads no file and so cannot import the reader.
  */
 const THEMED = [
-    { registry: 'venues', list: 'entries', vocab: 'venueThemes', noun: 'venue' },
-    { registry: 'datasets', list: 'datasets', vocab: 'dataThemes', noun: 'dataset' }
+    {
+        registry: 'venues',
+        list: 'entries',
+        vocab: 'venueThemes',
+        offList: (catalog: TextCatalog, word: string) =>
+            findingText(catalog, 'findings.validate.venue_theme', word)
+    },
+    {
+        registry: 'datasets',
+        list: 'datasets',
+        vocab: 'dataThemes',
+        offList: (catalog: TextCatalog, word: string) =>
+            findingText(catalog, 'findings.validate.dataset_theme', word)
+    }
 ] as const;
 
 /** The dataset registry's own label map, which the labels of `data_themes` replace. */
@@ -31,7 +44,7 @@ const RETIRED_LABELS = 'theme_labels';
  * reads that map and the labels it gives are not the ones drawn.
  */
 export function checkThemes(raw: RawPortfolio, rules: ValidationRules, findings: Finding[]): void {
-    for (const { registry, list, vocab: name, noun } of THEMED) {
+    for (const { registry, list, vocab: name, offList } of THEMED) {
         const allowed = rules.vocab[name];
         if (allowed === undefined) continue;
         const known = new Set(allowed);
@@ -42,7 +55,7 @@ export function checkThemes(raw: RawPortfolio, rules: ValidationRules, findings:
                 findings.push({
                     file: entry.file,
                     key: `${list}[${index}].themes[${at}]`,
-                    message: `theme "${word}" is not one of the ${noun} themes`
+                    message: offList(rules.text, word)
                 });
             });
         });
@@ -52,7 +65,7 @@ export function checkThemes(raw: RawPortfolio, rules: ValidationRules, findings:
         findings.push({
             file: rules.datasetsFile ?? '',
             key: RETIRED_LABELS,
-            message: 'theme_labels is not read; the labels are data_themes in config/vocab.yml'
+            message: findingText(rules.text, 'findings.validate.theme_labels_retired')
         });
     }
 }

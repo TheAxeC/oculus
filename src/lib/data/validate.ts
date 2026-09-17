@@ -16,6 +16,7 @@ import type {
     Vocabulary
 } from './model.ts';
 import { isMap, byKey, str } from './guards.ts';
+import { findingText, type TextCatalog } from './finding-text.ts';
 import { JOINT_WORK, PERSON_FIELD, collectionSchema } from './normalise.ts';
 import { checkThemes } from './validate-themes.ts';
 
@@ -51,9 +52,6 @@ type IdSets = {
     projects: Set<string>;
 };
 
-/** The word a finding about a `collaborators:` or `waiting-on:` value uses for one of its people. */
-const PERSON = 'person';
-
 /**
  * What an organisation's `kind:` may say. It is a fixed list rather than a configured vocabulary
  * because it is what the entity means rather than how it is drawn, and nothing in config/vocab.yml
@@ -68,14 +66,53 @@ const ORGANISATION_KINDS = ['university', 'hospital', 'funder', 'company', 'othe
  */
 export const RENAMED_FIELDS: Record<string, string> = { program: 'pillar' };
 
-/** A relation field of a manifest, the kind it points at, and the set that kind's ids live in. */
-const REFERENCES: { field: string; kind: keyof IdSets; what: string; single: boolean }[] = [
-    { field: 'venue_id', kind: 'venues', what: 'venue', single: true },
-    { field: 'domain', kind: 'domains', what: 'domain', single: true },
-    { field: 'funding', kind: 'funding', what: 'funding scheme', single: false },
-    { field: 'datasets', kind: 'datasets', what: 'dataset', single: false },
-    { field: 'pillar', kind: 'pillars', what: 'pillar', single: false },
-    { field: 'related', kind: 'projects', what: 'project', single: false }
+/**
+ * A relation field of a manifest, the kind it points at, the set that kind's ids live in, and the
+ * sentence that says an id of it resolves to nothing. The sentence is one catalog key per relation,
+ * so the field and the noun it names are the catalog's words rather than two arguments.
+ */
+const REFERENCES: {
+    field: string;
+    kind: keyof IdSets;
+    single: boolean;
+    unresolved: (catalog: TextCatalog, id: string) => string;
+}[] = [
+    {
+        field: 'venue_id',
+        kind: 'venues',
+        single: true,
+        unresolved: (catalog, id) => findingText(catalog, 'findings.validate.no_venue', id)
+    },
+    {
+        field: 'domain',
+        kind: 'domains',
+        single: true,
+        unresolved: (catalog, id) => findingText(catalog, 'findings.validate.no_domain', id)
+    },
+    {
+        field: 'funding',
+        kind: 'funding',
+        single: false,
+        unresolved: (catalog, id) => findingText(catalog, 'findings.validate.no_funding', id)
+    },
+    {
+        field: 'datasets',
+        kind: 'datasets',
+        single: false,
+        unresolved: (catalog, id) => findingText(catalog, 'findings.validate.no_dataset', id)
+    },
+    {
+        field: 'pillar',
+        kind: 'pillars',
+        single: false,
+        unresolved: (catalog, id) => findingText(catalog, 'findings.validate.no_pillar', id)
+    },
+    {
+        field: 'related',
+        kind: 'projects',
+        single: false,
+        unresolved: (catalog, id) => findingText(catalog, 'findings.validate.no_related', id)
+    }
 ];
 
 /** The shape each relation field has on the tree. An absent field is never a finding. */
@@ -91,11 +128,11 @@ const SHAPES: { field: string; kind: 'string' | 'list'; nullable: boolean }[] = 
 ];
 
 /** What a value is, in the words the shape messages use. */
-function shapeOf(value: unknown): string {
-    if (value === null) return 'null';
-    if (Array.isArray(value)) return 'a list';
-    if (isMap(value)) return 'a map';
-    return `a ${typeof value}`;
+function shapeOf(catalog: TextCatalog, value: unknown): string {
+    if (value === null) return findingText(catalog, 'findings.shape.is_null');
+    if (Array.isArray(value)) return findingText(catalog, 'findings.shape.is_list');
+    if (isMap(value)) return findingText(catalog, 'findings.shape.is_map');
+    return findingText(catalog, 'findings.shape.is_other', typeof value);
 }
 
 /**
@@ -146,7 +183,12 @@ export function schemaKeys(schema: unknown): SchemaKeys {
  * names is reported under the name it is written under now, so a manifest written by hand under the
  * old one says what to write instead.
  */
-function checkKeys(manifest: RawManifest, schema: SchemaKeys, findings: Finding[]): void {
+function checkKeys(
+    manifest: RawManifest,
+    schema: SchemaKeys,
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
     for (const key of Object.keys(manifest)) {
         if (!schema.top.has(key)) {
             const renamed = byKey(RENAMED_FIELDS, key);
@@ -155,8 +197,8 @@ function checkKeys(manifest: RawManifest, schema: SchemaKeys, findings: Finding[
                 key,
                 message:
                     renamed === undefined
-                        ? `key ${key} is not in the manifest schema`
-                        : `key ${key} is now ${renamed}: write the tags under ${renamed}:`
+                        ? findingText(catalog, 'findings.validate.key_not_in_schema', key)
+                        : findingText(catalog, 'findings.validate.key_renamed', key, renamed)
             });
             continue;
         }
@@ -168,21 +210,34 @@ function checkKeys(manifest: RawManifest, schema: SchemaKeys, findings: Finding[
             findings.push({
                 file: manifest.file,
                 key: `${key}.${sub}`,
-                message: `key ${key}.${sub} is not in the manifest schema`
+                message: findingText(
+                    catalog,
+                    'findings.validate.key_not_in_schema',
+                    `${key}.${sub}`
+                )
             });
         }
     }
 }
 
 /** `type` is one of the type vocabulary. A manifest without one is a tier's business, not ours. */
-function checkType(manifest: RawManifest, types: string[], findings: Finding[]): void {
+function checkType(
+    manifest: RawManifest,
+    types: string[],
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
     const type = manifest.type;
     if (type === undefined) return;
     if (typeof type !== 'string' || !types.includes(type)) {
         findings.push({
             file: manifest.file,
             key: 'type',
-            message: `type ${JSON.stringify(type)} is not one of the type vocabulary`
+            message: findingText(
+                catalog,
+                'findings.validate.type_not_in_vocab',
+                JSON.stringify(type)
+            )
         });
     }
 }
@@ -193,46 +248,75 @@ function checkType(manifest: RawManifest, types: string[], findings: Finding[]):
  * backlog, and until this check that was silent. No lanes in the vocabulary means the check is off,
  * the way `chips` behaves.
  */
-function checkFocus(manifest: RawManifest, lanes: string[] | undefined, findings: Finding[]): void {
+function checkFocus(
+    manifest: RawManifest,
+    lanes: string[] | undefined,
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
     const focus = manifest.focus;
     if (lanes === undefined || focus === undefined) return;
     if (typeof focus !== 'string' || !lanes.includes(focus)) {
         findings.push({
             file: manifest.file,
             key: 'focus',
-            message: `focus ${JSON.stringify(focus)} is not a lane of focus_lanes`
+            message: findingText(
+                catalog,
+                'findings.validate.focus_not_a_lane',
+                JSON.stringify(focus)
+            )
         });
     }
 }
 
+/**
+ * The sentence for a field whose value has the wrong shape: what the field must be, which is one
+ * catalog key per shape and nullability, and what it is instead. A null in a field that may not hold
+ * one takes the same sentence as any other wrong shape, with `null` as what it is.
+ */
+function shapeSentence(
+    catalog: TextCatalog,
+    shape: (typeof SHAPES)[number],
+    value: unknown
+): string {
+    const got = shapeOf(catalog, value);
+    if (shape.kind === 'list' && shape.nullable) {
+        return findingText(catalog, 'findings.validate.must_be_list_or_null', shape.field, got);
+    }
+    if (shape.kind === 'list') {
+        return findingText(catalog, 'findings.validate.must_be_list', shape.field, got);
+    }
+    if (shape.nullable) {
+        return findingText(catalog, 'findings.validate.must_be_string_or_null', shape.field, got);
+    }
+    return findingText(catalog, 'findings.validate.must_be_string', shape.field, got);
+}
+
 /** The relation fields have the shapes the tree has them in; an absent field has no shape. */
-function checkShapes(manifest: RawManifest, findings: Finding[]): void {
+function checkShapes(manifest: RawManifest, catalog: TextCatalog, findings: Finding[]): void {
     for (const shape of SHAPES) {
         const value = manifest[shape.field];
         if (value === undefined) continue;
-        if (value === null) {
-            if (shape.nullable) continue;
-            findings.push({
-                file: manifest.file,
-                key: shape.field,
-                message: `${shape.field} must be ${shape.kind === 'list' ? 'a list' : 'a string'}, not null`
-            });
-            continue;
+        if (value === null && shape.nullable) continue;
+        if (value !== null) {
+            const ok = shape.kind === 'list' ? Array.isArray(value) : typeof value === 'string';
+            if (ok) continue;
         }
-        const ok = shape.kind === 'list' ? Array.isArray(value) : typeof value === 'string';
-        if (ok) continue;
-        const want = shape.kind === 'list' ? 'a list' : 'a string';
-        const orNull = shape.nullable ? ' or null' : '';
         findings.push({
             file: manifest.file,
             key: shape.field,
-            message: `${shape.field} must be ${want}${orNull}, not ${shapeOf(value)}`
+            message: shapeSentence(catalog, shape, value)
         });
     }
 }
 
 /** Every id a manifest names resolves to an entity of the kind that field points at. */
-function checkReferences(manifest: RawManifest, ids: IdSets, findings: Finding[]): void {
+function checkReferences(
+    manifest: RawManifest,
+    ids: IdSets,
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
     for (const relation of REFERENCES) {
         const value = manifest[relation.field];
         if (value === undefined || value === null) continue;
@@ -243,14 +327,14 @@ function checkReferences(manifest: RawManifest, ids: IdSets, findings: Finding[]
             findings.push({
                 file: manifest.file,
                 key: relation.field,
-                message: `${relation.field} names no ${relation.what}: ${item}`
+                message: relation.unresolved(catalog, item)
             });
         }
     }
 }
 
 /** A project's `related:` names other projects; naming itself draws a card that links to itself. */
-function checkSelfRelated(manifest: RawManifest, findings: Finding[]): void {
+function checkSelfRelated(manifest: RawManifest, catalog: TextCatalog, findings: Finding[]): void {
     const value = manifest.related;
     if (!Array.isArray(value)) return;
     for (const item of value) {
@@ -258,7 +342,7 @@ function checkSelfRelated(manifest: RawManifest, findings: Finding[]): void {
         findings.push({
             file: manifest.file,
             key: 'related',
-            message: `related names the project itself: ${manifest.id}`
+            message: findingText(catalog, 'findings.validate.related_itself', manifest.id)
         });
     }
 }
@@ -268,7 +352,7 @@ function checkSelfRelated(manifest: RawManifest, findings: Finding[]): void {
  * under folders of one name are one id: the second card overwrites the first, and the sessions
  * matcher, which finds a project by its folder name, cannot tell the two apart.
  */
-function checkFolderNames(raw: RawPortfolio, findings: Finding[]): void {
+function checkFolderNames(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[]): void {
     const byName = new Map<string, RawManifest[]>();
     for (const manifest of raw.manifests) {
         const name =
@@ -285,14 +369,19 @@ function checkFolderNames(raw: RawPortfolio, findings: Finding[]): void {
             findings.push({
                 file: manifest.file,
                 key: 'folder',
-                message: `${held.length} projects share the folder name ${name}, so their ids collide`
+                message: findingText(catalog, 'findings.validate.folder_shared', held.length, name)
             });
         }
     }
 }
 
 /** Every id in `collaborators` names an entry of the people registry. */
-function checkCollaborators(manifest: RawManifest, keys: Set<string>, findings: Finding[]): void {
+function checkCollaborators(
+    manifest: RawManifest,
+    keys: Set<string>,
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
     const value = manifest.collaborators;
     if (!Array.isArray(value)) return;
     for (const item of value) {
@@ -300,7 +389,7 @@ function checkCollaborators(manifest: RawManifest, keys: Set<string>, findings: 
         findings.push({
             file: manifest.file,
             key: 'collaborators',
-            message: `collaborators names no ${PERSON}: ${item}`
+            message: findingText(catalog, 'findings.validate.no_collaborator', item)
         });
     }
 }
@@ -314,6 +403,7 @@ function checkWaitingOn(
     manifest: RawManifest,
     keys: Set<string>,
     projects: Set<string>,
+    catalog: TextCatalog,
     findings: Finding[]
 ): void {
     const value = manifest['waiting-on'];
@@ -324,7 +414,7 @@ function checkWaitingOn(
             findings.push({
                 file: manifest.file,
                 key: 'waiting-on',
-                message: `waiting-on names the project itself: ${item}`
+                message: findingText(catalog, 'findings.validate.waiting_on_itself', item)
             });
             continue;
         }
@@ -332,7 +422,7 @@ function checkWaitingOn(
         findings.push({
             file: manifest.file,
             key: 'waiting-on',
-            message: `waiting-on names no ${PERSON} or project: ${item}`
+            message: findingText(catalog, 'findings.validate.no_waiting_on', item)
         });
     }
 }
@@ -341,7 +431,12 @@ function checkWaitingOn(
  * `status.chips` is a list of strings, and each chip is in the chip vocabulary when the config
  * holds one. When it does not, `chips` is absent from the vocabulary and a chip is a free string.
  */
-function checkChips(manifest: RawManifest, chips: string[] | undefined, findings: Finding[]): void {
+function checkChips(
+    manifest: RawManifest,
+    chips: string[] | undefined,
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
     const status = manifest.status;
     if (!isMap(status) || status.chips === undefined) return;
     const file = manifest.file;
@@ -350,23 +445,44 @@ function checkChips(manifest: RawManifest, chips: string[] | undefined, findings
         findings.push({
             file,
             key,
-            message: `status.chips must be a list, not ${shapeOf(status.chips)}`
+            message: findingText(
+                catalog,
+                'findings.validate.chips_not_a_list',
+                shapeOf(catalog, status.chips)
+            )
         });
         return;
     }
     for (const chip of status.chips) {
         if (typeof chip !== 'string') {
-            findings.push({ file, key, message: `chip ${shapeOf(chip)} is not a string` });
+            findings.push({
+                file,
+                key,
+                message: findingText(
+                    catalog,
+                    'findings.validate.chip_not_a_string',
+                    shapeOf(catalog, chip)
+                )
+            });
             continue;
         }
         if (chips !== undefined && !chips.includes(chip)) {
-            findings.push({ file, key, message: `chip ${chip} is not in the chip vocabulary` });
+            findings.push({
+                file,
+                key,
+                message: findingText(catalog, 'findings.validate.chip_not_in_vocab', chip)
+            });
         }
     }
 }
 
 /** A collection entry's `status`, when it has one, is a word of the status vocabulary. */
-function checkEntryStatus(raw: RawPortfolio, statuses: string[], findings: Finding[]): void {
+function checkEntryStatus(
+    raw: RawPortfolio,
+    statuses: string[],
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
     for (const key of Object.keys(raw.collections).sort()) {
         const collection = raw.collections[key];
         collection.entries.forEach((entry, index) => {
@@ -376,7 +492,11 @@ function checkEntryStatus(raw: RawPortfolio, statuses: string[], findings: Findi
             findings.push({
                 file: collection.file,
                 key: `entries[${index}].status`,
-                message: `status ${JSON.stringify(status)} is not one of the status vocabulary`
+                message: findingText(
+                    catalog,
+                    'findings.validate.status_not_in_vocab',
+                    JSON.stringify(status)
+                )
             });
         });
     }
@@ -387,7 +507,7 @@ function checkEntryStatus(raw: RawPortfolio, statuses: string[], findings: Findi
  * `type`. It is what a collection is drawn by, so one malformed entry costs the whole file its
  * field order; normalise leaves such a schema off the wire and this is where that is said.
  */
-function checkCollectionSchema(raw: RawPortfolio, findings: Finding[]): void {
+function checkCollectionSchema(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[]): void {
     for (const key of Object.keys(raw.collections).sort()) {
         const collection = raw.collections[key];
         const schema = collection.meta.schema;
@@ -396,7 +516,11 @@ function checkCollectionSchema(raw: RawPortfolio, findings: Finding[]): void {
         findings.push({
             file: collection.file,
             key: 'schema',
-            message: `schema ${shapeOf(schema)} is not a list of maps naming a field and a type`
+            message: findingText(
+                catalog,
+                'findings.validate.schema_malformed',
+                shapeOf(catalog, schema)
+            )
         });
     }
 }
@@ -406,7 +530,7 @@ function checkCollectionSchema(raw: RawPortfolio, findings: Finding[]): void {
  * first, `title` where the file has no schema, and it is what a write addresses an entry by: with
  * two of one value, an edit reaches the first and the second can be neither edited nor removed.
  */
-function checkEntryIdentity(raw: RawPortfolio, findings: Finding[]): void {
+function checkEntryIdentity(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[]): void {
     for (const key of Object.keys(raw.collections).sort()) {
         const collection = raw.collections[key];
         const names = fieldNames(collection.meta.schema);
@@ -426,7 +550,7 @@ function checkEntryIdentity(raw: RawPortfolio, findings: Finding[]): void {
             findings.push({
                 file: collection.file,
                 key: `entries[${index}].${ident}`,
-                message: `two entries share the ${ident} ${value}`
+                message: findingText(catalog, 'findings.validate.identity_shared', ident, value)
             });
         });
     }
@@ -439,7 +563,12 @@ function checkEntryIdentity(raw: RawPortfolio, findings: Finding[]): void {
  * can be looked up by; `self` is how the hub knows which entry is its owner, and two of them or none
  * leaves that question unanswered.
  */
-function checkPeople(raw: RawPortfolio, organisations: Set<string>, findings: Finding[]): void {
+function checkPeople(
+    raw: RawPortfolio,
+    organisations: Set<string>,
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
     const entries = raw.registries.people.entries;
     const selves: number[] = [];
     entries.forEach((entry, index) => {
@@ -450,7 +579,7 @@ function checkPeople(raw: RawPortfolio, organisations: Set<string>, findings: Fi
             findings.push({
                 file: entry.file,
                 key: `entries[${index}].affiliation`,
-                message: 'affiliation is read as a one-entry affiliations list; write affiliations'
+                message: findingText(catalog, 'findings.validate.affiliation_retired')
             });
         }
         const held = entry.affiliations ?? entry.affiliation;
@@ -461,7 +590,11 @@ function checkPeople(raw: RawPortfolio, organisations: Set<string>, findings: Fi
             findings.push({
                 file: entry.file,
                 key: `entries[${index}].affiliations[${at}]`,
-                message: `affiliations names no organisation: ${JSON.stringify(one)}`
+                message: findingText(
+                    catalog,
+                    'findings.validate.no_affiliation',
+                    JSON.stringify(one)
+                )
             });
         });
     });
@@ -470,12 +603,12 @@ function checkPeople(raw: RawPortfolio, organisations: Set<string>, findings: Fi
     findings.push({
         file,
         key: 'entries',
-        message: `${selves.length} people entries carry self: true, and exactly one may`
+        message: findingText(catalog, 'findings.validate.self_not_one', selves.length)
     });
 }
 
 /** An organisation's `kind:` is one of the five words the entity is defined over. */
-function checkOrganisations(raw: RawPortfolio, findings: Finding[]): void {
+function checkOrganisations(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[]): void {
     raw.registries.organisations.entries.forEach((entry, index) => {
         const kind = entry.kind;
         if (kind === undefined) return;
@@ -483,7 +616,11 @@ function checkOrganisations(raw: RawPortfolio, findings: Finding[]): void {
         findings.push({
             file: entry.file,
             key: `entries[${index}].kind`,
-            message: `kind ${JSON.stringify(kind)} is not one of the organisation kinds`
+            message: findingText(
+                catalog,
+                'findings.validate.kind_not_organisation',
+                JSON.stringify(kind)
+            )
         });
     });
 }
@@ -493,7 +630,12 @@ function checkOrganisations(raw: RawPortfolio, findings: Finding[]): void {
  * work with one human, so an entry with no `person:` is a card no reader can follow to whoever the
  * work is with, which is the whole of what the collection is for.
  */
-function checkJointWork(raw: RawPortfolio, people: Set<string>, findings: Finding[]): void {
+function checkJointWork(
+    raw: RawPortfolio,
+    people: Set<string>,
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
     const collection = byKey(raw.collections, JOINT_WORK);
     if (collection === undefined) return;
     collection.entries.forEach((entry, index) => {
@@ -505,8 +647,13 @@ function checkJointWork(raw: RawPortfolio, people: Set<string>, findings: Findin
             key: `entries[${index}].${PERSON_FIELD}`,
             message:
                 held === undefined
-                    ? `entry has no ${PERSON_FIELD}`
-                    : `${PERSON_FIELD} names no ${PERSON}: ${JSON.stringify(held)}`
+                    ? findingText(catalog, 'findings.validate.joint_work_no_person', PERSON_FIELD)
+                    : findingText(
+                          catalog,
+                          'findings.validate.joint_work_unknown_person',
+                          PERSON_FIELD,
+                          JSON.stringify(held)
+                      )
         });
     });
 }
@@ -515,7 +662,12 @@ function checkJointWork(raw: RawPortfolio, people: Set<string>, findings: Findin
  * A funding scheme's `funder:` names an organisation of the registry. It is the same rule as a
  * person's affiliations, from the other file: who funds a scheme is an organisation the hub holds.
  */
-function checkFunders(raw: RawPortfolio, organisations: Set<string>, findings: Finding[]): void {
+function checkFunders(
+    raw: RawPortfolio,
+    organisations: Set<string>,
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
     raw.registries.funding.entries.forEach((entry, index) => {
         const funder = entry.funder;
         if (funder === undefined || funder === null) return;
@@ -523,7 +675,7 @@ function checkFunders(raw: RawPortfolio, organisations: Set<string>, findings: F
         findings.push({
             file: entry.file,
             key: `entries[${index}].funder`,
-            message: `funder names no organisation: ${JSON.stringify(funder)}`
+            message: findingText(catalog, 'findings.validate.no_funder', JSON.stringify(funder))
         });
     });
 }
@@ -533,14 +685,14 @@ function checkFunders(raw: RawPortfolio, organisations: Set<string>, findings: F
  * with neither has no identity and normalise cannot carry it. The other four registries require an
  * id and their reader has already reported a missing one, so only funding is checked here.
  */
-function checkFundingIdentity(raw: RawPortfolio, findings: Finding[]): void {
+function checkFundingIdentity(raw: RawPortfolio, catalog: TextCatalog, findings: Finding[]): void {
     raw.registries.funding.entries.forEach((entry, index) => {
         if (entry.key.length > 0) return;
         if (typeof entry.title === 'string' && entry.title.length > 0) return;
         findings.push({
             file: entry.file,
             key: `entries[${index}]`,
-            message: 'funding entry has neither a key nor a title'
+            message: findingText(catalog, 'findings.validate.funding_no_identity')
         });
     });
 }
@@ -553,7 +705,11 @@ const ACKNOWLEDGED = new Set(['awarded', 'contributing']);
  * it needs a `key` the tag can name and a `statement` the manuscript pastes. An application gets
  * both when it is granted; until then neither is asked for.
  */
-function checkFundingStatements(raw: RawPortfolio, findings: Finding[]): void {
+function checkFundingStatements(
+    raw: RawPortfolio,
+    catalog: TextCatalog,
+    findings: Finding[]
+): void {
     raw.registries.funding.entries.forEach((entry, index) => {
         const status = typeof entry.status === 'string' ? entry.status : '';
         if (!ACKNOWLEDGED.has(status)) return;
@@ -564,14 +720,19 @@ function checkFundingStatements(raw: RawPortfolio, findings: Finding[]): void {
             findings.push({
                 file: entry.file,
                 key: `entries[${index}]`,
-                message: `funding entry ${name} is ${status} and has no key`
+                message: findingText(catalog, 'findings.validate.funding_no_key', name, status)
             });
         }
         if (typeof statement !== 'string' || statement.trim().length === 0) {
             findings.push({
                 file: entry.file,
                 key: `entries[${index}]`,
-                message: `funding entry ${name} is ${status} and has no statement`
+                message: findingText(
+                    catalog,
+                    'findings.validate.funding_no_statement',
+                    name,
+                    status
+                )
             });
         }
     });
@@ -603,11 +764,6 @@ function sortFindings(findings: Finding[]): Finding[] {
 }
 
 /**
- * Every problem in one raw portfolio, the sources' own findings among them, sorted by file then
- * key. Nothing is thrown and nothing is repaired: a caller decides what a finding means, and the
- * snapshot carries the list so the app can show it.
- */
-/**
  * A host of the career file whose `status:` is not one of `career_host_status`. The buttons on a
  * host row are that vocabulary, so a status outside it is a row the board cannot move on.
  */
@@ -625,38 +781,44 @@ function checkHostStatus(raw: RawPortfolio, rules: ValidationRules, findings: Fi
         findings.push({
             file,
             key: `hosts[${index}]`,
-            message: `host status "${status}" is not one of the host status vocabulary`
+            message: findingText(rules.text, 'findings.validate.host_status', status)
         });
     });
 }
 
+/**
+ * Every problem in one raw portfolio, the sources' own findings among them, sorted by file then
+ * key. Nothing is thrown and nothing is repaired: a caller decides what a finding means, and the
+ * snapshot carries the list so the app can show it.
+ */
 export function validate(raw: RawPortfolio, rules: ValidationRules): Finding[] {
     const findings: Finding[] = [...raw.findings];
     const schema = schemaKeys(rules.schema);
     const ids = idSets(raw);
     const vocab: Vocabulary = rules.vocab;
+    const catalog = rules.text;
 
     for (const manifest of raw.manifests) {
-        checkKeys(manifest, schema, findings);
-        checkType(manifest, vocab.types, findings);
-        checkFocus(manifest, vocab.lanes, findings);
-        checkShapes(manifest, findings);
-        checkReferences(manifest, ids, findings);
-        checkSelfRelated(manifest, findings);
-        checkCollaborators(manifest, ids.people, findings);
-        checkWaitingOn(manifest, ids.people, ids.projects, findings);
-        checkChips(manifest, vocab.chips, findings);
+        checkKeys(manifest, schema, catalog, findings);
+        checkType(manifest, vocab.types, catalog, findings);
+        checkFocus(manifest, vocab.lanes, catalog, findings);
+        checkShapes(manifest, catalog, findings);
+        checkReferences(manifest, ids, catalog, findings);
+        checkSelfRelated(manifest, catalog, findings);
+        checkCollaborators(manifest, ids.people, catalog, findings);
+        checkWaitingOn(manifest, ids.people, ids.projects, catalog, findings);
+        checkChips(manifest, vocab.chips, catalog, findings);
     }
-    checkFolderNames(raw, findings);
-    checkPeople(raw, ids.organisations, findings);
-    checkOrganisations(raw, findings);
-    checkJointWork(raw, ids.people, findings);
-    checkFunders(raw, ids.organisations, findings);
-    checkFundingIdentity(raw, findings);
-    checkFundingStatements(raw, findings);
-    checkEntryStatus(raw, vocab.statuses, findings);
-    checkEntryIdentity(raw, findings);
-    checkCollectionSchema(raw, findings);
+    checkFolderNames(raw, catalog, findings);
+    checkPeople(raw, ids.organisations, catalog, findings);
+    checkOrganisations(raw, catalog, findings);
+    checkJointWork(raw, ids.people, catalog, findings);
+    checkFunders(raw, ids.organisations, catalog, findings);
+    checkFundingIdentity(raw, catalog, findings);
+    checkFundingStatements(raw, catalog, findings);
+    checkEntryStatus(raw, vocab.statuses, catalog, findings);
+    checkEntryIdentity(raw, catalog, findings);
+    checkCollectionSchema(raw, catalog, findings);
     checkHostStatus(raw, rules, findings);
     checkThemes(raw, rules, findings);
 
