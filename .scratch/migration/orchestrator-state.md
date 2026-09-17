@@ -44,6 +44,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   reviewer: acf063d6cb85d74f6                # claude:opus through the Agent tool, read-only, launched 23:14, scratch folder scratchpad/q48-review
   reported2: 2026-09-17T23:44                # the review's report, agents/reviews/Q48-refuter.md: every command reproduced and every named revert red, with nine findings
   round: 1                                  # sent 23:55: nine rulings (the sweep moved out of the mounted view, the on-disk case out of scope and booked as Q64, Save disabled while its request is out, the kept exemption tied to a save in flight, an add form that saves again after its entry was added, the replaced guarantee, the markKept record trimmed, a test with no revert, and the retyped-draft decision kept); round base: scratchpad/q48-round1; paths widened by state/context.ts and state/fs.svelte.ts
+  reported2: 2026-09-18T00:45                # the round's report, appended to agents/reviews/Q48-report.md: all nine rulings done; the `kept` mark became a `saving` mark, the sweep moved into the fs store over every file browser the layout holds, and the Save control is disabled while its save is out. One premise of ruling 4 was wrong on this tree, and the builder says so: nothing refreshes the bookmarks list mid-flight, so a rename now closes its form when the answer lands and the text typed during the save goes with it
+  reviewer2: a4941917f7bedef93               # the run over round 1, claude:opus, read-only, launched 00:45, scratch folder scratchpad/q48-review2
   landing: not-started
 - package: R14
   executor: agent                          # the configuration default, chosen for the step
