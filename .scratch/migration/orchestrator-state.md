@@ -24,7 +24,40 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # none in flight; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q40; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # Q37, Q31 and Q32 in flight (dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q40; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+- package: Q37
+  worker: claude:opus
+  worktree: .agents/worktrees/q37
+  base: 77ef1c91
+  launched: 2026-09-17T10:51
+  prompt: the Agent tool's prompt, the shape of M2's with the brief's own paths
+  report: tools/oculus/.scratch/migration/agents/reviews/Q37-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: pending
+  round: 0
+  landing: not-started
+- package: Q31
+  worker: claude:opus
+  worktree: .agents/worktrees/q31
+  base: 77ef1c91
+  launched: 2026-09-17T10:51
+  prompt: the Agent tool's prompt, the shape of M2's with the brief's own paths
+  report: tools/oculus/.scratch/migration/agents/reviews/Q31-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: pending
+  round: 0
+  landing: not-started
+- package: Q32
+  worker: claude:opus
+  worktree: .agents/worktrees/q32
+  base: 77ef1c91
+  launched: 2026-09-17T10:51
+  prompt: the Agent tool's prompt, the shape of M2's with the brief's own paths
+  report: tools/oculus/.scratch/migration/agents/reviews/Q32-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: pending
+  round: 0
+  landing: not-started
 ```
 
 ## The standing demands (from Axel, in force)
