@@ -24,7 +24,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57; Q32 (second run over its round) and Q30 (dispatched 12:48 from 115da2e7) in flight; Q38 and D22 wait for Q32; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57; Q32 (second run over its round) and Q30 (dispatched 12:48 from 115da2e7) in flight; Q34 dispatched 13:00 from 22ef9103; Q38 and D22 wait for Q32; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q32
   worker: claude:opus
   worktree: .agents/worktrees/q32
@@ -49,6 +49,17 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/Q30-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a71da6eb3c7470b27            # the Agent tool id, launched 12:48
+  round: 0
+  landing: not-started
+- package: Q34
+  worker: claude:opus
+  worktree: .agents/worktrees/q34
+  base: 22ef9103
+  launched: 2026-09-17T13:00
+  prompt: the Agent tool's prompt, the shape of M2's with the brief's own paths
+  report: tools/oculus/.scratch/migration/agents/reviews/Q34-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: a1fae161c84d38fc1            # the Agent tool id, launched 13:00
   round: 0
   landing: not-started
 ```
