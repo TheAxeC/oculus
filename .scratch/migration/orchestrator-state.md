@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37; in flight: Q38 (the run over its round) from 91fb46cb, Q46 (review) from 8eed7e03 and Q47 from 8d90177f; next: Q48, Q49, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37; in flight: Q38 (the run over its round) from 91fb46cb, Q46 (review) from 8eed7e03 and Q47 from 8d90177f; next: Q48, Q49, Q50, Q51, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q38
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
