@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08; in flight: Q46 (landing next) from 8eed7e03 and Q47 (landing after it) from 8d90177f; next: Q48, Q49, Q50, Q51, Q52, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08; in flight: Q46 (landing next) from 8eed7e03, Q47 (landing after it) from 8d90177f and Q48 from ac11faae; next: Q49, Q50, Q51, Q52, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q46
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -61,6 +61,17 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   round: 1                                  # sent 20:18: nine rulings on agents/reviews/Q47-refuter.md (a fourth shape and sentence for a session with no workspace, the in-step rule kept and named in the Doc text, a render case for the no-workspace session, repoShape moved to a .ts beside the view, the reading branch on the shape, scratch folders registered before use, one gitIn helper, a named failure for the served home, sessions.test.ts split and the trimmed case restored); round base: scratchpad/q47-round1; paths widened by views/sessions/*.ts, tests/views/changes.test.ts, tests/browser/git.ts and repositories.spec.ts's import line
   reported2: 2026-09-17T20:30                # the round's report, appended to agents/reviews/Q47-report.md; all nine rulings done; a fifth shape `unplaced` and `ch_noworkspace` added
   reviewer2: a5dcbee118b675fd5               # the run over round 1, claude:opus, read-only, launched 20:31, scratch folder scratchpad/q47-review2
+  landing: not-started
+- package: Q48
+  executor: agent                          # the configuration default, chosen for the step
+  worker: claude:opus
+  worktree: .agents/worktrees/q48
+  base: ac11faae
+  launched: 2026-09-17T21:11
+  prompt: the Agent tool's prompt, the shape of Q46's with the brief's own paths
+  report: tools/oculus/.scratch/migration/agents/reviews/Q48-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: a32e96803d5984c22            # the Agent tool id, launched 21:11
   landing: not-started
 ```
 
