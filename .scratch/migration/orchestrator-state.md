@@ -37,6 +37,7 @@ dispatch:                                  # Q37, Q31 and Q32 in flight (dispatc
   round: 1                                  # sent 11:25: six rulings on agents/reviews/Q37-refuter.md (hue text back to main with `--c-<hue>-lane` and `-lane-txt`, muted lanes' headers at full opacity, no holding for non-live tiers, four false sentences, three tests, the visible changes stated)
   reported: 2026-09-17T11:08
   reviewer: a5cac22d0f129b671                # claude:opus through the Agent tool, read-only, launched 11:10, scratch folder scratchpad/q37-review
+  reviewer2: ac51147ab4ee19a8f               # the second run over the repair round (plan.yaml refute_after_repair: yes, found set at 11:54), claude:opus, read-only, launched 11:54
   landing: cherry-picking
 - package: Q31
   worker: claude:opus
@@ -50,6 +51,7 @@ dispatch:                                  # Q37, Q31 and Q32 in flight (dispatc
   round: 1                                  # sent 11:28: eight rulings on agents/reviews/Q31-refuter.md (open state as instance state in five views and their cards, dirty against the current entry, one save rule, the editor overlay removed, in-flight typing kept, tests, false sentences); paths widened to those views and cards
   reported: 2026-09-17T11:10
   reviewer: a1b0ebaaebdc80756                # claude:opus through the Agent tool, read-only, launched 11:12, scratch folder scratchpad/q31-review
+  reviewer2: a4f24a088e23b253f               # the second run over the repair round (plan.yaml refute_after_repair: yes, found set at 11:54), claude:opus, read-only, launched 11:54
   landing: not-started
 - package: Q32
   worker: claude:opus
@@ -207,6 +209,7 @@ dispatch:                                  # Q37, Q31 and Q32 in flight (dispatc
 - Q37, lanes of one colour (raised 2026-09-17 11:25 by Q37's review): in dracula, Push and Backburner, Review and De-risk, and Scope, Build and Teaching draw the same header colours, and in latte Revise and Funding, and Build and Teaching; the lanes' tones (`focus_lanes` and `focus_lane_tones` in `config/vocab.yml`) resolve to the same theme colour there, as their top borders already did. Recommended: a later fix giving adjacent lanes distinct tones in `vocab.yml`, the tones picked to stay distinct under every theme. For Axel.
 - Q31, the Files view's bookmark form (raised 2026-09-17 11:28 by Q31's review): `Files.svelte` keeps its form's open state (`form`, `editing`) in component state, so after a switch its typed bookmark returns only when the form is opened again, and a tab can ask about text it does not show; Q32 is redrawing `Files.svelte` now, so Q31 does not touch it. Recommended: a fix after Q32 lands putting that open state in the instance state, as Q31 does for the five collection views. For Axel.
 - Q31, drafts left after a pane or page close (raised 2026-09-17 11:28 by Q31's review): `closePane` (`state/layout.svelte.ts` line 592) and `closePage` (line 409) never call `clearInstanceState`, so a closed pane's or page's source drafts, manifest edits and form drafts stay in `localStorage['oculus.ui.v1']` for good; nothing reads them (instance ids are random), they only accumulate. Recommended: a fix clearing every closed instance's state in both closes. For Axel.
+- Q31, the Leads and LinkedIn add toggles (raised 2026-09-17 11:54 by Q31's repair-round report): `Leads.svelte:120` and `Linkedin.svelte:110` still close the add form without forgetting its draft, so the close question can still ask over a hidden draft there; the two views were outside Q31's paths. Recommended: a fix of delivered work routing both toggles through `toggleAdd`, as the five collection views now do. For Axel.
 
 ## Verification, every package
 
