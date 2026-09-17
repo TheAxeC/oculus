@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; in flight: Q41 (repair round, from 21fd6359), D22 and Q38 (dispatched 16:54 from 91fb46cb); next: Q45, Q46, Q47, Q48, Q49, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; in flight: Q41 (repair round, from 21fd6359), D22 (review) and Q38 (building), both from 91fb46cb; next: Q45, Q46, Q47, Q48, Q49, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q41
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -57,6 +57,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/D22-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a4d7d4d6e44914898            # the Agent tool id, launched 16:54
+  reported: 2026-09-17T17:38                # everything done but a person's folder (drawn only by views/Person.svelte) and venue cards (views/venues/VenueCard.svelte), both outside the brief's paths
+  reviewer: ae62426b575ac4d88                # claude:opus through the Agent tool, read-only, launched 17:39, scratch folder scratchpad/d22-review (review earned: a state layer)
   round: 0
   landing: not-started
 - package: Q38
@@ -810,5 +812,6 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q41, reviewer claude:opus through the Agent tool, read-only: 214,487 tokens, 54 tool uses, 754 s (16:38 to 16:50); five rulings sent in the one repair round.
 - Q44, run over round 1, claude:opus read-only: 173,964 tokens, 56 tool uses, 956 s (15:54 to 16:10); seven findings, six fixed at landing, one closed by the Doc text.
 - Q44, worker round 1 claude:opus: 251,082 tokens cumulative on the thread, 22 tool uses, 678 s (15:53 to 16:04). Orchestrator claude:opus (this session), `land/templates/usage.py` from Q43's landing to 17:05: 18 messages, 26074 output tokens, 43493 cache-write tokens, 14196784 cache-read tokens, 38 fresh input tokens, 29 minutes; shared with the D22 and Q38 briefs and dispatches and Q41's review and round.
+- D22, worker claude:opus through the Agent tool, first run: 363,227 tokens, 126 tool uses, 2,696 s (16:54 to 17:38); two cases left outside its paths.
 - Q41, worker after the ruling claude:opus: the thread's tokens and time are in its notification when it closes; reported 15:41.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
