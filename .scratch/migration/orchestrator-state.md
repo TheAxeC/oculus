@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37; in flight: Q38 (the run over its round) from 91fb46cb, Q46 (repair round) from 8eed7e03 and Q47 from 8d90177f; next: Q48, Q49, Q50, Q51, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37; in flight: Q38 (the run over its round) from 91fb46cb, Q46 (repair round) from 8eed7e03 and Q47 (review) from 8d90177f; next: Q48, Q49, Q50, Q51, Q52, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q38
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -70,6 +70,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/Q47-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a321b30c366302d74            # the Agent tool id, launched 19:39
+  reported: 2026-09-17T20:03                # everything in the brief done; a session with no workspace kept on ch_norepo (a reversal of the brief's null rule for that case, to judge at landing); findings outside its paths: Repo.svelte's second branchState (booked Q52), tests/views/sessions.test.ts at 999 lines
+  reviewer: ad3e772b09d143256                # claude:opus through the Agent tool, read-only, launched 20:03, scratch folder scratchpad/q47-review (reviewed as every step today)
   landing: not-started
 ```
 
@@ -831,4 +833,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q38, worker round 1 claude:opus: 467,051 tokens cumulative on the thread, 62 tool uses, 4,965 s (18:14 to 19:37, including about 16 minutes idle after its first pass ended while its browser suite ran); eight rulings done.
 - Q46, worker claude:opus through the Agent tool, first run: 233,455 tokens, 65 tool uses, 1,684 s (19:10 to 19:38); everything done.
 - Q46, reviewer claude:opus through the Agent tool, read-only: 166,118 tokens, 50 tool uses, 1,315 s (19:39 to 20:01); eight rulings sent in the one repair round.
+- Q47, worker claude:opus through the Agent tool, first run: 203,346 tokens, 72 tool uses, 1,430 s (19:39 to 20:03); everything done.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
