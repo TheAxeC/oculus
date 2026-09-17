@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04; in flight: Q34 (the run over its round, from 22ef9103), Q43 (repair round, from 17e22699), Q44 (review, from a05037a9); Q41 building Axel's ruling (b) on the lane colours; next: Q45, Q46, then D22 and Q38 once Q34 has landed; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); the queue: Q38; D22; Q43; Q44; Q45; Q46; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04; in flight: Q34 (the run over its round, from 22ef9103), Q43 (the run over its round, from 17e22699), Q44 (review, from a05037a9); Q41 building Axel's ruling (b) on the lane colours; next: Q45, Q46, then D22 and Q38 once Q34 has landed; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); the queue: Q38; D22; Q43; Q44; Q45; Q46; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q34
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -74,6 +74,8 @@ dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12
   reported: 2026-09-17T14:52
   reviewer: aa8d621e6a9eb6dcc                # claude:opus through the Agent tool, read-only, launched 14:55, scratch folder scratchpad/q43-review (review earned: a state layer)
   round: 1                                  # sent 15:11: nine rulings on agents/reviews/Q43-refuter.md (the instance id taken before a request, a mark per opening of a form, tests for the edit move and the remount, a removed edited bookmark closing its form, the root and workspace line registered with the close question under the written rule, comments, one shared browser helper, the Doc text); round base: scratchpad/q43-round1; paths widened by state/context.ts, unsaved-forms.spec.ts, a shared browser helper
+  reported2: 2026-09-17T15:35                # the round's report, appended to agents/reviews/Q43-report.md; eight rulings done, ruling 2 in part (a reopened bookmark add form loses its Label when an earlier add answers, since EntryForm forgets the add draft on every added entry), reported as a clash, to be judged at landing
+  reviewer2: a3aa6ff00e43f797e               # the run over round 1, claude:opus, read-only, launched 15:35, scratch folder scratchpad/q43-review2
   landing: not-started
 - package: Q44
   executor: agent                          # the configuration default, chosen for the step
@@ -813,4 +815,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q43, reviewer claude:opus through the Agent tool, read-only: 196,228 tokens, 62 tool uses, 992 s (14:53 to 15:09); nine rulings sent in the one repair round.
 - Q34, worker round 1 claude:opus: 550,186 tokens (cumulative on the thread), 69 tool uses, about 44 min (14:39 to 15:22); eleven rulings done.
 - Q44, worker claude:opus through the Agent tool, first run: 174,661 tokens, 57 tool uses, 936 s (15:06 to 15:22); everything done, two files outside its paths, one wrong sentence in the Sessions Changes panel left outside its paths.
+- Q43, worker round 1 claude:opus: 316,438 tokens (cumulative on the thread), 37 tool uses, about 24 min (15:11 to 15:35); eight rulings done, one in part.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
