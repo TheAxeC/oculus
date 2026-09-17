@@ -5,10 +5,10 @@
 // builds its own directory under the system temporary directory and asserts each write stays inside
 // it, so no case can write into the checkout. This does not cover the browser drawing the wall.
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { mintToken } from '../../src/lib/server/auth.ts';
 import {
     add,
@@ -25,14 +25,32 @@ import {
 
 const TOKEN = mintToken();
 
-/** A directory holding the named files, each one byte, inside the system temporary directory. */
-function pictures(names: string[]): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-memories-'));
+/** Every directory this file made, taken away when the file's cases are done. */
+const made: string[] = [];
+
+afterAll(() => {
+    for (const dir of made) rmSync(dir, { recursive: true, force: true });
+    made.length = 0;
+});
+
+/** A directory of this file's own inside the system temporary directory, remembered for removal. */
+function scratch(prefix: string): string {
+    const dir = mkdtempSync(join(tmpdir(), prefix));
+    made.push(dir);
+    return dir;
+}
+
+/**
+ * A directory holding the named files inside the system temporary directory: each one byte, or the
+ * bytes `held` names for it.
+ */
+function pictures(names: string[], held: Record<string, Uint8Array> = {}): string {
+    const dir = scratch('oculus-memories-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     for (const name of names) {
         const full = join(dir, name);
         expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
-        writeFileSync(full, 'x');
+        writeFileSync(full, held[name] ?? 'x');
     }
     return dir;
 }
@@ -68,12 +86,32 @@ const TEXT = Buffer.from('this is not a picture', 'utf8').toString('base64');
 const PIXEL =
     'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==';
 
+/** The first bytes of a PNG as far as its IHDR chunk's width and height, which is all its size needs. */
+function pngHead(width: number, height: number): Uint8Array {
+    const bytes = Buffer.alloc(24);
+    Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]).copy(bytes, 0);
+    bytes.writeUInt32BE(13, 8);
+    bytes.write('IHDR', 12, 'ascii');
+    bytes.writeUInt32BE(width, 16);
+    bytes.writeUInt32BE(height, 20);
+    return bytes;
+}
+
 describe('the picture list', () => {
-    it('answers the three picture extensions by name and leaves everything else out', async () => {
-        const response = listing(pictures(NAMES), local());
+    it('answers the picture extensions in name order, each with its size, and nothing else', async () => {
+        const dir = pictures(NAMES, {
+            'a-first.jpg': Buffer.from(JPEG, 'base64'),
+            'b-second.png': pngHead(777, 1200)
+        });
+        const response = listing(dir, local());
         expect(response.status).toBe(200);
+        // The WebP is one byte, so its header gives no size and its record says so.
         expect(await response.json()).toEqual({
-            images: ['a-first.jpg', 'b-second.png', 'c-third.webp']
+            images: [
+                { name: 'a-first.jpg', width: 1, height: 1 },
+                { name: 'b-second.png', width: 777, height: 1200 },
+                { name: 'c-third.webp', width: null, height: null }
+            ]
         });
     });
 
@@ -292,7 +330,7 @@ describe('the request the server accepts', () => {
 describe('the configured folder', () => {
     /** An engine directory of this case's own: its config folder, its appearance and its local.yml. */
     function fixture(body: string): { engine: string; hub: string } {
-        const root = mkdtempSync(join(tmpdir(), 'oculus-memories-config-'));
+        const root = scratch('oculus-memories-config-');
         expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const engine = join(root, 'engine');
         const hub = join(root, 'hub');

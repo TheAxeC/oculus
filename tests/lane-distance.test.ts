@@ -275,18 +275,14 @@ describe('lane distance', () => {
                     (one) =>
                         `${name}: ${KINDS[one.kind]} ${one.pair} = ${one.difference.toFixed(2)}`
                 );
+            // The closest pair is printed whether it passes or not, since how much room is left is
+            // what the next colour change is judged against.
+            const [closest] = found;
+            console.log(
+                `lane distance: ${name} ${KINDS[closest.kind]} ${closest.pair} = ${closest.difference.toFixed(2)}`
+            );
             expect(found).toHaveLength(22);
             expect(failures).toEqual([]);
         });
     }
-
-    it('names the closest touching pair of every theme', () => {
-        for (const name of NAMES) {
-            const [closest] = measure(name);
-            console.log(
-                `lane distance: ${name} ${KINDS[closest.kind]} ${closest.pair} = ${closest.difference.toFixed(2)}`
-            );
-            expect(closest.difference).toBeGreaterThan(0);
-        }
-    });
 });

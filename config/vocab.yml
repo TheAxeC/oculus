@@ -153,7 +153,7 @@ status_palette:
 
 
 # Focus lanes form one lifecycle, grouped into current, parked, and incubating work.
-# With every cluster open and every Funding, Jobs and Teaching column drawn, a lane's colour differs by a CIEDE2000 of 10 or more, under every theme, from the header drawn next to it, the one stacked above or below it in the three-column layout, and the full-width Ideas lane; tests/lane-distance.test.ts holds those pairs. A collapsed cluster or a column with nothing in it brings other headers together, and no choice of colours keeps all of those apart: Build and Teaching share teal, and Blocked above the Ideas lane is below 10 in mocha and everforest.
+# With every cluster open and every Funding, Jobs and Teaching column drawn, a lane's colour differs by a CIEDE2000 of 10 or more, under every theme, from the header drawn next to it, the one stacked above or below it in the three-column layout, and the full-width Ideas lane; tests/lane-distance.test.ts holds those pairs. A collapsed cluster or a column with nothing in it brings other headers together, and no choice of colours keeps all of those apart: ten of the pairs that touch only in such a layout are below 10 under at least one theme, among them Build and Teaching, which share teal in every theme, Backburner and Jobs, which share a grey, Funding and Revise, gold against amber, and Blocked above the Ideas lane in mocha and everforest.
 focus_lanes:
   - { key: run,        label: Run,        sub: "experiments / getting the numbers", color: "#16a34a", cluster: now }
   - { key: push,       label: Push,       sub: "drafting toward first submission",  color: "#2563eb", cluster: now }

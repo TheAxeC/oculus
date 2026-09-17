@@ -5,8 +5,9 @@
 // The rules the folder is read under are server/images.ts's, the same ones the wallpaper route
 // obeys: the folder is resolved under the hub and refused if it is not inside it, a name carrying a
 // path is refused, only the four picture extensions are served, and every request is judged by where
-// it came from. What is here is the wall's own half: the list the view draws its tiles from, and the
-// upload, which is the one write in oculus that lands bytes rather than text.
+// it came from. What is here is the wall's own half: the list the view draws its tiles from, each
+// picture's name with its width and height so a tile has its picture's shape before the picture
+// arrives, and the upload, which is the one write in oculus that lands bytes rather than text.
 //
 // An upload is behind the write token as well as the origin check, and the name is reduced to its
 // last segment before anything is done with it, so a name that tried to reach out of the folder is a
@@ -19,9 +20,10 @@
 // file cannot be written under a picture's name into a folder the page then draws from.
 
 import { byKey } from '../data/guards.ts';
+import type { Picture } from '../data/model.ts';
 import { hasToken } from './auth.ts';
 import { writeBytesAtomic } from './sessions/json.ts';
-import { configOf, folderOf, images, isName, sameOrigin, stream } from './images.ts';
+import { configOf, folderOf, images, isName, sameOrigin, sizeOf, stream } from './images.ts';
 import { existsSync } from 'node:fs';
 import { basename, extname, join } from 'node:path';
 
@@ -58,6 +60,18 @@ export type MemoriesMemory = { refused: Set<string> };
 
 export function memoriesMemory(): MemoriesMemory {
     return { refused: new Set() };
+}
+
+/**
+ * The pictures of a folder in name order, each with the size its header gives. The sizes are read
+ * on every listing rather than kept, since a header is a few hundred bytes and a kept size would be
+ * stale the moment a picture of the same name replaced it.
+ */
+export function pictures(dir: string): Picture[] {
+    return images(dir).map((name) => {
+        const size = sizeOf(join(dir, name));
+        return { name, width: size?.width ?? null, height: size?.height ?? null };
+    });
 }
 
 /** What an upload was asked to write: the file's own name, and its bytes as base64. */
@@ -119,10 +133,10 @@ export function write(dir: string, asked: Upload): UploadOutcome {
     return { written: name };
 }
 
-/** The pictures of the folder, by name, as JSON. 403 covers a request from another origin. */
+/** The pictures of the folder with their sizes, as JSON. 403 covers a request from another origin. */
 export function listing(dir: string | null, headers: Headers): Response {
     if (!sameOrigin(headers)) return new Response(null, { status: 403 });
-    return new Response(JSON.stringify({ images: dir === null ? [] : images(dir) }), {
+    return new Response(JSON.stringify({ images: dir === null ? [] : pictures(dir) }), {
         status: 200,
         headers: { 'content-type': 'application/json' }
     });

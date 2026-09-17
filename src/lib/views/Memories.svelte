@@ -18,11 +18,13 @@
     //
     // The pictures are referenced by URL and never inlined: the folder is megabytes, the document
     // is not, and a browser caches a URL. The columns are CSS, a column count that falls with the
-    // pane's width, and every tile is one box of a fixed shape the picture is fitted into whole,
-    // never cropped: the folder's answer is names without sizes, so a tile whose size came from its
-    // picture would change size when the picture arrived. Until it arrives the tile is a muted
-    // surface of that same box, and a picture that fails draws its alternative words in the box
-    // instead.
+    // pane's width, and every tile is a box of its picture's own proportions, taken from the width
+    // and height the folder's answer carries with each name, so the box has its final shape before
+    // the picture arrives and nothing on the wall moves when it does. A picture far wider or taller
+    // than a square stops at `TILE_BOUND` of state/memories.svelte.ts and is fitted whole inside,
+    // and a picture whose header the server could not read keeps a 4:3 box it is fitted into whole;
+    // no picture is cropped. Until it arrives the tile is a muted surface of that same box, and a
+    // picture that fails draws its alternative words in the box instead.
     //
     // The enlarged picture is this view's own overlay rather than a primitive, since it is the one
     // place in oculus where a picture is shown over the pane and `ui/` would gain a component with
@@ -35,7 +37,8 @@
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { t } from '$lib/state/text';
-    import { tooLarge, uploadMessage } from '$lib/state/memories';
+    import { readMessage, tooLarge, uploadMessage } from '$lib/state/memories';
+    import { tileRatio } from '$lib/state/memories.svelte';
     import { useState } from '$lib/state/use';
     import type { ViewProps } from './registry';
 
@@ -181,15 +184,19 @@
                 </ul>
             </div>
         {/if}
-        {#if images.length === 0}
+        {#if held.error !== ''}
+            <p class="failed" aria-live="polite">{readMessage(held.error)}</p>
+        {:else if images.length === 0}
             <Empty message={t('memories.empty')} glyph={t('memories.empty_glyph')} />
         {:else}
             <div class="wall">
-                {#each images as name (name)}
+                {#each images as picture (picture.name)}
+                    {@const name = picture.name}
                     <button
                         type="button"
                         class="tile"
                         class:loaded={arrived[name] === 'loaded'}
+                        style:aspect-ratio={tileRatio(picture)}
                         data-tile={name}
                         data-arrived={arrived[name] ?? 'loading'}
                         title={t('memories.open', name)}
@@ -262,23 +269,29 @@
         padding-left: 18px;
     }
 
-    /* The wall is CSS columns: the column count falls with the pane, and every tile is one box of
-       the same shape, so nothing has to be measured for a tile to sit under another. */
+    /* The wall is CSS columns: the column count falls with the pane, and every tile's box has its
+       shape from the answer before its picture loads, so nothing has to be measured for a tile to
+       sit under another. */
     .wall {
         column-width: 220px;
         column-gap: 8px;
     }
 
     /* The tile's box is its shape and the whole picture is fitted inside it, so the placeholder a
-       loading picture shows is the box the picture is drawn in. */
+       loading picture shows is the box the picture is drawn in. The 4:3 here is the box of a picture
+       with no size; a sized one sets its own ratio on the element. The ratio is the content box's,
+       the border drawn outside it, so a picture of that ratio fills the box to the pixel; the border's
+       width is one property, read by the border and by the width that leaves room for it. */
     .tile {
+        --tile-border: 1px;
         position: relative;
         display: block;
-        width: 100%;
+        box-sizing: content-box;
+        width: calc(100% - 2 * var(--tile-border));
         aspect-ratio: 4 / 3;
         margin: 0 0 8px;
         padding: 0;
-        border: 1px solid var(--line);
+        border: var(--tile-border) solid var(--line);
         border-radius: var(--radius-sm);
         background: var(--chip);
         overflow: hidden;

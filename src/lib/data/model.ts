@@ -246,6 +246,12 @@ export type AuditPayload = {
     muted: string[];
 };
 
+/**
+ * One picture of the Memories wall as GET /api/memories answers it: the file's name, and its width
+ * and height in pixels as the browser draws it, both null when its header gave no size.
+ */
+export type Picture = { name: string; width: number | null; height: number | null };
+
 /** The four complete feed states carried together on the `feeds` channel. */
 export type FeedsPayload = Record<
     FeedKind,

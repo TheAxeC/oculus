@@ -1,5 +1,5 @@
-// Layer 2, client state, pure. What a refused upload reads as, and the size the page checks a file
-// against before it encodes one.
+// Layer 2, client state, pure. What a refused upload and a failed read of the wall read as, and the
+// size the page checks a file against before it encodes one.
 //
 // The endpoint answers one word (`name`, `data`, `taken`, `unwritable`) or a sentence of its own for a
 // request it would not read at all, and the page never draws either: DESIGN.md's rule for the deck
@@ -44,4 +44,19 @@ export function uploadMessage(answer: UploadAnswer): string {
 /** Whether a chosen file is one the wall would take, by its size alone. */
 export function tooLarge(size: number): boolean {
     return size > MAX_UPLOAD_BYTES;
+}
+
+/**
+ * The sentence a failed read of the wall reads as. The store holds one word for an answer that is
+ * not a list of pictures and the request's own reason for everything else, so a word this knows
+ * becomes its sentence and anything else is carried into the general one as written.
+ */
+export function readMessage(error: string): string {
+    if (error === '') return '';
+    const known: Record<string, string> = {
+        images_not_a_list: t('memories.read_not_a_list'),
+        image_without_name: t('memories.read_without_name'),
+        image_name_repeated: t('memories.read_name_repeated')
+    };
+    return t('memories.read_failed', known[error] ?? error);
 }

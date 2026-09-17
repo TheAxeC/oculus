@@ -26,3 +26,7 @@ text:
         failed_network: The picture did not reach the server.
         failed_other: The picture was not added.
         reading: The file could not be read from this machine.
+        read_failed: 'The wall could not be read: {0}'
+        read_name_repeated: the server named the same picture twice
+        read_not_a_list: the server did not answer with a list of pictures
+        read_without_name: the server answered with a picture that has no name
