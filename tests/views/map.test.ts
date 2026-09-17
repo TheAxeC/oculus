@@ -262,6 +262,38 @@ describe('the Map view', () => {
         expect(pressed(body, counted('pillar', 0))).toBe('true');
     });
 
+    it("dims an archived node's label with its node, and no other label", () => {
+        const graph: BuiltGraph = {
+            nodes: [
+                {
+                    id: 'project::live',
+                    entityId: 'live',
+                    label: 'Live',
+                    kind: 'project',
+                    degree: 0,
+                    radius: 8
+                },
+                {
+                    id: 'project::gone',
+                    entityId: 'gone',
+                    label: 'Gone',
+                    kind: 'project',
+                    archived: 'nogo',
+                    degree: 0,
+                    radius: 8
+                }
+            ],
+            edges: []
+        };
+        const body = drawGraph(client, graph, null);
+        const tag = (id: string): string =>
+            [...body.matchAll(/<text[^>]*>/g)]
+                .map((one) => one[0])
+                .find((one) => one.includes(`data-label="${id}"`)) ?? '';
+        expect(tag('project::gone')).toMatch(/class="[^"]*\barchived\b/);
+        expect(tag('project::live')).not.toMatch(/\barchived\b/);
+    });
+
     it('places under the parameters it is handed, and tunes its own when it is handed none', () => {
         const graph = buildGraph(graphFixture());
         const fresh = mapLayout(graph, null);

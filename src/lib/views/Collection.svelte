@@ -142,6 +142,15 @@
         });
     }
 
+    /** Draw one entry's long text whole, or cut it to its clamp again. */
+    function toggleMore(id: string): void {
+        write({
+            more: held.more.includes(id)
+                ? held.more.filter((one) => one !== id)
+                : [...held.more, id]
+        });
+    }
+
     /**
      * The drop: the dragged entry moves to the place of the card it was dropped on, and the file is
      * written in the whole new order. The order is taken over every entry, not over the ones the
@@ -294,6 +303,8 @@
                             ondragfrom={(value: string) => (dragged = value)}
                             ondropon={drop}
                             onsaid={(words: string) => (said = words)}
+                            more={held.more.includes(entry.id)}
+                            onmore={() => toggleMore(entry.id)}
                         />
                     </Reveal>
                 {/each}
@@ -361,10 +372,31 @@
         color: var(--muted-txt, var(--muted));
     }
 
+    /* The cards of one row stretch to the row's height, in file order, so no empty cell is left
+       under a short card and nothing is reordered to fill one. A card sits inside its reveal box,
+       which is stretched with it. */
     .cards {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
         gap: 10px;
-        align-items: start;
+        align-items: stretch;
+    }
+
+    .cards > :global([data-reveal]) {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cards > :global([data-reveal] > .slot) {
+        flex: 1 1 auto;
+    }
+
+    .cards > .slot {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .cards > .slot > :global(.card) {
+        flex: 1 1 auto;
     }
 </style>

@@ -1,14 +1,22 @@
 <script lang="ts">
     // Layer 3, shared view. The project-card frame, header and status chips live here because card
     // framing changes independently of its documents, links, sessions and expanded details.
+    //
+    // The card's controls are views/shared/CardActions.svelte, shown under the pointer and kept on
+    // one line; its ELI5 is views/shared/Clamp.svelte wherever the caller keeps an open state for
+    // it; its subtasks block is drawn only for a project that has subtasks, adding the first being
+    // one of the controls. The card is a positioned box whose content may reach past its edge, so
+    // the More menu of its controls is not cut off at the foot of a short card.
     import Chip from '$lib/ui/Chip.svelte';
     import Tag from '$lib/ui/Tag.svelte';
     import Card from '$lib/ui/Card.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
-    import ToolButton from '$lib/ui/ToolButton.svelte';
+    import CardActions, { type CardAction } from './CardActions.svelte';
     import CardDetails from './CardDetails.svelte';
     import CardLinks from './CardLinks.svelte';
     import CardSessions from './CardSessions.svelte';
+    import Clamp from './Clamp.svelte';
+    import Subtasks from './Subtasks.svelte';
     import { codeLabel, deadline, deckSlideOf, openDocument } from './card';
     import { firstSentence, isStale, waitingLine, type BoardItem } from '$lib/state/board';
     import { contextText } from '$lib/state/project-context';
@@ -49,6 +57,15 @@
         deposit?: boolean;
         /** Show the outcome of a write or action in the board. */
         onsaid: (said: string) => void;
+        /**
+         * Whether the open card lists the project's documents; a view that draws them itself says
+         * no.
+         */
+        documents?: boolean;
+        /** Whether the ELI5 is drawn whole rather than cut to its clamp. */
+        more?: boolean;
+        /** Open or cut the ELI5; a card given none draws the ELI5 whole with no control. */
+        onmore?: () => void;
     };
     let {
         item,
@@ -60,11 +77,16 @@
         staleLag,
         ontoggle,
         deposit = false,
-        onsaid
+        onsaid,
+        documents = true,
+        more = false,
+        onmore
     }: Props = $props();
     /** The most characters of the next action shown on a collapsed card. */
     const CARD_NEXT = 130;
     let copied = $state(false);
+    /** True while the add-subtask form is open, from the block's own control or the card's. */
+    let addingSubtask = $state(false);
     let copyTimer: ReturnType<typeof setTimeout> | undefined;
     const snapshot = $derived(portfolio());
     const stale = $derived(isStale(item, staleLag));
@@ -79,18 +101,11 @@
                   snapshot.entities.projects
               )
     );
-    type CardAction = {
-        label: string;
-        title?: string;
-        glyph: string;
-        active?: boolean;
-        toggle?: boolean;
-        onclick: () => void | Promise<void>;
-    };
-    const actions = $derived.by(() => {
+    const actions = $derived.by((): CardAction[] => {
         const rows: CardAction[] = [];
         if (!item.project.ghost) {
             rows.push({
+                id: 'pin',
                 label:
                     item.project.pin === true
                         ? t('project.card.unpin')
@@ -101,6 +116,7 @@
             });
         }
         rows.push({
+            id: 'copy',
             label: copied ? t('project.card.copied') : t('project.helper.copy_context'),
             title: t('project.helper.copy_context_tip'),
             glyph: 'copy',
@@ -108,6 +124,7 @@
         });
         if (!item.project.ghost) {
             rows.push({
+                id: 'ask',
                 label: t('project.helper.ask'),
                 title: t('project.helper.ask_tip'),
                 glyph: 'chat',
@@ -115,6 +132,7 @@
             });
         }
         rows.push({
+            id: 'folder',
             label: t('project.helper.folder'),
             title: t('project.helper.folder_tip'),
             glyph: 'folder',
@@ -122,6 +140,7 @@
         });
         if (ontoggle !== undefined) {
             rows.push({
+                id: 'toggle',
                 label: t('project.card.toggle_tip'),
                 glyph: open ? t('project.card.collapse_glyph') : t('project.card.expand_glyph'),
                 active: open,
@@ -132,6 +151,7 @@
         const slide = deckSlideOf(item.project);
         if (slide !== null) {
             rows.push({
+                id: 'present',
                 label: t('project.card.present'),
                 title: t('project.card.present_tip'),
                 glyph: t('project.card.present_glyph'),
@@ -144,7 +164,20 @@
             });
         }
         if (!item.project.ghost) {
+            if (item.project.subtasks.length === 0) {
+                rows.push({
+                    id: 'subtask',
+                    label: t('project.action.add_subtask'),
+                    title: t('project.action.add_subtask_tip'),
+                    glyph: t('project.action.add_subtask_glyph'),
+                    active: addingSubtask,
+                    onclick: () => {
+                        addingSubtask = !addingSubtask;
+                    }
+                });
+            }
             rows.push({
+                id: 'edit',
                 label: t('project.card.edit_manifest'),
                 glyph: t('project.card.edit_glyph'),
                 onclick: () => {
@@ -153,6 +186,7 @@
             });
             if (deposit) {
                 rows.push({
+                    id: 'deposit',
                     label: t('project.card.deposit'),
                     glyph: t('project.card.deposit_glyph'),
                     onclick: () => {
@@ -266,28 +300,7 @@
                     />
                 </span>
             {/if}
-            {#each actions as action, at (at)}
-                {#if action.toggle}
-                    <ToolButton
-                        label={action.label}
-                        title={action.title}
-                        glyph={action.glyph}
-                        active={action.active}
-                        compact
-                        dataCardToggle
-                        onclick={action.onclick}
-                    />
-                {:else}
-                    <ToolButton
-                        label={action.label}
-                        title={action.title}
-                        glyph={action.glyph}
-                        active={action.active}
-                        compact
-                        onclick={action.onclick}
-                    />
-                {/if}
-            {/each}
+            <CardActions {actions} />
         {/snippet}
 
         <div class="folder">{item.project.folder}</div>
@@ -330,19 +343,56 @@
         {:else if item.project.eli5}
             <div class="eli5">
                 <span class="label">{t('project.card.eli5')}</span>
-                <p>{item.project.eli5}</p>
+                {#if onmore === undefined}
+                    <p>{item.project.eli5}</p>
+                {:else}
+                    <Clamp open={more} ontoggle={onmore}>
+                        {item.project.eli5}
+                    </Clamp>
+                {/if}
             </div>
         {/if}
         {#if item.project.next}
             <p class="next">{firstSentence(item.project.next, CARD_NEXT)}</p>
         {/if}
         {#if open && !item.project.ghost}
-            <CardDetails {item} {onsaid} />
+            <CardDetails {item} {onsaid} {documents} />
+        {/if}
+        {#if !item.project.ghost && (open || addingSubtask)}
+            <Subtasks
+                target={{ id: item.id }}
+                subtasks={item.project.subtasks}
+                {onsaid}
+                adding={addingSubtask}
+                onadding={(next: boolean) => (addingSubtask = next)}
+            />
         {/if}
     </Card>
 </div>
 
 <style>
+    /* The slot fills its grid cell, and the card fills the slot, so the cards of one row of a board
+       are one height and no empty cell is left under a short one. */
+    .slot {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .slot > :global(.card) {
+        flex: 1 1 auto;
+        overflow: visible;
+    }
+
+    /* The card draws past its own edge, so its colour bar carries the card's rounded corners itself
+       and a long unbroken title breaks inside the card's width. */
+    .slot > :global(.card > .bar) {
+        border-radius: var(--radius) 0 0 var(--radius);
+    }
+
+    .slot > :global(.card .title) {
+        overflow-wrap: anywhere;
+    }
+
     .folder {
         font-family: var(--font-mono);
         font-size: var(--fs-xs);
@@ -371,7 +421,8 @@
         margin-top: 8px;
     }
 
-    .eli5 p {
+    .eli5 p,
+    .eli5 :global(.clamp) {
         margin: 2px 0 0;
         font-size: var(--fs-md);
     }

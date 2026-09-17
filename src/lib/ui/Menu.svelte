@@ -1,3 +1,14 @@
+<script module lang="ts">
+    import type { MenuItem as Item } from '$lib/ui/menu-items';
+
+    /**
+     * One headed run of choices, for a list whose choices fall under several headings (the board's
+     * one filter control, a heading per facet). Two groups may hold choices of the same id, so a
+     * pick names the group it came from.
+     */
+    export type MenuGroup = { id: string; heading: string; items: Item[] };
+</script>
+
 <script lang="ts">
     // Layer 3, primitive. A button that opens a list of choices below it. It holds only whether it
     // is open and which item has the keyboard: what the choices are and what picking one means
@@ -10,6 +21,10 @@
     // The list closes on Escape, on a pointer down anywhere outside it, and on a pick. The pointer
     // listener is installed only while the list is open and is removed with it, so a page holding
     // several menus adds one listener at a time and none when they are all closed.
+    //
+    // A menu given `groups` draws each group's heading above its choices instead of the flat list,
+    // and the arrow keys walk the choices of every group as one list; the headings are words, not
+    // stops. A choice inside a group is always a pick.
 
     import { type MenuItem, menuLevel, menuPlacement } from '$lib/ui/menu-items';
     import Glyph from './Glyph.svelte';
@@ -20,12 +35,15 @@
         /** The button's own words. */
         label: string;
         items: MenuItem[];
+        /** Headed runs of choices drawn in place of `items`, or nothing for a flat list. */
+        groups?: MenuGroup[];
         /**
          * What picking a choice means. The pointer event is passed on so a caller can read its
          * modifiers: the rail opens a view where a view lands, and in a pane beside it when shift
-         * is held, whether the view was picked from a button or from a group's list.
+         * is held, whether the view was picked from a button or from a group's list. A choice of a
+         * group names that group's id as the third argument.
          */
-        onpick: (id: string, event: MouseEvent) => void;
+        onpick: (id: string, event: MouseEvent, group?: string) => void;
         /** A glyph name drawn before the label, or nothing. */
         glyph?: string;
         /**
@@ -62,6 +80,7 @@
     let {
         label,
         items,
+        groups,
         onpick,
         glyph,
         compact = false,
@@ -90,6 +109,24 @@
 
     /** Where the first of `shown` sits among the drawn entries: after Back, when Back is drawn. */
     const offset = $derived(level === null ? 0 : 1);
+
+    /** Where each group's first choice sits among the drawn entries, by the group's order. */
+    const starts = $derived(
+        (groups ?? []).reduce<number[]>(
+            (held, group, at) => [
+                ...held,
+                at === 0 ? 0 : held[at - 1] + (groups ?? [])[at - 1].items.length
+            ],
+            []
+        )
+    );
+
+    /** How many entries the arrow keys walk: every group's choices, or the shown list and Back. */
+    const count = $derived(
+        groups === undefined
+            ? shown.length + offset
+            : groups.reduce((sum, group) => sum + group.items.length, 0)
+    );
 
     $effect(() => {
         if (!open) return;
@@ -166,10 +203,11 @@
         queueMicrotask(() => entries[index]?.focus());
     }
 
-    function pick(id: string, event: MouseEvent): void {
+    function pick(id: string, event: MouseEvent, group?: string): void {
         open = false;
         button?.focus();
-        onpick(id, event);
+        if (group === undefined) onpick(id, event);
+        else onpick(id, event, group);
     }
 
     function keys(event: KeyboardEvent, index: number): void {
@@ -182,11 +220,57 @@
         if (event.key !== 'ArrowDown' && event.key !== 'ArrowUp') return;
         event.preventDefault();
         const step = event.key === 'ArrowDown' ? 1 : -1;
-        const count = shown.length + offset;
         if (count === 0) return;
         focusAt((index + step + count) % count);
     }
 </script>
+
+{#snippet entry(item: MenuItem, at: number, onchoose: (event: MouseEvent) => void)}
+    <button
+        type="button"
+        class="item"
+        class:current={item.active === true}
+        role="menuitem"
+        aria-current={item.active === true}
+        aria-haspopup={item.items === undefined ? undefined : 'menu'}
+        title={item.title}
+        bind:this={entries[at]}
+        onclick={(event) => onchoose(event)}
+        onkeydown={(event) => keys(event, at)}
+    >
+        {#if item.tone !== undefined}
+            <span class="dot" style={dotStyle(item.tone)}></span>
+        {/if}
+        {#if item.glyph !== undefined}
+            <Glyph name={item.glyph} />
+        {/if}
+        <span class="label">{item.label}</span>
+        <!-- Hidden from the accessible name: the item keeps its label as its name,
+             which is what a menuitem lookup by name and the browser suite rely on. The
+             two forms are written out because a block inside the span would put the
+             renderer's markers between the span and its count, which every reader of a
+             count badge takes as one text node. -->
+        {#if (item.badgeGlyph ?? '') !== ''}
+            <span
+                class="item-badge"
+                style={badgeStyle(item.badgeTone)}
+                title={item.badgeTitle}
+                aria-hidden="true"
+            >
+                <Glyph name={item.badgeGlyph ?? ''} />{item.badge}
+            </span>
+        {:else if item.badge}
+            <span
+                class="item-badge"
+                style={badgeStyle(item.badgeTone)}
+                title={item.badgeTitle}
+                aria-hidden="true"
+            >
+                {item.badge}
+            </span>
+        {/if}
+    </button>
+{/snippet}
 
 <div class="menu" bind:this={box}>
     <!-- A compact menu is an icon in a narrow column, so its words go beside it; a menu that shows
@@ -221,6 +305,7 @@
             class:beside
             class:down={placement === 'down'}
             class:right={align === 'right'}
+            class:grouped={groups !== undefined}
             style={placed}
             role="menu"
             aria-label={label}
@@ -237,52 +322,26 @@
                     <span class="label">{t('ui.menu_back')}</span>
                 </button>
             {/if}
-            {#each shown as item, index (item.id)}
-                <button
-                    type="button"
-                    class="item"
-                    class:current={item.active === true}
-                    role="menuitem"
-                    aria-current={item.active === true}
-                    aria-haspopup={item.items === undefined ? undefined : 'menu'}
-                    title={item.title}
-                    bind:this={entries[index + offset]}
-                    onclick={(event) => choose(item, event)}
-                    onkeydown={(event) => keys(event, index + offset)}
-                >
-                    {#if item.tone !== undefined}
-                        <span class="dot" style={dotStyle(item.tone)}></span>
-                    {/if}
-                    {#if item.glyph !== undefined}
-                        <Glyph name={item.glyph} />
-                    {/if}
-                    <span class="label">{item.label}</span>
-                    <!-- Hidden from the accessible name: the item keeps its label as its name,
-                         which is what a menuitem lookup by name and the browser suite rely on. The
-                         two forms are written out because a block inside the span would put the
-                         renderer's markers between the span and its count, which every reader of a
-                         count badge takes as one text node. -->
-                    {#if (item.badgeGlyph ?? '') !== ''}
-                        <span
-                            class="item-badge"
-                            style={badgeStyle(item.badgeTone)}
-                            title={item.badgeTitle}
-                            aria-hidden="true"
-                        >
-                            <Glyph name={item.badgeGlyph ?? ''} />{item.badge}
-                        </span>
-                    {:else if item.badge}
-                        <span
-                            class="item-badge"
-                            style={badgeStyle(item.badgeTone)}
-                            title={item.badgeTitle}
-                            aria-hidden="true"
-                        >
-                            {item.badge}
-                        </span>
-                    {/if}
-                </button>
-            {/each}
+            {#if groups !== undefined}
+                {#each groups as group, g (group.id)}
+                    <div class="group" role="group" aria-label={group.heading}>
+                        <span class="heading" aria-hidden="true">{group.heading}</span>
+                        {#each group.items as item, index (item.id)}
+                            <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                            {@render entry(item, starts[g] + index, (event: MouseEvent) =>
+                                pick(item.id, event, group.id)
+                            )}
+                        {/each}
+                    </div>
+                {/each}
+            {:else}
+                {#each shown as item, index (item.id)}
+                    <!-- eslint-disable-next-line @typescript-eslint/no-confusing-void-expression -- a render tag has no statement position -->
+                    {@render entry(item, index + offset, (event: MouseEvent) =>
+                        choose(item, event)
+                    )}
+                {/each}
+            {/if}
         </div>
     {/if}
 </div>
@@ -396,6 +455,26 @@
         overflow-y: auto;
         box-sizing: border-box;
         margin: 0;
+    }
+
+    /* A list of several headed groups can be longer than the pane under it, so it scrolls. */
+    .list.grouped {
+        max-height: min(60vh, 520px);
+        overflow-y: auto;
+    }
+
+    .group {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .heading {
+        padding: 6px 6px 2px;
+        font-size: var(--fs-xxs);
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.04em;
+        color: var(--muted-txt, var(--muted));
     }
 
     .item .dot {

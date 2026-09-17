@@ -8,6 +8,9 @@
     // `shared/ProgramButton.svelte`, which hands the file to that application, since a link to it
     // would only download it; a refused or failed open is said through the card's own message line.
     // Every other file is a link the browser opens or downloads.
+    //
+    // The list of the project's documents is left out where the view drawing the card draws the
+    // documents itself (views/Project.svelte), so a reader meets one Documents heading.
 
     import Empty from '$lib/ui/Empty.svelte';
     import Tag from '$lib/ui/Tag.svelte';
@@ -33,8 +36,10 @@
         item: BoardItem;
         /** Show a refused or failed open in the owning board. */
         onsaid: (said: string) => void;
+        /** Whether the project's documents are listed above its files. */
+        documents: boolean;
     };
-    let { item, onsaid }: Props = $props();
+    let { item, onsaid, documents }: Props = $props();
 
     /** Extensions the document view can render as text. */
     const READABLE = /\.(html?|md|txt|ya?ml|py|sh|slurm|tex|bib|json|csv|r|m|cpp|h|ts|js|css)$/i;
@@ -59,7 +64,7 @@
     }
 </script>
 
-{#if item.project.docs.length > 0}
+{#if documents && item.project.docs.length > 0}
     <div class="field">
         <span class="label">{t('project.card.documents')}</span>
         <div class="docs">

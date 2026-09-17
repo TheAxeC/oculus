@@ -112,7 +112,7 @@
 
     /** Everything the strip draws, and the line each row came from, by the row's own id. */
     const view = $derived.by(() => {
-        const { index, row } = rowMaker('r');
+        const { index, row, kept } = rowMaker('r');
         const byKind = (lines: TickerItem[]): { kind: string; rows: TickerRow[] }[] => {
             const groups: { kind: string; rows: TickerRow[] }[] = [];
             for (const line of lines) {
@@ -133,6 +133,7 @@
         })).filter((one) => one.rows.length > 0);
         return {
             index,
+            kept,
             overdue: (week?.overdue ?? []).map((line) => row(line, overdueTail(line))),
             categories,
             subtaskDated: byKind(week?.subtasks ?? []),

@@ -124,10 +124,11 @@ async function bubbleShape(page: Page): Promise<{
 test('a card control tooltip is whole, inside the window and on top', async ({ page }) => {
     await board(page);
 
-    await page
-        .getByRole('button', { name: t('project.card.toggle_tip') })
-        .first()
-        .hover();
+    // A card's controls are drawn under the pointer, and the ones that do not fit sit behind More,
+    // so the pointer rests on the card before it moves onto the first control the line holds.
+    const card = page.locator('.cards .slot').first();
+    await card.locator('.title').hover();
+    await card.locator('[data-card-actions] [data-action] button').first().hover();
     const shape = await bubbleShape(page);
 
     expect(shape.width).toBeGreaterThan(0);

@@ -21,10 +21,12 @@
     // and drawn for no other: what it needs is the id, and everything about the files it lists comes
     // from api/latex rather than from the snapshot.
     //
-    // The card is views/shared/ProjectCard.svelte, the one the board draws, with `deposit` on and no
-    // `ontoggle`: this tab's card is always open, so it carries the deposit control and no expand
-    // control. Everything else the card shows, the pin, the stale badge, the file finder and the
-    // subtasks among it, is the board's card unchanged.
+    // The card is views/shared/ProjectCard.svelte, the one the board draws, with `deposit` on and
+    // no `ontoggle`: this tab's card is always open, so it carries the deposit control and no
+    // expand control. It is drawn with `documents` off, since the documents section below is this
+    // tab's list of the project's documents, and with no clamp state, so its ELI5 is drawn whole.
+    // Everything else the card shows, the pin, the stale badge, the file finder and the subtasks
+    // among it, is the board's card unchanged.
     //
     // A document is fetched, not selected: the wire model keeps documents out of the snapshot, so
     // state/docs.svelte.ts asks api/docs for the chosen one and this renders what comes back. The
@@ -182,6 +184,7 @@
                 cursor={cursor === item.id}
                 open
                 deposit
+                documents={false}
                 label={item.project.title}
                 tab={item.project.title}
                 staleLag={lag}

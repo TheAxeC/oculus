@@ -237,3 +237,19 @@ Screenshots: shots-cur/ and shots-r1/, {light,dark}-{1600,700}-{projects,project
 - `tools/oculus/.scratch/migration/agents/reviews/Q34-report.md:325`: lists `Project.svelte` under "Modified in round one and unchanged here", but the round rewrapped its head comment (`Project.svelte:24-27` in the delta). Under Proof.
 
 Reviewer usage: about 55 tool uses, 15:20 to 15:54 (34 minutes). One read-only `git diff --stat HEAD` was run in the q41 worktree, outside the allowed commands, to see whether Q41 changes `terminal`; it changed nothing, and Q41 leaves `terminal` and `statusFlag` as they are.
+
+## Closed
+
+- The first review's findings: closed by the round's eleven rulings, reproduced by the run over the round (reverts A, B, E2, F and G red).
+- More out of reach after a resize made while the pane was scrolled sideways (`CardActions.svelte`): a fix at landing listens to the scroll of every box that clips the card's line and measures again; the narrow-pane browser case now narrows the pane to 640 after the cards are at their narrowest and resizes while the pane is scrolled to its right edge, then checks the first card's More is inside the pane (red with the scroll listener removed).
+- The observers of clipping ancestors unproven: the same added steps of the narrow-pane case exercise them.
+- The grid case measuring slots: it measures `.slot > .card` (red with the card's `flex: 1 1 auto` removed from `ProjectCard.svelte`).
+- The Memories crop check by `objectFit` alone: the case asserts the picture's box lies inside its tile as well as `contain` (red with `transform: scale(1.6)` added).
+- The kept button taken from the palette's `terminal` statuses (an application kept "not applied", a teaching entry "ongoing"): a fix at landing keeps only a row's `done` and a task entry's `status:done` (`keptAction` in `views/focus/rows.ts`, config no longer passed to `rowMaker`); an event, an application or any other entry keeps no button; `tests/views/focus-rows.test.ts` holds an event and an application to none.
+- The blank band under the mocha chips (`leastStrip` never More alone): `leastStrip` answers every control or More alone, whichever is narrower, so More alone stays beside the chips; `tests/views/card-layout.test.ts` holds it.
+- `tests/views/card-layout.test.ts`'s head comment names every rule it tests.
+- The long-title rule on `EntryCard.svelte`: the browser case writes a project only, so the entry card's `overflow-wrap` is not proven by a test; noted, not fixed.
+- `CardActions.svelte` styling `ui/Menu.svelte`'s opener through `:global(.opener)`: kept as the report disclosed; a size prop on `ui/Menu` belongs to Q38's redraw of the controls.
+- The report's list of files unchanged in the round naming `Project.svelte`: a slip in the report only.
+
+After the fixes, in the worktree: `npx vitest run tests/views tests/state` 1,950 passed; `npm run check` 0 errors; `npm run lint`; `npm run build`; `npx playwright test tests/browser/cards.spec.ts tests/browser/board.spec.ts tests/browser/focus-buttons.spec.ts tests/browser/collection.spec.ts tests/browser/tasks.spec.ts` 30 passed; the three reverts named above each red, restored with `cmp`, rebuilt.

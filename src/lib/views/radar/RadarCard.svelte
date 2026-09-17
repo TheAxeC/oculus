@@ -1,6 +1,8 @@
 <script lang="ts">
     // Layer 3, view partial of views/Radar.svelte. One paper with its metadata, links, and writes.
     // It receives the feed entry and project map and keeps only the optional idea form locally.
+    // The source line (authors, venue, year) is one line, cut with an ellipsis where the card ends,
+    // and its whole text is the line's tooltip.
 
     import Card from '$lib/ui/Card.svelte';
     import Tag from '$lib/ui/Tag.svelte';
@@ -112,7 +114,9 @@
     {/snippet}
 
     {#if sub !== ''}
-        <p class="sub">{sub}</p>
+        <p class="sub" title={sub}>
+            {sub}
+        </p>
     {/if}
     {#if motif !== ''}
         <div class="row">
@@ -172,8 +176,12 @@
     }
 
     .sub {
+        min-width: 0;
+        overflow: hidden;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-md);
+        text-overflow: ellipsis;
+        white-space: nowrap;
     }
 
     .date {

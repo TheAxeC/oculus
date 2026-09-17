@@ -1,13 +1,14 @@
 <script lang="ts">
     // Layer 3, shared view. Expanded manifest fields and related documents live here because the
-    // expanded card section changes independently of its collapsed frame.
+    // expanded card section changes independently of its collapsed frame. The subtasks block is the
+    // card's own, drawn under this section, since adding a first subtask is a control of the closed
+    // card too.
 
     import Tag from '$lib/ui/Tag.svelte';
     import type { BoardItem } from '$lib/state/board';
     import { t } from '$lib/state/text';
     import { goto } from './card';
     import CardDocs from './CardDocs.svelte';
-    import Subtasks from './Subtasks.svelte';
     import { useState } from '$lib/state/use';
 
     const client = useState();
@@ -19,10 +20,12 @@
     type Props = {
         /** The joined board item whose details are shown. */
         item: BoardItem;
-        /** Show subtask write outcomes in the owning board. */
+        /** Show a refused or failed open in the owning board. */
         onsaid: (said: string) => void;
+        /** Whether the project's documents are listed; a view that draws them itself says no. */
+        documents: boolean;
     };
-    let { item, onsaid }: Props = $props();
+    let { item, onsaid, documents }: Props = $props();
     const shows = $derived(disseminatedFor(item.id));
 </script>
 
@@ -94,8 +97,7 @@
             </div>
         </div>
     {/if}
-    <CardDocs {item} {onsaid} />
-    <Subtasks target={{ id: item.id }} subtasks={item.project.subtasks} {onsaid} />
+    <CardDocs {item} {onsaid} {documents} />
 </div>
 
 <style>

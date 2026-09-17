@@ -525,9 +525,33 @@ describe('the controls a card carries', () => {
         expect(card).toContain(catalog['collection.edit_delete']);
     });
 
-    it('carries the subtasks block, over the entry rather than over a project', () => {
-        expect(card).toContain(catalog['project.action.subtasks']);
-        expect(card).toContain(catalog['project.action.add_subtask']);
+    it('draws no subtasks block for an entry with none, and offers adding the first as a control', () => {
+        expect(card).not.toContain('class="subtasks');
+        expect(card).not.toContain(catalog['project.action.subtasks']);
+        const actions = card.slice(card.indexOf('data-card-actions'), card.indexOf('class="entry'));
+        expect(actions).toContain(`aria-label="${catalog['project.action.add_subtask']}"`);
+    });
+
+    it('draws the subtasks block for an entry that has subtasks, and no first-subtask control', () => {
+        const funded = cards(html('funding'))[0];
+        expect(funded).toContain('A funded scheme');
+        expect(funded).toContain(catalog['project.action.subtasks']);
+        expect(funded).toContain('paste the statement');
+        const actions = funded.slice(
+            funded.indexOf('data-card-actions'),
+            funded.indexOf('class="entry')
+        );
+        expect(actions).not.toContain(catalog['project.action.add_subtask']);
+    });
+
+    it('cuts a long body to its clamp until the instance holds the entry open', () => {
+        const cut = cards(html('funding'))[0];
+        expect(cut).toContain('data-clamp="cut"');
+        const open = cards(html('funding', { more: ['FAIR'] }))[0];
+        expect(open).toContain('data-clamp="open"');
+        expect(open).not.toContain('data-clamp="cut"');
+        // Another entry the instance does not hold open stays cut.
+        expect(cards(html('funding', { more: ['later'] }))[0]).not.toContain('data-clamp="open"');
     });
 });
 

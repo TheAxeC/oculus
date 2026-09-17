@@ -165,9 +165,17 @@
 </Pane>
 
 <style>
+    /* One column the width of the pane, however long a line inside it: a grid's own column would
+       otherwise grow to the widest line it holds and widen the pane. */
     .radar {
         display: grid;
+        grid-template-columns: minmax(0, 1fr);
         gap: 12px;
+    }
+
+    .radar > :global(*),
+    .cards > :global(*) {
+        min-width: 0;
     }
 
     .said {

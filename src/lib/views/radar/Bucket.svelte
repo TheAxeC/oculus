@@ -79,10 +79,16 @@
         color: var(--bucket-txt);
     }
 
+    /* A column is never wider than the pane, and a card never wider than its column, so a card
+       holding one long line shrinks with the pane rather than widening it. */
     .cards {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(min(340px, 100%), 1fr));
         gap: 8px;
         margin-top: 8px;
+    }
+
+    .cards > :global(*) {
+        min-width: 0;
     }
 </style>

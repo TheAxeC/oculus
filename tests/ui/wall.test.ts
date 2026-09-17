@@ -101,6 +101,8 @@ const SOLID: Record<string, string> = {
     'src/lib/ui/DateInput.svelte .date': 'an input, whose text is typed and read back',
     'src/lib/ui/Disclosure.svelte .disclosure': 'a control, pressed to open a section',
     'src/lib/ui/Menu.svelte .opener': 'a control, the button a list hangs off',
+    'src/lib/views/shared/CardActions.svelte [data-action-more] :global(.opener)':
+        'a control, the More opener drawn as the card controls beside it are',
     'src/lib/ui/Menu.svelte .item:hover': 'a hover response inside a list that is translucent',
     'src/lib/ui/Meter.svelte .track': 'a track, read as the proportion of it the fill covers',
     'src/lib/ui/MultiSelect.svelte .filter': 'an input, whose text is typed and read back',

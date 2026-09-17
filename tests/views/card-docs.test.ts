@@ -122,7 +122,7 @@ afterEach(() => {
 function rows(holder: ClientState = client): Record<string, string> {
     const body = render(CardDocs, {
         context: clientContext(holder),
-        props: { item: item(), onsaid: noop }
+        props: { item: item(), onsaid: noop, documents: true }
     }).body;
     const found: Record<string, string> = {};
     for (const one of body.split('<div class="frow').slice(1)) {

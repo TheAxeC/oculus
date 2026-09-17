@@ -413,6 +413,23 @@ describe('an open card', () => {
     });
 });
 
+describe('a long description', () => {
+    it('is cut to its clamp until the instance holds the card open', () => {
+        const cut = html('projects');
+        expect(cut).toContain('data-clamp="cut"');
+        expect(cut).not.toContain('data-clamp="open"');
+        const open = html('projects', { more: ['alpha'] });
+        expect(open).toContain('data-clamp="open"');
+        expect(open).not.toContain('data-clamp="cut"');
+    });
+
+    it('draws no control on a server rendering, which measures no text', () => {
+        // Whether the text is longer than the clamp is measured in the page, and the control is
+        // drawn only then: tests/browser/cards.spec.ts. The rule itself is card-layout.test.ts.
+        expect(html('projects')).not.toContain(catalog['project.card.show_more']);
+    });
+});
+
 describe('the list mode', () => {
     it('draws a table with the columns the config names for this board', () => {
         const board = config.board as Record<string, string[]>;
@@ -469,20 +486,27 @@ describe('the facets', () => {
         body = html('projects');
     });
 
-    it('offers a menu per facet the board can be split on', () => {
-        expect(body).toContain(`Filter by ${catalog['board.facet_status']}`);
-        expect(body).toContain(`Filter by ${catalog['board.facet_compute']}`);
+    // A menu's groups are drawn when it opens, which needs a DOM: what the groups hold is
+    // tests/state/board-filter-menu.test.ts over filterGroups, and the menu opening and filtering
+    // is tests/browser/cards.spec.ts. What is checked here is the one control and its count.
+    it('offers one filter control in the toolbar and no menu per facet', () => {
+        const opener = /<button[^>]*aria-haspopup="menu"[^>]*aria-label="([^"]*)"/g;
+        const labels = [...body.matchAll(opener)].map((one) => one[1]);
+        expect(labels.filter((one) => one === catalog['board.filter'])).toHaveLength(1);
+        for (const facet of ['status', 'compute', 'dataset', 'sessions']) {
+            expect(labels).not.toContain(catalog[`board.facet_${facet}`]);
+        }
+        expect(body).not.toContain('class="filters');
     });
 
-    it('offers a menu for a facet that holds one value', () => {
-        expect(body).toContain(`Filter by ${catalog['board.facet_dataset']}`);
+    it('counts the values in force on the control', () => {
+        const held = html('projects', { filters: { compute: ['hpc', 'local'], status: ['lead'] } });
+        expect(held).toContain(`aria-label="${words('board.filter_count', '3')}"`);
+        expect(held).not.toContain(`aria-label="${catalog['board.filter']}"`);
     });
 
-    it('offers the sessions facet, and narrows the board to the project being worked on', () => {
-        // A menu's values are drawn when it opens, which needs a DOM; what is checked here is that
-        // the facet is offered at all, and that filtering on each of its values leaves the right
-        // cards. Alpha has a live session, bravo has none, and no project is `recent`.
-        expect(body).toContain(`Filter by ${catalog['board.facet_sessions']}`);
+    it('narrows the board to the project being worked on', () => {
+        // Alpha has a live session, bravo has none, and no project is `recent`.
         expect(cards(html('projects', { filters: { sessions: ['live'] } }))).toBe(1);
         expect(cards(html('projects', { filters: { sessions: ['none'] } }))).toBe(1);
         expect(cards(html('projects', { filters: { sessions: ['recent'] } }))).toBe(0);
@@ -701,6 +725,35 @@ describe('the subtasks block', () => {
             expect(line).toContain(catalog['project.action.mark_done']);
             expect(line).not.toContain(catalog['project.action.reopen']);
         }
+    });
+
+    it('offers no add-subtask control among the card controls of a card that has subtasks', () => {
+        const actions = body.slice(
+            body.indexOf('data-card-actions'),
+            body.indexOf('class="folder')
+        );
+        expect(actions).not.toContain(catalog['project.action.add_subtask']);
+    });
+});
+
+describe('a card with no subtasks', () => {
+    it('draws no subtasks block, open or closed', () => {
+        for (const state of [{}, { expanded: ['alpha', 'bravo'] }]) {
+            const body = html('projects', state);
+            expect(body).not.toContain('class="subtasks');
+            expect(body).not.toContain(catalog['project.action.subtasks']);
+            expect(body).not.toContain(words('project.action.n_open', '0'));
+        }
+    });
+
+    it('offers adding the first subtask as one of the card controls', () => {
+        const body = html('projects');
+        const first = body.split('<article class="card')[1];
+        const actions = first.slice(
+            first.indexOf('data-card-actions'),
+            first.indexOf('class="folder')
+        );
+        expect(actions).toContain(`aria-label="${catalog['project.action.add_subtask']}"`);
     });
 });
 

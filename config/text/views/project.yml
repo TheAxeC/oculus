@@ -3,6 +3,7 @@ text:
     project:
         action:
             add_subtask: + subtask
+            add_subtask_glyph: tasks
             add_subtask_tip: add a subtask
             box_off_glyph: checkbox_off
             box_on_glyph: checkbox_on
@@ -58,6 +59,8 @@ text:
             ideas: Ideas / avenues
             latest: Latest
             local_label: local
+            more_actions: More
+            more_glyph: disclosure
             more_tags: '+{0}'
             more_tags_tip: show the rest of {0}
             next: Next
@@ -73,6 +76,8 @@ text:
             pillar_glyph: pillar
             repro_glyph: check
             reproduced: Reproduced
+            show_less: Show less
+            show_more: Show more
             results: Results
             software: Software
             software_glyph: code

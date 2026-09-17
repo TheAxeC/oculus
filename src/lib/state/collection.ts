@@ -53,13 +53,15 @@ export type CollectionState = OpenForms & {
     search: string;
     statuses: string[];
     hidden: string[];
+    /** The ids of the entries whose long text is drawn whole rather than cut to its clamp. */
+    more: string[];
     /** The palette destination, cleared by the view after it scrolls and flashes the card. */
     reveal?: string;
 };
 
 /** The state of an instance nobody has typed in yet. */
 export function emptyCollectionState(): CollectionState {
-    return { search: '', statuses: [], hidden: [], ...parseOpenForms(undefined) };
+    return { search: '', statuses: [], hidden: [], more: [], ...parseOpenForms(undefined) };
 }
 
 /** The strings of a saved list, and nothing when what was saved is not a list. */
@@ -77,12 +79,14 @@ export function parseCollectionState(raw: unknown): CollectionState {
         search?: unknown;
         statuses?: unknown;
         hidden?: unknown;
+        more?: unknown;
         reveal?: unknown;
     };
     const state: CollectionState = {
         search: typeof held.search === 'string' ? held.search : '',
         statuses: savedList(held.statuses),
         hidden: savedList(held.hidden),
+        more: savedList(held.more),
         ...parseOpenForms(raw)
     };
     if (typeof held.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;

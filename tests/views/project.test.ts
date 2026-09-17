@@ -186,9 +186,29 @@ describe('a project as its own tab', () => {
         expect(body).toContain(catalog['project.card.stale_behind'].replace('{0}', '9'));
     });
 
-    it('draws the subtasks block', () => {
-        expect(body).toContain(catalog['project.action.subtasks']);
-        expect(body).toContain(catalog['project.action.add_subtask']);
+    it('draws no subtasks block for a project with none, and offers adding the first on the card', () => {
+        expect(body).not.toContain('class="subtasks');
+        expect(body).not.toContain(catalog['project.action.subtasks']);
+        expect(body).toContain(`aria-label="${catalog['project.action.add_subtask']}"`);
+    });
+
+    it('draws the subtasks block for a project that has subtasks', () => {
+        receive({
+            channel: 'portfolio',
+            version: 2,
+            payload: snapshot({ subtasks: [{ key: '0', do: 'redraw figure 2', done: false }] })
+        });
+        const held = html('alpha');
+        expect(held).toContain(catalog['project.action.subtasks']);
+        expect(held).toContain('redraw figure 2');
+    });
+
+    it('draws the documents once: the tab lists them and the card does not', () => {
+        const headings = body.split(`>${catalog['project.documents']}</`).length - 1;
+        expect(headings).toBe(1);
+        expect(body).toContain(`<h3 class="heading`);
+        // The card's own list is where an absent document is drawn as a tag; the tab has none.
+        expect(body).not.toContain('>TEX</span>');
     });
 
     it('offers the Markdown documents the project has, and no others', () => {
@@ -196,8 +216,7 @@ describe('a project as its own tab', () => {
         expect(body).toContain(catalog['project.documents']);
         expect(group).toContain('>README.md</span>');
         expect(group).toContain('>code/README.md</span>');
-        // The PDF is not a document this tab renders, and the LaTeX source is not there. Both are
-        // still on the card's own row of four, which reports presence and offers nothing.
+        // The PDF is not a document this tab renders, and the LaTeX source is not there.
         expect(group).not.toContain('>manuscript/main.pdf</span>');
         expect(group).not.toContain('>manuscript/main.tex</span>');
     });

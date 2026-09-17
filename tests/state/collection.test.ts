@@ -282,9 +282,15 @@ describe('parseCollectionState', () => {
             search: 'talk',
             statuses: ['upcoming'],
             hidden: ['completed'],
+            more: [],
             adding: false,
             editing: ''
         });
+    });
+
+    it('keeps which entries draw their long text whole, and drops an id that is not a string', () => {
+        expect(parseCollectionState({ more: ['A talk', 7] }).more).toEqual(['A talk']);
+        expect(parseCollectionState({ more: 'A talk' }).more).toEqual([]);
     });
 
     it('keeps which entry forms are open, and none for a record that names them wrongly', () => {

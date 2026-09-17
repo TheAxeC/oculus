@@ -23,7 +23,9 @@ text:
         facet_sessions: Sessions
         facet_status: Status
         facet_year: Year
-        filter_by: Filter by {0}
+        filter: Filter
+        filter_count: Filter ({0})
+        filter_tick_glyph: check
         labels: Title length
         new_idea: + new idea
         new_idea_cancel: cancel

@@ -5,12 +5,21 @@
 // a row lives here once rather than in each partial. It holds no markup and no list: a caller keeps
 // its own numbered index of the lines it drew, because two lines of one group can name the same
 // project and a button has to reach the one it sits on.
+//
+// A row's buttons are drawn only under the pointer or the keyboard (ui/Ticker.svelte's `reveal`),
+// except the one the row exists for, which the builder names by the row's id: a subtask's or a
+// follow-up's done, and a task entry's `done` status, since ticking a task off is what its row is
+// for. Another entry's statuses are all left under the pointer: the palette's `terminal` says a
+// status drops off the deadline radar, which is not the same as the status a reader closes it with.
 
 import type { TickerAction, TickerRow } from '$lib/ui/ticker-rows';
 import { daysTone, type TickerItem, type TickerTarget } from '$lib/state/ticker';
 import type { LayoutStore } from '$lib/state/layout.svelte';
 import { t } from '$lib/state/text';
 import type { WriteAnswer, WritesStore } from '$lib/state/writes.svelte';
+
+/** How a status button's id starts, the status following it. */
+const STATUS = 'status:';
 
 /** The lines one partial drew, by the row id each was given. */
 export type RowIndex = Record<string, TickerItem | undefined>;
@@ -19,7 +28,18 @@ export type RowIndex = Record<string, TickerItem | undefined>;
 export type Rows = {
     index: RowIndex;
     row: (line: TickerItem, tail: string) => TickerRow;
+    /** The id of the button a drawn row keeps visible, and nothing for a row that keeps none. */
+    kept: (row: TickerRow) => string | undefined;
 };
+
+/**
+ * The button one row exists for: its done, or a task entry's `done` status. Any other row (a
+ * project's snoozes, a lead, an event) keeps none.
+ */
+export function keptAction(actions: TickerAction[] | undefined): string | undefined {
+    if (actions === undefined) return undefined;
+    return actions.find((action) => action.id === 'done' || action.id === `${STATUS}done`)?.id;
+}
 
 /** An ISO date a snooze button pushes an item out to. */
 function snoozeDate(now: number, days: number): string {
@@ -94,7 +114,7 @@ export function actionsFor(line: TickerItem): TickerAction[] | undefined {
     for (const status of target.statuses ?? []) {
         if (status.toLowerCase() === (line.status ?? '').toLowerCase()) continue;
         statuses.push({
-            id: `status:${status}`,
+            id: `${STATUS}${status}`,
             label: status,
             title: t('project.action.set_status', status)
         });
@@ -121,12 +141,16 @@ export function dateTail(line: TickerItem): string {
  */
 export function rowMaker(prefix: string): Rows {
     const index: RowIndex = {};
+    const keeps: Record<string, string | undefined> = {};
     let at = 0;
     return {
         index,
+        kept: (row) => keeps[row.id],
         row(line: TickerItem, tail: string): TickerRow {
+            const actions = actionsFor(line);
             const id = `${prefix}${at++}`;
             index[id] = line;
+            keeps[id] = keptAction(actions);
             const name = line.venue === undefined ? line.label : `${line.label} ${line.venue}`;
             return {
                 id,
@@ -134,7 +158,7 @@ export function rowMaker(prefix: string): Rows {
                 label: name,
                 tail,
                 tone: daysTone(line.days),
-                actions: actionsFor(line),
+                actions,
                 plain: !opens(line)
             };
         }
@@ -162,7 +186,7 @@ function snoozeValue(action: string, now: number): string {
 function fieldsFor(action: string, now: number): Record<string, unknown> {
     if (action === 'unsnooze') return { snooze: '' };
     if (action === 'done') return { followup: '' };
-    if (action.startsWith('status:')) return { status: action.slice('status:'.length) };
+    if (action.startsWith(STATUS)) return { status: action.slice(STATUS.length) };
     return { snooze: snoozeValue(action, now) };
 }
 

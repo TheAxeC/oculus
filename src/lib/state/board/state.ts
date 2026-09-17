@@ -52,6 +52,7 @@ export function emptyBoardState(labels: LabelMode = 'short'): BoardState {
         search: '',
         filters: {},
         expanded: [],
+        more: [],
         labels,
         stale: false,
         dated: false,
@@ -70,6 +71,7 @@ export function parseBoardState(value: unknown, labels: LabelMode = 'short'): Bo
     state.dated = value.dated === true;
     state.hiddenTypes = strings(value.hiddenTypes);
     state.expanded = strings(value.expanded);
+    state.more = strings(value.more);
     if (isMap(value.filters)) {
         for (const [facet, selected] of Object.entries(value.filters)) {
             if (!FACETS.includes(facet)) continue;

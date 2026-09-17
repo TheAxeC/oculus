@@ -22,6 +22,8 @@
         subtaskDated: RowGroup[];
         followups: TickerRow[];
         snoozed: TickerRow[];
+        /** The button each row keeps drawn while its others wait for the pointer. */
+        kept: (row: TickerRow) => string | undefined;
     };
     type Props = {
         week: FocusTicker | null;
@@ -82,7 +84,7 @@
     {#if rows.length > 0}
         <div class="grp">
             <p class="lbl"><Glyph name={glyph} />{label}</p>
-            <Ticker {rows} {onpick} {onaction} />
+            <Ticker {rows} {onpick} {onaction} reveal kept={view.kept} />
         </div>
     {/if}
 {/snippet}
@@ -93,7 +95,7 @@
             <p class="lbl"><Glyph name={glyph} />{label}</p>
             {#each groups as one (one.kind)}
                 <p class="sub">{one.kind === '' ? t('focus.command.kind_other') : one.kind}</p>
-                <Ticker rows={one.rows} {onpick} {onaction} />
+                <Ticker rows={one.rows} {onpick} {onaction} reveal kept={view.kept} />
             {/each}
         </div>
     {/if}
@@ -160,7 +162,7 @@
                     <p class="sub">
                         {categoryLabel(one.category)}
                     </p>
-                    <Ticker rows={one.rows} {onpick} {onaction} />
+                    <Ticker rows={one.rows} {onpick} {onaction} reveal kept={view.kept} />
                 {/each}
             </div>
         {/if}
@@ -193,7 +195,7 @@
                         'focus.command.snoozed',
                         view.snoozed.length
                     )}</summary
-                ><Ticker rows={view.snoozed} {onpick} {onaction} />
+                ><Ticker rows={view.snoozed} {onpick} {onaction} reveal kept={view.kept} />
             </details>
         {/if}
     </section>

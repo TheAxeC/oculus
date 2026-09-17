@@ -198,3 +198,16 @@ P4 two Files instances in one pane (page 2's Files moved to page 1), each with a
 - `src/lib/views/Files.svelte`: 588 lines against the ~600 component guide in spec.md. The next addition needs a split first; Standards, note.
 
 Reviewer usage: about 60 tool uses, about 24 minutes (15:35 to 15:59).
+
+
+## Closed
+
+- The first review's findings: closed by the round's rulings 1 and 3 to 9, reproduced by the run over the round (RA, RB, RC, RE, RF, RG, RH red); ruling 2 closed for the root and workspace line (RC, N1).
+- Ruling 2 for the bookmark add form (P1: reopened during an add save, its new Label emptied when the save lands): the run over the round judged it a defect of the shared `EntryForm.svelte`, whose add branch forgets the draft the reopened form shares, reaching the collection views' add forms too; booked as Q48 with the smallest fix it names. The Doc text applied at landing does not claim the bookmark add form keeps its text in that case.
+- A line of spaces asked about (P2): a fix at landing, `filesLineTyped` trims (`state/fs.ts`), with a case in `tests/state/explorer.test.ts` (red with the trim removed: 1 failed).
+- The gone-bookmark close dropping a value typed during a rename save (P3), and not running while the Files tab is unshown: booked with Q48.
+- `explorer.test.ts`'s head comment overstating the remount proof: corrected at landing to what the Cancel case proves.
+- `unsaved-forms.spec.ts` against main's copy (a head-comment conflict with Q42, and main's `instanceKeys` repeating `uiInstances`): resolved at landing.
+- The `{#key}` over instance and opening unproven beyond the remount: noted; P4 shows the same result either way.
+- The `registerUnsaved` walk repeating the layout store's private lookup: noted, `state/layout*` outside the step.
+- Cases that clean up at the end of their body rather than in `finally`: noted.

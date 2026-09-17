@@ -45,10 +45,10 @@
 
     /** The three groups of rows, and the line each row came from, by the row's own id. */
     const view = $derived.by(() => {
-        const { index, row } = rowMaker('t');
+        const { index, row, kept } = rowMaker('t');
         const groups: Groups = { followups: [], subtasks: [], tasks: [] };
         for (const line of week?.tasks ?? []) groups[groupOf(line)].push(row(line, ''));
-        return { index, ...groups };
+        return { index, kept, ...groups };
     });
 
     const anything = $derived(view.followups.length + view.subtasks.length + view.tasks.length > 0);
@@ -74,7 +74,7 @@
                 {/if}
                 {label}
             </p>
-            <Ticker {rows} onpick={pick} onaction={run} />
+            <Ticker {rows} onpick={pick} onaction={run} reveal kept={view.kept} />
         </div>
     {/if}
 {/snippet}

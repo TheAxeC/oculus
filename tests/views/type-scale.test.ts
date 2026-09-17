@@ -69,7 +69,7 @@ const VIEWS: Record<string, string> = {
     'Leads.svelte': '.empty=fs-md | .runlog=fs-sm',
     'Linkedin.svelte': 'h3=fs-lg',
     'Map.svelte': '.head=fs-sm | .empty=fs-md',
-    'Memories.svelte': '.failed=fs-sm',
+    'Memories.svelte': '.failed=fs-sm | .alt=fs-sm',
     'Person.svelte': '.facts dt=fs-xxs | .block h3=fs-sm',
     'Present.svelte': '.counter=fs-xs',
     'Pillars.svelte': '.note, .said=fs-md',
@@ -170,7 +170,9 @@ const VIEWS: Record<string, string> = {
     'shared/ChangeCounts.svelte': '.bin=fs-xs | .add, .del=fs-xs',
     'shared/ChangeGroups.svelte': '.group-h=fs-xs | .file=fs-sm | .none=fs-xs',
     'shared/BookmarkStar.svelte': '.failed=fs-sm',
+    'shared/Clamp.svelte': '',
     'shared/CrossLinks.svelte': '',
+    'shared/CardActions.svelte': '[data-action-more] :global(.opener)=fs-sm',
     'shared/CardDetails.svelte': '.field .value=fs-md | .label=fs-xxs | .statusline=fs-sm',
     'shared/CardDocs.svelte': '.label=fs-xxs | .frow=fs-md | .capped=fs-xs',
     'shared/CardLinks.svelte': '.kind=fs-xxs',
@@ -181,7 +183,7 @@ const VIEWS: Record<string, string> = {
         '.note=fs-md | .doc=fs-md | .doc :global(h1)=fs-3xl | .doc :global(h2)=fs-2xl | .doc :global(h3)=fs-xl | .doc :global(h4)=fs-md | .doc :global(code)=fs-sm | .doc :global(table)=fs-md',
     'shared/NewIdeaForm.svelte': '',
     'shared/ProjectCard.svelte':
-        '.folder=fs-xs | .venue, .authors=fs-sm | .eli5 p=fs-md | .next, .waiting, .ghostmsg=fs-sm | .label=fs-xxs',
+        '.folder=fs-xs | .venue, .authors=fs-sm | .eli5 p, .eli5 :global(.clamp)=fs-md | .next, .waiting, .ghostmsg=fs-sm | .label=fs-xxs',
     'shared/ProgramButton.svelte': '.failed=fs-sm',
     'shared/Reveal.svelte': '',
     'shared/SourceButton.svelte': '',
@@ -211,7 +213,7 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/Empty.svelte': '.empty=fs-md | :global(body.rice) .empty=fs-xs',
     'src/lib/ui/Tabs.svelte': '.tab-badge=fs-xs | .cells=fs-xxs | .face, .close=fs-lg',
     'src/lib/ui/Menu.svelte':
-        '.opener=fs-sm | .opener.compact=fs-lg | .opener.rail-control=fs-xl | .opener.stacked :global(.label)=fs-3xs | .item=fs-sm | .item-badge=fs-3xs',
+        '.opener=fs-sm | .opener.compact=fs-lg | .opener.rail-control=fs-xl | .opener.stacked :global(.label)=fs-3xs | .heading=fs-xxs | .item=fs-sm | .item-badge=fs-3xs',
     'src/lib/shell/ActivityRail.svelte': '.group=fs-3xs | .badge=fs-3xs',
     'src/lib/shell/Workbench.svelte': ''
 };

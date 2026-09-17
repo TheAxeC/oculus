@@ -21,23 +21,22 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The project board: cards or a table, a search, quick filters, type toggles, a
-    // facet menu per way the board can be split, and a short or full title. It is registered three
-    // times, as `projects`, `archive` and `coauthor`, and reads which board it is from the instance
-    // it was mounted as, so the three board tabs over separate tier sets are one
+    // Layer 3, view. The project board: cards or a table, a search, quick filters, type toggles,
+    // one filter menu headed by every way the board can be split, and a short or full title. It is
+    // registered three times, as `projects`, `archive` and `coauthor`, and reads which board it is
+    // from the instance it was mounted as, so the three board tabs over separate tier sets are one
     // component here.
     //
     // It joins nothing and counts nothing itself: the projects come from the board selector already
-    // joined, and the facets, the filters, the counts and the sentence cut are the pure functions of
-    // state/board.ts. The strip is views/projects/Stats.svelte and the new-idea form
-    // views/projects/NewIdea.svelte, which is the partials rule of DESIGN.md's boundary table: a
-    // view too large for one file is split into its own folder. The card is
+    // joined, and the facets, the filter menu's groups, the filters, the counts and the sentence
+    // cut are the pure functions of state/board. The strip is views/projects/Stats.svelte and the
+    // new-idea form views/projects/NewIdea.svelte, which is the partials rule of DESIGN.md's
+    // boundary table: a view too large for one file is split into its own folder. The card is
     // views/shared/ProjectCard.svelte, since views/Project.svelte draws the same one.
 
     import Empty from '$lib/ui/Empty.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import Menu from '$lib/ui/Menu.svelte';
-    import type { MenuItem } from '$lib/ui/menu-items';
     import Pane from '$lib/ui/Pane.svelte';
     import Search from '$lib/ui/Search.svelte';
     import Segment from '$lib/ui/Segment.svelte';
@@ -50,21 +49,19 @@
     import NewIdea from './projects/NewIdea.svelte';
     import Stats from './projects/Stats.svelte';
     import {
-        NONE,
-        SESSIONS_LIVE,
-        SESSIONS_RECENT,
         applyFilters,
         facets,
+        filterGroups,
+        filterLabel,
         firstSentence,
         parseBoardState,
         typeCounts,
         type BoardItem,
-        type BoardState,
-        type FacetValue
+        type BoardState
     } from '$lib/state/board';
     import { cardCursor } from '$lib/state/instance';
     import { lookup, t } from '$lib/state/text';
-    import { chipGlyphName, chipLabel, statusMarkTone, toneOf } from '$lib/state/tones';
+    import { chipGlyphName, chipLabel, statusMarkTone } from '$lib/state/tones';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
@@ -85,7 +82,7 @@
     const held = $derived(parseBoardState(instanceState(instance.id), preset.labels));
     const cursor = $derived(cardCursor(instance.state));
     const items = $derived(board(preset));
-    const groups = $derived(facets(items, preset));
+    const groups = $derived(filterGroups(facets(items, preset), held.filters, preset));
     const types = $derived(typeCounts(items, preset.typeOrder));
     const lag = $derived(staleLag());
     const shown = $derived(
@@ -125,7 +122,7 @@
         setInstanceState(instance.id, { ...held, ...next });
     }
 
-    /** Add or remove one value of one facet, which is what a click in a facet menu means. */
+    /** Add or remove one value of one facet, which is what a pick in the filter menu means. */
     function toggleFilter(facet: string, value: string): void {
         const selected = held.filters[facet] ?? [];
         const next = selected.includes(value)
@@ -143,6 +140,12 @@
         write({
             expanded: open ? held.expanded.filter((one) => one !== id) : [...held.expanded, id]
         });
+    }
+
+    /** Draw one card's long description whole, or cut it to its clamp again. */
+    function toggleMore(id: string): void {
+        const open = held.more.includes(id);
+        write({ more: open ? held.more.filter((one) => one !== id) : [...held.more, id] });
     }
 
     /** Every type is on until it is clicked off, so the state holds the ones that are off. */
@@ -163,74 +166,6 @@
     /** The board's own name, the key the registry names it by. */
     function title(): string {
         return lookup(`views.${preset.id}`);
-    }
-
-    /** A facet's heading. The keys are literal so tests/keys.test.ts can see every one of them. */
-    function heading(facet: string): string {
-        if (facet === 'category') return t('board.facet_category');
-        if (facet === 'year') return t('board.facet_year');
-        if (facet === 'domain') return t('board.facet_domain');
-        if (facet === 'pillar') return t('board.facet_pillar');
-        if (facet === 'funding') return t('board.facet_funding');
-        if (facet === 'dataset') return t('board.facet_dataset');
-        if (facet === 'status') return t('board.facet_status');
-        if (facet === 'compute') return t('board.facet_compute');
-        if (facet === 'reproduced') return t('board.facet_reproduced');
-        if (facet === 'sessions') return t('board.facet_sessions');
-        return t('board.facet_code');
-    }
-
-    /** The words of a facet value that is vocabulary rather than data. */
-    function valueLabel(facet: string, value: FacetValue): string {
-        if (facet === 'year' && value.value === NONE) return t('board.no_year');
-        if (facet === 'funding' && value.value === NONE) return t('board.no_funding');
-        if (facet === 'compute') return computeLabel(value.value);
-        if (facet === 'code') return codeLabel(value.value);
-        if (facet === 'reproduced') {
-            return value.value === '1' ? t('board.repro_yes') : t('board.repro_no');
-        }
-        if (facet === 'sessions') return sessionsLabel(value.value);
-        return value.label;
-    }
-
-    function sessionsLabel(value: string): string {
-        if (value === SESSIONS_LIVE) return t('board.sessions_live');
-        if (value === SESSIONS_RECENT) return t('board.sessions_recent');
-        return t('board.sessions_none');
-    }
-
-    function computeLabel(value: string): string {
-        if (value === 'hpc') return t('board.compute_hpc');
-        if (value === 'local') return t('board.compute_local');
-        return t('board.compute_none');
-    }
-
-    function codeLabel(value: string): string {
-        if (value === 'deposited') return t('board.code_deposited');
-        if (value === 'review-anon') return t('board.code_anon');
-        if (value === 'none') return t('board.code_pending');
-        return t('board.code_none');
-    }
-
-    /**
-     * One facet's menu: every value with its count, and a mark on the ones in force. The category
-     * facet carries its bucket's own hue as a dot, which is the one facet whose values the config
-     * gives a colour to (`tab_rollup`), and no other facet is given one.
-     */
-    function menuItems(facet: string, values: FacetValue[]): MenuItem[] {
-        const selected = held.filters[facet] ?? [];
-        return values.map((value) => ({
-            id: value.value,
-            label: `${valueLabel(facet, value)} ${value.count}`,
-            active: selected.includes(value.value),
-            tone: facet === 'category' ? bucketTone(value.value) : undefined
-        }));
-    }
-
-    /** The hue of one lifecycle bucket, through the palette, and nothing when it has none. */
-    function bucketTone(id: string): string | undefined {
-        const colour = preset.rollup.find((bucket) => bucket.id === id)?.color ?? '';
-        return colour === '' ? undefined : toneOf(colour);
     }
 
     /** The label a card and a row carry: the short handle in short mode, else the full title. */
@@ -301,6 +236,15 @@
             placeholder={preset.search === '' ? t('board.search_default') : preset.search}
             oninput={(value: string) => write({ search: value })}
         />
+        <Menu
+            label={filterLabel(held.filters)}
+            items={[]}
+            {groups}
+            onpick={(value: string, _event: MouseEvent, facet?: string) => {
+                if (facet !== undefined) toggleFilter(facet, value);
+            }}
+            placement="down"
+        />
         <ToolButton
             label={t('board.new_idea')}
             title={t('board.new_idea_tip')}
@@ -358,18 +302,6 @@
 
 <Pane title={title()} toolbar={tools}>
     <div class="board" data-instance={instance.id} data-board={preset.id}>
-        <!-- The facets are a row of their own under the header, so the header keeps to one line
-             and the title stays readable whatever the board's width. -->
-        <div class="filters">
-            {#each groups as group (group.key)}
-                <Menu
-                    label={t('board.filter_by', heading(group.key))}
-                    items={menuItems(group.key, group.values)}
-                    onpick={(value: string) => toggleFilter(group.key, value)}
-                    placement="down"
-                />
-            {/each}
-        </div>
         {#if adding}
             <NewIdea
                 onclose={() => (adding = false)}
@@ -394,6 +326,8 @@
                         {now}
                         cursor={cursor === item.id}
                         open={held.expanded.includes(item.id)}
+                        more={held.more.includes(item.id)}
+                        onmore={() => toggleMore(item.id)}
                         label={label(item)}
                         tab={tabLabel(item)}
                         staleLag={lag}
@@ -412,19 +346,13 @@
         color: var(--mark, var(--muted-txt));
     }
 
+    /* The cards of one row stretch to the row's height, in file order, so no empty cell is left
+       under a short card and nothing is reordered to fill one. */
     .cards {
         display: grid;
         grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
         gap: 10px;
-        align-items: start;
-    }
-
-    .filters {
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        gap: 6px;
-        margin-bottom: 8px;
+        align-items: stretch;
     }
 
     .said {

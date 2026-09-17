@@ -16,10 +16,13 @@
     // Layer 3, view. The photo wall: every picture of the configured folder as a tile, one of them
     // enlarged over the pane, and the control that adds another.
     //
-    // The pictures are referenced by URL and never inlined: the folder is megabytes, the document is
-    // not, and a browser caches a URL. The columns are CSS, so a tall picture and a wide one sit
-    // beside each other without a library measuring anything: the wall is a column count that falls
-    // with the pane's width and each tile is kept whole inside its column.
+    // The pictures are referenced by URL and never inlined: the folder is megabytes, the document
+    // is not, and a browser caches a URL. The columns are CSS, a column count that falls with the
+    // pane's width, and every tile is one box of a fixed shape the picture is fitted into whole,
+    // never cropped: the folder's answer is names without sizes, so a tile whose size came from its
+    // picture would change size when the picture arrived. Until it arrives the tile is a muted
+    // surface of that same box, and a picture that fails draws its alternative words in the box
+    // instead.
     //
     // The enlarged picture is this view's own overlay rather than a primitive, since it is the one
     // place in oculus where a picture is shown over the pane and `ui/` would gain a component with
@@ -45,6 +48,9 @@
 
     const held = $derived(wall());
     const images = $derived(held.images);
+
+    /** What became of each tile's picture by name: absent while it loads. */
+    let arrived: Record<string, 'loaded' | 'failed'> = $state({});
 
     /** The picture the overlay shows, and the empty string when it shows none. */
     let open = $state('');
@@ -183,11 +189,23 @@
                     <button
                         type="button"
                         class="tile"
+                        class:loaded={arrived[name] === 'loaded'}
                         data-tile={name}
+                        data-arrived={arrived[name] ?? 'loading'}
                         title={t('memories.open', name)}
                         onclick={() => void enlarge(name)}
                     >
-                        <img loading="lazy" src={source(name)} alt={t('memories.tile', name)} />
+                        {#if arrived[name] === 'failed'}
+                            <span class="alt">{t('memories.tile', name)}</span>
+                        {:else}
+                            <img
+                                loading="lazy"
+                                src={source(name)}
+                                alt={t('memories.tile', name)}
+                                onload={() => (arrived[name] = 'loaded')}
+                                onerror={() => (arrived[name] = 'failed')}
+                            />
+                        {/if}
                     </button>
                 {/each}
             </div>
@@ -244,24 +262,34 @@
         padding-left: 18px;
     }
 
-    /* The wall is CSS columns rather than a grid: a picture keeps its own proportions, the column
-       count falls with the pane, and nothing has to be measured for a tile to sit under another. */
+    /* The wall is CSS columns: the column count falls with the pane, and every tile is one box of
+       the same shape, so nothing has to be measured for a tile to sit under another. */
     .wall {
         column-width: 220px;
         column-gap: 8px;
     }
 
+    /* The tile's box is its shape and the whole picture is fitted inside it, so the placeholder a
+       loading picture shows is the box the picture is drawn in. */
     .tile {
+        position: relative;
         display: block;
         width: 100%;
+        aspect-ratio: 4 / 3;
         margin: 0 0 8px;
         padding: 0;
         border: 1px solid var(--line);
         border-radius: var(--radius-sm);
-        background: none;
+        background: var(--chip);
         overflow: hidden;
         cursor: pointer;
         break-inside: avoid;
+    }
+
+    /* Over a wallpaper the pane's own tint is the placeholder's surface, so the tile adds none and
+       the view stays one translucent layer; its border still marks the picture's box. */
+    :global(body.wall) .tile {
+        background: transparent;
     }
 
     .tile:hover {
@@ -276,7 +304,26 @@
     .tile img {
         display: block;
         width: 100%;
-        height: auto;
+        height: 100%;
+        object-fit: contain;
+        opacity: 0;
+        transition: opacity 160ms ease-out;
+    }
+
+    .tile.loaded img {
+        opacity: 1;
+    }
+
+    .alt {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 8px;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-sm);
+        overflow-wrap: anywhere;
     }
 
     .lightbox:focus-visible {

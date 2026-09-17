@@ -3,6 +3,11 @@
     // row per line with what it says and when it is due, the buttons that move it, and the one-line
     // form that adds another.
     //
+    // A card with no lines draws no block at all: adding its first line is one of the card's own
+    // actions, which opens the add form here with no heading over it. So whether the add form is
+    // open is the card's, handed in, since the card's action and this block's own add control both
+    // open it.
+    //
     // Two views draw it: views/shared/ProjectCard.svelte, which hands it the `{ id }` of one
     // manifest, and views/collection/EntryCard.svelte, which hands it the `{ id, collection }` of one
     // entry of one collection. The host is the only difference between the two, so it is the prop,
@@ -32,12 +37,14 @@
         subtasks: Subtask[];
         /** What a write answered, for the one outcome line the card holds. */
         onsaid: (said: string) => void;
+        /** True while the add form is open. */
+        adding: boolean;
+        /** Open or close the add form. */
+        onadding: (next: boolean) => void;
     };
 
-    let { target, subtasks, onsaid }: Props = $props();
+    let { target, subtasks, onsaid, adding, onadding }: Props = $props();
 
-    /** True while the add form is open. */
-    let adding = $state(false);
     let text = $state('');
     let due = $state('');
 
@@ -71,103 +78,116 @@
         const answer = await addSubtask(target, fields);
         said(answer);
         if (answer.ok) {
-            adding = false;
+            onadding(false);
             text = '';
             due = '';
         }
     }
 </script>
 
-<div class="subtasks">
-    <div class="hdr">
-        <span class="label">{t('project.action.subtasks')}</span>
-        <span class="count">{t('project.action.n_open', open)}</span>
-        <ToolButton
-            label={t('project.action.add_subtask')}
-            title={t('project.action.add_subtask_tip')}
-            active={adding}
-            onclick={() => (adding = !adding)}
-        />
-    </div>
-
-    {#if adding}
-        <div class="form">
-            <TextInput
-                value={text}
-                label={t('project.action.subtask_do')}
-                placeholder={t('project.action.subtask_do')}
-                oninput={(next: string) => (text = next)}
-            />
-            <DateInput
-                value={due}
-                label={t('project.action.subtask_deadline')}
-                oninput={(n: string) => (due = n)}
-            />
-            <ToolButton label={t('project.action.subtask_save')} onclick={add} />
-            <ToolButton
-                label={t('project.action.subtask_cancel')}
-                onclick={() => (adding = false)}
-            />
-        </div>
-    {/if}
-
-    {#each subtasks as line (line.key)}
-        <div class="line" class:done={line.done}>
-            <span class="box">
-                <Glyph
-                    name={line.done
-                        ? t('project.action.box_on_glyph')
-                        : t('project.action.box_off_glyph')}
+{#if subtasks.length > 0 || adding}
+    <div class="subtasks">
+        {#if subtasks.length > 0}
+            <div class="hdr">
+                <span class="label">{t('project.action.subtasks')}</span>
+                <span class="count">{t('project.action.n_open', open)}</span>
+                <ToolButton
+                    label={t('project.action.add_subtask')}
+                    title={t('project.action.add_subtask_tip')}
+                    active={adding}
+                    onclick={() => onadding(!adding)}
                 />
-            </span>
-            <span class="do">{line.do}</span>
-            {#if line.deadline}
-                <Tag label={line.deadline} glyph={t('project.card.deadline_glyph')} />
-            {/if}
-            <span class="acts">
-                {#if line.done}
-                    <ToolButton
-                        label={t('project.action.reopen')}
-                        onclick={() => act(line.key, 'reopen')}
+            </div>
+        {/if}
+
+        {#if adding}
+            <div class="form">
+                <TextInput
+                    value={text}
+                    label={t('project.action.subtask_do')}
+                    placeholder={t('project.action.subtask_do')}
+                    oninput={(next: string) => (text = next)}
+                />
+                <DateInput
+                    value={due}
+                    label={t('project.action.subtask_deadline')}
+                    oninput={(n: string) => (due = n)}
+                />
+                <ToolButton label={t('project.action.subtask_save')} onclick={add} />
+                <ToolButton
+                    label={t('project.action.subtask_cancel')}
+                    onclick={() => onadding(false)}
+                />
+            </div>
+        {/if}
+
+        {#each subtasks as line (line.key)}
+            <div class="line" class:done={line.done}>
+                <span class="box">
+                    <Glyph
+                        name={line.done
+                            ? t('project.action.box_on_glyph')
+                            : t('project.action.box_off_glyph')}
                     />
-                {:else}
-                    <ToolButton
-                        label={t('project.action.done')}
-                        title={t('project.action.mark_done')}
-                        onclick={() => act(line.key, 'done')}
-                    />
-                    {#if line.snooze}
+                </span>
+                <span class="do">{line.do}</span>
+                {#if line.deadline}
+                    <Tag label={line.deadline} glyph={t('project.card.deadline_glyph')} />
+                {/if}
+                <span class="acts">
+                    {#if line.done}
                         <ToolButton
-                            label={t('project.action.unsnooze')}
-                            onclick={() => act(line.key, 'snooze', '')}
+                            label={t('project.action.reopen')}
+                            onclick={() => act(line.key, 'reopen')}
                         />
                     {:else}
                         <ToolButton
-                            label={t('project.action.snooze_1w')}
-                            title={t('project.action.snooze_tip', t('project.action.snooze_1w'))}
-                            onclick={() => act(line.key, 'snooze', snoozeDate(7))}
+                            label={t('project.action.done')}
+                            title={t('project.action.mark_done')}
+                            onclick={() => act(line.key, 'done')}
                         />
-                        <ToolButton
-                            label={t('project.action.snooze_1mo')}
-                            title={t('project.action.snooze_tip', t('project.action.snooze_1mo'))}
-                            onclick={() => act(line.key, 'snooze', snoozeDate(30))}
-                        />
-                        <ToolButton
-                            label={t('project.action.snooze_hide')}
-                            title={t('project.action.snooze_tip', t('project.action.snooze_hide'))}
-                            onclick={() => act(line.key, 'snooze', 'true')}
-                        />
+                        {#if line.snooze}
+                            <ToolButton
+                                label={t('project.action.unsnooze')}
+                                onclick={() => act(line.key, 'snooze', '')}
+                            />
+                        {:else}
+                            <ToolButton
+                                label={t('project.action.snooze_1w')}
+                                title={t(
+                                    'project.action.snooze_tip',
+                                    t('project.action.snooze_1w')
+                                )}
+                                onclick={() => act(line.key, 'snooze', snoozeDate(7))}
+                            />
+                            <ToolButton
+                                label={t('project.action.snooze_1mo')}
+                                title={t(
+                                    'project.action.snooze_tip',
+                                    t('project.action.snooze_1mo')
+                                )}
+                                onclick={() => act(line.key, 'snooze', snoozeDate(30))}
+                            />
+                            <ToolButton
+                                label={t('project.action.snooze_hide')}
+                                title={t(
+                                    'project.action.snooze_tip',
+                                    t('project.action.snooze_hide')
+                                )}
+                                onclick={() => act(line.key, 'snooze', 'true')}
+                            />
+                        {/if}
                     {/if}
-                {/if}
-                <ToolButton
-                    label={t('project.action.del')}
-                    title={t('project.action.delete_subtask')}
-                    onclick={() => act(line.key, 'delete')}
-                />
-            </span>
-        </div>
-    {/each}
-</div>
+                    <ToolButton
+                        label={t('project.action.del')}
+                        title={t('project.action.delete_subtask')}
+                        onclick={() => act(line.key, 'delete')}
+                    />
+                </span>
+            </div>
+        {/each}
+    </div>
+{/if}
 
 <style>
     .subtasks {

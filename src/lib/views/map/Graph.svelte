@@ -1,9 +1,22 @@
 <script lang="ts">
     // Layer 3, Map partial. The hand-drawn SVG graph and its drag, pan, zoom, open and related-edge
     // interactions. Geometry comes from the pure seeded layout in state/graph.ts.
+    //
+    // The labels are one layer drawn over every node, so a label is never covered by a node drawn
+    // after it. A label that would overlap one already drawn is hidden, by the rule of
+    // views/map/labels.ts over each label's measured width, until its node is hovered or holds the
+    // keyboard; those labels are drawn whatever they overlap, and last, so they sit on top.
 
-    import { onMount } from 'svelte';
+    import { onMount, tick } from 'svelte';
     import { writeRelated } from './edge-write';
+    import {
+        LABEL_DROP,
+        LABEL_GAP,
+        UNMEASURED,
+        labelBox,
+        shownLabels,
+        type LabelSize
+    } from './labels';
     import {
         DEFAULT_BOUNDS,
         DEFAULT_PHYSICS,
@@ -60,6 +73,63 @@
     let ty = $state(0);
     let zoom = $state(1);
     const marker = $derived(`map-arrow-${instanceId.replace(/[^a-zA-Z0-9_-]/g, '-')}`);
+
+    /** The node under the pointer, and the node holding the keyboard, by id. */
+    let hovered: string | null = $state(null);
+    let focused: string | null = $state(null);
+
+    /** Each drawn label element by node id, which is where a label's width is measured. */
+    const texts: Record<string, SVGTextElement | null> = {};
+
+    /** Each label's measured size by node id; a label not yet measured has none. */
+    let measured: Partial<Record<string, LabelSize>> = $state({});
+
+    /** The labels drawn on top of the rest: the hovered node's and the selected node's. */
+    const leading = $derived.by(() =>
+        [hovered, focused, linkSource?.id ?? null, linkTarget?.id ?? null].filter(
+            (id): id is string => id !== null
+        )
+    );
+
+    /** The labels drawn, by node id. An unmeasured label has no width and so overlaps nothing. */
+    const shown = $derived(
+        shownLabels(
+            positions.map((node) => labelBox(node, measured[node.id] ?? UNMEASURED)),
+            leading
+        )
+    );
+
+    /** The nodes in the order their labels are drawn: the leading labels last, so on top. */
+    const labelled = $derived([
+        ...positions.filter((node) => !leading.includes(node.id)),
+        ...positions.filter((node) => leading.includes(node.id))
+    ]);
+
+    /**
+     * Read every drawn label's box from the page, as a width and the reach above and below the
+     * baseline its `y` names, so the box follows the node as the layout moves it.
+     */
+    function measure(): void {
+        const next: Record<string, LabelSize> = {};
+        for (const [id, text] of Object.entries(texts)) {
+            if (text?.isConnected !== true) continue;
+            const box = text.getBBox();
+            const ys = text.y.baseVal;
+            const baseline = ys.numberOfItems > 0 ? ys.getItem(0).value : box.y;
+            next[id] = {
+                width: box.width,
+                above: baseline - box.y,
+                below: box.y + box.height - baseline
+            };
+        }
+        measured = next;
+    }
+
+    $effect(() => {
+        // The node set and its words are read so a label that changes is measured again.
+        void graph.nodes.map((node) => `${node.id}\n${node.label}`).join('\n');
+        void tick().then(measure);
+    });
 
     function point(id: string): PointNode | undefined {
         return positions.find((node) => node.id === id);
@@ -304,6 +374,14 @@
                     tabindex="0"
                     aria-label={node.label}
                     onpointerdown={(event) => nodeDown(event, node)}
+                    onpointerenter={() => (hovered = node.id)}
+                    onpointerleave={() => {
+                        if (hovered === node.id) hovered = null;
+                    }}
+                    onfocus={() => (focused = node.id)}
+                    onblur={() => {
+                        if (focused === node.id) focused = null;
+                    }}
                     onkeydown={(event) => {
                         if (event.key === 'Enter' || event.key === ' ') open(node);
                     }}
@@ -326,16 +404,24 @@
                             rx="3"
                         ></rect>
                     {/if}
-                    <text
-                        class:line-label={node.kind === 'line'}
-                        x={node.x + node.radius + 4}
-                        y={node.y + 4}
-                    >
-                        {node.label}
-                    </text>
                     <title>{node.label}</title>
                 </g>
             {/each}
+            <g class="labels">
+                {#each labelled as node (node.id)}
+                    <text
+                        class:line-label={node.kind === 'line'}
+                        class:hidden={!shown.has(node.id)}
+                        class:archived={node.archived !== undefined}
+                        data-label={node.id}
+                        bind:this={texts[node.id]}
+                        x={node.x + node.radius + LABEL_GAP}
+                        y={node.y + LABEL_DROP}
+                    >
+                        {node.label}
+                    </text>
+                {/each}
+            </g>
         </g>
     </svg>
 </div>
@@ -435,6 +521,15 @@
 
     text.line-label {
         font-size: var(--fs-sm);
+    }
+
+    /* An archived node's label is dimmed with its node, which it no longer sits inside. */
+    text.archived {
+        opacity: 0.6;
+    }
+
+    text.hidden {
+        visibility: hidden;
     }
 
     path {

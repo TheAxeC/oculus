@@ -14,12 +14,20 @@
     // `.docx`, an `.xlsx`) is `shared/ProgramButton.svelte`, which hands the file to that application,
     // since a link to it would only download it, and everything else is a link. A refused or failed
     // open is said through `onsaid`, the line the collection view shows every write's answer on.
+    //
+    // The controls are views/shared/CardActions.svelte, shown under the pointer and kept on one
+    // line; a long body field is views/shared/Clamp.svelte, open or cut by the view instance's
+    // state; the subtasks block is drawn only for an entry that has subtasks, adding the first
+    // being one of the controls. The card may draw past its own edge, so the More menu is not cut
+    // off at its foot.
 
     import Card from '$lib/ui/Card.svelte';
     import Chip from '$lib/ui/Chip.svelte';
     import Tag from '$lib/ui/Tag.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import CardActions, { type CardAction } from '../shared/CardActions.svelte';
+    import Clamp from '../shared/Clamp.svelte';
     import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
     import EntryForm from '../shared/EntryForm.svelte';
     import ProgramButton from '../shared/ProgramButton.svelte';
@@ -73,6 +81,10 @@
         ondragfrom: (value: string) => void;
         ondropon: (value: string) => void;
         onsaid: (said: string) => void;
+        /** Whether the long body fields are drawn whole rather than cut to their clamp. */
+        more: boolean;
+        /** Open or cut the long body fields. */
+        onmore: () => void;
     };
 
     let {
@@ -86,7 +98,9 @@
         onedit,
         ondragfrom,
         ondropon,
-        onsaid
+        onsaid,
+        more,
+        onmore
     }: Props = $props();
 
     const status = $derived(entryStatus(entry));
@@ -100,6 +114,55 @@
 
     /** True once the grip is held down, which is what makes the card draggable and nothing else. */
     let armed = $state(false);
+
+    /** True while the add-subtask form is open, from the block's own control or the card's. */
+    let addingSubtask = $state(false);
+
+    /**
+     * The card's controls: the pin, the edit form and, while the entry has no subtask, adding its
+     * first. A file with no schema has no identity to write by, so its cards carry the file's
+     * other lifecycle statuses instead.
+     */
+    const actions = $derived.by((): CardAction[] => {
+        if (!addressable) {
+            return statuses
+                .filter((one) => one !== status)
+                .map((one) => ({
+                    id: `status:${one}`,
+                    label: one,
+                    onclick: () => setStatus(one)
+                }));
+        }
+        const rows: CardAction[] = [
+            {
+                id: 'pin',
+                label: pinned ? t('collection.unpin') : t('collection.pin_to_top'),
+                glyph: t('collection.pin_glyph'),
+                active: pinned,
+                onclick: pin
+            },
+            {
+                id: 'edit',
+                label: t('collection.edit_delete'),
+                glyph: t('collection.edit_glyph'),
+                active: editing,
+                onclick: onedit
+            }
+        ];
+        if (lines.length === 0) {
+            rows.push({
+                id: 'subtask',
+                label: t('project.action.add_subtask'),
+                title: t('project.action.add_subtask_tip'),
+                glyph: t('project.action.add_subtask_glyph'),
+                active: addingSubtask,
+                onclick: () => {
+                    addingSubtask = !addingSubtask;
+                }
+            });
+        }
+        return rows;
+    });
 
     function said(answer: { ok: boolean; changed: string[]; error?: string }): void {
         onsaid(
@@ -193,25 +256,8 @@
             {#if status !== undefined}
                 <Chip label={status} tone={statusTone(status)} filled />
             {/if}
-            {#if addressable}
-                <ToolButton
-                    label={pinned ? t('collection.unpin') : t('collection.pin_to_top')}
-                    glyph={t('collection.pin_glyph')}
-                    active={pinned}
-                    compact
-                    onclick={pin}
-                />
-                <ToolButton
-                    label={t('collection.edit_delete')}
-                    glyph={t('collection.edit_glyph')}
-                    active={editing}
-                    compact
-                    onclick={onedit}
-                />
-            {:else}
-                {#each statuses.filter((one) => one !== status) as one (one)}
-                    <ToolButton label={one} onclick={() => setStatus(one)} />
-                {/each}
+            {#if actions.length > 0}
+                <CardActions {actions} />
             {/if}
         {/snippet}
 
@@ -245,12 +291,18 @@
                 {:else if drawn.kind === 'body'}
                     {#if drawn.field === 'statement'}
                         <blockquote class="stmt" title={t('collection.fundstmt_tip')}>
-                            <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                            {@html inlineMarkdown(drawn.values[0])}
+                            <Clamp open={more} ontoggle={onmore}>
+                                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+                                {@html inlineMarkdown(drawn.values[0])}
+                            </Clamp>
                         </blockquote>
                     {:else}
-                        <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
-                        <p class="body">{@html inlineMarkdown(drawn.values[0])}</p>
+                        <div class="body">
+                            <Clamp open={more} ontoggle={onmore}>
+                                <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
+                                {@html inlineMarkdown(drawn.values[0])}
+                            </Clamp>
+                        </div>
                     {/if}
                 {:else if drawn.kind === 'person'}
                     <div class="row">
@@ -310,7 +362,13 @@
             {/if}
 
             {#if addressable}
-                <Subtasks target={{ id: entry.id, collection }} subtasks={lines} {onsaid} />
+                <Subtasks
+                    target={{ id: entry.id, collection }}
+                    subtasks={lines}
+                    {onsaid}
+                    adding={addingSubtask}
+                    onadding={(next: boolean) => (addingSubtask = next)}
+                />
             {/if}
 
             {#if editing}
@@ -321,6 +379,28 @@
 </div>
 
 <style>
+    /* The slot fills its grid cell and the card fills the slot, so the cards of one row are one
+       height and no empty cell is left under a short one. */
+    .slot {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .slot > :global(.card) {
+        flex: 1 1 auto;
+        overflow: visible;
+    }
+
+    /* The card draws past its own edge, so its colour bar carries the card's rounded corners itself
+       and a long unbroken title breaks inside the card's width. */
+    .slot > :global(.card > .bar) {
+        border-radius: var(--radius) 0 0 var(--radius);
+    }
+
+    .slot > :global(.card .title) {
+        overflow-wrap: anywhere;
+    }
+
     .grip {
         cursor: grab;
         font-size: var(--fs-lg);

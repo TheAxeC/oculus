@@ -26,49 +26,49 @@ manifest_schema:
     "Archive (archive tier)": "Archive (archive tier)"
     "Overrides (rare)": "Overrides (rare)"
   fields:
-    id:            { label: "id", type: readonly, section: Core, help: "the folder name - rename = a folder move, not a form edit" }
-    tier:          { label: "Tier", type: readonly, section: Core, help: "projects / software / archive / coauthor - set by the folder it lives in (a move, not a form edit)" }
-    type:          { label: "Type / outcome", type: select, from: type_order, section: Core, help: "archive/coauthor: the outcome (published, nogo, dropped, ...); projects: the folder tier (active/manuscript/idea); software: software - don't change it here" }
+    id:            { label: "id", type: readonly, section: Core, help: "The project's folder name. Set by the folder the project is in; rename the folder to change it." }
+    tier:          { label: "Tier", type: readonly, section: Core, help: "Which board the project is on: projects, software, archive or coauthor. Set by the folder the project is in; move the folder to change it." }
+    type:          { label: "Type / outcome", type: select, from: type_order, section: Core, help: "On the Projects board, the project's stage (active, manuscript or idea); on Archive and Coauthor, how it ended (published, nogo, dropped and so on); on Software, software. The stage follows the folder the project is in, so move the folder rather than pick another stage here." }
     short:         { label: "Short handle", type: text, section: Core }
     title:         { label: "Title", type: text, section: Core }
     lead:          { label: "Lead (first author)", type: text, section: Core }
-    authors:       { label: "Authors", type: tags, section: Core, help: "full list (free text - people, not a registry)" }
+    authors:       { label: "Authors", type: tags, section: Core, help: "Everyone on the author list, in order, one name per entry. Type the names as they are written; they are not picked from the people list." }
     "status.chips": { label: "Status chips", type: chips, from: status_legend, section: Core }
-    "status.line": { label: "Status line", type: text, section: Core, help: "the short human glance (not a narrative)" }
+    "status.line": { label: "Status line", type: text, section: Core, help: "One short line a reader takes in at a glance, such as the page count and where it stands." }
     focus:         { label: "Focus lane", type: select, from: focus_lanes, section: Core }
-    priority:      { label: "Priority", type: select, from: priority_levels, section: Core, help: "optional per-card flame badge (High/Med/Low); a glance marker, does not reorder cards" }
-    pin:           { label: "Pin to top", type: checkbox, section: Core, help: "float this project to the top of its board tab (Projects / Archive / Coauthor); does not override facet/search filters" }
+    priority:      { label: "Priority", type: select, from: priority_levels, section: Core, help: "A flame on the card for High, Med or Low. It marks the card and does not change its place on the board." }
+    pin:           { label: "Pin to top", type: checkbox, section: Core, help: "Tick to keep the card at the top of its board. Search and filters still hide it when it does not match." }
     venue_id:      { label: "Venue", type: select, from: venues, section: Core }
     year:          { label: "Year", type: text, section: Core }
     eli5:          { label: "ELI5", type: textarea, section: Content }
     next:          { label: "Next", type: textarea, section: Content }
     latest:        { label: "Latest", type: textarea, section: Content }
-    results:       { label: "Results", type: lines, section: Content, help: "one claimable headline per line - NO nulls" }
-    ideas:         { label: "Ideas", type: lines, section: Content, help: "one avenue per line" }
+    results:       { label: "Results", type: lines, section: Content, help: "One headline result per line, each one a result you can claim." }
+    ideas:         { label: "Ideas", type: lines, section: Content, help: "One avenue to try per line." }
     domain:        { label: "Domain", type: select, from: domains, section: Connections }
-    pillar:       { label: "Pillars", type: chips, from: pillars, section: Connections, help: "pillars.yml keys" }
-    funding:       { label: "Funding", type: chips, from: funding, section: Connections, help: "funding.yml keys (multiple allowed)" }
-    collaborators: { label: "Collaborators", type: chips, from: people, section: Connections, help: "registries/people.yml keys (multiple allowed); the key names the person, not the joint work" }
-    "waiting-on":  { label: "Waiting on", type: tags, section: Connections, help: "registries/people.yml keys or project ids" }
-    related:       { label: "Related projects", type: chips, from: projects, section: Connections, help: "project ids" }
-    datasets:      { label: "Datasets", type: chips, from: datasets, section: Connections, help: "data.yml keys" }
+    pillar:       { label: "Pillars", type: chips, from: pillars, section: Connections, help: "The research lines this project belongs to, picked from the pillars list." }
+    funding:       { label: "Funding", type: chips, from: funding, section: Connections, help: "The grants that fund this project, picked from the funding list; pick as many as apply." }
+    collaborators: { label: "Collaborators", type: chips, from: people, section: Connections, help: "The people who work on this project, picked from the people list; pick as many as apply." }
+    "waiting-on":  { label: "Waiting on", type: tags, section: Connections, help: "Who or what this project is waiting for: a person from the people list or another project, one per entry." }
+    related:       { label: "Related projects", type: chips, from: projects, section: Connections, help: "Other projects this one builds on or feeds, picked from the project list." }
+    datasets:      { label: "Datasets", type: chips, from: datasets, section: Connections, help: "The datasets this project uses, picked from the data list." }
     deadline:      { label: "Deadline", type: date, section: Dates }
-    "followup.do": { label: "Follow-up: do", type: textarea, section: Dates, help: "a standing 'do this later' note" }
-    "followup.after": { label: "Follow-up: not until", type: date, section: Dates, help: "optional - hide the note until this date passes" }
-    snooze:        { label: "Snooze until", type: date, section: Dates, help: "hide its date from the ticker; clear to un-snooze" }
+    "followup.do": { label: "Follow-up: do", type: textarea, section: Dates, help: "A note of something to do later; it shows in the Follow-ups group on the Focus board." }
+    "followup.after": { label: "Follow-up: not until", type: date, section: Dates, help: "Leave empty to show the note now, or pick the date before which it stays hidden." }
+    snooze:        { label: "Snooze until", type: date, section: Dates, help: "Pick a date to keep this project off the ticker until then; clear it to bring the project back." }
     "code_availability.status": { label: "Code deposit", type: select, options: [none, review-anon, deposited], section: "Deposit & compute" }
-    "code_availability.date": { label: "Deposit date", type: date, section: "Deposit & compute", help: "when the code was deposited (auto-stamped by deposit.py --create)" }
+    "code_availability.date": { label: "Deposit date", type: date, section: "Deposit & compute", help: "The date the code was deposited. The deposit step fills it in when it creates the deposit." }
     "code_availability.url": { label: "Deposit URL", type: text, section: "Deposit & compute" }
     "code_availability.doi": { label: "Deposit DOI", type: text, section: "Deposit & compute" }
-    "code_availability.repo": { label: "Repo name", type: text, section: "Deposit & compute", help: "clean public kebab, e.g. cirrhosis-competing-risks" }
+    "code_availability.repo": { label: "Repo name", type: text, section: "Deposit & compute", help: "The public repository name, in lowercase words joined by dashes, for example cirrhosis-competing-risks." }
     "code_availability.description": { label: "Repo description", type: textarea, section: "Deposit & compute" }
     "code_availability.homepage": { label: "Repo homepage", type: text, section: "Deposit & compute" }
-    "code_availability.topics": { label: "Repo topics", type: tags, section: "Deposit & compute", help: "GitHub topics (free text)" }
+    "code_availability.topics": { label: "Repo topics", type: tags, section: "Deposit & compute", help: "The GitHub topics of the repository, one per entry." }
     "code_availability.visibility": { label: "Repo visibility", type: select, options: [public, private], section: "Deposit & compute" }
     compute:       { label: "Compute", type: select, options: [hpc, local], section: "Deposit & compute" }
-    "reproduced.date": { label: "Reproduced (date)", type: date, section: "Deposit & compute", help: "the date the full pipeline was last re-run to regenerate the committed numbers" }
-    "reproduced.note": { label: "Reproduced (note)", type: textarea, section: "Deposit & compute", help: "what was re-run + any caveat (e.g. needs a GPU cluster / credentialed data)" }
+    "reproduced.date": { label: "Reproduced (date)", type: date, section: "Deposit & compute", help: "The date the whole pipeline was last run again from the raw data to regenerate the reported numbers." }
+    "reproduced.note": { label: "Reproduced (note)", type: textarea, section: "Deposit & compute", help: "What was run again, and anything a rerun needs, such as a GPU cluster or credentialed data." }
     outcome:       { label: "Outcome (citation / why-not)", type: textarea, section: "Archive (archive tier)" }
     doi:           { label: "DOI", type: text, section: "Archive (archive tier)" }
-    paths:         { label: "Path overrides", type: keymap, section: "Overrides (rare)", help: "non-canonical doc locations - the escape hatch" }
-    subtasks:      { label: "Subtasks", type: keymap, section: Dates, help: "a checklist of { do, deadline, done, snooze } lines, the same mechanism as on a collection entry; edited by its own control, never by this form" }
+    paths:         { label: "Path overrides", type: keymap, section: "Overrides (rare)", help: "Where a document is kept when it is not in its usual place. Change these only when a document has moved." }
+    subtasks:      { label: "Subtasks", type: keymap, section: Dates, help: "A checklist of lines, each with what to do, a deadline, whether it is done and a snooze date. Add and tick them on the project's card; this form does not change them." }

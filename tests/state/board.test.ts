@@ -725,6 +725,7 @@ describe('parseBoardState', () => {
             search: 'ecg',
             filters: { status: ['lead'] },
             expanded: ['alpha'],
+            more: ['bravo'],
             labels: 'full' as const,
             stale: true,
             dated: true,
