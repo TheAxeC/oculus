@@ -15,6 +15,11 @@ worktree_root: .agents/worktrees
 worktree_paths: [tools/oculus, tools/cockpit, feeds, registries, projects, funding, network, education, applications, tasks]
 standards: [tools/oculus/.scratch/migration/agents/spec.md]
 executor: agent
+refute_after_repair: yes     # plan.yaml: /refute runs again over each repair round on a fresh reviewer; its findings are fixed at landing or booked, never sent back.
+repair_rounds: 1             # plan.yaml: one round, and one more only when the delta leaves a verification command red or an acceptance item unbuilt and the fix is too large for landing (Axel, 2026-09-17 11:33).
+review_minutes: 0            # plan.yaml: no time box.
+look: the page named TEST on the running server, created through the page menu when missing, never a page Axel works on   # plan.yaml; every step that changes a view, the shell or anything a reader sees is looked at there before its booking.
+report_each_step: yes        # plan.yaml: the turn ends with a landing report after every step.
 worker: claude:opus          # Axel's default from W1 on (2026-09-14 09:20, "switch to Opus agents"); codex:gpt-5.6-sol for a package whose brief says so; the rows before W1 ran on Sol from O24 on.
 orchestrator: claude:opus    # a trial for the next set of three (Axel, 2026-09-16 14:10): the orchestrator runs on Opus with the reviewer stage kept, measured by its usage rows against the Fable rows before it; the top tier for R2 and O29, whose decisions carry the release and the retirement; the sessions before this line ran on Claude Fable 5.1
 worker_effort: high          # the Codex reasoning effort passed as -c model_reasoning_effort; a recommendation until a row measures it.
@@ -26,6 +31,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```yaml
 dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57; Q32 (second run over its round) and Q30 (dispatched 12:48 from 115da2e7) in flight; Q34 dispatched 13:00 from 22ef9103; Q38 and D22 wait for Q32; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q32
+  executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
   worktree: .agents/worktrees/q32
   base: 77ef1c91
@@ -41,6 +47,7 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46,
   reviewer2: a179f2bf258fb5967               # the second run over the repair round, claude:opus, read-only, launched 12:45, scratch folder scratchpad/q32-review2
   landing: not-started
 - package: Q30
+  executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
   worktree: .agents/worktrees/q30
   base: 115da2e7
@@ -52,6 +59,7 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46,
   round: 0
   landing: not-started
 - package: Q34
+  executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
   worktree: .agents/worktrees/q34
   base: 22ef9103
@@ -201,10 +209,10 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46,
 - The recurring-findings pass the skill asks for at a pause (raised 2026-09-16 23:37): not done for the trial set's nine review reports; to run before the next dispatch. Ruled 2026-09-17 09:44, Axel: at the next pause; this one was a trial.
 - The look for M2, D16 and Q33 (raised 2026-09-17 10:28): their landing notes name no look on the TEST page. Axel's message of 2026-09-17 10:28 says both that the Fable session does those three and appends them to the notes, so nothing is done for them here, and that the look for them starts here on the orchestrator's next word. Nothing done; for Axel to say which. Closed 2026-09-17 10:46, Axel: the Fable session does those three; the second sentence disregarded.
 - Q40, the renamed view's tab (raised 2026-09-17 10:28 by Axel): the TEST page carries a tab named "Unknown view: programs" from before M1 renamed Programs to Pillars; M1 built the saved tab as an unknown view on purpose, Axel's ruling of 2026-09-16 11:00 ("M1's saved-layout id kept"), pinned by `tests/state/layout-saved.test.ts` ("a saved tab naming a view that has been renamed"), `tests/shell/workbench.test.ts` line 150 and `tests/views/registry.test.ts` line 405; Q40 reverses that ruling by Axel's agreement of 2026-09-17 10:28. (Corrected 2026-09-17 10:51: the first text of this item said the M1 item was not built, which was wrong.) The tab is left on the TEST page. Closed 2026-09-17 10:46, Axel: agreed. Withdrawn 2026-09-17 10:54, Axel: the agreement undone, no package; the tab stays an unknown view by the ruling of 2026-09-16 11:00.
-- Q37, the awaiting strip and a coauthor card (raised 2026-09-17 11:25 by Q37's review): a coauthor or archive project on a lane with `waiting-on:` shows "Waiting on ..." on its card, while the "Awaiting a response" strip counts people over the live tiers only (`waiting()` in `state/focus.ts`), as Q37's brief keeps it; the card and the strip disagree. Options: (a) the strip counts every project on a lane, whatever its tier; (b) keep it over the live tiers. Recommended (a): the strip then says what the board shows. For Axel.
-- Q37, lanes of one colour (raised 2026-09-17 11:25 by Q37's review): in dracula, Push and Backburner, Review and De-risk, and Scope, Build and Teaching draw the same header colours, and in latte Revise and Funding, and Build and Teaching; the lanes' tones (`focus_lanes` and `focus_lane_tones` in `config/vocab.yml`) resolve to the same theme colour there, as their top borders already did. Recommended: a later fix giving adjacent lanes distinct tones in `vocab.yml`, the tones picked to stay distinct under every theme. For Axel.
-- Q31, the Files view's bookmark form (raised 2026-09-17 11:28 by Q31's review): `Files.svelte` keeps its form's open state (`form`, `editing`) in component state, so after a switch its typed bookmark returns only when the form is opened again, and a tab can ask about text it does not show; Q32 is redrawing `Files.svelte` now, so Q31 does not touch it. Recommended: a fix after Q32 lands putting that open state in the instance state, as Q31 does for the five collection views. For Axel.
-- Q31, drafts left after a pane or page close (raised 2026-09-17 11:28 by Q31's review): `closePane` (`state/layout.svelte.ts` line 592) and `closePage` (line 409) never call `clearInstanceState`, so a closed pane's or page's source drafts, manifest edits and form drafts stay in `localStorage['oculus.ui.v1']` for good; nothing reads them (instance ids are random), they only accumulate. Recommended: a fix clearing every closed instance's state in both closes. For Axel.
+- Q37, the awaiting strip and a coauthor card (raised 2026-09-17 11:25 by Q37's review): a coauthor or archive project on a lane with `waiting-on:` shows "Waiting on ..." on its card, while the "Awaiting a response" strip counts people over the live tiers only (`waiting()` in `state/focus.ts`), as Q37's brief keeps it; the card and the strip disagree. Options: (a) the strip counts every project on a lane, whatever its tier; (b) keep it over the live tiers. Recommended (a): the strip then says what the board shows. For Axel. Closed 2026-09-17 ruled 13:05, Axel: (a), the strip counts every project on a lane; booked as Q41.
+- Q37, lanes of one colour (raised 2026-09-17 11:25 by Q37's review): in dracula, Push and Backburner, Review and De-risk, and Scope, Build and Teaching draw the same header colours, and in latte Revise and Funding, and Build and Teaching; the lanes' tones (`focus_lanes` and `focus_lane_tones` in `config/vocab.yml`) resolve to the same theme colour there, as their top borders already did. Recommended: a later fix giving adjacent lanes distinct tones in `vocab.yml`, the tones picked to stay distinct under every theme. For Axel. Closed 2026-09-17 ruled 13:05, Axel: yes, and now rather than later; booked as Q41.
+- Q31, the Files view's bookmark form (raised 2026-09-17 11:28 by Q31's review): `Files.svelte` keeps its form's open state (`form`, `editing`) in component state, so after a switch its typed bookmark returns only when the form is opened again, and a tab can ask about text it does not show; Q32 is redrawing `Files.svelte` now, so Q31 does not touch it. Recommended: a fix after Q32 lands putting that open state in the instance state, as Q31 does for the five collection views. For Axel. Closed 2026-09-17 ruled 13:05, Axel: agreed, after Q32 lands; booked as Q43.
+- Q31, drafts left after a pane or page close (raised 2026-09-17 11:28 by Q31's review): `closePane` (`state/layout.svelte.ts` line 592) and `closePage` (line 409) never call `clearInstanceState`, so a closed pane's or page's source drafts, manifest edits and form drafts stay in `localStorage['oculus.ui.v1']` for good; nothing reads them (instance ids are random), they only accumulate. Recommended: a fix clearing every closed instance's state in both closes. For Axel. Closed 2026-09-17 ruled 13:05, Axel: agreed; booked as Q42.
 - Q31, the Leads and LinkedIn add toggles (raised 2026-09-17 11:54 by Q31's repair-round report): `Leads.svelte:120` and `Linkedin.svelte:110` still close the add form without forgetting its draft, so the close question can still ask over a hidden draft there; the two views were outside Q31's paths. Recommended: a fix of delivered work routing both toggles through `toggleAdd`, as the five collection views now do. For Axel. Closed 2026-09-17 12:46 at Q31's landing: both toggles write `adding` through `toggleAdd`, a fix of delivered work.
 
 ## Verification, every package
