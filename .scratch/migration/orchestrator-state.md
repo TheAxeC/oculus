@@ -61,6 +61,8 @@ dispatch:                                  # Q37, Q31 and Q32 in flight (dispatc
   pid: none                                 # a native Claude worker has no process of its own
   session_id: ad29e581e565309d1            # the Agent tool id, launched 10:51
   round: 0
+  reported: 2026-09-17T11:29
+  reviewer: a0e97926122a9764a                # claude:opus through the Agent tool, read-only, launched 11:30, scratch folder scratchpad/q32-review, the look judged by screenshots
   landing: not-started
 ```
 
@@ -746,4 +748,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q31, worker claude:opus through the Agent tool, first run: 252,266 tokens, 79 tool uses, 1,262 s (10:51 to 11:10); a brief premise reported wrong: five host views keep a form's open state in component state, so a restored draft shows only when Add or Edit is pressed again.
 - Q37, reviewer claude:opus through the Agent tool, read-only: 204,552 tokens, 72 tool uses, 893 s (11:10 to 11:25); six rulings sent in the one repair round, two findings booked for Axel.
 - Q31, reviewer claude:opus through the Agent tool, read-only: 186,521 tokens, 55 tool uses, 1,000 s (11:12 to 11:28); eight rulings sent in the one repair round, two findings booked for Axel.
+- Q32, worker claude:opus through the Agent tool, first run: 422,399 tokens, 128 tool uses, 2,312 s (10:51 to 11:29); everything done by its report, 22 files +1,599 -623, three new `ui/` primitives, no look taken on the TEST page.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
