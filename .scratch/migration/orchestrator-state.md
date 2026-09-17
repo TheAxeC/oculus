@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57, Q32 landed 13:26, Q30 landed 14:28; Q30 (the run over its round), Q34 (review), Q42 (repair round) and Q43 (dispatched 14:30 from 17e22699) in flight; Q41 built, waiting on Axel's ruling on the lane colours; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57, Q32 landed 13:26, Q30 landed 14:28; Q30 (the run over its round), Q34 (repair round), Q42 (repair round) and Q43 (dispatched 14:30 from 17e22699) in flight; Q41 built, waiting on Axel's ruling on the lane colours; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q34
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -43,7 +43,7 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46,
   paths_note: 13:27, told by message to leave state/focus.ts, views/focus/Lanes.svelte, Band.svelte, LaneHead.svelte, state/tones.ts and config/vocab.yml unedited, which Q41 edits
   reported: 2026-09-17T14:01
   reviewer: a51e691aeaa704e52                # claude:opus through the Agent tool, read-only, launched 14:08, scratch folder scratchpad/q34-review (review earned: a state layer and ui/Menu)
-  round: 0
+  round: 1                                  # sent 14:39: eleven rulings on agents/reviews/Q34-refuter.md (a task row's done kept visible through ui/Ticker.svelte, the wrap band measured in fractions, the strip inside a narrow pane, More at the compact height, Lit Watch's grid shrinking, the Map's archived labels dimmed, Memories fitted whole with no crop, long titles inside the card, the project tab's Doc text, tests, standards); round base: scratchpad/q34-round1; paths widened by ui/Ticker.svelte; the picture sizes booked as Q46
   landing: not-started
 - package: Q41
   executor: agent                          # the configuration default, chosen for the step
@@ -799,4 +799,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q30, orchestrator claude:opus (this session), `land/templates/usage.py` from Q32's landing (2026-09-17T13:26:33+02:00) to 14:28: 47 messages, 44515 output tokens, 100688 cache-write tokens, 20861202 cache-read tokens, 102 fresh input tokens, 62 minutes; shared with Q41's brief, stop and dispatch, Q42's brief and dispatch, Q34's report and its reviewer's dispatch, Q42's report and its reviewer's dispatch.
 - Q42, worker claude:opus through the Agent tool, first run: 182,290 tokens, 47 tool uses, 622 s (13:57 to 14:08); everything done, an older leak found outside its paths.
 - Q42, reviewer claude:opus through the Agent tool, read-only: 184,280 tokens, 61 tool uses, 954 s (14:10 to 14:26); six rulings sent in the one repair round.
+- Q34, reviewer claude:opus through the Agent tool, read-only: 295,065 tokens, 92 tool uses, 2,024 s (14:04 to 14:37); eleven rulings sent in the one repair round, one step booked (Q46).
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
