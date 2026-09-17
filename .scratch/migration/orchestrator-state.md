@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; in flight: D22 (repair round) and Q38 (review), both from 91fb46cb, Q45 (review, from 76930aa3); Q41 waiting on Axel's ruling on collapsed layouts; next: Q45, Q46, Q47, Q48, Q49, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; in flight: D22 (repair round) and Q38 (repair round), both from 91fb46cb, Q45 (review, from 76930aa3); Q41 waiting on Axel's ruling on collapsed layouts; next: Q45, Q46, Q47, Q48, Q49, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q41
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -73,7 +73,7 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   session_id: a0cefe46348697af3            # the Agent tool id, launched 16:54
   reported: 2026-09-17T17:56
   reviewer: ad096f6b7af64b81f                # claude:opus through the Agent tool, read-only, launched 17:57, scratch folder scratchpad/q38-review (review earned: shell and ui primitives)
-  round: 0
+  round: 1                                  # sent 18:14: eight rulings on agents/reviews/Q38-refuter.md (the accent on the active pane's shown tab only, one bare button look through ToolButton and Menu props with no :global reach, the sash look in ui/Sash.svelte for every sash with a reach off the pane bodies, a dirty tab's spoken name and a page tab's dot, untested or redundant rules, tokens and merged blocks, the kept differences named, the Doc text); round base: scratchpad/q38-round1; paths widened by ui/Sash.svelte, ui/ToolButton.svelte, ui/Menu.svelte
   landing: not-started
 - package: Q45
   executor: agent                          # the configuration default, chosen for the step
@@ -833,6 +833,7 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q38, worker claude:opus through the Agent tool, first run: 341,646 tokens, 119 tool uses, 3,770 s (16:54 to 17:56); everything done by its report.
 - D22, reviewer claude:opus through the Agent tool, read-only: 229,705 tokens, 101 tool uses, 1,332 s (17:39 to 18:01); ten rulings sent in the one repair round.
 - Q45, worker claude:opus through the Agent tool, first run: 121,193 tokens, 27 tool uses, 533 s (17:59 to 18:07); everything done.
+- Q38, reviewer claude:opus through the Agent tool, read-only: 203,669 tokens, 66 tool uses, 1,022 s (17:57 to 18:14); eight rulings sent in the one repair round.
 - Q41, repair round claude:opus: 548,405 tokens cumulative on the thread, 47 tool uses, about 63 min (16:51 to 17:54); ruling 1 stopped as ruled, rulings 2 to 5 done.
 - Q41, worker after the ruling claude:opus: the thread's tokens and time are in its notification when it closes; reported 15:41.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
