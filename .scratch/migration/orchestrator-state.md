@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04; in flight: Q34 (repair round, from 22ef9103), Q43 (repair round, from 17e22699), Q44 (from a05037a9); Q41 built, waiting on Axel's ruling on the lane colours; next: Q45, Q46, then D22 and Q38 once Q34 has landed; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); the queue: Q38; D22; Q43; Q44; Q45; Q46; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04; in flight: Q34 (the run over its round, from 22ef9103), Q43 (repair round, from 17e22699), Q44 (review, from a05037a9); Q41 built, waiting on Axel's ruling on the lane colours; next: Q45, Q46, then D22 and Q38 once Q34 has landed; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); the queue: Q38; D22; Q43; Q44; Q45; Q46; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q34
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -44,6 +44,8 @@ dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12
   reported: 2026-09-17T14:01
   reviewer: a51e691aeaa704e52                # claude:opus through the Agent tool, read-only, launched 14:08, scratch folder scratchpad/q34-review (review earned: a state layer and ui/Menu)
   round: 1                                  # sent 14:39: eleven rulings on agents/reviews/Q34-refuter.md (a task row's done kept visible through ui/Ticker.svelte, the wrap band measured in fractions, the strip inside a narrow pane, More at the compact height, Lit Watch's grid shrinking, the Map's archived labels dimmed, Memories fitted whole with no crop, long titles inside the card, the project tab's Doc text, tests, standards); round base: scratchpad/q34-round1; paths widened by ui/Ticker.svelte; the picture sizes booked as Q46
+  reported2: 2026-09-17T15:22                # the round's report, appended to agents/reviews/Q34-report.md; all eleven rulings done
+  reviewer2: ac7629af4ae876975               # the run over round 1, claude:opus, read-only, launched 15:23, scratch folder scratchpad/q34-review2
   landing: not-started
 - package: Q41
   executor: agent                          # the configuration default, chosen for the step
@@ -82,6 +84,8 @@ dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12
   report: tools/oculus/.scratch/migration/agents/reviews/Q44-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: afc1b468bd84a4257            # the Agent tool id, launched 15:06
+  reported: 2026-09-17T15:28
+  reviewer: a6f99803527e9af27                # claude:opus through the Agent tool, read-only, launched 15:29, scratch folder scratchpad/q44-review (review earned: a server module)
   round: 0
   landing: not-started
 ```
@@ -806,4 +810,6 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q42, orchestrator claude:opus (this session), from `land.sh`'s row (Q30's landing 2026-09-17T14:28:42+02:00 to 14:53): 18 messages, 21,369 output tokens, 44,226 cache-write tokens, 9,244,128 cache-read tokens, 44 fresh input tokens, 24 minutes; shared with Q34's round and Q43's report and review dispatch.
 - Q43, worker claude:opus through the Agent tool, first run: 215,928 tokens, 57 tool uses, 1,324 s (14:30 to 14:52); everything done, three files outside its paths named.
 - Q43, reviewer claude:opus through the Agent tool, read-only: 196,228 tokens, 62 tool uses, 992 s (14:53 to 15:09); nine rulings sent in the one repair round.
+- Q34, worker round 1 claude:opus: 550,186 tokens (cumulative on the thread), 69 tool uses, about 44 min (14:39 to 15:22); eleven rulings done.
+- Q44, worker claude:opus through the Agent tool, first run: 174,661 tokens, 57 tool uses, 936 s (15:06 to 15:22); everything done, two files outside its paths, one wrong sentence in the Sessions Changes panel left outside its paths.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
