@@ -115,12 +115,22 @@ describe('dataset facets and search', () => {
 
 describe('dataset instance state and recovery command', () => {
     it('parses search and string facet keys and defaults malformed state', () => {
+        const closed = { adding: false, editing: '' };
         expect(parseDataState({ search: 'ecg', off: ['private-theme', 7] })).toEqual({
             search: 'ecg',
-            off: ['private-theme']
+            off: ['private-theme'],
+            ...closed
         });
-        expect(parseDataState(undefined)).toEqual({ search: '', off: [] });
-        expect(parseDataState({ search: 7, off: 'ecg' })).toEqual({ search: '', off: [] });
+        expect(parseDataState(undefined)).toEqual({ search: '', off: [], ...closed });
+        expect(parseDataState({ search: 7, off: 'ecg' })).toEqual({
+            search: '',
+            off: [],
+            ...closed
+        });
+        expect(parseDataState({ adding: true, editing: 'ptb-xl' })).toMatchObject({
+            adding: true,
+            editing: 'ptb-xl'
+        });
     });
 
     it('quotes the dataset key as one shell word', () => {

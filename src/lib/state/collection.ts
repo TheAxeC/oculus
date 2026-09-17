@@ -9,6 +9,7 @@
 // seven hub files agree on the names (`status`, `tags`, `meta`, `note`) and use only six types.
 
 import type { Entry, Project, SchemaField, Subtask } from '../data/model.ts';
+import { parseOpenForms, type OpenForms } from './open-forms.ts';
 import { realProjects } from './venues.ts';
 
 // The boundary table lets `views/` import `state/` and nothing of `data/`, so the types the view
@@ -40,15 +41,15 @@ export type Drawn = {
 };
 
 /**
- * What the view holds per instance: the search box, the status values in force, and the statuses
- * the reader has switched off in the facet bar.
+ * What the view holds per instance: the search box, the status values in force, the statuses the
+ * reader has switched off in the facet bar, and which of its entry forms are open.
  *
  * The two status fields are not one field. `statuses` is a selection: empty means every status, and
  * a value in it means that value alone. `hidden` is the facet bar of the acceptance list, where
  * every toggle is on until it is clicked and a click hides that status's cards. A card is drawn
  * when the selection admits it and the facet bar has not hidden it.
  */
-export type CollectionState = {
+export type CollectionState = OpenForms & {
     search: string;
     statuses: string[];
     hidden: string[];
@@ -58,7 +59,7 @@ export type CollectionState = {
 
 /** The state of an instance nobody has typed in yet. */
 export function emptyCollectionState(): CollectionState {
-    return { search: '', statuses: [], hidden: [] };
+    return { search: '', statuses: [], hidden: [], ...parseOpenForms(undefined) };
 }
 
 /** The strings of a saved list, and nothing when what was saved is not a list. */
@@ -81,7 +82,8 @@ export function parseCollectionState(raw: unknown): CollectionState {
     const state: CollectionState = {
         search: typeof held.search === 'string' ? held.search : '',
         statuses: savedList(held.statuses),
-        hidden: savedList(held.hidden)
+        hidden: savedList(held.hidden),
+        ...parseOpenForms(raw)
     };
     if (typeof held.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
     return state;
@@ -299,7 +301,10 @@ function haystack(value: unknown): string {
  * substring of every word the entry holds, case insensitive. An empty search matches everything and
  * so does an empty status selection, which is what an instance nobody has touched shows.
  */
-export function applyCollectionFilters(entries: Entry[], state: CollectionState): Entry[] {
+export function applyCollectionFilters(
+    entries: Entry[],
+    state: Pick<CollectionState, 'search' | 'statuses' | 'hidden'>
+): Entry[] {
     const needle = state.search.trim().toLowerCase();
     return entries.filter((entry) => {
         const status = entryStatus(entry);

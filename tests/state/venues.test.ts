@@ -200,20 +200,26 @@ describe('saved venue state', () => {
             search: '',
             off: [],
             journalsOpen: true,
-            conferencesOpen: true
+            conferencesOpen: true,
+            adding: false,
+            editing: ''
         });
         expect(
             parseVenuesState({
                 search: 'clinical',
                 off: ['ml', 3],
                 journalsOpen: false,
-                conferencesOpen: 'no'
+                conferencesOpen: 'no',
+                adding: true,
+                editing: 'bspc'
             })
         ).toEqual({
             search: 'clinical',
             off: ['ml'],
             journalsOpen: false,
-            conferencesOpen: true
+            conferencesOpen: true,
+            adding: true,
+            editing: 'bspc'
         });
     });
 });

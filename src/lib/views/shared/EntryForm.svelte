@@ -9,6 +9,14 @@
     //
     // A `metalist` is kept as rows apart from the scalar controls because each row writes two
     // values and is saved as one flat map.
+    //
+    // What the reader typed outlives the component. Inside a pane the form reads the instance it is
+    // drawn in (state/instance-context.ts) and keeps its typed values in that instance's form drafts
+    // (state/form-drafts.svelte.ts), keyed by the collection and the entry, so a tab switch or a
+    // reload gives them back and the tab asks before it closes over them. Cancel and a delete forget
+    // them, and a save forgets what it sent, keeping a value typed while it was on its way. A form
+    // drawn outside any pane keeps them in a target of its own and registers nothing. How an entry's
+    // value is held by a control, and what a control's value is saved as, are state/form-values.ts.
 
     import { addFromForm } from './entry-form';
     import Checkbox from '$lib/ui/Checkbox.svelte';
@@ -25,18 +33,22 @@
         formFields,
         identityField,
         parseRawField,
-        rawFieldText,
         refusedField,
         type Entry,
         type SchemaField
     } from '$lib/state/collection';
+    import { draftTarget, formKey, localDrafts } from '$lib/state/form-drafts.svelte';
+    import { controlValue, savedValue, type FormValue, type MetaRow } from '$lib/state/form-values';
+    import { useInstance } from '$lib/state/instance-context';
     import { t } from '$lib/state/text';
     import type { WriteAnswer } from '$lib/state/writes.svelte';
     import { useState } from '$lib/state/use';
 
     const client = useState();
+    const within = useInstance();
 
     const {
+        formDrafts,
         selectors: { configMap },
         writes: { deleteEntry, writeEntry }
     } = client;
@@ -74,41 +86,32 @@
         onsaid
     }: Props = $props();
 
-    type MetaRow = { label: string; value: string };
-    type Draft = string | boolean | MetaRow[];
+    type Draft = FormValue;
 
     const fields = $derived([...formFields(schema, configMap()), ...extraRawFields(entry, schema)]);
-
-    /** One field of the entry as the control for it holds it: a list is a line of commas. */
-    function held(field: string, kind: string): Draft {
-        const value = entry === null ? opening[field] : entry.fields[field];
-        if (kind === 'checkbox') return value === true;
-        if (kind === 'metalist' && Array.isArray(value)) {
-            return value
-                .filter(
-                    (one): one is Record<string, unknown> =>
-                        typeof one === 'object' && one !== null && !Array.isArray(one)
-                )
-                .map((one) => ({
-                    label: typeof one.label === 'string' ? one.label : '',
-                    value: typeof one.value === 'string' ? one.value : ''
-                }));
-        }
-        if (kind === 'raw') return rawFieldText(value);
-        if (Array.isArray(value)) return value.filter((one) => typeof one === 'string').join(', ');
-        if (typeof value === 'string' || typeof value === 'number') return String(value);
-        return '';
-    }
 
     /** What the entry itself holds, per field: what a control shows until the reader types in it. */
     const initial = $derived.by(() => {
         const next: Record<string, Draft> = {};
-        for (const field of fields) next[field.field] = held(field.field, field.kind);
+        for (const field of fields) {
+            const value = entry === null ? opening[field.field] : entry.fields[field.field];
+            next[field.field] = controlValue(value, field.kind);
+        }
         return next;
     });
 
+    /** The kind of each field's control, by field name. */
+    const kinds = $derived(new Map(fields.map((one) => [one.field, one.kind])));
+
+    /** Which form of the instance this is: the collection, and the entry or null for adding. */
+    const form = $derived(formKey(collection, entry === null ? null : entry.id));
+
+    /** What a form outside any pane keeps its typed values in, since no instance keeps them. */
+    const local = localDrafts();
+    /** Where the typed values are kept: the instance the form is drawn in, or the form itself. */
+    const target = $derived(draftTarget(formDrafts, within?.() ?? null, local));
     /** What the reader has typed, by field. A field nobody touched is not in here at all. */
-    let edits: Record<string, Draft> = $state({});
+    const edits = $derived(target.edits(form));
     let asked = $state('');
     let sure = $state(false);
 
@@ -127,18 +130,31 @@
         return Array.isArray(value) ? value : [];
     }
 
+    /** Keep what one control now holds, with its kind and what the control held before any typing. */
+    function hold(field: string, value: Draft): void {
+        target.set(form, field, {
+            value,
+            kind: kinds.get(field) ?? 'text',
+            base: initial[field] ?? ''
+        });
+    }
+
     function setMeta(field: string, at: number, key: keyof MetaRow, value: string): void {
-        edits[field] = metaRows(field).map((row, index) =>
-            index === at ? { ...row, [key]: value } : row
+        hold(
+            field,
+            metaRows(field).map((row, index) => (index === at ? { ...row, [key]: value } : row))
         );
     }
 
     function addMeta(field: string): void {
-        edits[field] = [...metaRows(field), { label: '', value: '' }];
+        hold(field, [...metaRows(field), { label: '', value: '' }]);
     }
 
     function removeMeta(field: string, at: number): void {
-        edits[field] = metaRows(field).filter((_, index) => index !== at);
+        hold(
+            field,
+            metaRows(field).filter((_, index) => index !== at)
+        );
     }
 
     /**
@@ -147,24 +163,10 @@
      * so adding an entry writes no key for what was never filled in.
      */
     function saveable(field: string, kind: string): unknown {
-        const value = valueOf(field);
-        if (kind === 'checkbox') return value === true ? true : null;
-        if (kind === 'metalist') {
-            const rows = Array.isArray(value) ? value : [];
-            const kept = rows
-                .map((row) => ({ label: row.label.trim(), value: row.value.trim() }))
-                .filter((row) => row.label !== '' || row.value !== '');
-            return kept.length === 0 ? null : kept;
-        }
-        const text = typeof value === 'string' ? value.trim() : '';
-        if (kind === 'tags') {
-            const words = text
-                .split(',')
-                .map((one) => one.trim())
-                .filter((one) => one !== '');
-            return words.length === 0 ? null : words;
-        }
-        if (text !== '') return text;
+        const saved = savedValue(valueOf(field), kind);
+        if (typeof saved === 'boolean') return saved ? true : null;
+        if (Array.isArray(saved)) return saved.length === 0 ? null : saved;
+        if (saved !== '') return saved;
         return clearedValue(field in edits, entry !== null);
     }
 
@@ -184,7 +186,13 @@
         }
     }
 
-    /** Save the form: a new entry when the form has none, the entry's own fields when it has one. */
+    /**
+     * Save the form: a new entry when the form has none, the entry's own fields when it has one. The
+     * draft settled is the one the save was pressed over, with the values it sent, both taken before
+     * the request goes: an answer landing after the tab was switched settles that draft and no other.
+     * An edit form keeps a value typed while the request was on its way, left open over it. An add
+     * form closes and forgets its draft once the entry is added, since the form can only add another.
+     */
     async function save(): Promise<void> {
         const ident = identityField(schema);
         const wanted: Record<string, unknown> = {};
@@ -211,19 +219,37 @@
             return;
         }
         asked = '';
+        const into = target;
+        const which = form;
+        const sent = { ...edits };
         const answer =
             entry === null
                 ? await addFromForm(client.writes, collection, wanted, onadd)
                 : await writeEntry(collection, entry.id, wanted);
         said(answer);
-        if (answer.ok && answer.refused.length === 0) onclose();
+        if (!answer.ok || answer.refused.length > 0) return;
+        if (entry === null) {
+            into.clear(which);
+            onclose();
+        } else if (!into.settle(which, sent)) {
+            onclose();
+        }
+    }
+
+    /** Close the form over nothing saved, forgetting what was typed into it. */
+    function cancel(): void {
+        target.clear(form);
+        onclose();
     }
 
     /** Delete the entry the form edits. The confirm is the dialog, never a second press of this. */
     async function remove(): Promise<void> {
         sure = false;
         if (entry === null) return;
+        const into = target;
+        const which = form;
         said(await deleteEntry(collection, entry.id));
+        into.clear(which);
         onclose();
     }
 </script>
@@ -241,7 +267,7 @@
                 <TextArea
                     value={line(field.field)}
                     label={field.label}
-                    oninput={(next: string) => (edits[field.field] = next)}
+                    oninput={(next: string) => hold(field.field, next)}
                 />
             {:else if field.kind === 'select'}
                 <Select
@@ -249,26 +275,26 @@
                     label={field.label}
                     empty={t('collection.form_none')}
                     choices={field.options.map((one) => ({ id: one, label: one }))}
-                    onchange={(next: string) => (edits[field.field] = next)}
+                    onchange={(next: string) => hold(field.field, next)}
                 />
             {:else if field.kind === 'date'}
                 <DateInput
                     value={line(field.field)}
                     label={field.label}
-                    oninput={(next: string) => (edits[field.field] = next)}
+                    oninput={(next: string) => hold(field.field, next)}
                 />
             {:else if field.kind === 'checkbox'}
                 <Checkbox
                     checked={valueOf(field.field) === true}
                     label={field.label}
-                    onchange={(next: boolean) => (edits[field.field] = next)}
+                    onchange={(next: boolean) => hold(field.field, next)}
                 />
             {:else if field.kind === 'tags'}
                 <TextInput
                     value={line(field.field)}
                     label={field.label}
                     placeholder={t('collection.tags_hint')}
-                    oninput={(next: string) => (edits[field.field] = next)}
+                    oninput={(next: string) => hold(field.field, next)}
                 />
             {:else if field.kind === 'metalist'}
                 <div class="metalist" data-metalist={field.field}>
@@ -302,7 +328,7 @@
                 <TextInput
                     value={line(field.field)}
                     label={field.label}
-                    oninput={(next: string) => (edits[field.field] = next)}
+                    oninput={(next: string) => hold(field.field, next)}
                 />
             {/if}
         </Field>
@@ -314,7 +340,7 @@
             glyph={t('collection.save_glyph')}
             onclick={save}
         />
-        <ToolButton label={t('collection.form_cancel')} onclick={onclose} />
+        <ToolButton label={t('collection.form_cancel')} onclick={cancel} />
         {#if entry !== null}
             <ToolButton
                 label={t('collection.form_delete')}

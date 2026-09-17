@@ -87,6 +87,7 @@
     const {
         layout: { openView },
         selectors: { archiveDead, collectionOf, configMap, projects },
+        formDrafts: { toggleAdd, toggleEdit },
         ui: { cardMoveRequested, instanceState, setInstanceState },
         writes: { reorderEntries }
     } = useState();
@@ -122,9 +123,6 @@
             : []
     );
 
-    /** True while the add form is open, and the id of the entry whose edit form is. */
-    let adding = $state(false);
-    let editing: string | null = $state(null);
     let said = $state('');
 
     /** The identity value of the card the reader picked up, while a drag is in flight. */
@@ -211,8 +209,8 @@
             <ToolButton
                 label={t('collection.add')}
                 title={t('collection.add_tip')}
-                active={adding}
-                onclick={() => (adding = !adding)}
+                active={held.adding}
+                onclick={() => write({ adding: toggleAdd(instance.id, key, held.adding) })}
             />
         {/if}
         {#if source !== null}
@@ -252,12 +250,12 @@
             </div>
         {/if}
 
-        {#if adding}
+        {#if held.adding}
             <EntryForm
                 collection={key}
                 {schema}
                 entry={null}
-                onclose={() => (adding = false)}
+                onclose={() => write({ adding: false })}
                 onsaid={(words: string) => (said = words)}
             />
         {/if}
@@ -288,8 +286,11 @@
                             {schema}
                             projects={all}
                             statuses={lifecycle}
-                            editing={editing === entry.id}
-                            onedit={() => (editing = editing === entry.id ? null : entry.id)}
+                            editing={held.editing === entry.id}
+                            onedit={() =>
+                                write({
+                                    editing: toggleEdit(instance.id, key, held.editing, entry.id)
+                                })}
                             ondragfrom={(value: string) => (dragged = value)}
                             ondropon={drop}
                             onsaid={(words: string) => (said = words)}

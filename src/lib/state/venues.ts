@@ -2,6 +2,7 @@
 // The view receives ready-to-draw groups and month columns, so its markup contains no data rules.
 
 import type { Project, Venue } from '../data/model.ts';
+import { parseOpenForms, type OpenForms } from './open-forms.ts';
 
 export type VenueUse = { projects: Project[]; concentrated: boolean };
 export type TimelineChip = { venue: Venue; biennial: boolean };
@@ -15,7 +16,7 @@ export type TimelineMonth = {
 export type NextDeadline = { venue: Venue; month: number; distance: number };
 export type VenueTimeline = { months: TimelineMonth[]; next: NextDeadline[]; counts: number[] };
 
-export type VenuesState = {
+export type VenuesState = OpenForms & {
     search: string;
     off: string[];
     journalsOpen: boolean;
@@ -142,7 +143,8 @@ export function parseVenuesState(raw: unknown): VenuesState {
         search: '',
         off: [],
         journalsOpen: true,
-        conferencesOpen: true
+        conferencesOpen: true,
+        ...parseOpenForms(undefined)
     };
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return fallback;
     const held = raw as Record<string, unknown>;
@@ -150,7 +152,8 @@ export function parseVenuesState(raw: unknown): VenuesState {
         search: typeof held.search === 'string' ? held.search : '',
         off: strings(held.off),
         journalsOpen: typeof held.journalsOpen === 'boolean' ? held.journalsOpen : true,
-        conferencesOpen: typeof held.conferencesOpen === 'boolean' ? held.conferencesOpen : true
+        conferencesOpen: typeof held.conferencesOpen === 'boolean' ? held.conferencesOpen : true,
+        ...parseOpenForms(raw)
     };
     if (typeof held.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
     return state;

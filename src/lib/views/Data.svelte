@@ -40,6 +40,7 @@
 
     const {
         selectors: { collectionOf, configMap, datasets, projects },
+        formDrafts: { toggleAdd, toggleEdit },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -56,8 +57,6 @@
     const facets = $derived(themeFacets(allDatasets, labels));
     const shown = $derived(applyThemeFacets(datasetSearch(allDatasets, held.search), held.off));
 
-    let adding = $state(false);
-    let editing: string | null = $state(null);
     let said = $state('');
 
     function write(next: Partial<DataState>): void {
@@ -110,18 +109,18 @@
                 <ToolButton
                     label={t('collection.add')}
                     title={t('collection.add_tip')}
-                    active={adding}
-                    onclick={() => (adding = !adding)}
+                    active={held.adding}
+                    onclick={() => write({ adding: toggleAdd(instance.id, 'data', held.adding) })}
                 />
             {/if}
         </div>
 
-        {#if adding && collection?.schema !== undefined}
+        {#if held.adding && collection?.schema !== undefined}
             <EntryForm
                 collection="data"
                 schema={collection.schema}
                 entry={null}
-                onclose={() => (adding = false)}
+                onclose={() => write({ adding: false })}
                 onsaid={(words: string) => (said = words)}
             />
         {/if}
@@ -148,8 +147,16 @@
                             projects={users(dataset.projectIds)}
                             entry={entryFor(dataset.id)}
                             schema={collection?.schema}
-                            editing={editing === dataset.id}
-                            onedit={() => (editing = editing === dataset.id ? null : dataset.id)}
+                            editing={held.editing === dataset.id}
+                            onedit={() =>
+                                write({
+                                    editing: toggleEdit(
+                                        instance.id,
+                                        'data',
+                                        held.editing,
+                                        dataset.id
+                                    )
+                                })}
                             onsaid={(words: string) => (said = words)}
                         />
                     </Reveal>

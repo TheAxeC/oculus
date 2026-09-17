@@ -2,6 +2,7 @@
 // status, venue-tier counts and the archival groups. The views receive ready-to-draw lists.
 
 import type { Domain, Pillar, Project, Venue } from '../data/model.ts';
+import { parseOpenForms, type OpenForms } from './open-forms.ts';
 import { realProjects } from './venues.ts';
 
 export type { Domain, Pillar, Project, Venue } from '../data/model.ts';
@@ -12,14 +13,15 @@ const FLIGHT = ['active', 'manuscript'];
 export type TierRow = { key: string; label: string; color?: string };
 export type TierCount = TierRow & { count: number };
 export type ArchiveGroup = { type: string; count: number; projects: Project[] };
-export type PillarsState = { reveal?: string };
-export type DomainsState = { reveal?: string };
+export type PillarsState = OpenForms & { reveal?: string };
+export type DomainsState = OpenForms & { reveal?: string };
 
-/** The optional palette destination shared by the two registry-line views. */
-function parseRevealState(raw: unknown): { reveal?: string } {
-    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return {};
+/** The open forms and the optional palette destination shared by the two registry-line views. */
+function parseRevealState(raw: unknown): OpenForms & { reveal?: string } {
+    const open = parseOpenForms(raw);
+    if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) return open;
     const reveal = (raw as Record<string, unknown>).reveal;
-    return typeof reveal === 'string' && reveal !== '' ? { reveal } : {};
+    return typeof reveal === 'string' && reveal !== '' ? { ...open, reveal } : open;
 }
 
 /** Saved state of one Pillars instance. */

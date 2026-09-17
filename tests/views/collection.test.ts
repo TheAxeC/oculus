@@ -26,6 +26,8 @@ import { setVocab, statusTone } from '../../src/lib/state/tones.ts';
 import type { CollectionState } from '../../src/lib/state/collection.ts';
 import type { Entry, Project, Relations, SchemaField, Snapshot } from '../../src/lib/data/model.ts';
 import type { Instance } from '../../src/lib/state/layout/index.ts';
+import { formKey } from '../../src/lib/state/form-drafts.svelte.ts';
+import { INSTANCE_KEY } from '../../src/lib/state/instance-context.ts';
 import { noop } from '../doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../client.ts';
 
@@ -734,6 +736,59 @@ describe('the entry form', () => {
         expect(form(null, { surface: false })).toContain('data-form="add"');
     });
 
+    it('gives back what was typed into it, inside the instance it was typed in and no other', () => {
+        const typed = formKey('events', ENTRIES[0].id);
+        client.formDrafts.setFormField(INSTANCE, typed, 'sub', {
+            value: 'A subtitle typed earlier',
+            kind: 'text',
+            base: ''
+        });
+        const within = (instance: string | null): string =>
+            render(EntryForm, {
+                context: new Map([
+                    ...clientContext(client),
+                    [INSTANCE_KEY, (): string | null => instance]
+                ]),
+                props: {
+                    collection: 'events',
+                    schema: SCHEMA,
+                    entry: ENTRIES[0],
+                    onclose: noop,
+                    onsaid: noop
+                }
+            }).body;
+        expect(within(INSTANCE)).toContain('value="A subtitle typed earlier"');
+        expect(within('another-instance')).not.toContain('A subtitle typed earlier');
+        expect(within(null)).not.toContain('A subtitle typed earlier');
+        // The add form of the same collection in the same instance is another form.
+        expect(form(null)).not.toContain('A subtitle typed earlier');
+    });
+
+    it('keeps a form outside any pane apart from every instance, the empty id included', () => {
+        // Revert: EntryForm reading `within?.() ?? ''` puts a form with no instance into the
+        // instance named '', and the draft below is drawn in both forms here.
+        const typed = formKey('events', ENTRIES[0].id);
+        client.formDrafts.setFormField('', typed, 'sub', {
+            value: 'A subtitle kept under the empty id',
+            kind: 'text',
+            base: ''
+        });
+        const props = {
+            collection: 'events',
+            schema: SCHEMA,
+            entry: ENTRIES[0],
+            onclose: noop,
+            onsaid: noop
+        };
+        const outside = render(EntryForm, { context: clientContext(client), props }).body;
+        const unnamed = render(EntryForm, {
+            context: new Map([...clientContext(client), [INSTANCE_KEY, (): string | null => null]]),
+            props
+        }).body;
+        expect(outside).not.toContain('A subtitle kept under the empty id');
+        expect(unnamed).not.toContain('A subtitle kept under the empty id');
+    });
+
     it("pre-fills a raw textarea with the entry map's JSON", () => {
         const body = render(EntryForm, {
             context: clientContext(client),
@@ -791,7 +846,7 @@ describe('what a reorder and a cleared control send', () => {
     it('sends the empty string for a control the reader cleared on an entry that exists', () => {
         const source = readFileSync('src/lib/views/shared/EntryForm.svelte', 'utf8');
         expect(source).toContain('return clearedValue(field in edits, entry !== null);');
-        expect(source).toContain("if (text !== '') return text;");
+        expect(source).toContain("if (saved !== '') return saved;");
     });
 });
 

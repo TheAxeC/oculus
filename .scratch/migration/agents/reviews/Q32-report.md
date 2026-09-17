@@ -170,3 +170,250 @@ DESIGN.md line 317: change "one section per repository:" to "one repository at a
 - `collapseRoot` matches by the `root:` prefix, so a root key that itself contains `:` could collapse another root's folders. This is the existing `treeKey` ambiguity, and it is not tested.
 - Keyboard focus moves after `tick()` by querying the list's own `[data-fs-row]` elements. It is proven only in the browser case.
 - I took no screenshot and did not look at the views on the TEST page. The look is proven only as far as the browser specs assert: opacity on hover, `aria-expanded`, `aria-current` and focus.
+
+
+## Repair round
+
+All fourteen repair items are done. One item comes with a condition: the change rows count and status-letter column share one partial, but that partial is a new file, `views/shared/ChangeCounts.svelte`, outside the paths the round listed. See decision 4.
+
+## DONE / NOT DONE (all fourteen items)
+
+| # | Item | State | Proof |
+|---|---|---|---|
+| 1 | Actions reachable in every state | DONE | `tests/views/files.test.ts`: "offers the workspace menu and the add-root control on its header while the roots are read"; "says why the two lists could not be read, and keeps both heads and their add controls". Both pass. |
+| 2 | Density: 22px rows, 13px names, 11px heads; custom properties with fallbacks | DONE | Browser case "a row is 22 pixels at 13-pixel names under 11-pixel heads..." passes. Probe measured `{"h":22,"font":"13px"}`, head font `11px`. `TreeItem.svelte` reads `var(--tree-row, 22px)`, `var(--tree-indent, 12px)`, `var(--tree-font, calc(13px * var(--text-scale, 1)))` and `var(--tree-heading-font, calc(11px * ...))`, and declares none of them itself. |
+| 3 | Selection and current | DONE | Selected row: ink on `--accent-bg`. The detail, count, arrow and mark of a selected row are also drawn in ink. Outline is on `.item:focus-visible, .item:has(:focus-visible)`. Workspace in force, checked-out branch and the bookmark being edited use `current`: bold name, check glyph, `aria-current`, no tint. Cases: tree.test "draws the row in force as a bold name with a check...", files.test workspaces case, repositories.test "draws the checked-out branch as in force...", browser 22-pixel case (colour and outline). |
+| 4 | Tooltips on hover only | DONE | The Tooltip now sits inside the row button, so a keyboard focus never reaches it. Browser arrow-keys case asserts `[role="tooltip"]:not([hidden])` count 0 after arrow moves. |
+| 5 | Heads | DONE | Root heads carry icon controls only: refresh, collapse all, remove. The workspace choice is an icon `Menu` in the view header (`views/files/Controls.svelte`) and stays as the Workspaces section rows. Removing a root goes through `Confirm`. Cases: files.test "draws icon controls alone on a root head"; browser "removing a root the reader added asks first, and a cancel keeps it"; browser "the workspace menu on the header lists the configured roots, drawn as in force". |
+| 6 | Indent guides on tree hover or focus | DONE | Browser "the indent guides are drawn while the tree is hovered and not while it is left alone" passes. |
+| 7 | Source Control rows | DONE | Status letter in an `end` column at the right edge. An empty Staged group is not drawn (`changeGroups`). Empty groups and sections draw a muted `TreeItem` row. Every count is in the right-edge `count` column. Branch and worktree forms are rows whose visible label is also the input's accessible name. Cases: repositories.test staged, fields and tree cases; state test `changeGroups`. |
+| 8 | Picker: repositories only, same last folder told apart | DONE | `repositoryRoots` keeps roots with `error === null`; `repositoryLabels` uses the last folder, then the last two, then the full path. Browser case at repositories.spec.ts:119 makes two repos named `repo` plus a non-repo folder; the picker lists `<parent>/repo` twice, not the loose folder, and switches. |
+| 9 | Filter and keyboard | DONE | `treeKeyRows(rows, filtering)` marks rows `fixed`. `rowMove` never toggles a fixed row. `toggle()` in `Files.svelte` writes nothing while filtering. Catalog: "Filter the folders already read by name" / "No folder read so far holds a name with that text." Browser cases for Left, Right and Enter under a filter each clear the filter and assert the folder is closed again. |
+| 10 | Focus and ARIA | DONE | `ui/TreeView.svelte` gives `role="tree"` and one stop. Rows are `treeitem` with `aria-level`, `aria-expanded` and `aria-selected`. Mechanism under "How Tab reaches a row's controls". Browser "the tree is one stop from the filter box..." asserts the exact tab order; repositories "is one stop the arrow keys move along..." too. |
+| 11 | Bookmark label | DONE | `markLabel`: the file name, or the path under the root when the name is already a label. Browser "a second file of the same name is bookmarked under its path from the row star": `README.md` and `sub/README.md`, both pressed, both listed. |
+| 12 | One tone map, one counts partial; ChangeGroups head comment and `controls` prop | DONE | `statusStyle()` in `state/repositories.ts` and `views/shared/ChangeCounts.svelte` are used by both `Changes.svelte` and `ChangeGroups.svelte`. The ChangeGroups head comment is rewritten and its `controls` prop dropped. `tests/views/sessions.test.ts`: 58 passed. |
+| 13 | False sentences | DONE | `Files.svelte` form comment, `files.yml:1`, Tree head comment and TreeItem head comment are rewritten. HELP.md and DESIGN.md are unedited; their exact lines are in Doc text below, including DESIGN.md:311. |
+| 14 | Report states every visible change | DONE | "Before and after" below. |
+
+## Verification
+All run from `tools/oculus` in the worktree.
+- `npx vitest run --reporter=dot`: `Test Files 236 passed (236)`, `Tests 3970 passed (3970)`. No timing test failed.
+- `npm run check`: `COMPLETED 1180 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS`
+- `npm run build`: `built in 5.82s`
+- `npm run format:check`: `All matched files use Prettier code style!`
+- `npm run lint`: exit 0
+- ASCII perl gate: prints nothing
+- `find src tests bin -type f | xargs wc -l | sort -n | tail -3`: 970 `tests/state/layout.test.ts`, 979 `tests/state/board.test.ts`. Largest component: `Files.svelte` at 525, then `TreeItem.svelte` at 412.
+- `npx playwright test tests/browser/files.spec.ts tests/browser/repositories.spec.ts tests/browser/search.spec.ts tests/browser/source.spec.ts tests/browser/open-file.spec.ts`: `46 passed (1.1m)`.
+- Contrast of ink on `--accent-bg`, computed from `tokens.css` and `themes.css` for every class in `config/appearance.yml`: lowest 4.52 (rice solarized), light 12.68. Muted text on the tint fails (light 3.64), which is why a selected row's muted parts switch to ink. `tests/contrast.test.ts` does not measure this pair; the probe ran from the scratch folder.
+
+## Reverts run (every one restored; `git status` shows only this round's files)
+
+**Node, one revert per run**
+- `tests/ui/tree-keys.test.ts`:
+  - swap the ArrowDown/ArrowUp lines: the up/down case red.
+  - Home focuses the last row: the Home/End case red.
+  - Right on a closed row focuses instead of opening: the Right case and the fixed case red.
+  - drop the Left close line: the Left case red.
+  - drop the `fixed` tests: the fixed case red.
+  - null from a row not drawn: its case red.
+  - `stopOf` returns `wanted`: the stop case red.
+- `tests/state/explorer.test.ts`:
+  - `open: row.open` for files: the key-rows case red.
+  - `fixed: false`: the fixed case red.
+  - `markLabel` returns the name: the label case red.
+- `tests/state/repositories.test.ts`:
+  - `repositoryRoots` returns all roots: its case red.
+  - labels by last folder only: the labels case red.
+  - `changeGroups` keeps an empty staged group: the groups case and the key-rows case red.
+  - `head()` always reports open: the key-rows case red.
+  - `statusStyle` always grey: its case red.
+- `tests/ui/tree.test.ts`:
+  - drop `role` and `aria-level`: 2 cases red.
+  - tabindex 0 whatever the stop: the stop case red.
+  - `actions(0)`: the controls case red.
+  - `depth + 1` guides: the guides case red.
+  - span branch never taken: the text-row case red.
+  - `class:selected={selected || current}`: the current case red.
+  - count before the controls: the count case red.
+  - TreeSection list drawn while closed: the section case red.
+  - drop `role="tree"`: the tree case red.
+  - breadcrumb marks the first segment current: the breadcrumb case red.
+- `tests/views/files.test.ts`:
+  - header toolbar only once workspaces arrive: the header case red.
+  - `expanded` on file rows: the treeitem case red.
+  - add-root control in `rootActions`: the icon-only case red.
+  - `current={''}` in Tree: the selected-stop case red.
+  - `stopOf` gives no stop: the first-row-stop case red.
+  - Workspaces `selected` instead of `current`: the workspaces case red.
+  - drop the empty Bookmarks row: the empty-heads case red.
+  - bookmarks error as a paragraph instead of the section: the error case red.
+- `tests/views/repositories.test.ts`:
+  - picker over unfiltered `gitRoots()`: its case red.
+  - last-folder labels: the labels case red.
+  - staged group kept: the staged case red.
+  - drop `role="tree"`: the tree case red.
+  - Branches `selected` instead of `current`: 2 cases red.
+  - field label `git.branch_new_label`: the fields case red.
+  - picker label a fixed word: 2 cases red.
+
+**Browser**
+- `treeKeyRows` `fixed: false`: Left case red; Right and Enter stay green.
+- `fixed: false` plus dropping the filtering guard in `toggle()`: Right case red.
+- Filtering guard dropped alone: Enter case red; Right stays green.
+- One build with ten reverts: hover rule dropped, guides always drawn, row height 24, removal without confirm, `markLabel` returns the name, Notes always open, menu `active: false`, picker unfiltered, Commits always open, breadcrumb selects the root line. Result: the breadcrumb, hover, guides, 22-pixel, removal, same-name bookmark, section, workspace menu, picker and Repositories section cases all red (10 failed). Each revert touches a different case, but in one build it is not proven which revert turned which case red.
+- `rowMove` returns null: arrow-keys case red.
+- TreeView tabindex 0 for every row: both one-stop cases red (files and repositories).
+- `rows` instead of `shown`: filter-narrows case red.
+
+## How Tab reaches a row's controls
+Each treeitem `div` is the focus target. `ui/TreeView.svelte` hands every row `nav.tabindex(id)`: 0 for the stop, -1 for the rest. The row's inner button always carries `tabindex -1`. `ui/TreeItem.svelte` keeps `inside` state from `focusin` and `focusout`, where `relatedTarget` outside the row clears it, and passes `inside ? 0 : -1` to the caller's `actions(reach)` snippet. Every control uses that value as its `tabindex`.
+
+So while the focus is on a row, that row's controls are the next Tab stops. Once the focus leaves the row they go back to -1, and a Tab from outside the tree lands only on the stop row.
+
+Measured order from the filter box: breadcrumb segments, the selected row, its star, its new-tab control, the Bookmarks head, "+ bookmark", the Notes head.
+
+## Decisions the orchestrator may reverse
+1. "+ root" and the workspace `Menu` are icon controls on the Files view header (Pane toolbar), not on the first root head. That is the one place drawn while loading, on a read error and with no roots, and each control is drawn once. The workspace in force is no longer shown as text in the header; it shows as the bold, checked row in Workspaces and as the active menu item.
+2. Each Files section (Bookmarks, Notes, Workspaces) is its own tree and focus stop; the roots are one tree. Repositories is one tree over all four sections. The branch and worktree inputs remain ordinary stops.
+3. The treeitem `div` takes focus and Enter presses its inner button. The button stays in the DOM, so `open-file.spec.ts` and `source.spec.ts` (`[data-fs-row] getByRole('button').first()`) still resolve unchanged.
+4. The counts partial is a new file, `src/lib/views/shared/ChangeCounts.svelte`. A snippet exported from ChangeGroups' module script failed lint (`no-unsafe-call`), and the round did not list this new file.
+5. Catalog:
+   - `files.yml` gains:
+     - `bookmarks_empty`, `notes_empty`
+     - `remove_root_confirm`, `remove_root_detail`
+     - `workspace_glyph` (folder)
+   - The `filter` and `filter_none` words are rewritten.
+   - `repositories.yml` loses `error` (unreachable now) and `worktree_new_label` (the field's name is now `repositories.worktree_new`).
+   - The branch field's name is now `git.branch_new`.
+6. Commit rows and branch rows are focusable text treeitems. Their press does nothing; they exist so a branch's switch control is reachable by Tab.
+7. A root whose git read failed for any reason (not only "not a repository") is left out of the picker.
+8. While a filter is typed, a mouse press on a folder selects it and writes nothing into the open folders, as the keyboard does.
+9. The 13px and 11px sizes are `calc(Npx * var(--text-scale, 1))` in the primitive, because `tokens.css` has no 13px or 11px token. Terminal palettes get the same sizes.
+10. A selected row draws its detail, count, arrow and check in ink, since muted text on the tint measured below 4.5.
+
+## Before and after (every visible change, including the reviewer's Behaviour list)
+- **Row density.**
+  - Before: 24px rows, 11.5px names, 10.5px heads.
+  - After: 22px, 13px, 11px.
+- **Selection.**
+  - Before: accent tint with accent-coloured text; the outline stopped short of the controls.
+  - After: accent tint with ink text; the outline is round the whole row.
+- **In force.**
+  - Before: the workspace in force, the checked-out branch and the bookmark being edited used the selection tint.
+  - After: bold name, check glyph, `aria-current`.
+- **Tooltip.**
+  - Before: opened on keyboard focus and covered the next row.
+  - After: opens only while the pointer rests on the row.
+- **Root heads.**
+  - Before: the first head held a Select, "+ root" and more.
+  - After: every head carries icon refresh, collapse all and, on reader-added roots, remove. Remove now asks through a Confirm.
+- **View header.**
+  - Before: nothing.
+  - After: workspace menu icon and "+ root" icon, drawn in every state.
+- **Indent guides.**
+  - Before: always drawn.
+  - After: drawn while the tree is hovered or holds focus.
+- **Bookmarks and Notes on a read error.**
+  - Before: an error line replaced the section and "+ bookmark"/"+ note" disappeared.
+  - After: head and control stay, and the error is one red row.
+- **Empty Bookmarks and Notes.**
+  - Before: a head with nothing under it.
+  - After: a muted row, "No bookmark yet." / "No note yet."
+- **Row star on a second file of the same name.**
+  - Before: refused with "an entry with that label is already in the file".
+  - After: bookmarked under its path under the root (`sub/README.md`).
+- **Filter.**
+  - Before: Left on a folder the filter held open trapped the focus and closed the real folder, and clearing the filter lost open folders.
+  - After: Left goes to the parent, Right steps in or does nothing, Enter and a click only select, and clearing restores the open folders exactly. Folders never opened are still not searched; the words now say "folders already read".
+- **ARIA.**
+  - Before: a flat list of buttons.
+  - After: `tree` with `treeitem`, `aria-level`, `aria-expanded` and `aria-selected`. Row controls are no longer Tab stops but are still announced (opacity 0, as before).
+- **Repositories picker.**
+  - Before: listed every root, including folders that are not repositories, named by last folder.
+  - After: repositories only, with `parent/name` where two share a name.
+- **Change groups.**
+  - Before: Staged 0 and Untracked 0 drawn open and empty; counts beside the label; status letter inline after the counts.
+  - After: empty Staged not drawn; an empty group shows a muted "nothing" row; group and section counts at the right edge; letter in the right-edge column.
+- **Commit row.**
+  - Before: glyph, subject, then hash and time inline.
+  - After: glyph, subject, muted short hash, time at the right edge.
+- **Branch and worktree forms.**
+  - Before: bordered input with a placeholder and a bordered "create" button, 31px tall.
+  - After: a row with a visible label ("New branch", "New worktree") that is also the input's name, a check-glyph create button, and the planned path and .gitignore warning as muted or amber rows.
+- **Empty Commits, Branches, Worktrees.**
+  - Before: sentences with hand-set 20px padding.
+  - After: muted rows in the row geometry.
+- **Repositories keyboard.**
+  - Before: every row and head was a Tab stop.
+  - After: one stop; arrows move; Right and Left open and close heads and groups; Tab from a row reaches its controls.
+
+## Limitations and sharp edges
+- Row controls are still hidden until hover or focus. On a touch screen they stay invisible but pressable.
+- A row's tooltip no longer describes the row to a screen reader (no `aria-describedby`), because the Tooltip sits inside the button.
+- Rows still span the full pane width in a wide pane, so the right-edge controls and counts sit far from the name.
+- The picker is still a bordered `Menu` button.
+- The Right-under-filter case turns red only when both the `fixed` flag and the view's filtering guard are reverted; each alone still keeps the folder closed.
+- `TreeItem.svelte` still restyles `ToolButton`'s `.tool` class, left as ruled.
+
+## Doc text
+HELP.md line 85:
+`| \`files\` | Files | The file browser over the hub, the engine config folder and the configured roots, read like an editor's explorer. The view's header carries the workspace menu and the add-root control. Under a filter over the folders already read and a breadcrumb naming the selected row sits one tree per root, each under a head with its refresh, collapse-all and (for a root you added) remove controls, then the Bookmarks, Notes and Workspaces sections. The tree is one Tab stop: the arrow keys move the selection, Right and Left open and close a folder, Enter opens a file, and Tab from a row reaches its controls. A scratch note's file is made by the first keystroke typed into it, and the delete control in the Notes list is the one thing that takes a note away. |`
+
+HELP.md line 86:
+`| \`repositories\` | Repositories | One repository at a time, picked at the top from the roots that are git repositories: its branch line, then Changes (staged when anything is, changed, untracked), Commits, Branches and Worktrees as sections with their counts. A change or worktree row opens its diff; each row's controls (diff, stage, unstage, discard, switch, terminal, merge back, remove) show on hover or when the row has the focus. The sections are one Tab stop moved along with the arrow keys. |`
+
+HELP.md line 140, first two sentences:
+`The Repositories view is over every root the file browser serves that is a git repository, the hub and the configured roots and whatever the current workspace added, plus the workspace of every session, one repository at a time through the picker at its top. What it shows is the pushed state of that repository: nothing is polled, and a commit made in a terminal moves it within two seconds.`
+
+HELP.md line 144, first sentence:
+`Each worktree row opens its diff when pressed and carries four controls, shown on hover or when the row has the focus: its diff against the repository's checked-out branch, a shell started in it, the merge back, and the removal.`
+
+DESIGN.md line 311, first sentence:
+`- 2026-09-15, the file browser's box and its scratch notes: the Files view asks \`ui/Pane.svelte\` for the tint, since its trees and its three sections draw straight into the box, and it renders \`shared/EntryForm.svelte\` with \`surface={false}\`, a variant of the one form component that keeps the border and the padding and paints no box, so the form is not a second translucent layer inside a tinted one.`
+
+DESIGN.md line 317: replace "one section per repository:" with "one repository at a time through a picker over the roots that are git repositories:".
+
+DESIGN.md, new entry after line 329:
+`- 2026-09-17, Files and Repositories read as an explorer and a source control view. Rows are drawn by \`ui/TreeItem.svelte\`. A row is one fixed-height line holding an indent guide per level (shown while its tree is hovered or holds the focus), an expand arrow on a row that opens, glyph, name, muted detail, the row's controls (transparent until the row is hovered or holds the focus), and a count or mark at the right edge. Its height, indent and two type sizes are \`var(--tree-row, 22px)\`, \`var(--tree-indent, 12px)\`, \`var(--tree-font, 13px)\` and \`var(--tree-heading-font, 11px)\`, each scaled by the text scale, so an ancestor may set them. Selected is the reader's cursor, the accent tint under the ink; current is what is in force, a bold name with a check. A row's tooltip opens on pointer hover only. Rows sit in \`ui/TreeView.svelte\`, a \`tree\` that is one stop of the focus order: \`ui/tree-keys.ts\`'s \`rowMove\` answers Up, Down, Home, End, Right and Left, and a row marked \`fixed\` is stepped through and never opened or closed. Each row is a \`treeitem\` with its level that takes the focus, and Enter presses it. Its controls take tabindex 0 only while the focus is inside the row, so Tab from a row reaches them and Tab from outside does not. Sections are \`ui/TreeSection.svelte\`. The Files view's header carries the workspace menu and the add-root control, so both exist in every state. Its instance keeps \`expanded\`, \`selected: { root, path }\`, \`filter\` and \`collapsed\`. The filter walks every listing already read (\`heldEntries\` asks the server for nothing) and draws a match open under its folders, holding those folders \`fixed\` and writing nothing to \`expanded\`, so clearing it restores the tree. A row star bookmarks under the file's name, or under its path under the root when the name is already a label. Removing a root asks first. Repositories picks among the roots of the \`git\` channel whose state has no error, labelled by last folder or by the last two where two share it (\`repositoryRoots\`, \`repositoryLabels\`, \`shownRoot\`), and keeps \`root\` and \`collapsed\`. An empty staged group is not drawn, and a status letter's colour (\`statusStyle\`) and the line counts (\`shared/ChangeCounts.svelte\`) are shared with the session views' Changes panel.`
+
+## Files changed (under tools/oculus), with line counts
+- **Modified:**
+  - `config/glyphs.yml` 279
+  - `config/icons.yml` 147
+  - `config/text/views/files.yml` 85
+  - `config/text/views/repositories.yml` 44
+  - `src/lib/state/fs.svelte.ts` 765
+  - `src/lib/state/fs.ts` 367
+  - `src/lib/state/repositories.ts` 203
+  - `src/lib/views/Files.svelte` 525
+  - `src/lib/views/Repositories.svelte` 202
+  - `src/lib/views/files/Bookmarks.svelte` 122
+  - `src/lib/views/files/Notes.svelte` 134
+  - `src/lib/views/files/Tree.svelte` 244
+  - `src/lib/views/files/Workspaces.svelte` 90
+  - `src/lib/views/repositories/Repo.svelte` 222
+  - `src/lib/views/repositories/Worktrees.svelte` 170
+  - `src/lib/views/shared/ChangeGroups.svelte` 136
+  - `tests/browser/files.spec.ts` 860
+  - `tests/browser/repositories.spec.ts` 252
+  - `tests/state/repositories.test.ts` 433
+  - `tests/ui/wall.test.ts` 185
+  - `tests/views/files.test.ts` 743
+  - `tests/views/repositories.test.ts` 364
+  - `tests/views/type-scale.test.ts` 238
+- **New:**
+  - `src/lib/ui/Breadcrumb.svelte` 96
+  - `src/lib/ui/TreeItem.svelte` 412
+  - `src/lib/ui/TreeSection.svelte` 69
+  - `src/lib/ui/TreeView.svelte` 79
+  - `src/lib/ui/tree-keys.ts` 69
+  - `src/lib/views/files/Controls.svelte` 53
+  - `src/lib/views/repositories/Branches.svelte` 101
+  - `src/lib/views/repositories/Changes.svelte` 180
+  - `src/lib/views/shared/ChangeCounts.svelte` 43
+  - `tests/state/explorer.test.ts` 171
+  - `tests/ui/tree-keys.test.ts` 77
+  - `tests/ui/tree.test.ts` 245
+- `git diff --stat` over tracked files: 23 files changed, 2395 insertions, 766 deletions.
+- Scratch probes, screenshots and revert runners are under `scratchpad/q32-builder/`.

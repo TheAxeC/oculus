@@ -16,11 +16,16 @@
     // config/manifest-schema.yml in order, one widget per field, and a Save that posts only what was
     // changed. The form is data: this file names no field, no section and no list of choices.
     //
-    // What it holds of its own is the edits, not the values. A field reads the project's current
-    // value until it is edited, and the edit sits over it until it is saved or reverted; so nothing
-    // has to be copied when the project changes, and what Save posts is exactly the map of edits.
-    // The page sees its own write when the watcher pushes the rebuilt snapshot, at which point the
-    // edits equal the values and the form is clean again.
+    // What it holds is the edits, not the values. A field reads the project's current value until it
+    // is edited, and the edit sits over it until it is saved or reverted; so nothing has to be copied
+    // when the project changes, and what Save posts is exactly the map of edits. The edits are kept
+    // in the instance's state through state/manifest-draft.ts rather than in this component, since a
+    // pane mounts only its active tab: a tab switch and a reload keep them, and the tab asks before
+    // it closes over them.
+    //
+    // A save the server took drops the edits it took, keeping an edit typed while it was on its way
+    // and one the server refused. The page sees its own write when the watcher pushes the rebuilt
+    // snapshot; until then a field whose edit the save took shows the snapshot's value.
 
     import Tag from '$lib/ui/Tag.svelte';
     import Checkbox from '$lib/ui/Checkbox.svelte';
@@ -34,6 +39,7 @@
     import TextInput from '$lib/ui/TextInput.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
+    import { editDiffers } from '$lib/state/manifest-draft';
     import {
         NOT_IN_MODEL,
         NOT_WRITTEN,
@@ -47,6 +53,7 @@
     import { useState } from '$lib/state/use';
 
     const {
+        manifestDraft: { editManifest, manifestEdits, revertManifest, settleManifest },
         selectors: { fieldChoices, manifestFields, manifestSections, projectOf },
         writes: { pending, writeManifest }
     } = useState();
@@ -64,7 +71,7 @@
     const sections = $derived(manifestSections());
 
     /** The edits over the project's own values, by field name. Cleared by Revert and by a save. */
-    let edits = $state<Record<string, unknown>>({});
+    const edits = $derived(manifestEdits(instance.id, id));
     /** What the last save said, as lines the pane shows under the form. */
     let result = $state<string[]>([]);
 
@@ -82,22 +89,20 @@
     }
 
     /**
-     * Whether a field has an edit that says something other than what the project says. The two are
-     * compared trimmed, because the write trims: an edit that differs from the file by a space at
-     * the end is an edit the server would answer with nothing changed, and a row that says it is
-     * waiting to be saved when nothing will be written says the wrong thing.
+     * Whether a field has an edit that says something other than what the project says, by the rule
+     * the tab's close asks by: a row that says it is waiting to be saved when nothing will be written
+     * says the wrong thing.
      */
     function changed(field: string): boolean {
-        if (!(field in edits)) return false;
-        return asText(edits[field]).trim() !== asText(values[field]).trim();
+        return field in edits && editDiffers(edits[field], values[field]);
     }
 
     function edit(field: string, value: unknown): void {
-        edits = { ...edits, [field]: value };
+        editManifest(instance.id, id, field, value);
     }
 
     function revert(): void {
-        edits = {};
+        revertManifest(instance.id);
         result = [];
     }
 
@@ -116,17 +121,24 @@
         return dirty.length === 0 ? t('editor.clean') : t('editor.dirty', dirty.length);
     }
 
+    /**
+     * Post the changed fields. The instance is taken before the request goes, so an answer that lands
+     * after the tab was switched settles the draft it was sent from.
+     */
     async function save(): Promise<void> {
         const body = payload();
         if (Object.keys(body).length === 0) {
             result = [t('editor.saved_none')];
             return;
         }
+        const from = instance.id;
         const answer = await writeManifest(id, body);
         if (!answer.ok) {
             result = [t('editor.failed', answer.error ?? '')];
             return;
         }
+        const refused = answer.refused.map((one) => one.field);
+        settleManifest(from, body, refused);
         result = [
             t('editor.saved', answer.changed.join(', ')),
             ...answer.refused.map((one) => t('editor.refused', one.field, one.reason))

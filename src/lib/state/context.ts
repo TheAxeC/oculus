@@ -24,11 +24,18 @@ import { createDrag, type DragStore } from './drag.svelte.ts';
 import { createEntities, type EntitiesStore } from './entities.svelte.ts';
 import { createFeeds, type FeedsStore } from './feeds.svelte.ts';
 import { createFiles, type FilesStore } from './files.svelte.ts';
+import {
+    createFormDrafts,
+    formsKey,
+    snapshotEntries,
+    type FormDraftsStore
+} from './form-drafts.svelte.ts';
 import { createFs, type FsStore } from './fs.svelte.ts';
 import { createHpc, type HpcStore } from './hpc.svelte.ts';
 import { createInbox, type InboxStore } from './inbox.svelte.ts';
 import { createLatex, type LatexStore } from './latex.svelte.ts';
 import { createLayout, type LayoutStore } from './layout.svelte.ts';
+import { createManifestDraft, type ManifestDraftStore } from './manifest-draft.ts';
 import { createMemories, type MemoriesStore } from './memories.svelte.ts';
 import { createPaletteSource, type PaletteSourceStore } from './palette-source.svelte.ts';
 import { createPresent, type PresentStore } from './present.svelte.ts';
@@ -64,6 +71,8 @@ export type ClientState = {
     deposit: DepositStore;
     transcripts: TranscriptsStore;
     source: SourceStore;
+    formDrafts: FormDraftsStore;
+    manifestDraft: ManifestDraftStore;
     feeds: FeedsStore;
     hpc: HpcStore;
     calendar: CalendarStore;
@@ -91,7 +100,17 @@ export function createClientState(): ClientState {
     const writes = createWrites();
     const socket = createSocket(entities, writes);
     const ui = createUi();
-    const layout = createLayout(ui);
+    const formDrafts = createFormDrafts(ui, snapshotEntries(entities.portfolio));
+    // A tab's close forgets its instance's state, and the layout is the one store that knows a tab
+    // closed. The entry forms of an instance keep their drafts in an entry of their own beside that
+    // state, so the layout is handed a forget that takes both.
+    const layout = createLayout({
+        ...ui,
+        clearInstanceState: (id: string) => {
+            ui.clearInstanceState(id);
+            ui.clearInstanceState(formsKey(id));
+        }
+    });
     const drag = createDrag(layout);
     const clock = createClock();
     const changes = createChanges();
@@ -107,6 +126,7 @@ export function createClientState(): ClientState {
     // The pane asks the instance id whether a tab holds unsaved text before it closes it, and asks
     // the ui store rather than the source store, which the shell may not read.
     ui.registerUnsaved(source.sourceDirty);
+    ui.registerUnsaved(formDrafts.formsDirty);
     const feeds = createFeeds(entities);
     const hpc = createHpc(entities, writes);
     const calendar = createCalendar(entities, writes, clock);
@@ -118,6 +138,8 @@ export function createClientState(): ClientState {
     const search = createSearch(entities, writes, ui);
     const usageRefresh = createUsageRefresh(entities, writes);
     const selectors = createSelectors(entities, layout, selection);
+    const manifestDraft = createManifestDraft(ui, selectors.projectOf);
+    ui.registerUnsaved(manifestDraft.manifestDirty);
     const railBadges = createRailBadges(entities, feeds, hpc, calendar, inbox, audit, selectors);
     const paletteSource = createPaletteSource(entities, feeds);
     const registry = createRegistry(layout);
@@ -140,6 +162,8 @@ export function createClientState(): ClientState {
         deposit,
         transcripts,
         source,
+        formDrafts,
+        manifestDraft,
         feeds,
         hpc,
         calendar,

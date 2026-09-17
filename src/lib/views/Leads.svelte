@@ -48,6 +48,7 @@
     const {
         entities: { config },
         feeds: { feed },
+        formDrafts: { toggleAdd },
         selectors: { configMap },
         ui: { instanceState, setInstanceState },
         writes: { addLead }
@@ -117,7 +118,7 @@
             label={t('leads.add')}
             title={t('leads.add_tip')}
             active={held.adding}
-            onclick={() => write({ adding: !held.adding })}
+            onclick={() => write({ adding: toggleAdd(instance.id, 'leads', held.adding) })}
         />
         {#if dismissed > 0}
             <ToolButton

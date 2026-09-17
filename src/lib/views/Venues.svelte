@@ -43,6 +43,7 @@
 
     const {
         selectors: { archiveDead, collectionOf, configMap, projects, venues },
+        formDrafts: { toggleAdd, toggleEdit },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -62,8 +63,6 @@
     const conferences = $derived(shown.filter((venue) => venue.category === 'conference'));
     const todayMonth = new Date().getMonth() + 1;
 
-    let adding = $state(false);
-    let editing: string | null = $state(null);
     let said = $state('');
 
     function write(next: Partial<VenuesState>): void {
@@ -89,8 +88,8 @@
             <ToolButton
                 label={t('collection.add')}
                 title={t('collection.add_tip')}
-                active={adding}
-                onclick={() => (adding = !adding)}
+                active={held.adding}
+                onclick={() => write({ adding: toggleAdd(instance.id, 'venues', held.adding) })}
             />
         {/if}
         <Search
@@ -107,12 +106,12 @@
 <Pane title={t('views.venues')} toolbar={tools}>
     <div class="venues" data-instance={instance.id}>
         <Intro html={t('venues.intro')} trusted />
-        {#if adding && collection?.schema !== undefined}
+        {#if held.adding && collection?.schema !== undefined}
             <EntryForm
                 collection="venues"
                 schema={collection.schema}
                 entry={null}
-                onclose={() => (adding = false)}
+                onclose={() => write({ adding: false })}
                 onsaid={(words: string) => (said = words)}
             />
         {/if}
@@ -156,9 +155,16 @@
                                         {labels}
                                         entry={entryFor(venue.id)}
                                         schema={collection?.schema}
-                                        editing={editing === venue.id}
+                                        editing={held.editing === venue.id}
                                         onedit={() =>
-                                            (editing = editing === venue.id ? null : venue.id)}
+                                            write({
+                                                editing: toggleEdit(
+                                                    instance.id,
+                                                    'venues',
+                                                    held.editing,
+                                                    venue.id
+                                                )
+                                            })}
                                         onsaid={(words: string) => (said = words)}
                                     />
                                 </Reveal>
@@ -196,9 +202,16 @@
                                         {labels}
                                         entry={entryFor(venue.id)}
                                         schema={collection?.schema}
-                                        editing={editing === venue.id}
+                                        editing={held.editing === venue.id}
                                         onedit={() =>
-                                            (editing = editing === venue.id ? null : venue.id)}
+                                            write({
+                                                editing: toggleEdit(
+                                                    instance.id,
+                                                    'venues',
+                                                    held.editing,
+                                                    venue.id
+                                                )
+                                            })}
                                         onsaid={(words: string) => (said = words)}
                                     />
                                 </Reveal>

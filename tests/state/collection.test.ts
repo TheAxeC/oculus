@@ -278,7 +278,24 @@ describe('parseCollectionState', () => {
                 statuses: ['upcoming', 7],
                 hidden: ['completed']
             })
-        ).toEqual({ search: 'talk', statuses: ['upcoming'], hidden: ['completed'] });
+        ).toEqual({
+            search: 'talk',
+            statuses: ['upcoming'],
+            hidden: ['completed'],
+            adding: false,
+            editing: ''
+        });
+    });
+
+    it('keeps which entry forms are open, and none for a record that names them wrongly', () => {
+        expect(parseCollectionState({ adding: true, editing: 'A talk' })).toMatchObject({
+            adding: true,
+            editing: 'A talk'
+        });
+        expect(parseCollectionState({ adding: 'yes', editing: 7 })).toMatchObject({
+            adding: false,
+            editing: ''
+        });
     });
 
     it('falls back to the empty state for anything that is not a map', () => {

@@ -43,6 +43,7 @@
     const {
         entities: { portfolio },
         selectors: { archiveDead, collectionOf, configMap, projects, venues },
+        formDrafts: { toggleAdd, toggleEdit },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -88,8 +89,6 @@
             .filter((row) => row.key !== '');
     });
 
-    let adding = $state(false);
-    let editing = $state<string | null>(null);
     let said = $state('');
 
     function write(next: Partial<PillarsState>): void {
@@ -106,8 +105,8 @@
         <ToolButton
             label={t('collection.add')}
             title={t('collection.add_tip')}
-            active={adding}
-            onclick={() => (adding = !adding)}
+            active={held.adding}
+            onclick={() => write({ adding: toggleAdd(instance.id, 'pillars', held.adding) })}
         />
     {/if}
 {/snippet}
@@ -123,12 +122,12 @@
 <Pane title={t('views.pillars')} toolbar={tools}>
     <div class="pillars-view" data-instance={instance.id}>
         <Intro html={inlineMarkdown(t('pillars.intro'))} trusted actions={introActions} />
-        {#if adding && collection?.schema !== undefined}
+        {#if held.adding && collection?.schema !== undefined}
             <EntryForm
                 collection="pillars"
                 schema={collection.schema}
                 entry={null}
-                onclose={() => (adding = false)}
+                onclose={() => write({ adding: false })}
                 onsaid={(words: string) => (said = words)}
             />
         {/if}
@@ -147,8 +146,11 @@
                         {tiers}
                         entry={entryFor(line.id)}
                         schema={collection?.schema}
-                        editing={editing === line.id}
-                        onedit={() => (editing = editing === line.id ? null : line.id)}
+                        editing={held.editing === line.id}
+                        onedit={() =>
+                            write({
+                                editing: toggleEdit(instance.id, 'pillars', held.editing, line.id)
+                            })}
                         onsaid={(words: string) => (said = words)}
                     />
                 </Reveal>
@@ -176,8 +178,16 @@
                                 {tiers}
                                 entry={entryFor(line.id)}
                                 schema={collection?.schema}
-                                editing={editing === line.id}
-                                onedit={() => (editing = editing === line.id ? null : line.id)}
+                                editing={held.editing === line.id}
+                                onedit={() =>
+                                    write({
+                                        editing: toggleEdit(
+                                            instance.id,
+                                            'pillars',
+                                            held.editing,
+                                            line.id
+                                        )
+                                    })}
                                 onsaid={(words: string) => (said = words)}
                             />
                         </Reveal>
@@ -207,8 +217,16 @@
                                 entry={entryFor(line.id)}
                                 schema={collection?.schema}
                                 muted
-                                editing={editing === line.id}
-                                onedit={() => (editing = editing === line.id ? null : line.id)}
+                                editing={held.editing === line.id}
+                                onedit={() =>
+                                    write({
+                                        editing: toggleEdit(
+                                            instance.id,
+                                            'pillars',
+                                            held.editing,
+                                            line.id
+                                        )
+                                    })}
                                 onsaid={(words: string) => (said = words)}
                             />
                         </Reveal>

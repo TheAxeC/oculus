@@ -51,6 +51,7 @@
 
     const {
         feeds: { feed },
+        formDrafts: { toggleAdd },
         ui: { instanceState, setInstanceState },
         writes: { addLinkedinIdea }
     } = useState();
@@ -107,7 +108,7 @@
             title={t('linkedin.addidea_tip')}
             glyph="idea"
             active={held.adding}
-            onclick={() => write({ adding: !held.adding })}
+            onclick={() => write({ adding: toggleAdd(instance.id, 'linkedin', held.adding) })}
         />
     </Toolbar>
 {/snippet}

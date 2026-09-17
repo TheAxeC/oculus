@@ -1,10 +1,12 @@
 // Layer 2, client state. Pure dataset summaries, search, tones, saved state and recovery command.
-// The Data view receives records ready to draw and keeps only search words and disabled facets.
+// The Data view receives records ready to draw and keeps its search words, disabled facets and open
+// entry forms.
 
 import { dataAccessTone } from './tones.ts';
 import type { Dataset } from '../data/model.ts';
+import { parseOpenForms, type OpenForms } from './open-forms.ts';
 
-export type DataState = { search: string; off: string[]; reveal?: string };
+export type DataState = OpenForms & { search: string; off: string[]; reveal?: string };
 
 function strings(value: unknown): string[] {
     return Array.isArray(value)
@@ -59,12 +61,13 @@ export function recoveryCommand(key: string): string {
 /** Saved state of one Data instance, with defaults for malformed or absent fields. */
 export function parseDataState(raw: unknown): DataState {
     if (typeof raw !== 'object' || raw === null || Array.isArray(raw)) {
-        return { search: '', off: [] };
+        return { search: '', off: [], ...parseOpenForms(raw) };
     }
     const held = raw as Record<string, unknown>;
     const state: DataState = {
         search: typeof held.search === 'string' ? held.search : '',
-        off: strings(held.off)
+        off: strings(held.off),
+        ...parseOpenForms(raw)
     };
     if (typeof held.reveal === 'string' && held.reveal !== '') state.reveal = held.reveal;
     return state;

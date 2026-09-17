@@ -52,6 +52,7 @@ const ALLOWED: Record<string, string[]> = {
         'ui/**',
         'state/context',
         'state/use',
+        'state/instance-context',
         'state/layout',
         'state/drag',
         'state/ui',

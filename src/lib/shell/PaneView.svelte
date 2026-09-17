@@ -5,6 +5,9 @@
     // a view this release does not have still renders: the tab says so and the body is empty, which
     // is the rule state/layout.ts states for a ViewId the registry does not hold.
     //
+    // It tells what it mounts which instance that is, through state/instance-context.ts, so a partial
+    // deep inside a view keys what it keeps by the instance without a prop through every level.
+    //
     // It is where closing is guarded. A tab holding text no save has taken is asked about before it
     // goes, whether the close came from the tab's own control or from Delete on it, and so is a pane
     // close over more than one tab; the question is asked of the instance id, so the pane learns
@@ -29,6 +32,7 @@
     import { edgeAt, markAt, withoutOwn } from '$lib/state/drag.svelte';
     import { t } from '$lib/state/text';
     import { badgeOf, registrationGlyph, registrationLabel } from '$lib/views/registry';
+    import { provideInstance } from '$lib/state/instance-context';
     import { showable, type Instance, type Layout } from '$lib/state/layout';
     import { useState } from '$lib/state/use';
 
@@ -79,6 +83,11 @@
     const shown = $derived(instances.find((instance) => instance.id === active));
     const registration = $derived(shown === undefined ? undefined : viewFor(shown.view));
     const maximised = $derived(focused(page) !== null);
+
+    // What the mounted view and its partials read as the instance they are drawn in. It is a reader
+    // of the active tab rather than its id at mount, since a tab switch between two instances of one
+    // view keeps the component and changes the instance it is handed.
+    provideInstance(() => shown?.id ?? null);
 
     /**
      * A tab per instance: the registry's words and glyph, or the view's own id when it has none. An

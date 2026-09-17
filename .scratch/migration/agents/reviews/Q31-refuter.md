@@ -152,3 +152,14 @@ V2 (Tasks add form): /api/write delayed 2.5 s, title "V2 first" saved, "V2 first
 - Closures reproduced: the browser add form is no longer reopened by the helper (`typeTask` presses Add before typing only). The P4 case, save clearing, delete clearing, the Add toggle forgetting and the manifest cases pass. The `written` overlay is gone and the Editor head comment (lines 495-497 of the diff) now matches the code. `Files.svelte` and pane or page close stay booked.
 
 Reviewer usage: about 40 tool uses, about 17 minutes of wall clock.
+
+## Closed at landing (the second run's findings)
+
+- Item 5, typing during a save kept, unproven: `tests/browser/unsaved-forms.spec.ts` "an edit form keeps a value typed while its save was on its way, open over it" holds every write two seconds and types during it; the form stays open over the later text and the file holds what was sent.
+- The add form's second entry: `EntryForm.svelte`'s save closes an add form and forgets its draft once the entry is added, and settles only an edit form's draft; the head comment says so. Proof: "an add form closes once its entry is added, and a second save cannot add another" (the file never holds the later text).
+- Item 6c, a form outside a pane: `tests/views/collection.test.ts` "keeps a form outside any pane apart from every instance, the empty id included" renders the form with no instance context and with one answering null over a draft kept under the empty id; neither draws it.
+- Item 1, the collection views' open state: "the Venues add form is kept across a tab switch, and its Add and a card's Edit toggles forget what was typed" covers one of the four views beside Collection through the browser; Pillars, Domains and Data keep their node cases only.
+- Item 3, raw fields: `state/form-values.ts` `sameSaved` compares two raw fields that both parse as the parsed JSON, so spacing alone is not unsaved; `tests/state/form-values.test.ts` holds `{"a": 1}` against `{"a":1}` the same and against `{"a":2}` or an unparsable text different.
+- `state/open-forms.ts`'s head comment names the collection views that use the parser, not every view with an entry form.
+- The Doc text and the Leads and LinkedIn toggles: both toggles now write `adding` through `toggleAdd` (`Leads.svelte`, `Linkedin.svelte`), so the doc lines hold and the open item is closed. A browser case for them was not added: the demo hub has no LinkedIn feed and its `feeds/position-leads.yml` carries no `schema:`, so the Leads add form draws no field to type into (`grep -n schema tools/oculus/demo/feeds/position-leads.yml` prints nothing); the store's `toggleAdd` node cases are the proof.
+- `tests/browser/unsaved-forms.spec.ts`'s head comment says a delete leaves no draft, and no longer that it takes the question away.

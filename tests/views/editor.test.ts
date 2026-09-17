@@ -20,7 +20,7 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
+import { setCatalog, setGlyphs, t } from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import { formFields, formSections } from '../../src/lib/state/schema.ts';
 import type { Id, Project, Snapshot } from '../../src/lib/data/model.ts';
@@ -198,6 +198,23 @@ describe('the editor of one project', () => {
 
     it('opens with nothing changed', () => {
         expect(body).toContain(catalog['editor.clean']);
+    });
+});
+
+describe('the edits the instance kept', () => {
+    it('draws them over the project values and counts them as waiting to be saved', () => {
+        client.manifestDraft.editManifest('editor-one', 'alpha', 'status.line', 'typed earlier');
+        const body = html({ id: 'alpha' });
+        expect(body).toContain('value="typed earlier"');
+        expect(body).not.toContain('value="submit-ready, 16 pp"');
+        expect(body).toContain(t('editor.dirty', 1));
+    });
+
+    it('draws none of them in the editor of another instance or another project', () => {
+        client.manifestDraft.editManifest('editor-two', 'alpha', 'status.line', 'typed earlier');
+        expect(html({ id: 'alpha' })).not.toContain('typed earlier');
+        client.manifestDraft.editManifest('editor-one', 'beta', 'status.line', 'for beta');
+        expect(html({ id: 'alpha' })).not.toContain('for beta');
     });
 });
 

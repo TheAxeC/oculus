@@ -33,6 +33,7 @@
     const {
         entities: { portfolio },
         selectors: { archiveDead, collectionOf, configMap, projects },
+        formDrafts: { toggleAdd, toggleEdit },
         ui: { instanceState, setInstanceState }
     } = useState();
 
@@ -58,8 +59,6 @@
             .map((domain) => ({ domain, projects: domainMembers(domain, allProjects, dead) }))
             .filter((item) => item.projects.length > 0)
     );
-    let adding = $state(false);
-    let editing = $state<string | null>(null);
     let said = $state('');
 
     function write(next: Partial<DomainsState>): void {
@@ -75,8 +74,8 @@
         <ToolButton
             label={t('collection.add')}
             title={t('collection.add_tip')}
-            active={adding}
-            onclick={() => (adding = !adding)}
+            active={held.adding}
+            onclick={() => write({ adding: toggleAdd(instance.id, 'domains', held.adding) })}
         />
     {/if}
 {/snippet}
@@ -92,12 +91,12 @@
 <Pane title={t('views.domains')} toolbar={tools}>
     <div class="domains-view" data-instance={instance.id}>
         <Intro html={inlineMarkdown(t('domains.intro'))} trusted actions={introActions} />
-        {#if adding && collection?.schema !== undefined}
+        {#if held.adding && collection?.schema !== undefined}
             <EntryForm
                 collection="domains"
                 schema={collection.schema}
                 entry={null}
-                onclose={() => (adding = false)}
+                onclose={() => write({ adding: false })}
                 onsaid={(words: string) => (said = words)}
             />
         {/if}
@@ -120,9 +119,16 @@
                             projects={item.projects}
                             entry={entryFor(item.domain.id)}
                             schema={collection?.schema}
-                            editing={editing === item.domain.id}
+                            editing={held.editing === item.domain.id}
                             onedit={() =>
-                                (editing = editing === item.domain.id ? null : item.domain.id)}
+                                write({
+                                    editing: toggleEdit(
+                                        instance.id,
+                                        'domains',
+                                        held.editing,
+                                        item.domain.id
+                                    )
+                                })}
                             onsaid={(words: string) => (said = words)}
                         />
                     </Reveal>
