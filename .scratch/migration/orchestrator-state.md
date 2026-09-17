@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57, Q32 landed 13:26; Q30 (the run over its round), Q34 (dispatched 13:00 from 22ef9103) and Q41 (dispatched 13:28 from 21fd6359) in flight; Q42 next; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57, Q32 landed 13:26; Q30 (the run over its round), Q34 (dispatched 13:00 from 22ef9103) and Q42 (dispatched 13:57 from 8986cc4a) in flight; Q41 built, waiting on Axel's ruling on the lane colours; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q30
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -69,6 +69,19 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/Q41-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a1f9bd02947543e64            # the Agent tool id, launched 13:28
+  reported: 2026-09-17T13:55                # a premise found wrong: the lane colours against their meanings, a stop booked in the open items; the review waits for Axel's ruling
+  round: 0
+  landing: not-started
+- package: Q42
+  executor: agent                          # the configuration default, chosen for the step
+  worker: claude:opus
+  worktree: .agents/worktrees/q42
+  base: 8986cc4a
+  launched: 2026-09-17T13:57
+  prompt: the Agent tool's prompt, the shape of M2's with the brief's own paths
+  report: tools/oculus/.scratch/migration/agents/reviews/Q42-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: aa3e13607c19eb8db            # the Agent tool id, launched 13:57
   round: 0
   landing: not-started
 ```
@@ -215,6 +228,7 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46,
 - Q31, the Files view's bookmark form (raised 2026-09-17 11:28 by Q31's review): `Files.svelte` keeps its form's open state (`form`, `editing`) in component state, so after a switch its typed bookmark returns only when the form is opened again, and a tab can ask about text it does not show; Q32 is redrawing `Files.svelte` now, so Q31 does not touch it. Recommended: a fix after Q32 lands putting that open state in the instance state, as Q31 does for the five collection views. For Axel. Closed 2026-09-17 ruled 13:05, Axel: agreed, after Q32 lands; booked as Q43.
 - Q31, drafts left after a pane or page close (raised 2026-09-17 11:28 by Q31's review): `closePane` (`state/layout.svelte.ts` line 592) and `closePage` (line 409) never call `clearInstanceState`, so a closed pane's or page's source drafts, manifest edits and form drafts stay in `localStorage['oculus.ui.v1']` for good; nothing reads them (instance ids are random), they only accumulate. Recommended: a fix clearing every closed instance's state in both closes. For Axel. Closed 2026-09-17 ruled 13:05, Axel: agreed; booked as Q42.
 - Q32, a repository the Repositories picker leaves out (raised 2026-09-17 13:07 by the second run over Q32's round): the picker lists the roots whose git state has no error (`repositoryRoots` in `state/repositories.ts`), and `server/git.ts` line 101 reports an error for a repository with no commit yet (`git rev-parse --abbrev-ref HEAD` fails), for a `git status` past its 5 s timeout and for any failed status, so a fresh `git init` repository is not in the picker at all, and a shown repository whose read fails once is swapped for the first one until the next push. Before Q32 such a root was listed with its error line. Recommended: a fix of delivered work in the git reader and the picker: the reader tells a repository from a folder by `git rev-parse --git-dir` and reads an unborn branch's name with `git symbolic-ref --short HEAD`, and the picker lists every repository, a failed read drawn as its error row. A fix of delivered work, no ruling needed: booked as Q44, after Q32.
+- Q41, lane colours against their meanings (raised 2026-09-17 13:55 by Q41's report, a premise found wrong): a lane header is 20% of its hue mixed into the panel (`LANE_SHARE` 0.2 in `themes/derive.ts`), and at that share several themes draw different hues alike (dracula blue, grey and slate; gruvbox violet, magenta, pink and mauve), so holding every pair of neighbouring headers at a CIEDE2000 of 10 or more under all 17 themes forced colours against their meaning: Push and Review crimson, Blocked honey, Backburner dark red, De-risk pink, Funding lime, Jobs magenta (the worktree `q41`, `tests/lane-distance.test.ts` green). Options: (a) keep the colours as built; (b) a stronger header tint, `LANE_SHARE` 0.35, which by the builder's scratch search keeps Run green, Push blue, Revise amber, Blocked red, Backburner grey, Scope cyan, De-risk indigo, Build teal, Funding gold, Jobs violet and Teaching teal at 10 or more, Review alone moved off violet, with the lane text contrast measured again by `tests/contrast.test.ts` (not yet measured); (c) keep the meanings and hold only the pairs inside a cluster row. Recommended (b): the lanes keep the colours their names suggest and still differ from their neighbours in every theme, at the cost of a stronger strip. For Axel; Q41 waits at its report.
 - Q31, the Leads and LinkedIn add toggles (raised 2026-09-17 11:54 by Q31's repair-round report): `Leads.svelte:120` and `Linkedin.svelte:110` still close the add form without forgetting its draft, so the close question can still ask over a hidden draft there; the two views were outside Q31's paths. Recommended: a fix of delivered work routing both toggles through `toggleAdd`, as the five collection views now do. For Axel. Closed 2026-09-17 12:46 at Q31's landing: both toggles write `adding` through `toggleAdd`, a fix of delivered work.
 
 ## Verification, every package
@@ -778,4 +792,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q30, worker claude:opus through the Agent tool, first run: 345,995 tokens, 106 tool uses, 1,822 s (12:48 to 13:18); a brief conflict reported (the missing directory's sentence), edits outside its paths named.
 - Q30, reviewer claude:opus through the Agent tool, read-only: 231,956 tokens, 58 tool uses, 710 s (13:20 to 13:35); nine rulings sent in the one repair round.
 - Q30, worker round 1 claude:opus: 405,548 tokens (cumulative on the thread), 32 tool uses, 570 s (13:36 to 13:45); nine rulings done.
+- Q41, worker claude:opus through the Agent tool, first run: 249,149 tokens, 82 tool uses, 1,621 s (13:28 to 13:55); a premise found wrong reported, one comment in a barred view left.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
