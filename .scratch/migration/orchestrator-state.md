@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20; in flight: Q34 (the run over its round, from 22ef9103), Q43 (the run over its round, from 17e22699), Q44 (repair round, from a05037a9); Q41 building Axel's ruling (b) on the lane colours; next: Q45, Q46, then D22 and Q38 once Q34 has landed; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); the queue: Q38; D22; Q43; Q44; Q45; Q46; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47; in flight: Q41 (repair round, from 21fd6359), Q44 (landing), D22 and Q38 (dispatched 16:54 from 91fb46cb); next: Q45, Q46, Q47, Q48, Q49, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q41
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -43,7 +43,9 @@ dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12
   reported: 2026-09-17T13:55                # a premise found wrong: the lane colours against their meanings, a stop booked in the open items; the review waits for Axel's ruling
   ruling: 2026-09-17 15:30, Axel's (b) sent to the builder as the rest of its build (not the repair round): LANE_SHARE 0.35 in themes/derive.ts, the lane colours back on their meanings, Review off violet, Focus.svelte's comment; paths widened by themes/derive.ts and views/Focus.svelte (its comment)
   choice_a: 2026-09-17 16:08 sent; built 16:25 at LANE_SHARE 0.5 (Review slate, De-risk honey, Jobs grey-d, the 22 pairs held); tests/contrast.test.ts red in 7 themes on -lane-txt measured against page surfaces it is never painted on; 16:31 the builder told to measure lane text on its own lane only, per the test's stated rule, with a check that no other place paints it
-  round: 0
+  reported: 2026-09-17T16:36
+  reviewer: a068e9ee71d007dcf                # claude:opus through the Agent tool, read-only, 16:38 to 16:50, scratch folder scratchpad/q41-review
+  round: 1                                  # sent 16:51: five rulings on agents/reviews/Q41-refuter.md (every layout's touching pairs, collapsed clusters and hidden band columns included, with a stop if no colours hold them; lane text proved on its own strip in the browser under light, dark, dracula and the wallpaper mode; four false sentences; the Doc text); round base: scratchpad/q41-round1
   landing: not-started
 - package: Q44
   executor: agent                          # the configuration default, chosen for the step
@@ -58,6 +60,31 @@ dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12
   reported: 2026-09-17T15:28
   reviewer: a6f99803527e9af27                # claude:opus through the Agent tool, read-only, launched 15:29, scratch folder scratchpad/q44-review (review earned: a server module)
   round: 1                                  # sent 15:53: nine rulings on agents/reviews/Q44-refuter.md (a --git-dir timeout is no answer, the error row's tone kept, the branch and path lines kept above it, a case for the failed branch read, two sessions fixtures corrected, the browser case's scratch folder removed, branch pinned in the gate and its comments, a no-commit repository's branches line and New branch control, the Doc text); round base: scratchpad/q44-round1 (tracked.patch, no untracked files); the Sessions Changes panel booked as Q47
+  reviewer2: a373cf7de3b043c91               # the run over round 1, claude:opus, read-only, launched 16:10
+  landing: cherry-picking
+- package: D22
+  executor: agent                          # the configuration default, chosen for the step
+  worker: claude:opus
+  worktree: .agents/worktrees/d22
+  base: 91fb46cb
+  launched: 2026-09-17T16:54
+  prompt: the Agent tool's prompt, the shape of M2's with the brief's own paths
+  report: tools/oculus/.scratch/migration/agents/reviews/D22-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: a4d7d4d6e44914898            # the Agent tool id, launched 16:54
+  round: 0
+  landing: not-started
+- package: Q38
+  executor: agent                          # the configuration default, chosen for the step
+  worker: claude:opus
+  worktree: .agents/worktrees/q38
+  base: 91fb46cb
+  launched: 2026-09-17T16:54
+  prompt: the Agent tool's prompt, the shape of M2's with the brief's own paths
+  report: tools/oculus/.scratch/migration/agents/reviews/Q38-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: a0cefe46348697af3            # the Agent tool id, launched 16:54
+  round: 0
   landing: not-started
 ```
 
@@ -793,5 +820,8 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q41, the two colour searches after the ruling, claude:opus: 336,609 tokens cumulative on the thread, 11 tool uses, about 5 min.
 - Q34, orchestrator claude:opus (this session), `land/templates/usage.py` from Q42's landing (2026-09-17T15:04:36+02:00) to 16:20: 68 messages, 71894 output tokens, 164973 cache-write tokens, 43678541 cache-read tokens, 158 fresh input tokens, 76 minutes; shared with Q43's and Q44's rounds and reviews, the Q41 searches and rulings, Q44's review dispatch.
 - Q43, worker round 1 and the run over it recorded above; orchestrator claude:opus (this session), `land/templates/usage.py` from Q34's landing to 16:36: 19 messages, 18104 output tokens, 32333 cache-write tokens, 14204860 cache-read tokens, 38 fresh input tokens, 16 minutes; shared with Q41's contrast instruction and Q44's landing fixes.
+- Q41, after choice (a) and the contrast pairs, claude:opus: 442,823 tokens cumulative on the thread, 17 tool uses in the last run, about 16 min.
+- Q41, reviewer claude:opus through the Agent tool, read-only: 214,487 tokens, 54 tool uses, 754 s (16:38 to 16:50); five rulings sent in the one repair round.
+- Q44, run over round 1, claude:opus read-only: 173,964 tokens, 56 tool uses, 956 s (15:54 to 16:10); seven findings, six fixed at landing, one closed by the Doc text.
 - Q41, worker after the ruling claude:opus: the thread's tokens and time are in its notification when it closes; reported 15:41.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.

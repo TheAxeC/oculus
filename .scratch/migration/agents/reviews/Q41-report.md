@@ -582,3 +582,125 @@ All under `tools/oculus/`:
 - **Duplicate colours:** in dracula, several headers that do not touch are one colour (see Shared hues).
 - **Dark-theme header text:** it is now dark on a lighter strip, which the contrast failure above reflects.
 - **Hidden band columns:** the distance test covers the layout with all three band columns drawn. When a column is empty and hidden, the pairs that form are not held.
+
+
+Everything asked in this round is done. The contrast test now measures lane text only on its own lane surface, a new case holds that true by reading `src/`, and the brief's whole verify list is green.
+
+## Contrast pairs
+
+### The diff of the test
+`diff -u` of `tests/contrast.test.ts` against its state before this round:
+
+```diff
+@@ -1,20 +1,30 @@
+ // The pairs are the ones a component can actually produce: a `-txt` colour on the page, the panel
+-// the card and the chip; a hue's `-txt` on its own tint; a hue's `-lane-txt` on its `-lane`, the
+-// surface a Focus lane header is drawn on; `--accent-bg-txt` on the pressed-toggle surface
++// the card and the chip; a hue's `-txt` on its own tint; a hue's `-lane-txt` on its `-lane` and on
++// nothing else, since the header of a Focus lane is the one place it is painted, which the last
++// case below holds by reading src/; `--accent-bg-txt` on the pressed-toggle surface
+ ...
++import { readFileSync, readdirSync } from 'node:fs';
++import { dirname, join, relative, resolve } from 'node:path';
++import { fileURLToPath } from 'node:url';
+ ...
++/** The source tree whose painting of lane text the last case reads. */
++const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src');
++
++/** A lane header's text token, which is measured on its own lane surface only. */
++const LANE_TEXT = /^--c-.+-lane-txt$/;
+@@ -32,7 +42,8 @@
+     for (const fg of Object.keys(derived)) {
+         if (!fg.endsWith('-txt')) continue;
+-        for (const surface of SURFACES) if (all[surface]) measure(fg, surface);
++        if (!LANE_TEXT.test(fg))
++            for (const surface of SURFACES) if (all[surface]) measure(fg, surface);
+         const own = `${fg.slice(0, -'-txt'.length)}-bg`;
+@@ -52,6 +63,86 @@
++function sources(dir)            // every file under src/ with its text
++function escaped(text)           // a string made safe inside a RegExp
++function blockAt(text, at)       // the {...} block an offset sits in
++function fills(text, variable)   // `background(-color): var(<variable>)` in a block or line
++function offLane(file, text)     // the reading, below
+@@ -121,6 +212,39 @@
++    // Revert: paint `--c-green-lane-txt` as `color` in any rule of a component whose background is
++    // `--panel`, and that line is printed.
++    it('finds lane text painted only over its own lane surface under src/', () => {
++        const all = sources(SRC).map(([file, text]) => offLane(file, text));
++        expect(all.reduce((sum, one) => sum + one.places, 0)).toBeGreaterThan(0);
++        expect(all.flatMap((one) => one.findings)).toEqual([]);
++    });
++
++    it('reports every way of painting lane text off its lane', () => {
++        // five synthetic texts: green lane text on --panel; --t holding red lane text with no lane
++        // beside it; --t read in a block filled with --panel; a bare read outside any declaration;
++        // and the two allowed shapes, which give { places: 2, findings: [] }
++    });
+```
+
+**What `offLane` holds.** Every `var(--c-X-lane-txt)` in a file is counted as a place. Each place must be one of two shapes:
+- **A custom property** `--p: var(--c-X-lane-txt)`. The same line must also set `--q: var(--c-X-lane)`, and every CSS block that reads `var(--p)` must fill its background with `var(--q)`. This is `LaneHead.svelte:25` and `:41-42`.
+- **A property** `color: var(--c-X-lane-txt)`. Its block or line must fill its background with `var(--c-X-lane)`.
+
+Any other read of lane text is reported with its `file:line`. The case also asserts it found at least one place, so it cannot pass on an empty reading.
+
+**Other pairs are unchanged.** The threshold, `SURFACES` and every other pair are untouched; the only change to what is measured is the one guarded line.
+- Pair count went from 6341 to 3961, both from the test's own console line: "contrast: 6341 pairs over 17 themes" before, "contrast: 3961 pairs over 17 themes" after.
+- The difference is 2380, which is exactly the lane text pairs removed. A scratch count through `tests/themes.ts` (`count.test.ts`) gives 35 lane text tokens x 4 surfaces in each of the 17 themes, printed as "count removed 2380".
+
+### Green, then red on the scratch paint
+The scratch copy is `scratchpad/q41-builder/red/`: `src/` copied from the worktree, and `tests/contrast.test.ts` copied with its two relative imports made absolute. It was run with the worktree's config: `npx vitest run --config <worktree>/vite.config.ts --root <scratch>/red tests/contrast.test.ts`.
+
+- **Worktree:** `npx vitest run tests/contrast.test.ts` gives "Tests 25 passed (25)". The two new cases pass.
+- **Red:** a copy of `src/lib/views/focus/Band.svelte` with `color: var(--c-green-lane-txt);` added to its `.lane` rule, whose background is `var(--panel)`. `diff -r` shows only that line, at 188.
+  ```
+  x finds lane text painted only over its own lane surface under src/
+  +   "lib/views/focus/Band.svelte:188 paints green lane text off its lane",
+  Tests  1 failed | 24 passed (25)
+  ```
+- **Same copy with the line removed:** `diff -r` against the worktree `src/` is empty, and the run gives "Tests 25 passed (25)".
+
+### Verify list
+From `tools/oculus` in the worktree:
+
+| Command | Output |
+|---|---|
+| `npx vitest run --reporter=dot` | Test Files 240 passed (240); Tests 4052 passed (4052) |
+| `npm run check` | COMPLETED 1193 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS |
+| `npm run build` | exit 0 |
+| `npm run format:check` | All matched files use Prettier code style! |
+| `npm run lint` | exit 0 |
+| ASCII gate (perl command in the brief) | 0 lines |
+| `python3 -c "import yaml; yaml.safe_load(open('config/vocab.yml'))"` | exit 0 |
+| `npx playwright test tests/browser/focus-look.spec.ts tests/browser/focus-buttons.spec.ts tests/browser/focus-drag.spec.ts` | 8 passed (22.0s) |
+
+### What the reading does not cover
+The case reads `src/` text for `var(--c-...-lane-txt)`. It would not see:
+- a lane text token assembled in code without the `var(...)` form;
+- a custom property holding lane text that is set in one file and read in another, since pairing and use are checked within a single file.
+
+### Doc text, updated
+**DESIGN.md**, four changes:
+- Line 228: "a fifth of the hue in the panel" becomes "half the hue in the panel".
+- Line 228: "the contrast test measures that pair under every theme" becomes "the contrast test measures that pair under every theme and measures `-lane-txt` on its own `-lane` only, a narrowing it holds by reading src/ for any place that paints lane text over another surface".
+- Append to the same paragraph: "The lane surfaces are also measured against each other: `tests/lane-distance.test.ts` derives every theme through `tests/themes.ts`, the derivation the contrast test reads, reads the rows Lanes.svelte and Band.svelte draw, and holds every pair of headers that touch at a CIEDE2000 of 10 or more: each header and the next one drawn, a header and the one stacked below it in the three-column layout, and the full-width Ideas lane against the rows above and below it."
+- Add under `tests/` after line 111: `    lane-distance.test.ts      Focus lane headers that touch, every theme, CIEDE2000 at least 10`
+
+**DESIGN.md decision line**, in the form of the dated lines beside it:
+"- 2026-09-17, Axel: the awaiting strip counts what the board shows, and lane headers that touch are told apart. `waiting()` tallies the people and venues of every live project and of every project `laneItems` draws on a lane, whatever its tier; a project of another tier in holding or on no lane is not counted. A lane header's surface is half its hue and half the panel (`LANE_SHARE` in `themes/derive.ts`). The lane colours are Run green, Push blue, Revise amber, Review slate, Blocked red, Backburner grey, Scope cyan-d, De-risk honey, Build teal, with the Ideas lane mauve and the columns Funding gold, Jobs grey-d and Teaching teal, so every pair of headers that touch (next in drawing order, stacked in one column, beside the full-width Ideas lane) stays a CIEDE2000 of 10 or more apart under every theme, which `tests/lane-distance.test.ts` holds. A header's text colour, `--c-<hue>-lane-txt`, is painted only on its lane surface, so `tests/contrast.test.ts` measures it there alone and reads src/ to hold that no other place paints it."
+
+**HELP.md** line is unchanged from the last report.
+
+### Files changed
+All under `tools/oculus/`:
+- `config/vocab.yml` (+6 -5)
+- `src/lib/state/focus.ts` (+20 -9)
+- `src/lib/themes/derive.ts` (+9 -3)
+- `src/lib/views/Focus.svelte` (+3 -3)
+- `tests/config-folder.test.ts` (+1 -1)
+- `tests/contrast.test.ts` (+130 -21 against the commit; 256 lines)
+- `tests/state/focus.test.ts` (+45 -5)
+- `tests/lane-distance.test.ts`, new, 290 lines
+- `tests/themes.ts`, new, 34 lines
+
+Scratch files kept in `scratchpad/q41-builder/`: `red/` (the copy, now back to no paint), `red/tests/count.test.ts` and `contrast.before.ts`.

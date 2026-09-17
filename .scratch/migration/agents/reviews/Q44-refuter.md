@@ -103,3 +103,75 @@ Every "Before" and "After" below comes from real scratch repositories, served th
 - The browser probe made its scratch repositories under `$TMPDIR` rather than the scratch folder, because they are added through the served app's add-root form. They were removed afterwards.
 
 Reviewer usage: about 45 tool uses, about 32 minutes.
+
+
+## Repair round 1, refuted
+```
+All commands ran from tools/oculus in the q44 worktree. Load average about 12 at the start.
+npx vitest run --reporter=dot: Test Files 241 passed (241), Tests 4060 passed (4060). No timing test timed out.
+npm run check: COMPLETED 1194 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+npm run lint: eslint . printed no problem
+npm run format:check: All matched files use Prettier code style!
+ASCII gate (the perl command): 0 lines
+npm run build: build-exit=0
+npx playwright test tests/browser/repositories.spec.ts: first try "http://127.0.0.1:8792/ is already used" (another run held the port); after it was free, 7 passed (13.6s). $TMPDIR/oculus-repositories-fresh-* count was 6 before and 6 after.
+git status --short: 14 files. The git diff a05037a9 output is byte-identical at the start and at the end of this review.
+The round's delta was computed in a scratch repository (scratchpad/q44-review2/d) as round1 (base + tracked.patch) against the current tree: 13 files, +376 -178.
+
+Reverts, in my copy scratchpad/q44-review2/oc. Each one was run over git.test.ts, state/repositories.test.ts and views/repositories.test.ts; RV1 to RV7 also over watch/git.test.ts and views/sessions.test.ts. Each file was restored and cmp'd against the worktree.
+RV1 `if (!gitDir.ok)`, answered ignored: red, "keeps a root whose repository check did not answer" (ETIMEDOUT .../repo: expected false to be true)
+RV2 `const answered = true;` (a signal kill counts as answered): GREEN, 165/165
+RV3 `{#if true}` around the branch line and path in Repo.svelte: red, "keeps the branch line and the path above the error row" (not to contain 'branch')
+RV4 noCommitYet without `git.error === null` and `!git.detached`: GREEN, 165/165
+RV5 `['branch', '--list', BRANCH_FORMAT]`: red, both gates (source literal; branch --list ...: expected [['branch', ...(1)]] to deep equally contain [...])
+RV6 `{#if false}` for the error row in Repo.svelte: red, 2 view cases (expected +0 to be 1; expected -1 to be greater than 0)
+RV7 no early return after an unanswered --git-dir: red (expected 'not a git repository ...' to be 'git timed out')
+RD `found.repository = false` when both HEAD reads fail: red (expected false to be true)
+RE2 empty line always branches_empty: red (expected ... to contain 'start has no commit yet ...')
+Browser, served from the scratch copy's own build through serve.ts, with probe specs zz-probe.spec.ts and zz-press.spec.ts:
+  real git, roots fresh/noread/orphan/plain added: picker ["demo","fresh","noread","orphan"]
+  git missing from the server's PATH (serve.ts in the copy passes PATH=<bin> only): picker ["demo"], then ["demo","plain"] after adding the plain folder; both draw "git could not read this repository: spawnSync git ENOENT"
+  disabled={busy} reverted in the copy and rebuilt, New branch "made-here" pressed on a no-commit repository (fresh2): outcome "Done.", branch line "made-here", `git symbolic-ref --short HEAD` = made-here
+Node probe (statusFor over the scratch repositories): outputs quoted below.
+```
+- `src/lib/views/repositories/Branches.svelte:105` and `:102`, `config/text/views/repositories.yml:7`: ruling 8 (New branch disabled on a no-commit repository) rests on a wrong premise. The control's write is `createBranch`, which runs `switch -c <name>` (`src/lib/server/git-write.ts:245`), and `git switch -c` works on an unborn HEAD. With `disabled={busy}` restored in my copy and the copy rebuilt, pressing New branch on a `git init` repository with no commit gave "Done." and moved HEAD to the new branch. On `orphan` (an unborn branch in a repository with commits, where the control stays live), the press also gave "Done.". So the change disables a control that works, and the tooltip "A new branch starts from a commit, and this repository has none yet." is false. The first report's "fails in git" came from `git branch <name>`, which is not the command the control runs. The HELP.md Doc text sentence "New branch is disabled until the first commit, since a branch starts from one" is false for the same reason. This is a premise found wrong, for the orchestrator. Spec, Behaviour.
+- `src/lib/state/repositories.ts:137` `noCommitYet`: it misreads a repository with commits. It uses an empty branch listing as the sign of no commit. `server/git.ts:176-179` returns `[]` when the listing fails, and `git branch --format` exits 0 with no output when `.git/refs/heads` cannot be listed.
+  - Node probe with a git wrapper that fails `branch`: `full {"error":null,"branch":"main","branches":[],"log":1,"noCommitYet":true}`.
+  - Probe with `chmod a-r .git/refs/heads`: `noread {"error":null,"branch":"main","branches":[],"log":1,"noCommitYet":true}`.
+  - In the served build, noread draws Commits 1 ("one 2e1453c"), then "Branches 0 main has no commit yet, and git lists a branch only from its first commit.". New branch is disabled, with the tooltip "A new branch starts from a commit, and this repository has none yet." (hovered, read from role=tooltip).
+  - The opposite miss: `orphan` (unborn `newroot`, branches main and side, log 0) gives `noCommitYet: false`.
+  - The builder names the failed-listing case as untested. It is a false sentence on screen, not only a sharp edge.
+  Behaviour, Spec.
+- `src/lib/server/git.ts:117-123` and `:339-347`: the `answered` outcome goes beyond ruling 1, which as booked is "a --git-dir timeout is no answer". A git that cannot start (ENOENT) or is killed also leaves `repository: true`, so every existing root, plain folders included, becomes a repository with an error row.
+  - Node probe with no git on PATH: `plain {"repository":true,"error":"spawnSync git ENOENT"}`, picker ["full","noread","fresh","orphan","plain"].
+  - Served build without git: the picker lists the added plain folder and draws "plain git could not read this repository: spawnSync git ENOENT". That calls a folder that is no repository "this repository", against brief item 1 ("false for a folder that is none").
+  - With round1's code the same folder would come back `repository: false` and stay out of the picker. RV1 shows that line decides it.
+  - The builder lists the case as a decision. It needs a ruling or a narrower condition (ETIMEDOUT only). Spec, Behaviour.
+- `src/lib/server/git.ts:345`: a git killed by a signal. RV2 (`answered = true`) left all 5 files green (165/165), so the signal half of `answered` has no test. The probe (a wrapper that sends itself SIGKILL on `--git-dir`) gave `repository: true, error: "git failed"` for every root, plain included. The row then reads "git could not read this repository: git failed", with no mention of the signal. Proof, Behaviour.
+- `src/lib/state/repositories.ts:137`: RV4 (dropping `git.error === null` and `!git.detached`) left everything green, 165/165. Neither condition is exercised. The error condition cannot be reached from the view, since `Repo.svelte:103` draws no Branches while `error` is set. Proof.
+- `src/lib/server/git.ts:79`: the comment "A root is a repository only once `rev-parse --git-dir` has said so." is false after ruling 1. A root whose check timed out or whose git would not start is `repository: true` without `--git-dir` having said anything. Standards.
+- `src/lib/views/repositories/Repo.svelte:88-95`: the path line is inside `{#if git.branch !== ''}` together with the branch line. A root whose check did not answer therefore draws only the picker label and the error row, with no path. Served build without git: text "demo git could not read this repository: spawnSync git ENOENT". The state file books ruling 3 as "the branch and path lines kept above it", while the report narrows it to "when a branch is named". The path needs no git read. Whether that narrowing was ruled cannot be read from the ledger. Spec.
+- Closures reproduced as claimed:
+  - ruling 1 for ETIMEDOUT (RV1, RV7 red)
+  - ruling 3 (RV3, RV6 red; the branch line is absent when the branch is empty, as the served probe shows)
+  - ruling 4 (RD red)
+  - ruling 5 (`tests/views/sessions.test.ts:194`, `:588` carry `repository: false`; suite green)
+  - ruling 6 (the case removes its folder; the fresh-folder count was 6 before and after a green run)
+  - ruling 7 (RV5 red on both gates; `branch` in `server/git.ts` has one caller, `:177`, matching `PINNED`; `git-write.ts:478` and `deposit-git.ts:203` run `branch` through their own call sites, outside this gate)
+  - ruling 2 kept (`tone="error"`)
+  None.
+- Doc text (report, DESIGN.md line 318): "false only when the root is not a directory or git ran `rev-parse --git-dir` to its end and answered". This leaves out the third case that `model-sessions.ts:350-351` names (the read threw, from the `statusFor` catch at `git.ts:101-103`). Standards.
+
+Not checked: the Sessions Changes panel (booked as Q47); a real slow mount; light themes.
+
+Reviewer usage: about 50 tool uses, about 25 minutes.
+
+## Closed
+
+- The first review's findings: closed by the round's rulings 1 to 7 and 9, reproduced by the run over the round (RV1, RV3, RV5, RV6, RV7, RD, RE2 red).
+- Ruling 8 rested on a wrong premise: New branch runs `git switch -c`, which works on a branch with no commit. A fix at landing removes the disabled state and its title (`repositories.branch_new_unborn` dropped) and keeps the Branches line's wording for a repository with no commit; the view case asserts the control stays live.
+- `noCommitYet` misreading a repository with commits whose branch listing failed: a fix at landing also requires an empty log; the view case draws a repository with commits and an empty listing without the no-commit line (red with the log condition removed: 1 failed).
+- A git that cannot start or is killed making every root, plain folders included, a repository: a fix at landing counts only a timeout as no answer (`run` in `server/git.ts`); the server case now holds a timed-out check keeping both roots and a git that cannot start leaving both out (red with every spawn failure counted as no answer: 2 failed).
+- `server/git.ts:79`'s comment: now names the timed-out check.
+- The path line hidden with the branch line: a fix at landing draws the path whenever the view draws a repository; the view case asserts it above the error row with no branch.
+- The DESIGN.md sentence leaving out the `statusFor` catch: the Doc text applied at landing names it.
