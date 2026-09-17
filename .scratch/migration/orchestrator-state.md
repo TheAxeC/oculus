@@ -24,7 +24,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46; Q32 (second run over its round) and Q39 (review) in flight; Q30 next; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46; Q32 (second run over its round) and Q39 (review) and Q30 (dispatched 12:48 from 115da2e7) in flight; Q38 and D22 wait for Q32, Q38 for Q39 too; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q32
   worker: claude:opus
   worktree: .agents/worktrees/q32
@@ -37,6 +37,8 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46;
   round: 1                                  # sent 11:47: fourteen rulings on agents/reviews/Q32-refuter.md (actions in every state, VS Code density, selection versus in force, hover-only row tooltips, icon-only heads with a workspace menu, guides on hover, Source Control rows, a repositories-only picker, the filter's keyboard, one roving stop with tree ARIA, the bookmark label, one tone map with ChangeGroups, false sentences, the visible changes)
   reported: 2026-09-17T11:29
   reviewer: a0e97926122a9764a                # claude:opus through the Agent tool, read-only, launched 11:30, scratch folder scratchpad/q32-review, the look judged by screenshots
+  reported2: 2026-09-17T12:44                # the repair round's report, appended to agents/reviews/Q32-report.md
+  reviewer2: a179f2bf258fb5967               # the second run over the repair round, claude:opus, read-only, launched 12:45, scratch folder scratchpad/q32-review2
   landing: not-started
 - package: Q39
   worker: claude:opus
@@ -49,6 +51,17 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46;
   session_id: a5aa03f2dc76269d7            # the Agent tool id, launched 12:09
   reported: 2026-09-17T12:33
   reviewer: a3bc3b443a2e83edf                # claude:opus through the Agent tool, read-only, launched 12:34, scratch folder scratchpad/q39-review (review earned: the builder's last three rows each needed a repair round)
+  round: 0
+  landing: not-started
+- package: Q30
+  worker: claude:opus
+  worktree: .agents/worktrees/q30
+  base: 115da2e7
+  launched: 2026-09-17T12:48
+  prompt: the Agent tool's prompt, the shape of M2's with the brief's own paths
+  report: tools/oculus/.scratch/migration/agents/reviews/Q30-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: a71da6eb3c7470b27            # the Agent tool id, launched 12:48
   round: 0
   landing: not-started
 ```
