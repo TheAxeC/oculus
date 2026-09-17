@@ -35,6 +35,8 @@ dispatch:                                  # Q37, Q31 and Q32 in flight (dispatc
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a732fe3f2691cdf00            # the Agent tool id, launched 10:51
   round: 0
+  reported: 2026-09-17T11:08
+  reviewer: a5cac22d0f129b671                # claude:opus through the Agent tool, read-only, launched 11:10, scratch folder scratchpad/q37-review
   landing: not-started
 - package: Q31
   worker: claude:opus
@@ -734,4 +736,5 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q33, worker round 3: 602,378 tokens (cumulative on the thread), 26 tool uses in the round's reply, about 20 min (16:45 to 17:03); the seven rulings done, the scroll mechanics moved to `ui/tab-scroll.svelte.ts`, full browser suite 153 passed.
 - Q33, third reviewer claude:opus through the Agent tool, read-only: about 45 tool uses, about 19 min (17:05 to 17:24); every second-review finding closed or narrowed; the cost of whole-tab scrolling put to Axel.
 - The trial set, orchestrator claude:opus (this session): from the go at 14:16 to Q33's landing at 23:37, with a pause from 17:33 to the resumption; M2 about 1 h (two repair rounds, one review), D16 and Q33 about 3 h 10 min of work each (four and four rounds, three reviews each, the last round of Q33 finished at landing); its own tokens not separated per step.
+- Q37, worker claude:opus through the Agent tool, first run: 231,988 tokens, 79 tool uses, 1,156 s (10:51 to 11:08); report: everything done, one side effect named (every hue's `-txt` made readable on its new band shifts 389 of 1,513 derived tokens).
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
