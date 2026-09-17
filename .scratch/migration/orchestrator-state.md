@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57, Q32 landed 13:26, Q30 landed 14:28, Q42 landed 15:04; Q30 (the run over its round), Q34 (repair round), Q43 (dispatched 14:30 from 17e22699) in flight; Q41 built, waiting on Axel's ruling on the lane colours; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # Q37 landed 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04; in flight: Q34 (repair round, from 22ef9103), Q43 (review, from 17e22699); Q41 built, waiting on Axel's ruling on the lane colours; next: Q44, Q45, Q46, then D22 and Q38 once Q34 has landed; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); the queue: Q38; D22; Q43; Q44; Q45; Q46; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q34
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
