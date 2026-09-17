@@ -178,6 +178,20 @@ function command(argv: string[]): string {
     return argv.map(shellWord).join(' ');
 }
 
+/**
+ * A chat catalog template with each placeholder replaced by the argument it numbers, built by splitting
+ * the template rather than by replacing into it, so an argument holding braces or a `$` pattern is
+ * expected exactly as written and independently of the server's fill.
+ */
+function filled(key: string, args: string[]): string {
+    const template = CHAT_CATALOG[key];
+    const numbers = [...template.matchAll(/\{(\d+)\}/g)].map((match) => Number(match[1]));
+    return template
+        .split(/\{\d+\}/)
+        .map((piece, at) => (at < numbers.length ? piece + args[numbers[at]] : piece))
+        .join('');
+}
+
 async function answer(response: Response): Promise<Record<string, unknown>> {
     return (await response.json()) as Record<string, unknown>;
 }
@@ -811,6 +825,48 @@ describe('POST /api/terminal, the chat action', () => {
         expect(started[started.length - 1]).toBe(expected);
         expect(started[started.length - 1]).not.toContain("'-p'");
         expect(indexAtStart).toBe(true);
+    });
+
+    // Reverts: build the focus note and the focus name in startChat with `replaceAll` chains on the
+    // catalog instead of `words`; or fill each argument in turn so a later one refills the title's
+    // `{2}`.
+    it('fills a title holding a placeholder and a replacement pattern into the command as written', async () => {
+        const title = 'Alpha {1} {2} $& Study';
+        const driver = tmux();
+        const response = await handleTerminal(
+            request({ action: 'chat', id: 'alpha', cols: 80, rows: 24 }),
+            TOKEN,
+            {
+                ...chatOptions(driver),
+                projectFor: (id) =>
+                    id === 'alpha' ? { title, folder: 'projects/active/alpha' } : null
+            }
+        );
+        expect(response.status).toBe(200);
+        const terminal = (await answer(response)).terminal as { id: string; name: string };
+        const index = chatIndexPath(join(CHAT_STATE, 'sessions.json'), terminal.id);
+        expect(terminal.name).toBe(filled('server.chat.chat_name_focus', [title]));
+        expect(terminal.name).toContain(title);
+        const focus = filled('server.chat.chat_focus_note', ['alpha', title, CHAT_PROJECT]);
+        expect(focus).toContain(title);
+        const system = [
+            filled('server.chat.chat_instruction', [CHAT_HUB, CHAT_PROJECT]),
+            focus,
+            filled('server.chat.chat_index_note', [index])
+        ].join('\n\n');
+        const started = driver.calls.find((args) => args[0] === 'new-session') ?? [];
+        expect(started[started.length - 1]).toBe(
+            command([
+                '/opt/Claude CLI/claude',
+                '--append-system-prompt',
+                system,
+                '--disallowedTools',
+                'Bash,Edit,Write,WebFetch,WebSearch',
+                '--model',
+                'claude-opus-4-1',
+                filled('server.chat.seed_focus', [title])
+            ])
+        );
     });
 
     it('starts a numbered portfolio chat in the hub with no model argument when none is set', async () => {

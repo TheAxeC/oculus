@@ -5,7 +5,7 @@
 // whatever expression the formatter is handed the catalog through.
 
 import { statusWordKey } from '../src/lib/state/repositories.ts';
-import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -37,8 +37,46 @@ const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', 'src');
 /** Readers whose first argument is a catalog key: the client's three and the audit's `sentence`, spread or not. */
 const CALL = /(?<![\w$.])(?:\.\.\.)?(t|lookup|catalogText|sentence)\(/g;
 
-/** Server interpolation takes the catalog before its key: the chat and task-name `words` of server/pty. */
-const WORDS = /(?<![\w$.])words\(\s*catalog\s*,/g;
+/**
+ * Server interpolation takes the catalog before its key: `words` of server/pty/chat.ts, which names
+ * the chat terminals and the LaTeX terminals and writes the chat instruction. Every `words(` call in a
+ * file under WORDS_DIR is read, whatever its first argument is spelled, and its declaration is left
+ * out by the `function` rule CALL uses. Outside that folder a `words` is another module's own helper
+ * (the data layer's `words(catalog)` in sources/config.ts, the state and present modules' `words`
+ * of a value) and is not a catalog read. A call whose key is not a literal is held to
+ * COMPUTED_PREFIXES like every other reader, and none of those is a `words` call.
+ */
+const WORDS = /(?<![\w$.])words\(/g;
+
+/** The folder, relative to the scanned root, whose `words` calls are the server's catalog reads. */
+const WORDS_DIR = 'lib/server/';
+
+/**
+ * The text after the first argument of a call whose argument list starts at `at`, or null when the
+ * list closes before a comma at its own depth. Quotes and nested brackets are skipped, so a first
+ * argument such as `textCatalog(config)` is passed over whole.
+ */
+function afterFirstArgument(source: string, at: number): string | null {
+    let depth = 0;
+    let quote = '';
+    for (let index = at; index < source.length; index += 1) {
+        const char = source[index];
+        if (quote !== '') {
+            if (char === '\\') index += 1;
+            else if (char === quote) quote = '';
+        } else if (char === "'" || char === '"' || char === '`') {
+            quote = char;
+        } else if ('([{'.includes(char)) {
+            depth += 1;
+        } else if (')]}'.includes(char)) {
+            if (depth === 0) return null;
+            depth -= 1;
+        } else if (char === ',' && depth === 0) {
+            return source.slice(index + 1, index + 201);
+        }
+    }
+    return null;
+}
 
 /** A `findings.` key written as a string literal in any quote, with at least one dot after the group. */
 const FINDING_LITERAL = /(['"`])(findings\.[A-Za-z0-9_]+(?:\.[A-Za-z0-9_]+)+)\1/g;
@@ -159,11 +197,14 @@ export function calls(root: string): Call[] {
                 text: source.slice(match.index, at + 80).split('\n')[0]
             });
         }
-        for (const match of source.matchAll(WORDS)) {
+        const relativePath = file.slice(root.length + 1);
+        for (const match of relativePath.startsWith(WORDS_DIR) ? source.matchAll(WORDS) : []) {
             const at = match.index + match[0].length;
-            const literal = LITERAL.exec(source.slice(at, at + 200));
+            if (/function\s+$/.test(source.slice(0, match.index))) continue;
+            const key = afterFirstArgument(source, at);
+            const literal = key === null ? null : LITERAL.exec(key);
             found.push({
-                file: file.slice(root.length + 1),
+                file: relativePath,
                 reader: 'words',
                 key: literal ? (literal.at(1) ?? literal.at(2) ?? null) : null,
                 text: source.slice(match.index, at + 80).split('\n')[0]
@@ -232,6 +273,7 @@ describe('text keys', () => {
         expect(found.length).toBeGreaterThan(0);
     });
 
+    // Revert: call words(catalog, 'server.chat.' + name) anywhere under src.
     it('uses literals except at the documented computed prefixes', () => {
         const computed = unapproved(found);
         expect(computed.map((call) => `${call.file}: ${call.text}`)).toEqual([]);
@@ -304,12 +346,14 @@ describe('text keys', () => {
         ]);
     });
 
+    // Revert: drop the WORDS scan from calls(), or read `words` only when its first argument is `catalog`.
     it('catches a computed key and a literal key, and reads past neither', () => {
         const dir = mkdtempSync(join(tmpdir(), 'oculus-keys-'));
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const write = (name: string, body: string) => {
             const full = join(dir, name);
             expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
+            mkdirSync(dirname(full), { recursive: true });
             writeFileSync(full, body);
         };
         write(
@@ -328,6 +372,22 @@ describe('text keys', () => {
             'Server.ts',
             "const e = textCatalog(config)['app.nav.host'];\n" +
                 "const f = byKey(textCatalog(config), 'app.search');\n"
+        );
+        // Under lib/server every `words` call is read whatever its first argument is spelled, a call
+        // with no key argument reads no key, and the declaration is left out by the `function` rule.
+        // A `words` outside lib/server is another module's helper and is not read at all.
+        write(
+            'lib/server/pty/Words.ts',
+            "const g = words(catalog, 'server.chat.chat_name', 1);\n" +
+                "const h = words(textCatalog(config), 'server.chat.' + name);\n" +
+                "const i = words(texts, 'server.latex.name', step);\n" +
+                'const k = words(catalog);\n' +
+                'export function words(\n    catalog: Record<string, string>,\n    key: string\n) {}\n'
+        );
+        write('lib/server/mail/Words.ts', "const m = words(catalog, 'server.chat.' + kind);\n");
+        write(
+            'lib/state/Words.ts',
+            "const j = words('kicker', 'kicker');\nconst l = words(catalog, 'app.title');\n"
         );
         expect(calls(dir)).toEqual([
             { file: 'Computed.ts', reader: 't', key: null, text: 't(key);' },
@@ -350,11 +410,44 @@ describe('text keys', () => {
                 reader: 'index',
                 key: 'app.search',
                 text: "byKey(textCatalog(config), 'app.search')"
+            },
+            {
+                file: 'lib/server/mail/Words.ts',
+                reader: 'words',
+                key: null,
+                text: "words(catalog, 'server.chat.' + kind);"
+            },
+            {
+                file: 'lib/server/pty/Words.ts',
+                reader: 'words',
+                key: 'server.chat.chat_name',
+                text: "words(catalog, 'server.chat.chat_name', 1);"
+            },
+            {
+                file: 'lib/server/pty/Words.ts',
+                reader: 'words',
+                key: null,
+                text: "words(textCatalog(config), 'server.chat.' + name);"
+            },
+            {
+                file: 'lib/server/pty/Words.ts',
+                reader: 'words',
+                key: 'server.latex.name',
+                text: "words(texts, 'server.latex.name', step);"
+            },
+            {
+                file: 'lib/server/pty/Words.ts',
+                reader: 'words',
+                key: null,
+                text: 'words(catalog);'
             }
         ]);
         expect(unapproved(calls(dir)).map((call) => call.text)).toEqual([
             't(key);',
-            'lookup(key);'
+            'lookup(key);',
+            "words(catalog, 'server.chat.' + kind);",
+            "words(textCatalog(config), 'server.chat.' + name);",
+            'words(catalog);'
         ]);
     });
 });

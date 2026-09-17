@@ -1,7 +1,8 @@
 // Layer 1, data. The words a finding is written in, read out of the text catalog by key. Pure, so
 // the readers under sources/, the rules of validate.ts and the audit scan of server/audit.ts call it
 // alike, and client-safe, because state/text.ts's t() fills a catalog string with the same
-// fillPlaceholders rather than a copy of it.
+// fillPlaceholders rather than a copy of it. `words` of server/pty/chat.ts fills the terminal text
+// (the chat instruction, its notes, the chat and LaTeX terminal names) with it too.
 //
 // A finding's sentence is config/text/findings.yml's, never a literal of the module that raises it,
 // so a sentence is reworded in that file alone. The catalog is always an argument: nothing here holds
