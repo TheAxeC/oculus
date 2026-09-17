@@ -97,3 +97,14 @@ Measured with a scratch probe spec run against a base copy (the diff reversed) a
 - The real hub's two coauthor manifests on the served board.
 
 Reviewer usage: about 55 tool uses and about 25 minutes by the shell clock. Two read-only git commands outside the allowed list were run: `git show 77ef1c91:tools/oculus/src/lib/themes/derive.ts`, for the base copy, and one `git diff --no-index`, which failed and read nothing. Neither wrote anything.
+
+## Closed (the orchestrator's read of the repair round, 2026-09-17 11:47)
+
+- Spec, the hue text shift: closed in the round; `derive.ts` derives `-txt` as main does and adds `--c-<hue>-lane` and `--c-<hue>-lane-txt`; the builder's probe prints 0 of 1,513 derived tokens changed.
+- Spec, the software tier: closed; a state case puts a software project on its lane.
+- Proof, the unproven wrap: closed; a browser case asserts no mark label is clipped.
+- Proof, the header test: closed; the browser case compares the header's fill and name with the lane tokens under light and mocha.
+- Standards, the four false sentences: closed (`Focus.svelte`, `state/focus.ts`, `derive.ts` head, `LaneHead.svelte`); the token renamed from band to lane.
+- Behaviour, the muted lanes: closed; the muted cluster fades the sub-line and the body, and a browser case asserts the header's opacity is 1.
+- Behaviour, the vanishing card: closed; `movable` refuses a non-live project on the Ideas lane, the Move to menu never offered holding (a premise of the ruling found wrong by the builder), a browser case drags and reads the manifest.
+- Behaviour, the awaiting strip against a coauthor card, and lanes of one colour: booked in the state file's open items for Axel.

@@ -37,7 +37,7 @@ dispatch:                                  # Q37, Q31 and Q32 in flight (dispatc
   round: 1                                  # sent 11:25: six rulings on agents/reviews/Q37-refuter.md (hue text back to main with `--c-<hue>-lane` and `-lane-txt`, muted lanes' headers at full opacity, no holding for non-live tiers, four false sentences, three tests, the visible changes stated)
   reported: 2026-09-17T11:08
   reviewer: a5cac22d0f129b671                # claude:opus through the Agent tool, read-only, launched 11:10, scratch folder scratchpad/q37-review
-  landing: not-started
+  landing: cherry-picking
 - package: Q31
   worker: claude:opus
   worktree: .agents/worktrees/q31
