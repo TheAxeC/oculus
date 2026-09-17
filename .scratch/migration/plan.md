@@ -201,7 +201,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 ## Could run in parallel
 
 - The feature stretch after R17, three in flight at all times (Axel 2026-09-14 17:50 for three at a time; 2026-09-15 19:58 for the rolling window: one new package dispatched at each landing, cut at main's head, its paths checked against the two still running). Alone by nature: Q18, R10, R13a, R13b, K1, R17, L1, L2 before it; R2, O29, O30, X2 after it.
-- The queue, in order (rewritten 2026-09-17 13:05 at Axel's rulings; the sets before it landed): M2 + D16 + Q33, the one trial set of the Opus orchestrator; the pause; Q37; Q31; Q32; Q39; Q30; Q34; Q41; Q42; Q38; D22; Q43; Q44; Q45; Q46; Q47; Q48; Q49; Q50; Q51; Q52; Q53; Q54; Q55; Q56; Q57; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2.
+- The queue, in order (rewritten 2026-09-17 22:42; every open step is named here, including the ones no earlier queue line carried): Q48; Q49; Q50; Q51; Q52; Q53; Q54; Q55; Q56; Q57; Q35; Q36; R12 (the still-open sharp edges of the O1 to O25e landings, listed in the state file); R13 (the 31 lint rules turned back on with their sites fixed); D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
