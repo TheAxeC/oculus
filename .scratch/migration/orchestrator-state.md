@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; in flight: D22 (repair round) and Q38 (repair round), both from 91fb46cb, Q45 (repair round, from 76930aa3); Q41 waiting on Axel's ruling on collapsed layouts; next: Q45, Q46, Q47, Q48, Q49, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; in flight: D22 (repair round) and Q38 (repair round), both from 91fb46cb, Q45 (the run over its round, from 76930aa3); Q41 waiting on Axel's ruling on collapsed layouts; next: Q45, Q46, Q47, Q48, Q49, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q41
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -88,6 +88,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   reported: 2026-09-17T18:07                # everything done; two brief premises corrected by the builder
   reviewer: a5f8eb700bb9d4c73                # claude:opus through the Agent tool, read-only, launched 18:07, scratch folder scratchpad/q45-review (review earned: a server module)
   round: 1                                  # sent 18:15: four rulings on agents/reviews/Q45-refuter.md (a case that the chat start fills through words, the keys scan reading every words( call under server/ whatever its catalog argument, five false sentences, the verify list); round base: scratchpad/q45-round1; paths widened by finding-text.ts's head comment and one terminal route case
+  reported2: 2026-09-17T18:25                # the round's report, appended to agents/reviews/Q45-report.md; all four rulings done
+  reviewer2: ab499ae389f7421e0               # the run over round 1, claude:opus, read-only, launched 18:26, scratch folder scratchpad/q45-review2
   landing: not-started
 ```
 
@@ -835,6 +837,7 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q45, worker claude:opus through the Agent tool, first run: 121,193 tokens, 27 tool uses, 533 s (17:59 to 18:07); everything done.
 - Q38, reviewer claude:opus through the Agent tool, read-only: 203,669 tokens, 66 tool uses, 1,022 s (17:57 to 18:14); eight rulings sent in the one repair round.
 - Q45, reviewer claude:opus through the Agent tool, read-only: 122,612 tokens, 33 tool uses, 481 s (18:07 to 18:15); four rulings sent in the one repair round.
+- Q45, worker round 1 claude:opus: 153,099 tokens cumulative on the thread, 11 tool uses, 631 s (18:15 to 18:25); four rulings done.
 - Q41, repair round claude:opus: 548,405 tokens cumulative on the thread, 47 tool uses, about 63 min (16:51 to 17:54); ruling 1 stopped as ruled, rulings 2 to 5 done.
 - Q41, worker after the ruling claude:opus: the thread's tokens and time are in its notification when it closes; reported 15:41.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
