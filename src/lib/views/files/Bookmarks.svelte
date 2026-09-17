@@ -1,25 +1,48 @@
 <script lang="ts">
-    // Layer 3, partial of views/Files.svelte. The reader's own bookmarks under the tree: one row per
-    // bookmark, opening the file it names, with the control that opens the shared entry form over it.
+    // Layer 3, partial of views/Files.svelte. The reader's own bookmarks as a section under the
+    // trees: a head that opens and closes it and carries the control that adds one, and one explorer
+    // row per bookmark, opening the file it names, with the control that opens the shared entry form
+    // over it. The bookmark the form is open for is drawn as the one in force.
+    //
+    // The head is drawn in every state, since it is where a bookmark is added: with no bookmark the
+    // section says so in one muted row, and with a bookmarks file that could not be read it says why
+    // in that row instead. The section is one stop of the focus order through ui/TreeView.svelte.
     //
     // The rail draws the same bookmarks as buttons, which is where they are pressed from; this is
     // where they are changed, since a form has nowhere to go in a rail of 34-pixel controls.
 
+    import TreeItem from '$lib/ui/TreeItem.svelte';
+    import TreeSection from '$lib/ui/TreeSection.svelte';
+    import TreeView from '$lib/ui/TreeView.svelte';
+    import type { TreeNav } from '$lib/ui/tree-keys';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import type { Entry } from '$lib/state/collection';
     import { t } from '$lib/state/text';
 
     type Props = {
         rows: Entry[];
+        /** What reading the bookmarks failed with, or the empty string. */
+        error: string;
+        /** Whether the section is open. */
+        open: boolean;
         /** The bookmark the form is open for, and the empty string while it is closed. */
         editing: string;
+        /** Whether the form is open to add a bookmark. */
+        adding: boolean;
+        ontoggle: () => void;
+        onadd: () => void;
         onopen: (entry: Entry) => void;
         onedit: (id: string) => void;
     };
 
-    let { rows, editing, onopen, onedit }: Props = $props();
+    let { rows, error, open, editing, adding, ontoggle, onadd, onopen, onedit }: Props = $props();
 
-    /** The root and the path one bookmark names, which is what a row says under its label. */
+    const keyRows = $derived([
+        { id: 'head', parent: null, open },
+        ...(open ? rows.map((row) => ({ id: `mark:${row.id}`, parent: 'head' })) : [])
+    ]);
+
+    /** The root and the path one bookmark names, which is what a row says after its label. */
     function whereOf(entry: Entry): string {
         const root = entry.fields.root;
         const path = entry.fields.path;
@@ -28,69 +51,72 @@
 </script>
 
 <div class="marks" data-fs-bookmarks>
-    <p class="head">{t('files.bookmarks')}</p>
-    <ul class="list" aria-label={t('files.bookmarks')}>
-        {#each rows as row (row.id)}
-            <li class="row" data-fs-bookmark={row.id}>
-                <span class="open">
+    <TreeView label={t('files.bookmarks')} rows={keyRows} {ontoggle}>
+        {#snippet children(nav: TreeNav)}
+            <TreeSection
+                label={t('files.bookmarks')}
+                id="head"
+                {nav}
+                count={rows.length}
+                {open}
+                {ontoggle}
+            >
+                {#snippet actions(reach: number)}
                     <ToolButton
-                        label={row.title}
+                        label={t('files.add_bookmark')}
+                        title={t('files.add_bookmark_title')}
                         glyph={t('files.bookmark_glyph')}
-                        title={t('files.bookmark_open_title', whereOf(row))}
-                        onclick={() => onopen(row)}
+                        compact
+                        tabindex={reach}
+                        expanded={adding}
+                        onclick={onadd}
                     />
-                </span>
-                <ToolButton
-                    label={t('files.bookmark_edit')}
-                    glyph="edit"
-                    compact
-                    expanded={editing === row.id}
-                    title={t('files.bookmark_edit_title', row.title)}
-                    onclick={() => onedit(row.id)}
-                />
-            </li>
-        {/each}
-    </ul>
+                {/snippet}
+                {#if error !== ''}
+                    <li role="none">
+                        <TreeItem label={t('files.bookmarks_failed', error)} tone="error" />
+                    </li>
+                {:else if rows.length === 0}
+                    <li role="none">
+                        <TreeItem label={t('files.bookmarks_empty')} tone="muted" />
+                    </li>
+                {/if}
+                {#each rows as row (row.id)}
+                    <li role="none" data-fs-bookmark={row.id}>
+                        <TreeItem
+                            label={row.title}
+                            id={`mark:${row.id}`}
+                            {nav}
+                            level={2}
+                            glyph={t('files.bookmark_glyph')}
+                            title={t('files.bookmark_open_title', whereOf(row))}
+                            current={editing === row.id}
+                            onclick={() => onopen(row)}
+                        >
+                            {#snippet detail()}
+                                {whereOf(row)}
+                            {/snippet}
+                            {#snippet actions(reach: number)}
+                                <ToolButton
+                                    label={t('files.bookmark_edit')}
+                                    glyph="edit"
+                                    compact
+                                    tabindex={reach}
+                                    expanded={editing === row.id}
+                                    title={t('files.bookmark_edit_title', row.title)}
+                                    onclick={() => onedit(row.id)}
+                                />
+                            {/snippet}
+                        </TreeItem>
+                    </li>
+                {/each}
+            </TreeSection>
+        {/snippet}
+    </TreeView>
 </div>
 
 <style>
     .marks {
-        display: flex;
-        flex-direction: column;
-        gap: 1px;
-        min-width: 0;
-    }
-
-    .head {
-        margin: 6px 0 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-3xs);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .list {
-        display: flex;
-        flex-direction: column;
-        gap: 1px;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-        min-width: 0;
-    }
-
-    .row {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        min-width: 0;
-    }
-
-    /* The label is the row's own box, so a long one elides against the pane's edge rather than
-       pushing the edit control out of the pane. */
-    .open {
-        display: flex;
-        min-width: 0;
-        flex: 1 1 auto;
+        margin-top: 6px;
     }
 </style>

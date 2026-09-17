@@ -118,6 +118,12 @@ const NOTES = ':notes';
 export type FsStore = {
     listing: (root: string, path: string) => Listing;
     entries: (root: string, path: string) => FsEntry[];
+    /**
+     * The entries of one folder as far as they have been read, and null for a folder never read. It
+     * asks the server for nothing, which is what lets a filter look through every folder already read
+     * without reading the rest of the root.
+     */
+    heldEntries: (root: string, path: string) => FsEntry[] | null;
     workspaces: () => WorkspacesState;
     fileText: (root: string, path: string) => FileText;
     /**
@@ -357,6 +363,10 @@ export function createFs(writes: WritesStore): FsStore {
     /** The entries of one folder, which is what the tree walks. */
     function entries(root: string, path: string): FsEntry[] {
         return listing(root, path).entries;
+    }
+
+    function heldEntries(root: string, path: string): FsEntry[] | null {
+        return listings[treeKey(root, path)]?.entries ?? null;
     }
 
     async function loadListing(root: string, path: string, at: number): Promise<void> {
@@ -727,6 +737,7 @@ export function createFs(writes: WritesStore): FsStore {
     return {
         listing,
         entries,
+        heldEntries,
         workspaces,
         fileText,
         readFileKind,

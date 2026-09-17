@@ -1,4 +1,4 @@
-# Oculus text owned by the file browser: the tree, its toolbar, and what a refused workspace write says.
+# Oculus text owned by the file browser: the explorer's header controls, its trees and their heads, its three sections, and what a refused workspace write says.
 text:
     files:
         add: add
@@ -10,14 +10,21 @@ text:
         add_root_title: Add a folder on this machine to this workspace
         bookmark_edit: edit
         bookmark_edit_title: Change the bookmark {0}
+        bookmark_failed: 'The bookmark was not written: {0}'
         bookmark_glyph: star
         bookmark_open_title: Open {0}
         bookmarks: Bookmarks
+        bookmarks_empty: No bookmark yet.
         bookmarks_failed: 'The bookmarks could not be read: {0}'
+        breadcrumb: Path of the selected row
         cancel: cancel
+        collapse_all: collapse all
+        collapse_all_title: Close every folder under {0}
         collapse_title: Close {0}
         expand_title: Open {0}
         file_glyph: paper
+        filter: Filter the folders already read by name
+        filter_none: No folder read so far holds a name with that text.
         folder_glyph: folder
         html_glyph: page
         image_glyph: memories
@@ -32,9 +39,12 @@ text:
         note_open_title: Open the note {0}
         note_untitled: Untitled note
         notes: Notes
+        notes_empty: No note yet.
         notes_failed: 'The notes could not be read: {0}'
         open_title: Open {0} as a tab
         read_failed: 'The roots could not be read: {0}'
+        refresh: refresh
+        refresh_title: Read the roots, the open folders and the lists again
         refused_name_held: A workspace already carries that name.
         refused_no_dir: Type the path of a folder.
         refused_no_name: Type a name for the workspace.
@@ -48,10 +58,17 @@ text:
         refused_root_fixed: A configured root is in every workspace and cannot be removed.
         refused_root_held: That folder is already a root of this workspace.
         remove_root: remove
+        remove_root_confirm: Take {0} out of this workspace?
+        remove_root_detail: The folder stays on this machine; this workspace stops serving it.
         remove_root_title: Take {0} out of this workspace
         reserved: 'Left out of this workspace, since the configuration owns the name: {0}'
         root_dir: Folder path
         root_dir_help: An absolute path, or one starting with ~/
+        row_bookmark: bookmark
+        row_bookmark_title: Bookmark {0}
+        row_open_tab: open in a new tab
+        row_open_tab_title: Open {0} in a tab that stays
+        row_unbookmark_title: Take the bookmark on {0} away
         save: save
         save_as: save as
         save_as_title: Save these roots as a workspace of their own
@@ -59,7 +76,10 @@ text:
         tree: Roots and folders
         workspace: Workspace
         workspace_default: Configured roots
+        workspace_glyph: folder
         workspace_name: Name for the workspace
+        workspace_open_title: Switch to the workspace {0}
+        workspaces: Workspaces
     views:
         files: Files
         files_glyph: applications

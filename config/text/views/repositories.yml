@@ -1,8 +1,17 @@
-# Oculus text owned by the Repositories view: the sections over every root, the log, the branches, the worktrees and the merge back.
+# Oculus text owned by the Repositories view: the repository picker, the changes, the commits, the branches, the worktrees and the merge back.
 text:
     repositories:
         branches: Branches
         branches_empty: git named no branch here.
+        changes: Changes
+        change_name: '{0}, {1}'
+        status_modified: modified
+        status_added: added
+        status_deleted: deleted
+        status_renamed: renamed
+        status_copied: copied
+        status_untracked: untracked
+        status_changed: changed
         diff: diff
         diff_empty: Nothing to show for this one.
         diff_failed: The diff could not be read.
@@ -12,8 +21,7 @@ text:
         diff_worktree_title: Show what this worktree holds that the repository does not
         empty: No repository is on the channel yet.
         empty_glyph: repositories
-        error: git could not read this root.
-        log: Recent commits
+        log: Commits
         log_empty: No commit has been made here yet.
         merge: merge back
         merge_confirm: Merge {0} into {1}?
@@ -25,12 +33,12 @@ text:
         remove_detail: The worktree folder goes, and its branch with it when no work is left only there.
         remove_title: Take this worktree away and delete its branch
         switch: switch to
+        switch_title: Check out {0} in this repository
         terminal: terminal here
         terminal_title: Open a shell in this worktree
         worktree_detached: detached
         worktree_new: New worktree
         worktree_new_create: create
-        worktree_new_label: Name for the new worktree and its branch
         worktree_new_confirm: Make the worktree {0}?
         worktree_new_detail: The worktree is made at {0}, on a branch of that name from the repository's HEAD, and a shell opens in it.
         worktree_path: It will be made at {0}.

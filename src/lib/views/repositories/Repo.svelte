@@ -1,18 +1,25 @@
 <script lang="ts">
-    // Layer 3, partial of views/Repositories.svelte. One repository: its branch line, what is
-    // changed in it, its newest commits, its branches and its worktrees.
+    // Layer 3, partial of views/Repositories.svelte. The one repository the view shows: its branch
+    // line, then Changes, Commits, Branches and Worktrees as collapsible sections of explorer rows,
+    // each with its count at the right edge of its head. The sections are one tree and one stop of
+    // the focus order through ui/TreeView.svelte, moved along with the arrow keys over the rows
+    // state/repositories.ts's repositoryKeyRows() lists, Right and Left opening and closing a head or
+    // a group.
     //
     // It draws and reports presses; every write is the view's, so a section knows nothing about the
-    // endpoint. The change groups are the shared partial the Changes panel draws, with one control
-    // added per row: the diff of that path, which the view opens as a pane of its own.
+    // endpoint. Which sections are closed is the view's instance state, handed in, so a section the
+    // reader closed stays closed across a tab switch and a switch to another repository.
 
-    import ToolButton from '$lib/ui/ToolButton.svelte';
-    import TextInput from '$lib/ui/TextInput.svelte';
-    import ChangeGroups from '$lib/views/shared/ChangeGroups.svelte';
+    import TreeItem from '$lib/ui/TreeItem.svelte';
+    import TreeSection from '$lib/ui/TreeSection.svelte';
+    import TreeView from '$lib/ui/TreeView.svelte';
+    import type { TreeNav } from '$lib/ui/tree-keys';
+    import Branches from './Branches.svelte';
+    import Changes from './Changes.svelte';
     import Worktrees from './Worktrees.svelte';
     import { elide, stamp } from '$lib/state/format';
-    import type { DiffSubject } from '$lib/state/repositories';
-    import type { GitEntry, GitState } from '$lib/state/selectors.svelte';
+    import { repositoryKeyRows, type DiffSubject } from '$lib/state/repositories';
+    import type { GitState } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
 
     type Props = {
@@ -20,6 +27,9 @@
         git: GitState;
         busy: boolean;
         outcome: string;
+        /** The section ids the reader closed. */
+        collapsed: string[];
+        ontoggle: (id: string) => void;
         onstage: (path: string) => void;
         onunstage: (path: string) => void;
         ondiscard: (path: string) => void;
@@ -37,6 +47,8 @@
         git,
         busy,
         outcome,
+        collapsed,
+        ontoggle,
         onstage,
         onunstage,
         ondiscard,
@@ -49,7 +61,12 @@
         onterminal
     }: Props = $props();
 
-    let branchName = $state('');
+    const keyRows = $derived(repositoryKeyRows(git, collapsed));
+
+    /** A key's toggle names a group by its row id; the view keeps it by the group's own id. */
+    function toggled(id: string): void {
+        ontoggle(id.startsWith('group:') ? id.slice('group:'.length) : id);
+    }
 
     /** What the branch line says beside the name: detached, the distance, or in step. */
     function branchState(held: GitState): string {
@@ -60,212 +77,146 @@
         if (bits.length === 0) bits.push(t('sessions.ch_insync'));
         return bits.join(` ${t('sessions.meta_sep')} `);
     }
-
-    function created(): void {
-        const name = branchName.trim();
-        if (name === '') return;
-        branchName = '';
-        onbranch(name);
-    }
 </script>
 
-{#snippet diffControl(entry: GitEntry, kind: string)}
-    {@const staged = kind === 'staged'}
-    <ToolButton
-        label={t('repositories.diff')}
-        title={staged ? t('repositories.diff_staged_title') : t('repositories.diff_title')}
-        onclick={() => ondiff({ root, path: entry.path, staged, worktree: false }, entry.path)}
-    />
-{/snippet}
-
 <section class="repo" data-root={root}>
-    <div class="sec-h">
-        <span class="path" title={root}>{elide(root)}</span>
+    <div class="branch" title={root}>
+        <span class="lb">{t('sessions.ch_branch')}</span>
+        <span class="nm">{git.branch}</span>
+        <span class="mt">{branchState(git)}</span>
     </div>
-    {#if git.error !== null}
-        <p class="none" title={git.error}>{t('repositories.error')}</p>
-    {:else}
-        <div class="branch">
-            <span class="lb">{t('sessions.ch_branch')}</span>
-            <span class="nm">{git.branch}</span>
-            <span class="mt">{branchState(git)}</span>
-        </div>
+    <p class="path" title={root}>{elide(root)}</p>
+    {#if busy}
+        <p class="none">{t('git.busy')}</p>
+    {/if}
+    {#if outcome !== ''}
+        <p class="outcome">{outcome}</p>
+    {/if}
 
-        <div data-group="changes">
-            <ChangeGroups
-                staged={git.staged}
-                unstaged={git.unstaged}
-                untracked={git.untracked}
+    <TreeView label={t('views.repositories')} rows={keyRows} ontoggle={toggled}>
+        {#snippet children(nav: TreeNav)}
+            <Changes
+                {root}
+                {git}
+                {nav}
+                {collapsed}
+                {ontoggle}
                 {onstage}
                 {onunstage}
                 {ondiscard}
-                controls={diffControl}
+                {ondiff}
             />
-        </div>
 
-        <div class="group">
-            <div class="group-h"><span>{t('repositories.log')}</span></div>
-            {#if git.log.length === 0}
-                <p class="none">{t('repositories.log_empty')}</p>
-            {:else}
-                <ul class="log">
+            <div data-group="log">
+                <TreeSection
+                    label={t('repositories.log')}
+                    id="log"
+                    {nav}
+                    count={git.log.length}
+                    open={!collapsed.includes('log')}
+                    ontoggle={() => ontoggle('log')}
+                >
+                    {#if git.log.length === 0}
+                        <li role="none">
+                            <TreeItem label={t('repositories.log_empty')} tone="muted" />
+                        </li>
+                    {/if}
                     {#each git.log as commit (commit.hash)}
-                        <li class="row">
-                            <span class="hash">{commit.short}</span>
-                            <span class="subject" title={commit.subject}>{commit.subject}</span>
-                            <span class="when">{stamp(commit.when)}</span>
+                        <li role="none" data-commit={commit.hash}>
+                            <TreeItem
+                                label={commit.subject}
+                                id={`commit:${commit.hash}`}
+                                {nav}
+                                level={2}
+                                glyph="commit"
+                            >
+                                {#snippet detail()}
+                                    <span class="hash">{commit.short}</span>
+                                {/snippet}
+                                {#snippet end()}
+                                    {stamp(commit.when)}
+                                {/snippet}
+                            </TreeItem>
                         </li>
                     {/each}
-                </ul>
-            {/if}
-        </div>
-
-        <div class="group">
-            <div class="group-h"><span>{t('repositories.branches')}</span></div>
-            {#if git.branches.length === 0}
-                <p class="none">{t('repositories.branches_empty')}</p>
-            {:else}
-                <ul class="list">
-                    {#each git.branches as branch (branch.name)}
-                        <li class="row" class:current={branch.current}>
-                            <span class="nm">{branch.name}</span>
-                            <span class="up">{branch.upstream}</span>
-                            {#if !branch.current}
-                                <span class="acts">
-                                    <ToolButton
-                                        label={t('repositories.switch')}
-                                        disabled={busy}
-                                        onclick={() => onswitch(branch.name)}
-                                    />
-                                </span>
-                            {/if}
-                        </li>
-                    {/each}
-                </ul>
-            {/if}
-            <div class="add">
-                <span class="lb">{t('git.branch_new')}</span>
-                <TextInput
-                    value={branchName}
-                    label={t('git.branch_new_label')}
-                    oninput={(next: string) => (branchName = next)}
-                />
-                <ToolButton label={t('git.branch_new_create')} disabled={busy} onclick={created} />
+                </TreeSection>
             </div>
-        </div>
 
-        <Worktrees
-            {root}
-            {git}
-            {busy}
-            {ondiff}
-            {onremove}
-            {onmerge}
-            {onterminal}
-            oncreate={onworktree}
-        />
+            <Branches
+                {git}
+                {nav}
+                {busy}
+                open={!collapsed.includes('branches')}
+                ontoggle={() => ontoggle('branches')}
+                {onswitch}
+                {onbranch}
+            />
 
-        {#if busy}
-            <p class="none">{t('git.busy')}</p>
-        {/if}
-        {#if outcome !== ''}
-            <p class="outcome">{outcome}</p>
-        {/if}
-    {/if}
+            <Worktrees
+                {root}
+                {git}
+                {nav}
+                {busy}
+                open={!collapsed.includes('worktrees')}
+                ontoggle={() => ontoggle('worktrees')}
+                {ondiff}
+                {onremove}
+                {onmerge}
+                {onterminal}
+                oncreate={onworktree}
+            />
+        {/snippet}
+    </TreeView>
 </section>
 
 <style>
-    .sec-h,
-    .group-h {
+    .repo {
         display: flex;
-        align-items: center;
+        flex-direction: column;
         gap: 6px;
-        color: var(--muted-txt, var(--muted));
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
+        min-width: 0;
     }
-    .sec-h {
-        font-size: var(--fs-sm);
-        border-bottom: 1px solid var(--line);
-        padding-bottom: 2px;
-        margin-bottom: 4px;
-    }
-    .group-h {
-        font-size: var(--fs-xs);
-    }
-    .group {
-        margin-top: 8px;
-    }
-    .path {
-        font-family: var(--font-mono);
-        text-transform: none;
-    }
-    .branch,
-    .add {
+
+    .branch {
         display: flex;
         align-items: center;
         gap: 6px;
         font-size: var(--fs-sm);
     }
-    .add {
-        margin-top: 4px;
-    }
+
     .branch .lb,
-    .add .lb {
+    .branch .mt {
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
     }
+
     .branch .mt {
         margin-left: auto;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-xs);
     }
-    .log,
-    .list {
+
+    .path {
         margin: 0;
-        padding: 0;
-        list-style: none;
-    }
-    .row {
-        display: flex;
-        align-items: baseline;
-        gap: 6px;
-        min-width: 0;
-        font-size: var(--fs-sm);
-    }
-    .row.current .nm {
-        color: var(--c-green-txt, var(--muted));
-    }
-    .hash {
-        flex: 0 0 auto;
-        font-family: var(--font-mono);
-        color: var(--muted-txt, var(--muted));
-    }
-    .subject {
-        min-width: 0;
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-    }
-    .when,
-    .up {
-        flex: 0 0 auto;
-        margin-left: auto;
         color: var(--muted-txt, var(--muted));
+        font-family: var(--font-mono);
         font-size: var(--fs-xs);
     }
-    .acts {
-        flex: 0 0 auto;
-        display: flex;
-        gap: 2px;
+
+    .hash {
+        margin-right: 4px;
+        font-family: var(--font-mono);
     }
+
     .none {
-        margin: 2px 0 0;
+        margin: 0;
         color: var(--muted-txt, var(--muted));
         font-size: var(--fs-xs);
     }
+
     .outcome {
-        margin: 4px 0 0;
+        margin: 0;
         font-size: var(--fs-md);
     }
 </style>

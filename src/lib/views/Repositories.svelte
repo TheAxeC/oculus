@@ -13,8 +13,14 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. Every root the `git` channel carries, one section each: the branch line, the
-    // three change groups, the newest commits, the branches, and the worktrees of the root.
+    // Layer 3, view. One repository at a time, read like a source control view: a picker over the
+    // roots of the `git` channel that git answered for as repositories, each named by its last
+    // folder or, where two share it, by its last two, and under it the one picked, with its changes,
+    // its commits, its branches and its worktrees as collapsible sections of explorer rows.
+    //
+    // Which repository is shown and which sections are closed are the instance's own state, so the
+    // view comes back as it was left after a tab switch, and a repository the picker no longer offers
+    // hands the view to the first one it does.
     //
     // The state is the channel's, pushed, so nothing here polls: a commit made in a terminal moves
     // the section within the watcher's two seconds. The one thing the channel does not carry is a
@@ -27,24 +33,54 @@
 
     import Confirm from '$lib/ui/Confirm.svelte';
     import Empty from '$lib/ui/Empty.svelte';
+    import Menu from '$lib/ui/Menu.svelte';
+    import type { MenuItem } from '$lib/ui/menu-items';
     import Pane from '$lib/ui/Pane.svelte';
     import Repo from './repositories/Repo.svelte';
-    import { plannedPath } from '$lib/state/repositories';
+    import { toggleExpanded } from '$lib/state/fs';
+    import {
+        plannedPath,
+        repositoriesViewOf,
+        repositoryLabels,
+        repositoryRoots,
+        shownRoot,
+        type RepositoriesView
+    } from '$lib/state/repositories';
     import { t } from '$lib/state/text';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
     const {
         repositories,
-        selectors: { gitFor, gitRoots }
+        selectors: { gitFor, gitRoots },
+        ui: { instanceState, setInstanceState }
     } = useState();
 
     let { instance }: ViewProps = $props();
 
     type Ask = { message: string; detail: string; act: () => void };
 
-    const roots = $derived(gitRoots());
+    const roots = $derived(repositoryRoots(gitRoots(), gitFor));
+    const labels = $derived(repositoryLabels(roots));
+    const view = $derived(repositoriesViewOf(instanceState(instance.id)));
+    const shown = $derived(shownRoot(roots, view.root));
+    const held = $derived(gitFor(shown));
+    const choices = $derived<MenuItem[]>(
+        roots.map((root) => ({
+            id: root,
+            label: labels[root],
+            title: root,
+            active: root === shown
+        }))
+    );
     let asking: Ask | null = $state(null);
+
+    /** Write part of what this instance remembers, keeping the rest of it as it was. */
+    function patch(part: Partial<RepositoriesView>): void {
+        const kept = instanceState(instance.id);
+        const keep = typeof kept === 'object' && kept !== null && !Array.isArray(kept) ? kept : {};
+        setInstanceState(instance.id, { ...keep, ...part });
+    }
 
     function ask(message: string, detail: string, act: () => void): void {
         asking = { message, detail, act };
@@ -102,29 +138,40 @@
         {#if roots.length === 0}
             <Empty message={t('repositories.empty')} glyph={t('repositories.empty_glyph')} />
         {:else}
-            {#each roots as root (root)}
-                {@const held = gitFor(root)}
-                {#if held !== null}
+            <div class="picker" data-repo-picker>
+                <Menu
+                    label={labels[shown] ?? ''}
+                    glyph="repositories"
+                    items={choices}
+                    placement="down"
+                    onpick={(root: string) => patch({ root })}
+                />
+            </div>
+            {#if held !== null}
+                {#key shown}
                     <Repo
-                        {root}
+                        root={shown}
                         git={held}
-                        busy={repositories.busy(root)}
-                        outcome={repositories.outcome(root)}
-                        onstage={(path: string) => void repositories.stage(root, path)}
-                        onunstage={(path: string) => void repositories.unstage(root, path)}
-                        ondiscard={(path: string) => discardPath(root, path)}
+                        busy={repositories.busy(shown)}
+                        outcome={repositories.outcome(shown)}
+                        collapsed={view.collapsed}
+                        ontoggle={(id: string) =>
+                            patch({ collapsed: toggleExpanded(view.collapsed, id) })}
+                        onstage={(path: string) => void repositories.stage(shown, path)}
+                        onunstage={(path: string) => void repositories.unstage(shown, path)}
+                        ondiscard={(path: string) => discardPath(shown, path)}
                         ondiff={repositories.openDiff}
-                        onswitch={(name: string) => switchTo(root, name)}
-                        onbranch={(name: string) => createBranch(root, name)}
-                        onworktree={(name: string) => createWorktree(root, name)}
+                        onswitch={(name: string) => switchTo(shown, name)}
+                        onbranch={(name: string) => createBranch(shown, name)}
+                        onworktree={(name: string) => createWorktree(shown, name)}
                         onremove={(path: string, label: string) =>
-                            removeWorktree(root, path, label)}
-                        onmerge={(branch: string, onto: string) => mergeBack(root, branch, onto)}
+                            removeWorktree(shown, path, label)}
+                        onmerge={(branch: string, onto: string) => mergeBack(shown, branch, onto)}
                         onterminal={(path: string, label: string) =>
-                            void repositories.shellIn(root, path, label)}
+                            void repositories.shellIn(shown, path, label)}
                     />
-                {/if}
-            {/each}
+                {/key}
+            {/if}
         {/if}
     </div>
 </Pane>
@@ -144,6 +191,12 @@
     .repos {
         display: flex;
         flex-direction: column;
-        gap: 16px;
+        gap: 6px;
+        min-width: 0;
+    }
+
+    .picker {
+        display: flex;
+        min-width: 0;
     }
 </style>

@@ -36,6 +36,14 @@ icons:
     list: list
     disclosure: chevron-down
     now: play
+    chevron: chevron-right
+    collapse_all: chevrons-down-up
+    folder_add: folder-plus
+    save: save
+    branch: git-branch
+    merge: git-merge
+    commit: git-commit-horizontal
+    worktree: folder-tree
     # status + markers
     check: check
     done: check-circle

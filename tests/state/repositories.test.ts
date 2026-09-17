@@ -6,11 +6,21 @@
 // tests/routes/git.test.ts and tests/server/git-write.test.ts.
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import type { GitEntry, GitState } from '../../src/lib/data/model.ts';
+import { git } from '../sessions-fixture.ts';
 import {
     diffState,
     diffUrl,
     fileDiffUrl,
     plannedPath,
+    changeGroups,
+    repositoriesViewOf,
+    repositoryKeyRows,
+    repositoryLabels,
+    repositoryRoots,
+    shownRoot,
+    statusStyle,
+    statusWordKey,
     validName,
     worktreeDiffUrl,
     worktreeLabel,
@@ -72,6 +82,120 @@ describe('where a worktree goes', () => {
         expect(ignoresWorktrees(`# ${IGNORE_RULE}\n`)).toBe(false);
         expect(ignoresWorktrees('/.agents/\n')).toBe(false);
         expect(ignoresWorktrees('')).toBe(false);
+    });
+});
+
+// Which repository one view shows. Each case names the change to state/repositories.ts that turns it
+// red.
+describe('the repository a view shows', () => {
+    // Revert: return `kept` from shownRoot whether or not the channel carries it.
+    it('shows the repository it keeps while the channel carries it, and the first one otherwise', () => {
+        expect(shownRoot(['/hub', '/other'], '/other')).toBe('/other');
+        expect(shownRoot(['/hub', '/other'], '/gone')).toBe('/hub');
+        expect(shownRoot(['/hub', '/other'], '')).toBe('/hub');
+        expect(shownRoot([], '/hub')).toBe('');
+    });
+
+    // Revert: default `root` to the first entry of `collapsed`.
+    it('reads what the instance keeps, and a default for anything it cannot read', () => {
+        expect(repositoriesViewOf({ root: '/hub', collapsed: ['log', 4] })).toEqual({
+            root: '/hub',
+            collapsed: ['log']
+        });
+        expect(repositoriesViewOf(null)).toEqual({ root: '', collapsed: [] });
+        expect(repositoriesViewOf({ root: 7, collapsed: 'log' })).toEqual({
+            root: '',
+            collapsed: []
+        });
+    });
+
+    // Revert: return `roots` whole from repositoryRoots.
+    it('offers the roots git answered for as repositories and no other', () => {
+        const states: Record<string, GitState> = {
+            '/hub': git({ branch: 'main' }),
+            '/notes': git({ error: 'not a git repository' })
+        };
+        expect(
+            repositoryRoots(['/hub', '/notes', '/gone'], (root) => states[root] ?? null)
+        ).toEqual(['/hub']);
+    });
+
+    // Revert: label every root by its last folder alone in repositoryLabels.
+    it('names a repository by its last folder, and by its last two where another shares it', () => {
+        expect(repositoryLabels(['/a/work/hub', '/b/other/hub', '/c/engine'])).toEqual({
+            '/a/work/hub': 'work/hub',
+            '/b/other/hub': 'other/hub',
+            '/c/engine': 'engine'
+        });
+        expect(repositoryLabels(['/a/x/hub', '/b/x/hub'])).toEqual({
+            '/a/x/hub': '/a/x/hub',
+            '/b/x/hub': '/b/x/hub'
+        });
+        expect(repositoryLabels(['/'])).toEqual({ '/': '/' });
+    });
+});
+
+describe('the rows of one repository', () => {
+    const entry = (path: string): GitEntry => ({ path, status: 'M', added: 1, deleted: 0 });
+
+    // Revert: keep the staged group whatever it holds, in changeGroups.
+    it('leaves out an empty staged group and keeps the changed and untracked groups', () => {
+        expect(changeGroups(git({ unstaged: [entry('a')] })).map((group) => group.id)).toEqual([
+            'changed',
+            'untracked'
+        ]);
+        expect(changeGroups(git({ staged: [entry('b')] })).map((group) => group.id)).toEqual([
+            'staged',
+            'changed',
+            'untracked'
+        ]);
+    });
+
+    // Revert: push the rows under a closed head as well, in repositoryKeyRows.
+    it('lists each head, and under an open one its groups and rows, for the keyboard', () => {
+        const held = git({
+            unstaged: [entry('a.md')],
+            log: [{ hash: 'h1', short: 'h1', subject: 's', when: '' }],
+            branches: [{ name: 'main', upstream: '', current: true }],
+            worktrees: [
+                { path: '/hub', branch: 'main', head: 'h1', main: true },
+                { path: '/hub/.agents/worktrees/x', branch: 'x', head: 'h2', main: false }
+            ]
+        });
+        expect(repositoryKeyRows(held, [])).toEqual([
+            { id: 'changes', parent: null, open: true },
+            { id: 'group:changed', parent: 'changes', open: true },
+            { id: 'change:changed:a.md', parent: 'group:changed' },
+            { id: 'group:untracked', parent: 'changes', open: true },
+            { id: 'log', parent: null, open: true },
+            { id: 'commit:h1', parent: 'log' },
+            { id: 'branches', parent: null, open: true },
+            { id: 'branch:main', parent: 'branches' },
+            { id: 'worktrees', parent: null, open: true },
+            { id: 'worktree:/hub/.agents/worktrees/x', parent: 'worktrees' }
+        ]);
+        expect(repositoryKeyRows(held, ['changes', 'log']).map((row) => row.id)).toEqual([
+            'changes',
+            'log',
+            'branches',
+            'branch:main',
+            'worktrees',
+            'worktree:/hub/.agents/worktrees/x'
+        ]);
+    });
+
+    // Revert: answer one key for every letter in statusWordKey.
+    it('names each status letter by its word, and any other letter as changed', () => {
+        expect(statusWordKey('M')).toBe('repositories.status_modified');
+        expect(statusWordKey('?')).toBe('repositories.status_untracked');
+        expect(statusWordKey('U')).toBe('repositories.status_changed');
+    });
+
+    // Revert: colour every letter grey in statusStyle.
+    it('colours a status letter in its hue, and an unknown one grey', () => {
+        expect(statusStyle('M')).toBe('--tone-txt: var(--c-amber-txt)');
+        expect(statusStyle('?')).toBe('--tone-txt: var(--c-slate-txt)');
+        expect(statusStyle('X')).toBe('--tone-txt: var(--c-grey-txt)');
     });
 });
 

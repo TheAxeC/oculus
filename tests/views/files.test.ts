@@ -1,16 +1,19 @@
-// The file browser rendered to HTML on the server: the toolbar the roots are changed from, and the
-// tree's rows for one root and its first level.
+// The file browser rendered to HTML on the server: the explorer's root heads with the controls the
+// roots are changed from, the tree's rows for one root and its first level, and the three sections
+// under the trees.
 //
 // The catalog and the glyphs are the real config; the rows are built by state/fs.ts from synthetic
 // listings, so the tree is drawn without a server. What this does NOT cover: the fetches
 // state/fs.svelte.ts makes, which need a server and are exercised by tests/browser/files.spec.ts;
-// and pressing a control, which no server rendering runs.
+// and pressing a control or a key, which no server rendering runs and tests/browser/files.spec.ts
+// does. Each case written for the explorer names the change that turns it red.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
+import type { ComponentProps } from 'svelte';
 import Files from '../../src/lib/views/Files.svelte';
 import Bookmarks from '../../src/lib/views/files/Bookmarks.svelte';
 import EntryForm from '../../src/lib/views/shared/EntryForm.svelte';
@@ -48,7 +51,8 @@ const LISTINGS: Record<string, FsEntry[]> = {
     'hub:': [
         { name: 'code', kind: 'dir', size: 0, mtime: 1 },
         { name: 'README.md', kind: 'file', size: 2048, mtime: 1 }
-    ]
+    ],
+    'hub:code': [{ name: 'run.py', kind: 'file', size: 10, mtime: 1 }]
 };
 
 const ROWS = treeRows(
@@ -57,30 +61,60 @@ const ROWS = treeRows(
         { key: 'notes', dir: '/tmp/notes', fixed: false }
     ],
     (root, path) => LISTINGS[treeKey(root, path)] ?? [],
-    ['hub:']
+    ['hub:', 'hub:code']
 );
 
+/** The tree's props, every callback a no-op, with the fields a case sets laid over them. */
+function treeProps(over: Record<string, unknown> = {}): ComponentProps<typeof Tree> {
+    return {
+        rows: ROWS,
+        filtering: false,
+        selected: null,
+        fixed: ['hub'],
+        marked: [],
+        onselect: noop,
+        ontoggle: noop,
+        onopen: noop,
+        onremove: noop,
+        onbookmark: noop,
+        onrefresh: noop,
+        oncollapse: noop,
+        ...over
+    };
+}
+
+/** One row of a rendering, from its attribute to the end of its list item. */
+function rowOf(body: string, key: string): string {
+    const at = body.indexOf(`data-fs-row="${key}"`);
+    return at < 0 ? '' : body.slice(at, body.indexOf('</li>', at));
+}
+
 describe('the file browser as a tab', () => {
-    it('offers the workspace picker, the add-root control and the save-as control', () => {
+    // Revert: drop the Search from Files.svelte.
+    it('offers the filter over the trees and the workspaces section with its save-as control', () => {
         const { body } = render(Files, {
             context: clientContext(client),
             props: { instance: instance() }
         });
 
-        expect(body).toContain('aria-label="File browser controls"');
-        expect(body).toContain('aria-label="Workspace"');
+        expect(body).toContain('aria-label="Filter the folders already read by name"');
+        expect(body).toContain('data-fs-workspaces');
         expect(body).toContain('Configured roots');
-        expect(body).toContain('+ root');
-        expect(body).toContain('save as');
+        expect(body).toContain('aria-label="save as"');
     });
 
-    it('says it is reading while the workspaces have not arrived', () => {
+    // Revert: draw the Controls partial only once the workspaces have arrived, in Files.svelte.
+    it('offers the workspace menu and the add-root control on its header while the roots are read', () => {
         const { body } = render(Files, {
             context: clientContext(client),
             props: { instance: instance() }
         });
+        const header = body.slice(body.indexOf('<header'), body.indexOf('</header>'));
 
         expect(body).toContain('Reading...');
+        expect(header).toContain('aria-label="Workspace"');
+        expect(header).toContain('aria-haspopup="menu"');
+        expect(header).toContain('aria-label="+ root"');
     });
 });
 
@@ -99,65 +133,164 @@ describe('the control that opens a note', () => {
 });
 
 describe('the tree', () => {
+    // Revert: draw only the rows of depth 0 in Tree.svelte's each.
     it('draws one line per root and the first level of the one that is open', () => {
-        const { body } = render(Tree, {
-            context: clientContext(client),
-            props: { rows: ROWS, fixed: ['hub'], ontoggle: noop, onopen: noop, onremove: noop }
-        });
+        const { body } = render(Tree, { context: clientContext(client), props: treeProps() });
 
         expect(body).toContain('data-fs-row="hub:"');
         expect(body).toContain('data-fs-row="hub:code"');
         expect(body).toContain('data-fs-row="hub:README.md"');
         expect(body).toContain('data-fs-row="notes:"');
-        expect(body).toContain('aria-label="Roots and folders"');
+        expect(body).toContain('role="tree" aria-label="Roots and folders"');
     });
 
-    it('reports an open folder as expanded and a closed one as not', () => {
-        const { body } = render(Tree, {
-            context: clientContext(client),
-            props: { rows: ROWS, fixed: ['hub'], ontoggle: noop, onopen: noop, onremove: noop }
-        });
-        const row = /data-fs-row="hub:"[\s\S]*?<\/li>/.exec(body)?.[0] ?? '';
-        const closed = /data-fs-row="notes:"[\s\S]*?<\/li>/.exec(body)?.[0] ?? '';
+    // Revert: pass `expanded={row.open}` to the file rows as well in Tree.svelte.
+    it('makes every row a treeitem at its level, and reports an open folder as expanded', () => {
+        const { body } = render(Tree, { context: clientContext(client), props: treeProps() });
 
-        expect(row).toContain('aria-expanded="true"');
-        expect(closed).toContain('aria-expanded="false"');
+        expect(rowOf(body, 'hub:')).toContain('aria-expanded="true"');
+        expect(rowOf(body, 'notes:')).toContain('aria-expanded="false"');
+        // A file opens nothing under it, so it says nothing about being open.
+        expect(rowOf(body, 'hub:README.md')).not.toContain('aria-expanded');
+        expect(rowOf(body, 'hub:')).toContain('aria-level="1"');
+        expect(rowOf(body, 'hub:code')).toContain('aria-level="2"');
+        expect(rowOf(body, 'hub:code/run.py')).toContain('aria-level="3"');
+        expect(rowOf(body, 'hub:code/run.py')).toContain('role="treeitem"');
     });
 
-    it('sets each level in one step further than the one above it', () => {
-        const { body } = render(Tree, {
-            context: clientContext(client),
-            props: { rows: ROWS, fixed: ['hub'], ontoggle: noop, onopen: noop, onremove: noop }
-        });
+    // Revert: pass `depth={row.depth}` rather than `row.depth - 1` to the row in Tree.svelte.
+    it('draws one indent guide per level under the root, and none on a root head', () => {
+        const { body } = render(Tree, { context: clientContext(client), props: treeProps() });
+        const guides = (key: string): number => rowOf(body, key).split('class="guide').length - 1;
 
-        expect(body).toContain('padding-left: 0px');
-        expect(body).toContain('padding-left: 14px');
+        expect(guides('hub:')).toBe(0);
+        expect(guides('hub:code')).toBe(0);
+        expect(guides('hub:code/run.py')).toBe(1);
     });
 
+    // Revert: drop `heading` from the root row's TreeItem in Tree.svelte.
+    it('draws a root line as the head of its tree and every other line as a row', () => {
+        const { body } = render(Tree, { context: clientContext(client), props: treeProps() });
+
+        expect(rowOf(body, 'hub:')).toContain('heading');
+        expect(rowOf(body, 'hub:code')).not.toContain('heading');
+    });
+
+    // Revert: drop the `!fixed.includes(row.root)` test around the removal in Tree.svelte.
     it('offers a removal on a reader-added root and none on a configured one', () => {
+        const { body } = render(Tree, { context: clientContext(client), props: treeProps() });
+
+        expect(rowOf(body, 'hub:')).not.toContain('Take hub out of this workspace');
+        expect(rowOf(body, 'notes:')).toContain('Take notes out of this workspace');
+    });
+
+    // Revert: draw a Workspaces menu or an add-root control in Tree.svelte's rootActions.
+    it('draws icon controls alone on a root head: refresh, collapse all and the removal', () => {
+        const { body } = render(Tree, { context: clientContext(client), props: treeProps() });
+        const head = rowOf(body, 'notes:');
+        const actions = head.slice(head.indexOf('class="actions'));
+
+        expect(body).not.toContain('aria-label="Workspace"');
+        expect(body).not.toContain('aria-label="+ root"');
+        expect(actions).toContain('aria-label="refresh"');
+        expect(actions).toContain('aria-label="collapse all"');
+        expect(actions).toContain('aria-label="remove"');
+        expect(actions.split('class="tool').length - 1).toBe(actions.split('compact').length - 1);
+    });
+
+    // Revert: give folder rows the `fileActions` snippet as well in Tree.svelte.
+    it('offers the bookmark and the new-tab controls on a file row and neither on a folder', () => {
+        const { body } = render(Tree, { context: clientContext(client), props: treeProps() });
+
+        expect(rowOf(body, 'hub:README.md')).toContain('aria-label="bookmark"');
+        expect(rowOf(body, 'hub:README.md')).toContain('aria-label="open in a new tab"');
+        expect(rowOf(body, 'hub:code')).not.toContain('aria-label="bookmark"');
+        expect(rowOf(body, 'hub:code')).not.toContain('aria-label="open in a new tab"');
+    });
+
+    // Revert: set `pressed={false}` on the row's bookmark control.
+    it("draws a file's bookmark control pressed while a bookmark names it", () => {
         const { body } = render(Tree, {
             context: clientContext(client),
-            props: { rows: ROWS, fixed: ['hub'], ontoggle: noop, onopen: noop, onremove: noop }
+            props: treeProps({ marked: ['hub:README.md'] })
         });
-        const configured = /data-fs-row="hub:"[\s\S]*?<\/li>/.exec(body)?.[0] ?? '';
-        const added = /data-fs-row="notes:"[\s\S]*?<\/li>/.exec(body)?.[0] ?? '';
 
-        expect(configured).not.toContain('Take hub out of this workspace');
-        expect(added).toContain('Take notes out of this workspace');
+        expect(rowOf(body, 'hub:README.md')).toContain('aria-pressed="true"');
+        expect(rowOf(body, 'hub:code/run.py')).toContain('aria-pressed="false"');
+    });
+
+    // Revert: pass `current={''}` to the TreeView in Tree.svelte, whatever is selected.
+    it('draws the selected row as selected and makes it the one stop of the focus order', () => {
+        const { body } = render(Tree, {
+            context: clientContext(client),
+            props: treeProps({ selected: { root: 'hub', path: 'code' } })
+        });
+
+        expect(rowOf(body, 'hub:code')).toContain('aria-selected="true"');
+        expect(rowOf(body, 'hub:code')).toContain('tabindex="0"');
+        expect(rowOf(body, 'hub:')).toContain('tabindex="-1"');
+        expect(body.split('aria-selected="true"').length - 1).toBe(1);
+        expect(body.split('tabindex="0"').length - 1).toBe(1);
+    });
+
+    // Revert: leave the stop nowhere while no drawn row is selected.
+    it('puts the stop on the first row while no drawn row is selected', () => {
+        const { body } = render(Tree, {
+            context: clientContext(client),
+            props: treeProps({ selected: { root: 'gone', path: 'x' } })
+        });
+
+        expect(rowOf(body, 'hub:')).toContain('tabindex="0"');
+        expect(body).not.toContain('aria-selected="true"');
     });
 });
 
-describe('the workspace picker', () => {
-    it('offers the default workspace as the empty choice and one choice per saved name', () => {
+describe('the workspaces section', () => {
+    // Revert: drop the leading '' from `rows` in Workspaces.svelte, or draw `current` as `selected`.
+    it('lists the configured roots first and one row per saved name, the one in force current', () => {
         const { body } = render(Workspaces, {
             context: clientContext(client),
-            props: { current: 'thesis', names: ['', 'thesis', 'grant'], onselect: noop }
+            props: {
+                current: 'thesis',
+                names: ['', 'thesis', 'grant'],
+                open: true,
+                saving: false,
+                ontoggle: noop,
+                onsave: noop,
+                onselect: noop
+            }
         });
 
-        expect(body).toContain('Configured roots');
-        expect(body).toContain('thesis');
-        expect(body).toContain('grant');
-        expect(body.match(/<option/g)?.length).toBe(3);
+        expect(body).toContain('data-fs-workspace=""');
+        expect(body.indexOf('Configured roots')).toBeLessThan(
+            body.indexOf('data-fs-workspace="thesis"')
+        );
+        expect(body).toContain('data-fs-workspace="grant"');
+        const thesis = body.slice(body.indexOf('data-fs-workspace="thesis"'));
+        expect(thesis.slice(0, thesis.indexOf('</li>'))).toContain('aria-current="true"');
+        expect(body.split('aria-current="true"').length - 1).toBe(1);
+        // The workspace in force is drawn as in force, never as the reader's selection.
+        expect(body).not.toContain('aria-selected="true"');
+    });
+
+    // Revert: render the list whether or not `open` is set, in ui/TreeSection.svelte.
+    it('draws the head alone while the section is closed', () => {
+        const { body } = render(Workspaces, {
+            context: clientContext(client),
+            props: {
+                current: '',
+                names: ['', 'thesis'],
+                open: false,
+                saving: false,
+                ontoggle: noop,
+                onsave: noop,
+                onselect: noop
+            }
+        });
+
+        expect(body).toContain('Workspaces');
+        expect(body).toContain('aria-expanded="false"');
+        expect(body).not.toContain('data-fs-workspace="thesis"');
     });
 });
 
@@ -186,12 +319,9 @@ describe('the form a root and a workspace are named in', () => {
 });
 
 describe('the marks the tree draws', () => {
+    // Revert: draw a folder row with the file glyph in Tree.svelte's glyphOf.
     it('gives a folder row and the empty state different marks', () => {
-        const rows = treeRows([{ key: 'hub', dir: '/tmp/hub', fixed: true }], () => [], []);
-        const { body } = render(Tree, {
-            context: clientContext(client),
-            props: { rows, fixed: ['hub'], ontoggle: noop, onopen: noop, onremove: noop }
-        });
+        const { body } = render(Tree, { context: clientContext(client), props: treeProps() });
         const empty = render(Files, {
             context: clientContext(client),
             props: { instance: instance() }
@@ -226,6 +356,7 @@ describe('the marks the tree draws', () => {
 });
 
 describe('a root nothing saved', () => {
+    // Revert: the removal case's, dropping the `fixed` test.
     it('draws no removal control, since there is nothing saved to remove', () => {
         const rows = treeRows(
             [{ key: 'workspace', dir: '/tmp/workspace', fixed: true }],
@@ -234,7 +365,7 @@ describe('a root nothing saved', () => {
         );
         const { body } = render(Tree, {
             context: clientContext(client),
-            props: { rows, fixed: ['workspace'], ontoggle: noop, onopen: noop, onremove: noop }
+            props: treeProps({ rows, fixed: ['workspace'] })
         });
 
         expect(body).toContain('data-fs-row="workspace:"');
@@ -415,14 +546,19 @@ describe("the reader's own bookmarks and notes", () => {
         vi.unstubAllGlobals();
     });
 
-    it('offers the bookmark and the note controls in the toolbar', () => {
+    // Revert: label the head control of Notes.svelte with the section's name instead of its own.
+    it('offers the bookmark and the note controls on the heads of their sections', () => {
         const { body } = render(Files, {
             context: clientContext(client),
             props: { instance: instance() }
         });
+        const head = (attribute: string): string =>
+            body.slice(body.indexOf(attribute), body.indexOf('</button>', body.indexOf(attribute)));
 
-        expect(body).toContain('+ bookmark');
-        expect(body).toContain('+ note');
+        expect(body).toContain('aria-label="+ bookmark"');
+        expect(body).toContain('aria-label="+ note"');
+        expect(head('data-fs-bookmarks')).toContain('aria-label="Bookmarks"');
+        expect(head('data-fs-notes')).toContain('aria-label="Notes"');
     });
 
     it('lists the bookmarks under the tree, each with a control that changes it', async () => {
@@ -451,7 +587,8 @@ describe("the reader's own bookmarks and notes", () => {
         expect(body).toContain('Delete the note a note title');
     });
 
-    it('draws neither list on a machine that has no bookmarks and no notes', async () => {
+    // Revert: drop the empty row of views/files/Bookmarks.svelte.
+    it('draws both heads with a count of none on a machine that has no bookmarks and no notes', async () => {
         vi.stubGlobal('window', {});
         vi.stubGlobal('fetch', (url: string) => {
             if (url.includes('bookmarks=1')) {
@@ -470,11 +607,17 @@ describe("the reader's own bookmarks and notes", () => {
             props: { instance: instance() }
         });
 
-        expect(body).not.toContain('data-fs-bookmarks');
-        expect(body).not.toContain('data-fs-notes');
+        expect(body).toContain('data-fs-bookmarks');
+        expect(body).toContain('data-fs-notes');
+        expect(body).not.toContain('data-fs-bookmark=');
+        expect(body).not.toContain('data-fs-note=');
+        expect(body.split('>0</span>').length - 1).toBe(2);
+        expect(body).toContain('No bookmark yet.');
+        expect(body).toContain('No note yet.');
     });
 
-    it('says why the two lists could not be read rather than drawing them empty', async () => {
+    // Revert: draw the bookmarks' error as a paragraph in place of Bookmarks in views/Files.svelte.
+    it('says why the two lists could not be read, and keeps both heads and their add controls', async () => {
         vi.stubGlobal('window', {});
         vi.stubGlobal('fetch', (url: string) =>
             Promise.resolve(
@@ -497,15 +640,27 @@ describe("the reader's own bookmarks and notes", () => {
 
         expect(body).toContain('The bookmarks could not be read: origin');
         expect(body).toContain('The notes could not be read: origin');
+        const marks = body.slice(body.indexOf('data-fs-bookmarks'), body.indexOf('data-fs-notes'));
+        const held = body.slice(body.indexOf('data-fs-notes'), body.indexOf('data-fs-workspaces'));
+        expect(marks).toContain('aria-label="+ bookmark"');
+        expect(marks).toContain('The bookmarks could not be read: origin');
+        expect(held).toContain('aria-label="+ note"');
+        expect(held).toContain('The notes could not be read: origin');
     });
 
+    // Revert: give a bookmark row the bookmark's title rather than its place as its tooltip.
     it('says where each bookmark points, so two labels on one path are told apart', async () => {
         const fresh = await loaded();
         const { body } = render(Bookmarks, {
             context: clientContext(fresh),
             props: {
                 rows: fresh.fs.bookmarks().entries,
+                error: '',
+                open: true,
                 editing: '',
+                adding: false,
+                ontoggle: noop,
+                onadd: noop,
                 onopen: noop,
                 onedit: noop
             }

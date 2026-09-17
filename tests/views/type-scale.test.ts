@@ -43,8 +43,9 @@ const VIEWS: Record<string, string> = {
     'File.svelte': '.download=fs-sm',
     'Files.svelte': '.note=fs-sm | .said=fs-sm',
     'Note.svelte': '.when=fs-sm',
-    'files/Bookmarks.svelte': '.head=fs-3xs',
-    'files/Notes.svelte': '.head=fs-3xs | .when=fs-3xs',
+    'files/Bookmarks.svelte': '',
+    'files/Controls.svelte': '',
+    'files/Notes.svelte': '',
     'files/RootForm.svelte': '',
     'files/Tree.svelte': '',
     'files/Workspaces.svelte': '',
@@ -144,10 +145,11 @@ const VIEWS: Record<string, string> = {
     'radar/Bucket.svelte': '',
     'radar/RadarCard.svelte': '.sub=fs-md | .date=fs-sm',
     'repositories/Diff.svelte': '.text=fs-sm | .note, .failed=fs-sm',
+    'repositories/Branches.svelte': '',
+    'repositories/Changes.svelte': '',
     'repositories/Repo.svelte':
-        '.sec-h=fs-sm | .group-h=fs-xs | .branch, .add=fs-sm | .branch .lb, .add .lb=fs-xs | .branch .mt=fs-xs | .row=fs-sm | .when, .up=fs-xs | .none=fs-xs | .outcome=fs-md',
-    'repositories/Worktrees.svelte':
-        '.group-h=fs-xs | .row=fs-sm | .br=fs-xs | .add=fs-sm | .add .lb=fs-xs | .none=fs-xs | .warn=fs-xs',
+        '.branch=fs-sm | .branch .lb, .branch .mt=fs-xs | .path=fs-xs | .none=fs-xs | .outcome=fs-md',
+    'repositories/Worktrees.svelte': '',
     'sessions/Agents.svelte': '.agent=fs-sm | .st=fs-xs | .mo=fs-xs',
     'sessions/Changes.svelte': '.sec-h=fs-sm | .none=fs-xs',
     'sessions/ChangesRepo.svelte':
@@ -165,8 +167,8 @@ const VIEWS: Record<string, string> = {
     'sessions/Timeline.svelte': '.event=fs-sm | .ts=fs-xs',
     'sessions/Transcript.svelte':
         '.turn=fs-md | .turn.tool=fs-sm | .who=fs-xs | .ts=fs-xs | .cut=fs-md | .failed=fs-md | .doc=fs-md | .doc :global(h1), .doc :global(h2), .doc :global(h3), .doc :global(h4)=fs-md | .doc :global(code), .doc :global(pre)=fs-sm',
-    'shared/ChangeGroups.svelte':
-        '.group-h=fs-xs | .file=fs-sm | .bin=fs-xs | .none=fs-xs | .add, .del=fs-xs',
+    'shared/ChangeCounts.svelte': '.bin=fs-xs | .add, .del=fs-xs',
+    'shared/ChangeGroups.svelte': '.group-h=fs-xs | .file=fs-sm | .none=fs-xs',
     'shared/BookmarkStar.svelte': '.failed=fs-sm',
     'shared/CrossLinks.svelte': '',
     'shared/CardDetails.svelte': '.field .value=fs-md | .label=fs-xxs | .statusline=fs-sm',

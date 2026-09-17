@@ -112,6 +112,10 @@ const SOLID: Record<string, string> = {
     'src/lib/ui/TextInput.svelte .text': 'an input, whose text is typed and read back',
     'src/lib/ui/Ticker.svelte .act': 'a control, pressed to run what it names',
     'src/lib/ui/ToolButton.svelte .tool': 'a control, read at the size of a word',
+    'src/lib/ui/Breadcrumb.svelte .crumb:hover':
+        'a hover response, saying which segment the pointer is on',
+    'src/lib/ui/TreeItem.svelte .item:not(.muted, .warn, .error):hover':
+        'a hover response, saying which row the pointer is on',
     'src/lib/views/hpc/Capacity.svelte .bar':
         'a track, read as the proportion of it the fill covers',
     'src/lib/views/sessions/SessionWorkspace.svelte .pick:hover, .hide:hover':

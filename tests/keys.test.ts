@@ -1,6 +1,7 @@
 // The catalog key gate in both directions. Every literal reader names a catalog key, and every
 // catalog key is reached by a literal, registration metadata, or one documented computed lookup.
 
+import { statusWordKey } from '../src/lib/state/repositories.ts';
 import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
@@ -80,6 +81,13 @@ const COMPUTED_PREFIXES = [
         file: 'lib/views/History.svelte',
         start: 't(`history.kind_${row.kind',
         keys: () => recordedKinds().map((kind) => `history.kind_${kind.replaceAll('-', '_')}`)
+    },
+    {
+        // A change row is named by its path and the word its git status letter stands for; a letter
+        // git adds later reads as `changed`.
+        file: 'lib/views/repositories/Changes.svelte',
+        start: 't(statusWordKey(',
+        keys: () => ['M', 'A', 'D', 'R', 'C', '?', 'U'].map((letter) => statusWordKey(letter))
     }
 ] as const;
 

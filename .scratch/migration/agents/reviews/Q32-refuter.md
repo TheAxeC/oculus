@@ -166,3 +166,65 @@ Changes the report does not state, with before and after:
 - Reverts for the explorer's filter, breadcrumb and arrow-key browser cases were not rerun individually. Only the hover browser revert was rerun; the builder's six-at-once build was not reproduced.
 
 Reviewer usage: about 40 tool uses, about 16 minutes (11:29 to 11:45 CEST).
+
+
+## Repair round 1, refuted
+```
+Round delta: diffed the worktree against the first reviewer's pre-round copy (scratchpad/q32-review/copy, src tests config). The round's changes outside the brief's paths are src/lib/views/shared/ChangeGroups.svelte (modified) and src/lib/views/shared/ChangeCounts.svelte (new). tests/ui/wall.test.ts did not change in the round (it changed in the first build). views/files/Controls.svelte, repositories/Branches.svelte and repositories/Changes.svelte are inside the brief's paths.
+npx vitest run --reporter=dot: Test Files 236 passed (236), Tests 3970 passed (3970). No timing test failed.
+npm run check: COMPLETED 1180 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+npm run lint: exit 0, no output
+npm run format:check: All matched files use Prettier code style!
+ASCII perl gate: prints nothing, exit 0
+npm run build: built in 4.00s
+find src tests bin -type f | xargs wc -l | sort -n | tail -3: 970 tests/state/layout.test.ts, 979 tests/state/board.test.ts
+npx playwright test files.spec.ts repositories.spec.ts search.spec.ts source.spec.ts open-file.spec.ts: 46 passed (1.3m). tests/browser/sessions.spec.ts does not exist, so it was dropped. No browser spec draws the session views' Changes panel.
+Reverts, one per build, each run alone by -g in my clone (scratchpad/q32-review2/copy), every one restored, clone src identical to the worktree afterwards:
+  drop .item:hover .actions: hover case 1 failed
+  guides border var(--line) always: guides case 1 failed
+  var(--tree-row, 24px): 22-pixel case 1 failed
+  .item.selected color var(--accent): 22-pixel case 1 failed
+  onremove calls remove(key) with no confirm: removal case 1 failed
+  markLabel returns row.name: same-name bookmark case 1 failed
+  Notes open={true}: section case 1 failed
+  Controls active: false: workspace menu case 1 failed
+  picker over gitRoots() unfiltered: picker case 1 failed
+  Commits open={true}: Repositories section case 1 failed
+  breadcrumb selects the root line: breadcrumb case 1 failed
+  actions(-1): files one-stop case 1 failed; repositories one-stop case 1 failed
+  actions(0): files one-stop case 1 failed
+  TreeView tabindex 0 for every row: repositories one-stop case 1 failed
+  treeKeyRows fixed: false: Left-under-filter case 1 failed
+  toggle() without `if (filtering) return;`: Enter-under-filter case 1 failed
+  Tooltip wrapped round the whole .item (tooltip on keyboard focus): arrow-keys case 1 failed (tooltip count Expected 0, Received 1)
+Probe (scratchpad/q32-review2/copy/tests/browser/zz-review2.spec.ts, zz-scale.spec.ts), themes switched through the Theme menu:
+  ink on --accent-bg for a selected row and a selected root head, every theme: lowest 4.52 (solarized), then 5.40 everforest, 5.71 latte; light 12.68. The builder's figure reproduces.
+  picker with a repository with one commit and a `git init` repository with no commit added as roots: ["demo","oculus-review2-..."]; the no-commit repository is not listed.
+  Tab from the picker: Changes head, New branch input, create, New worktree input, create, then out of the view.
+  --text-scale 1.6: row 22px, name font 20.8px, line box 31.19px, .main scrollHeight 27 in a 22px box.
+Screenshots (scratchpad/q32-review2/shots): light and vscode-dark-modern Files and Repositories at 1280x900 with a row hovered, Files and Repositories at 560px wide, the picker open, Files at text scale 1.6.
+```
+- src/lib/state/repositories.ts:91-96 with views/Repositories.svelte:63 (decision 7, the picker keeps roots whose `error === null`), Behaviour. `server/git.ts:101` sets `error` when `git rev-parse --abbrev-ref HEAD` fails, and it fails on a repository with no commit yet (git 2.49: "fatal: ambiguous argument 'HEAD'", exit 128). It also sets `error` when `git status` fails or goes past the 5 s TIMEOUT_MS (`git.ts:115`). The probe confirms a `git init` root is missing from the picker. Before the round such a root was a picker entry with the `repositories.error` line. Now nothing in the view says it exists. If a shown repository's read fails on one push, the view jumps to the first repository and comes back on the next push (`shownRoot` does not write back). The report states the filter but not these cases. The Doc text for HELP.md line 140 ("the roots ... that is a git repository") is false for a repository with no commit. The first-build test that covered the error line (`tests/views/repositories.test.ts` "draws the error of a root git could not read") was deleted, and no test covers a repository with no commit.
+- src/lib/ui/TreeItem.svelte:219, 245, 285 against :223, 374 (ruling 2, density), Behaviour and Standards. The row height and the indent are fixed at 22px and 12px. The two font sizes are multiplied by `--text-scale`. At the maximum scale of 1.6 (`state/ui.svelte.ts:291`), the probe measured a 31px line inside a 22px row. Hover and selection paint 22px of the line, and neighbouring line boxes overlap by 9px (screenshot light-files-scale16.png). The Doc text for the DESIGN.md entry says "Its height, indent and two type sizes are ... each scaled by the text scale", which is false for height and indent. No case runs above scale 1.
+- src/lib/ui/TreeItem.svelte:230-232, 349-355 (ruling 3, ink on the tint), Proof. The contrast rests on a scratch probe; the suite checks nothing. `themes/derive.ts` makes `--ink-txt` readable on chip, card, panel and bg (`derive.ts:219`), not on `--accent-bg`. The token derived for text on that surface is `--on-accent-bg` (`:217`), and `--accent-bg-txt` for accent text on it. Solarized passes at 4.52 by chance. A theme added later can fall under 4.5 and no test turns red. The builder named this gap himself.
+- src/lib/views/repositories/Changes.svelte:99 (ruling 7, Source Control rows), Behaviour. A change row's treeitem and button are named `nameOf(entry.path)` alone. The folder, the line counts and the status letter are not in the accessible name. Two changed files `a/README.md` and `b/README.md` are announced the same, and neither says whether it is modified, added or deleted. The report does not state this.
+- src/lib/ui/TreeItem.svelte:226-228 (look), Behaviour. `.item:hover` also tints rows with nothing to press: "No bookmark yet.", "nothing", "This repository has no worktree beside itself.", the .gitignore warning and the planned-path row. In light-files-narrow.png the empty Bookmarks row is drawn hovered. VS Code highlights nothing on a message row. The row tooltip opens on hover only, as ruled, but it still covers the row below while the pointer rests (light-files-hover.png covers the next root head; light-repos-hover.png covers the Untracked group).
+- src/lib/views/files/Controls.svelte:26-31 and views/files/Workspaces.svelte:33, 40-42 (ruling 5), Standards (DRY, spec.md principles). The same list, the configured roots first under `files.workspace_default` and then the named workspaces with the empty name filtered out, is built in both partials.
+- src/lib/ui/tree-keys.ts:41, Standards. One comment line in a block hard-wrapped at 100 columns runs to about 160 ("presses its button (ui/TreeItem.svelte). From a row that is not drawn, ... A key the tree does").
+- views/shared/ChangeGroups.svelte and views/shared/ChangeCounts.svelte (ruling 12, reach beyond the paths), Spec. The round went outside its paths only in these two files, both as named in the report. The styles moved to ChangeCounts.svelte are byte-identical to those removed from ChangeGroups (`.bin`, `.add`, `.del`), and the spans still sit directly in `.file`. `tests/views/sessions.test.ts` and `type-scale.test.ts` pass. No browser run draws the session Changes panel, so its look after the move was read, not seen.
+- Closures checked and found as claimed: items 1, 4, 5, 6, 8, 9, 10, 11 and 13. No check was weakened. The removed tests were replaced by cases over the new mechanism (`treeMove` became `rowMove` in `ui/tree-keys.ts` with its own tests; `repositoryName` became `repositoryLabels`). `grep -rn "treeMove\|repositoryName\|repositories.error\|worktree_new_label\|letterStyle"` over src, tests, config, HELP.md, DESIGN.md and README.md finds nothing left. The `git.branch_new_label` key that remains is used by `sessions/ChangesRepo.svelte` and `Deposit.svelte`.
+
+Reviewer usage: about 50 tool uses, about 26 minutes (12:41 to 13:07 CEST).
+
+## Closed
+
+- The picker leaves out a repository with no commit, or one whose read failed (`state/repositories.ts` `repositoryRoots`, `server/git.ts` line 101): booked in the state file's open items. The cause is the git reader, a server module outside the step's paths, which reads a repository with no commit as an error; the fix belongs there.
+- Row height and indent at a larger text size: `ui/TreeItem.svelte` scales `--tree-row` and `--tree-indent`'s fallbacks by `--text-scale` as it does the two type sizes; `tests/browser/files.spec.ts`'s 22-pixel case now also sets `--text-scale: 1.6` on the tree and checks a 35.2 px row holding its line and a 19.2 px indent (red under the unscaled height: expected 35.2, received 22).
+- Ink on the tint unproven: a selected row draws its whole line in `--on-accent-bg`, the token `themes/derive.ts` derives for text on `--accent-bg`, and `tests/contrast.test.ts` measures that pair under every theme; the browser case checks the selected name's colour against that token.
+- A change row's accessible name: the row and its button are named by the path and the status word (`repositories.change_name`, `statusWordKey` over `repositories.status_*`); `tests/views/repositories.test.ts` checks `code/one.py, modified` (red with the name removed) and `tests/state/repositories.test.ts` the words.
+- Hover on rows with nothing to press: a row drawn with a `tone` (the empty and warning rows) takes no hover tint; `tests/ui/wall.test.ts`'s surface list follows the selector. No browser case: the empty rows the served demo hub draws depend on its bookmarks and notes; read, not seen. The tooltip covering the next row while the pointer rests stays as ruled (hover only).
+- The workspace list in two partials: `workspaceChoices` in `state/fs.ts`, used by `views/files/Controls.svelte` and `Workspaces.svelte`, with its case in `tests/state/explorer.test.ts`.
+- `ui/tree-keys.ts`'s long comment line rewrapped.
+- `views/shared/ChangeGroups.svelte` and `ChangeCounts.svelte` outside the round's paths: kept, as the report named them; the session views' Changes panel is looked at on the TEST page at landing.
+
+After the fixes, in the worktree: `npx vitest run tests/state tests/views tests/ui tests/contrast.test.ts tests/integrity.test.ts` 2,074 passed; `npm run check` 0 errors; `npm run lint`; `npm run build`; `npx playwright test tests/browser/files.spec.ts tests/browser/repositories.spec.ts` 29 passed.

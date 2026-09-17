@@ -1,28 +1,48 @@
 <script lang="ts">
-    // Layer 3, partial of views/Files.svelte. The scratch notes under the tree: one row per note,
-    // newest first, with what it is called, when it was last written, and its removal behind the
-    // confirm every write that can lose work sits behind.
+    // Layer 3, partial of views/Files.svelte. The scratch notes as a section under the trees: a head
+    // that opens and closes it and carries the control that opens a new note, and one explorer row
+    // per note, newest first, with what it is called, when it was last written, and its removal
+    // behind the confirm every write that can lose work sits behind.
+    //
+    // The head is drawn in every state, since it is where a note is started: with no note the section
+    // says so in one muted row, and with notes that could not be read it says why in that row
+    // instead. The section is one stop of the focus order through ui/TreeView.svelte.
     //
     // It holds nothing of its own but which row the confirm is open for, and even that is the id
     // rather than a flag, so the dialog names the note it is about to remove.
 
     import Confirm from '$lib/ui/Confirm.svelte';
+    import TreeItem from '$lib/ui/TreeItem.svelte';
+    import TreeSection from '$lib/ui/TreeSection.svelte';
+    import TreeView from '$lib/ui/TreeView.svelte';
+    import type { TreeNav } from '$lib/ui/tree-keys';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { t } from '$lib/state/text';
     import { stamp } from '$lib/state/notes';
 
     type Props = {
         rows: { id: string; title: string; modified: number }[];
+        /** What reading the notes failed with, or the empty string. */
+        error: string;
+        /** Whether the section is open. */
+        open: boolean;
+        ontoggle: () => void;
+        onadd: () => void;
         onopen: (id: string) => void;
         onremove: (id: string) => void;
     };
 
-    let { rows, onopen, onremove }: Props = $props();
+    let { rows, error, open, ontoggle, onadd, onopen, onremove }: Props = $props();
 
     /** The note the confirm is open for, and the empty string while it is closed. */
     let asked = $state('');
 
     const named = $derived(rows.find((row) => row.id === asked));
+
+    const keyRows = $derived([
+        { id: 'head', parent: null, open },
+        ...(open ? rows.map((row) => ({ id: `note:${row.id}`, parent: 'head' })) : [])
+    ]);
 
     /** What a note is listed as: its own title, or the words for one that has none yet. */
     function nameOf(row: { title: string }): string {
@@ -31,29 +51,65 @@
 </script>
 
 <div class="notes" data-fs-notes>
-    <p class="head">{t('files.notes')}</p>
-    <ul class="list" aria-label={t('files.notes')}>
-        {#each rows as row (row.id)}
-            <li class="row" data-fs-note={row.id}>
-                <span class="open">
+    <TreeView label={t('files.notes')} rows={keyRows} {ontoggle}>
+        {#snippet children(nav: TreeNav)}
+            <TreeSection
+                label={t('files.notes')}
+                id="head"
+                {nav}
+                count={rows.length}
+                {open}
+                {ontoggle}
+            >
+                {#snippet actions(reach: number)}
                     <ToolButton
-                        label={nameOf(row)}
+                        label={t('files.add_note')}
+                        title={t('files.add_note_title')}
                         glyph={t('files.note_glyph')}
-                        title={t('files.note_open_title', nameOf(row))}
-                        onclick={() => onopen(row.id)}
+                        compact
+                        tabindex={reach}
+                        onclick={onadd}
                     />
-                </span>
-                <span class="when">{stamp(row.modified)}</span>
-                <ToolButton
-                    label={t('files.note_delete')}
-                    glyph="trash"
-                    compact
-                    title={t('files.note_delete_title', nameOf(row))}
-                    onclick={() => (asked = row.id)}
-                />
-            </li>
-        {/each}
-    </ul>
+                {/snippet}
+                {#if error !== ''}
+                    <li role="none">
+                        <TreeItem label={t('files.notes_failed', error)} tone="error" />
+                    </li>
+                {:else if rows.length === 0}
+                    <li role="none">
+                        <TreeItem label={t('files.notes_empty')} tone="muted" />
+                    </li>
+                {/if}
+                {#each rows as row (row.id)}
+                    <li role="none" data-fs-note={row.id}>
+                        <TreeItem
+                            label={nameOf(row)}
+                            id={`note:${row.id}`}
+                            {nav}
+                            level={2}
+                            glyph={t('files.note_glyph')}
+                            title={t('files.note_open_title', nameOf(row))}
+                            onclick={() => onopen(row.id)}
+                        >
+                            {#snippet detail()}
+                                {stamp(row.modified)}
+                            {/snippet}
+                            {#snippet actions(reach: number)}
+                                <ToolButton
+                                    label={t('files.note_delete')}
+                                    glyph="trash"
+                                    compact
+                                    tabindex={reach}
+                                    title={t('files.note_delete_title', nameOf(row))}
+                                    onclick={() => (asked = row.id)}
+                                />
+                            {/snippet}
+                        </TreeItem>
+                    </li>
+                {/each}
+            </TreeSection>
+        {/snippet}
+    </TreeView>
 </div>
 
 {#if named !== undefined}
@@ -73,49 +129,6 @@
 
 <style>
     .notes {
-        display: flex;
-        flex-direction: column;
-        gap: 1px;
-        min-width: 0;
-    }
-
-    .head {
-        margin: 6px 0 0;
-        color: var(--muted-txt, var(--muted));
-        font-size: var(--fs-3xs);
-        text-transform: uppercase;
-        letter-spacing: 0.04em;
-    }
-
-    .list {
-        display: flex;
-        flex-direction: column;
-        gap: 1px;
-        margin: 0;
-        padding: 0;
-        list-style: none;
-        min-width: 0;
-    }
-
-    .row {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        min-width: 0;
-    }
-
-    /* The name is the row's own box, so a long title elides against the pane's edge rather than
-       pushing the time and the removal out of the pane. */
-    .open {
-        display: flex;
-        min-width: 0;
-        flex: 1 1 auto;
-    }
-
-    .when {
-        color: var(--muted-txt, var(--muted));
-        font-family: var(--font-num);
-        font-size: var(--fs-3xs);
-        white-space: nowrap;
+        margin-top: 6px;
     }
 </style>

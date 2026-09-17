@@ -166,6 +166,163 @@ export function toggleExpanded(expanded: string[], key: string): string[] {
     return expanded.includes(key) ? expanded.filter((one) => one !== key) : [...expanded, key];
 }
 
+/** One row as the tree addresses it: which root, and which path under it. */
+export type RowRef = { root: string; path: string };
+
+/**
+ * What one file browser keeps about itself across a tab switch and a saved page: the open folders,
+ * the selected row, the filter text and the sections under the tree that are closed.
+ */
+export type FilesView = {
+    expanded: string[];
+    selected: RowRef | null;
+    filter: string;
+    collapsed: string[];
+};
+
+/** The file browser's instance state, every field defaulted, so a state from any source draws. */
+export function filesViewOf(state: unknown): FilesView {
+    const map =
+        typeof state === 'object' && state !== null && !Array.isArray(state)
+            ? (state as Record<string, unknown>)
+            : {};
+    const picked = map.selected as Record<string, unknown> | null | undefined;
+    const selected =
+        typeof picked === 'object' &&
+        picked !== null &&
+        typeof picked.root === 'string' &&
+        typeof picked.path === 'string' &&
+        picked.root !== ''
+            ? { root: picked.root, path: picked.path }
+            : null;
+    const collapsed = Array.isArray(map.collapsed)
+        ? map.collapsed.filter((one): one is string => typeof one === 'string')
+        : [];
+    return {
+        expanded: expandedOf(state),
+        selected,
+        filter: typeof map.filter === 'string' ? map.filter : '',
+        collapsed
+    };
+}
+
+/** The key one row is addressed by among the rows, which is its key in the set of open folders. */
+export function rowKey(row: RowRef): string {
+    return treeKey(row.root, row.path);
+}
+
+/** The folder one path sits in, and null for a root's own line, which sits in nothing. */
+export function parentOf(row: RowRef): RowRef | null {
+    if (row.path === '') return null;
+    const at = row.path.lastIndexOf('/');
+    return { root: row.root, path: at < 0 ? '' : row.path.slice(0, at) };
+}
+
+/**
+ * The rows a filter leaves: every root's line, every entry whose name holds the text whatever its
+ * case, and every folder above one of those, drawn open so the match is seen under the folders it
+ * sits in. The entries are the listings already read, `null` for a folder never read: a folder the
+ * reader opened once and closed again is searched, and a folder nobody opened is not, since reading
+ * it would walk the whole root for one keystroke. An empty filter is no filter, and the view draws
+ * treeRows() for it instead.
+ */
+export function filterRows(
+    roots: FsRoot[],
+    heldOf: (root: string, path: string) => FsEntry[] | null,
+    text: string
+): TreeRow[] {
+    const wanted = text.trim().toLowerCase();
+    const walk = (root: string, path: string, depth: number): TreeRow[] => {
+        const found: TreeRow[] = [];
+        for (const entry of heldOf(root, path) ?? []) {
+            const child = childPath(path, entry.name);
+            const below = entry.kind === 'dir' ? walk(root, child, depth + 1) : [];
+            if (below.length === 0 && !entry.name.toLowerCase().includes(wanted)) continue;
+            found.push({
+                root,
+                path: child,
+                name: entry.name,
+                kind: entry.kind,
+                size: entry.size,
+                depth,
+                open: below.length > 0
+            });
+            found.push(...below);
+        }
+        return found;
+    };
+    return roots.flatMap((root) => {
+        const below = walk(root.key, '', 1);
+        const own: TreeRow = {
+            root: root.key,
+            path: '',
+            name: root.key,
+            kind: 'dir',
+            size: 0,
+            depth: 0,
+            open: below.length > 0
+        };
+        return [own, ...below];
+    });
+}
+
+/** The same set of open folders with one folder set open or closed, whatever it was before. */
+export function setExpanded(expanded: string[], key: string, open: boolean): string[] {
+    const rest = expanded.filter((one) => one !== key);
+    return open ? [...rest, key] : rest;
+}
+
+/**
+ * The rows as the tree's keyboard reads them (ui/tree-keys.ts's KeyRow): each row's key, the key of
+ * the row it sits under, and whether a folder is open. While a filter draws the rows, a folder is
+ * open because the filter holds it so, and the keyboard steps through it without opening or closing
+ * it, which is what leaves the reader's own open folders as they were when the filter is cleared.
+ */
+export function treeKeyRows(
+    rows: TreeRow[],
+    filtering: boolean
+): { id: string; parent: string | null; open?: boolean; fixed?: boolean }[] {
+    return rows.map((row) => {
+        const parent = parentOf(row);
+        return {
+            id: rowKey(row),
+            parent: parent === null ? null : rowKey(parent),
+            open: row.kind === 'dir' ? row.open : undefined,
+            fixed: filtering
+        };
+    });
+}
+
+/**
+ * The label a file is bookmarked under from the tree: its own name, or its path under the root when
+ * another bookmark already carries that name, since the label is what a bookmark is found by.
+ */
+export function markLabel(row: RowRef & { name: string }, labels: string[]): string {
+    return labels.includes(row.name) ? row.path : row.name;
+}
+
+/**
+ * The segments of the path one row sits at: the root, then each folder down to the row itself, each
+ * with the row it names.
+ */
+export function crumbsOf(selected: RowRef | null): { row: RowRef; label: string }[] {
+    if (selected === null) return [];
+    const parts = selected.path.split('/').filter((part) => part !== '');
+    return [
+        { row: { root: selected.root, path: '' }, label: selected.root },
+        ...parts.map((part, at) => ({
+            row: { root: selected.root, path: parts.slice(0, at + 1).join('/') },
+            label: part
+        }))
+    ];
+}
+
+/** The open folders with every folder under one root closed, the root's own line left as it was. */
+export function collapseRoot(expanded: string[], root: string): string[] {
+    const own = treeKey(root, '');
+    return expanded.filter((key) => key === own || !key.startsWith(own));
+}
+
 /**
  * The lines of the tree: every root, and under each open folder the entries the server answered for
  * it. A folder that is open but whose listing has not arrived contributes its own line and nothing
@@ -207,4 +364,12 @@ export function treeRows(
         if (open) walk(root.key, '', 1);
     }
     return rows;
+}
+
+/**
+ * The workspaces a reader picks among, in their order: the configured roots first, which have no
+ * name, then every saved workspace by its name.
+ */
+export function workspaceChoices(names: string[]): string[] {
+    return ['', ...names.filter((name) => name !== '')];
 }

@@ -1,5 +1,6 @@
-// The file browser in Chrome: the rail opens it, a root reads its first level from the server, and a
-// file in that level opens as the tab its own bytes ask for.
+// The file browser in Chrome: the rail opens it, a root reads its first level from the server, a file
+// in that level opens as the tab its own bytes ask for, and the explorer answers the arrow keys, the
+// filter, the breadcrumb, a row's hover and a section's head.
 //
 // This is the one check that the fetches actually reach the server, which no server rendering runs:
 // the workspaces, one directory listing, the file's own bytes, and the add-root write. The hub is the
@@ -13,7 +14,7 @@
 // frame with net::ERR_BLOCKED_BY_CLIENT and draws the file without one) and that the server answers
 // it, which is everything up to the viewer.
 
-import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
@@ -286,7 +287,7 @@ test("a file is bookmarked from its own tab, and the rail draws the reader's own
     await expect(page.locator('nav button[data-bookmark="hub/README.md"]')).toHaveCount(0);
 });
 
-test('a note is opened from the toolbar, typed into, saved on its own, and deleted', async ({
+test('a note is opened from its section, typed into, saved on its own, and deleted', async ({
     page
 }) => {
     await boot(page);
@@ -441,4 +442,448 @@ test('the first bookmark is made from the form, and an HTML one is one tab from 
     await expect(frame).toHaveCount(1);
     await expect(page.getByRole('tab', { name: 'the spec page' })).toBeVisible();
     await expect(page.getByRole('tab', { name: 'page.html' })).toHaveCount(0);
+});
+
+/** The treeitem one row of the tree is, which carries its state and takes the keyboard's focus. */
+function item(page: Page, root: string, path = ''): ReturnType<Page['locator']> {
+    return page.locator(`[data-fs-row="${root}:${path}"] [role="treeitem"]`);
+}
+
+/** A scratch root with one folder in it, added through the page, and the key the tree gives it. */
+async function nestedRoot(page: Page): Promise<{ dir: string; key: string }> {
+    const dir = scratch();
+    mkdirSync(join(dir, 'sub'));
+    writeFileSync(join(dir, 'sub', 'inner.txt'), 'inside\n');
+    await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
+    await page.getByRole('textbox', { name: t('files.root_dir') }).fill(dir);
+    await page.getByRole('button', { name: t('files.add'), exact: true }).click();
+    const key = dir.split(sep).at(-1) ?? '';
+    await expect(row(page, key)).toBeVisible();
+    return { dir, key };
+}
+
+/** Open a root and its one folder, waiting for each listing, with the folder left selected. */
+async function openNested(page: Page, key: string): Promise<void> {
+    await row(page, key).click();
+    await expect(item(page, key, 'sub')).toBeVisible();
+    await page.keyboard.press('ArrowDown');
+    await expect(item(page, key, 'sub')).toBeFocused();
+    await page.keyboard.press('ArrowRight');
+    await expect(item(page, key, 'sub/inner.txt')).toBeVisible();
+}
+
+// Revert: return null from rowMove in ui/tree-keys.ts for every key.
+test('the arrow keys move the selection, open and close a folder, and carry the focus', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+
+    // A press on the head opens the root and selects it.
+    await row(page, key).click();
+    await expect(item(page, key)).toHaveAttribute('aria-selected', 'true');
+    await expect(item(page, key, 'sub')).toBeVisible();
+
+    // Down selects the first entry, which is the folder, and the focus goes with it.
+    await page.keyboard.press('ArrowDown');
+    await expect(item(page, key, 'sub')).toHaveAttribute('aria-selected', 'true');
+    await expect(item(page, key, 'sub')).toBeFocused();
+    await expect(item(page, key, 'sub')).toHaveAttribute('aria-expanded', 'false');
+
+    // Right opens it, and Right again steps into it.
+    await page.keyboard.press('ArrowRight');
+    await expect(item(page, key, 'sub')).toHaveAttribute('aria-expanded', 'true');
+    await expect(item(page, key, 'sub/inner.txt')).toBeVisible();
+    await page.keyboard.press('ArrowRight');
+    await expect(item(page, key, 'sub/inner.txt')).toHaveAttribute('aria-selected', 'true');
+    await expect(item(page, key, 'sub/inner.txt')).toBeFocused();
+
+    // A focus moved by a key opens no tooltip, so the row the next key goes to stays readable.
+    await page.mouse.move(0, 0);
+    await expect(page.locator('[role="tooltip"]:not([hidden])')).toHaveCount(0);
+
+    // Left steps out to the folder, Left again closes it, and Up goes back to the head.
+    await page.keyboard.press('ArrowLeft');
+    await expect(item(page, key, 'sub')).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('ArrowLeft');
+    await expect(item(page, key, 'sub')).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator(`[data-fs-row="${key}:sub/inner.txt"]`)).toHaveCount(0);
+    await page.keyboard.press('ArrowUp');
+    await expect(item(page, key)).toHaveAttribute('aria-selected', 'true');
+    await expect(item(page, key)).toBeFocused();
+
+    // End goes to the last row of the tree, and Home back to the first.
+    const tree = page.getByRole('tree', { name: t('files.tree') });
+    await page.keyboard.press('End');
+    await expect(tree.getByRole('treeitem').last()).toHaveAttribute('aria-selected', 'true');
+    await page.keyboard.press('Home');
+    await expect(tree.getByRole('treeitem').first()).toHaveAttribute('aria-selected', 'true');
+});
+
+// Revert: pass `rows` rather than `shown` to Tree in views/Files.svelte.
+test('the filter narrows the rows to the names holding its text, their folders kept open', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+    await row(page, key).click();
+    await row(page, key, 'sub').click();
+    await expect(row(page, key, 'sub/inner.txt')).toBeVisible();
+    // The folder is closed again: its entries were read, so the filter still looks through them.
+    await row(page, key, 'sub').click();
+    await expect(page.locator(`[data-fs-row="${key}:sub/inner.txt"]`)).toHaveCount(0);
+
+    const filter = page.getByRole('searchbox', { name: t('files.filter') });
+    await filter.fill('inner');
+    await expect(row(page, key, 'sub/inner.txt')).toBeVisible();
+    await expect(item(page, key, 'sub')).toHaveAttribute('aria-expanded', 'true');
+    await expect(page.locator(`[data-fs-row="${key}:tool.py"]`)).toHaveCount(0);
+    await expect(page.locator(`[data-fs-row="${key}:notes.md"]`)).toHaveCount(0);
+
+    // A text no name holds leaves the heads and says so.
+    await filter.fill('no name holds this');
+    await expect(page.getByText(t('files.filter_none'))).toBeVisible();
+
+    // Escape clears it and the tree is the tree again.
+    await filter.press('Escape');
+    await expect(row(page, key, 'tool.py')).toBeVisible();
+    await expect(filter).toHaveValue('');
+});
+
+/**
+ * Read the one folder, close it again, and type a filter, with the keyboard's focus on that folder.
+ * `inner` holds the folder open over its file; `sub` draws the folder alone, closed.
+ */
+async function filteredOnFolder(page: Page, key: string, text: string): Promise<void> {
+    await openNested(page, key);
+    await page.keyboard.press('ArrowLeft');
+    await expect(item(page, key, 'sub')).toHaveAttribute('aria-expanded', 'false');
+    await page.getByRole('searchbox', { name: t('files.filter') }).fill(text);
+    await expect(item(page, key, 'sub')).toHaveAttribute(
+        'aria-expanded',
+        text === 'inner' ? 'true' : 'false'
+    );
+    await item(page, key, 'sub').focus();
+}
+
+/** Clear the filter and see the folder closed, as it was before the filter was typed. */
+async function clearedClosed(page: Page, key: string): Promise<void> {
+    await page.getByRole('searchbox', { name: t('files.filter') }).fill('');
+    await expect(item(page, key, 'sub')).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator(`[data-fs-row="${key}:sub/inner.txt"]`)).toHaveCount(0);
+}
+
+// Revert: pass `fixed: false` whatever `filtering` says, in state/fs.ts's treeKeyRows.
+test('Left on a folder the filter holds open steps out to its parent and closes nothing', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+    await filteredOnFolder(page, key, 'inner');
+
+    await page.keyboard.press('ArrowLeft');
+    await expect(item(page, key)).toBeFocused();
+    await expect(item(page, key, 'sub')).toHaveAttribute('aria-expanded', 'true');
+    await clearedClosed(page, key);
+});
+
+// Revert: pass `fixed: false` in treeKeyRows and drop the `if (filtering) return;` line of toggle()
+// in views/Files.svelte; either one alone still keeps the folder closed.
+test('Right under a filter steps into a folder it holds open and opens no folder for good', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+    await filteredOnFolder(page, key, 'inner');
+    await page.keyboard.press('ArrowRight');
+    await expect(item(page, key, 'sub/inner.txt')).toBeFocused();
+
+    // A folder the filter draws closed, since its name matches and nothing under it does.
+    await page.getByRole('searchbox', { name: t('files.filter') }).fill('sub');
+    await expect(item(page, key, 'sub')).toHaveAttribute('aria-expanded', 'false');
+    await item(page, key, 'sub').focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(item(page, key, 'sub')).toHaveAttribute('aria-expanded', 'false');
+    await clearedClosed(page, key);
+});
+
+// Revert: drop the `if (filtering) return;` line of toggle() in views/Files.svelte.
+test('Enter on a folder under a filter selects it and writes nothing into the tree', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+    await filteredOnFolder(page, key, 'sub');
+
+    await page.keyboard.press('Enter');
+    await expect(item(page, key, 'sub')).toHaveAttribute('aria-selected', 'true');
+    await expect(item(page, key, 'sub')).toHaveAttribute('aria-expanded', 'false');
+    await clearedClosed(page, key);
+});
+
+// Revert: make the Breadcrumb's onselect in views/Files.svelte select the crumb's root line.
+test('a breadcrumb segment selects the folder it names, and the path follows the selection', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+    await openNested(page, key);
+    await page.keyboard.press('ArrowRight');
+    await expect(item(page, key, 'sub/inner.txt')).toHaveAttribute('aria-selected', 'true');
+
+    const crumbs = page.getByRole('navigation', { name: t('files.breadcrumb') });
+    await expect(crumbs.getByRole('button')).toHaveText([key, 'sub', 'inner.txt']);
+
+    await crumbs.getByRole('button', { name: 'sub', exact: true }).click();
+    await expect(item(page, key, 'sub')).toHaveAttribute('aria-selected', 'true');
+    await expect(crumbs.getByRole('button')).toHaveText([key, 'sub']);
+});
+
+// Revert: make every row's tabindex 0 in ui/TreeView.svelte's nav.
+test('the tree is one stop from the filter box, and the focused row hands Tab to its controls', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+    await openNested(page, key);
+    await page.keyboard.press('ArrowRight');
+    await expect(item(page, key, 'sub/inner.txt')).toHaveAttribute('aria-selected', 'true');
+
+    /** What holds the focus: a row's treeitem by its key, or a control by its name. */
+    const focused = (): Promise<string> =>
+        page.evaluate(() => {
+            const at = document.activeElement;
+            if (!(at instanceof HTMLElement)) return '';
+            if (at.getAttribute('role') === 'treeitem') {
+                return `row ${at.closest('[data-fs-row]')?.getAttribute('data-fs-row') ?? at.getAttribute('aria-label') ?? ''}`;
+            }
+            return `${at.tagName.toLowerCase()} ${at.getAttribute('aria-label') ?? at.textContent.trim()}`;
+        });
+
+    await page.getByRole('searchbox', { name: t('files.filter') }).focus();
+    const seen: string[] = [];
+    for (let at = 0; at < 9; at += 1) {
+        await page.keyboard.press('Tab');
+        seen.push(await focused());
+    }
+    expect(seen).toEqual([
+        `button ${key}`,
+        'button sub',
+        'button inner.txt',
+        `row ${key}:sub/inner.txt`,
+        `button ${t('files.row_bookmark')}`,
+        `button ${t('files.row_open_tab')}`,
+        'row ' + t('files.bookmarks'),
+        `button ${t('files.add_bookmark')}`,
+        'row ' + t('files.notes')
+    ]);
+});
+
+// Revert: drop the `.item:hover .actions` rule from ui/TreeItem.svelte.
+test("a row's controls appear on hover, and bookmark the file and open it in a kept tab", async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+    await row(page, key).click();
+    await page.getByRole('searchbox', { name: t('files.filter') }).focus();
+
+    const line = page.locator(`[data-fs-row="${key}:tool.py"]`);
+    const controls = line.locator('.actions');
+    await page.mouse.move(0, 0);
+    await expect.poll(() => controls.evaluate((el) => getComputedStyle(el).opacity)).toBe('0');
+    await line.hover();
+    await expect.poll(() => controls.evaluate((el) => getComputedStyle(el).opacity)).toBe('1');
+
+    // The star writes a bookmark the rail draws, and a second press takes it away.
+    await line.getByRole('button', { name: t('files.row_bookmark'), exact: true }).click();
+    const mark = page.locator(`nav button[data-bookmark="${key}/tool.py"]`);
+    await expect(mark).toBeVisible();
+    await line.hover();
+    await line.getByRole('button', { name: t('files.row_bookmark'), exact: true }).click();
+    await expect(mark).toHaveCount(0);
+
+    // The other control opens the file in a tab that stays rather than in the preview.
+    await line.hover();
+    await line.getByRole('button', { name: t('files.row_open_tab'), exact: true }).click();
+    const tab = page.getByRole('tab', { name: 'tool.py' });
+    await expect(tab).toBeVisible();
+    await expect(tab).not.toHaveAttribute('data-tab-preview', '');
+});
+
+// Revert: draw `.guide` with `border-left-color: var(--line)` whatever the tree's state is.
+test('the indent guides are drawn while the tree is hovered and not while it is left alone', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+    await openNested(page, key);
+    await page.getByRole('searchbox', { name: t('files.filter') }).focus();
+    await page.mouse.move(0, 0);
+
+    const guide = page.locator(`[data-fs-row="${key}:sub/inner.txt"] .guide`).first();
+    const alpha = (): Promise<number> =>
+        guide.evaluate((el) => getComputedStyle(el).borderLeftColor).then(alphaOf);
+    await expect.poll(alpha).toBe(0);
+    await item(page, key, 'sub/inner.txt').hover();
+    await expect.poll(alpha).toBeGreaterThan(0);
+});
+
+// Revert: set `height: var(--tree-row, 24px)`, draw `.item.selected` in the accent's text colour, or
+// leave the row's height or indent unscaled by --text-scale.
+test('a row is 22 pixels at 13-pixel names under 11-pixel heads, a selected row reads on its tint, and the row grows with the text size', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+    await openNested(page, key);
+
+    const measure = (target: ReturnType<Page['locator']>) =>
+        target.evaluate((el) => {
+            const name = el.querySelector('.name');
+            return {
+                height: el.getBoundingClientRect().height,
+                size: name === null ? '' : getComputedStyle(name).fontSize,
+                colour: name === null ? '' : getComputedStyle(name).color,
+                onTint: getComputedStyle(el).getPropertyValue('--on-accent-bg').trim(),
+                outline: getComputedStyle(el).outlineStyle
+            };
+        });
+    const selected = await measure(item(page, key, 'sub'));
+    const plain = await measure(item(page, key, 'sub/inner.txt'));
+    const head = await measure(item(page, key));
+
+    expect(selected.height).toBe(22);
+    expect(plain.size).toBe('13px');
+    expect(head.size).toBe('11px');
+    // The selected row's name is drawn in the colour the theme derives for text on the tint.
+    const probe = await item(page, key, 'sub').evaluate((el, value) => {
+        const swatch = document.createElement('span');
+        swatch.style.color = value;
+        el.appendChild(swatch);
+        const colour = getComputedStyle(swatch).color;
+        swatch.remove();
+        return colour;
+    }, selected.onTint);
+    expect(selected.colour).toBe(probe);
+    // The keyboard's focus outline is drawn round the whole row.
+    expect(selected.outline).toBe('solid');
+
+    // At the largest text size the row and its indent grow with the names, so no line spills out.
+    const scaled = await item(page, key, 'sub/inner.txt').evaluate((el) => {
+        const tree = el.closest('[role="tree"]');
+        if (!(tree instanceof HTMLElement)) return null;
+        tree.style.setProperty('--text-scale', '1.6');
+        const main = el.querySelector('.main');
+        const guide = el.querySelector('.guide');
+        return {
+            height: el.getBoundingClientRect().height,
+            content: main === null ? 0 : main.scrollHeight,
+            indent: guide === null ? 0 : guide.getBoundingClientRect().width
+        };
+    });
+    expect(scaled).not.toBeNull();
+    expect(scaled?.height).toBeCloseTo(22 * 1.6, 0);
+    expect(scaled?.content ?? 0).toBeLessThanOrEqual(scaled?.height ?? 0);
+    expect(scaled?.indent).toBeCloseTo(12 * 1.6, 0);
+});
+
+// Revert: call remove(key) straight from the head's control in views/Files.svelte, with no confirm.
+test('removing a root the reader added asks first, and a cancel keeps it', async ({ page }) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+
+    const head = page.locator(`[data-fs-row="${key}:"]`);
+    await head.hover();
+    await head.getByRole('button', { name: t('files.remove_root'), exact: true }).click();
+    const confirm = page.getByRole('alertdialog', { name: t('files.remove_root_confirm', key) });
+    await expect(confirm).toBeVisible();
+    await confirm.getByRole('button', { name: t('files.cancel'), exact: true }).click();
+    await expect(confirm).toHaveCount(0);
+    await expect(row(page, key)).toBeVisible();
+
+    await head.hover();
+    await head.getByRole('button', { name: t('files.remove_root'), exact: true }).click();
+    await confirm.getByRole('button', { name: t('files.remove_root'), exact: true }).click();
+    await expect(page.locator(`[data-fs-row="${key}:"]`)).toHaveCount(0);
+});
+
+// Revert: bookmark under `row.name` whatever the other bookmarks hold, in views/Files.svelte.
+test('a second file of the same name is bookmarked under its path from the row star', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { dir, key } = await nestedRoot(page);
+    writeFileSync(join(dir, 'README.md'), '# one\n');
+    writeFileSync(join(dir, 'sub', 'README.md'), '# two\n');
+    await openNested(page, key);
+    await expect(row(page, key, 'README.md')).toBeVisible();
+    await expect(row(page, key, 'sub/README.md')).toBeVisible();
+
+    const star = (path: string): ReturnType<Page['locator']> =>
+        page
+            .locator(`[data-fs-row="${key}:${path}"]`)
+            .getByRole('button', { name: t('files.row_bookmark'), exact: true });
+    await star('README.md').click();
+    await expect(star('README.md')).toHaveAttribute('aria-pressed', 'true');
+    await star('sub/README.md').click();
+    await expect(star('sub/README.md')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('[data-fs-bookmark="README.md"]')).toBeVisible();
+    await expect(page.locator('[data-fs-bookmark="sub/README.md"]')).toBeVisible();
+
+    // Both taken away again, so the bookmarks this run saves are the ones the other cases expect.
+    await star('README.md').click();
+    await star('sub/README.md').click();
+    await expect(page.locator('[data-fs-bookmark="sub/README.md"]')).toHaveCount(0);
+    await expect(page.locator('[data-fs-bookmark="README.md"]')).toHaveCount(0);
+});
+
+// Revert: open the Notes section whatever `view.collapsed` holds, in views/Files.svelte.
+test('a section closed from its head stays closed after a tab switch', async ({ page }) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+
+    const head = page.locator('[data-fs-notes] [role="treeitem"]').first();
+    await expect(head).toHaveAttribute('aria-expanded', 'true');
+    await head.getByRole('button', { name: t('files.notes'), exact: true }).click();
+    await expect(head).toHaveAttribute('aria-expanded', 'false');
+    await expect(page.locator('[data-fs-notes] [role="group"]')).toHaveCount(0);
+
+    // Another view takes the pane, and the file browser comes back with the section still closed.
+    await openView(page, 'repositories', t('views.repositories'));
+    await page.getByRole('tab', { name: t('views.files') }).click();
+    await expect(head).toHaveAttribute('aria-expanded', 'false');
+
+    // Opened again, so the page this run saves draws the section as the other cases expect it.
+    await head.getByRole('button', { name: t('files.notes'), exact: true }).click();
+    await expect(head).toHaveAttribute('aria-expanded', 'true');
+});
+
+// Revert: set `active: false` on every choice in views/files/Controls.svelte.
+test('the workspace menu on the header lists the configured roots, drawn as in force', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    await page.getByRole('button', { name: t('files.workspace'), exact: true }).click();
+    const choice = page.getByRole('menuitem', { name: t('files.workspace_default'), exact: true });
+    await expect(choice).toBeVisible();
+    await expect(choice).toHaveAttribute('aria-current', 'true');
+    await choice.click();
+    await expect(page.locator('[data-fs-workspace=""] [role="treeitem"]')).toHaveAttribute(
+        'aria-current',
+        'true'
+    );
 });

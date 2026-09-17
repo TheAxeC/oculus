@@ -2,8 +2,9 @@
 //
 // The pairs are the ones a component can actually produce: a `-txt` colour on the page, the panel
 // the card and the chip; a hue's `-txt` on its own tint; a hue's `-lane-txt` on its `-lane`, the
-// surface a Focus lane header is drawn on; `--accent-bg-txt` on the pressed-toggle
-// surface `--accent-bg`; and the on-chip ink on its filled chip. A pair below
+// surface a Focus lane header is drawn on; `--accent-bg-txt` on the pressed-toggle surface
+// `--accent-bg`, and `--on-accent-bg` on it for a selected tree row; and the on-chip ink on its
+// filled chip. A pair below
 // the threshold is printed with its ratio and fails. It is never fixed by loosening the threshold or
 // by editing a colour here: a colour is an authored value in tokens.css or themes.css, and a failure
 // is a finding about that value or about derive.ts, not something this file repairs.
@@ -54,6 +55,8 @@ function pairs(name: string): Pair[] {
     }
     // The pressed-toggle surface's own text on that surface, the accent mixed into the page.
     if (all['--accent-bg-txt'] && all['--accent-bg']) measure('--accent-bg-txt', '--accent-bg');
+    // A selected tree row draws its whole line in `--on-accent-bg` on the tint.
+    if (all['--on-accent-bg'] && all['--accent-bg']) measure('--on-accent-bg', '--accent-bg');
     for (const fg of Object.keys(derived)) {
         if (!fg.startsWith('--on-c-')) continue;
         const on = `--${fg.slice('--on-'.length)}`;

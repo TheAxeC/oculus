@@ -13,13 +13,18 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. The roots of the current workspace as one collapsible tree, the two lists the
-    // reader keeps beside them, and the toolbar that adds to all three.
+    // Layer 3, view. The roots of the current workspace as an explorer: the workspace picker and the
+    // add-root control on the view's header, a filter and a breadcrumb over one tree per root, each
+    // under a head carrying that root's icon controls, and the bookmarks, the notes and the
+    // workspaces as sections under the trees in the same row style. Every control is drawn in every
+    // state the view is in: a section whose file could not be read keeps its head and its control and
+    // says why in its one row.
     //
     // A folder is read one level at a time, when it is opened: a root is a whole checkout and walking
-    // one to draw it would read a hundred thousand names to show twenty. Which folders are open lives
-    // in the instance's own state, so a tree left half open is the same tree when the tab comes back,
-    // and two file browsers on two pages are open at two different places.
+    // one to draw it would read a hundred thousand names to show twenty. Which folders are open, the
+    // selected row, the filter text and which sections are closed live in the instance's own state,
+    // so a tree left half open is the same tree when the tab comes back, and two file browsers on two
+    // pages are open at two different places.
     //
     // Every root the configuration names is in every workspace and cannot be taken out of one, so a
     // workspace can only ever add. The server refuses a removal of a configured root as well; a
@@ -37,12 +42,14 @@
     // the file said when it was written. A note opens as a tab and is a file in a folder of its own,
     // written by the first keystroke typed into it.
 
+    import Breadcrumb from '$lib/ui/Breadcrumb.svelte';
+    import Confirm from '$lib/ui/Confirm.svelte';
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
-    import ToolButton from '$lib/ui/ToolButton.svelte';
-    import Toolbar from '$lib/ui/Toolbar.svelte';
+    import Search from '$lib/ui/Search.svelte';
     import EntryForm from './shared/EntryForm.svelte';
     import Bookmarks from './files/Bookmarks.svelte';
+    import Controls from './files/Controls.svelte';
     import Notes from './files/Notes.svelte';
     import RootForm from './files/RootForm.svelte';
     import Tree from './files/Tree.svelte';
@@ -50,12 +57,20 @@
     import type { Entry, SchemaField } from '$lib/state/collection';
     import { BOOKMARK_COLLECTION } from '$lib/state/fs.svelte';
     import {
-        expandedOf,
+        collapseRoot,
+        crumbsOf,
+        filesViewOf,
+        filterRows,
+        markLabel,
         nameOf,
+        rowKey,
+        setExpanded,
         toggleExpanded,
         treeKey,
         treeRows,
         typeOfFile,
+        type FilesView,
+        type RowRef,
         type TreeRow
     } from '$lib/state/fs';
     import { documentState } from '$lib/state/layout';
@@ -73,9 +88,12 @@
             bookmarksChanged,
             deleteNote,
             entries,
+            heldEntries,
+            invalidate,
             listing,
             notes,
             readFileKind,
+            removeBookmark,
             removeRoot,
             saveWorkspace,
             selectWorkspace,
@@ -87,7 +105,7 @@
 
     let { instance }: ViewProps = $props();
 
-    /** Which form the toolbar has open, if any. */
+    /** Which form is open over the trees, if any. */
     let form: 'root' | 'workspace' | 'bookmark' | '' = $state('');
     /** What is typed into whichever line form is open. */
     let typed = $state('');
@@ -97,6 +115,8 @@
     let note = $state('');
     /** What the entry form's last write answered, which is a report and not a refusal. */
     let said = $state('');
+    /** The root the removal confirm is open for, and the empty string while it is closed. */
+    let removing = $state('');
 
     // Named `saved` rather than `state`: a variable called `state` in a component is read as the
     // store prefix of `$state`, which svelte-check refuses.
@@ -104,13 +124,25 @@
     const current = $derived(
         saved.workspaces.find((one) => one.name === saved.current) ?? { name: '', roots: [] }
     );
-    const expanded = $derived(expandedOf(instanceState(instance.id)));
-    const rows = $derived(treeRows(current.roots, entries, expanded));
+    const view = $derived(filesViewOf(instanceState(instance.id)));
+    const rows = $derived(treeRows(current.roots, entries, view.expanded));
+    const filtering = $derived(view.filter.trim() !== '');
+    const shown = $derived(filtering ? filterRows(current.roots, heldEntries, view.filter) : rows);
+    const crumbs = $derived(crumbsOf(view.selected));
     const fixed = $derived(current.roots.filter((one) => one.fixed).map((one) => one.key));
 
     const marks = $derived(bookmarks());
     const held = $derived(notes());
     const editedMark = $derived(marks.entries.find((one) => one.id === editing) ?? null);
+
+    /** The row keys a bookmark of the reader's own names, which the tree draws its star from. */
+    const marked = $derived(
+        marks.entries.flatMap((one) =>
+            typeof one.fields.root === 'string' && typeof one.fields.path === 'string'
+                ? [treeKey(one.fields.root, one.fields.path)]
+                : []
+        )
+    );
 
     /**
      * The bookmarks schema the form draws, with the roots of the workspace in force as the choices
@@ -159,14 +191,53 @@
         return t('files.refused_other', code);
     }
 
-    /** Open or close one folder, which is the one thing this view remembers per instance. */
-    function toggle(row: TreeRow): void {
+    /** Write part of what this instance remembers, keeping the rest of it as it was. */
+    function patch(part: Partial<FilesView>): void {
         const kept = instanceState(instance.id);
         const keep = typeof kept === 'object' && kept !== null && !Array.isArray(kept) ? kept : {};
-        setInstanceState(instance.id, {
-            ...keep,
-            expanded: toggleExpanded(expanded, treeKey(row.root, row.path))
-        });
+        setInstanceState(instance.id, { ...keep, ...part });
+    }
+
+    /**
+     * Open or close one folder. While a filter draws the tree, a folder is drawn open because the
+     * filter holds it so, and a press on it writes nothing, so clearing the filter gives back the
+     * folders that were open before it.
+     */
+    function toggle(row: TreeRow): void {
+        if (filtering) return;
+        patch({ expanded: setExpanded(view.expanded, rowKey(row), !row.open) });
+    }
+
+    function selectRow(row: RowRef): void {
+        patch({ selected: { root: row.root, path: row.path } });
+    }
+
+    /** Open or close one section under the trees. */
+    function toggleSection(id: string): void {
+        patch({ collapsed: toggleExpanded(view.collapsed, id) });
+    }
+
+    /**
+     * Bookmark one file, or take the bookmark on it away again. The label is the file's name, or its
+     * path under the root when another bookmark already carries that name; a label that is taken
+     * even so is refused rather than written over, and the refusal is said.
+     */
+    async function bookmark(row: TreeRow): Promise<void> {
+        const found = marks.entries.find(
+            (one) => one.fields.root === row.root && one.fields.path === row.path
+        );
+        const label = markLabel(
+            row,
+            marks.entries.map((one) => one.title)
+        );
+        const answer =
+            found === undefined
+                ? await addBookmark({ label, root: row.root, path: row.path })
+                : await removeBookmark(found.id);
+        const reason = answer.ok
+            ? answer.refused.map((one) => one.reason).join('; ')
+            : (answer.error ?? '');
+        note = reason === '' ? '' : t('files.bookmark_failed', reason);
     }
 
     /**
@@ -283,42 +354,15 @@
 </script>
 
 {#snippet tools()}
-    <Toolbar label={t('files.toolbar')}>
-        <Workspaces
-            current={saved.current}
-            names={saved.workspaces.map((one) => one.name)}
-            onselect={(name: string) => void select(name)}
-        />
-        <ToolButton
-            label={t('files.add_root')}
-            title={t('files.add_root_title')}
-            expanded={form === 'root'}
-            onclick={() => {
-                show('root');
-            }}
-        />
-        <ToolButton
-            label={t('files.save_as')}
-            title={t('files.save_as_title')}
-            expanded={form === 'workspace'}
-            onclick={() => {
-                show('workspace');
-            }}
-        />
-        <ToolButton
-            label={t('files.add_bookmark')}
-            title={t('files.add_bookmark_title')}
-            expanded={form === 'bookmark' && editing === ''}
-            onclick={() => {
-                show('bookmark');
-            }}
-        />
-        <ToolButton
-            label={t('files.add_note')}
-            title={t('files.add_note_title')}
-            onclick={addNote}
-        />
-    </Toolbar>
+    <Controls
+        current={saved.current}
+        names={saved.workspaces.map((one) => one.name)}
+        adding={form === 'root'}
+        onselect={(name: string) => void select(name)}
+        onadd={() => {
+            show('root');
+        }}
+    />
 {/snippet}
 
 <Pane title={t('views.files')} toolbar={tools} tinted>
@@ -359,6 +403,21 @@
         {#if said !== ''}
             <p class="said" aria-live="polite">{said}</p>
         {/if}
+        <Search
+            value={view.filter}
+            placeholder={t('files.filter')}
+            oninput={(value: string) => patch({ filter: value })}
+        />
+        {#if crumbs.length > 0}
+            <Breadcrumb
+                label={t('files.breadcrumb')}
+                segments={crumbs.map((one) => ({ id: rowKey(one.row), label: one.label }))}
+                onselect={(id: string) => {
+                    const found = crumbs.find((one) => rowKey(one.row) === id);
+                    if (found !== undefined) selectRow(found.row);
+                }}
+            />
+        {/if}
         {#if saved.error !== ''}
             <p class="note" aria-live="polite">{t('files.read_failed', saved.error)}</p>
         {:else if saved.loading}
@@ -375,35 +434,80 @@
                 </p>
             {/each}
             <Tree
-                {rows}
+                rows={shown}
+                {filtering}
+                selected={view.selected}
                 {fixed}
+                {marked}
+                onselect={selectRow}
                 ontoggle={toggle}
                 onopen={(row: TreeRow, preview: boolean) => void open(row, preview)}
-                onremove={(key: string) => void remove(key)}
+                onremove={(key: string) => (removing = key)}
+                onbookmark={(row: TreeRow) => void bookmark(row)}
+                onrefresh={invalidate}
+                oncollapse={(root: string) =>
+                    patch({ expanded: collapseRoot(view.expanded, root) })}
             />
+            {#if filtering && shown.every((row) => row.depth === 0)}
+                <p class="said">{t('files.filter_none')}</p>
+            {/if}
         {/if}
-        {#if marks.error !== ''}
-            <p class="note">{t('files.bookmarks_failed', marks.error)}</p>
-        {:else if marks.entries.length > 0}
-            <Bookmarks rows={marks.entries} {editing} onopen={openMark} onedit={edit} />
-        {/if}
-        {#if held.error !== ''}
-            <p class="note">{t('files.notes_failed', held.error)}</p>
-        {:else if held.notes.length > 0}
-            <Notes
-                rows={held.notes}
-                onopen={openNote}
-                onremove={(id: string) => void dropNote(id)}
-            />
-        {/if}
+        <Bookmarks
+            rows={marks.entries}
+            error={marks.error}
+            open={!view.collapsed.includes('bookmarks')}
+            {editing}
+            adding={form === 'bookmark' && editing === ''}
+            ontoggle={() => toggleSection('bookmarks')}
+            onadd={() => {
+                show('bookmark');
+            }}
+            onopen={openMark}
+            onedit={edit}
+        />
+        <Notes
+            rows={held.notes}
+            error={held.error}
+            open={!view.collapsed.includes('notes')}
+            ontoggle={() => toggleSection('notes')}
+            onadd={addNote}
+            onopen={openNote}
+            onremove={(id: string) => void dropNote(id)}
+        />
+        <Workspaces
+            current={saved.current}
+            names={saved.workspaces.map((one) => one.name)}
+            open={!view.collapsed.includes('workspaces')}
+            saving={form === 'workspace'}
+            ontoggle={() => toggleSection('workspaces')}
+            onsave={() => {
+                show('workspace');
+            }}
+            onselect={(name: string) => void select(name)}
+        />
     </div>
 </Pane>
+
+{#if removing !== ''}
+    <Confirm
+        message={t('files.remove_root_confirm', removing)}
+        detail={t('files.remove_root_detail')}
+        confirm={t('files.remove_root')}
+        cancel={t('files.cancel')}
+        onconfirm={() => {
+            const key = removing;
+            removing = '';
+            void remove(key);
+        }}
+        oncancel={() => (removing = '')}
+    />
+{/if}
 
 <style>
     .files {
         display: flex;
         flex-direction: column;
-        gap: 6px;
+        gap: 4px;
         min-width: 0;
     }
 
