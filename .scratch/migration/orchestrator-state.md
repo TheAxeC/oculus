@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57, Q32 landed 13:26, Q30 landed 14:28; Q30 (the run over its round), Q34 (dispatched 13:00 from 22ef9103) and Q42 (dispatched 13:57 from 8986cc4a) in flight; Q41 built, waiting on Axel's ruling on the lane colours; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46, Q39 landed 12:57, Q32 landed 13:26, Q30 landed 14:28; Q30 (the run over its round), Q34 (review), Q42 (repair round) and Q43 (dispatched 14:30 from 17e22699) in flight; Q41 built, waiting on Axel's ruling on the lane colours; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q34
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -70,7 +70,19 @@ dispatch:                                  # Q37 landed 12:06, Q31 landed 12:46,
   session_id: aa3e13607c19eb8db            # the Agent tool id, launched 13:57
   reported: 2026-09-17T14:08
   reviewer: a43aebd3d656fc74f                # claude:opus through the Agent tool, read-only, launched 14:10, scratch folder scratchpad/q42-review (review earned: a state layer)
-  round: 1                                  # sent 14:37: six rulings on agents/reviews/Q42-refuter.md (the in-flight source save guarded, the tab walk shared in state/instance.ts, the browser case over every tab by ids from the page, two comments, the HELP.md sentence); round base: scratchpad/q42-round1; paths widened by state/source.svelte.ts, state/instance.ts, shell/page-strip.ts, state/context.ts
+  round: 1                                  # sent 14:27: six rulings on agents/reviews/Q42-refuter.md (the in-flight source save guarded, the tab walk shared in state/instance.ts, the browser case over every tab by ids from the page, two comments, the HELP.md sentence); round base: scratchpad/q42-round1; paths widened by state/source.svelte.ts, state/instance.ts, shell/page-strip.ts, state/context.ts
+  landing: not-started
+- package: Q43
+  executor: agent                          # the configuration default, chosen for the step
+  worker: claude:opus
+  worktree: .agents/worktrees/q43
+  base: 17e22699
+  launched: 2026-09-17T14:30
+  prompt: the Agent tool's prompt, the shape of M2's with the brief's own paths (the brief's path list narrowed after the worktree was made: unsaved-forms.spec.ts left to Q42, the worktree's copy of the brief updated)
+  report: tools/oculus/.scratch/migration/agents/reviews/Q43-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: ad06a6086e8783012            # the Agent tool id
+  round: 0
   landing: not-started
 ```
 
