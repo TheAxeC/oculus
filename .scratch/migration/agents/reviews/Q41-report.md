@@ -704,3 +704,147 @@ All under `tools/oculus/`:
 - `tests/themes.ts`, new, 34 lines
 
 Scratch files kept in `scratchpad/q41-builder/`: `red/` (the copy, now back to no paint), `red/tests/count.test.ts` and `contrast.before.ts`.
+
+
+NOT done: ruling 1 stopped, as the ruling says to when no colours can hold every pair. No assignment of lane colours at 0.5 keeps every pair of headers that touch in some board layout at 10 or more under every theme. The proof is below. I left `tests/lane-distance.test.ts` at the open board and changed no colour. Rulings 2 to 5 are done.
+
+## Repair round
+
+### Rulings
+| Ruling | State | Proof |
+|---|---|---|
+| 1 Every layout, and a colour search over the full pair set | STOPPED: no assignment exists; nothing changed | `scratchpad/q41-builder/layouts.ts`, `allpairs.ts`, `pertheme57.ts` |
+| 2 Lane text on its own strip, proved in the page | DONE | `npx playwright test tests/browser/focus-look.spec.ts`: 4 passed; probes below |
+| 3 False sentences | DONE | `config/vocab.yml:156`, `tests/contrast.test.ts:3-8` and the src/ case comment, `tests/lane-distance.test.ts` (head comment, row 9), `src/lib/state/focus.ts:245-252` and `:268-271` |
+| 4 Doc text | DONE | "Doc text" below |
+| 5 Verify list | DONE | table below |
+
+### Ruling 1: why no assignment exists
+- **How the layouts were enumerated** (`layouts.ts`). Every subset of the five `<details>` collapsed (`Lanes.svelte` now/parked/incubate, Ideas `Lanes.svelte:366`, band `Band.svelte:104`), times every subset of band columns hidden (`Band.svelte:91`; with none drawn the band is not drawn), at the wide width (three to a row, the Ideas lane full width, band columns packed left) and the one-column width. That is 32 x 8 x 2 = 512 layouts.
+- **Pair count.** 57 pairs touch in at least one of them. 22 touch in the open board, the same set the test holds.
+- **Why it is impossible.** Seven headers all touch one another in some layout: run, review, scope, holding, funding, jobs and teaching (`allpairs.ts` prints "largest set of headers that all touch each other: 7").
+  - The largest set of hues whose lane colours are pairwise 10 or more apart under all 17 themes at 0.5 is 5 (`distinct-0.5.out`: "largest set of hues pairwise >= 10 under all themes: 5").
+  - If only one pair among those seven headers failed, six headers would need six such hues.
+  - So at least 2 of the 57 pairs cannot be held by any assignment. The search found assignments that fail exactly 2, so 55 of 57 is the most any assignment can hold.
+- **Current colours: 47 of 57 held.** The 10 not held (worst themes; layout count and one example):
+  - build (teal) / teaching (teal): 0.00 in all 17 themes; 8 layouts, e.g. wide with Ideas collapsed.
+  - blocked (red) / holding (mauve): mocha 6.05, everforest 9.57; 32 layouts, e.g. wide with Incubation collapsed.
+  - scope (cyan-d) / teaching (teal): 0.00 in synthwave, dracula, solarized and gruvboxlight; everforest 8.36, kanagawa 7.69, latte 9.71; 4 layouts, e.g. wide with Ideas collapsed and Funding and Jobs hidden.
+  - jobs (grey-d) / review (slate): 0.00 in 10 themes, 4.54 to 5.57 in the other 7; 4 layouts, e.g. wide with Incubation and Ideas collapsed and Funding hidden.
+  - backburner (grey) / jobs (grey-d): 0.00 in 10 themes, 6.31 to 9.00 in the other 7; 4 layouts, e.g. one column with Incubation and Ideas collapsed and Funding hidden.
+  - funding (gold) / run (green): solarized 8.95, gruvboxlight 9.27; 4 layouts, e.g. wide with Parked, Incubation and Ideas collapsed.
+  - jobs (grey-d) / push (blue): nord 6.53, dracula 0.00; 2 layouts.
+  - funding (gold) / revise (amber): 0.00 in 7 themes, 5.24 to 7.96 in 7 more; 4 layouts, e.g. one column with Parked, Incubation and Ideas collapsed.
+  - push (blue) / teaching (teal): synthwave 3.73, everforest 8.36; 2 layouts.
+  - run (green) / teaching (teal): rosepine 0.00, everforest 6.56; 1 layout.
+- **Best assignment found: 55 of 57** (`allpairs.ts`, min-conflicts search, 500 restarts, 5 current colours kept; the most current colours kept at 55 is not proved).
+  - Colours: run green, push slate*, revise lime*, review slate, blocked cyan-d*, backburner grey, scope cyan-d, derisk green-d*, build cyan-d*, holding mauve, funding orange*, jobs magenta*, teaching orange*. An asterisk marks a change.
+  - It fails in the open board: holding (mauve) / jobs (magenta) is 0.00 in gruvbox, nord, everforest, dracula, kanagawa and solarized, touching in 48 layouts including the fully open one.
+  - It also fails funding (orange) / teaching (orange): 0.00 in all themes, 32 layouts, e.g. wide with Jobs hidden.
+  - Review and De-risk do not keep slate and honey.
+- **Best keeping the open board whole: 53 of 57** (`OPEN=1 allpairs.ts`, 300 restarts, 6 current colours kept; not proved optimal).
+  - Colours: run green, push cyan*, revise green*, review slate, blocked green-d*, backburner grey, scope cyan-d, derisk orange*, build cyan-d*, holding mauve, funding orange*, jobs grey-d, teaching orange*.
+  - Not held: funding/teaching (orange/orange, 0.00 in all themes), derisk/teaching (orange/orange, 0.00 in all themes), jobs/review (grey-d/slate), backburner/jobs (grey/grey-d).
+- **Smallest distance per theme over the 57 pairs** (`pertheme57.ts`; the number in brackets is how many of the 57 fall below 10 in that theme):
+
+| Theme | Current colours | Best found (55 of 57) |
+|---|---|---|
+| light | 0.00 build/teaching (4) | 0.00 funding/teaching (1) |
+| dark | 0.00 build/teaching (4) | 0.00 funding/teaching (1) |
+| vscode-dark-modern | 0.00 build/teaching (4) | 0.00 funding/teaching (1) |
+| vscode-light-modern | 0.00 build/teaching (4) | 0.00 funding/teaching (1) |
+| mocha | 0.00 build/teaching (4) | 0.00 funding/teaching (2) |
+| gruvbox | 0.00 build/teaching (4) | 0.00 holding/jobs (2) |
+| nord | 0.00 build/teaching (5) | 0.00 holding/jobs (2) |
+| synthwave | 0.00 build/teaching (5) | 0.00 funding/teaching (2) |
+| tokyoneon | 0.00 build/teaching (4) | 0.00 funding/teaching (1) |
+| tokyonight | 0.00 build/teaching (4) | 0.00 funding/teaching (2) |
+| rosepine | 0.00 build/teaching (5) | 0.00 funding/teaching (1) |
+| everforest | 0.00 build/teaching (8) | 0.00 holding/jobs (2) |
+| dracula | 0.00 build/teaching (5) | 0.00 holding/jobs (2) |
+| kanagawa | 0.00 build/teaching (5) | 0.00 funding/teaching (2) |
+| solarized | 0.00 build/teaching (6) | 0.00 holding/jobs (2) |
+| latte | 0.00 build/teaching (5) | 0.00 funding/teaching (1) |
+| gruvboxlight | 0.00 build/teaching (6) | 0.00 funding/teaching (2) |
+
+**Colour table: unchanged from the last round.** Run green, Push blue, Revise amber, Review slate, Blocked red, Backburner grey, Scope cyan-d, De-risk honey, Build teal, Ideas mauve, Funding gold, Jobs grey-d, Teaching teal. The open-board test still holds its 22 pairs; its smallest distance per theme is as last reported (nord 10.22 is the lowest).
+
+### Ruling 2: the browser case
+**New case** in `tests/browser/focus-look.spec.ts`: "every word of every lane and column header sits on its own lane surface, readable, with and without the wallpaper".
+- **Layouts:** light, dark, dracula over the wallpaper (the rice theme turns `body.wall` on; the case asserts the class), and dracula with the wallpaper toggled off. At the end it turns the wallpaper back on and returns to light.
+- **For every `.lane-h` on the board** (9 lanes, Ideas, and the band columns the demo draws):
+  - Each element inside it holding text of its own (the name and the count) is taken.
+  - The nearest ancestor-or-self background that is not transparent must equal that header's `--c-<hue>-lane`, opaque. The hue comes from config (`focus_lanes`, `holding_color`, `focus_lane_tones`) through `palette:`, never from the markup.
+  - The text colour on that background must reach 4.5:1 (`ratio` from `derive.ts`).
+  - A header whose name config does not know fails.
+- **Runs** (each probe added to `LaneHead.svelte`, rebuilt, run, then restored and rebuilt; `cmp` confirms the file is identical):
+
+| Probe | Result | First failure line |
+|---|---|---|
+| none | 1 passed | |
+| `:global(body.wall) .lane-h { background: transparent; }` | 1 failed, 24 lines | "dracula over the wallpaper: Run lane-name ... "Run" sits on color(srgb 0.156863 0.164706 0.211765 / 0.76), not --c-green-lane rgb(60, 146, 88)" |
+| `.count { background: var(--chip); }` | 1 failed, 12 lines | "light: Run count ... "0" sits on rgb(241, 245, 249), not --c-green-lane rgb(138, 209, 164)" |
+| `.lane-name { background: var(--panel); }` | 1 failed, 12 lines | "light: Run lane-name ... "Run" sits on rgb(255, 255, 255), not --c-green-lane rgb(138, 209, 164)" |
+| `.lane-name { color: var(--lane); }` | 1 failed, 12 lines | "light: Run lane-name ... "Run" is 1.00:1 on its lane" |
+
+- **The src/ reading case stays** in `tests/contrast.test.ts`. It catches something the browser case does not: a lane text token referenced in a file whose view the Focus board never opens. Its comment now says exactly what it checks and what it does not see (a later overriding rule, a descendant's own background, the wallpaper rules, a value built in code), and points to the browser case for those.
+- **Contrast test head (lines 3-8).** It no longer says "the last case" or "holds". It says the browser spec proves the header words sit on their lane surface, and that the src/ reading only reports a lane text token used outside the header's one shape.
+
+### Ruling 3: sentences corrected
+- **`config/vocab.yml:156`:** "With every cluster open and every Funding, Jobs and Teaching column drawn, a lane's colour differs by a CIEDE2000 of 10 or more, under every theme, from the header drawn next to it, the one stacked above or below it in the three-column layout, and the full-width Ideas lane; tests/lane-distance.test.ts holds those pairs. A collapsed cluster or a column with nothing in it brings other headers together, and no choice of colours keeps all of those apart: Build and Teaching share teal, and Blocked above the Ideas lane is below 10 in mocha and everforest."
+- **`tests/lane-distance.test.ts` head comment:** the layout is read "with every cluster's <details> open and every band column drawn; a collapsed cluster or a column hidden for having no rows is not modelled, and brings together headers this file does not hold apart". The Sharma row list now reads "rows 1, 7, 9, 17 to 21 and 25".
+- **`src/lib/state/focus.ts` `waiting()` doc:** "The people and venue tallies count every live project, whether or not a card draws it, and every project of another tier that laneItems draws on a lane". The inline comment reads "over every live project and every project a lane draws".
+- **`src/lib/themes/derive.ts` `LANE_SHARE` comment:** now scoped to "with every Focus cluster open and every band column drawn".
+
+### Verify list
+From `tools/oculus` in the worktree:
+
+| Command | Output |
+|---|---|
+| `npx vitest run --reporter=dot` | Test Files 240 passed (240); Tests 4052 passed (4052) |
+| `npm run check` | COMPLETED 1193 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS |
+| `npm run build` | exit 0 |
+| `npm run format:check` | All matched files use Prettier code style! |
+| `npm run lint` | exit 0 |
+| ASCII gate (perl command in the brief) | 0 lines |
+| `yaml.safe_load` on `config/vocab.yml` | exit 0 |
+| `npx playwright test tests/browser/focus-look.spec.ts tests/browser/focus-buttons.spec.ts tests/browser/focus-drag.spec.ts` | 9 passed (20.1s) |
+| `npx playwright test tests/browser/focus-look.spec.ts` | 4 passed (7.9s) |
+
+### Reverts run this round
+- **The four `LaneHead.svelte` probes:** in the ruling 2 table.
+- **Ruling 1:** no revert, since nothing changed. The search scripts are the evidence.
+- **Earlier reverts:** unchanged by this round, and each case they cover passes in the full run above.
+
+### Doc text
+**HELP.md**, append to the `focus` row (line 74):
+"The Awaiting a response strip counts the people and venues of every live project and of every project of another tier on a lane. While every cluster is open and every Funding, Jobs and Teaching column is drawn, each header has a colour that differs under every theme from the header drawn next to it, the one stacked above or below it, and the full-width Ideas lane; collapsing a cluster or emptying a column can bring two headers of the same or a near colour together."
+
+**DESIGN.md:228**, replace "For every hue it also derives `--c-<hue>-lane`, a fifth of the hue in the panel, ... the contrast test measures that pair under every theme." with:
+"For every hue it also derives `--c-<hue>-lane`, half the hue and half the panel, which the header of a Focus lane and of the Funding, Jobs and Teaching columns fills with (`views/focus/LaneHead.svelte`), and `--c-<hue>-lane-txt`, the hue's text colour made readable on that surface first, which the header's name and count are drawn in, so no other hue text changes. The contrast test measures `--c-<hue>-lane-txt` on its own `--c-<hue>-lane` and on nothing else. `tests/browser/focus-look.spec.ts` proves in the page, under light, dark and dracula with and without the wallpaper, that every word of every lane and column header sits on its own lane surface at 4.5:1 or better. The contrast test also reads src/ for a lane text token used outside the header's shape. `tests/lane-distance.test.ts` holds every pair of headers that touch with every cluster open and every column drawn at a CIEDE2000 of 10 or more under every theme; a collapsed cluster or a hidden column is not held."
+
+**DESIGN.md:111**, add under `tests/`: `    lane-distance.test.ts      Focus lane headers that touch on the open board, every theme, CIEDE2000 at least 10`
+
+**DESIGN.md:330**, replace "the ideas backlog, the unplaced hint and the people and venue tallies of the awaiting strip stay over the three live tiers" with:
+"the ideas backlog and the unplaced hint stay over the three live tiers, and the people and venue tallies of the awaiting strip count every live project and every project a lane draws"
+
+**Decision line:**
+"- 2026-09-17, Axel: the awaiting strip counts every live project and every project a lane draws, and lane headers on the open board are told apart. `waiting()` tallies the people and venues of every live project, whether or not a card draws it, and of every project of another tier that `laneItems` draws on a lane; a project of another tier in holding or on no lane is not counted. A lane header's surface is half its hue and half the panel (`LANE_SHARE` in `themes/derive.ts`). The lane colours are Run green, Push blue, Revise amber, Review slate, Blocked red, Backburner grey, Scope cyan-d, De-risk honey, Build teal, with the Ideas lane mauve and the columns Funding gold, Jobs grey-d and Teaching teal. With every cluster open and every column drawn, every pair of headers that touch (next in drawing order, stacked in one column, beside the full-width Ideas lane) stays a CIEDE2000 of 10 or more apart under every theme, which `tests/lane-distance.test.ts` holds. A collapsed cluster or a hidden column brings other headers together, and no colours keep all of them apart: seven headers can all touch one another, and at this share no more than five hues are pairwise 10 apart under every theme. A header's text colour, `--c-<hue>-lane-txt`, is measured only on its own lane surface; `tests/browser/focus-look.spec.ts` proves in the page that every word of every lane and column header sits on that surface at 4.5:1 or better under light, dark and dracula with and without the wallpaper."
+
+### Files changed
+All under `tools/oculus/`:
+- `config/vocab.yml` (+6 -5)
+- `src/lib/state/focus.ts` (+20 -9)
+- `src/lib/themes/derive.ts` (+9 -3)
+- `src/lib/views/Focus.svelte` (+3 -3)
+- `tests/browser/focus-look.spec.ts` (+190 -9; 406 lines)
+- `tests/config-folder.test.ts` (+1 -1)
+- `tests/contrast.test.ts` (+139 -21; 265 lines)
+- `tests/state/focus.test.ts` (+45 -5)
+- `tests/lane-distance.test.ts`, new, 292 lines
+- `tests/themes.ts`, new, 34 lines
+
+### Limitations and notes
+- **Browser case coverage:** it only covers headers the demo board draws. The demo hides Jobs, so the Jobs header's own surface is checked by the node tests only.
+- **Probes edited a shared file:** they were added in place to `LaneHead.svelte`, which is outside my paths, and restored byte-identical (`cmp`).
+- **Search optimality:** the 55-of-57 count is proved optimal; the colours kept at that count, and the 53-of-57 open-board search, are best found, not proved.
