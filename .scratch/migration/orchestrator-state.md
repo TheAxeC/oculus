@@ -24,7 +24,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # Q37 landed 12:06; Q31 (second run over its round) and Q32 (repair round) in flight; Q39 next (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # Q37 landed 12:06; Q31 (second run over its round) and Q32 (repair round) in flight; Q39 dispatched 12:09 from d5f1ce02 (Q31 and Q32 dispatched 10:51 from 77ef1c91, paths disjoint by their briefs); the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); after the trial set: M2 landed 15:17, D16 landed 23:27, Q33 landed 23:37; the queue after the pause: Q37; Q31; Q32; Q39; Q38; D22; Q30; Q34; Q35; Q36; D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q31
   worker: claude:opus
   worktree: .agents/worktrees/q31
@@ -37,7 +37,7 @@ dispatch:                                  # Q37 landed 12:06; Q31 (second run o
   round: 1                                  # sent 11:28: eight rulings on agents/reviews/Q31-refuter.md (open state as instance state in five views and their cards, dirty against the current entry, one save rule, the editor overlay removed, in-flight typing kept, tests, false sentences); paths widened to those views and cards
   reported: 2026-09-17T11:10
   reviewer: a1b0ebaaebdc80756                # claude:opus through the Agent tool, read-only, launched 11:12, scratch folder scratchpad/q31-review
-  reviewer2: a4f24a088e23b253f               # the second run over the repair round (plan.yaml refute_after_repair: yes, found set at 11:54), claude:opus, read-only, launched 11:54
+  reviewer2: a4f24a088e23b253f               # the second run over the repair round (plan.yaml refute_after_repair: yes, found set at 11:54), claude:opus, read-only, launched 11:54, reported 12:07 (nine findings, appended to agents/reviews/Q31-refuter.md)
   landing: not-started
 - package: Q32
   worker: claude:opus
@@ -51,6 +51,17 @@ dispatch:                                  # Q37 landed 12:06; Q31 (second run o
   round: 1                                  # sent 11:47: fourteen rulings on agents/reviews/Q32-refuter.md (actions in every state, VS Code density, selection versus in force, hover-only row tooltips, icon-only heads with a workspace menu, guides on hover, Source Control rows, a repositories-only picker, the filter's keyboard, one roving stop with tree ARIA, the bookmark label, one tone map with ChangeGroups, false sentences, the visible changes)
   reported: 2026-09-17T11:29
   reviewer: a0e97926122a9764a                # claude:opus through the Agent tool, read-only, launched 11:30, scratch folder scratchpad/q32-review, the look judged by screenshots
+  landing: not-started
+- package: Q39
+  worker: claude:opus
+  worktree: .agents/worktrees/q39
+  base: d5f1ce02
+  launched: 2026-09-17T12:09
+  prompt: the Agent tool's prompt, the shape of M2's with the brief's own paths (the two browser specs only, reverts in a scratch copy)
+  report: tools/oculus/.scratch/migration/agents/reviews/Q39-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: a5aa03f2dc76269d7            # the Agent tool id, launched 12:09
+  round: 0
   landing: not-started
 ```
 
