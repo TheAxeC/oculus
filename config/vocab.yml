@@ -153,15 +153,16 @@ status_palette:
 
 
 # Focus lanes form one lifecycle, grouped into current, parked, and incubating work.
+# With every cluster open and every Funding, Jobs and Teaching column drawn, a lane's colour differs by a CIEDE2000 of 10 or more, under every theme, from the header drawn next to it, the one stacked above or below it in the three-column layout, and the full-width Ideas lane; tests/lane-distance.test.ts holds those pairs. A collapsed cluster or a column with nothing in it brings other headers together, and no choice of colours keeps all of those apart: Build and Teaching share teal, and Blocked above the Ideas lane is below 10 in mocha and everforest.
 focus_lanes:
   - { key: run,        label: Run,        sub: "experiments / getting the numbers", color: "#16a34a", cluster: now }
   - { key: push,       label: Push,       sub: "drafting toward first submission",  color: "#2563eb", cluster: now }
   - { key: revise,     label: Revise,     sub: "back from a venue (R&R or reject)",  color: "#b45309", cluster: now }
-  - { key: review,     label: Review,     sub: "under peer review, hands off",       color: "#7c5cff", cluster: parked }
+  - { key: review,     label: Review,     sub: "under peer review, hands off",       color: "#475569", cluster: parked }
   - { key: blocked,    label: Blocked,    sub: "waiting on you / coauthor",          color: "#dc2626", cluster: parked }
-  - { key: backburner, label: Backburner, sub: "deprioritized, not being worked",    color: "#64748b", cluster: parked }
+  - { key: backburner, label: Backburner, sub: "deprioritized, not being worked",    color: "#9ca3af", cluster: parked }
   - { key: scope,      label: Scope,      sub: "shaping + novelty check",            color: "#0e7490", cluster: incubate }
-  - { key: derisk,     label: De-risk,    sub: "Tier-0 go / no-go pilot",            color: "#6366f1", cluster: incubate }
+  - { key: derisk,     label: De-risk,    sub: "Tier-0 go / no-go pilot",            color: "#f59e0b", cluster: incubate }
   - { key: build,      label: Build,      sub: "strongest version -> manuscript",    color: "#0d9488", cluster: incubate }
 
 # Holding is a backlog state, not a board lane. This colour is used by its header and focus pill.
@@ -181,8 +182,8 @@ fund_stages:
   - { label: "Submitted", color: "#16a34a", statuses: [submitted, under-review, "under review"] }
   - { label: "Planned",   color: "#0891b2", statuses: [planned] }
 
-# Collection lane bars are independent of the stage colours inside Funding.
-focus_lane_tones: { funding: gold, jobs: violet, teaching: teal }
+# Collection lane bars are independent of the stage colours inside Funding. The three hues follow the Ideas lane above them and each other under the same distance rule as `focus_lanes`.
+focus_lane_tones: { funding: gold, jobs: grey-d, teaching: teal }
 
 
 # Career host-pipeline statuses (Focus career card): status -> icon / label / colour.

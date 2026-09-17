@@ -13,7 +13,7 @@
 // without competing with the text beside it. And `--accent-bg`, the
 // surface a pressed toggle fills with: a fifth of the accent in the page's colour, so the pressed
 // state reads as a filled box in the accent's hue under every theme without the solid accent block.
-// And for every hue `--c-<hue>-lane`, a fifth of the hue in the panel, the surface the header of a
+// And for every hue `--c-<hue>-lane`, half the hue in the panel, the surface the header of a
 // Focus lane fills with, beside `--c-<hue>-lane-txt`, the hue's text colour made readable on that
 // surface, which the header's name and count are drawn in, so every other hue text is left as it is.
 //
@@ -41,8 +41,14 @@ export const SCROLL_THUMB_RATIO = 3;
 /** How much of the accent the pressed-toggle surface carries, the rest being the page. */
 const ACCENT_SHARE = 0.2;
 
-/** How much of a hue a lane header's surface carries, the rest being the panel. */
-const LANE_SHARE = 0.2;
+/**
+ * How much of a hue a lane header's surface carries, the rest being the panel. At half, with every
+ * Focus cluster open and every band column drawn, the headers drawn next to each other, stacked in
+ * a column and beside the full-width Ideas lane stay a CIEDE2000 of 10 apart under every theme in
+ * the colours config/vocab.yml gives them, which tests/lane-distance.test.ts holds. A smaller share
+ * folds those neighbours into one colour in a theme that gives two hues near values.
+ */
+const LANE_SHARE = 0.5;
 
 const ONE_THIRD = 1 / 3;
 const ONE_SIXTH = 1 / 6;

@@ -1,9 +1,10 @@
 // The Focus board's look in Chrome: a project of the archive tier whose `focus:` names a lane is
 // drawn on that lane and cannot be sent to the Ideas lane, a card's status mark shows its whole word,
-// and a lane header is painted in its lane's surface and text tokens at full opacity. The node suite renders the markup to a string and can
-// say which class and which custom property a header carries; only a browser resolves those into
-// the colours a reader sees, and only the served board shows a manifest outside the live tiers
-// arriving on a lane.
+// a lane header is painted in its lane's surface and text tokens at full opacity, and every word of
+// every lane and column header sits on its own lane surface at 4.5:1 or better, with and without the
+// wallpaper. The node suite renders the markup to a string and can say which class and which custom
+// property a header carries; only a browser resolves those into the colours a reader sees, and only
+// the served board shows a manifest outside the live tiers arriving on a lane.
 //
 // The demo hub's archive projects carry no `focus:`, so this file gives one of them a lane in the
 // run's own copy of demo/ and puts the file back at the end. Nothing here writes the checkout's hub.
@@ -13,6 +14,7 @@ import { readHubFile, shortOf, writeHubFile } from './hub.ts';
 import { boot, openView } from './rail.ts';
 import { t, vocabulary } from './words.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
+import { ratio } from '../../src/lib/themes/derive.ts';
 
 const ARCHIVED = 'projects/archive/published/early-benchmark';
 const MANIFEST = `${ARCHIVED}/project.yml`;
@@ -50,17 +52,123 @@ function ideas(page: Page): Locator {
     });
 }
 
-/** The hue config/vocab.yml gives a lane, through its `palette:`, as state/tones.ts reads it. */
-function laneHue(key: string): string {
+/** The hue a palette hex is drawn in, as state/tones.ts reads `palette:`. */
+function paletteHue(hex: string): string {
     const { config } = loadConfig(engineDir());
-    const rows = config.focus_lanes as { key: string; color: string }[];
-    const hex = rows.find((one) => one.key === key)?.color ?? '';
     const palette = config.palette as Record<string, string>;
     const token = Object.entries(palette).find(
         ([held]) => held.toLowerCase() === hex.toLowerCase()
     )?.[1];
-    if (token?.startsWith('c-') !== true) throw new Error(`lane ${key} has no palette hue`);
+    if (token?.startsWith('c-') !== true) throw new Error(`${hex} has no palette hue`);
     return token.slice('c-'.length);
+}
+
+/** The hue config/vocab.yml gives a lane, through its `palette:`, as state/tones.ts reads it. */
+function laneHue(key: string): string {
+    const { config } = loadConfig(engineDir());
+    const rows = config.focus_lanes as { key: string; color: string }[];
+    const hex = rows.find((one) => one.key === key)?.color;
+    if (hex === undefined) throw new Error(`no lane ${key}`);
+    return paletteHue(hex);
+}
+
+/**
+ * Every header the board can draw, by the words its name shows, with the hue config/vocab.yml gives
+ * it: the lanes of `focus_lanes`, the Ideas lane in `holding_color`, and the Funding, Jobs and
+ * Teaching columns in `focus_lane_tones`. A column's words start with a glyph, so a column is found
+ * by the words its name ends with.
+ */
+function headerHues(): { matches: (name: string) => boolean; hue: string; label: string }[] {
+    const { config } = loadConfig(engineDir());
+    const columns = config.focus_lane_tones as Record<string, string>;
+    const lanes = vocabulary('focus_lanes').map((one) => ({
+        matches: (name: string) => name === one.label,
+        hue: laneHue(one.key),
+        label: one.label
+    }));
+    const holding = {
+        matches: (name: string) => name === t('focus.ideas'),
+        hue: paletteHue(String(config.holding_color)),
+        label: t('focus.ideas')
+    };
+    const band = (['funding', 'jobs', 'teaching'] as const).map((key) => {
+        const words = t(`focus.${key}_lane`).replace(/^\{G\.[a-z_]+\}\s*/, '');
+        return { matches: (name: string) => name.endsWith(words), hue: columns[key], label: words };
+    });
+    return [...lanes, holding, ...band];
+}
+
+/**
+ * A computed colour as a six-digit hex and its alpha. Chrome writes an sRGB colour as `rgb()` or
+ * `rgba()` with channels of 0 to 255, and a mixed one as `color(srgb r g b / a)` with channels of 0
+ * to 1; anything else reads as no colour, which matches no lane.
+ */
+function rgbHex(colour: string): { hex: string; alpha: number } {
+    const byte = (value: number): string => Math.round(value).toString(16).padStart(2, '0');
+    const legacy = /^rgba?\(([^)]*)\)$/.exec(colour);
+    if (legacy !== null) {
+        const values = legacy[1].split(',').map((part) => Number.parseFloat(part));
+        const [r, g, b] = values;
+        const alpha = values.length > 3 ? values[3] : 1;
+        return { hex: `#${byte(r)}${byte(g)}${byte(b)}`, alpha };
+    }
+    const modern = /^color\(srgb ([\d.]+) ([\d.]+) ([\d.]+)(?: \/ ([\d.]+))?\)$/.exec(colour);
+    if (modern !== null) {
+        const [r, g, b] = modern.slice(1, 4).map((part) => Number.parseFloat(part) * 255);
+        const tail = modern.at(4);
+        const alpha = tail === undefined ? 1 : Number.parseFloat(tail);
+        return { hex: `#${byte(r)}${byte(g)}${byte(b)}`, alpha };
+    }
+    return { hex: '', alpha: 0 };
+}
+
+/**
+ * For every lane and column header on the page: the words of its name, each element inside it that
+ * holds text of its own, and for each such element its text colour, the nearest background at or
+ * above it that paints anything, and the colour `--c-<hue>-lane` resolves to for every hue named.
+ */
+async function headerSurfaces(page: Page, hues: string[]) {
+    return page.locator('.lane-h').evaluateAll((heads, names) => {
+        const lanes: Record<string, string> = {};
+        for (const hue of names) {
+            const sample = document.createElement('span');
+            sample.style.backgroundColor = `var(--c-${hue}-lane)`;
+            document.body.appendChild(sample);
+            lanes[hue] = getComputedStyle(sample).backgroundColor;
+            sample.remove();
+        }
+        // Transparent is `rgba(0, 0, 0, 0)` in the legacy form and ends in `/ 0)` in `color()`.
+        const painted = (colour: string): boolean =>
+            colour !== 'transparent' &&
+            !/rgba\([^)]*,\s*0\)$/.test(colour) &&
+            !/\/\s*0\)$/.test(colour);
+        return {
+            lanes,
+            heads: heads.map((head) => {
+                const holders = [head, ...head.querySelectorAll('*')].filter((element) =>
+                    [...element.childNodes].some(
+                        (node) =>
+                            node.nodeType === Node.TEXT_NODE &&
+                            (node.textContent ?? '').trim() !== ''
+                    )
+                );
+                return {
+                    name: head.querySelector('.lane-name')?.textContent.trim() ?? '',
+                    texts: holders.map((element) => {
+                        let at: Element | null = element;
+                        while (at !== null && !painted(getComputedStyle(at).backgroundColor)) {
+                            at = at.parentElement;
+                        }
+                        return {
+                            what: `${element.getAttribute('class') ?? element.tagName} "${element.textContent.trim()}"`,
+                            colour: getComputedStyle(element).color,
+                            background: at === null ? 'none' : getComputedStyle(at).backgroundColor
+                        };
+                    })
+                };
+            })
+        };
+    }, hues);
 }
 
 /** The archive project's card on its lane. */
@@ -164,6 +272,79 @@ test('a lane header paints its lane tokens at full opacity, in light and in a te
         // drawn at 0.9, below the pair the contrast test measured.
         expect((await header(page, 'review')).opacity).toBe(1);
     }
+});
+
+test('every word of every lane and column header sits on its own lane surface, readable, with and without the wallpaper', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'focus', t('views.focus'));
+    const known = headerHues();
+    // A theme is picked by its label, the picker's glyph and then the name alone, since other labels
+    // end in the same word ("gruvbox light"); the light theme puts no class on the body.
+    const theme = async (name: string): Promise<void> => {
+        await page.getByRole('button', { name: t('ui.theme') }).click();
+        await page.getByRole('menuitem', { name: new RegExp(`^\\S+\\s+${name}$`) }).click();
+        const expected = name === 'light' ? /^(?!.*\b(dark|rice)\b)/ : new RegExp(`\\b${name}\\b`);
+        await expect(page.locator('body')).toHaveClass(expected);
+    };
+    const wall = page.getByRole('button', { name: t('ui.wallpaper') });
+    const walled = (): Promise<boolean> =>
+        page.evaluate(() => document.body.classList.contains('wall'));
+
+    const layouts: { name: string; enter: () => Promise<void>; wall: boolean }[] = [
+        { name: 'light', enter: () => theme('light'), wall: false },
+        { name: 'dark', enter: () => theme('dark'), wall: false },
+        { name: 'dracula over the wallpaper', enter: () => theme('dracula'), wall: true },
+        { name: 'dracula without the wallpaper', enter: () => wall.click(), wall: false }
+    ];
+    // Revert, one at a time in LaneHead.svelte: `:global(body.wall) .lane-h { background:
+    // transparent; }`, and over the wallpaper every word sits on the lane's translucent panel;
+    // `.count { background: var(--chip); }`, and the count sits on the chip; `.lane-name {
+    // background: var(--panel); }`, and the name sits on the panel. Each prints the header, the
+    // element and the background it found. `.lane-name { color: var(--lane); }` prints each name
+    // at 1.00:1 on its lane.
+    for (const layout of layouts) {
+        await layout.enter();
+        await expect.poll(walled).toBe(layout.wall);
+        const read = await headerSurfaces(
+            page,
+            known.map((one) => one.hue)
+        );
+        expect(read.heads.length).toBeGreaterThanOrEqual(10);
+        const failures: string[] = [];
+        for (const head of read.heads) {
+            const match = known.find((one) => one.matches(head.name));
+            if (match === undefined) {
+                failures.push(`${layout.name}: a header "${head.name}" no config names`);
+                continue;
+            }
+            const lane = rgbHex(read.lanes[match.hue]);
+            if (head.texts.length === 0)
+                failures.push(`${layout.name}: ${match.label} holds no text`);
+            for (const text of head.texts) {
+                const surface = rgbHex(text.background);
+                const ink = rgbHex(text.colour);
+                if (surface.alpha !== 1 || surface.hex !== lane.hex) {
+                    failures.push(
+                        `${layout.name}: ${match.label} ${text.what} sits on ${text.background}, not --c-${match.hue}-lane ${read.lanes[match.hue]}`
+                    );
+                    continue;
+                }
+                const found = ratio(ink.hex, surface.hex);
+                if (found < 4.5) {
+                    failures.push(
+                        `${layout.name}: ${match.label} ${text.what} is ${found.toFixed(2)}:1 on its lane`
+                    );
+                }
+            }
+        }
+        expect(failures).toEqual([]);
+    }
+    // Leave the page as a run finds it: the wallpaper on and the light theme.
+    await wall.click();
+    await expect.poll(walled).toBe(true);
+    await theme('light');
 });
 
 test('an archive card is offered no Ideas lane in its menu and its drop there is refused', async ({

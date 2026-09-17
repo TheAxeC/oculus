@@ -164,7 +164,10 @@ function laneOrder(a: Project, b: Project): number {
     return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
 }
 
-/** The three open tiers the Projects board shows, which the backlog and the tallies read. */
+/**
+ * The three open tiers the Projects board shows. The backlog reads them alone; the waiting tallies
+ * read them beside the projects drawn on a lane.
+ */
 export function live(project: Project): boolean {
     return ['ideas', 'active', 'manuscripts'].includes(project.tier);
 }
@@ -240,10 +243,12 @@ export function venueLabel(venue: Venue | undefined): string {
 }
 
 /**
- * The awaiting-a-response strip. The people and venue tallies are one per live project, the people
- * named in `waiting-on:` first, then the venue holding it when it is `submitted`; the blocked tally
- * is over every project of every tier on its own, whatever else the project is waiting for.
- * A `waiting-on:` value is a people key or another project's id, drawn by waiting.ts.
+ * The awaiting-a-response strip. The people and venue tallies count every live project, whether
+ * or not a card draws it, and every project of another tier that laneItems draws on a lane, so
+ * every card that says "Waiting on" is counted. For each, the people named in `waiting-on:` first,
+ * then the venue holding it when it is `submitted`. The blocked tally is over every project of
+ * every tier on its own, whatever else the project is waiting for. A `waiting-on:` value is a
+ * people key or another project's id, drawn by waiting.ts.
  */
 export function waiting(
     snapshot: Snapshot,
@@ -252,15 +257,21 @@ export function waiting(
 ): Waiting {
     const venues = snapshot.entities.venues;
     const projects = snapshot.entities.projects;
+    const onLanes = new Set(
+        Object.values(laneItems(Object.values(projects), lanes(config)))
+            .flat()
+            .map((project) => project.id)
+    );
     const people: Record<string, number> = {};
     const held: Record<string, number> = {};
     let blocked = 0;
-    for (const project of Object.values(snapshot.entities.projects)) {
+    for (const project of Object.values(projects)) {
         // The blocked tally is over every tier and over every project, where the people and venue
-        // tallies are over the live ones: a blocked archive or coauthor paper is still blocked, and
-        // a blocked project also waiting on somebody is blocked as well as waited on.
+        // tallies are over every live project and every project a lane draws: a blocked archive or
+        // coauthor paper is still blocked, and a blocked project also waiting on somebody is
+        // blocked as well as waited on.
         if (project.chips.includes('blocked')) blocked += 1;
-        if (!live(project)) continue;
+        if (!live(project) && !onLanes.has(project.id)) continue;
         if (project.waitingOn.length > 0) {
             for (const key of project.waitingOn) {
                 const name = waitingLabel(key, names, projects);

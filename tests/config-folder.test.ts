@@ -281,7 +281,7 @@ describe("oculus's own config directory", () => {
         ]);
         expect(config.focus_lane_tones).toEqual({
             funding: 'gold',
-            jobs: 'violet',
+            jobs: 'grey-d',
             teaching: 'teal'
         });
         expect(typeof config.stale_lag_days).toBe('number');

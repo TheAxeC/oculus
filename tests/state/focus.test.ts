@@ -412,14 +412,17 @@ describe('laneItems over every tier', () => {
         expect(ids).toEqual(['idea-loose', 'idea-parked', 'unplaced-ms']);
     });
 
-    // Revert: drop `if (!live(project)) continue;` from waiting.
-    it('leaves the waiting tallies over the live tiers', () => {
+    // Revert: put `if (!live(project)) continue;` back at the head of waiting's tallies, and the
+    // coauthor and archive projects on a lane leave the people and venue counts.
+    it('counts the people and venues of the projects it draws on a lane, whatever their tier', () => {
         const more = snapshot();
         for (const one of wider()) more.entities.projects[one.id] = one;
         const wide = waiting(more, config, { someone: 'Some One' });
         const strip = waiting(snap, config, { someone: 'Some One' });
-        expect(wide.people).toEqual(strip.people);
-        expect(wide.venues).toEqual(strip.venues);
+        expect(strip.people).toEqual([{ label: 'Some One', count: 1 }]);
+        expect(wide.people).toEqual([{ label: 'Some One', count: 2 }]);
+        expect(strip.venues).toEqual([{ label: 'JBI', count: 1 }]);
+        expect(wide.venues).toEqual([{ label: 'JBI', count: 2 }]);
         expect(wide.blocked).toBe(strip.blocked);
     });
 });
@@ -474,7 +477,9 @@ describe('waiting', () => {
         expect(waiting(wider, config, {}).blocked).toBe(strip.blocked + 3);
     });
 
-    it('leaves the people and venue tallies over the live tiers alone', () => {
+    // Revert: drop the tier and lane condition from waiting, so every project of every tier is
+    // tallied, and the archive projects off the lanes and the coauthor in holding are counted.
+    it('leaves a project of another tier that is on no lane out of the people and venue tallies', () => {
         const wider = snapshot();
         wider.entities.projects['archive-waiting'] = project('archive-waiting', 'archive', {
             waitingOn: ['someone']
@@ -483,10 +488,45 @@ describe('waiting', () => {
             chips: ['submitted'],
             venueId: 'jbi'
         });
+        wider.entities.projects['coauthor-holding'] = project('coauthor-holding', 'coauthor', {
+            focus: 'holding',
+            waitingOn: ['someone']
+        });
+        for (const focus of ['', 'submit', 'constructor', '__proto__']) {
+            const id = `coauthor-focus-${focus}`;
+            wider.entities.projects[id] = project(id, 'coauthor', {
+                focus,
+                chips: ['submitted'],
+                venueId: 'jbi',
+                waitingOn: ['someone']
+            });
+        }
         const wide = waiting(wider, config, { someone: 'Some One' });
         expect(wide.people).toEqual(strip.people);
         expect(wide.venues).toEqual(strip.venues);
         expect(wide.blocked).toBe(strip.blocked);
+    });
+
+    // Revert: put `if (!live(project)) continue;` back in waiting, and both coauthor projects leave
+    // the tallies while the live counts stay as they were.
+    it('counts a coauthor project on a lane under its person, and a submitted one under its venue', () => {
+        const wider = snapshot();
+        wider.entities.projects['coauthor-waits'] = project('coauthor-waits', 'coauthor', {
+            focus: 'blocked',
+            waitingOn: ['someone']
+        });
+        wider.entities.projects['coauthor-submitted'] = project('coauthor-submitted', 'coauthor', {
+            focus: 'review',
+            chips: ['submitted'],
+            venueId: 'jbi'
+        });
+        const wide = waiting(wider, config, { someone: 'Some One' });
+        expect(wide.people).toEqual([{ label: 'Some One', count: 2 }]);
+        expect(wide.venues).toEqual([{ label: 'JBI', count: 2 }]);
+        expect(wide.blocked).toBe(strip.blocked);
+        delete wider.entities.projects['coauthor-waits'];
+        delete wider.entities.projects['coauthor-submitted'];
+        expect(waiting(wider, config, { someone: 'Some One' })).toEqual(strip);
     });
 
     it('draws a waiting-on value that is a project id by the label of that project', () => {
