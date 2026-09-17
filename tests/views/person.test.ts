@@ -137,6 +137,11 @@ function snapshot(): Snapshot {
                     name: 'Ward',
                     role: 'student',
                     folder: 'education/student-supervision/ward-2024'
+                }),
+                outsider: person('outsider', {
+                    name: 'Outsider',
+                    role: 'student',
+                    folder: 'education/../../elsewhere/thesis'
                 })
             },
             organisations: {
@@ -263,6 +268,27 @@ describe('one person as their own tab', () => {
         expect(body).toContain('thesis.pdf');
         // A directory has no bytes for a source tab to hold, so it is not a row at all.
         expect(body).not.toContain('drafts');
+    });
+
+    // Revert: drop the ToolButton from the folder block's heading in views/Person.svelte.
+    it('offers Show in Files for the supervision folder on its block, and no such control without one', async () => {
+        const body = await listed([{ name: 'thesis.pdf', kind: 'file', size: 10, mtime: 0 }]);
+        const block = body.slice(body.indexOf('data-block="folder"'));
+        expect(block).toContain(`aria-label="${catalog['person.show_in_files']}"`);
+        expect(block).toContain(
+            catalog['person.show_in_files_tip'].replace(
+                '{0}',
+                'education/student-supervision/ward-2024'
+            )
+        );
+        expect(drawn(client, { key: 'naesens' })).not.toContain(catalog['person.show_in_files']);
+    });
+
+    // Revert: draw the ToolButton whatever `folderPath` is in views/Person.svelte.
+    it('offers no Show in Files for a folder that climbs above the hub', () => {
+        const body = drawn(client, { key: 'outsider' });
+        expect(body).toContain('data-block="folder"');
+        expect(body).not.toContain(catalog['person.show_in_files']);
     });
 
     it('says the folder is empty when every entry in it is a directory', async () => {

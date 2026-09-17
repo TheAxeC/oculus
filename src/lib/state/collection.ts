@@ -261,6 +261,45 @@ export function isHubPath(value: string): boolean {
     return value !== '' && !ADDRESSED.test(value);
 }
 
+/**
+ * A path by its segments: the empty and the `.` ones dropped, and each `..` taking the segment
+ * before it away, so `funding/x/`, `./funding//x` and `network/../funding/x` are one path. A `..`
+ * with no segment before it is kept, which is how a path climbing above its root still says so.
+ */
+export function normalisePath(path: string): string {
+    const kept: string[] = [];
+    for (const part of path.split('/')) {
+        if (part === '' || part === '.') continue;
+        if (part === '..' && kept.length > 0 && kept[kept.length - 1] !== '..') {
+            kept.pop();
+            continue;
+        }
+        kept.push(part);
+    }
+    return kept.join('/');
+}
+
+/** The fields of an entry that hold a path of the hub when their value is not an address. */
+const PATH_FIELDS = ['link', 'url', 'folder'];
+
+/**
+ * The hub paths an entry's fields name, each once, in field order, which is what a card offers to
+ * show in the Files view. A value counts when isHubPath says it is not an address and, by its
+ * segments, it names something under the hub: not the hub itself and nothing above it. Whether
+ * anything is there is decided when the file browser opens it.
+ */
+export function hubPathsOf(fields: Record<string, unknown>): string[] {
+    const found: string[] = [];
+    for (const field of PATH_FIELDS) {
+        const value = fields[field];
+        if (typeof value !== 'string' || !isHubPath(value.trim())) continue;
+        const path = normalisePath(value.trim());
+        if (path === '' || path === '..' || path.startsWith('../')) continue;
+        if (!found.includes(path)) found.push(path);
+    }
+    return found;
+}
+
 /** The entry's status, when it has one as a word. */
 export function entryStatus(entry: Entry): string | undefined {
     const status = entry.fields[STATUS_FIELD];

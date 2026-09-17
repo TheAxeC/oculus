@@ -12,6 +12,7 @@
 // temporary copy of demo/, and every file a case writes is put back before the case ends.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { pressCardAction } from './cards.ts';
 import { draftKeys, switchAndBack, uiInstances } from './forms.ts';
 import { readHubFile, readHubYaml, writeHubFile } from './hub.ts';
 import { boot, openView } from './rail.ts';
@@ -69,12 +70,11 @@ async function typeTask(page: Page): Promise<void> {
 async function typeManifest(page: Page): Promise<Locator> {
     const short = String(readHubYaml(`${PROJECT}/project.yml`).short);
     await openView(page, 'projects', t('views.projects'));
-    await page
-        .locator('.slot')
-        .filter({ hasText: short })
-        .first()
-        .getByRole('button', { name: t('project.card.edit_manifest') })
-        .click();
+    await pressCardAction(
+        page,
+        page.locator('.slot').filter({ hasText: short }).first(),
+        t('project.card.edit_manifest')
+    );
     const tab = page.getByRole('tab', { name: t('views.editor'), exact: true });
     await expect(tab).toBeVisible();
     const box = page.getByRole('textbox', { name: labelOf(FIELD) });

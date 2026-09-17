@@ -1,6 +1,11 @@
 <script lang="ts">
     // Layer 3, Venues view partial. One catalogue venue, its metadata, project users and edit form.
     // The project list is already restricted to real users, and concentration arrives as a flag.
+    //
+    // A `link` is told a path of the hub from an address by the rule the collection cards use
+    // (state/collection.ts's hubPathsOf): a path opens through api/file in this tab and the card
+    // carries the control that selects it in the Files view; an address opens in a tab of the
+    // browser's own.
 
     import Card from '$lib/ui/Card.svelte';
     import Tag from '$lib/ui/Tag.svelte';
@@ -10,13 +15,20 @@
     import CrossLinks from '$lib/views/shared/CrossLinks.svelte';
     import EntryForm from '$lib/views/shared/EntryForm.svelte';
     import { inlineMarkdown } from '$lib/ui/html';
-    import { groupProjects, type Entry, type SchemaField } from '$lib/state/collection';
+    import {
+        groupProjects,
+        hrefOf,
+        hubPathsOf,
+        type Entry,
+        type SchemaField
+    } from '$lib/state/collection';
     import { t } from '$lib/state/text';
     import { freeTone, quartileTone, type Project, type Venue } from '$lib/state/venues';
     import { themeWordLabel, type ThemeWordLabels } from '$lib/state/themes';
     import { useState } from '$lib/state/use';
 
     const {
+        layout: { showInFiles },
         selectors: { archiveDead }
     } = useState();
 
@@ -49,6 +61,8 @@
     }: Props = $props();
 
     const groups = $derived(groupProjects(projects, archiveDead()));
+    /** The hub path the venue's `link` names, or undefined for an address or no link. */
+    const linkPath = $derived(hubPathsOf({ link: venue.link }).at(0));
     const metadata = $derived(
         [
             venue.jif && !['none', ' - '].includes(venue.jif.toLowerCase())
@@ -59,7 +73,12 @@
             venue.format ? { label: venue.format, bold: true } : null,
             venue.timing ? { label: venue.timing, glyph: 'timing' } : null,
             venue.link
-                ? { label: t('venues.site'), glyph: 'launch', href: venue.link, external: true }
+                ? {
+                      label: t('venues.site'),
+                      glyph: 'launch',
+                      href: linkPath === undefined ? venue.link : hrefOf(linkPath),
+                      external: true
+                  }
                 : null,
             venue.call
                 ? { label: t('venues.call'), glyph: 'paper', href: venue.call, external: true }
@@ -84,6 +103,17 @@
             {/if}
             {#if venue.free}
                 <Tag label={venue.free} tone={freeTone(venue.free)} />
+            {/if}
+            {#if linkPath !== undefined}
+                <ToolButton
+                    label={t('venues.show_in_files')}
+                    title={t('venues.show_in_files_tip', linkPath)}
+                    glyph="show_in_files"
+                    compact
+                    onclick={() => {
+                        showInFiles(linkPath);
+                    }}
+                />
             {/if}
             {#if entry !== null && schema !== undefined}
                 <ToolButton

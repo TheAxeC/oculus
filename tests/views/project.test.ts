@@ -172,6 +172,13 @@ describe('a project as its own tab', () => {
         expect(body).toContain('the first result');
     });
 
+    // Revert: drop the `files` control from the actions of views/shared/ProjectCard.svelte.
+    it("offers Show in Files for the project's folder on the card", () => {
+        expect(body).toContain('data-action="files"');
+        expect(body).toContain(`aria-label="${catalog['project.helper.show_in_files']}"`);
+        expect(body).toContain(catalog['project.helper.show_in_files_tip']);
+    });
+
     it('offers the manifest editor and the deposit on the card', () => {
         expect(body).toContain(catalog['project.card.edit_manifest']);
         expect(body).toContain(catalog['project.card.deposit']);

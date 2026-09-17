@@ -52,6 +52,11 @@
     // form by a control of this view forgets them through toggleAdd and toggleEdit, as a collection
     // view's own Add and Edit controls do. A note opens as a tab and is a file in a folder of its own,
     // written by the first keystroke typed into it.
+    //
+    // Another view shows a path here through the layout store's showInFiles, which writes the ask
+    // into this instance's state; files/ShowPath.svelte reads the folders on the way, opens them,
+    // selects the path (or the nearest folder of it that is there, and says so) and scrolls it into
+    // view.
 
     import Breadcrumb from '$lib/ui/Breadcrumb.svelte';
     import Confirm from '$lib/ui/Confirm.svelte';
@@ -63,6 +68,8 @@
     import Controls from './files/Controls.svelte';
     import Notes from './files/Notes.svelte';
     import RootForm from './files/RootForm.svelte';
+    import ShowPath from './files/ShowPath.svelte';
+    import { refusal } from './files/refusal';
     import Tree from './files/Tree.svelte';
     import Workspaces from './files/Workspaces.svelte';
     import type { Entry, SchemaField } from '$lib/state/collection';
@@ -143,6 +150,10 @@
     const shown = $derived(filtering ? filterRows(current.roots, heldEntries, view.filter) : rows);
     const crumbs = $derived(crumbsOf(view.selected));
     const fixed = $derived(current.roots.filter((one) => one.fixed).map((one) => one.key));
+    /** The root keys an ask to show a path is answered against, and null until they are read. */
+    const rootKeys = $derived(
+        saved.loading || saved.error !== '' ? null : current.roots.map((one) => one.key)
+    );
 
     const marks = $derived(bookmarks());
     const held = $derived(notes());
@@ -197,22 +208,6 @@
             .filter((one) => one.error !== '')
     );
 
-    /** What one refusal code from the endpoint says to the reader. */
-    function refusal(code: string): string {
-        if (code === 'no-dir') return t('files.refused_no_dir');
-        if (code === 'not-absolute') return t('files.refused_not_absolute');
-        if (code === 'no-such-dir') return t('files.refused_no_such_dir');
-        if (code === 'not-a-directory') return t('files.refused_not_a_directory');
-        if (code === 'root-held') return t('files.refused_root_held');
-        if (code === 'root-fixed') return t('files.refused_root_fixed');
-        if (code === 'no-such-root') return t('files.refused_no_such_root');
-        if (code === 'no-name') return t('files.refused_no_name');
-        if (code === 'name-held') return t('files.refused_name_held');
-        if (code === 'no-such-workspace') return t('files.refused_no_such_workspace');
-        if (code === 'no-such-note') return t('files.refused_no_such_note');
-        return t('files.refused_other', code);
-    }
-
     /** Write part of what one instance remembers, keeping the rest of it as it was. */
     function patchAt(id: string, part: Partial<FilesView>): void {
         const kept = instanceState(id);
@@ -235,8 +230,9 @@
         patch({ expanded: setExpanded(view.expanded, rowKey(row), !row.open) });
     }
 
+    /** Select one row; the outcome line of an ask to show a path is about the row it selected. */
     function selectRow(row: RowRef): void {
-        patch({ selected: { root: row.root, path: row.path } });
+        patch({ selected: { root: row.root, path: row.path }, revealed: null });
     }
 
     /** Open or close one section under the trees. */
@@ -466,6 +462,14 @@
         {#if said !== ''}
             <p class="said" aria-live="polite">{said}</p>
         {/if}
+        <ShowPath
+            owner={instance.id}
+            {view}
+            roots={rootKeys}
+            rootsError={saved.error}
+            rows={shown}
+            onpatch={patchAt}
+        />
         <Search
             value={view.filter}
             placeholder={t('files.filter')}

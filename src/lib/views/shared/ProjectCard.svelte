@@ -3,10 +3,12 @@
     // framing changes independently of its documents, links, sessions and expanded details.
     //
     // The card's controls are views/shared/CardActions.svelte, shown under the pointer and kept on
-    // one line; its ELI5 is views/shared/Clamp.svelte wherever the caller keeps an open state for
-    // it; its subtasks block is drawn only for a project that has subtasks, adding the first being
-    // one of the controls. The card is a positioned box whose content may reach past its edge, so
-    // the More menu of its controls is not cut off at the foot of a short card.
+    // one line; the project's folder is offered twice among them, shown in Finder through the host
+    // and selected in the Files view of this page. Its ELI5 is views/shared/Clamp.svelte wherever
+    // the caller keeps an open state for it; its subtasks block is drawn only for a project that
+    // has subtasks, adding the first being one of the controls. The card is a positioned box whose
+    // content may reach past its edge, so the More menu of its controls is not cut off at the foot
+    // of a short card.
     import Chip from '$lib/ui/Chip.svelte';
     import Tag from '$lib/ui/Tag.svelte';
     import Card from '$lib/ui/Card.svelte';
@@ -30,7 +32,7 @@
 
     const {
         entities: { portfolio },
-        layout: { layout, openBeside, openView },
+        layout: { layout, openBeside, openView, showInFiles },
         selection: { select },
         terminals: { startChat },
         ui: { setInstanceState },
@@ -137,6 +139,15 @@
             title: t('project.helper.folder_tip'),
             glyph: 'folder',
             onclick: showFolder
+        });
+        rows.push({
+            id: 'files',
+            label: t('project.helper.show_in_files'),
+            title: t('project.helper.show_in_files_tip'),
+            glyph: 'show_in_files',
+            onclick: () => {
+                showInFiles(item.project.folder);
+            }
         });
         if (ontoggle !== undefined) {
             rows.push({

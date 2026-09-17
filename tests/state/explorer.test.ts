@@ -51,6 +51,12 @@ function dir(name: string): FsEntry {
 /** The forms of a file browser with none open. */
 const NO_FORM = { form: '', editing: '', typed: '', opening: 0 } as const;
 
+/**
+ * The asks to show a path of a file browser nothing has asked. Revert: in filesViewOf of
+ * state/fs.ts, leave `reveal`, `revealed` or `revealing` out of the record it returns.
+ */
+const NO_REVEAL = { reveal: null, revealed: null, revealing: 0 } as const;
+
 function root(key: string, fixed = true): FsRoot {
     return { key, dir: `/tmp/${key}`, fixed };
 }
@@ -168,7 +174,9 @@ describe('the explorer over the rows', () => {
         expect(collapseRoot([...open, 'hubby:x'], 'hub')).toEqual(['hub:', 'notes:', 'hubby:x']);
     });
 
-    // Revert: read `selected` without checking that root and path are strings.
+    // Revert: read `selected` without checking that root and path are strings; or, for the
+    // `...NO_REVEAL` expectations, default `reveal` or `revealed` to anything but null or
+    // `revealing` to anything but 0 in filesViewOf (askOf, outcomeOf, countOf of state/fs.ts).
     it('reads what the instance keeps, and a default for anything it cannot read', () => {
         expect(
             filesViewOf({
@@ -179,12 +187,20 @@ describe('the explorer over the rows', () => {
             })
         ).toEqual({
             ...NO_FORM,
+            ...NO_REVEAL,
             expanded: ['hub:'],
             selected: { root: 'hub', path: 'code' },
             filter: 'run',
             collapsed: ['notes']
         });
-        const empty = { ...NO_FORM, expanded: [], selected: null, filter: '', collapsed: [] };
+        const empty = {
+            ...NO_FORM,
+            ...NO_REVEAL,
+            expanded: [],
+            selected: null,
+            filter: '',
+            collapsed: []
+        };
         expect(filesViewOf(null)).toEqual(empty);
         expect(filesViewOf({ selected: { root: 'hub' }, filter: 4 })).toEqual(empty);
         expect(filesViewOf({ selected: { root: '', path: '' } })).toEqual(empty);

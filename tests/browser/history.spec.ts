@@ -6,6 +6,7 @@
 // the bytes. The log itself is written under this run's own HOME, which serve.ts makes.
 
 import { expect, test } from '@playwright/test';
+import { pressCardAction } from './cards.ts';
 import { readHubFile, readHubYaml } from './hub.ts';
 import { boot, openView } from './rail.ts';
 import { t } from './words.ts';
@@ -44,7 +45,7 @@ test('a manifest edit shows in History and its control puts the value back', asy
     await openView(page, 'projects', t('views.projects'));
 
     const card = page.locator('.slot').filter({ hasText: short }).first();
-    await card.getByRole('button', { name: t('project.card.edit_manifest') }).click();
+    await pressCardAction(page, card, t('project.card.edit_manifest'));
     // The editor's tab carries the view's own name; the pane it opens is headed by the project.
     await expect(page.getByRole('tab', { name: t('views.editor') })).toBeVisible();
     await expect(page.getByRole('heading', { name: title })).toBeVisible();

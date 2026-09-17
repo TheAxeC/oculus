@@ -144,6 +144,8 @@ glyphs:
   terminal_claude: "✦"
   terminal_codex: "◇"
   terminal_shell: "▶"
+  # showing a path in the file browser
+  show_in_files: "⌖"
   # circled section numbers (inbox)
 
 
@@ -277,3 +279,5 @@ ascii:
   "⚫": "(X)"
   "🟧": "[o]"
   "🟩": "[+]"
+  # showing a path in the file browser
+  "⌖": "[@]"

@@ -67,6 +67,7 @@ import {
     type Workbench
 } from './layout/index.ts';
 import { parseArrangement } from './arrangement.ts';
+import { revealAsked } from './fs.ts';
 import { t } from './text.ts';
 
 /** The key the arrangement is saved under. The envelope inside it carries the version. */
@@ -129,6 +130,14 @@ export type LayoutStore = {
     focused: (page?: string) => Focus | null;
     openView: (view: ViewId, state?: unknown, page?: string, options?: OpenOptions) => string;
     openBeside: (view: ViewId, state?: unknown, page?: string) => string;
+    /**
+     * Show one path in the file browser: the Files tab of the page the reader is in is activated
+     * (the panes are restored first when it sits behind a maximised pane), or one is opened there
+     * when the page has none, and it is asked to open the folders on the way, select the path and
+     * scroll it into view. A path given with no root is a path of the hub. The returned id names
+     * the Files instance.
+     */
+    showInFiles: (path: string, root?: string) => string;
 };
 
 /** What an opener may ask for beyond the view and its state. */
@@ -841,6 +850,29 @@ export function createLayout(ui: UiStore): LayoutStore {
     }
 
     /**
+     * Show one path in the file browser. The ask is written into the Files instance's own state
+     * rather than acted on here: the folders on the way are read by the view, which is what draws
+     * them, and an ask written into the state is still there for a tab that mounts after it.
+     */
+    function showInFiles(path: string, root?: string): string {
+        const page = touched().id;
+        const tree = layout(page);
+        const held = findView(tree, 'files', null);
+        const focus = focusedPane(workbench(page));
+        const shown = focus === null ? null : paneAt(tree, focus.path);
+        // openView looks inside a maximised pane alone, which would open a second Files tab there
+        // while the page's own one waits behind it; the panes are given back so that one is found.
+        // A maximised pane that holds a Files tab of its own keeps the reader's layout and is used.
+        if (held !== null && shown !== null && !shown.tabs.some((tab) => tab.view === 'files')) {
+            restorePanes(page);
+        }
+        const id = openView('files', undefined, page);
+        if (id === '') return '';
+        ui.setInstanceState(id, revealAsked(ui.instanceState(id), path, root));
+        return id;
+    }
+
+    /**
      * The pane the last openBeside made, while the instance it made is still on the page and not in
      * the pane of the instance it was opened beside: a tab dragged back into the pane being read is
      * beside nothing, so the next view asked for beside it splits again.
@@ -904,6 +936,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         expandChild,
         focused,
         openView,
-        openBeside
+        openBeside,
+        showInFiles
     };
 }

@@ -43,6 +43,7 @@ text:
         notes_failed: 'The notes could not be read: {0}'
         open_title: Open {0} as a tab
         read_failed: 'The roots could not be read: {0}'
+        read_offline: there is no page to read from
         refresh: refresh
         refresh_title: Read the roots, the open folders and the lists again
         refused_name_held: A workspace already carries that name.
@@ -62,6 +63,11 @@ text:
         remove_root_detail: The folder stays on this machine; this workspace stops serving it.
         remove_root_title: Take {0} out of this workspace
         reserved: 'Left out of this workspace, since the configuration owns the name: {0}'
+        reveal_missing: '{0} is not there; {1}, the nearest folder on its way, is selected.'
+        reveal_no_root: '{0} cannot be shown: this workspace has no root {1}.'
+        reveal_no_roots: '{0} cannot be shown: the file browser could not read its roots ({1}).'
+        reveal_place: '{0}/{1}'
+        reveal_unread: '{0} cannot be shown: {1} could not be read ({2}), and is selected.'
         root_dir: Folder path
         root_dir_help: An absolute path, or one starting with ~/
         row_bookmark: bookmark

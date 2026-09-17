@@ -145,3 +145,5 @@ icons:
     terminal_claude: sparkle
     terminal_codex: diamond
     terminal_shell: terminal
+    # showing a path in the file browser
+    show_in_files: folder-search

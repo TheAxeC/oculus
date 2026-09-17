@@ -100,6 +100,8 @@ text:
             folder_tip: show the project folder in Finder
             full: Full
             short: Short
+            show_in_files: Show in Files
+            show_in_files_tip: select the project folder in the Files view
             under_review_at: under review at {0}
             under_review_unset: under review (venue unset)
             waiting_on: waiting on {0}

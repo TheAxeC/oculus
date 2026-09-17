@@ -16,10 +16,11 @@
     // open is said through `onsaid`, the line the collection view shows every write's answer on.
     //
     // The controls are views/shared/CardActions.svelte, shown under the pointer and kept on one
-    // line; a long body field is views/shared/Clamp.svelte, open or cut by the view instance's
-    // state; the subtasks block is drawn only for an entry that has subtasks, adding the first
-    // being one of the controls. The card may draw past its own edge, so the More menu is not cut
-    // off at its foot.
+    // line, and a hub path the entry's `link`, `url` or `folder` names is one of them, which
+    // selects that path in the Files view of this page; a long body field is
+    // views/shared/Clamp.svelte, open or cut by the view instance's state; the subtasks block is
+    // drawn only for an entry that has subtasks, adding the first being one of the controls. The
+    // card may draw past its own edge, so the More menu is not cut off at its foot.
 
     import Card from '$lib/ui/Card.svelte';
     import Chip from '$lib/ui/Chip.svelte';
@@ -40,6 +41,7 @@
         entrySubtasks,
         hrefOf,
         HUB_ROOT,
+        hubPathsOf,
         isHubPath,
         isPinned,
         identityValue,
@@ -55,7 +57,7 @@
 
     const {
         entities: { portfolio },
-        layout: { openView },
+        layout: { openView, showInFiles },
         selectors: { archiveDead, programApps },
         writes: { writeEntry }
     } = useState();
@@ -119,19 +121,36 @@
     let addingSubtask = $state(false);
 
     /**
-     * The card's controls: the pin, the edit form and, while the entry has no subtask, adding its
-     * first. A file with no schema has no identity to write by, so its cards carry the file's
-     * other lifecycle statuses instead.
+     * One Show in Files control per hub path the entry's `link`, `url` or `folder` names. It needs no
+     * identity to write by, so a card of a file with no schema carries it too.
+     */
+    const shows: CardAction[] = $derived(
+        hubPathsOf(entry.fields).map((path): CardAction => ({
+            id: `files:${path}`,
+            label: t('collection.show_in_files'),
+            title: t('collection.show_in_files_tip', path),
+            glyph: 'show_in_files',
+            onclick: () => {
+                showInFiles(path);
+            }
+        }))
+    );
+
+    /**
+     * The card's controls: the pin, the edit form, while the entry has no subtask adding its first,
+     * and the Show in Files controls. A file with no schema has no identity to write by, so its cards
+     * carry the file's other lifecycle statuses instead of the first three.
      */
     const actions = $derived.by((): CardAction[] => {
         if (!addressable) {
-            return statuses
+            const buttons: CardAction[] = statuses
                 .filter((one) => one !== status)
                 .map((one) => ({
                     id: `status:${one}`,
                     label: one,
                     onclick: () => setStatus(one)
                 }));
+            return buttons.concat(shows);
         }
         const rows: CardAction[] = [
             {
@@ -161,7 +180,7 @@
                 }
             });
         }
-        return rows;
+        return rows.concat(shows);
     });
 
     function said(answer: { ok: boolean; changed: string[]; error?: string }): void {

@@ -313,6 +313,29 @@ describe('the journal section and venue card', () => {
         expect(journal).not.toContain('>clinical</span>');
     });
 
+    // Revert: in views/venues/VenueCard.svelte, drop the Show in Files ToolButton, or send the site
+    // link to the raw value instead of the hub file.
+    it('offers Show in Files and a site link to the hub file, in a tab of its own, for a link that is a hub path', () => {
+        const path = VENUES.map((one) =>
+            one.id === 'journal' ? { ...one, link: 'network/../registries/venues.yml' } : one
+        );
+        const journal = venueCard(html(path), 'journal');
+        expect(journal).toContain(`aria-label="${catalog['venues.show_in_files']}"`);
+        expect(journal).toContain(
+            catalog['venues.show_in_files_tip'].replace('{0}', 'registries/venues.yml')
+        );
+        expect(journal).toContain('href="/api/file/hub/registries/venues.yml"');
+        // The site link leaves the application as the collection cards' links do, never replacing it.
+        expect(journal).toContain('target="_blank"');
+    });
+
+    // Revert: in hubPathsOf of state/collection.ts, take every `link` value.
+    it('offers no Show in Files for a link that is a web address, and opens it in a tab of its own', () => {
+        const journal = venueCard(html(), 'journal');
+        expect(journal).not.toContain(catalog['venues.show_in_files']);
+        expect(journal).toMatch(/href="https:\/\/example.org\/journal"[^>]*target="_blank"/);
+    });
+
     it('draws the concentration legend with its explanation', () => {
         const body = html();
         const firstCard = body.indexOf('<article');

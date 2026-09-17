@@ -19,6 +19,10 @@
 // view watching the config one) asks again for that root's listings and texts and for nothing under
 // any other root. A refresh at a version already seen writes the same value and moves nothing.
 //
+// A folder can also be read awaited (readListing), which is how the Files view reads the folders on
+// the way to a path it was asked to show, one after the other; that read and a render's read of the
+// same folder in the same round are one request.
+//
 // The file text is read through the file route and stopped at the window's limit: the reader is
 // cancelled once the limit is in, so a forty-megabyte file costs two megabytes of transfer and not
 // forty. What a file opens as is read the same way and stops after the rule's window and the one
@@ -28,6 +32,7 @@
 import type { Entry, SchemaField } from '../data/model.ts';
 import { TEXT_SNIFF_READ } from '../data/text-kind.ts';
 import { TEXT_LIMIT, treeKey, typeOfFile, type FileType, type FsEntry, type FsRoot } from './fs.ts';
+import { t } from './text.ts';
 import type { WriteAnswer, WritesStore } from './writes.svelte.ts';
 
 /** The endpoint the tree reads and the workspace actions write. */
@@ -124,6 +129,12 @@ export type FsStore = {
      * without reading the rest of the root.
      */
     heldEntries: (root: string, path: string) => FsEntry[] | null;
+    /**
+     * One directory once it is answered: what is held for the round without a request, or the answer
+     * of the one request the round makes for it, shared with every other caller asking meanwhile.
+     * It is what a caller that has to know what a folder holds before its next step awaits.
+     */
+    readListing: (root: string, path: string) => Promise<Listing>;
     workspaces: () => WorkspacesState;
     fileText: (root: string, path: string) => FileText;
     /**
@@ -272,6 +283,9 @@ export function createFs(writes: WritesStore): FsStore {
     /** The requests in flight, by round and key, so one render does not send two. */
     const inflight = new Set<string>();
 
+    /** The listing reads in flight, by round and key, so a render and an awaited read send one. */
+    const reading = new Map<string, Promise<Listing>>();
+
     /**
      * Which round of answers is current, and which round of notes. A write moves one of them on and
      * what that round holds is asked again; they are runes because every read of them happens inside
@@ -355,9 +369,35 @@ export function createFs(writes: WritesStore): FsStore {
         const found = listings[key];
         const at = roundOf(root);
         if (found === undefined || rounds[key] !== at) {
-            schedule(key, at, () => loadListing(root, path, at));
+            schedule(key, at, () => askListing(root, path, at).then(() => undefined));
         }
         return found ?? NO_LISTING;
+    }
+
+    /** The one request of a round for one folder, started or joined. */
+    function askListing(root: string, path: string, at: number): Promise<Listing> {
+        const ticket = `${at}:${treeKey(root, path)}`;
+        const pending = reading.get(ticket);
+        if (pending !== undefined) return pending;
+        const request = loadListing(root, path, at).finally(() => reading.delete(ticket));
+        reading.set(ticket, request);
+        return request;
+    }
+
+    /**
+     * One directory, awaited. A folder held for the round is answered as held; otherwise the round's
+     * request is made or joined, and its answer is what comes back even when a newer round has begun
+     * meanwhile and the store did not keep it. Where there is no page nothing is asked, and the
+     * answer says so.
+     */
+    async function readListing(root: string, path: string): Promise<Listing> {
+        if (root === '') return { entries: [], error: '', loading: false };
+        const key = treeKey(root, path);
+        const at = roundOf(root);
+        const found = listings[key];
+        if (found !== undefined && rounds[key] === at) return found;
+        if (!online()) return { entries: [], error: t('files.read_offline'), loading: false };
+        return askListing(root, path, at);
     }
 
     /** The entries of one folder, which is what the tree walks. */
@@ -369,31 +409,32 @@ export function createFs(writes: WritesStore): FsStore {
         return listings[treeKey(root, path)]?.entries ?? null;
     }
 
-    async function loadListing(root: string, path: string, at: number): Promise<void> {
+    /** Ask for one directory and hold the answer when its round is still current; return it either way. */
+    async function loadListing(root: string, path: string, at: number): Promise<Listing> {
         const key = treeKey(root, path);
+        let answer: Listing;
         try {
             const response = await fetch(listingUrl(root, path));
             const body = (await response.json()) as { entries?: unknown; error?: unknown };
-            if (!current(at, root)) return;
-            rounds[key] = at;
-            if (!response.ok) {
-                listings[key] = {
-                    entries: [],
-                    error: typeof body.error === 'string' ? body.error : String(response.status),
-                    loading: false
-                };
-                return;
-            }
-            listings[key] = {
-                entries: Array.isArray(body.entries) ? (body.entries as FsEntry[]) : [],
-                error: '',
-                loading: false
-            };
+            answer = response.ok
+                ? {
+                      entries: Array.isArray(body.entries) ? (body.entries as FsEntry[]) : [],
+                      error: '',
+                      loading: false
+                  }
+                : {
+                      entries: [],
+                      error: typeof body.error === 'string' ? body.error : String(response.status),
+                      loading: false
+                  };
         } catch (error) {
-            if (!current(at, root)) return;
-            rounds[key] = at;
-            listings[key] = { entries: [], error: reasonOf(error), loading: false };
+            answer = { entries: [], error: reasonOf(error), loading: false };
         }
+        if (current(at, root)) {
+            rounds[key] = at;
+            listings[key] = answer;
+        }
+        return answer;
     }
 
     /** The workspaces, asked for once a round and held until the next one. */
@@ -738,6 +779,7 @@ export function createFs(writes: WritesStore): FsStore {
         listing,
         entries,
         heldEntries,
+        readListing,
         workspaces,
         fileText,
         readFileKind,

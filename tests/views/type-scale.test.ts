@@ -48,6 +48,7 @@ const VIEWS: Record<string, string> = {
     'files/Controls.svelte': '',
     'files/Notes.svelte': '',
     'files/RootForm.svelte': '',
+    'files/ShowPath.svelte': '.said=fs-sm',
     'files/Tree.svelte': '',
     'files/Workspaces.svelte': '',
     'Domains.svelte': '.empty, .said=fs-md',

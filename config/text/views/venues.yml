@@ -24,6 +24,8 @@ text:
         next_from: '(from {0}):'
         scopus: Scopus {0}
         sep: ' | '
+        show_in_files: Show in Files
+        show_in_files_tip: select {0} in the Files view
         site: site
         spark_lbl: deadlines/mo
         spark_tip: conference deadlines per month across the year (peak {0})

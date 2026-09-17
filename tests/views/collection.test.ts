@@ -416,6 +416,49 @@ describe('a card', () => {
         }
     });
 
+    // Revert: in hubPathsOf of state/collection.ts, take every `link` value, or drop the `shows`
+    // from the actions of views/collection/EntryCard.svelte.
+    it('offers Show in Files on a card whose link is a hub path, and not on one whose link is an address', () => {
+        const snap = snapshot();
+        snap.version = 8;
+        snap.entities.collections.funding.entries = [
+            {
+                ...FUNDING_ENTRIES[0],
+                fields: { ...FUNDING_ENTRIES[0].fields, link: 'https://example.org/call' }
+            },
+            {
+                ...FUNDING_ENTRIES[1],
+                fields: { ...FUNDING_ENTRIES[1].fields, link: 'funding/2026-veni' }
+            }
+        ];
+        receive({ channel: 'portfolio', version: 8, payload: snap });
+        const drawnCards = cards(html('funding'));
+        const address = drawnCards.find((one) => one.includes('data-card="A later scheme"')) ?? '';
+        const path = drawnCards.find((one) => one.includes('data-card="A funded scheme"')) ?? '';
+        expect(address).not.toBe('');
+        expect(address).not.toContain('data-action="files:');
+        expect(address).not.toContain(catalog['collection.show_in_files']);
+        expect(path).toContain('data-action="files:funding/2026-veni"');
+        expect(path).toContain(`aria-label="${catalog['collection.show_in_files']}"`);
+        expect(path).toContain(
+            catalog['collection.show_in_files_tip'].replace('{0}', 'funding/2026-veni')
+        );
+    });
+
+    // Revert: in views/collection/EntryCard.svelte, return the status buttons without the `shows`.
+    it('offers Show in Files on a card of a file with no schema too', () => {
+        const snap = snapshot();
+        snap.version = 9;
+        snap.entities.collections.tasks.entries = PLAIN_ENTRIES.map((one) => ({
+            ...one,
+            fields: { ...one.fields, folder: 'tasks/one' }
+        }));
+        receive({ channel: 'portfolio', version: 9, payload: snap });
+        const found = cards(html('tasks'));
+        expect(found.length).toBeGreaterThan(0);
+        for (const card of found) expect(card).toContain('data-action="files:tasks/one"');
+    });
+
     it("draws every other link as an anchor into the hub, in a tab of the browser's own", () => {
         const body = html('funding');
         expect(body).toContain('href="https://example.org/call"');

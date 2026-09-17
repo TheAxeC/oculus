@@ -267,6 +267,17 @@ describe('the board', () => {
         expect(cards(html('coauthor'))).toBe(1);
     });
 
+    // Revert: drop the `files` control from the actions of views/shared/ProjectCard.svelte.
+    it("offers Show in Files on every card, beside the folder's Finder control", () => {
+        const body = html('projects');
+        const shows = body.split('data-action="files"').length - 1;
+        expect(shows).toBe(cards(body));
+        expect(body).toContain(`aria-label="${catalog['project.helper.show_in_files']}"`);
+        expect(body.indexOf('data-action="folder"')).toBeLessThan(
+            body.indexOf('data-action="files"')
+        );
+    });
+
     it('carries its own name from the catalog', () => {
         expect(html('projects')).toContain(catalog['views.projects']);
         expect(html('archive')).toContain(catalog['views.archive']);

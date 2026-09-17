@@ -22,8 +22,10 @@
     // the project tab reads its own `id`.
     //
     // The folder is listed through the file store rather than carried in the snapshot, because the
-    // snapshot holds the portfolio's YAML and not what is in a folder; a file opens in the source tab
-    // exactly as a file browser row does, which is the one way a text file is opened.
+    // snapshot holds the portfolio's YAML and not what is in a folder; a file opens in the source
+    // tab exactly as a file browser row does, which is the one way a text file is opened, and the
+    // block's heading carries the control that selects the folder itself in the Files view of this
+    // page.
 
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
@@ -32,7 +34,7 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import SourceButton from './shared/SourceButton.svelte';
     import { openSourceFile } from './shared/source-file';
-    import { HUB_ROOT } from '$lib/state/collection';
+    import { HUB_ROOT, hubPathsOf } from '$lib/state/collection';
     import { personJoin, type PersonJoin } from '$lib/state/person';
     import { t } from '$lib/state/text';
     import { viewSourceFile } from '$lib/state/view-source';
@@ -43,7 +45,7 @@
     const {
         entities: { portfolio },
         fs: { listing },
-        layout: { openView },
+        layout: { openView, showInFiles },
         selectors: { configMap }
     } = client;
 
@@ -53,6 +55,8 @@
     const key = $derived(readKey(instance.state));
     const join = $derived(personJoin(portfolio(), key));
     const folder = $derived(join.folder);
+    /** The folder as a path of the hub, which Show in Files can select, or nothing for one outside it. */
+    const folderPath = $derived(hubPathsOf({ folder }).at(0));
     const files = $derived(folder === '' ? null : listing(HUB_ROOT, folder));
     // The block offers what a source tab can hold, so a folder inside the supervision folder is not
     // a row: opening one would ask the file route for bytes a directory has none of.
@@ -191,7 +195,20 @@
 
             {#if folder !== ''}
                 <section class="block" data-block="folder">
-                    <h3>{t('person.folder', folder)}</h3>
+                    <div class="head">
+                        <h3>{t('person.folder', folder)}</h3>
+                        {#if folderPath !== undefined}
+                            <ToolButton
+                                label={t('person.show_in_files')}
+                                title={t('person.show_in_files_tip', folderPath)}
+                                glyph="show_in_files"
+                                compact
+                                onclick={() => {
+                                    showInFiles(folderPath);
+                                }}
+                            />
+                        {/if}
+                    </div>
                     {#if files === null || files.loading}
                         <Empty message={t('person.folder_loading')} />
                     {:else if files.error !== ''}
@@ -252,6 +269,13 @@
     .block h3 {
         margin: 0 0 6px;
         font-size: var(--fs-sm);
+    }
+
+    /* The folder block's heading carries the control that selects the folder in the Files view. */
+    .head {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
     }
 
     .rows {
