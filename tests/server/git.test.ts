@@ -6,8 +6,12 @@
 // file ever names a path outside the temporary directory: the hub's own repository is never touched.
 //
 // Two gates sit at the end. The module's source names no writing subcommand, and the recorder in
-// git.ts reports every argument vector the module ran over this whole file, which must be nothing
-// but the four read-only commands.
+// git.ts reports every argument vector the module ran over this whole file, which must use nothing
+// but the allowed subcommands, with `branch`, `symbolic-ref` and `worktree` (each of which has
+// writing forms) and `rev-parse` held to the exact vectors the module reads with.
+//
+// The recorder can also stand in for git on one vector, answering as a git that timed out or never
+// started would, since neither can be made to happen on demand with a real repository.
 
 import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -16,6 +20,8 @@ import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { LOG_ENTRIES, MAX_ENTRIES, capped, empty, statusFor } from '../../src/lib/server/git.ts';
+import { BRANCH_FORMAT } from '../../src/lib/server/git-parse.ts';
+import { repositoryRoots, shownRoot } from '../../src/lib/state/repositories.ts';
 import type { GitEntry, GitState } from '../../src/lib/data/model.ts';
 
 const MODULE = resolve(
@@ -29,7 +35,47 @@ const MODULE = resolve(
 );
 
 /** Everything git.ts is allowed to run. The source scan below asserts it holds no other. */
-const ALLOWED = ['branch', 'diff', 'log', 'rev-list', 'rev-parse', 'status', 'worktree'];
+const ALLOWED = [
+    'branch',
+    'diff',
+    'log',
+    'rev-list',
+    'rev-parse',
+    'status',
+    'symbolic-ref',
+    'worktree'
+];
+
+/**
+ * Every call the module makes, by subcommand, one entry per call site: `rev-parse` is run twice,
+ * once to tell a repository from a folder and once for the branch.
+ */
+const CALLS = [...ALLOWED, 'rev-parse'].sort();
+
+/**
+ * The exact vectors four subcommands may run as. `branch <name>` and `branch -d` make and delete a
+ * branch, `symbolic-ref HEAD <ref>` moves HEAD and `worktree add` makes a checkout, so each of
+ * those is held to its one reading vector; `rev-parse` has no writing form and is held to the
+ * module's two reads so a third use is a change this gate sees.
+ */
+const PINNED: Partial<Record<string, string[][]>> = {
+    branch: [['branch', BRANCH_FORMAT]],
+    'rev-parse': [
+        ['rev-parse', '--git-dir'],
+        ['rev-parse', '--abbrev-ref', 'HEAD']
+    ],
+    'symbolic-ref': [['symbolic-ref', '--short', 'HEAD']],
+    worktree: [['worktree', 'list', '--porcelain']]
+};
+
+/** The same vectors as the module's source writes them, one list literal per call. */
+const PINNED_SOURCE = [
+    "['branch', BRANCH_FORMAT]",
+    "['rev-parse', '--git-dir']",
+    "['rev-parse', '--abbrev-ref', 'HEAD']",
+    "['symbolic-ref', '--short', 'HEAD']",
+    "['worktree', 'list', '--porcelain']"
+];
 
 /** No writing subcommand may be named in the module at all, quoted as an argument would be. */
 const FORBIDDEN = [
@@ -60,6 +106,13 @@ const FORBIDDEN = [
 
 /** Every argument vector the module ran, over the whole file. Asserted by the last gate. */
 const ran = vi.hoisted(() => [] as string[][]);
+
+/**
+ * A vector the recorder answers for git instead of running it: the argument it matches on and the
+ * error code a git that did not answer carries (`ETIMEDOUT` for a timeout, `ENOENT` for a git that
+ * could not start). Null runs every command for real.
+ */
+const unanswered = vi.hoisted(() => ({ on: null as { arg: string; code: string } | null }));
 vi.mock('node:child_process', async (importOriginal) => {
     const actual = await importOriginal<typeof import('node:child_process')>();
     // Only what a module under src/lib/server runs is recorded; a test's own setup command is not.
@@ -68,6 +121,22 @@ vi.mock('node:child_process', async (importOriginal) => {
         ...actual,
         spawnSync: ((file: string, args: string[], options: unknown) => {
             if (fromServer()) ran.push(file === 'git' ? args : [file, ...args]);
+            const held = unanswered.on;
+            if (fromServer() && held !== null && args.includes(held.arg)) {
+                // What node hands back for a child that timed out or never started: no status.
+                const error = Object.assign(new Error(`spawnSync ${file} ${held.code}`), {
+                    code: held.code
+                });
+                return {
+                    pid: 0,
+                    output: [],
+                    stdout: '',
+                    stderr: '',
+                    status: null,
+                    signal: null,
+                    error
+                };
+            }
             return (actual.spawnSync as (...held: unknown[]) => unknown)(file, args, options);
         }) as typeof actual.spawnSync,
         execFile: ((file: string, args: string[], ...rest: unknown[]) => {
@@ -142,6 +211,7 @@ describe('the shape', () => {
         expect(found.detached).toBe(false);
         expect([found.ahead, found.behind]).toEqual([0, 0]);
         expect([found.staged, found.unstaged, found.untracked]).toEqual([[], [], []]);
+        expect(found.repository).toBe(true);
         expect(found.error).toBe(null);
     });
 
@@ -281,16 +351,33 @@ describe('the log, the branches and the worktrees', () => {
         expect(found.log[0].when).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     });
 
-    it('says nothing about the log of a repository with no commit in it', () => {
+    // Revert: drop the `symbolic-ref --short HEAD` read from state() in server/git.ts, so a HEAD
+    // that does not resolve is an error again.
+    it('reads a repository with no commit in it, its branch and its files, as no error', () => {
         const fresh = join(dir, 'fresh');
         mkdirSync(fresh);
         git(fresh, 'init', '--initial-branch=work');
-        // A repository with no commit has no HEAD to resolve, which is the empty shape with the
-        // reason on it; the log is empty there like every other list.
+        const loose = join(fresh, 'loose.txt');
+        const staged = join(fresh, 'staged.txt');
+        for (const full of [loose, staged]) {
+            expect(resolve(full).startsWith(resolve(fresh) + sep)).toBe(true);
+            writeFileSync(full, 'x\n');
+        }
+        git(fresh, 'add', 'staged.txt');
         const found = state(fresh);
+        expect(found.repository).toBe(true);
+        expect(found.error).toBe(null);
+        expect(found.branch).toBe('work');
+        expect(found.detached).toBe(false);
+        expect(paths(found.untracked)).toEqual(['loose.txt']);
+        expect(paths(found.staged)).toEqual(['staged.txt']);
+        expect(found.staged[0].status).toBe('A');
+        expect(found.unstaged).toEqual([]);
+        // No commit is there to list or to count from, and no branch is made before the first one.
         expect(found.log).toEqual([]);
         expect(found.branches).toEqual([]);
-        expect(found.error).toBeTruthy();
+        expect([found.ahead, found.behind]).toEqual([0, 0]);
+        expect(found.upstream).toBe(false);
     });
 
     it('lists every branch with its upstream and which one is checked out', () => {
@@ -363,10 +450,12 @@ describe('the log, the branches and the worktrees', () => {
 });
 
 describe('failure', () => {
+    // Revert: set `repository` to true in state() before the `rev-parse --git-dir` read answers.
     it('does not take a plain directory for a repository', () => {
         const plain = join(dir, 'plain');
         mkdirSync(plain);
         const found = state(plain);
+        expect(found.repository).toBe(false);
         expect(found.error).toBeTruthy();
         expect(found.branch).toBe('');
         expect([found.staged, found.unstaged, found.untracked]).toEqual([[], [], []]);
@@ -374,8 +463,72 @@ describe('failure', () => {
 
     it('comes back empty for a path that does not exist', () => {
         const found = state(join(dir, 'gone'));
+        expect(found.repository).toBe(false);
         expect(found.error).toBe('no such directory');
         expect(found.ahead).toBe(0);
+    });
+
+    // Revert: return `empty(reason)` from state() when `git status` fails, as the directory that is
+    // no repository returns.
+    it('keeps a repository whose status cannot be read a repository, with the reason', () => {
+        // An index git cannot parse fails `git status` and nothing that reads only the refs, so the
+        // repository is told apart and its branch read before the status fails.
+        const index = join(repo, '.git', 'index');
+        expect(resolve(index).startsWith(resolve(repo) + sep)).toBe(true);
+        writeFileSync(index, 'not an index\n');
+        const found = state();
+        expect(found.repository).toBe(true);
+        expect(found.error).toBeTruthy();
+        expect(found.branch).toBe('work');
+    });
+
+    // Revert: set `found.repository = false` in checkedOut() in server/git.ts where both HEAD reads
+    // have failed.
+    it('keeps a repository git names no branch for a repository, with the reason', () => {
+        // A HEAD that is a symbolic ref to a name git refuses: the repository is found, and neither
+        // the branch read nor the read of HEAD itself answers.
+        const head = join(repo, '.git', 'HEAD');
+        expect(resolve(head).startsWith(resolve(repo) + sep)).toBe(true);
+        writeFileSync(head, 'ref: refs/heads/../bad\n');
+        const found = state();
+        expect(found.repository).toBe(true);
+        expect(found.error).toBeTruthy();
+        expect(found.branch).toBe('');
+    });
+
+    // Reverts: return `empty(reason)` from state() in server/git.ts on any `rev-parse --git-dir`
+    // failure, timed out or not; or count a git that cannot start as not answered.
+    it('keeps a root whose repository check timed out, and the view on it, and no root git cannot start', () => {
+        const plain = join(dir, 'plain');
+        mkdirSync(plain);
+        unanswered.on = { arg: '--git-dir', code: 'ETIMEDOUT' };
+        try {
+            const states = statusFor([repo, plain]);
+            for (const root of [repo, plain]) {
+                expect(states[root].repository, root).toBe(true);
+                expect(states[root].error).toBe('git timed out');
+            }
+            // The picker keeps both, and a view kept on the repository stays on it.
+            const offered = repositoryRoots([repo, plain], (root) => states[root] ?? null);
+            expect(offered).toEqual([repo, plain]);
+            expect(shownRoot(offered, repo)).toBe(repo);
+        } finally {
+            unanswered.on = null;
+        }
+        // A git that cannot start is taken at its word: no root becomes a repository through it.
+        unanswered.on = { arg: '--git-dir', code: 'ENOENT' };
+        try {
+            const states = statusFor([repo, plain]);
+            for (const root of [repo, plain]) {
+                expect(states[root].repository, root).toBe(false);
+                expect(states[root].error).toBe('spawnSync git ENOENT');
+            }
+        } finally {
+            unanswered.on = null;
+        }
+        // Once git answers, the folder is told apart again.
+        expect(state(plain).repository).toBe(false);
+        expect(state().repository).toBe(true);
     });
 
     it('yields nothing and raises nothing on rubbish input', () => {
@@ -413,14 +566,14 @@ describe('read only', () => {
         }
     });
 
-    it('holds only the read-only commands at its one call site, worktree as a listing', () => {
+    // Revert: write the `symbolic-ref` call in server/git.ts as `['symbolic-ref', 'HEAD']`.
+    it('holds only the allowed subcommands at its call site, the pinned four as their exact vectors', () => {
         const source = readFileSync(MODULE, 'utf8');
         const calls = [...source.matchAll(/\brun\(\s*root\s*,\s*\[\s*'([a-z-]+)'/g)];
-        expect(calls.length).toBe(ALLOWED.length);
+        expect(calls.map((call) => call[1]).sort()).toEqual(CALLS);
         expect([...new Set(calls.map((call) => call[1]))].sort()).toEqual(ALLOWED);
-        // `worktree` is the one allowed subcommand with writing forms of its own, so the module's
-        // single use of it is pinned to the listing.
-        expect(source).toContain("['worktree', 'list', '--porcelain']");
+        // Every pinned call is written out in the source as the whole list it runs.
+        for (const form of PINNED_SOURCE) expect(source).toContain(form);
     });
 
     it('ran every command without optional locks, so a read writes no index lock', () => {
@@ -430,7 +583,10 @@ describe('read only', () => {
         }
     });
 
-    it('ran nothing but those commands over this whole file', () => {
+    // Revert: write the `symbolic-ref` call in server/git.ts as `['symbolic-ref', 'HEAD']`, or the
+    // branch listing as `['branch', '--list', BRANCH_FORMAT]`; the vector it runs is then none of
+    // the pinned ones.
+    it('ran nothing but those commands over this whole file, the pinned four as their vectors', () => {
         expect(ran.length).toBeGreaterThan(0);
         const used = new Set<string>();
         for (const args of ran) {
@@ -440,6 +596,11 @@ describe('read only', () => {
             expect(resolve(args[1]).startsWith(resolve(tmpdir()) + sep)).toBe(true);
             expect(args[2]).toBe('--no-optional-locks');
             used.add(args[3]);
+            // A pinned subcommand ran as one of its vectors and never with another word.
+            const forms = PINNED[args[3]];
+            if (forms !== undefined) {
+                expect(forms, args.join(' ')).toContainEqual(args.slice(3));
+            }
         }
         expect([...used].sort()).toEqual(ALLOWED);
     });

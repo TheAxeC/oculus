@@ -315,7 +315,10 @@ export type GitWorktree = {
     main: boolean;
 };
 
-/** One workspace's git state. Every field is filled, `error` saying why when the rest is empty. */
+/**
+ * One workspace's git state. Every field is filled, `error` saying why when the rest is empty, and
+ * `repository` saying whether the root is a repository whatever else failed.
+ */
 export type GitState = {
     /** The branch name, `HEAD` when nothing is checked out, empty when git said nothing. */
     branch: string;
@@ -325,9 +328,10 @@ export type GitState = {
      * Whether the branch has a tracking branch, and null when that is not known. The rule a reader
      * applies is `upstream === null && error === null`: that pair, and only that pair, is a state
      * git has not answered for yet, and a control that would say "no upstream" says it is still
-     * being looked up instead. Null with `error` set is a directory that is not a repository at all,
-     * which is never pending. The upstream's own name comes from the branch listing of /api/git,
-     * which arrives after this.
+     * being looked up instead. Null with `error` set is a state git answered with a failure (a
+     * directory that is not a repository, which `repository` tells apart, or a repository whose
+     * read failed), and that is never pending. The upstream's own name comes from the branch
+     * listing of /api/git, which arrives after this.
      */
     upstream?: boolean | null;
     detached: boolean;
@@ -341,6 +345,15 @@ export type GitState = {
     worktrees: GitWorktree[];
     /** Whether the repository's .gitignore keeps the worktrees folder out of its history. */
     ignoresWorktrees: boolean;
+    /**
+     * Whether the root is taken for a repository. False in exactly three cases: the root is not a
+     * directory (or does not exist), git ran `rev-parse --git-dir` to its end and answered that the
+     * root is no repository, or the read threw before git answered. True otherwise, which includes
+     * a repository with no commit yet, a repository whose later reads failed, and a root whose
+     * check timed out or whose git would not start, each of the last two with `error` set.
+     */
+    repository: boolean;
+    /** Why a read failed, or null. Set on a repository as well, so it does not mean "no repository". */
     error: string | null;
 };
 

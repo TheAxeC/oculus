@@ -8,7 +8,7 @@
 
 import { expect, test, type Page } from '@playwright/test';
 import { spawnSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { boot, openView } from './rail.ts';
@@ -179,6 +179,61 @@ test.describe('the Repositories view', () => {
         // Back to the hub, which the other cases of this file draw.
         await pick(page, hubDir().split(sep).at(-1) ?? '');
         await expect(shown).toHaveAttribute('data-root', hubDir());
+    });
+
+    // Revert: drop the `symbolic-ref --short HEAD` read from state() in server/git.ts, so the
+    // repository with no commit is drawn as its error row rather than its branch and its files.
+    test('lists a repository with no commit yet and switches to it', async ({ page }) => {
+        const fresh = mkdtempSync(join(tmpdir(), 'oculus-repositories-fresh-'));
+        expect(resolve(fresh).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        // The folder goes when the case ends, whatever the case did, so no repository is left
+        // behind.
+        try {
+            gitIn(fresh, 'init', '--quiet', '--initial-branch=start');
+            writeFileSync(join(fresh, 'loose.txt'), 'x\n');
+            const label = fresh.split(sep).at(-1) ?? '';
+
+            await boot(page);
+            await openView(page, 'files', t('views.files'));
+            await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
+            await page.getByRole('textbox', { name: t('files.root_dir') }).fill(fresh);
+            await page.getByRole('button', { name: t('files.add'), exact: true }).click();
+            await expect(page.getByRole('textbox', { name: t('files.root_dir') })).toHaveCount(0);
+
+            await openView(page, 'repositories', t('views.repositories'));
+            const shown = page.locator('[data-view="repositories"] [data-root]');
+            await expect(shown).toHaveAttribute('data-root', hubDir());
+
+            // The channel reads the roots again once the workspaces file has changed, so the picker
+            // is asked until it lists the new repository.
+            const opener = page.locator('[data-repo-picker]').getByRole('button').first();
+            await expect
+                .poll(
+                    async () => {
+                        await opener.click();
+                        const listed = await page
+                            .getByRole('menuitem', { name: label, exact: true })
+                            .count();
+                        await page.keyboard.press('Escape');
+                        return listed;
+                    },
+                    { timeout: 10_000 }
+                )
+                .toBe(1);
+
+            await pick(page, label);
+            await expect(shown).toHaveAttribute('data-root', new RegExp(`${label}$`));
+            const section = page.locator('[data-view="repositories"] [data-root]');
+            await expect(section.getByText('start', { exact: true }).first()).toBeVisible();
+            await expect(section.locator('[data-entry="loose.txt"]')).toBeVisible();
+            await expect(section.getByText(t('repositories.log_empty'))).toBeVisible();
+
+            // Back to the hub, which the other cases of this file draw.
+            await pick(page, hubDir().split(sep).at(-1) ?? '');
+            await expect(shown).toHaveAttribute('data-root', hubDir());
+        } finally {
+            rmSync(fresh, { recursive: true, force: true });
+        }
     });
 
     // Revert: read `open` as true whatever `collapsed` holds for the log in repositories/Repo.svelte.

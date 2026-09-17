@@ -1,12 +1,14 @@
 // Layer 2, server. Read-only git state for the workspaces the session views name.
 //
 // What a session touched comes from its transcript. What the checkout looks like right now only git
-// can say, and that is this module: the branch, the distance from its upstream, and the staged,
-// changed and untracked lists.
+// can say, and that is this module: whether the root is a repository at all, the branch, the
+// distance from its upstream, and the staged, changed and untracked lists.
 //
 // DESIGN.md, "Git": exactly these read-only commands run here and no others, ever.
 //
+//     git -C <root> rev-parse --git-dir
 //     git -C <root> rev-parse --abbrev-ref HEAD
+//     git -C <root> symbolic-ref --short HEAD
 //     git -C <root> rev-list --left-right --count @{upstream}...HEAD
 //     git -C <root> status --porcelain=v1 -z --untracked-files=normal
 //     git -C <root> diff --numstat -z
@@ -16,9 +18,9 @@
 //
 // Nothing here may ever change a repository. Every writing subcommand belongs to Axel alone, and a
 // dashboard watcher must never be the thing that runs one. tests/server/git.test.ts holds two gates
-// over that: the source names no writing subcommand, and the suite records every argument vector the
-// process runs and asserts the whole suite ran only the commands above, `worktree` only as a
-// listing.
+// over that: the source names no writing subcommand, and the suite records every argument vector
+// the process runs and asserts the whole suite ran only the commands above, `branch`, `worktree` and
+// `symbolic-ref` only as the vectors written here.
 //
 // A repository on a slow mount must not stall a watcher, so the one call site takes a list argument
 // (never a shell string), carries a timeout, and collapses any failure into the empty shape with a
@@ -52,7 +54,11 @@ type Counts = Map<string, [number | null, number | null]>;
 /** One row of the porcelain output: the index letter, the worktree letter, and the path. */
 type Row = [string, string, string];
 
-type Outcome = { ok: boolean; text: string };
+/**
+ * What one command came back with. `answered` is whether git ran to its end and gave an exit
+ * status; a command that timed out, could not start or was killed has not answered anything.
+ */
+type Outcome = { ok: boolean; answered: boolean; text: string };
 
 /** The shape every caller can count on, with nothing in it. */
 export function empty(error: string | null = null): GitState {
@@ -70,14 +76,19 @@ export function empty(error: string | null = null): GitState {
         branches: [],
         worktrees: [],
         ignoresWorktrees: false,
+        // A root is a repository once `rev-parse --git-dir` has said so, or once that check timed out.
+        repository: false,
         error
     };
 }
 
 /**
  * Read-only git state for each root, keyed by root. Never throws. A root that is not a directory,
- * not a repository, or where git fails or times out comes back as the empty shape with `error` set,
- * so a caller renders every workspace without a special case. A repeated root is read once.
+ * or that git answered is not a repository, comes back as the empty shape with `error` set and
+ * `repository` false. A root whose check did not answer (a timeout, a git that would not start) and
+ * a repository where a later read fails keep `repository` true and say why in `error`, so a slow
+ * mount does not make a repository disappear for one read. A caller renders every workspace without
+ * a special case. A repeated root is read once.
  */
 export function statusFor(roots: string[], timeout: number = TIMEOUT_MS): Record<string, GitState> {
     const out: Record<string, GitState> = {};
@@ -98,13 +109,19 @@ export function statusFor(roots: string[], timeout: number = TIMEOUT_MS): Record
 
 function state(root: string, timeout: number): GitState {
     if (!directory(root)) return empty('no such directory');
-    const head = run(root, ['rev-parse', '--abbrev-ref', 'HEAD'], timeout);
-    if (!head.ok) return empty(head.text || 'not a git repository');
+    // The one read that tells a repository from a folder: it names no commit, so a repository with
+    // none yet answers it like any other. Only a check that timed out says nothing about the root,
+    // which is then kept as the repository it was taken for; a git that cannot start or is killed is
+    // taken at its word, so a plain folder never becomes a repository because git is missing.
+    const gitDir = run(root, ['rev-parse', '--git-dir'], timeout);
+    if (!gitDir.ok && gitDir.answered) return empty(gitDir.text || 'not a git repository');
     const found = empty(null);
-    const name = head.text.trim();
-    found.branch = name;
-    // --abbrev-ref says HEAD when nothing is checked out.
-    found.detached = name === 'HEAD';
+    found.repository = true;
+    if (!gitDir.ok) {
+        found.error = gitDir.text || 'git failed';
+        return found;
+    }
+    if (!checkedOut(root, found, timeout)) return found;
     upstream(root, found, timeout);
     found.log = log(root, timeout);
     found.branches = branches(root, timeout);
@@ -117,6 +134,27 @@ function state(root: string, timeout: number): GitState {
     }
     fill(found, rows.rows, numstat(root, timeout));
     return found;
+}
+
+/**
+ * The checked-out branch, or false with `error` set when git names none. `--abbrev-ref` says HEAD
+ * when nothing is checked out. A repository with no commit yet has a HEAD that resolves to nothing,
+ * so the branch it will make is read from HEAD itself: that repository is ordinary, not an error.
+ */
+function checkedOut(root: string, found: GitState, timeout: number): boolean {
+    const head = run(root, ['rev-parse', '--abbrev-ref', 'HEAD'], timeout);
+    if (head.ok) {
+        found.branch = head.text.trim();
+        found.detached = found.branch === 'HEAD';
+        return true;
+    }
+    const unborn = run(root, ['symbolic-ref', '--short', 'HEAD'], timeout);
+    if (unborn.ok) {
+        found.branch = unborn.text.trim();
+        return true;
+    }
+    found.error = head.text || 'git named no branch';
+    return false;
 }
 
 /**
@@ -289,7 +327,8 @@ function numstat(root: string, timeout: number): Counts {
 
 /**
  * One git command, as a list, with a timeout. A non-zero exit, a broken git, or a repository too
- * slow to answer all come back as not ok with a short reason. This is the module's one call site.
+ * slow to answer all come back as not ok with a short reason, and only the non-zero exit as
+ * answered. This is the module's one call site.
  */
 function run(root: string, args: string[], timeout: number): Outcome {
     // Every read runs without optional locks, so a status refresh never writes .git/index.lock and
@@ -299,10 +338,13 @@ function run(root: string, args: string[], timeout: number): Outcome {
     const done = spawnSync(GIT, argv, { encoding: 'utf8', timeout });
     if (done.error !== undefined) {
         const failure = done.error as NodeJS.ErrnoException;
-        return { ok: false, text: failure.code === 'ETIMEDOUT' ? 'git timed out' : short(failure) };
+        const text = failure.code === 'ETIMEDOUT' ? 'git timed out' : short(failure);
+        return { ok: false, answered: failure.code !== 'ETIMEDOUT', text };
     }
-    if (done.status !== 0) return { ok: false, text: short(done.stderr) || 'git failed' };
-    return { ok: true, text: typeof done.stdout === 'string' ? done.stdout : '' };
+    if (done.status !== 0) {
+        return { ok: false, answered: true, text: short(done.stderr) || 'git failed' };
+    }
+    return { ok: true, answered: true, text: typeof done.stdout === 'string' ? done.stdout : '' };
 }
 
 // ---------------------------------------------------------------- small stuff

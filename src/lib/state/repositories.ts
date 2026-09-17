@@ -84,21 +84,24 @@ export function repositoriesViewOf(state: unknown): RepositoriesView {
 }
 
 /**
- * The roots the picker offers: the ones git answered for as repositories. A root the channel carries
- * because the file browser serves it but that is no repository (a folder of notes, a data folder)
- * is not a repository to pick.
+ * The roots the picker offers: the ones git reads as repositories, a repository with no commit yet
+ * and one whose last read failed among them. A root the channel carries because the file browser
+ * serves it but that is no repository (a folder of notes, a data folder) is not a repository to
+ * pick. A failed read stays offered, so the view draws the failure rather than losing the
+ * repository.
  */
 export function repositoryRoots(
     roots: string[],
     stateOf: (root: string) => GitState | null
 ): string[] {
-    return roots.filter((root) => stateOf(root)?.error === null);
+    return roots.filter((root) => stateOf(root)?.repository === true);
 }
 
 /**
  * The repository the view draws: the one it keeps while the picker offers it, and the first one the
  * picker offers otherwise, so a repository that went away hands the view to another one rather than
- * to nothing. The empty string while there is none.
+ * to nothing. A repository whose read failed is still offered, so it stays the one drawn. The empty
+ * string while there is none.
  */
 export function shownRoot(roots: string[], kept: string): string {
     return roots.includes(kept) ? kept : (roots[0] ?? '');
@@ -124,6 +127,21 @@ export function repositoryLabels(roots: string[]): Record<string, string> {
         labels[root] = !sameOne ? one : !sameTwo ? two : root;
     }
     return labels;
+}
+
+/**
+ * Whether the repository has no commit yet: a branch is checked out, git read it without an error,
+ * and neither the log nor the branch listing names anything. Both are asked, since a listing that
+ * failed also comes back empty on a repository with commits, while its log does not.
+ */
+export function noCommitYet(git: GitState): boolean {
+    return (
+        git.error === null &&
+        git.branch !== '' &&
+        !git.detached &&
+        git.log.length === 0 &&
+        git.branches.length === 0
+    );
 }
 
 /** The three change groups in the order they are drawn, with the entries each holds. */

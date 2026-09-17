@@ -110,14 +110,43 @@ describe('the repository a view shows', () => {
     });
 
     // Revert: return `roots` whole from repositoryRoots.
-    it('offers the roots git answered for as repositories and no other', () => {
+    it('offers the roots git reads as repositories and no other', () => {
         const states: Record<string, GitState> = {
             '/hub': git({ branch: 'main' }),
-            '/notes': git({ error: 'not a git repository' })
+            '/notes': git({ branch: '', repository: false, error: 'not a git repository' })
         };
         expect(
             repositoryRoots(['/hub', '/notes', '/gone'], (root) => states[root] ?? null)
         ).toEqual(['/hub']);
+    });
+
+    // Revert: keep the roots whose state has `error === null` in repositoryRoots.
+    it('offers a repository with no commit yet and one whose read failed, and keeps showing it', () => {
+        const states: Record<string, GitState> = {
+            '/hub': git({ branch: 'main' }),
+            '/fresh': git({ branch: 'work', log: [] }),
+            '/broken': git({ branch: 'main', error: 'index file smaller than expected' }),
+            '/notes': git({ branch: '', repository: false, error: 'not a git repository' })
+        };
+        const offered = repositoryRoots(
+            ['/hub', '/fresh', '/broken', '/notes'],
+            (root) => states[root] ?? null
+        );
+        expect(offered).toEqual(['/hub', '/fresh', '/broken']);
+        // The reader was on the repository whose read has just failed, and the view stays on it.
+        expect(shownRoot(offered, '/broken')).toBe('/broken');
+    });
+
+    // Revert: keep the roots whose state has `error === null` in repositoryRoots.
+    it('offers a root whose repository check did not answer, and keeps showing it', () => {
+        // The shape server/git.ts gives a root whose `rev-parse --git-dir` timed out.
+        const states: Record<string, GitState> = {
+            '/hub': git({ branch: 'main' }),
+            '/slow': git({ branch: '', repository: true, error: 'git timed out' })
+        };
+        const offered = repositoryRoots(['/hub', '/slow'], (root) => states[root] ?? null);
+        expect(offered).toEqual(['/hub', '/slow']);
+        expect(shownRoot(offered, '/slow')).toBe('/slow');
     });
 
     // Revert: label every root by its last folder alone in repositoryLabels.

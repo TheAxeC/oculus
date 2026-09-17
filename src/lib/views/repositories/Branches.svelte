@@ -4,6 +4,9 @@
     // one in force (a bold name with a check), the switch control on every other one, and the row a
     // new branch is named on, whose visible label is the name of its field.
     //
+    // A repository with no commit yet has a branch checked out that git does not list and cannot
+    // branch from, so the empty line says so and the create control is disabled with the reason.
+    //
     // It draws and reports presses; the write and its confirm are the view's.
 
     import TextInput from '$lib/ui/TextInput.svelte';
@@ -11,6 +14,7 @@
     import TreeSection from '$lib/ui/TreeSection.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import type { TreeNav } from '$lib/ui/tree-keys';
+    import { noCommitYet } from '$lib/state/repositories';
     import type { GitState } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
 
@@ -27,6 +31,7 @@
     let { git, nav, busy, open, ontoggle, onswitch, onbranch }: Props = $props();
 
     let branchName = $state('');
+    const unborn = $derived(noCommitYet(git));
 
     function created(): void {
         const name = branchName.trim();
@@ -47,7 +52,12 @@
     >
         {#if git.branches.length === 0}
             <li role="none">
-                <TreeItem label={t('repositories.branches_empty')} tone="muted" />
+                <TreeItem
+                    label={unborn
+                        ? t('repositories.branches_unborn', git.branch)
+                        : t('repositories.branches_empty')}
+                    tone="muted"
+                />
             </li>
         {/if}
         {#each git.branches as branch (branch.name)}

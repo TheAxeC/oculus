@@ -6,6 +6,11 @@
     // state/repositories.ts's repositoryKeyRows() lists, Right and Left opening and closing a head or
     // a group.
     //
+    // A repository whose read failed draws git's reason as one row in the explorer's row style and
+    // the error hue in place of the sections, which a failed read has nothing true to fill. The
+    // branch line and the path stay above it whenever the state names a branch, since the branch
+    // was read before whatever failed.
+    //
     // It draws and reports presses; every write is the view's, so a section knows nothing about the
     // endpoint. Which sections are closed is the view's instance state, handed in, so a section the
     // reader closed stays closed across a tab switch and a switch to another repository.
@@ -80,11 +85,13 @@
 </script>
 
 <section class="repo" data-root={root}>
-    <div class="branch" title={root}>
-        <span class="lb">{t('sessions.ch_branch')}</span>
-        <span class="nm">{git.branch}</span>
-        <span class="mt">{branchState(git)}</span>
-    </div>
+    {#if git.branch !== ''}
+        <div class="branch" title={root}>
+            <span class="lb">{t('sessions.ch_branch')}</span>
+            <span class="nm">{git.branch}</span>
+            <span class="mt">{branchState(git)}</span>
+        </div>
+    {/if}
     <p class="path" title={root}>{elide(root)}</p>
     {#if busy}
         <p class="none">{t('git.busy')}</p>
@@ -93,80 +100,86 @@
         <p class="outcome">{outcome}</p>
     {/if}
 
-    <TreeView label={t('views.repositories')} rows={keyRows} ontoggle={toggled}>
-        {#snippet children(nav: TreeNav)}
-            <Changes
-                {root}
-                {git}
-                {nav}
-                {collapsed}
-                {ontoggle}
-                {onstage}
-                {onunstage}
-                {ondiscard}
-                {ondiff}
-            />
-
-            <div data-group="log">
-                <TreeSection
-                    label={t('repositories.log')}
-                    id="log"
+    {#if git.error !== null}
+        <div data-repo-failed>
+            <TreeItem label={t('repositories.error', git.error)} tone="error" />
+        </div>
+    {:else}
+        <TreeView label={t('views.repositories')} rows={keyRows} ontoggle={toggled}>
+            {#snippet children(nav: TreeNav)}
+                <Changes
+                    {root}
+                    {git}
                     {nav}
-                    count={git.log.length}
-                    open={!collapsed.includes('log')}
-                    ontoggle={() => ontoggle('log')}
-                >
-                    {#if git.log.length === 0}
-                        <li role="none">
-                            <TreeItem label={t('repositories.log_empty')} tone="muted" />
-                        </li>
-                    {/if}
-                    {#each git.log as commit (commit.hash)}
-                        <li role="none" data-commit={commit.hash}>
-                            <TreeItem
-                                label={commit.subject}
-                                id={`commit:${commit.hash}`}
-                                {nav}
-                                level={2}
-                                glyph="commit"
-                            >
-                                {#snippet detail()}
-                                    <span class="hash">{commit.short}</span>
-                                {/snippet}
-                                {#snippet end()}
-                                    {stamp(commit.when)}
-                                {/snippet}
-                            </TreeItem>
-                        </li>
-                    {/each}
-                </TreeSection>
-            </div>
+                    {collapsed}
+                    {ontoggle}
+                    {onstage}
+                    {onunstage}
+                    {ondiscard}
+                    {ondiff}
+                />
 
-            <Branches
-                {git}
-                {nav}
-                {busy}
-                open={!collapsed.includes('branches')}
-                ontoggle={() => ontoggle('branches')}
-                {onswitch}
-                {onbranch}
-            />
+                <div data-group="log">
+                    <TreeSection
+                        label={t('repositories.log')}
+                        id="log"
+                        {nav}
+                        count={git.log.length}
+                        open={!collapsed.includes('log')}
+                        ontoggle={() => ontoggle('log')}
+                    >
+                        {#if git.log.length === 0}
+                            <li role="none">
+                                <TreeItem label={t('repositories.log_empty')} tone="muted" />
+                            </li>
+                        {/if}
+                        {#each git.log as commit (commit.hash)}
+                            <li role="none" data-commit={commit.hash}>
+                                <TreeItem
+                                    label={commit.subject}
+                                    id={`commit:${commit.hash}`}
+                                    {nav}
+                                    level={2}
+                                    glyph="commit"
+                                >
+                                    {#snippet detail()}
+                                        <span class="hash">{commit.short}</span>
+                                    {/snippet}
+                                    {#snippet end()}
+                                        {stamp(commit.when)}
+                                    {/snippet}
+                                </TreeItem>
+                            </li>
+                        {/each}
+                    </TreeSection>
+                </div>
 
-            <Worktrees
-                {root}
-                {git}
-                {nav}
-                {busy}
-                open={!collapsed.includes('worktrees')}
-                ontoggle={() => ontoggle('worktrees')}
-                {ondiff}
-                {onremove}
-                {onmerge}
-                {onterminal}
-                oncreate={onworktree}
-            />
-        {/snippet}
-    </TreeView>
+                <Branches
+                    {git}
+                    {nav}
+                    {busy}
+                    open={!collapsed.includes('branches')}
+                    ontoggle={() => ontoggle('branches')}
+                    {onswitch}
+                    {onbranch}
+                />
+
+                <Worktrees
+                    {root}
+                    {git}
+                    {nav}
+                    {busy}
+                    open={!collapsed.includes('worktrees')}
+                    ontoggle={() => ontoggle('worktrees')}
+                    {ondiff}
+                    {onremove}
+                    {onmerge}
+                    {onterminal}
+                    oncreate={onworktree}
+                />
+            {/snippet}
+        </TreeView>
+    {/if}
 </section>
 
 <style>

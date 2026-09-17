@@ -114,6 +114,7 @@ export function git(over: Partial<GitState> = {}): GitState {
         worktrees: [],
         ignoresWorktrees: true,
         upstream: false,
+        repository: true,
         error: null,
         ...over
     };

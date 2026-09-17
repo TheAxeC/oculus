@@ -191,7 +191,7 @@ function installFixture(): void {
         version: 1,
         payload: {
             [HUB]: HUB_GIT,
-            '/other': git({ error: 'not a git repository' })
+            '/other': git({ branch: '', repository: false, error: 'not a git repository' })
         }
     });
     receive({ channel: 'config', version: 1, payload: { config, text: catalog, findings: [] } });
@@ -585,7 +585,7 @@ describe('the changes view', () => {
     });
 
     it('says the upstream is being looked up, not that there is none, before git has answered', () => {
-        const other = git({ error: 'not a git repository' });
+        const other = git({ branch: '', repository: false, error: 'not a git repository' });
         receive({
             channel: 'git',
             version: 3,

@@ -14,9 +14,14 @@
 
 <script lang="ts">
     // Layer 3, view. One repository at a time, read like a source control view: a picker over the
-    // roots of the `git` channel that git answered for as repositories, each named by its last
-    // folder or, where two share it, by its last two, and under it the one picked, with its changes,
-    // its commits, its branches and its worktrees as collapsible sections of explorer rows.
+    // roots of the `git` channel that git reads as repositories, each named by its last folder or,
+    // where two share it, by its last two, and under it the one picked, with its changes, its
+    // commits, its branches and its worktrees as collapsible sections of explorer rows.
+    //
+    // A repository whose read failed stays in the picker, and repositories/Repo.svelte draws git's
+    // reason as one error row in place of its sections: the failure is a fact about that
+    // repository, so the view neither hides the repository nor hands itself to another one while
+    // git cannot answer.
     //
     // Which repository is shown and which sections are closed are the instance's own state, so the
     // view comes back as it was left after a tab switch, and a repository the picker no longer offers

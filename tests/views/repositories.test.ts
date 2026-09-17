@@ -274,16 +274,96 @@ describe('the Repositories view', () => {
     });
 
     // Revert: pass `gitRoots()` to the picker unfiltered, in Repositories.svelte.
-    it('offers only the roots git answered for as repositories', () => {
-        const body = html({
-            [HUB]: git({ error: 'not a git repository' }),
-            [OTHER]: git({ branch: 'work' })
-        });
+    it('offers only the roots git reads as repositories', () => {
+        const folder = git({ branch: '', repository: false, error: 'not a git repository' });
+        const body = html({ [HUB]: folder, [OTHER]: git({ branch: 'work' }) });
         expect(body).toContain(`data-root="${OTHER}"`);
         expect(body).not.toContain(`data-root="${HUB}"`);
         expect(body).not.toContain('not a git repository');
-        const none = html({ [HUB]: git({ error: 'not a git repository' }) });
+        const none = html({ [HUB]: folder });
         expect(none).toContain(catalog['repositories.empty']);
+    });
+
+    // Revert: draw Repo.svelte whenever `held` is not null, in Repositories.svelte.
+    it('draws a repository whose read failed as its error row and no section', () => {
+        const reason = 'index file smaller than expected';
+        const body = html(
+            { [HUB]: HUB_GIT, [OTHER]: git({ branch: 'work', error: reason }) },
+            'repositories',
+            { root: OTHER }
+        );
+        expect(body).toContain(`data-root="${OTHER}"`);
+        expect(body).not.toContain(`data-root="${HUB}"`);
+        const row = catalog['repositories.error'].replace('{0}', reason);
+        const failed = body.slice(body.indexOf('data-repo-failed'));
+        // One row, in the explorer's row style and the error hue.
+        expect(count(body, row)).toBe(1);
+        expect(failed).toContain(`>${row}</span>`);
+        expect(failed).toMatch(/class="item[^"]*\berror\b/);
+        for (const id of ['changes', 'log', 'branches', 'worktrees']) {
+            expect(body).not.toContain(`data-group="${id}"`);
+        }
+        expect(body).not.toContain('role="tree"');
+        // The picker still names the repository it is on.
+        const picker = body.slice(body.indexOf('data-repo-picker'));
+        expect(picker.slice(0, picker.indexOf('</button>'))).toContain('aria-label="other"');
+    });
+
+    // Revert: wrap the branch line and the path in `{#if git.error === null}` in
+    // repositories/Repo.svelte.
+    it('keeps the branch line and the path above the error row while the state names a branch', () => {
+        const reason = 'index file smaller than expected';
+        const named = html({ [OTHER]: git({ branch: 'work', error: reason }) });
+        const row = named.indexOf('data-repo-failed');
+        expect(row).toBeGreaterThan(0);
+        const above = named.slice(named.indexOf(`data-root="${OTHER}"`), row);
+        expect(above).toContain(catalog['sessions.ch_branch']);
+        expect(above).toContain('>work</span>');
+        expect(above).toContain('class="path');
+
+        // A root whose check timed out names no branch, so the row has the path alone above it.
+        const unnamed = html({ [OTHER]: git({ branch: '', error: 'git timed out' }) });
+        expect(unnamed).toContain('data-repo-failed');
+        expect(unnamed).not.toContain(catalog['sessions.ch_branch']);
+        expect(unnamed).toContain('class="path');
+    });
+
+    // Reverts: draw the empty line `repositories.branches_empty` alone in repositories/Branches.svelte;
+    // or leave the log out of noCommitYet, which a failed listing then misreads.
+    it('says a repository with no commit has no branch to list, and keeps New branch live', () => {
+        const fresh = git({ branch: 'start', branches: [], log: [] });
+        const branches = group(html({ [HUB]: fresh }), 'branches');
+        expect(branches).toContain(catalog['repositories.branches_unborn'].replace('{0}', 'start'));
+        expect(branches).not.toContain(catalog['repositories.branches_empty']);
+        const form = branches.slice(branches.indexOf('data-form="branch"'));
+        const create = form.slice(
+            form.lastIndexOf(
+                '<button',
+                form.indexOf(`aria-label="${catalog['git.branch_new_create']}"`)
+            )
+        );
+        // git switch -c, which the control runs, works on a branch with no commit.
+        expect(create.slice(0, create.indexOf('>'))).not.toContain('disabled');
+
+        // A repository with commits whose branch listing came back empty keeps the plain line.
+        const unread = group(
+            html({ [HUB]: git({ branch: 'main', branches: [], log: HUB_GIT.log }) }),
+            'branches'
+        );
+        expect(unread).not.toContain(
+            catalog['repositories.branches_unborn'].replace('{0}', 'main')
+        );
+
+        // A repository with commits keeps the control live and draws no such title.
+        const live = group(html({ [HUB]: HUB_GIT }), 'branches');
+        const liveForm = live.slice(live.indexOf('data-form="branch"'));
+        const liveCreate = liveForm.slice(
+            liveForm.lastIndexOf(
+                '<button',
+                liveForm.indexOf(`aria-label="${catalog['git.branch_new_create']}"`)
+            )
+        );
+        expect(liveCreate.slice(0, liveCreate.indexOf('>'))).not.toContain('disabled');
     });
 
     // Revert: label the picker with each root's last folder alone.

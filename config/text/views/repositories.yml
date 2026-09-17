@@ -3,6 +3,7 @@ text:
     repositories:
         branches: Branches
         branches_empty: git named no branch here.
+        branches_unborn: '{0} has no commit yet, and git lists a branch only from its first commit.'
         changes: Changes
         change_name: '{0}, {1}'
         status_modified: modified
@@ -21,6 +22,7 @@ text:
         diff_worktree_title: Show what this worktree holds that the repository does not
         empty: No repository is on the channel yet.
         empty_glyph: repositories
+        error: 'git could not read this repository: {0}'
         log: Commits
         log_empty: No commit has been made here yet.
         merge: merge back
