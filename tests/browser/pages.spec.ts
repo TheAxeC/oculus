@@ -1,10 +1,11 @@
 // The page strip of shell/PageStrip.svelte: its menu makes a page and renames one, the digits 1 to 9
-// reach the first nine, and closing a page that holds more than one tab asks first.
+// reach the first nine, closing a page that holds more than one tab asks first, and a scroll control
+// of an overflowing strip rests its left edge on a page tab's start or on the strip's end.
 //
 // Nothing here writes to the hub. The layout lives in the browser's own storage, and Playwright gives
 // every test a context of its own, so each test starts from the one default page.
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator } from '@playwright/test';
 import { openView } from './rail.ts';
 import { t } from './words.ts';
 
@@ -136,4 +137,66 @@ test('closing a page asks first: cancel keeps it, confirm removes it', async ({ 
         .click();
     await expect(strip.getByRole('tab')).toHaveCount(1);
     await expect(strip.getByRole('tab', { name: t('ui.page_default', 1) })).toBeVisible();
+});
+
+test.describe('an overflowing page strip', () => {
+    test.use({ viewport: { width: 480, height: 640 } });
+
+    /** How many pages the strip holds, which at this width is several page tabs past its width. */
+    const PAGES = 12;
+
+    /** The strip's offset, and whether its left edge is a page tab's start or the strip's end. */
+    async function rest(list: Locator): Promise<{ at: number; onStart: boolean; atEnd: boolean }> {
+        return list.evaluate((node) => {
+            const left = node.getBoundingClientRect().left;
+            const tabs = [...node.querySelectorAll<HTMLElement>(':scope > .tab')];
+            const onStart =
+                node.scrollLeft <= 1 ||
+                tabs.some((tab) => Math.abs(tab.getBoundingClientRect().left - left) <= 1);
+            const atEnd = node.scrollLeft >= node.scrollWidth - node.clientWidth - 1;
+            return { at: node.scrollLeft, onStart, atEnd };
+        });
+    }
+
+    test('a scroll control rests the left edge on a page tab start, or on the strip end', async ({
+        page
+    }) => {
+        await page.goto('/');
+        const strip = page.getByRole('region', { name: t('ui.pages') });
+        for (let made = 1; made < PAGES; made += 1) {
+            await strip.getByRole('button', { name: t('ui.page_menu') }).click();
+            await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
+        }
+        await expect(strip.getByRole('tab')).toHaveCount(PAGES);
+
+        const list = strip.getByRole('tablist');
+        const left = strip.getByRole('button', { name: t('ui.tabs_scroll_left') });
+        const right = strip.getByRole('button', { name: t('ui.tabs_scroll_right') });
+        await expect(left).toBeVisible();
+        await expect(right).toBeVisible();
+
+        // To the strip's end, then left to its start and right to its end again. Every press moves
+        // the strip and rests it on a page tab's start or the end. The first walk starts wherever the
+        // newest page left the strip; each of the other two takes more than one press, so at least
+        // one rest lies between the two ends.
+        for (const [press, far, least] of [
+            [right, 'end', 0],
+            [left, 'start', 2],
+            [right, 'end', 2]
+        ] as const) {
+            let presses = 0;
+            while (await press.isEnabled()) {
+                const before = (await rest(list)).at;
+                await press.click();
+                await expect.poll(async () => (await rest(list)).at).not.toBe(before);
+                const seen = await rest(list);
+                expect(seen.onStart || seen.atEnd).toBe(true);
+                presses += 1;
+            }
+            expect(presses).toBeGreaterThanOrEqual(least);
+            const seen = await rest(list);
+            if (far === 'start') expect(seen.at).toBeLessThanOrEqual(1);
+            else expect(seen.atEnd).toBe(true);
+        }
+    });
 });

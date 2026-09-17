@@ -502,12 +502,27 @@ test.describe('tabs', () => {
     }) => {
         const list = await tenTabs(page);
         const right = page.getByRole('button', { name: t('ui.tabs_scroll_right') }).first();
-        await expect(right).toBeVisible();
-        await page.setViewportSize({ width: 2400, height: 640 });
-        await expect(right).toBeHidden();
-        await expect
-            .poll(() => list.evaluate((node) => node.scrollWidth - node.clientWidth))
-            .toBeLessThanOrEqual(1);
+        // Once from the strip's start, where the widening moves nothing and so no scroll event
+        // measures the strip again, and once from its end, where the browser pulls the offset back.
+        for (const from of ['start', 'end'] as const) {
+            await page.setViewportSize({ width: 720, height: 640 });
+            await expect(right).toBeVisible();
+            if (from === 'start') {
+                await toStart(page, list);
+            } else {
+                while (await right.isEnabled()) {
+                    const before = (await edge(list)).at;
+                    await right.click();
+                    await expect.poll(async () => (await edge(list)).at).not.toBe(before);
+                }
+                await expect.poll(async () => (await edge(list)).atEnd).toBe(true);
+            }
+            await page.setViewportSize({ width: 2400, height: 640 });
+            await expect(right).toBeHidden();
+            await expect
+                .poll(() => list.evaluate((node) => node.scrollWidth - node.clientWidth))
+                .toBeLessThanOrEqual(1);
+        }
     });
 
     test('a tab activated from the rail is brought in whole with a start at the left edge', async ({
