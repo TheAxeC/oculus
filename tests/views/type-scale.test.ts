@@ -43,6 +43,7 @@ const VIEWS: Record<string, string> = {
     'File.svelte': '.download=fs-sm',
     'Files.svelte': '.note=fs-sm | .said=fs-sm',
     'Note.svelte': '.when=fs-sm',
+    'files/BookmarkForm.svelte': '',
     'files/Bookmarks.svelte': '',
     'files/Controls.svelte': '',
     'files/Notes.svelte': '',

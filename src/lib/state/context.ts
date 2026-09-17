@@ -31,8 +31,10 @@ import {
     type FormDraftsStore
 } from './form-drafts.svelte.ts';
 import { createFs, type FsStore } from './fs.svelte.ts';
+import { filesLineTyped } from './fs.ts';
 import { createHpc, type HpcStore } from './hpc.svelte.ts';
 import { createInbox, type InboxStore } from './inbox.svelte.ts';
+import { findInstance } from './instance.ts';
 import { createLatex, type LatexStore } from './latex.svelte.ts';
 import { createLayout, type LayoutStore } from './layout.svelte.ts';
 import { createManifestDraft, type ManifestDraftStore } from './manifest-draft.ts';
@@ -141,6 +143,11 @@ export function createClientState(): ClientState {
     const selectors = createSelectors(entities, layout, selection);
     const manifestDraft = createManifestDraft(ui, selectors.projectOf);
     ui.registerUnsaved(manifestDraft.manifestDirty);
+    // A file browser's root or workspace line is text no save has taken, asked by the instance's view.
+    ui.registerUnsaved((id) => {
+        const found = layout.pages().flatMap((page) => findInstance(page.workbench.root, id) ?? []);
+        return filesLineTyped(found[0]?.instance.view, ui.instanceState(id));
+    });
     const railBadges = createRailBadges(entities, feeds, hpc, calendar, inbox, audit, selectors);
     const paletteSource = createPaletteSource(entities, feeds);
     const registry = createRegistry(layout);

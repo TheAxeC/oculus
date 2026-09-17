@@ -5,7 +5,7 @@
 // This is the one check that the fetches actually reach the server, which no server rendering runs:
 // the workspaces, one directory listing, the file's own bytes, and the add-root write. The hub is the
 // run's copy of demo/, and the second root is a folder this spec makes under the system temporary
-// directory and adds through the page's own control.
+// directory, through scratch() of tests/browser/files.ts, and adds through the page's own control.
 //
 // What this does NOT cover: a PDF drawn. Playwright's Chrome aborts its own PDF viewer extension
 // (net::ERR_ABORTED on chrome-extension://mhjfbmdgcfjbbpaeojofohoefgiehjai/index.html), so the
@@ -14,48 +14,17 @@
 // frame with net::ERR_BLOCKED_BY_CLIENT and draws the file without one) and that the server answers
 // it, which is everything up to the viewer.
 
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { readFileSync, writeFileSync } from 'node:fs';
+import { join, sep } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
+import { nestedRoot, row, scratch } from './files.ts';
 import { boot, openView } from './rail.ts';
 import { alphaOf } from './style.ts';
 import { t } from './words.ts';
 
-/** The smallest PDF with a drawable page, so the type and not the size is what is exercised. */
-const PDF = [
-    '%PDF-1.4',
-    '1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj',
-    '2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj',
-    '3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 200 200]/Contents 4 0 R>>endobj',
-    '4 0 obj<</Length 0>>stream',
-    'endstream',
-    'endobj',
-    'trailer<</Root 1 0 R>>',
-    ''
-].join('\n');
-
-/** A folder of the spec's own, under the system temporary directory and asserted to be inside it. */
-function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-files-spec-'));
-    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
-    writeFileSync(join(dir, 'page.html'), '<!doctype html><title>a page</title><h1>A page</h1>\n');
-    writeFileSync(join(dir, 'paper.pdf'), PDF);
-    writeFileSync(join(dir, 'notes.md'), '# notes\n');
-    writeFileSync(join(dir, 'tool.py'), 'print("before")\n');
-    // A file whose name says text and whose bytes do not: the tree must read the bytes.
-    writeFileSync(join(dir, 'data.txt'), Buffer.from([0x50, 0x4b, 0x03, 0x04, 0x00, 0x01, 0x02]));
-    return dir;
-}
-
 /** The alpha a locator's background is painted at. */
 async function backgroundAlpha(target: ReturnType<Page['locator']>): Promise<number> {
     return alphaOf(await target.evaluate((el) => getComputedStyle(el).backgroundColor));
-}
-
-/** The one row of the tree a root or a path is drawn as. */
-function row(page: Page, root: string, path = ''): ReturnType<Page['locator']> {
-    return page.locator(`[data-fs-row="${root}:${path}"]`).getByRole('button').first();
 }
 
 test('the rail opens the file browser, a root expands, and a text file opens for editing', async ({
@@ -447,19 +416,6 @@ test('the first bookmark is made from the form, and an HTML one is one tab from 
 /** The treeitem one row of the tree is, which carries its state and takes the keyboard's focus. */
 function item(page: Page, root: string, path = ''): ReturnType<Page['locator']> {
     return page.locator(`[data-fs-row="${root}:${path}"] [role="treeitem"]`);
-}
-
-/** A scratch root with one folder in it, added through the page, and the key the tree gives it. */
-async function nestedRoot(page: Page): Promise<{ dir: string; key: string }> {
-    const dir = scratch();
-    mkdirSync(join(dir, 'sub'));
-    writeFileSync(join(dir, 'sub', 'inner.txt'), 'inside\n');
-    await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
-    await page.getByRole('textbox', { name: t('files.root_dir') }).fill(dir);
-    await page.getByRole('button', { name: t('files.add'), exact: true }).click();
-    const key = dir.split(sep).at(-1) ?? '';
-    await expect(row(page, key)).toBeVisible();
-    return { dir, key };
 }
 
 /** Open a root and its one folder, waiting for each listing, with the folder left selected. */

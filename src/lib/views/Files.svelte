@@ -22,9 +22,18 @@
     //
     // A folder is read one level at a time, when it is opened: a root is a whole checkout and walking
     // one to draw it would read a hundred thousand names to show twenty. Which folders are open, the
-    // selected row, the filter text and which sections are closed live in the instance's own state,
-    // so a tree left half open is the same tree when the tab comes back, and two file browsers on two
-    // pages are open at two different places.
+    // selected row, the filter text, which sections are closed, which form is open and the line typed
+    // into a root or a workspace form live in the instance's own state, so a tree left half open is
+    // the same tree when the tab comes back, a form left open is open again with what was typed into
+    // it, and two file browsers on two pages are open at two different places. What stays in this
+    // component is what answers the press just made: the refusal line (`note`), the entry form's
+    // outcome line (`said`) and the root the removal confirm is open for (`removing`), all gone after
+    // a switch, since a pane mounts only its active tab.
+    //
+    // A write closes its form on its answer, which may land after the reader has opened another form,
+    // opened the same one again or switched the tab away. The instance id and the forms are taken
+    // before the request goes, and the answer closes only that opening in that instance
+    // (formSettled): once the tab is switched, the `instance` prop reads the tab the pane shows now.
     //
     // Every root the configuration names is in every workspace and cannot be taken out of one, so a
     // workspace can only ever add. The server refuses a removal of a configured root as well; a
@@ -39,7 +48,9 @@
     // A bookmark is a collection entry, so it is added and edited by the form every other collection
     // is edited by, over the schema its own file carries; the one thing this view supplies is the
     // list of roots a bookmark may name, since that is what the workspace in force says and not what
-    // the file said when it was written. A note opens as a tab and is a file in a folder of its own,
+    // the file said when it was written. Its typed values are that form's drafts, and closing the
+    // form by a control of this view forgets them through toggleAdd and toggleEdit, as a collection
+    // view's own Add and Edit controls do. A note opens as a tab and is a file in a folder of its own,
     // written by the first keystroke typed into it.
 
     import Breadcrumb from '$lib/ui/Breadcrumb.svelte';
@@ -47,7 +58,7 @@
     import Empty from '$lib/ui/Empty.svelte';
     import Pane from '$lib/ui/Pane.svelte';
     import Search from '$lib/ui/Search.svelte';
-    import EntryForm from './shared/EntryForm.svelte';
+    import BookmarkForm from './files/BookmarkForm.svelte';
     import Bookmarks from './files/Bookmarks.svelte';
     import Controls from './files/Controls.svelte';
     import Notes from './files/Notes.svelte';
@@ -57,10 +68,16 @@
     import type { Entry, SchemaField } from '$lib/state/collection';
     import { BOOKMARK_COLLECTION } from '$lib/state/fs.svelte';
     import {
+        bookmarkLeft,
         collapseRoot,
         crumbsOf,
+        editedGone,
+        editShown,
         filesViewOf,
         filterRows,
+        formSettled,
+        formShown,
+        formsOf,
         markLabel,
         nameOf,
         rowKey,
@@ -69,6 +86,7 @@
         treeKey,
         treeRows,
         typeOfFile,
+        type FilesForms,
         type FilesView,
         type RowRef,
         type TreeRow
@@ -81,6 +99,7 @@
     import { useState } from '$lib/state/use';
 
     const {
+        formDrafts: { toggleAdd, toggleEdit },
         fs: {
             addBookmark,
             addRoot,
@@ -105,12 +124,6 @@
 
     let { instance }: ViewProps = $props();
 
-    /** Which form is open over the trees, if any. */
-    let form: 'root' | 'workspace' | 'bookmark' | '' = $state('');
-    /** What is typed into whichever line form is open. */
-    let typed = $state('');
-    /** The bookmark the entry form is editing, and the empty string while it is adding one. */
-    let editing = $state('');
     /** What the endpoint refused the last attempt with, in the reader's own words. */
     let note = $state('');
     /** What the entry form's last write answered, which is a report and not a refusal. */
@@ -133,7 +146,16 @@
 
     const marks = $derived(bookmarks());
     const held = $derived(notes());
-    const editedMark = $derived(marks.entries.find((one) => one.id === editing) ?? null);
+    const editedMark = $derived(marks.entries.find((one) => one.id === view.editing) ?? null);
+    /**
+     * Whether the bookmark form is drawn. A form open over a bookmark waits for the bookmarks to be
+     * read, which after a reload arrive after the record saying the form is open. Drawn before them
+     * it would be an add form where the edit form belongs: its Save would add a new bookmark, and
+     * what was typed into the edit form would be hidden under it.
+     */
+    const markForm = $derived(
+        view.form === 'bookmark' && (view.editing === '' || editedMark !== null)
+    );
 
     /** The row keys a bookmark of the reader's own names, which the tree draws its star from. */
     const marked = $derived(
@@ -191,11 +213,16 @@
         return t('files.refused_other', code);
     }
 
-    /** Write part of what this instance remembers, keeping the rest of it as it was. */
-    function patch(part: Partial<FilesView>): void {
-        const kept = instanceState(instance.id);
+    /** Write part of what one instance remembers, keeping the rest of it as it was. */
+    function patchAt(id: string, part: Partial<FilesView>): void {
+        const kept = instanceState(id);
         const keep = typeof kept === 'object' && kept !== null && !Array.isArray(kept) ? kept : {};
-        setInstanceState(instance.id, { ...keep, ...part });
+        setInstanceState(id, { ...keep, ...part });
+    }
+
+    /** Write part of what the instance on screen remembers, for a press made on it now. */
+    function patch(part: Partial<FilesView>): void {
+        patchAt(instance.id, part);
     }
 
     /**
@@ -293,15 +320,29 @@
         note = answer.ok ? '' : refusal(answer.error ?? '');
     }
 
+    /**
+     * Add the root or save the workspace the open line form names. The form closes on the answer
+     * only when it is still the opening the request went from, holding the same line: a form the
+     * reader opened, reopened or typed on meanwhile stays as the reader left it, and a closed tab is
+     * not given its record back.
+     */
     async function confirm(): Promise<void> {
-        const answer = form === 'root' ? await addRoot(typed) : await saveWorkspace(typed);
+        const owner = instance.id;
+        const asked = formsOf(view);
+        const answer =
+            asked.form === 'root' ? await addRoot(asked.typed) : await saveWorkspace(asked.typed);
         if (!answer.ok) {
             note = refusal(answer.error ?? '');
             return;
         }
         note = '';
-        typed = '';
-        form = '';
+        settle(owner, asked);
+    }
+
+    /** Close the form an answer was for in the instance it was sent from, if it is still open as it was. */
+    function settle(owner: string, asked: FilesForms): void {
+        const closed = formSettled(filesViewOf(instanceState(owner)), asked);
+        if (closed !== null) patchAt(owner, closed);
     }
 
     async function select(name: string): Promise<void> {
@@ -330,26 +371,48 @@
         if (answer.ok) closeRecord('note', id);
     }
 
-    function show(which: 'root' | 'workspace' | 'bookmark'): void {
-        form = form === which && editing === '' ? '' : which;
-        typed = '';
-        editing = '';
+    /**
+     * Move to other forms. A bookmark form the move closes forgets its draft through the form drafts
+     * store: the add form's through toggleAdd, one bookmark's through toggleEdit.
+     */
+    function shift(next: FilesForms): void {
+        const left = bookmarkLeft(view, next);
+        if (left !== null && left.editing === '') {
+            toggleAdd(instance.id, BOOKMARK_COLLECTION, true);
+        } else if (left !== null) {
+            toggleEdit(instance.id, BOOKMARK_COLLECTION, left.editing, next.editing);
+        }
+        patch(next);
+    }
+
+    /** Move to the forms a press asks for, clearing the lines that answered the last press. */
+    function move(next: FilesForms): void {
+        shift(next);
         note = '';
         said = '';
+    }
+
+    // A bookmark taken away while its edit form is open, by the row star or on the disk, closes the
+    // form and forgets what was typed into it, so the tab does not ask about text it no longer shows.
+    $effect(() => {
+        if (editedGone(view, marks)) shift(editShown(view, view.editing));
+    });
+
+    function show(which: 'root' | 'workspace' | 'bookmark'): void {
+        move(formShown(view, which));
     }
 
     /** Open the entry form over one bookmark, or close it when it is already that one's. */
     function edit(id: string): void {
-        const same = form === 'bookmark' && editing === id;
-        form = same ? '' : 'bookmark';
-        editing = same ? '' : id;
-        note = '';
-        said = '';
+        move(editShown(view, id));
     }
 
-    function closeForm(): void {
-        form = '';
-        editing = '';
+    /**
+     * Close the bookmark form, which asks once Cancel, a save or a delete is done with it; the form
+     * has forgotten its own draft by then. A form the reader has since left is not closed.
+     */
+    function closeMark(owner: string, forms: FilesForms): void {
+        settle(owner, forms);
     }
 </script>
 
@@ -357,7 +420,7 @@
     <Controls
         current={saved.current}
         names={saved.workspaces.map((one) => one.name)}
-        adding={form === 'root'}
+        adding={view.form === 'root'}
         onselect={(name: string) => void select(name)}
         onadd={() => {
             show('root');
@@ -367,38 +430,38 @@
 
 <Pane title={t('views.files')} toolbar={tools} tinted>
     <div class="files" data-instance={instance.id}>
-        {#if form === 'root' || form === 'workspace'}
+        {#if view.form === 'root' || view.form === 'workspace'}
             <RootForm
-                label={form === 'root' ? t('files.root_dir') : t('files.workspace_name')}
-                help={form === 'root' ? t('files.root_dir_help') : ''}
-                confirm={form === 'root' ? t('files.add') : t('files.save')}
-                value={typed}
+                label={view.form === 'root' ? t('files.root_dir') : t('files.workspace_name')}
+                help={view.form === 'root' ? t('files.root_dir_help') : ''}
+                confirm={view.form === 'root' ? t('files.add') : t('files.save')}
+                value={view.typed}
                 {note}
-                oninput={(value: string) => {
-                    typed = value;
-                }}
+                oninput={(value: string) => patch({ typed: value })}
                 onconfirm={() => void confirm()}
                 oncancel={() => {
-                    show(form === 'root' ? 'root' : 'workspace');
+                    show(view.form === 'root' ? 'root' : 'workspace');
                 }}
             />
         {:else if note !== ''}
             <p class="note" aria-live="polite">{note}</p>
         {/if}
-        {#if form === 'bookmark'}
-            <EntryForm
-                collection={BOOKMARK_COLLECTION}
-                schema={markSchema}
-                entry={editedMark}
-                initial={{ root: current.roots[0]?.key ?? '' }}
-                surface={false}
-                onadd={addBookmark}
-                onclose={closeForm}
-                onsaid={(answer: string) => {
-                    said = answer;
-                    bookmarksChanged();
-                }}
-            />
+        {#if markForm}
+            {#key `${instance.id} ${view.opening}`}
+                <BookmarkForm
+                    owner={instance.id}
+                    forms={formsOf(view)}
+                    schema={markSchema}
+                    entry={editedMark}
+                    initial={{ root: current.roots[0]?.key ?? '' }}
+                    onadd={addBookmark}
+                    onclose={closeMark}
+                    onsaid={(answer: string) => {
+                        said = answer;
+                        bookmarksChanged();
+                    }}
+                />
+            {/key}
         {/if}
         {#if said !== ''}
             <p class="said" aria-live="polite">{said}</p>
@@ -456,8 +519,8 @@
             rows={marks.entries}
             error={marks.error}
             open={!view.collapsed.includes('bookmarks')}
-            {editing}
-            adding={form === 'bookmark' && editing === ''}
+            editing={view.editing}
+            adding={view.form === 'bookmark' && view.editing === ''}
             ontoggle={() => toggleSection('bookmarks')}
             onadd={() => {
                 show('bookmark');
@@ -478,7 +541,7 @@
             current={saved.current}
             names={saved.workspaces.map((one) => one.name)}
             open={!view.collapsed.includes('workspaces')}
-            saving={form === 'workspace'}
+            saving={view.form === 'workspace'}
             ontoggle={() => toggleSection('workspaces')}
             onsave={() => {
                 show('workspace');

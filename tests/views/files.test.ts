@@ -1,12 +1,12 @@
 // The file browser rendered to HTML on the server: the explorer's root heads with the controls the
-// roots are changed from, the tree's rows for one root and its first level, and the three sections
-// under the trees.
+// roots are changed from, the tree's rows for one root and its first level, the three sections
+// under the trees, and the form the instance's state says is open.
 //
 // The catalog and the glyphs are the real config; the rows are built by state/fs.ts from synthetic
 // listings, so the tree is drawn without a server. What this does NOT cover: the fetches
 // state/fs.svelte.ts makes, which need a server and are exercised by tests/browser/files.spec.ts;
 // and pressing a control or a key, which no server rendering runs and tests/browser/files.spec.ts
-// does. Each case written for the explorer names the change that turns it red.
+// and tests/browser/files-forms.spec.ts do. Each case written for the explorer names the change that turns it red.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -668,6 +668,52 @@ describe("the reader's own bookmarks and notes", () => {
 
         expect(body).toContain('aria-label="Bookmarks"');
         expect(body).toContain('Open hub/docs/manual.md');
+    });
+
+    // Revert: in `markForm` of views/Files.svelte, test a component `$state('')` for 'bookmark'
+    // instead of `view.form`, or draw the form whenever `view.form` is 'bookmark'.
+    it('draws the bookmark form open when the instance state says it is, over the bookmark it names', async () => {
+        const fresh = await loaded();
+        const drawn = (state: unknown): string => {
+            fresh.ui.setInstanceState('files-one', state);
+            return render(Files, {
+                context: clientContext(fresh),
+                props: { instance: instance() }
+            }).body;
+        };
+
+        expect(drawn({})).not.toContain('data-form=');
+        const adding = drawn({ form: 'bookmark' });
+        expect(adding).toContain('data-form="add"');
+        expect(adding).toContain('aria-label="Label"');
+        const editing = drawn({ form: 'bookmark', editing: 'the manual' });
+        expect(editing).toContain('data-form="edit"');
+        expect(editing).toContain('value="the manual"');
+        // An edit form whose bookmark is not in the list, as before the bookmarks are read after a
+        // reload, draws no form: drawn, it would be an add form where the edit form belongs, whose
+        // Save adds a new bookmark and under which what was typed into the edit form is hidden.
+        client.ui.setInstanceState('files-one', { form: 'bookmark', editing: 'the manual' });
+        const unread = render(Files, {
+            context: clientContext(client),
+            props: { instance: instance() }
+        }).body;
+        expect(unread).not.toContain('data-form=');
+        expect(drawn({ form: 'bookmark', editing: 'no such bookmark' })).not.toContain(
+            'data-form='
+        );
+    });
+
+    // Revert: in views/Files.svelte, give RootForm a component `typed` instead of `view.typed`.
+    it('draws the root form open with the line the instance state holds', async () => {
+        const fresh = await loaded();
+        fresh.ui.setInstanceState('files-one', { form: 'root', typed: '/tmp/typed-root' });
+        const { body } = render(Files, {
+            context: clientContext(fresh),
+            props: { instance: instance() }
+        });
+
+        expect(body).toContain('data-fs-form="Folder path"');
+        expect(body).toContain('value="/tmp/typed-root"');
     });
 
     it("draws the add form over the bookmarks file's own schema, with the roots in force", async () => {

@@ -6,12 +6,13 @@
 // away, and they and a delete leave no draft in the browser's storage. A value typed while an edit's
 // save is on its way stays in the open form; an add form closes once its entry is added. A pane
 // closed from its menu takes the drafts and the records of every tab in it out of the browser's
-// storage.
+// storage. A file browser's root line typed and not added is asked about the same way.
 //
 // The drafts are the ui store's, kept in the browser's own storage. The writes here go to the
 // temporary copy of demo/, and every file a case writes is put back before the case ends.
 
 import { expect, test, type Locator, type Page } from '@playwright/test';
+import { draftKeys, switchAndBack, uiInstances } from './forms.ts';
 import { readHubFile, readHubYaml, writeHubFile } from './hub.ts';
 import { boot, openView } from './rail.ts';
 import { t } from './words.ts';
@@ -57,27 +58,11 @@ function kindBox(page: Page): Locator {
     return page.locator('[data-form="edit"]').getByRole('textbox', { name: 'kind', exact: true });
 }
 
-/** The ui store keys holding form drafts in the browser's storage. */
-async function draftKeys(page: Page): Promise<string[]> {
-    const raw = await page.evaluate(() => localStorage.getItem('oculus.ui.v1'));
-    if (raw === null) return [];
-    const held = JSON.parse(raw) as { instances?: Record<string, unknown> };
-    return Object.keys(held.instances ?? {}).filter((key) => key.endsWith('#forms'));
-}
-
 /** Open the Tasks tab, open its add form, and type into it. */
 async function typeTask(page: Page): Promise<void> {
     await openView(page, 'tasks', t('views.tasks'));
     await page.getByRole('button', { name: t('collection.add') }).click();
     await titleBox(page).fill(TYPED);
-}
-
-/** Leave the Tasks tab for the Status tab of the same pane, and come back to it. */
-async function switchAndBack(page: Page): Promise<void> {
-    await page.getByRole('tab', { name: t('views.status'), exact: true }).click();
-    await expect(page.locator('[data-collection="tasks"]')).toHaveCount(0);
-    await page.getByRole('tab', { name: t('views.tasks'), exact: true }).click();
-    await expect(page.locator('[data-collection="tasks"]')).toBeVisible();
 }
 
 /** Open the manifest editor of the demo project from its card, and type into one field. */
@@ -104,7 +89,7 @@ test('text typed into an add form is there, in the open form, after a tab switch
     await boot(page);
     await typeTask(page);
 
-    await switchAndBack(page);
+    await switchAndBack(page, t('views.tasks'), page.locator('[data-collection="tasks"]'));
     await expect(titleBox(page)).toHaveValue(TYPED);
 
     // The Tasks tab is still the active one after the reload, so the Status tab's socket line is
@@ -125,7 +110,7 @@ test("text typed into a card's edit form is there, in the open form, after a tab
         .click();
     await kindBox(page).fill('kind typed into the card');
 
-    await switchAndBack(page);
+    await switchAndBack(page, t('views.tasks'), page.locator('[data-collection="tasks"]'));
     await expect(kindBox(page)).toHaveValue('kind typed into the card');
 });
 
@@ -163,10 +148,7 @@ test('a tab holding a typed add form asks before it closes; Cancel and the Add t
 
 /** The keys of every instance record the ui store holds in the browser's storage. */
 async function instanceKeys(page: Page): Promise<string[]> {
-    const raw = await page.evaluate(() => localStorage.getItem('oculus.ui.v1'));
-    if (raw === null) return [];
-    const held = JSON.parse(raw) as { instances?: Record<string, unknown> };
-    return Object.keys(held.instances ?? {});
+    return Object.keys(await uiInstances(page));
 }
 
 /** Show one tab of a pane and read the instance id its view draws, once that view is the one drawn. */
@@ -425,4 +407,28 @@ test("the Venues add form is kept across a tab switch, and its Add and a card's 
     await edits.nth(1).click();
     await expect(page.locator('[data-form="edit"]')).toHaveCount(1);
     expect(await draftKeys(page)).toEqual([]);
+});
+
+// Revert: drop the Files registerUnsaved line from state/context.ts.
+test("a tab holding a file browser's typed root line asks before it closes, and an empty line does not", async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const close = closeOf(page, t('views.files'));
+    const asked = page.getByRole('alertdialog');
+    await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
+    const box = page.getByRole('textbox', { name: t('files.root_dir') });
+    await box.fill('~/a-folder-typed-and-not-added');
+
+    await close.click();
+    await expect(asked).toBeVisible();
+    await expect(asked).toContainText(t('ui.tab_close_dirty'));
+    await asked.getByRole('button', { name: t('ui.confirm_cancel'), exact: true }).click();
+    await expect(box).toHaveValue('~/a-folder-typed-and-not-added');
+
+    await box.fill('');
+    await close.click();
+    await expect(asked).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: t('views.files'), exact: true })).toHaveCount(0);
 });

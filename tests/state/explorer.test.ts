@@ -1,16 +1,30 @@
 // The explorer over the file browser's rows, the pure half in state/fs.ts: what a filter leaves,
 // the rows the keyboard reads, the label a row's star bookmarks under, what the breadcrumb names,
-// and what one instance keeps. Where a key moves is ui/tree-keys.ts, tests/ui/tree-keys.test.ts.
+// what one instance keeps, and which form a press or an answer leaves open. Where a key moves is
+// ui/tree-keys.ts, tests/ui/tree-keys.test.ts.
 //
 // What this does NOT cover: the rows drawn and the keys pressed, which are tests/views/files.test.ts
-// and tests/browser/files.spec.ts.
+// and tests/browser/files.spec.ts; and the forms pressed, which is tests/browser/files-forms.spec.ts:
+// the bookmark and root forms kept across a switch and a reload, the drafts forgotten by the add
+// control, by a row's edit moving to another bookmark and by the bookmark's removal, the form
+// remounted when an edit form opens over the add form, and a held root or bookmark answer landing
+// after another form, the same root form reopened or a tab switch. The close question over a typed root line is
+// tests/browser/unsaved-forms.spec.ts.
 
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it } from 'vitest';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import {
+    bookmarkLeft,
     collapseRoot,
     crumbsOf,
+    editedGone,
+    editShown,
+    filesLineTyped,
     filesViewOf,
     filterRows,
+    formSettled,
+    formShown,
+    formsOf,
     markLabel,
     parentOf,
     rowKey,
@@ -22,6 +36,9 @@ import {
     type FsEntry,
     type FsRoot
 } from '../../src/lib/state/fs.ts';
+import { setCatalog } from '../../src/lib/state/text.ts';
+import { createClientState, type ClientState } from '../client.ts';
+import { fakeStorage } from './layout-fixture.ts';
 
 function file(name: string, size = 10): FsEntry {
     return { name, kind: 'file', size, mtime: 1 };
@@ -30,6 +47,9 @@ function file(name: string, size = 10): FsEntry {
 function dir(name: string): FsEntry {
     return { name, kind: 'dir', size: 0, mtime: 1 };
 }
+
+/** The forms of a file browser with none open. */
+const NO_FORM = { form: '', editing: '', typed: '', opening: 0 } as const;
 
 function root(key: string, fixed = true): FsRoot {
     return { key, dir: `/tmp/${key}`, fixed };
@@ -158,16 +178,182 @@ describe('the explorer over the rows', () => {
                 collapsed: ['notes', 3]
             })
         ).toEqual({
+            ...NO_FORM,
             expanded: ['hub:'],
             selected: { root: 'hub', path: 'code' },
             filter: 'run',
             collapsed: ['notes']
         });
-        const empty = { expanded: [], selected: null, filter: '', collapsed: [] };
+        const empty = { ...NO_FORM, expanded: [], selected: null, filter: '', collapsed: [] };
         expect(filesViewOf(null)).toEqual(empty);
         expect(filesViewOf({ selected: { root: 'hub' }, filter: 4 })).toEqual(empty);
         expect(filesViewOf({ selected: { root: '', path: '' } })).toEqual(empty);
         expect(filesViewOf(['hub:'])).toEqual(empty);
+    });
+
+    // Revert: in filesViewOf of state/fs.ts, read `editing` and `typed` whatever form is open, take
+    // `form` as any string, or `opening` as any number.
+    it('reads the open form, the bookmark it edits, the typed line and the opening, each only where it belongs', () => {
+        const forms = (state: unknown): unknown => formsOf(filesViewOf(state));
+        expect(forms({ form: 'bookmark', editing: 'the manual', opening: 4 })).toEqual({
+            form: 'bookmark',
+            editing: 'the manual',
+            typed: '',
+            opening: 4
+        });
+        expect(forms({ form: 'root', typed: '/tmp/a' })).toEqual({
+            ...NO_FORM,
+            form: 'root',
+            typed: '/tmp/a'
+        });
+        expect(forms({ form: 'workspace', typed: 'lab' })).toEqual({
+            ...NO_FORM,
+            form: 'workspace',
+            typed: 'lab'
+        });
+        // Empty: no form, and an empty bookmark id is the form that adds.
+        expect(forms({})).toEqual(NO_FORM);
+        expect(forms({ form: 'bookmark', editing: '' })).toEqual({ ...NO_FORM, form: 'bookmark' });
+        // A name that is no form, a field of the wrong type, and a field of a form that is not open.
+        expect(forms({ form: 'note', editing: 'x', typed: 'y' })).toEqual(NO_FORM);
+        expect(forms({ form: 'expanded' })).toEqual(NO_FORM);
+        expect(forms({ form: 'bookmark', editing: 3, typed: 'left over' })).toEqual({
+            ...NO_FORM,
+            form: 'bookmark'
+        });
+        expect(forms({ form: 'root', editing: 'the manual', typed: ['a'] })).toEqual({
+            ...NO_FORM,
+            form: 'root'
+        });
+        expect(forms({ editing: 'the manual', typed: '/tmp/a' })).toEqual(NO_FORM);
+        // An opening count that is not a whole number at or above zero is no count.
+        for (const opening of [-1, 1.5, '2', Number.NaN, Number.MAX_VALUE, null]) {
+            expect(forms({ opening })).toEqual(NO_FORM);
+        }
+        expect(forms({ opening: 7 })).toEqual({ ...NO_FORM, opening: 7 });
+    });
+});
+
+describe('the forms of the file browser', () => {
+    const adding = { form: 'bookmark', editing: '', typed: '', opening: 3 } as const;
+    const manual = { form: 'bookmark', editing: 'the manual', typed: '', opening: 3 } as const;
+    const line = { form: 'root', editing: '', typed: '/tmp/a', opening: 3 } as const;
+    const closed = { ...NO_FORM, opening: 4 };
+
+    // Revert: keep `typed` in formShown, close the form whichever one is open, or leave `opening`.
+    it("opens a section's form, closes it when it is the one open, and drops the typed line", () => {
+        expect(formShown(NO_FORM, 'root')).toEqual({ ...NO_FORM, form: 'root', opening: 1 });
+        expect(formShown(line, 'root')).toEqual(closed);
+        expect(formShown(line, 'workspace')).toEqual({ ...closed, form: 'workspace' });
+        expect(formShown(adding, 'bookmark')).toEqual(closed);
+        // The add control over an open edit form opens the add form rather than closing.
+        expect(formShown(manual, 'bookmark')).toEqual({ ...adding, opening: 4 });
+        expect(formShown(manual, 'root')).toEqual({ ...closed, form: 'root' });
+    });
+
+    // Revert: open the bookmark's form whether or not it is the one open, in editShown.
+    it("opens one bookmark's form, closes it when it is that one's, and moves between two", () => {
+        expect(editShown(NO_FORM, 'the manual')).toEqual({ ...manual, opening: 1 });
+        expect(editShown(manual, 'the manual')).toEqual(closed);
+        expect(editShown(manual, 'the guide')).toEqual({
+            ...manual,
+            editing: 'the guide',
+            opening: 4
+        });
+        expect(editShown(adding, 'the manual')).toEqual({ ...manual, opening: 4 });
+        expect(editShown(line, 'the manual')).toEqual({ ...manual, opening: 4 });
+    });
+
+    // Revert: answer null from bookmarkLeft whenever the next form is a bookmark form.
+    it('names the bookmark form a move closes, and none for a move that keeps it', () => {
+        expect(bookmarkLeft(adding, NO_FORM)).toEqual({ editing: '' });
+        expect(bookmarkLeft(adding, manual)).toEqual({ editing: '' });
+        expect(bookmarkLeft(manual, adding)).toEqual({ editing: 'the manual' });
+        expect(bookmarkLeft(manual, { ...manual, editing: 'the guide' })).toEqual({
+            editing: 'the manual'
+        });
+        expect(bookmarkLeft(manual, line)).toEqual({ editing: 'the manual' });
+        expect(bookmarkLeft(manual, manual)).toBeNull();
+        expect(bookmarkLeft(adding, adding)).toBeNull();
+        expect(bookmarkLeft(line, manual)).toBeNull();
+        expect(bookmarkLeft(NO_FORM, NO_FORM)).toBeNull();
+    });
+
+    // Revert: answer a closed form from formSettled whatever `now` holds, or leave `opening` out of
+    // what it compares.
+    it('closes the form an answer was for only while that opening is open as the request left it', () => {
+        // In flight and still open as it was: the answer closes it and keeps the count.
+        expect(formSettled(line, line)).toEqual({ ...NO_FORM, opening: 3 });
+        expect(formSettled(manual, manual)).toEqual({ ...NO_FORM, opening: 3 });
+        expect(formSettled(adding, adding)).toEqual({ ...NO_FORM, opening: 3 });
+        // Superseded: another form opened, another bookmark's form, or more typed into the line.
+        expect(formSettled({ ...NO_FORM, form: 'workspace' }, line)).toBeNull();
+        expect(formSettled({ ...manual, editing: 'the guide' }, manual)).toBeNull();
+        expect(formSettled(manual, adding)).toBeNull();
+        expect(formSettled({ ...line, typed: '/tmp/ab' }, line)).toBeNull();
+        // Superseded by the same form closed and opened again, even with the same line typed.
+        expect(formSettled({ ...line, opening: 5 }, line)).toBeNull();
+        expect(formSettled({ ...adding, opening: 5 }, adding)).toBeNull();
+        // After close: a closed tab's record is gone, which reads as no form at all.
+        expect(formSettled(filesViewOf(undefined), line)).toBeNull();
+        expect(formSettled(NO_FORM, NO_FORM)).toBeNull();
+    });
+
+    // Revert: in editedGone of state/fs.ts, drop the check that the list is read without an error,
+    // or answer for the form that adds as well.
+    it('finds the edit form whose bookmark the loaded file no longer holds', () => {
+        const loaded = { entries: [{ id: 'the manual' }], loading: false, error: '' };
+        expect(editedGone(manual, loaded)).toBe(false);
+        expect(editedGone({ ...manual, editing: 'the guide' }, loaded)).toBe(true);
+        expect(editedGone({ ...manual, editing: 'the guide' }, { ...loaded, entries: [] })).toBe(
+            true
+        );
+        // Not read yet, or read with an error: nothing is known to be gone.
+        expect(editedGone({ ...manual, editing: 'x' }, { ...loaded, loading: true })).toBe(false);
+        expect(editedGone({ ...manual, editing: 'x' }, { ...loaded, error: 'refused' })).toBe(
+            false
+        );
+        // The add form, another form and no form edit nothing.
+        expect(editedGone(adding, { ...loaded, entries: [] })).toBe(false);
+        expect(editedGone(line, loaded)).toBe(false);
+        expect(editedGone(NO_FORM, loaded)).toBe(false);
+    });
+});
+
+describe('a typed root or workspace line as unsaved text', () => {
+    let client: ClientState;
+
+    beforeEach(() => {
+        setCatalog(textCatalog(loadConfig(engineDir()).config));
+        client = createClientState();
+        client.layout.loadLayout(fakeStorage());
+    });
+
+    // Revert: answer true from filesLineTyped without checking the view is `files`.
+    it('is asked about for a file browser whose line form holds text, and for nothing else', () => {
+        expect(filesLineTyped('files', { form: 'root', typed: '/tmp/a' })).toBe(true);
+        expect(filesLineTyped('files', { form: 'workspace', typed: 'lab' })).toBe(true);
+        expect(filesLineTyped('files', { form: 'root', typed: '' })).toBe(false);
+        // Revert: count a line of spaces, which the add takes as nothing, as typed text.
+        expect(filesLineTyped('files', { form: 'root', typed: '   ' })).toBe(false);
+        expect(filesLineTyped('files', { form: '', typed: '/tmp/a' })).toBe(false);
+        expect(filesLineTyped('files', { form: 'bookmark', typed: '/tmp/a' })).toBe(false);
+        expect(filesLineTyped('tasks', { form: 'root', typed: '/tmp/a' })).toBe(false);
+        expect(filesLineTyped(undefined, { form: 'root', typed: '/tmp/a' })).toBe(false);
+    });
+
+    // Revert: drop the Files registerUnsaved line from state/context.ts, or pass it the view of
+    // every instance as 'files'.
+    it("reaches the tab close through the client's unsaved question, by the instance's own view", () => {
+        const files = client.layout.openView('files');
+        const tasks = client.layout.openView('tasks');
+        client.ui.setInstanceState(files, { form: 'root', typed: '/tmp/a' });
+        client.ui.setInstanceState(tasks, { form: 'root', typed: '/tmp/a' });
+        expect(client.ui.unsaved(files)).toBe(true);
+        expect(client.ui.unsaved(tasks)).toBe(false);
+        expect(client.ui.unsaved('no-such-instance')).toBe(false);
+        client.ui.setInstanceState(files, { form: 'root', typed: '' });
+        expect(client.ui.unsaved(files)).toBe(false);
     });
 });
 
