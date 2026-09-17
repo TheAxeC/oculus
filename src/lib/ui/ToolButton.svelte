@@ -41,6 +41,11 @@
         compact?: boolean;
         /** Use the activity rail's one full-width, 34 px control box. */
         rail?: boolean;
+        /**
+         * The glyph alone in a bare icon box, for a strip's own buttons: no border, no fill and no
+         * terminal brackets until the pointer is over it, the same box a bare menu opener draws.
+         */
+        bare?: boolean;
         /** Draw a compact rail glyph above its visible label instead of hiding the label. */
         stacked?: boolean;
         /** A rail view id, rendered on the button for browser navigation. */
@@ -81,6 +86,7 @@
         disabled = false,
         compact = false,
         rail = false,
+        bare = false,
         stacked = false,
         dataView,
         dataBookmark,
@@ -111,6 +117,7 @@
         class:active
         class:compact={iconOnly}
         class:rail-control={rail}
+        class:bare
         class:stacked
         role={checked === undefined ? undefined : 'radio'}
         aria-checked={checked}
@@ -206,6 +213,29 @@
         cursor: default;
     }
 
+    /* A strip's own button: the glyph in a box of the strip's action size, the same under every
+       theme, a terminal palette included. */
+    .tool.bare,
+    :global(body.rice) .tool.bare {
+        justify-content: center;
+        box-sizing: border-box;
+        min-width: var(--tab-action);
+        height: var(--tab-action);
+        padding: 0 var(--tab-action-pad);
+        border: 1px solid transparent;
+        border-radius: var(--radius-sm);
+        background: none;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-lg);
+        line-height: 1;
+    }
+
+    .tool.bare:hover:not(:disabled) {
+        border-color: transparent;
+        background: var(--chip);
+        color: var(--ink-txt, var(--ink));
+    }
+
     .tool.active {
         border-color: var(--accent);
         background: var(--accent);
@@ -249,13 +279,14 @@
        a column of a glyph over a label, where the pair would be two lines of their own above and
        below it, and a rail control is a glyph in a box the rail's width sets, a third of it in the
        rail's row of text steps; in both the terminal stand-in the glyph draws carries its own
-       brackets already. */
-    :global(body.rice) .tool:not(.stacked):not(.rail-control)::before {
+       brackets already. A bare button is a strip's icon and draws none, as a bare menu opener
+       beside it draws none. */
+    :global(body.rice) .tool:not(.stacked):not(.rail-control):not(.bare)::before {
         content: '[';
         opacity: 0.5;
     }
 
-    :global(body.rice) .tool:not(.stacked):not(.rail-control)::after {
+    :global(body.rice) .tool:not(.stacked):not(.rail-control):not(.bare)::after {
         content: ']';
         opacity: 0.5;
     }

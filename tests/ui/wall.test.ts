@@ -101,6 +101,8 @@ const SOLID: Record<string, string> = {
     'src/lib/ui/DateInput.svelte .date': 'an input, whose text is typed and read back',
     'src/lib/ui/Disclosure.svelte .disclosure': 'a control, pressed to open a section',
     'src/lib/ui/Menu.svelte .opener': 'a control, the button a list hangs off',
+    'src/lib/ui/Menu.svelte .opener.bare:hover':
+        'a hover response, saying the bare opener is under the pointer',
     'src/lib/views/shared/CardActions.svelte [data-action-more] :global(.opener)':
         'a control, the More opener drawn as the card controls beside it are',
     'src/lib/ui/Menu.svelte .item:hover': 'a hover response inside a list that is translucent',
@@ -112,8 +114,12 @@ const SOLID: Record<string, string> = {
         'a hover response, saying which row the pointer is on',
     'src/lib/ui/TextArea.svelte .area': 'an input, whose text is typed and read back',
     'src/lib/ui/TextInput.svelte .text': 'an input, whose text is typed and read back',
+    'src/lib/ui/Tabs.svelte .close:hover':
+        'a hover response, saying the close control is under the pointer',
     'src/lib/ui/Ticker.svelte .act': 'a control, pressed to run what it names',
     'src/lib/ui/ToolButton.svelte .tool': 'a control, read at the size of a word',
+    'src/lib/ui/ToolButton.svelte .tool.bare:hover:not(:disabled)':
+        'a hover response, saying which bare icon the pointer is on',
     'src/lib/ui/Breadcrumb.svelte .crumb:hover':
         'a hover response, saying which segment the pointer is on',
     'src/lib/ui/TreeItem.svelte .item:not(.muted, .warn, .error):hover':

@@ -147,3 +147,6 @@ icons:
     terminal_shell: terminal
     # showing a path in the file browser
     show_in_files: folder-search
+    # the tab strip's header actions: a pane's more-actions opener and its split control
+    more: ellipsis
+    split_right: columns-2

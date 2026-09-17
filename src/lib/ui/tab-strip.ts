@@ -24,6 +24,8 @@ export type Tab = {
     cells?: { count: number; color: string; label: string }[];
     /** The tab the next single click replaces: its label is drawn in italics. */
     preview?: boolean;
+    /** The tab holds text no save has taken: a dot stands in the close control's place and its name says so. */
+    dirty?: boolean;
 };
 
 /**

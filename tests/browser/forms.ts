@@ -3,7 +3,7 @@
 // the view checked to be gone in between, since a pane mounts only its active tab.
 
 import { expect, type Locator, type Page } from '@playwright/test';
-import { t } from './words.ts';
+import { t, tabNamed } from './words.ts';
 
 /** The ui store's per-instance records, by key, as the browser's storage holds them now. */
 export async function uiInstances(page: Page): Promise<Record<string, unknown>> {
@@ -23,8 +23,8 @@ export async function draftKeys(page: Page): Promise<string[]> {
  * the tab's view, which is gone while Status is shown and drawn again after the return.
  */
 export async function switchAndBack(page: Page, tab: string, view: Locator): Promise<void> {
-    await page.getByRole('tab', { name: t('views.status'), exact: true }).click();
+    await page.getByRole('tab', { name: tabNamed(t('views.status')) }).click();
     await expect(view).toHaveCount(0);
-    await page.getByRole('tab', { name: tab, exact: true }).click();
+    await page.getByRole('tab', { name: tabNamed(tab) }).click();
     await expect(view).toBeVisible();
 }

@@ -18,6 +18,7 @@ import Confirm from '../../src/lib/ui/Confirm.svelte';
 import Empty from '../../src/lib/ui/Empty.svelte';
 import KeySheet from '../../src/lib/ui/KeySheet.svelte';
 import { sheetRows } from '../../src/lib/ui/key-rows.ts';
+import Menu from '../../src/lib/ui/Menu.svelte';
 import Meter from '../../src/lib/ui/Meter.svelte';
 import { menuPlacement } from '../../src/lib/ui/menu-items.ts';
 import Pane from '../../src/lib/ui/Pane.svelte';
@@ -41,7 +42,14 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { glyph, setAscii, setCatalog, setGlyphMode, setGlyphs } from '../../src/lib/state/text.ts';
+import {
+    glyph,
+    setAscii,
+    setCatalog,
+    setGlyphMode,
+    setGlyphs,
+    t
+} from '../../src/lib/state/text.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import { noop } from '../doubles.ts';
 import { clientContext, createClientState, type ClientState } from '../client.ts';
@@ -725,5 +733,120 @@ describe('one strip, one stop of the focus order', () => {
         expect(controls.filter((control) => control.includes('tabindex="-1"'))).toHaveLength(7);
         // Nothing in the strip is left without a place in the order.
         expect(controls.filter((control) => !/tabindex="(0|-1)"/.test(control))).toEqual([]);
+    });
+});
+
+// What a node render can show of the tab look: the classes a tab carries for being the one shown and
+// for holding unsaved text, the dot drawn only for the latter, and a preview's mark. The pointer's
+// hover, and what each class paints, are tests/browser/tabs.spec.ts.
+describe('the marks a tab carries', () => {
+    function strip(): string {
+        return html(Tabs, {
+            tabs: [
+                { id: 'shown', label: 'Shown', glyph: 'refresh' },
+                { id: 'other', label: 'Other' },
+                { id: 'held', label: 'Held', dirty: true },
+                { id: 'kept', label: 'Kept', preview: true }
+            ],
+            active: 'shown',
+            onselect: noop,
+            onclose: noop
+        });
+    }
+
+    /** The tab wrapper of one tab by its label, from its opening tag to the next tab's. */
+    function tabOf(body: string, label: string): string {
+        const parts = body.split(/(?=<div class="tab[ "])/);
+        const found = parts.find((part) => part.includes(`>${label}</span>`));
+        expect(found).toBeDefined();
+        return found ?? '';
+    }
+
+    function classOf(tab: string): string {
+        return /^<div class="([^"]*)"/.exec(tab)?.[1].replace(/\s*svelte-\S+/g, '') ?? '';
+    }
+
+    // Revert: drop `class:current` from ui/Tabs.svelte, and the shown tab loses its mark.
+    it('marks the shown tab current and no other', () => {
+        const body = strip();
+        expect(classOf(tabOf(body, 'Shown'))).toBe('tab current');
+        expect(classOf(tabOf(body, 'Other'))).toBe('tab');
+    });
+
+    // Revert: drop `class:dirty` or the dot's block from ui/Tabs.svelte.
+    it('marks a tab holding unsaved text and draws its dot, and draws no dot on a clean tab', () => {
+        const body = strip();
+        const held = tabOf(body, 'Held');
+        expect(classOf(held)).toBe('tab dirty');
+        expect(held).toContain('class="dot');
+        expect(held).toContain('class="cross');
+        for (const label of ['Shown', 'Other', 'Kept']) {
+            expect(tabOf(body, label)).not.toContain('class="dot');
+            expect(tabOf(body, label)).toContain('class="cross');
+        }
+    });
+
+    // Revert: drop the `aria-label` of the tab face in ui/Tabs.svelte.
+    it('names a tab holding unsaved text with the catalog word, and leaves a clean tab its label', () => {
+        const body = strip();
+        const face = (label: string): string =>
+            /<button[^>]*role="tab"[^>]*>/.exec(tabOf(body, label))?.[0] ?? '';
+        expect(face('Held')).toContain(`aria-label="${t('ui.tab_unsaved', 'Held')}"`);
+        for (const label of ['Shown', 'Other', 'Kept']) {
+            expect(face(label)).toContain('role="tab"');
+            expect(face(label)).not.toContain('aria-label=');
+        }
+    });
+
+    // Revert: drop `class:unfocused`, `class:low` or `class:card` from the strip in ui/Tabs.svelte.
+    it('marks the strip unfocused, low and on the card surface only when asked', () => {
+        const classes = (body: string): string =>
+            /<div class="(strip[^"]*)"/.exec(body)?.[1].replace(/\s*svelte-\S+/g, '') ?? '';
+        expect(classes(strip())).toBe('strip');
+        const asked = html(Tabs, {
+            tabs: [{ id: 'one', label: 'One' }],
+            active: 'one',
+            onselect: noop,
+            onclose: noop,
+            focused: false,
+            low: true,
+            surface: 'card'
+        });
+        expect(classes(asked)).toBe('strip unfocused low card');
+    });
+
+    // Revert: drop `class:bare` from ui/ToolButton.svelte or from the opener of ui/Menu.svelte.
+    it('draws a bare tool button and a bare menu opener only when asked', () => {
+        const tool = (bare: boolean): string =>
+            html(ToolButton, {
+                label: 'Split',
+                glyph: 'refresh',
+                compact: true,
+                bare,
+                onclick: noop
+            });
+        expect(tool(true)).toMatch(/class="tool[^"]*\bbare\b/);
+        expect(tool(false)).not.toMatch(/class="tool[^"]*\bbare\b/);
+        const opener = (bare: boolean): string =>
+            html(Menu, {
+                label: 'More',
+                glyph: 'refresh',
+                compact: true,
+                bare,
+                items: [],
+                onpick: noop
+            });
+        expect(opener(true)).toMatch(/class="opener[^"]*\bbare\b/);
+        expect(opener(false)).not.toMatch(/class="opener[^"]*\bbare\b/);
+    });
+
+    // Revert: drop the Glyph before the label in ui/Tabs.svelte.
+    it('draws the glyph before the label, and the preview mark on the preview tab alone', () => {
+        const body = strip();
+        const shown = tabOf(body, 'Shown');
+        expect(shown.indexOf('class="glyph')).toBeGreaterThan(-1);
+        expect(shown.indexOf('class="glyph')).toBeLessThan(shown.indexOf('>Shown</span>'));
+        expect(tabOf(body, 'Kept')).toContain('data-tab-preview');
+        expect(tabOf(body, 'Other')).not.toContain('data-tab-preview');
     });
 });

@@ -16,7 +16,7 @@ import { pressCardAction } from './cards.ts';
 import { draftKeys, switchAndBack, uiInstances } from './forms.ts';
 import { readHubFile, readHubYaml, writeHubFile } from './hub.ts';
 import { boot, openView } from './rail.ts';
-import { t } from './words.ts';
+import { t, tabNamed } from './words.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 
 const TASKS = 'tasks/tasks.yml';
@@ -39,7 +39,7 @@ function labelOf(field: string): string {
 /** The close control of the tab with this name. */
 function closeOf(page: Page, name: string): Locator {
     return page
-        .locator('.tab', { has: page.getByRole('tab', { name, exact: true }) })
+        .locator('.tab', { has: page.getByRole('tab', { name: tabNamed(name) }) })
         .getByRole('button', { name: t('ui.close_tab') });
 }
 
@@ -75,7 +75,7 @@ async function typeManifest(page: Page): Promise<Locator> {
         page.locator('.slot').filter({ hasText: short }).first(),
         t('project.card.edit_manifest')
     );
-    const tab = page.getByRole('tab', { name: t('views.editor'), exact: true });
+    const tab = page.getByRole('tab', { name: tabNamed(t('views.editor')) });
     await expect(tab).toBeVisible();
     const box = page.getByRole('textbox', { name: labelOf(FIELD) });
     await box.fill(LINE);
@@ -143,7 +143,7 @@ test('a tab holding a typed add form asks before it closes; Cancel and the Add t
 
     await close.click();
     await expect(asked).toHaveCount(0);
-    await expect(page.getByRole('tab', { name: t('views.tasks'), exact: true })).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: tabNamed(t('views.tasks')) })).toHaveCount(0);
 });
 
 /** The keys of every instance record the ui store holds in the browser's storage. */
@@ -153,7 +153,7 @@ async function instanceKeys(page: Page): Promise<string[]> {
 
 /** Show one tab of a pane and read the instance id its view draws, once that view is the one drawn. */
 async function instanceOf(pane: Locator, label: string, body: string): Promise<string> {
-    await pane.getByRole('tab', { name: label, exact: true }).click();
+    await pane.getByRole('tab', { name: tabNamed(label) }).click();
     const view = pane.locator(body);
     await expect(view).toHaveCount(1);
     const id = await view.getAttribute('data-instance');
@@ -168,7 +168,7 @@ test("a pane closed from its menu over a typed add form leaves none of its tabs'
     await boot(page);
     await typeTask(page);
     const pane = page.locator('[data-pane]', {
-        has: page.getByRole('tab', { name: t('views.tasks'), exact: true })
+        has: page.getByRole('tab', { name: tabNamed(t('views.tasks')) })
     });
     // A collection's search box writes the instance's own record, beside the form draft's. The pane
     // holds three tabs: Tasks with both records, Venues with its own, and Status, which writes none.
@@ -191,7 +191,7 @@ test("a pane closed from its menu over a typed add form leaves none of its tabs'
     const asked = page.getByRole('alertdialog');
     await expect(asked).toBeVisible();
     await asked.getByRole('button', { name: t('ui.confirm_ok'), exact: true }).click();
-    await expect(page.getByRole('tab', { name: t('views.tasks'), exact: true })).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: tabNamed(t('views.tasks')) })).toHaveCount(0);
 
     expect(await draftKeys(page)).toEqual([]);
     const left = await instanceKeys(page);
@@ -315,9 +315,7 @@ test('a manifest editor with an edit asks before it closes, and a save clears th
 
         await close.click();
         await expect(asked).toHaveCount(0);
-        await expect(page.getByRole('tab', { name: t('views.editor'), exact: true })).toHaveCount(
-            0
-        );
+        await expect(page.getByRole('tab', { name: tabNamed(t('views.editor')) })).toHaveCount(0);
     } finally {
         writeHubFile(file, before);
     }
@@ -388,9 +386,9 @@ test("the Venues add form is kept across a tab switch, and its Add and a card's 
         .locator('[data-form="add"]')
         .getByRole('textbox', { name: 'name', exact: true });
     await name.fill('A venue typed and left unsaved');
-    await page.getByRole('tab', { name: t('views.status'), exact: true }).click();
+    await page.getByRole('tab', { name: tabNamed(t('views.status')) }).click();
     await expect(name).toHaveCount(0);
-    await page.getByRole('tab', { name: t('views.venues'), exact: true }).click();
+    await page.getByRole('tab', { name: tabNamed(t('views.venues')) }).click();
     await expect(name).toHaveValue('A venue typed and left unsaved');
 
     await page.getByRole('button', { name: t('collection.add') }).click();
@@ -430,5 +428,5 @@ test("a tab holding a file browser's typed root line asks before it closes, and 
     await box.fill('');
     await close.click();
     await expect(asked).toHaveCount(0);
-    await expect(page.getByRole('tab', { name: t('views.files'), exact: true })).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: tabNamed(t('views.files')) })).toHaveCount(0);
 });

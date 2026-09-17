@@ -30,7 +30,7 @@ import {
     loadConfig,
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { setCatalog, setGlyphs, setIcons } from '../../src/lib/state/text.ts';
+import { glyph, setCatalog, setGlyphs, setIcons, t } from '../../src/lib/state/text.ts';
 import { installBadges } from '../state/rail-badges-fixture.ts';
 import { setVocab } from '../../src/lib/state/tones.ts';
 import type { Layout, Workbench as Bench } from '../../src/lib/state/layout/index.ts';
@@ -274,6 +274,95 @@ describe('the workbench', () => {
         expect([...whole.matchAll(/aria-label="Pane"/g)]).toHaveLength(3);
         // The three pane menus, the page strip's, and the theme menu at the foot of the rail.
         expect([...whole.matchAll(/aria-haspopup="menu"/g)]).toHaveLength(5);
+    });
+
+    // Revert: take the ToolButton out of PaneView.svelte's paneMenu snippet, or give it no tabindex.
+    it("draws the pane header's split button beside every pane menu, out of the focus order", () => {
+        const splits = [
+            ...whole.matchAll(/<button[^>]*aria-label="Split tab to the right"[^>]*>/g)
+        ];
+        expect(splits).toHaveLength(3);
+        for (const one of splits) expect(one[0]).toContain('tabindex="-1"');
+        for (const path of ['0', '1.0', '1.1']) {
+            const pane = whole.slice(whole.indexOf(`data-pane-path="${path}"`));
+            expect(pane.indexOf('Split tab to the right')).toBeLessThan(
+                pane.indexOf('aria-label="Pane"')
+            );
+        }
+    });
+
+    // Revert: point PaneView.svelte's menu at `ui.pane_menu_glyph`, or its button at another glyph.
+    it('draws the split button with the split glyph and the pane menu opener with the more glyph', () => {
+        const button = (label: string): string => {
+            const at = whole.indexOf(`aria-label="${label}"`);
+            return whole.slice(at, whole.indexOf('</button>', at));
+        };
+        expect(button('Split tab to the right')).toContain(glyph('split_right'));
+        expect(button('Pane')).toContain(glyph('more'));
+        expect(button('Pane')).not.toContain(glyph('list'));
+    });
+
+    // Revert: drop `dirty: unsaved(instance.id)` from PaneView.svelte's tabs.
+    it('marks the pane tab the ui store answers unsaved for, and names it so', () => {
+        client.ui.registerUnsaved((id) => id === 'two');
+        const body = html();
+        const panes = body.slice(body.indexOf('class="area'));
+        const marked = [...panes.matchAll(/<div class="tab[^"]*dirty[^"]*"[^>]*>/g)];
+        expect(marked).toHaveLength(1);
+        const two = panes.slice(
+            panes.indexOf('data-pane-path="1.0"'),
+            panes.indexOf('data-pane-path="1.1"')
+        );
+        expect(two).toMatch(/class="tab[^"]*dirty/);
+        expect(two).toContain(`aria-label="${t('ui.tab_unsaved', 'Findings')}"`);
+    });
+
+    // Revert: set `dirty` to false in PageStrip.svelte's tabOf.
+    it('marks the page holding that tab in the page strip, and names it so', () => {
+        const clean = html();
+        const strip = (body: string): string =>
+            body.slice(body.indexOf('aria-label="Pages"'), body.indexOf('class="area'));
+        expect(strip(clean)).not.toMatch(/class="tab[^"]*dirty/);
+        client.ui.registerUnsaved((id) => id === 'two');
+        const marked = strip(html());
+        expect(marked).toMatch(/class="tab[^"]*dirty/);
+        expect(marked).toContain(`aria-label="${t('ui.tab_unsaved', 'Page 1')}"`);
+    });
+
+    // Revert: drop `focused={activePane}` from PaneView.svelte's Tabs.
+    it("draws the active pane's strip focused and every other pane's strip unfocused", () => {
+        const strips = (body: string): string[] =>
+            ['0', '1.0', '1.1'].map((path) => {
+                const pane = body.slice(body.indexOf(`data-pane-path="${path}"`));
+                return (
+                    /<div class="(strip[^"]*)"/.exec(pane)?.[1].replace(/\s*svelte-\S+/g, '') ?? ''
+                );
+            });
+        expect(strips(whole)).toEqual(['strip', 'strip unfocused', 'strip unfocused']);
+        client.layout.activateInstance('three');
+        const moved = render(Workbench, {
+            context: clientContext(client),
+            props: { groups: [] }
+        }).body;
+        expect(strips(moved)).toEqual(['strip unfocused', 'strip unfocused', 'strip']);
+    });
+
+    // A pinned instance is one whose state carries a session and a label.
+    // Revert: draw `registrationLabel(found)` as every tab's label in PaneView.svelte.
+    it("draws a pinned instance's tab under the label its state carries, with no mark of its own", () => {
+        apply({ root: pane('pinned', 'alpha', { session: 'one', label: 'Pinned session' }) });
+        const body = render(Workbench, {
+            context: clientContext(client),
+            props: { groups: [] }
+        }).body;
+        const panes = body.slice(body.indexOf('class="area'));
+        const start = panes.indexOf('<div class="tab ');
+        const tab = panes.slice(start, panes.indexOf('</button>', start));
+        expect(tab).toContain('>Pinned session</span>');
+        expect(/^<div class="([^"]*)"/.exec(tab)?.[1].replace(/\s*svelte-\S+/g, '')).toBe(
+            'tab current'
+        );
+        expect(tab).toContain('class="glyph');
     });
 });
 

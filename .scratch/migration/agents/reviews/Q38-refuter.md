@@ -156,3 +156,57 @@ The dirty tab and its close button carry no word for unsaved text.
 - `rail.spec.ts` and `unsaved-forms.spec.ts` under my reverts (run only unreverted, in the worktree).
 
 Reviewer usage: about 50 tool uses, about 20 minutes (17:57 to 18:17).
+
+## Repair round 1, refuted
+
+```
+Rerun in the worktree (tools/oculus), nothing edited anywhere; git status --short still 21 modified files, no untracked.
+npx vitest run --reporter=dot        Test Files 246 passed (246), Tests 4125 passed (4125), 39.07s, no timeout
+npm run check                        COMPLETED 1209 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+npm run lint                         exit 0, no output
+npm run format:check                 All matched files use Prettier code style!
+ASCII gate (the perl command)        printed nothing
+find src tests bin | wc -l | tail -3 970 tests/state/layout.test.ts, 980 tests/state/board.test.ts; largest component Tabs.svelte 596, Files.svelte 588
+npm run build                        exit 0
+playwright tabs, shell-defects, pages, layout, rail, unsaved-forms, source, keyboard, files-forms   86 passed (1.6m)
+playwright whole suite (the report's 227)                                                          227 passed (4.6m)
+
+Reverts, each in my own clone (scratchpad/q38-review2/clone), rebuilt before its run, restored and byte-checked after:
+V1 ToolButton.svelte :219 `:global(body.rice) .tool.bare` dropped from the selector   RED, tabs.spec.ts:406 (gruvbox one-box)
+V3 Sash.svelte :138-144 `.sash.col::before` (the split-down reach) removed            GREEN, tabs.spec 10 passed
+V4 Sash.svelte :182-185 `.sash.col:focus-visible .line` removed                       GREEN, tabs.spec 10 passed
+V7 Tabs.svelte :574 `transform: translate(-50%, -50%)` on the dot's svg removed       GREEN, tabs.spec 10 passed
+V12 Tabs.svelte :392 `:global(body.wall) .strip.card` removed                         GREEN, tabs + pages + appearance 18 passed
+V16 tokens.css :119 `--sash-reach: 0px`                                               probe: the caught column moves from 844.5 to 845.5
+
+Probes from my own served build (the browser suite's serve.ts on 8792, clone build), light, dark, gruvbox at 1600x900 and 820x700, shots in scratchpad/q38-review2/shots/:
+two panes with the right one active, a dirty Tasks tab, the page strip, a split-down handle hovered and focused, a narrow pane's scroll controls, an embedded page, a folded active pane.
+```
+
+- `src/lib/shell/PaneView.svelte:96` (`activePane = activeInstance(page)?.id === active`): ruling 1 not reached for a page shown inside another page. Probe with page 2 embedded in page 1: three `.tab.current` tops read `accent` (the page tab), `accent` (the host pane's Projects) and `accent` (the leaf pane's Tasks), and after a press inside the leaf still `[accent, accent]` for the two pane strips, so two strips carry the accent at once and it no longer says where the rail opens. The report names this as reversible decision 3 and the Doc text's HELP line ("the shown tab of every other pane a plain one") is false in that case; nothing is booked in `orchestrator-state.md`'s Open items. Under Spec.
+- `src/lib/shell/PaneView.svelte:96`: with the active pane folded, no strip carries the accent at all. Probe: two panes, the right one active, `Fold pane` from its menu, tops afterwards `[accent(page tab), line(Status)]`, one `[data-fold]` strip, no separator. The rail still opens into that pane and no tab says so. Under Behaviour.
+- `config/text/ui.yml:54` `tab_unsaved: '{0}, unsaved'` and `:44` `pane_more_glyph: more`: user-visible catalog keys the brief does not name, and the new `Tabs` props `focused`, `low`, `surface`. The first refuter asked for a ruling on `pane_more_glyph`; grep of `orchestrator-state.md` finds no Q38 entry in the Open items list, so neither key is booked. Under Spec.
+- `tests/browser/tabs.spec.ts:304-311` (the dot-vs-cross centre check) with `src/lib/ui/Tabs.svelte:567-576`: the check measures the `.dot` span box, which is 1em x 1em in the close control whatever the svg does, so the revert named in that test's own list ("drop the `.tab.dirty:not(:hover) .dot` rule") is not the one that could move the mark. Removing `transform: translate(-50%, -50%)` from `.close .dot :global(svg)`, which puts the drawn dot's top-left on the centre point and moves it about 1.5 em down and right, leaves tabs.spec 10 passed. A check fitted around its revert. Under Proof.
+- `src/lib/ui/Sash.svelte:138-144` `.sash.col::before`: the split-down handle's reach is untested, as limit 6 of the report says; removing the whole block leaves tabs.spec 10 passed. My own probe shows the vertical handle does work (sash box y 462 h 6 between panes [34,462] and [468,896]; line transparent at rest, accent after the delay, 4 px accent and `outline: none` under the keyboard, a press on the upper pane's border row resizes 444 -> 384.5 px), so this is missing coverage of a rule the ruling asked for on every sash, not a broken handle. Under Proof.
+- `src/lib/ui/Sash.svelte:182-185` `.sash.col:focus-visible .line`: removed, tabs.spec 10 passed. The keyboard mark on a vertical handle is untested. Under Proof.
+- `src/lib/ui/Tabs.svelte:392` `:global(body.wall) .strip.card`: removed, tabs + pages + appearance 18 passed. Ruling 5 was untested or redundant rules; over a wallpaper this rule is what keeps the page strip translucent, since `.strip.card` (two classes) beats `:global(body.wall) .strip` and would paint opaque `--card` over the picture. The same rule's predecessor was on the first refuter's untested list. Under Proof.
+- `src/lib/ui/Sash.svelte:117-122` (`--sash-reach: 1px` through `::before`): at deviceScaleFactor 2 a real pointerdown at x = 844.5, which is the left pane body's last device-pixel column (body ends at 845, the pane border is 845-846, the sash 846-852), lands on the separator; 853 on the right side does not. With `--sash-reach: 0px` the same probe gives the border column 845.5 instead, so the reach is one device pixel wider than the borders on the left at that scale. `tests/browser/tabs.spec.ts:462-465` probes whole pixels only (`bodies[0].right - 1`, `bodies[1].left`), so the claim "never inside them" is proven at whole pixels alone. Under Behaviour.
+- `src/lib/ui/Tabs.svelte` at 596 lines against the component guide of about 600, four lines of room, not split. `tests/ui/primitives.test.ts` 852 and `tests/shell/workbench.test.ts` 807 are under the 1000-line rule, no finding there. Under Standards.
+- Not this step's, so that nobody reads it into the delta: under gruvbox (body `rice gruvbox wall`) the pane menu's list is covered by the pane body, `elementFromPoint` at the "Split tab downwards" item returns the body's `h3` and a click never lands. Reproduced on the base build at 91fb46cb with the step's diff reversed, and on the current tree, identically; light is unaffected.
+- `tests/browser/words.ts:41-48` `tabNamed`, the dirty tab's accessible name, the page tab's dot across nested pages, and the `bare` prop on `ui/ToolButton.svelte` and `ui/Menu.svelte`: no finding. `tabNamed` anchors both alternatives (`^(?:label|label, unsaved)$`) after escaping, so a label that is a prefix of another does not match; the whole browser suite is green at 227 passed; `pageInstanceIds` walks no page leaf, which is the same list `closing.ts` asks the close question over, so a host page carrying an embedded dirty page shows no dot and closing it loses nothing (probe: "Page 2, unsaved", "Page 1" clean); `bare` is read only by the four strip buttons, and the only rule reaching other callers is the added `:not(.bare)` on the rice bracket rules, whose V1 revert shows the rice override is load-bearing. Measured boxes at 820 wide: light and dark 22.2 x 22 for all four controls, gruvbox 28.6 x 22 for all four, one vertical centre.
+- Tokens: every token in the delta has a reader (`--tab-height-low`, `--tab-dot-size`, `--tab-action`, `--tab-action-pad`, `--tab-action-gap`, `--sash-reach`, `--sash-line`, `--sash-focus-line`), and the removed `--sash-hit` and `--page-tab-height` have none left. No finding.
+
+Not checked: VS Code's own source values; a view whose scrollbar is flush with the pane body's edge (no such view found in the demo hub, the Status and Projects scrollers end inside their padding); the node suite under my reverts (the reverts were run against the browser specs only); `Tabs.svelte`'s pinned and preview cases beyond the node test.
+
+Reviewer usage: about 40 tool uses, about 60 minutes (19:22 to 20:20).
+
+## Closed at landing
+
+- The dirty-dot check fitted to its revert (`tests/browser/tabs.spec.ts`): closed. The check measures the drawn svg inside the box, not the 1em box, on both axes; it is red with `transform: translate(-50%, -50%)` removed from `.close .dot :global(svg)` (the mark moves 20.66 px).
+- The split-down handle's reach and its keyboard mark, untested (`src/lib/ui/Sash.svelte`): closed. A new case splits a pane downwards, probes the border row above and below the gap and the two body rows beside them, and reads the keyboard line; it is red with `.sash.col::before` dropped and red with `.sash.col:focus-visible .line` dropped.
+- The page strip's wallpaper rule, untested (`src/lib/ui/Tabs.svelte` `:global(body.wall) .strip.card`): closed. The page-strip case now switches to a wallpaper theme and reads both strips: their surfaces differ and both are translucent; it is red with that rule dropped.
+- The accent on two strips at once with a page shown inside another page, and on no strip when the active pane is folded: booked as Q53.
+- `src/lib/ui/Tabs.svelte` at 596 lines against the component guide: booked as Q54.
+- The pane menu covered by the pane body under the rice themes, which the reviewer reproduced on the base build as well: booked as Q55.
+- The sash reach one device pixel past the borders at deviceScaleFactor 2: recorded, not changed; the rule the ruling asked for is the reach over the 1 px borders, and the case proves it at whole pixels.
+- `config/text/ui.yml` `tab_unsaved` and `pane_more_glyph`, and the new `Tabs` props `focused`, `low` and `surface`: the two keys are named in the landing note and in the Doc text; the props are internal.

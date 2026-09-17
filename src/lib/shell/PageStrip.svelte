@@ -8,6 +8,11 @@
     // one is renamed, and the page drag with its insertion point. Everything else is the layout
     // store's.
     //
+    // It is the same strip a pane heads itself with, the tabs drawn alike, told apart by where it is
+    // and what it is drawn on: it spans the top of the column right of the rail, above the area the
+    // panes fill, at the strip's low height and on the card surface. A page holding a tab with text
+    // no save has taken shows the unsaved dot and name, since closing the page would lose that text.
+    //
     // A page dragged within the strip is reordered here. One carried out of the strip becomes the
     // drag store's, which is what every pane reports a drop for, so it lands on a pane's edge and is
     // shown there.
@@ -92,11 +97,12 @@
         }))
     ]);
 
-    /** One page as a tab, the first nine naming the shortcut that reaches them. */
+    /** One page as a tab, the first nine naming the shortcut that reaches them, marked when unsaved. */
     function tabOf(page: Page, index: number): Tab {
         const label = pageName(page, index);
-        if (index >= SHORTCUTS) return { id: page.id, label };
-        return { id: page.id, label, hint: t('ui.page_shortcut', label, index + 1) };
+        const dirty = pageInstanceIds(page).some(unsaved);
+        if (index >= SHORTCUTS) return { id: page.id, label, dirty };
+        return { id: page.id, label, dirty, hint: t('ui.page_shortcut', label, index + 1) };
     }
 
     /**
@@ -283,6 +289,8 @@
         onhoverindex={stripHover}
         {dropIndex}
         menu={pageMenu}
+        low
+        surface="card"
     />
 </section>
 
@@ -314,6 +322,7 @@
         label={t('ui.page_menu')}
         glyph={lookup('ui.page_menu_glyph')}
         compact
+        bare
         placement="down"
         align="right"
         {items}
@@ -326,7 +335,6 @@
         display: flex;
         flex: 0 0 auto;
         min-width: 0;
-        padding: 4px 4px 0;
         box-sizing: border-box;
     }
 

@@ -64,6 +64,11 @@
         align?: 'left' | 'right';
         /** Use the activity rail's one full-width, 34 px opener box. */
         rail?: boolean;
+        /**
+         * The opener as a strip's bare icon box, the same box a bare ToolButton draws: the glyph
+         * alone, no border and no fill until the pointer is over it. The list it opens is unchanged.
+         */
+        bare?: boolean;
         /** Draw a compact rail glyph above its visible label instead of hiding the label. */
         stacked?: boolean;
         /**
@@ -87,6 +92,7 @@
         placement = 'up',
         align = 'left',
         rail = false,
+        bare = false,
         stacked = false,
         tabindex,
         stop,
@@ -281,6 +287,7 @@
             class="opener"
             class:compact
             class:rail-control={rail}
+            class:bare
             class:stacked
             bind:this={button}
             aria-haspopup="menu"
@@ -376,6 +383,26 @@
     .opener.compact {
         justify-content: center;
         font-size: var(--fs-lg);
+    }
+
+    .opener.bare {
+        justify-content: center;
+        box-sizing: border-box;
+        width: auto;
+        min-width: var(--tab-action);
+        height: var(--tab-action);
+        padding: 0 var(--tab-action-pad);
+        border-color: transparent;
+        background: none;
+        color: var(--muted-txt, var(--muted));
+        font-size: var(--fs-lg);
+        line-height: 1;
+    }
+
+    .opener.bare:hover {
+        border-color: transparent;
+        background: var(--chip);
+        color: var(--ink-txt, var(--ink));
     }
 
     .opener.rail-control {

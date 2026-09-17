@@ -3,6 +3,13 @@
     // sizes: it reports how far the pointer moved since the last report and the caller decides what
     // that means. The pointer is captured on the way down, so a fast drag that leaves the handle
     // keeps resizing, which is the whole reason this is not a mousemove listener on the window.
+    //
+    // It is drawn as an editor's handle: nothing at rest, since what it parts already shows where
+    // it parts; the accent line once the pointer has rested on it for `--sash-delay`, and at once
+    // while it is dragged or holds the keyboard, where the line widens to `--sash-focus-line` in
+    // place of the browser's focus ring. A pointer catches it `--sash-reach` past its own thickness
+    // on either side, over the border of what sits there and never inside it, on a layer that takes
+    // no room, so the thickness a split lays out is still SASH_PX.
 
     import { SASH_PX, STEP } from '$lib/ui/sash-size';
     import { t } from '$lib/state/text';
@@ -97,6 +104,8 @@
 
 <style>
     .sash {
+        position: relative;
+        z-index: 1;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -105,31 +114,73 @@
         touch-action: none;
     }
 
+    /* The reach: the handle's own box grown along the split's direction by the token on each side. */
+    .sash::before {
+        content: '';
+        position: absolute;
+    }
+
     .sash.row {
         cursor: col-resize;
+    }
+
+    .sash.row::before {
+        top: 0;
+        bottom: 0;
+        left: calc(-1 * var(--sash-reach));
+        right: calc(-1 * var(--sash-reach));
     }
 
     .sash.col {
         cursor: row-resize;
     }
 
+    .sash.col::before {
+        left: 0;
+        right: 0;
+        top: calc(-1 * var(--sash-reach));
+        bottom: calc(-1 * var(--sash-reach));
+    }
+
+    .sash:focus-visible {
+        outline: none;
+    }
+
+    /* Hidden at rest, and gone the moment the pointer leaves. */
     .line {
         display: block;
-        background: var(--line);
+        background: transparent;
+        transition: background-color 0s;
     }
 
     .row .line {
-        width: 1px;
+        width: var(--sash-line);
         height: 100%;
     }
 
     .col .line {
-        height: 1px;
+        height: var(--sash-line);
         width: 100%;
     }
 
-    .sash:focus-visible .line,
-    .sash.dragging .line {
+    /* A resting pointer draws it after the delay: a change of colour that takes no time, only a wait. */
+    .sash:hover .line {
         background: var(--accent);
+        transition: background-color 0s var(--sash-delay);
+    }
+
+    /* A drag and the keyboard draw it at once, whether or not the pointer rests there. */
+    .sash.dragging .line,
+    .sash:focus-visible .line {
+        background: var(--accent);
+        transition: none;
+    }
+
+    .sash.row:focus-visible .line {
+        width: var(--sash-focus-line);
+    }
+
+    .sash.col:focus-visible .line {
+        height: var(--sash-focus-line);
     }
 </style>

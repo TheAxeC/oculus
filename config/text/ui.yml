@@ -10,6 +10,7 @@ text:
         confirm_stop: Confirm
         crt_on: CRT
         crt_title: 'CRT overlay: scanlines + vignette. Cosmetic only.'
+        dirty_glyph: bullet
         docs: Bookmarks
         drag_hint: Moving {0}
         embed_page: 'Show {0} here'
@@ -40,6 +41,7 @@ text:
         pane_maximise: Maximise pane
         pane_menu: Pane
         pane_menu_glyph: list
+        pane_more_glyph: more
         pane_restore: Restore panes
         preview_tab: 'The next single click replaces this tab; double-click to keep it.'
         rail: Views
@@ -47,7 +49,9 @@ text:
         sash: Resize
         split_down: Split tab downwards
         split_right: Split tab to the right
+        split_right_glyph: split_right
         tab_close_dirty: Close this tab and lose its unsaved changes?
+        tab_unsaved: '{0}, unsaved'
         tabs_scroll_left: Scroll tabs left
         tabs_scroll_right: Scroll tabs right
         theme: Theme

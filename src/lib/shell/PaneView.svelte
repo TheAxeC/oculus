@@ -21,6 +21,13 @@
     // Every item of the pane menu is an operation the pointer has another path to, which is what
     // makes the menu the keyboard path: the opener takes focus and Menu already handles arrows and
     // Escape.
+    //
+    // The strip's right end is the pane's header, drawn as an editor group's: the split to the right
+    // as a bare icon button, drawn while the pane shows a tab, and the menu as its bare more-actions
+    // opener. Only the page's active pane, the one its active instance is in, draws its strip
+    // focused, so the accent over a shown tab says where the rail opens a view.
+    // The split button is the pointer's shortcut to an item the menu already holds, so it takes no
+    // stop of its own and the pane's stops stay the strip and the menu.
 
     import { EMBED, PAGE, foldable, pageListItems } from '$lib/shell/pane-view';
     import { closeQuestion } from '$lib/shell/closing';
@@ -29,6 +36,7 @@
     import type { MenuItem } from '$lib/ui/menu-items';
     import Tabs from '$lib/ui/Tabs.svelte';
     import type { Tab } from '$lib/ui/tab-strip';
+    import ToolButton from '$lib/ui/ToolButton.svelte';
     import { edgeAt, markAt, withoutOwn } from '$lib/state/drag.svelte';
     import { t } from '$lib/state/text';
     import { badgeOf, registrationGlyph, registrationLabel } from '$lib/views/registry';
@@ -41,6 +49,7 @@
     const {
         layout: {
             activateInstance,
+            activeInstance,
             closeInstance,
             closePane,
             currentPage,
@@ -83,6 +92,8 @@
     const shown = $derived(instances.find((instance) => instance.id === active));
     const registration = $derived(shown === undefined ? undefined : viewFor(shown.view));
     const maximised = $derived(focused(page) !== null);
+    /** Whether this is the page's active pane, the one whose shown tab the page resolves as active. */
+    const activePane = $derived(active !== '' && activeInstance(page)?.id === active);
 
     // What the mounted view and its partials read as the instance they are drawn in. It is a reader
     // of the active tab rather than its id at mount, since a tab switch between two instances of one
@@ -117,7 +128,8 @@
                 badgeGlyph: badge.glyph,
                 badgeTone: badge.tone,
                 badgeTitle: badge.title,
-                cells: badge.text === '' ? undefined : badge.cells
+                cells: badge.text === '' ? undefined : badge.cells,
+                dirty: unsaved(instance.id)
             };
         })
     );
@@ -310,6 +322,7 @@
         onpointerdown={press}
         onhoverindex={held === null ? undefined : stripHover}
         menu={paneMenu}
+        focused={activePane}
     />
     <!-- The body is where a view is mounted, and the two pointer handlers only report where a drop
          would land while a drag is in progress. Every drop they report has an item in the pane menu,
@@ -340,10 +353,21 @@
 {/if}
 
 {#snippet paneMenu()}
+    {#if active !== ''}
+        <ToolButton
+            label={t('ui.split_right')}
+            glyph={t('ui.split_right_glyph')}
+            compact
+            bare
+            tabindex={-1}
+            onclick={() => pick('split_right')}
+        />
+    {/if}
     <Menu
         label={t('ui.pane_menu')}
-        glyph={t('ui.pane_menu_glyph')}
+        glyph={t('ui.pane_more_glyph')}
         compact
+        bare
         placement="down"
         align="right"
         {items}

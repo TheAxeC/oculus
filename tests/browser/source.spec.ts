@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { boot, openView } from './rail.ts';
-import { t } from './words.ts';
+import { t, tabNamed } from './words.ts';
 
 /** A folder of the spec's own, under the system temporary directory and asserted to be inside it. */
 function scratch(): string {
@@ -248,7 +248,7 @@ test('a page holding one tab with an unsaved edit asks before it closes', async 
     await expect(editor).toBeVisible();
     for (const name of [t('views.status'), t('views.radar')]) {
         await page
-            .locator('.tab', { has: page.getByRole('tab', { name, exact: true }) })
+            .locator('.tab', { has: page.getByRole('tab', { name: tabNamed(name) }) })
             .getByRole('button', { name: t('ui.close_tab') })
             .click();
     }

@@ -21,6 +21,13 @@
     // width, which brings it in whole. A wheel or trackpad scrolls the strip freely and leaves it
     // where it stops. The strip's end is the browser's largest offset, so a control press or a
     // reveal there may rest short of a tab start. How it scrolls is ui/tab-scroll.svelte.ts.
+    //
+    // It is drawn as an editor's tab strip, every measure a token of themes/tokens.css: tabs of one
+    // height with a line between them; the shown tab on the surface it heads, over a gap in the line
+    // under the strip, with an accent line along its top on a focused strip only; a close control
+    // on the shown tab and under the pointer, keeping its room on every tab; and a tab holding
+    // unsaved text showing a dot there until hovered, and named for it, since a dot says nothing to
+    // a screen reader. The scroll controls are bare icons, as the caller's buttons at the right are.
 
     import { type Tab, insertionIndex } from '$lib/ui/tab-strip';
     import { createTabScroll } from '$lib/ui/tab-scroll.svelte';
@@ -45,8 +52,14 @@
         onhoverindex?: (index: number | null) => void;
         /** Draw the insertion mark at this index. */
         dropIndex?: number | null;
-        /** A small opener at the right of the strip, for whatever the caller puts there. */
+        /** The caller's buttons at the right end, drawn `bare` to match the scroll controls. */
         menu?: Snippet;
+        /** Whether what the strip heads is the active one: only then is the shown tab's line accent. */
+        focused?: boolean;
+        /** The strip at the low tab height, for a strip that sits above panes rather than heading one. */
+        low?: boolean;
+        /** The surface the strip is drawn on: the ground a pane header uses, or the card surface. */
+        surface?: 'ground' | 'card';
     };
 
     let {
@@ -58,7 +71,10 @@
         onpointerdown,
         onhoverindex,
         dropIndex = null,
-        menu
+        menu,
+        focused = true,
+        low = false,
+        surface = 'ground'
     }: Props = $props();
 
     /**
@@ -215,7 +231,15 @@
 <!-- The two pointer handlers report where a dragged tab would be inserted and do nothing else. They
      sit on the wrapper rather than on the tab list, so the list holds the keyboard alone. -->
 <!-- svelte-ignore a11y_no_static_element_interactions -->
-<div class="strip" bind:this={strip} onpointermove={over} onpointerleave={out}>
+<div
+    class="strip"
+    class:unfocused={!focused}
+    class:low
+    class:card={surface === 'card'}
+    bind:this={strip}
+    onpointermove={over}
+    onpointerleave={out}
+>
     <!-- The scroll controls are the pointer's way along an overflowing strip and take no stop of
          their own: the arrow keys reach every tab whether it is on screen or not, and bring the one
          they land on into view, so a keyboard that had to scroll first would be doing it twice. -->
@@ -224,6 +248,7 @@
             label={t('ui.tabs_scroll_left')}
             glyph="arrow_to"
             compact
+            bare
             tabindex={-1}
             disabled={scroll.atStart}
             onclick={() => scrolling.step(-1)}
@@ -245,6 +270,7 @@
             <div
                 class="tab"
                 class:current={tab.id === active}
+                class:dirty={tab.dirty === true}
                 role="presentation"
                 bind:this={faces[index]}
             >
@@ -255,6 +281,7 @@
                         class:preview={tab.preview === true}
                         role="tab"
                         aria-selected={tab.id === active}
+                        aria-label={tab.dirty === true ? t('ui.tab_unsaved', tab.label) : undefined}
                         data-tab-preview={tab.preview === true ? '' : undefined}
                         data-drag-handle={onpointerdown === undefined ? undefined : ''}
                         bind:this={heads[index]}
@@ -306,7 +333,14 @@
                         tabindex={-1}
                         onclick={() => onclose(tab.id)}
                     >
-                        <Glyph name={t('ui.close_glyph')} />
+                        {#if tab.dirty === true}
+                            <span class="dot">
+                                <Glyph name={t('ui.dirty_glyph')} />
+                            </span>
+                        {/if}
+                        <span class="cross">
+                            <Glyph name={t('ui.close_glyph')} />
+                        </span>
                     </button>
                 </Tooltip>
             </div>
@@ -320,6 +354,7 @@
             label={t('ui.tabs_scroll_right')}
             glyph="arrow_to"
             compact
+            bare
             tabindex={-1}
             disabled={scroll.atEnd}
             onclick={() => scrolling.step(1)}
@@ -336,8 +371,16 @@
     .strip {
         display: flex;
         align-items: stretch;
+        min-height: var(--tab-height);
         background: var(--bg);
-        border-bottom: 1px solid var(--line);
+    }
+
+    .strip.low {
+        --tab-height: var(--tab-height-low);
+    }
+
+    .strip.card {
+        background: var(--card);
     }
 
     /* The strip is the pane's own top edge over a wallpaper: the shell's pane paints nothing behind it, so the picture reads through here too. */
@@ -346,10 +389,14 @@
         backdrop-filter: blur(var(--wall-blur));
     }
 
+    :global(body.wall) .strip.card {
+        background: color-mix(in srgb, var(--card) var(--wall-panel), transparent);
+    }
+
+    /* The tabs sit on the strip's foot, so a strip made taller at the right keeps them on its line. */
     .tabs {
         display: flex;
-        align-items: stretch;
-        gap: 2px;
+        align-items: flex-end;
         flex: 1 1 auto;
         min-width: 0;
         overflow-x: auto;
@@ -360,11 +407,23 @@
         display: none;
     }
 
-    .scroll-control {
+    /* The line under the strip is drawn by what sits in it, so the shown tab can leave a gap in it;
+       this filler carries it past the last tab, growing into free room only. */
+    .tabs::after {
+        content: '';
+        flex: 1 0 0;
+        align-self: stretch;
+        border-bottom: 1px solid var(--line);
+    }
+
+    .scroll-control,
+    .opener {
         display: flex;
         align-items: center;
+        gap: var(--tab-action-gap);
         flex: 0 0 auto;
-        padding: 2px;
+        padding: 0 var(--tab-action-gap);
+        border-bottom: 1px solid var(--line);
     }
 
     .scroll-control[hidden] {
@@ -375,29 +434,32 @@
         transform: rotate(180deg);
     }
 
-    .opener {
-        display: flex;
-        align-items: center;
-        flex: 0 0 auto;
-        padding: 2px 4px;
-    }
-
     .tab {
         display: flex;
-        align-items: center;
-        border: 1px solid transparent;
-        border-bottom: none;
-        border-radius: var(--radius) var(--radius) 0 0;
+        align-items: stretch;
+        flex: 0 0 auto;
+        box-sizing: border-box;
+        height: var(--tab-height);
+        border-top: var(--tab-accent-line) solid transparent;
+        border-right: 1px solid var(--line);
+        border-bottom: 1px solid var(--line);
+        color: var(--muted-txt, var(--muted));
         white-space: nowrap;
     }
 
     .tab.current {
         background: var(--panel);
-        border-color: var(--line);
+        border-top-color: var(--accent);
+        border-bottom-color: transparent;
+        color: var(--ink-txt, var(--ink));
+    }
+
+    .strip.unfocused .tab.current {
+        border-top-color: var(--line);
     }
 
     /* The current tab sits inside the strip, which is already translucent, so it paints nothing of
-       its own: its border and the picture showing through it are what tell it apart. */
+       its own: its borders and the picture showing through it are what tell it apart. */
     :global(body.wall) .tab.current {
         background: transparent;
     }
@@ -441,22 +503,84 @@
         background: var(--accent);
     }
 
-    .face,
-    .close {
+    .face {
         display: flex;
         align-items: center;
-        gap: 4px;
+        gap: var(--tab-icon-gap);
         border: none;
         background: none;
-        color: var(--muted-txt, var(--muted));
+        color: inherit;
         font: inherit;
         font-size: var(--fs-lg);
-        padding: 4px 6px;
+        padding: 0 0 0 var(--tab-pad);
         cursor: pointer;
     }
 
-    .tab.current .face {
-        color: var(--ink-txt, var(--ink));
+    /* Seen only on the shown tab, under the pointer and as the unsaved dot. It takes no stop, so it
+       has no keyboard look; Delete on the tab is the keyboard's close. */
+    .close {
+        display: flex;
+        align-items: center;
+        align-self: center;
+        justify-content: center;
+        box-sizing: border-box;
+        width: var(--tab-close);
+        height: var(--tab-close);
+        margin: 0 calc((var(--tab-actions) - var(--tab-close)) / 2);
+        padding: 0;
+        border: none;
+        border-radius: var(--radius-sm);
+        background: none;
+        color: inherit;
+        font: inherit;
+        font-size: var(--fs-lg);
+        cursor: pointer;
+        opacity: 0;
+    }
+
+    .tab.current .close,
+    .tab.dirty .close,
+    .tab:hover .close {
+        opacity: 1;
+    }
+
+    .close:hover {
+        background: var(--chip);
+    }
+
+    .dot,
+    .cross {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* The dot is centred on the cross's box at any icon size, and its icon, larger than the control,
+       takes no press. It shows on a tab holding unsaved text until the pointer is over the tab. */
+    .dot {
+        position: relative;
+        display: none;
+        width: 1em;
+        height: 1em;
+    }
+
+    .close .dot :global(svg) {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        width: var(--tab-dot-size);
+        height: var(--tab-dot-size);
+        fill: currentColor;
+        transform: translate(-50%, -50%);
+        pointer-events: none;
+    }
+
+    .tab.dirty:not(:hover) .dot {
+        display: flex;
+    }
+
+    .tab.dirty:not(:hover) .cross {
+        display: none;
     }
 
     /* The tab the next single click replaces. Italics rather than a colour of its own: it says the
@@ -465,13 +589,7 @@
         font-style: italic;
     }
 
-    .face:hover,
-    .close:hover {
-        color: var(--accent-txt, var(--accent));
-    }
-
-    .face:focus-visible,
-    .close:focus-visible {
+    .face:focus-visible {
         outline: 2px solid var(--accent);
         outline-offset: -2px;
     }

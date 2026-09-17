@@ -148,6 +148,10 @@ glyphs:
   show_in_files: "⌖"
   # circled section numbers (inbox)
 
+  # the tab strip's header actions: a pane's more-actions opener and its split control
+  more: "⋯"
+  split_right: "◫"
+
 
 # Terminal themes resolve each named glyph through these short character-keyed stand-ins.
 ascii:
@@ -281,3 +285,6 @@ ascii:
   "🟩": "[+]"
   # showing a path in the file browser
   "⌖": "[@]"
+  # the tab strip's header actions
+  "⋯": "..."
+  "◫": "||"

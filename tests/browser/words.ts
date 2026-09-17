@@ -36,3 +36,13 @@ export function t(key: string, ...args: (string | number)[]): string {
         return arg === undefined ? placeholder : String(arg);
     });
 }
+
+/**
+ * The accessible name of a tab with this label, clean or holding unsaved text: the label alone, or
+ * the catalog's unsaved name around it. A spec that finds a tab by its label finds it either way, and
+ * nothing else whose name only starts with the label.
+ */
+export function tabNamed(label: string): RegExp {
+    const escape = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    return new RegExp(`^(?:${escape(label)}|${escape(t('ui.tab_unsaved', label))})$`);
+}

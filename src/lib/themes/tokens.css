@@ -92,4 +92,32 @@
     --fs-2xl: calc(19px * var(--text-scale, 1));
     --fs-3xl: calc(24px * var(--text-scale, 1));
     --scan: none; /* CRT scanline layer, opt-in per theme */
+    /* The tab strip's measures, which are VS Code's editor tab defaults grown with the text the way a
+       tree row is: the tab's height, the room before its glyph, the gap from glyph to label, the
+       width the close control sits centred in, and that control's own box. The accent line on the
+       current tab's top edge is a hairline and does not grow. A low strip is a tab strip at a lower
+       height, for a strip that sits above panes rather than heading one. The unsaved dot is drawn
+       from the bullet icon, whose dot is a sixth of its box, so the box is set in ems of the text. */
+    --tab-height: calc(35px * var(--text-scale, 1));
+    --tab-height-low: calc(30px * var(--text-scale, 1));
+    --tab-pad: calc(10px * var(--text-scale, 1));
+    --tab-icon-gap: calc(6px * var(--text-scale, 1));
+    --tab-actions: calc(28px * var(--text-scale, 1));
+    --tab-close: calc(20px * var(--text-scale, 1));
+    --tab-accent-line: 1px;
+    --tab-dot-size: 3em;
+    /* A strip's own buttons, the scroll controls and the header's actions: one bare icon box, the
+       room either side of its glyph, and the gap between two of them. */
+    --tab-action: calc(22px * var(--text-scale, 1));
+    --tab-action-pad: calc(2px * var(--text-scale, 1));
+    --tab-action-gap: calc(2px * var(--text-scale, 1));
+    /* A split's handle, in pixels that do not grow with the text, since the gap the layout gives it
+       is a fixed number too: how far past that gap a pointer still catches it, which is the 1px
+       border of what sits either side; the accent line drawn while it is hovered or dragged, and
+       the wider one drawn while it holds the keyboard; and how long the pointer rests on it before
+       the line shows, so a pointer crossing the gap on its way somewhere else draws nothing. */
+    --sash-reach: 1px;
+    --sash-line: 2px;
+    --sash-focus-line: 4px;
+    --sash-delay: 300ms;
 }

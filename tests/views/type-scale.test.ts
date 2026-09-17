@@ -211,11 +211,11 @@ const PASS_THROUGH: Record<string, string> = {
     'src/lib/ui/Meter.svelte': '.text=fs-xs',
     'src/lib/ui/Toolbar.svelte': '',
     'src/lib/ui/ToolButton.svelte':
-        '.tool=fs-sm | .tool.rail-control=fs-xl | .tool.stacked :global(.label)=fs-3xs',
+        '.tool=fs-sm | .tool.rail-control=fs-xl | .tool.stacked :global(.label)=fs-3xs | .tool.bare, :global(body.rice) .tool.bare=fs-lg',
     'src/lib/ui/Empty.svelte': '.empty=fs-md | :global(body.rice) .empty=fs-xs',
-    'src/lib/ui/Tabs.svelte': '.tab-badge=fs-xs | .cells=fs-xxs | .face, .close=fs-lg',
+    'src/lib/ui/Tabs.svelte': '.tab-badge=fs-xs | .cells=fs-xxs | .face=fs-lg | .close=fs-lg',
     'src/lib/ui/Menu.svelte':
-        '.opener=fs-sm | .opener.compact=fs-lg | .opener.rail-control=fs-xl | .opener.stacked :global(.label)=fs-3xs | .heading=fs-xxs | .item=fs-sm | .item-badge=fs-3xs',
+        '.opener=fs-sm | .opener.compact=fs-lg | .opener.bare=fs-lg | .opener.rail-control=fs-xl | .opener.stacked :global(.label)=fs-3xs | .heading=fs-xxs | .item=fs-sm | .item-badge=fs-3xs',
     'src/lib/shell/ActivityRail.svelte': '.group=fs-3xs | .badge=fs-3xs',
     'src/lib/shell/Workbench.svelte': ''
 };

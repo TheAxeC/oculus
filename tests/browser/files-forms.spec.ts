@@ -16,7 +16,7 @@ import { expect, test, type Locator, type Page } from '@playwright/test';
 import { nestedRoot, row, scratch } from './files.ts';
 import { draftKeys, switchAndBack, uiInstances } from './forms.ts';
 import { boot, openView } from './rail.ts';
-import { t } from './words.ts';
+import { t, tabNamed } from './words.ts';
 
 /**
  * Hold every POST to one path until the case releases it. `sent` settles once the first one has left
@@ -68,13 +68,13 @@ async function formsElsewhere(page: Page, owner: string): Promise<string[]> {
 
 /** The Status tab, drawn in place of the file browser. */
 async function toStatus(page: Page): Promise<void> {
-    await page.getByRole('tab', { name: t('views.status'), exact: true }).click();
+    await page.getByRole('tab', { name: tabNamed(t('views.status')) }).click();
     await expect(page.locator('[data-fs-bookmarks]')).toHaveCount(0);
 }
 
 /** Back to the file browser tab. */
 async function toFiles(page: Page): Promise<void> {
-    await page.getByRole('tab', { name: t('views.files'), exact: true }).click();
+    await page.getByRole('tab', { name: tabNamed(t('views.files')) }).click();
     await expect(page.locator('[data-fs-bookmarks]')).toBeVisible();
 }
 
@@ -400,9 +400,9 @@ test('a bookmark taken away while its typed edit form is open closes the form, a
     await star('notes.md');
     await expect(mark('notes.md')).toHaveCount(0);
     await page
-        .locator('.tab', { has: page.getByRole('tab', { name: t('views.files'), exact: true }) })
+        .locator('.tab', { has: page.getByRole('tab', { name: tabNamed(t('views.files')) }) })
         .getByRole('button', { name: t('ui.close_tab') })
         .click();
     await expect(page.getByRole('alertdialog')).toHaveCount(0);
-    await expect(page.getByRole('tab', { name: t('views.files'), exact: true })).toHaveCount(0);
+    await expect(page.getByRole('tab', { name: tabNamed(t('views.files')) })).toHaveCount(0);
 });
