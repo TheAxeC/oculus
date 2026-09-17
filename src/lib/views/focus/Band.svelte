@@ -6,6 +6,7 @@
     // Every card opens its collection tab and sets that tab's transient reveal id, so the exact
     // entry scrolls into view and flashes after the view opens.
 
+    import LaneHead from './LaneHead.svelte';
     import Tag from '$lib/ui/Tag.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { daysUntil, firstSentence } from '$lib/state/board';
@@ -89,10 +90,7 @@
 {#snippet column(label: string, glyph: string, sub: string, tone: string, rows: BandItem[])}
     {#if rows.length > 0}
         <div class="lane" style={`--tone: var(--c-${tone})`}>
-            <div class="lane-h">
-                <span class="lane-name">{label}</span>
-                <span class="count">{rows.length}</span>
-            </div>
+            <LaneHead {label} count={rows.length} {tone} />
             <p class="lane-sub">{sub}</p>
             <div class="lane-body">
                 {#each rows as item, at (`${at}:${item.title}`)}
@@ -110,14 +108,11 @@
         <div class="lanes">
             {#if cards.funding.length > 0}
                 <div class="lane" style={`--tone: var(--c-${cards.tones.funding})`}>
-                    <div class="lane-h">
-                        <span class="lane-name">
-                            {t('focus.funding_lane')}
-                        </span>
-                        <span class="count">
-                            {cards.funding.reduce((n, stage) => n + stage.items.length, 0)}
-                        </span>
-                    </div>
+                    <LaneHead
+                        label={t('focus.funding_lane')}
+                        count={cards.funding.reduce((n, stage) => n + stage.items.length, 0)}
+                        tone={cards.tones.funding}
+                    />
                     <p class="lane-sub">{t('focus.funding_sub')}</p>
                     <div class="lane-body">
                         {#each cards.funding as stage (stage.label)}
@@ -197,28 +192,8 @@
         backdrop-filter: blur(var(--wall-blur));
     }
 
-    .lane-h {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 6px;
-    }
-
-    .lane-name {
-        display: flex;
-        align-items: center;
-        gap: 4px;
-        font-size: var(--fs-md);
-        font-weight: 700;
-    }
-
-    .count {
-        font-size: var(--fs-xs);
-        color: var(--muted-txt, var(--muted));
-    }
-
     .lane-sub {
-        margin: 2px 0 6px;
+        margin: 4px 0 6px;
         font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
     }

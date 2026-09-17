@@ -18,6 +18,7 @@ import {
     backlog,
     holdingTone,
     laneItems,
+    movable,
     lanes,
     priorities,
     unplaced,
@@ -346,6 +347,80 @@ describe('laneItems', () => {
                 .flat()
                 .map((one) => one.id)
         ).not.toContain('unplaced-ms');
+    });
+});
+
+describe('laneItems over every tier', () => {
+    /** The fixture's projects with a coauthor and an archive paper on a lane, and two that are not. */
+    function wider(): Project[] {
+        const more = snapshot();
+        const held = more.entities.projects;
+        held['coauthor-lane'] = project('coauthor-lane', 'coauthor', {
+            title: 'Coauthor on a lane',
+            focus: 'revise',
+            waitingOn: ['someone']
+        });
+        held['archive-lane'] = project('archive-lane', 'archive', {
+            title: 'Archive on a lane',
+            focus: 'review',
+            chips: ['submitted'],
+            venueId: 'jbi'
+        });
+        held['software-lane'] = project('software-lane', 'software', {
+            title: 'Software on a lane',
+            focus: 'build'
+        });
+        held['coauthor-holding'] = project('coauthor-holding', 'coauthor', { focus: 'holding' });
+        held['archive-loose'] = project('archive-loose', 'archive', {});
+        return Object.values(held);
+    }
+
+    // Revert: put `if (!live(project)) continue;` back at the head of laneItems' loop.
+    it('draws a coauthor, an archive and a software project on the lane their focus names', () => {
+        const held = laneItems(wider(), board);
+        expect(held.revise.map((one) => one.id)).toEqual(['coauthor-lane']);
+        expect(held.review.map((one) => one.id)).toEqual(['review-out', 'archive-lane']);
+        expect(held.build.map((one) => one.id)).toEqual(['software-lane', 'build-notes']);
+    });
+
+    // Revert: return true from `movable` for every project, and a coauthor, archive or software
+    // project dropped on the Ideas lane would be written to `holding` and leave the board.
+    it('moves a project of any tier to a lane and only a live one to holding', () => {
+        const byId = Object.fromEntries(wider().map((one) => [one.id, one]));
+        for (const id of ['coauthor-lane', 'archive-lane', 'software-lane']) {
+            expect(movable(byId[id], 'holding')).toBe(false);
+            expect(movable(byId[id], 'run')).toBe(true);
+        }
+        for (const id of ['idea-loose', 'run-plain', 'unplaced-ms']) {
+            expect(movable(byId[id], 'holding')).toBe(true);
+            expect(movable(byId[id], 'run')).toBe(true);
+        }
+    });
+
+    // Revert: let laneItems put a `holding` or an unset focus on a lane.
+    it('leaves a coauthor project in holding and an archive project with no focus off every lane', () => {
+        const drawn = Object.values(laneItems(wider(), board))
+            .flat()
+            .map((one) => one.id);
+        expect(drawn).not.toContain('coauthor-holding');
+        expect(drawn).not.toContain('archive-loose');
+    });
+
+    // Revert: drop `if (!live(project)) return false;` from backlog.
+    it('keeps them out of the backlog and the unplaced hint', () => {
+        const ids = [...backlog(wider(), board), ...unplaced(wider())].map((one) => one.id);
+        expect(ids).toEqual(['idea-loose', 'idea-parked', 'unplaced-ms']);
+    });
+
+    // Revert: drop `if (!live(project)) continue;` from waiting.
+    it('leaves the waiting tallies over the live tiers', () => {
+        const more = snapshot();
+        for (const one of wider()) more.entities.projects[one.id] = one;
+        const wide = waiting(more, config, { someone: 'Some One' });
+        const strip = waiting(snap, config, { someone: 'Some One' });
+        expect(wide.people).toEqual(strip.people);
+        expect(wide.venues).toEqual(strip.venues);
+        expect(wide.blocked).toBe(strip.blocked);
     });
 });
 

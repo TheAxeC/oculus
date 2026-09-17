@@ -92,13 +92,14 @@ const VIEWS: Record<string, string> = {
     'data/Facets.svelte': '.label=fs-xxs',
     'domains/DomainCard.svelte': '',
     'focus/Band.svelte':
-        'summary=fs-xs | .lane-name=fs-md | .count=fs-xs | .lane-sub=fs-xs | .stage=fs-3xs | .entry-name=fs-md | .entry-name :global(.tool)=fs-md | .note=fs-xs',
+        'summary=fs-xs | .lane-sub=fs-xs | .stage=fs-3xs | .entry-name=fs-md | .entry-name :global(.tool)=fs-md | .note=fs-xs',
     'focus/CareerPanel.svelte':
         '.career > summary=fs-sm | .seclbl=fs-xxs | .sub=fs-md | .note=fs-sm | .fact=fs-sm | .fact b=fs-xxs | .milestone=fs-md | .caveat=fs-sm | .order li=fs-sm | .ordernote=fs-xs | .inst=fs-xs | .tag=fs-xs | .when=fs-xs | .host-h=fs-sm | .rank=fs-xxs | .move=fs-sm | .crit li=fs-sm | .empty=fs-md',
     'focus/CommandCenter.svelte': '',
     'focus/CommandCenterView.svelte': '.head > b=fs-sm | .lbl=fs-xs | .sub=fs-md | .behind=fs-md',
     'focus/Lanes.svelte':
-        'summary=fs-xs | .hint=fs-md | .lane-name=fs-md | .count=fs-xs | .lane-sub=fs-xs | .flames=fs-xxs | .chipicon=fs-xs | .name=fs-md | .wait, .next=fs-xs',
+        'summary=fs-xs | .hint=fs-md | .lane-sub=fs-xs | .flames=fs-xxs | .chipicon=fs-xs | .name=fs-md | .wait, .next=fs-xs',
+    'focus/LaneHead.svelte': '.lane-name=fs-md | .count=fs-xs',
     'focus/QuickAdd.svelte': '.lbl=fs-xs',
     'focus/Tasks.svelte': '.head > b=fs-sm | .lbl=fs-xs',
     // Axel allows these HPC differences from the cockpit: sm tables, header, disk and capacity

@@ -13,6 +13,9 @@
 // without competing with the text beside it. And `--accent-bg`, the
 // surface a pressed toggle fills with: a fifth of the accent in the page's colour, so the pressed
 // state reads as a filled box in the accent's hue under every theme without the solid accent block.
+// And for every hue `--c-<hue>-lane`, a fifth of the hue in the panel, the surface the header of a
+// Focus lane fills with, beside `--c-<hue>-lane-txt`, the hue's text colour made readable on that
+// surface, which the header's name and count are drawn in, so every other hue text is left as it is.
 //
 // The numbers come from the cockpit's build-time tools/cockpit/src/cockpit/contrast.py: the same WCAG
 // relative luminance, the same 0.02 lightness step, the same 50-step bound, the same order of grounds.
@@ -37,6 +40,9 @@ export const SCROLL_THUMB_RATIO = 3;
 
 /** How much of the accent the pressed-toggle surface carries, the rest being the page. */
 const ACCENT_SHARE = 0.2;
+
+/** How much of a hue a lane header's surface carries, the rest being the panel. */
+const LANE_SHARE = 0.2;
 
 const ONE_THIRD = 1 / 3;
 const ONE_SIXTH = 1 / 6;
@@ -175,10 +181,12 @@ export function readable(fg: string, bg: string, minimum = 4.5): string {
  * A hue's `-txt` is made readable on its own `--c-<hue>-bg` first when it has one, then on `--chip`,
  * `--card`, `--panel` and `--bg` in turn, so it clears on every surface it can land on rather than only on the
  * tinted pill it was measured against. Hues that are themselves a tint (`-bg`), a derived value
- * (`-txt`, `-on`) or the on-chip ink (`--c-on`) are skipped, since nothing places text on them.
+ * (`-txt`, `-on`), a lane surface (`-lane`) or the on-chip ink (`--c-on`) are skipped, since nothing places text on them.
  * The two scrollbar colours, `--scroll-thumb` and `--scroll-track`, come with them, and so does
  * `--accent-bg`, the accent mixed into the page, with its `--on-accent-bg` and `--accent-bg-txt`,
- * the accent made readable on that surface before the others.
+ * the accent made readable on that surface before the others. Every hue also gets its lane header
+ * surface, `--c-<hue>-lane`, the hue mixed into the panel, and `--c-<hue>-lane-txt`, the hue's own
+ * `-txt` nudged until it clears on that surface; a theme with no panel and no page gets neither.
  *
  * The input is the whole token map; anything that is not a colour token with a hex value is ignored,
  * so the caller can hand over the theme exactly as parse.ts read it.
@@ -230,8 +238,15 @@ export function deriveTokens(theme: Record<string, string>): Record<string, stri
         const hue = key.slice(4);
         if (hue === 'on' || hue.startsWith('on')) continue;
         if (hue.endsWith('-bg') || hue.endsWith('-txt') || hue.endsWith('-on')) continue;
+        if (hue.endsWith('-lane')) continue;
         if (effective[key] && chip) {
-            derived[`--c-${hue}-txt`] = everywhere(effective[key], effective[`--c-${hue}-bg`]);
+            const text = everywhere(effective[key], effective[`--c-${hue}-bg`]);
+            derived[`--c-${hue}-txt`] = text;
+            if (panel) {
+                const lane = mix(effective[key], panel, LANE_SHARE);
+                derived[`--c-${hue}-lane`] = lane;
+                derived[`--c-${hue}-lane-txt`] = readable(text, lane);
+            }
         }
     }
     return derived;

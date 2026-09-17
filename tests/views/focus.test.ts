@@ -23,6 +23,7 @@ import {
     textCatalog,
     vocabCatalog
 } from '../../src/lib/data/sources/config.ts';
+import { holdingTone, lanes } from '../../src/lib/state/focus.ts';
 import { setCatalog, setGlyphs } from '../../src/lib/state/text.ts';
 import {
     chipLabel,
@@ -444,6 +445,24 @@ describe('the board', () => {
         }
     });
 
+    // Revert: draw `.lane-h` in Lanes.svelte as a plain row again rather than through LaneHead,
+    // which leaves no lane style on any lane header.
+    it('draws every lane header on the surface of its own hue, the name in its text token', () => {
+        const heads = [...body.matchAll(/<div class="lane-h[^"]*" style="([^"]*)">/g)].map(
+            (found) => found[1]
+        );
+        const tones = [
+            ...lanes(config).map((one) => one.tone),
+            holdingTone(config),
+            ...Object.values(config.focus_lane_tones as Record<string, string>)
+        ];
+        expect(heads).toEqual(
+            tones.map(
+                (tone) => `--lane: var(--c-${tone}-lane); --lane-txt: var(--c-${tone}-lane-txt)`
+            )
+        );
+    });
+
     it('counts what sits on a lane', () => {
         const run = body.slice(body.indexOf('>Run<'));
         expect(run.slice(0, 200)).toContain('>3<');
@@ -476,16 +495,20 @@ describe('a card', () => {
         expect(body).toContain(catalog['focus.move_to']);
     });
 
-    // A status mark is a line icon, so each one is drawn in the hue of the status it stands for;
-    // without it a lane's row of marks would be one grey run.
-    it('draws each status mark in the hue of its own status', () => {
-        const marks = [...body.matchAll(/class="chipicon[^"]*"[^>]*style="([^"]*)"/g)].map(
-            (found) => found[1]
-        );
+    // A status mark is its glyph and its word, in the hue of the status it stands for, so a lane's
+    // row reads at a glance without a tooltip. Revert: draw each mark as the `span.chipicon` holding
+    // the glyph alone with the word in its `title`, which leaves no mark tag and no word here.
+    it('draws each status mark as its word in the hue of its own status', () => {
+        const marks = [
+            ...body.matchAll(
+                /<span class="mark[^"]*"><span class="tag[^"]*" style="([^"]*)">[\s\S]*?<span class="label[^"]*">([^<]*)<\/span>/g
+            )
+        ].map((found) => [found[1], found[2]]);
         expect(marks).toEqual([
-            `--mark: var(--c-${statusMarkTone('lead')}-txt)`,
-            `--mark: var(--c-${statusMarkTone('submitted')}-txt)`
+            [`--tone-txt: var(--c-${statusMarkTone('lead')}-txt)`, chipLabel('lead')],
+            [`--tone-txt: var(--c-${statusMarkTone('submitted')}-txt)`, chipLabel('submitted')]
         ]);
+        expect(chipLabel('lead')).not.toBe('lead');
         // The two differ, and the one the palette names is a hue rather than the neutral.
         expect(statusTone('submitted')).not.toBe(statusTone('lead'));
         expect(statusTone('submitted')).not.toBe(UNKNOWN_TONE);
@@ -611,6 +634,10 @@ describe('the strip and the band', () => {
                 props: { now: Date.UTC(2030, 0, 1, 12) }
             }).body;
             expect(lane).toMatch(/class="lane [^"]*" style="--tone: var\(--c-gold\)"/);
+            // Revert: draw Band.svelte's funding header as a plain `.lane-h` row again.
+            expect(lane).toMatch(
+                /class="lane-h [^"]*" style="--lane: var\(--c-gold-lane\); --lane-txt: var\(--c-gold-lane-txt\)"/
+            );
             expect(lane).toMatch(/class="stage-block [^"]*" style="--stage: var\(--c-green\)"/);
             expect(lane).toContain('Submitted grant');
             expect(lane).toContain('>in 1d</span>');

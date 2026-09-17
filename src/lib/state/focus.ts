@@ -164,25 +164,29 @@ function laneOrder(a: Project, b: Project): number {
     return a.title < b.title ? -1 : a.title > b.title ? 1 : 0;
 }
 
-/** Everything the board speaks for: the three open tiers, the ones the Projects board shows. */
+/** The three open tiers the Projects board shows, which the backlog and the tallies read. */
 export function live(project: Project): boolean {
     return ['ideas', 'active', 'manuscripts'].includes(project.tier);
 }
 
-/** The tiers that belong on a lane rather than in the ideas backlog. */
+/** The tiers expected on a lane, so a project of one that names none is reported as unplaced. */
 function onBoard(project: Project): boolean {
     return project.tier === 'active' || project.tier === 'manuscripts';
 }
 
 /**
  * What sits on each lane, by lane key, sorted deadline first then title. `holding` is not a lane
- * and neither is a `focus:` no lane names; both are the backlog.
+ * and neither is a `focus:` no lane names, so a project carrying either is on no lane: `backlog`
+ * takes a live project in `holding` and an idea on no lane, `unplaced` names an active or
+ * manuscript project with no focus, and a project of another tier is drawn by neither. A project of
+ * any tier is drawn on the lane its `focus:` names: the tier says where the folder lives, and a
+ * coauthor, archive or software project whose manifest names a lane is still work the reader placed
+ * there.
  */
 export function laneItems(projects: Project[], all: Lane[]): Record<string, Project[]> {
     const out: Record<string, Project[]> = {};
     for (const lane of all) out[lane.key] = [];
     for (const project of projects) {
-        if (!live(project)) continue;
         const key = project.focus ?? '';
         const lane = byKey(out, key);
         if (lane === undefined) continue;
@@ -190,6 +194,15 @@ export function laneItems(projects: Project[], all: Lane[]): Record<string, Proj
     }
     for (const lane of Object.values(out)) lane.sort(laneOrder);
     return out;
+}
+
+/**
+ * Whether the board may move a project to a `focus:` value. Any project may go to a lane, and only
+ * a project of a live tier may go to `holding`: the backlog draws the live tiers alone, so a
+ * project of another tier sent there would leave the board.
+ */
+export function movable(project: Project, focus: string): boolean {
+    return focus !== 'holding' || live(project);
 }
 
 /**

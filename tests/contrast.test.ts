@@ -1,7 +1,8 @@
 // Every text-on-background pair the tokens declare, under every theme, at 4.5:1 or better.
 //
 // The pairs are the ones a component can actually produce: a `-txt` colour on the page, the panel
-// the card and the chip; a hue's `-txt` on its own tint; `--accent-bg-txt` on the pressed-toggle
+// the card and the chip; a hue's `-txt` on its own tint; a hue's `-lane-txt` on its `-lane`, the
+// surface a Focus lane header is drawn on; `--accent-bg-txt` on the pressed-toggle
 // surface `--accent-bg`; and the on-chip ink on its filled chip. A pair below
 // the threshold is printed with its ratio and fails. It is never fixed by loosening the threshold or
 // by editing a colour here: a colour is an authored value in tokens.css or themes.css, and a failure
@@ -48,6 +49,8 @@ function pairs(name: string): Pair[] {
         for (const surface of SURFACES) if (all[surface]) measure(fg, surface);
         const own = `${fg.slice(0, -'-txt'.length)}-bg`;
         if (fg.startsWith('--c-') && all[own]) measure(fg, own);
+        const lane = fg.slice(0, -'-txt'.length);
+        if (fg.startsWith('--c-') && lane.endsWith('-lane') && all[lane]) measure(fg, lane);
     }
     // The pressed-toggle surface's own text on that surface, the accent mixed into the page.
     if (all['--accent-bg-txt'] && all['--accent-bg']) measure('--accent-bg-txt', '--accent-bg');
@@ -90,6 +93,44 @@ describe('contrast', () => {
         const total = [...measured.values()].reduce((sum, found) => sum + found.length, 0);
         console.log(`contrast: ${total} pairs over ${NAMES.length} themes`);
         expect(total).toBeGreaterThan(0);
+    });
+
+    // Revert: take `readable(text, lane)` out of derive.ts, so `--c-<hue>-lane-txt` is the hue's
+    // plain `-txt`, and the lane pairs under the threshold are printed by the theme cases above;
+    // stop minting the lane surface and this case finds no lane pair.
+    it('measures a lane header pair for every hue of every theme', () => {
+        for (const name of NAMES) {
+            const found = measured.get(name) ?? [];
+            const lanes = found.filter((pair) => pair.bg.endsWith('-lane'));
+            const hues = Object.keys(deriveTokens(resolveTheme(blocks, themeClass(name)))).filter(
+                (token) => /^--c-.+-lane$/.test(token)
+            );
+            expect(lanes.length).toBeGreaterThan(0);
+            expect(lanes.map((pair) => pair.bg).sort()).toEqual(hues.sort());
+            expect(lanes.every((pair) => pair.fg === `${pair.bg}-txt`)).toBe(true);
+        }
+    });
+
+    // A theme that authors a token ending in `-lane` gets no lane of that token and keeps its own
+    // lane surface for the hue; a theme with neither a panel nor a page gets no lane while its hues
+    // keep their text colours. Revert: drop the `-lane` skip in derive.ts, or mint a lane with no
+    // panel.
+    it('mints a lane only from a hue and only over a panel', () => {
+        const authored = deriveTokens({
+            '--bg': '#ffffff',
+            '--panel': '#ffffff',
+            '--c-red': '#dc2626',
+            '--c-red-lane': '#fee2e2'
+        });
+        expect(authored['--c-red-lane']).not.toBe('#fee2e2');
+        expect(authored['--c-red-lane-lane']).toBeUndefined();
+        expect(
+            ratio(authored['--c-red-lane-txt'], authored['--c-red-lane'])
+        ).toBeGreaterThanOrEqual(MINIMUM);
+        const bare = deriveTokens({ '--chip': '#ffffff', '--c-red': '#dc2626' });
+        expect(bare['--c-red-lane']).toBeUndefined();
+        expect(bare['--c-red-lane-txt']).toBeUndefined();
+        expect(bare['--c-red-txt']).toBeDefined();
     });
 
     it('references only tokens :root defines', () => {

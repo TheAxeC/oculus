@@ -69,7 +69,11 @@
      */
     const week = $derived(snapshot === null ? null : ticker(snapshot, config, now));
 
-    /** The projects quick add may write to: the three live tiers, which is the board's own set. */
+    /**
+     * The projects quick add may write to: the three live tiers, the ones the ideas backlog and the
+     * awaiting strip's people and venue tallies read. A lane also draws a project of another tier
+     * whose `focus:` names it.
+     */
     const live = $derived(
         projects.filter((one: Project) => ['ideas', 'active', 'manuscripts'].includes(one.tier))
     );

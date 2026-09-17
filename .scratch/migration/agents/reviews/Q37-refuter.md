@@ -108,3 +108,33 @@ Reviewer usage: about 55 tool uses and about 25 minutes by the shell clock. Two 
 - Behaviour, the muted lanes: closed; the muted cluster fades the sub-line and the body, and a browser case asserts the header's opacity is 1.
 - Behaviour, the vanishing card: closed; `movable` refuses a non-live project on the Ideas lane, the Move to menu never offered holding (a premise of the ruling found wrong by the builder), a browser case drags and reads the manifest.
 - Behaviour, the awaiting strip against a coauthor card, and lanes of one colour: booked in the state file's open items for Axel.
+
+## The repair round, refuted
+```
+npx vitest run tests/state/focus.test.ts tests/views/focus.test.ts tests/contrast.test.ts tests/ui/colours.test.ts tests/views/type-scale.test.ts  (worktree): Test Files 5 passed (5), Tests 269 passed (269); contrast.test.ts verbose: "contrast: 6324 pairs over 17 themes"
+npm run build (worktree): exit 0
+npx playwright test tests/browser/focus-look.spec.ts tests/browser/focus-drag.spec.ts tests/browser/focus-buttons.spec.ts (worktree): 8 passed (23.0s)
+git status --short (worktree), before and after: empty
+Probe (scratch copy, vitest): main 23299518 deriveTokens vs 1f06dcb5 over 17 themes: {"mainTokens":1513,"changed":0,"lanes":595,"worst":4.5032,"differ":351,"extra":[]}
+Reverts in a scratch copy (cp -Rc of tools/oculus), each rebuilt, run, restored and cmp-checked:
+  R1 `!movable(...)` dropped from draggedOver only: focus-look 3 passed (green)
+  R2 movable returns true: test 3 red (manifest no longer holds "focus: revise")
+  R3 `.cluster.muted .lane { opacity: 0.9 }` back: test 2 red (Expected 1, Received 0.9)
+  R4 LaneHead `--lane-txt: var(--c-${tone}-txt)`: test 2 red (Expected rgb(160, 74, 8), Received rgb(180, 83, 9))
+  R5 `.mark` rule removed alone: 3 passed (green)
+  R5b `flex-wrap: wrap` removed from `.card-h` alone: 3 passed (green)
+  R5c both removed (the revert the spec names; built CSS read back as `.card-h{align-items:baseline;gap:5px;display:flex}` with no Lanes `.mark` rule): 3 passed (green)
+  R6 derive.ts `readable(text, lane)` -> `text`: contrast.test.ts 17 per-theme cases and "mints a lane only..." red
+```
+- tests/browser/focus-look.spec.ts:123-130: the round closes the first report's "no test covers the row wraps rather than clipping" with "a browser case asserts no mark label is clipped", and the report says its named revert (`flex-wrap` off `.card-h` and the `.mark` rule out) turns test 1 red. My R5c applied exactly that revert, and the served build's CSS shows both rules gone, yet all 3 tests passed. R5 and R5b, each rule removed on its own, also passed. At the default 1280x720 viewport no card header runs out of room, so the check cannot fail. The closure is not reproduced, and the round's `.mark { flex: 0 0 auto; max-width: 100% }` (Lanes.svelte:516) has no test that fails without it. Proof.
+- src/lib/views/focus/Lanes.svelte:197-203: the doc comment claims that for a refused drag "the browser refuses the drop and the lane does not light", and the report states the same. Test 3 sends its own `dragover` and `drop` events (focus-look.spec.ts:194-195). A dispatched `drop` runs `dropped` whether or not `dragover` called preventDefault, so only the check in `dropped` is exercised. With R1 (the check removed from `draggedOver` alone) the spec stays green. In a real browser that revert would light the Ideas lane and accept the drop, with nothing written. The refusal at dragover and the unlit lane are claimed but unproven. Proof.
+- src/lib/views/Focus.svelte:73-74: the rewritten comment says the three live tiers are "the ones the ideas backlog and the awaiting strip read". The strip's blocked tally counts every tier (`waiting()` in state/focus.ts, whose doc says "the blocked tally is over every project of every tier"). Only the people and venue tallies read the live tiers, so the new sentence is partly false. Standards.
+- The other closures reproduce: hue text is unchanged against main (0 of 1513 tokens changed, 595 lane pairs, worst 4.503:1); the muted-cluster header keeps opacity 1 (R3 red); the header paints the lane tokens (R4 red); `movable` refuses the Ideas drop (R2 red) and is the only write path to `focus:` besides the menu, whose items never include holding (Lanes.svelte:116-131); `derive.ts` guards the lane text pair (R6 red). No check was weakened: the colour gate's `fillToken` and `textToken` are unchanged in code, and only their comments changed. No non-ASCII and no history comment on the added lines. No further new defect was found in the lane tokens, the opacity split or the drag handlers.
+
+Reviewer usage: about 33 tool uses and about 12 minutes by the shell clock (11:50 to 12:02). Read-only git only (`git status --short`, `git log`, `git diff`, `git show 23299518:tools/oculus/src/lib/themes/derive.ts` into the scratch copy). Two browser runs waited for port 8792 to free up; nothing was deleted or signalled.
+
+## Closed (the orchestrator's disposition of the second run, 2026-09-17 12:05)
+
+- Proof, the wrap check that could not fail: fixed at landing; test 1 of `tests/browser/focus-look.spec.ts` also asserts the card header's computed `flex-wrap` is `wrap` and a mark's `flex-shrink` is `0`; with `.mark` set to `flex: 1 1 auto` the test goes red (run on main, rebuilt, restored).
+- Proof, the refused dragover unproven: fixed at landing; test 3 dispatches a cancelable `dragover` and asserts it was not prevented and the Ideas lane is not lit; with the `movable` check dropped from `draggedOver` the test goes red (same run).
+- Standards, `Focus.svelte:73-74`: fixed at landing; the comment names the awaiting strip's people and venue tallies.

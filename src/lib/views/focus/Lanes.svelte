@@ -17,6 +17,7 @@
     import { waitingLabel } from '$lib/state/waiting';
     import Empty from '$lib/ui/Empty.svelte';
     import Glyph from '$lib/ui/Glyph.svelte';
+    import LaneHead from './LaneHead.svelte';
     import Menu from '$lib/ui/Menu.svelte';
     import type { MenuItem } from '$lib/ui/menu-items';
     import ToolButton from '$lib/ui/ToolButton.svelte';
@@ -29,6 +30,7 @@
         labelOf,
         laneItems,
         lanes,
+        movable,
         priorities,
         unplaced,
         type Id,
@@ -76,7 +78,7 @@
     let over = $state<string | null>(null);
 
     /** The project being dragged, and the lane it came from. */
-    let dragging: { id: Id; from: string } | null = null;
+    let dragging: { project: Project; from: string } | null = null;
 
     /** The deadline badge of a card: how overdue it is, how long is left, or the date itself. */
     function deadline(project: Project): { label: string; tone?: string } | null {
@@ -181,7 +183,7 @@
     }
 
     function started(project: Project, event: DragEvent): void {
-        dragging = { id: project.id, from: project.focus ?? '' };
+        dragging = { project, from: project.focus ?? '' };
         if (event.dataTransfer === null) return;
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData('text/plain', project.id);
@@ -192,8 +194,12 @@
         over = null;
     }
 
+    /**
+     * A lane that may not take the dragged project, the Ideas lane for a project outside the live
+     * tiers, leaves the event alone, so the browser refuses the drop and the lane does not light.
+     */
     function draggedOver(lane: string, event: DragEvent): void {
-        if (dragging === null) return;
+        if (dragging === null || !movable(dragging.project, lane)) return;
         event.preventDefault();
         if (event.dataTransfer !== null) event.dataTransfer.dropEffect = 'move';
         over = lane;
@@ -201,12 +207,12 @@
 
     /** Dropping a card on a lane writes its `focus:`, which is what puts it on that lane. */
     async function dropped(lane: string, event: DragEvent): Promise<void> {
-        if (dragging === null) return;
+        if (dragging === null || !movable(dragging.project, lane)) return;
         event.preventDefault();
         const held = dragging;
         ended();
         if (lane === held.from) return;
-        said(await writeManifest(held.id, { focus: lane }));
+        said(await writeManifest(held.project.id, { focus: lane }));
     }
 </script>
 
@@ -242,15 +248,12 @@
                 </button>
             {/if}
             {#each project.chips.slice(0, CARD_CHIPS) as chip (chip)}
-                {@const icon = chipGlyphName(chip)}
-                <span
-                    class="chipicon"
-                    title={chipLabel(chip)}
-                    style={`--mark: var(--c-${statusMarkTone(chip)}-txt)`}
-                >
-                    {#if icon !== ''}
-                        <Glyph name={icon} />
-                    {/if}
+                <span class="mark">
+                    <Tag
+                        label={chipLabel(chip)}
+                        glyph={chipGlyphName(chip)}
+                        tone={statusMarkTone(chip)}
+                    />
                 </span>
             {/each}
             <button type="button" class="name" onclick={() => openMissing(project)}>
@@ -285,10 +288,7 @@
 
 {#snippet lane(one: Lane, held: Project[], grid: boolean)}
     <div class="lane" class:lit={over === one.key} style={`--tone: var(--c-${one.tone})`}>
-        <div class="lane-h">
-            <span class="lane-name">{one.label}</span>
-            <span class="count">{held.length}</span>
-        </div>
+        <LaneHead label={one.label} count={held.length} tone={one.tone} />
         <p class="lane-sub">{one.sub}</p>
         <div
             class="lane-body"
@@ -429,29 +429,15 @@
         box-shadow: inset 0 0 0 2px var(--tone, var(--line));
     }
 
-    .cluster.muted .lane {
+    /* A lane of a muted cluster fades its body and its sub-line; its header keeps full opacity,
+       since the header pair is measured opaque. */
+    .cluster.muted .lane-sub,
+    .cluster.muted .lane-body {
         opacity: 0.9;
     }
 
-    .lane-h {
-        display: flex;
-        align-items: baseline;
-        justify-content: space-between;
-        gap: 6px;
-    }
-
-    .lane-name {
-        font-size: var(--fs-md);
-        font-weight: 700;
-    }
-
-    .count {
-        font-size: var(--fs-xs);
-        color: var(--muted-txt, var(--muted));
-    }
-
     .lane-sub {
-        margin: 2px 0 6px;
+        margin: 4px 0 6px;
         font-size: var(--fs-xs);
         color: var(--muted-txt, var(--muted));
     }
@@ -518,13 +504,18 @@
         opacity: 0.6;
     }
 
-    /* A status mark is a line icon, so each one is drawn in the hue of the status it stands for
-       and a lane's row still reads at a glance; a mark given no hue keeps the card's ink. */
+    /* The ghost badge: a line icon whose words are its tooltip. */
     .chipicon {
         flex: 0 0 auto;
-        color: var(--mark, inherit);
         font-size: var(--fs-xs);
         line-height: 1;
+    }
+
+    /* A status mark is its glyph and its word in the status's hue. It keeps its whole width, so a
+       row with no room left for it wraps the mark to the next line rather than cutting its word. */
+    .mark {
+        flex: 0 0 auto;
+        max-width: 100%;
     }
 
     .name {

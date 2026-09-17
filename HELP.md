@@ -71,7 +71,7 @@ The sheet itself opens with `?` and closes with `?` or Escape. The letters befor
 
 | Id | Name | What it shows |
 |---|---|---|
-| `focus` | Focus | What wants attention now: deadlines, overdue items, follow-ups, the week's ticker and the career strategy. |
+| `focus` | Focus | What wants attention now: deadlines, overdue items, follow-ups, the week's ticker, the lanes and the career strategy. A project of any tier, coauthor, archive and software included, sits on the lane its `focus:` names, and only a project of the ideas, active or manuscripts tiers can be dropped on the Ideas lane. Each card shows its first two statuses as a glyph and a word in the status's colour, and each lane's header is a strip of the lane's colour. |
 | `projects` | Projects | The projects board, as cards or as a list, searchable, with the pin, the stale badge and the card's own controls. An opened card lists the project's files of the extensions `file_index.ext` in `behavior.yml` names: a Markdown file, a script or a LaTeX source opens as a document tab, a file whose extension `open.program_ext` maps to an application (a `.docx`, an `.xlsx`, a `.pptx`) opens in that application on this machine, and any other file is a link the browser opens or saves. The folder control shows the project folder in Finder. |
 | `coauthor` | Coauthor | The same board over the projects someone else leads. |
 | `archive` | Archive | The same board over finished work and dead ends. |
