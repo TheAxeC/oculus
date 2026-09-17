@@ -104,3 +104,79 @@ A probe (`node scratchpad/q46-builder/probe.ts`) checked `sizeOf` against real f
 - `tests/server/images.test.ts`: new, 379 lines. Its picture bytes are built in code; no fixture files are checked in.
 
 All paths are under `/Users/axelfaes/workspace/research-hub/.agents/worktrees/q46/tools/oculus/`.
+
+NOT DONE: half of ruling 1. The state half is done (a malformed answer is held as a failed read with a reason); the drawing half is not, and it cannot be done inside my paths. Everything else in the eight rulings is done.
+
+## Repair round
+
+| Ruling | State | Command and output |
+|---|---|---|
+| 1. Malformed answer is a failed read | **State DONE, drawing NOT DONE** | `state/memories.svelte.ts` `pictures()` now answers `{ images }` or `{ malformed }`, and `load()` holds `{ images: [], error: <reason>, loading: false }` for `images_not_a_list`, `image_without_name` and `image_name_repeated`. The size screen is unchanged. `tests/views/memories.test.ts:190` is now three cases asserting the whole `Wall`, the repeated-name case among them. `npx vitest run tests/views/memories.test.ts`: 22 passed. See "The drawing half" below |
+| 2. JPEG tables before the frame | DONE | New case "steps over a Huffman table and an arithmetic coding table before the frame": a DHT (C4) whose bytes read as a frame would give 512x256, and a DAC (CC) that would give 1024x768, each before a real 640x480 frame |
+| 3. APP1 order | DONE | New case "reads the orientation of an EXIF block that comes after an XMP block": an XMP APP1 (`http://ns.adobe.com/xap/1.0/`) before an EXIF APP1 with orientation 6; the answer is 3024x4032 |
+| 4. One wire type | DONE | `Picture` is declared once, in `src/lib/data/model.ts` (beside `AuditPayload`, in the facade both layers already import). `server/memories.ts` and `state/memories.svelte.ts` both `import type { Picture }` from it; `tests/views/memories.test.ts` takes it from there too |
+| 5. PNG orientation | DONE | `pngOrientation()` walks the chunks after IHDR by their lengths, stops at IDAT, IEND or a chunk head that is not four letters, and reads `eXIf` under the JPEG caps (512 chunks, 1024 bytes). `turned()` is now the one place that trades the sides, for JPEG and PNG alike. Node cases: swapped for orientation 6, unswapped for 3, no orientation from an `eXIf` after IDAT. Browser case: a 40x30 PNG with `eXIf` orientation 6, built in the spec with real CRCs, drawn by Chrome at 30x40, tile box 0.75 |
+| 6. The 4:3 source-text test | DONE | `tests/views/memories.test.ts` no longer reads the stylesheet text; the browser case's `mem-00.webp` is the coverage |
+| 7. The bound sentence | DONE | `state/memories.svelte.ts` now reads: "A picture past that, drawn at its own shape, would be a sliver across a column or a column of its own, so its box stops at the bound and the picture is fitted whole inside it." |
+| 8. The repeated border width | DONE | `.tile` sets `--tile-border: 1px`; the rule reads `border: var(--tile-border) solid var(--line)` and `width: calc(100% - 2 * var(--tile-border))`. A new browser assertion measures the column step against the tile's whole width plus the 8px gap, so a border the width leaves no room for is caught |
+
+## The drawing half of ruling 1 (a premise found wrong, for you to rule on)
+
+The wall draws no failed read today. `Memories.svelte` reads `held.images` only, never `held.error`, so a failed fetch already draws the empty-wall message (`memories.empty`). Drawing a read failure needs a new key in `config/text/views/memories.yml`: a literal sentence in the view is a defect, and my paths exclude every config file, so I did not add one. What is done instead: the reason is in `Wall.error` as a word, the way the upload's wire words are mapped to sentences by `uploadMessage`.
+
+To finish it, one of:
+- (a) allow `config/text/views/memories.yml` in a follow-up and add, say, `read_failed: 'The wall could not be read: {0}'` with a sentence per reason (`read_not_a_list`, `read_without_name`, `read_name_repeated`), drawn in the `.failed` paragraph the upload failures already use, with the empty-wall message drawn only when `error` is empty;
+- (b) leave the words in state and rule that the view keeps drawing the empty-wall message.
+
+The three reason words (`images_not_a_list`, `image_without_name`, `image_name_repeated`) are a vocabulary you may reverse.
+
+## Verify before you report (final tree)
+
+| Command | Output |
+|---|---|
+| `npx vitest run --reporter=dot` | `Test Files 249 passed (249)`, `Tests 4184 passed (4184)`, 48.22s. No timing test timed out |
+| `npm run check` | `COMPLETED 1213 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
+| `npm run build` | exit 0 |
+| `npm run format:check` | `All matched files use Prettier code style!` |
+| `npm run lint` | exit 0, no findings |
+| ASCII gate (the brief's perl form) | prints nothing, exit 0; `LC_ALL=C grep -n '[^ -~]'` over the touched files prints nothing |
+| `npx playwright test tests/browser/memories.spec.ts` | `4 passed (8.1s)`, on the final build. Two earlier attempts waited on the port 8792 lock; it was never touched |
+| `grep -rl wallpaper tests` files | in the full vitest run above |
+
+## Reverts run in this round (each put back; `cmp` against the saved copy shows all five source files identical)
+
+- `isFrame` widened to C0..CF: `tests/server/images.test.ts tests/routes/memories.test.ts` 1 failed of 54 (the tables case).
+- First APP1 decides (`exifOrientation(...) || -1`): 1 failed of 54 ("reads the orientation of an EXIF block that comes after an XMP block").
+- PNG orientation not applied (`return sized(width, height)`): 3 failed (the eXIf case and the two PNG byte-count cases). Browser, rebuilt: shape case failed, expected 0.75, received 1.3333.
+- PNG `eXIf` read cap removed: 1 failed ("reads a PNG eXIf chunk only as far as its first directory needs").
+- Chunk walk stop removed (only IEND stops it): 3 failed (orientation read from a chunk after IDAT, the chunk-walk byte count, the non-letter head).
+- `images` not a list read as an empty wall: 1 failed ("reads an answer whose pictures are not a list as a failed read...").
+- Item with no name skipped: 1 failed. Name already read skipped: 1 failed.
+- Border width as a literal `3px` with the width still on the property (the mutation that shows the property is load-bearing), rebuilt: browser shape case failed, the column step off by 4.1875 px against a bound of 1 px.
+
+The earlier round's reverts still hold; they were rerun by the reviewer.
+
+## Doc text as it now stands (neither file edited)
+
+- HELP.md:114 is unchanged: "| `memories` | Memories | The photo wall, each picture shown whole in a tile of one shape, a muted tile while it loads and its name when it fails, with a control that adds a picture and a click that enlarges one. |". Suggested: "| `memories` | Memories | The photo wall, each picture in a tile of its own proportions (a 4:3 tile when its size cannot be read), a muted tile while it loads and its name when it fails, with a control that adds a picture and a click that enlarges one. |"
+- DESIGN.md:337 ends, unchanged: "The Memories wall draws every tile as one 4:3 box with the whole picture fitted inside; carrying each picture's size so a tile takes the picture's proportions is a later step." Suggested: "The Memories wall draws each tile at its picture's proportions: `GET /api/memories` answers `{ name, width, height }` per picture, read per listing from the header bytes by `sizeOf` in `server/images.ts` (PNG, JPEG and WebP, with the EXIF quarter turns a browser applies to a JPEG's EXIF block and a PNG's `eXIf` chunk, and not to a WebP), and the tile's `aspect-ratio` is set from it, bounded at three to one either way, with a 4:3 box for a picture whose size is not read."
+
+## Notes
+
+- Chrome does not turn a WebP: the reviewer's probe drew `webp-exif-o6.webp` at its stored 400x300, so no WebP orientation is read and the earlier limitation line about it is dropped.
+- The `eXIf` chunk is read only before the first IDAT, which is where the PNG extension puts it; a chunk after the image data is not read (node case "reads no orientation from a chunk after the image data").
+- The column-step assertion allows one pixel, because the step is a whole pixel and the tile's width a fraction of one; the border mutation misses it by 4.19 px.
+
+## Files changed (added / removed lines against main)
+
+- `src/lib/data/model.ts`: +6 / -0
+- `src/lib/server/images.ts`: +226 / -1 (344 lines)
+- `src/lib/server/memories.ts`: +19 / -5
+- `src/lib/state/memories.svelte.ts`: +69 / -7
+- `src/lib/views/Memories.svelte`: +22 / -11
+- `tests/browser/memories.spec.ts`: +173 / -5
+- `tests/routes/memories.test.ts`: +29 / -6
+- `tests/views/memories.test.ts`: +133 / -9
+- `tests/server/images.test.ts`: new, 483 lines
+
+All paths are under `/Users/axelfaes/workspace/research-hub/.agents/worktrees/q46/tools/oculus/`.

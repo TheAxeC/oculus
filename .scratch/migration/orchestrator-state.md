@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37; in flight: Q38 (the run over its round) from 91fb46cb, Q46 (repair round) from 8eed7e03 and Q47 (review) from 8d90177f; next: Q48, Q49, Q50, Q51, Q52, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:47, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37; in flight: Q38 (the run over its round) from 91fb46cb, Q46 (the run over its round) from 8eed7e03 and Q47 (repair round) from 8d90177f; next: Q48, Q49, Q50, Q51, Q52, Q35, Q36; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3 + O31; M4; then R2, O29, O30, X2
 - package: Q38
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -59,6 +59,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   reported: 2026-09-17T19:38                # everything in the brief done; bound three to one, listing 1.8 ms median over the 16 demo pictures
   reviewer: a0449c003d4d09150                # claude:opus through the Agent tool, read-only, launched 19:39, scratch folder scratchpad/q46-review (review earned: a server module and a wire shape)
   round: 1                                  # sent 20:02: eight rulings on agents/reviews/Q46-refuter.md (a malformed answer read as a failed read, JPEG tables before the frame and APP1 order tested, one Picture wire type in data/, a PNG eXIf orientation read and swapped, the 4:3 source-text test removed, a reversed comment, the tile border in one custom property); round base: scratchpad/q46-round1; paths widened by src/lib/data/ for the wire type
+  reported2: 2026-09-17T20:18                # the round's report, appended to agents/reviews/Q46-report.md; seven rulings done and the state half of ruling 1; the wall draws no failed read at all today (Memories.svelte reads only held.images), which needs a key in config/text/views/memories.yml, outside the step's paths: the orchestrator adds the key and the line at landing
+  reviewer2: a05fcf6290cf605dc               # the run over round 1, claude:opus, read-only, launched 20:19, scratch folder scratchpad/q46-review2
   landing: not-started
 - package: Q47
   executor: agent                          # the configuration default, chosen for the step
@@ -72,6 +74,7 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   session_id: a321b30c366302d74            # the Agent tool id, launched 19:39
   reported: 2026-09-17T20:03                # everything in the brief done; a session with no workspace kept on ch_norepo (a reversal of the brief's null rule for that case, to judge at landing); findings outside its paths: Repo.svelte's second branchState (booked Q52), tests/views/sessions.test.ts at 999 lines
   reviewer: ad3e772b09d143256                # claude:opus through the Agent tool, read-only, launched 20:03, scratch folder scratchpad/q47-review (reviewed as every step today)
+  round: 1                                  # sent 20:18: nine rulings on agents/reviews/Q47-refuter.md (a fourth shape and sentence for a session with no workspace, the in-step rule kept and named in the Doc text, a render case for the no-workspace session, repoShape moved to a .ts beside the view, the reading branch on the shape, scratch folders registered before use, one gitIn helper, a named failure for the served home, sessions.test.ts split and the trimmed case restored); round base: scratchpad/q47-round1; paths widened by views/sessions/*.ts, tests/views/changes.test.ts, tests/browser/git.ts and repositories.spec.ts's import line
   landing: not-started
 ```
 
@@ -834,4 +837,6 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q46, worker claude:opus through the Agent tool, first run: 233,455 tokens, 65 tool uses, 1,684 s (19:10 to 19:38); everything done.
 - Q46, reviewer claude:opus through the Agent tool, read-only: 166,118 tokens, 50 tool uses, 1,315 s (19:39 to 20:01); eight rulings sent in the one repair round.
 - Q47, worker claude:opus through the Agent tool, first run: 203,346 tokens, 72 tool uses, 1,430 s (19:39 to 20:03); everything done.
+- Q47, reviewer claude:opus through the Agent tool, read-only: 156,637 tokens, 46 tool uses, 828 s (20:03 to 20:17); nine rulings sent in the one repair round.
+- Q46, worker round 1 claude:opus: 288,631 tokens cumulative on the thread, 31 tool uses, 964 s (20:02 to 20:18); seven rulings done, the drawing half of ruling 1 left to the landing.
 - The whole run from the green light (19:48) to the pause (23:58), the orchestrator's session transcript summed: 664 messages, 660,286 output tokens, 2,352,878 cache-write tokens, 358,290,725 cache-read tokens, 18,672 fresh input tokens.
