@@ -1,13 +1,39 @@
 // The Focus board's write controls: the ticker's snooze buttons, a card's priority, and quick add.
 // Each one is pressed in Chrome, the DOM is read for what the watcher pushed back, and the manifest
-// on disk is read for what was written.
+// on disk is read for what was written. The last two cases are the room those buttons take and the
+// keyboard's way to them: both are a measure of the page, which a server rendering has none of.
 //
 // Every test here restores the manifest it changed and asserts the bytes are the ones it found.
 
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { readHubFile, shortOf } from './hub.ts';
 import { boot, openView } from './rail.ts';
 import { t, vocabulary } from './words.ts';
+
+/** The opacity of every button of a row. */
+function opacities(controls: Locator): Promise<number[]> {
+    return controls.evaluateAll((nodes) =>
+        nodes.map((node) => Number(getComputedStyle(node).opacity))
+    );
+}
+
+/**
+ * Put the pointer inside a row, near the start of its name, so the row draws its buttons. A row of
+ * the Snoozed group can be split across the board's two columns, and the centre of its box then
+ * falls on another row, which is what an element-centred hover would reach.
+ */
+async function onto(page: Page, row: Locator): Promise<void> {
+    const spot = await row.locator('.name').evaluate((node) => {
+        const box = node.getBoundingClientRect();
+        return { x: box.left + 4, y: box.top + box.height / 2 };
+    });
+    await page.mouse.move(spot.x, spot.y);
+}
+
+/** Put the pointer where no row is, so no row is under it. */
+async function away(page: Page): Promise<void> {
+    await page.mouse.move(2, 2);
+}
 
 const TRANSFER = 'projects/active/graph-transfer';
 const BANDITS = 'projects/active/graph-bandits';
@@ -25,6 +51,8 @@ test('a deadline line snoozes to the Snoozed group and wakes back unchanged', as
     const name = shortOf(TRANSFER);
     const line = page.getByRole('listitem').filter({ hasText: name });
     await expect(line.first()).toBeVisible();
+    // A row draws the button under the pointer, so the pointer reaches the row before the press.
+    await onto(page, line.first());
     await line
         .first()
         .getByRole('button', { name: t('project.action.snooze_1w'), exact: true })
@@ -36,6 +64,7 @@ test('a deadline line snoozes to the Snoozed group and wakes back unchanged', as
 
     await snoozed.click();
     const asleep = snoozed.getByRole('listitem').filter({ hasText: name });
+    await onto(page, asleep);
     await asleep.getByRole('button', { name: t('project.action.unsnooze'), exact: true }).click();
     await expect(
         page.locator('details').filter({ hasText: t('focus.command.snoozed', 1) })
@@ -108,4 +137,415 @@ test('quick add writes a follow-up and the ticker shows it', async ({ page }) =>
 
     await line.getByRole('button', { name: t('project.action.done'), exact: true }).click();
     await expect.poll(() => readHubFile(`${BANDITS}/project.yml`), { timeout: 5000 }).toBe(before);
+});
+
+/** The widths every measured case runs at: a wide pane, two the board's columns crowd, and a narrow one. */
+const WIDTHS = [1600, 900, 760, 480];
+
+/** The row of the board carrying the most buttons, which is the row a narrowing pane crowds first. */
+async function busiest(page: Page): Promise<Locator> {
+    const rows = page.locator('.ticker li');
+    await expect(rows.first()).toBeVisible();
+    const at = await rows.evaluateAll((nodes) => {
+        const many = nodes.map((node) => node.querySelectorAll('.act').length);
+        return many.indexOf(Math.max(...many));
+    });
+    return rows.nth(at);
+}
+
+/**
+ * A theme by its name in the picker, as tests/browser/focus-look.spec.ts picks one: the glyph and
+ * then the name alone, since other labels end in the same word, and the light theme puts no class on
+ * the body.
+ */
+async function theme(page: Page, name: string): Promise<void> {
+    await page.getByRole('button', { name: t('ui.theme') }).click();
+    await page.getByRole('menuitem', { name: new RegExp(`^\\S+\\s+${name}$`) }).click();
+    const expected = name === 'light' ? /^(?!.*\b(dark|rice)\b)/ : new RegExp(`\\b${name}\\b`);
+    await expect(page.locator('body')).toHaveClass(expected);
+}
+
+/**
+ * The words of the buttons a row is drawing, once the set has stopped changing: a row that has just
+ * opened draws them all for a frame and then takes back the ones it measured no room for.
+ */
+async function drawnOf(row: Locator): Promise<string[]> {
+    let last: string[] = [];
+    await expect
+        .poll(
+            async () => {
+                const now = await row
+                    .locator('.act')
+                    .evaluateAll((nodes) =>
+                        nodes
+                            .filter((one) => getComputedStyle(one).display !== 'none')
+                            .map((one) => one.textContent.trim())
+                    );
+                const same = JSON.stringify(now) === JSON.stringify(last);
+                last = now;
+                return same;
+            },
+            { intervals: [100] }
+        )
+        .toBe(true);
+    return last;
+}
+
+/** What a row holds while its buttons wait: the width of its button box, and the room its name has. */
+function atRest(row: Locator): Promise<{ box: number; held: number; name: number; free: number }> {
+    return row.evaluate((node) => {
+        const line = node.getBoundingClientRect();
+        const name = node.querySelector('.name');
+        const acts = node.querySelector('.acts');
+        const kept = node.querySelector('.act.kept');
+        const gap = Number.parseFloat(getComputedStyle(node).columnGap) || 0;
+        const others = [...node.children]
+            .filter((one) => one !== name && one !== acts)
+            .reduce((all, one) => all + one.getBoundingClientRect().width, 0);
+        const held = kept === null ? 0 : kept.getBoundingClientRect().width;
+        const whole = name === null ? 0 : name.scrollWidth;
+        const free = line.width - others - held - gap * Math.max(0, node.children.length - 1);
+        return {
+            box: acts === null ? 0 : acts.getBoundingClientRect().width,
+            held,
+            name: name === null ? 0 : name.getBoundingClientRect().width,
+            free: Math.min(whole, free)
+        };
+    });
+}
+
+/** What an open row draws: what its buttons cover of the name, where they end, and what answers a press. */
+function whileOpen(
+    row: Locator
+): Promise<{ cover: number; spill: number; missed: string[]; drawn: number; all: number }> {
+    return row.evaluate((node) => {
+        const line = node.getBoundingClientRect();
+        const name = node.querySelector('.name')?.getBoundingClientRect();
+        const every = [...node.querySelectorAll('.act')];
+        const drawn = every.filter((one) => getComputedStyle(one).display !== 'none');
+        const boxes = drawn.map((one) => one.getBoundingClientRect());
+        return {
+            cover: boxes.reduce(
+                (all, box) =>
+                    all +
+                    Math.max(
+                        0,
+                        Math.min(box.right, name?.right ?? 0) - Math.max(box.left, name?.left ?? 0)
+                    ),
+                0
+            ),
+            spill: boxes.reduce(
+                (all, box) => Math.max(all, box.right - line.right, line.left - box.left),
+                0
+            ),
+            missed: drawn
+                .filter((one) => {
+                    const box = one.getBoundingClientRect();
+                    const hit = document.elementFromPoint(
+                        box.left + box.width / 2,
+                        box.top + box.height / 2
+                    );
+                    return hit === null || !one.contains(hit);
+                })
+                .map((one) => one.textContent.trim()),
+            drawn: drawn.length,
+            all: every.length
+        };
+    });
+}
+
+test('a row keeps its name while its buttons wait, and drawing them covers none of it', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'focus', t('views.focus'));
+    // revert: src/lib/ui/Ticker.svelte:358 => display: inline-block;
+    // Draw the waiting buttons at rest and they take the name's room, which is the cut the reader
+    // saw in a narrow pane.
+    for (const paint of ['light', 'mocha']) {
+        if (paint !== 'light') await theme(page, paint);
+        for (const wide of WIDTHS) {
+            await page.setViewportSize({ width: wide, height: 900 });
+            await away(page);
+            const row = await busiest(page);
+            const where = `${paint} at ${wide}`;
+
+            const high = await row.evaluate((node) => node.getBoundingClientRect().height);
+            const rest = await atRest(row);
+            expect(rest.box, `the waiting buttons hold width, ${where}`).toBeLessThanOrEqual(
+                rest.held + 0.5
+            );
+            expect(rest.name, `the name is cut short of the row, ${where}`).toBeGreaterThanOrEqual(
+                rest.free - 0.5
+            );
+
+            await onto(page, row);
+            await expect
+                .poll(async () => (await opacities(row.locator('.act'))).every((one) => one === 1))
+                .toBe(true);
+            await drawnOf(row);
+            const open = await whileOpen(row);
+            // revert: src/lib/ui/Ticker.svelte:312 => align-self: baseline;
+            // A row that changed height as its buttons came onto the line would move the rows the
+            // board's columns hold around it, and the pointer would land on another row.
+            expect(
+                await row.evaluate((node) => node.getBoundingClientRect().height),
+                `the row's height changed under the pointer, ${where}`
+            ).toBe(high);
+            expect(open.cover, `a button covers the name, ${where}`).toBeLessThanOrEqual(0.5);
+            expect(open.spill, `a button is past the row, ${where}`).toBeLessThanOrEqual(0.5);
+            expect(open.missed, `a button cannot be pointed at, ${where}`).toEqual([]);
+            expect(open.drawn, `the row draws nothing, ${where}`).toBeGreaterThan(0);
+        }
+    }
+    // Leave the page in the theme a run finds it in.
+    await theme(page, 'light');
+});
+
+test('the keyboard walks the buttons a row draws, in the order the row lists them', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'focus', t('views.focus'));
+    // revert: src/lib/ui/Ticker.svelte:374 => display: inline-block;
+    // Draw the buttons a row has no room for and the walk reaches one the row cannot show.
+    for (const wide of WIDTHS) {
+        await page.setViewportSize({ width: wide, height: 900 });
+        await away(page);
+        const row = await busiest(page);
+        const listed = await row.locator('.act').allTextContents();
+
+        await row.locator('.name').focus();
+        // The order the row lists its buttons in is the order the markup holds, open or at rest.
+        expect(await row.locator('.act').allTextContents()).toEqual(listed);
+        const drawn = await drawnOf(row);
+        expect(drawn.length, `the row draws no button at ${wide}`).toBeGreaterThan(0);
+
+        const walk: string[] = [];
+        for (const one of drawn) {
+            expect(one.length, `a button of the row carries no words at ${wide}`).toBeGreaterThan(
+                0
+            );
+            await page.keyboard.press('Tab');
+            const stop = await page.evaluate(() => {
+                const one = document.activeElement;
+                if (!(one instanceof HTMLElement)) return null;
+                const box = one.getBoundingClientRect();
+                const line = one.closest('li')?.getBoundingClientRect();
+                const hit = document.elementFromPoint(
+                    box.left + box.width / 2,
+                    box.top + box.height / 2
+                );
+                return {
+                    label: one.textContent.trim(),
+                    on: hit !== null && one.contains(hit),
+                    inside:
+                        line !== undefined &&
+                        box.left >= line.left - 0.5 &&
+                        box.right <= line.right + 0.5
+                };
+            });
+            expect(stop, `the keyboard left the page at ${wide}`).not.toBeNull();
+            expect(stop?.inside, `the focus is outside the row at ${wide}`).toBe(true);
+            expect(stop?.on, `the focus ring is behind something at ${wide}`).toBe(true);
+            walk.push(stop?.label ?? '');
+        }
+        expect(walk, `the walk is not the row's own order at ${wide}`).toEqual(drawn);
+    }
+});
+
+test('a button the keyboard reaches writes what it names, and the row wakes back unchanged', async ({
+    page
+}) => {
+    const before = readHubFile(`${TRANSFER}/project.yml`);
+    expect(before).not.toContain('snooze:');
+    await boot(page);
+    await openView(page, 'focus', t('views.focus'));
+    await away(page);
+
+    const short = shortOf(TRANSFER);
+    const line = page.getByRole('listitem').filter({ hasText: short }).first();
+    await expect(line).toBeVisible();
+    // revert: src/lib/ui/Ticker.svelte:362 => display: none;
+    // Leave a button undrawn while its row is open and the keyboard never reaches it to press it.
+    const wanted = t('project.action.snooze_1w');
+    await line.locator('.name').focus();
+    const walked: string[] = [];
+    for (let step = 0; step < 12 && walked[walked.length - 1] !== wanted; step += 1) {
+        await page.keyboard.press('Tab');
+        walked.push(await page.evaluate(() => document.activeElement?.textContent.trim() ?? ''));
+    }
+    expect(walked, `the keyboard never reached ${wanted}`).toContain(wanted);
+    await page.keyboard.press('Enter');
+
+    const asleep = page.locator('details').filter({ hasText: t('focus.command.snoozed', 1) });
+    await expect(asleep).toBeVisible();
+    expect(readHubFile(`${TRANSFER}/project.yml`)).toContain('snooze:');
+
+    await asleep.click();
+    const woken = asleep.getByRole('listitem').filter({ hasText: short });
+    await onto(page, woken);
+    await woken.getByRole('button', { name: t('project.action.unsnooze'), exact: true }).click();
+    await expect(
+        page.locator('details').filter({ hasText: t('focus.command.snoozed', 1) })
+    ).toHaveCount(0);
+    expect(readHubFile(`${TRANSFER}/project.yml`)).toBe(before);
+});
+
+test('a press at the end of a name reaches the name while the buttons are not drawn', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'focus', t('views.focus'));
+    // revert: src/lib/ui/Ticker.svelte:358 => position: absolute; right: 0;
+    // Stack the waiting buttons over the row's end instead and the end of a name presses one.
+    expect(await page.evaluate(() => matchMedia('(hover: hover)').matches)).toBe(true);
+    let spot = { x: 0, y: 0 };
+    for (const wide of WIDTHS) {
+        await page.setViewportSize({ width: wide, height: 900 });
+        await away(page);
+        const row = await busiest(page);
+        // Every point along the name, not the last one alone: a name shorter than its row ends
+        // short of where the buttons are drawn, and the reader presses the words wherever they are.
+        const spots = await row.evaluate((node) => {
+            const name = node.querySelector('.name')?.getBoundingClientRect();
+            const left = name?.left ?? 0;
+            const right = name?.right ?? 0;
+            const y = (name?.top ?? 0) + (name?.height ?? 0) / 2;
+            const points = [{ x: right - 2, y }];
+            for (let x = left + 2; x < right - 2; x += 8) points.push({ x, y });
+            return points;
+        });
+        const landed = await page.evaluate(
+            (points) =>
+                points.map(({ x, y }) => {
+                    const one = document.elementFromPoint(x, y);
+                    return one === null ? '' : `${one.tagName}.${one.className}`;
+                }),
+            spots
+        );
+        expect(
+            landed.filter((one) => one.includes('act')),
+            `a button answers over the name at ${wide}`
+        ).toEqual([]);
+        spot = spots[0];
+    }
+
+    // A tap on a device that also has a pointer: the page answers `hover: hover`, so a tap raises
+    // hover before it presses, and what it presses is what the reader could see.
+    const session = await page.context().newCDPSession(page);
+    await page.evaluate(() => {
+        document.addEventListener(
+            'click',
+            (event) => {
+                const one = event.target;
+                document.documentElement.dataset.pressed =
+                    one instanceof Element ? `${one.tagName}.${one.className}` : '';
+            },
+            true
+        );
+    });
+    await session.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: spot.x, y: spot.y }]
+    });
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+    await expect
+        .poll(() => page.evaluate(() => document.documentElement.dataset.pressed ?? ''))
+        .not.toBe('');
+    expect(await page.evaluate(() => document.documentElement.dataset.pressed)).not.toContain(
+        'act'
+    );
+});
+
+// Chrome answers `hover: none` out of its device emulation, which `isMobile` turns on; the media
+// feature cannot be asked for on its own.
+/** The first row of the board that keeps a button, which is the row the kept rule is drawn on. */
+async function keeping(page: Page): Promise<Locator> {
+    const rows = page.locator('.ticker li');
+    await expect(rows.first()).toBeVisible();
+    const at = await rows.evaluateAll((nodes) =>
+        nodes.findIndex((node) => node.querySelector('.act.kept') !== null)
+    );
+    expect(at, 'the board draws a row that keeps a button').toBeGreaterThan(-1);
+    return rows.nth(at);
+}
+
+test('the button a row keeps is drawn at the row end, waiting or not', async ({ page }) => {
+    await boot(page);
+    await openView(page, 'focus', t('views.focus'));
+    // revert: src/lib/ui/Ticker.svelte:355 => margin-left: 0;
+    // Let the button group follow the name instead of sitting at the row's end, and the kept button
+    // lands wherever the name happens to stop.
+    for (const wide of WIDTHS) {
+        await page.setViewportSize({ width: wide, height: 900 });
+        await away(page);
+        const row = await keeping(page);
+        const kept = row.locator('.act.kept');
+        const at = async (): Promise<{
+            row: number;
+            left: number;
+            right: number;
+            group: number;
+        }> =>
+            row.evaluate((node) => {
+                const line = node.getBoundingClientRect();
+                const kept = node.querySelector('.act.kept');
+                const group = node.querySelector('.acts');
+                if (kept === null || group === null)
+                    throw new Error('the row lost its kept button');
+                const one = kept.getBoundingClientRect();
+                const acts = group.getBoundingClientRect();
+                return { row: line.right, left: one.left, right: one.right, group: acts.right };
+            });
+
+        const rest = await at();
+        expect(rest.right, `the kept button is at the row's end at ${wide}`).toBeGreaterThan(
+            rest.row - 24
+        );
+        expect(rest.right, `the kept button is inside the row at ${wide}`).toBeLessThanOrEqual(
+            rest.row + 0.5
+        );
+        await expect.poll(async () => (await opacities(kept))[0]).toBe(1);
+
+        await onto(page, row);
+        await drawnOf(row);
+        // Open, the group is what sits at the row's end and the kept button sits inside it, where
+        // the caller lists it, which is why the rest of the group is drawn to the right of it.
+        const open = await at();
+        expect(open.group, `the group is at the row's end at ${wide}`).toBeGreaterThan(
+            open.row - 24
+        );
+        expect(open.group, `the group is inside the row at ${wide}`).toBeLessThanOrEqual(
+            open.row + 0.5
+        );
+        expect(open.right, `the kept button is inside the group at ${wide}`).toBeLessThanOrEqual(
+            open.group + 0.5
+        );
+        expect(
+            open.left,
+            `the kept button did not move out of the row at ${wide}`
+        ).toBeGreaterThanOrEqual(0);
+    }
+});
+
+test.describe('on a device with no pointer', () => {
+    test.use({ viewport: { width: 760, height: 900 }, isMobile: true, hasTouch: true });
+
+    test('a row draws every button and gives it its room', async ({ page }) => {
+        await boot(page);
+        await openView(page, 'focus', t('views.focus'));
+        const row = await busiest(page);
+        // revert: src/lib/ui/Ticker.svelte:348 => @media (hover: none) {
+        // Hide the waiting buttons on a device with no pointer and nothing can ever be pressed.
+        const drawn = row.locator('.act');
+        await expect
+            .poll(async () => (await opacities(drawn)).every((one) => one === 1))
+            .toBe(true);
+        const box = await atRest(row);
+        expect(
+            box.box,
+            'the buttons hold no room on a device that always draws them'
+        ).toBeGreaterThan(box.held + 0.5);
+    });
 });

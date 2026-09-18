@@ -94,7 +94,8 @@ test("a ticker row's buttons are drawn under the pointer, and the one it exists 
     await away(page);
 
     // A task entry's done is kept drawn in the Command centre and in the Tasks section alike, and
-    // its other buttons wait for the pointer.
+    // its other buttons wait for the pointer, out of the page until it arrives: they are in the
+    // markup, they hold no room, and hovering the row puts them back.
     for (const [section, title] of [
         ['section.week', String(dated.title)],
         ['section.tasks', String(undated.title)]
@@ -110,11 +111,22 @@ test("a ticker row's buttons are drawn under the pointer, and the one it exists 
         expect(await others.count()).toBeGreaterThan(0);
         await expect.poll(() => opacities(done)).toEqual([1]);
         await expect
-            .poll(async () => (await opacities(others)).every((one) => one === 0))
+            .poll(async () =>
+                (await others.evaluateAll((all) => all.map((one) => one.clientWidth))).every(
+                    (one) => one === 0
+                )
+            )
             .toBe(true);
         await row.hover();
         await expect
             .poll(async () => (await opacities(others)).every((one) => one === 1))
+            .toBe(true);
+        await expect
+            .poll(async () =>
+                (await others.evaluateAll((all) => all.map((one) => one.clientWidth))).every(
+                    (one) => one > 0
+                )
+            )
             .toBe(true);
         await away(page);
     }

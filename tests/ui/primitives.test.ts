@@ -29,6 +29,7 @@ import Tabs from '../../src/lib/ui/Tabs.svelte';
 import Table from '../../src/lib/ui/Table.svelte';
 import { order, type Column } from '../../src/lib/ui/table-rows.ts';
 import Ticker from '../../src/lib/ui/Ticker.svelte';
+import type { TickerRow } from '../../src/lib/ui/ticker-rows.ts';
 import Toolbar from '../../src/lib/ui/Toolbar.svelte';
 import ToolButton from '../../src/lib/ui/ToolButton.svelte';
 import Tooltip from '../../src/lib/ui/Tooltip.svelte';
@@ -502,6 +503,28 @@ describe('Ticker', () => {
         expect(body).toContain('>1w<');
         expect(body).toContain('title="snooze 1w"');
         expect(body).toContain('>hide<');
+    });
+
+    // revert: src/lib/ui/Ticker.svelte:231 => class:kept={false}
+    // Revert: in Ticker.svelte, mark no button as the one the row keeps.
+    it('lists the buttons in the order the row gives them, marking the one it keeps', () => {
+        const body = html(Ticker, {
+            rows,
+            onaction: noop,
+            reveal: true,
+            kept: (row: TickerRow) => (row.id === 'one' ? 'snooze:7' : undefined)
+        });
+        // The row lists its snooze first and its hide second. That is the order the markup carries,
+        // and with it the order the keyboard walks and a screen reader reads: the button the row
+        // keeps is marked where it stands rather than moved.
+        const drawn = [
+            ...body.matchAll(/<button type="button" class="act([^"]*)"[^>]*>\s*([^\s<]+)/g)
+        ].map((one) => [one[2], one[1].includes('kept')]);
+        expect(drawn).toEqual([
+            ['1w', true],
+            ['hide', false]
+        ]);
+        expect(body).toContain('title="snooze 1w"');
     });
 
     it('leaves a plain row as text in a list that can otherwise be picked', () => {
