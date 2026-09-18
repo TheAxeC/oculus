@@ -114,7 +114,7 @@ const SOLID: Record<string, string> = {
         'a hover response, saying which row the pointer is on',
     'src/lib/ui/TextArea.svelte .area': 'an input, whose text is typed and read back',
     'src/lib/ui/TextInput.svelte .text': 'an input, whose text is typed and read back',
-    'src/lib/ui/Tabs.svelte .close:hover':
+    'src/lib/ui/TabFace.svelte .close:hover':
         'a hover response, saying the close control is under the pointer',
     'src/lib/ui/Ticker.svelte .act': 'a control, pressed to run what it names',
     'src/lib/ui/ToolButton.svelte .tool': 'a control, read at the size of a word',
@@ -148,6 +148,7 @@ describe('the wallpaper rule', () => {
                 .map((selector) => `${file} ${selector}`);
         });
 
+    // revert: src/lib/ui/TabFace.svelte:258 => delete
     it('answers every surface a component paints, or names it as solid with its reason', () => {
         expect([...new Set(unpaired)].sort()).toEqual(Object.keys(SOLID).sort());
     });

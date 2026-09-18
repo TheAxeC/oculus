@@ -185,8 +185,10 @@ async function lineOf(handle: Locator): Promise<Line> {
 test.describe('the look', () => {
     // Revert: set `--tab-height` in themes/tokens.css to anything but 35px times the scale; take
     // `border-top-color: var(--accent)`, `border-bottom-color: transparent` or the ink colour off
-    // `.tab.current`, the muted colour off `.tab`, or the `.tabs::after` filler out of
-    // ui/Tabs.svelte; or drop the `.tab.current .close` or `.tab:hover .close` selector.
+    // `.tab.current`, or the muted colour off `.tab`, in ui/TabFace.svelte; take the `.tabs::after`
+    // filler out of ui/Tabs.svelte; or drop the `.tab.current .close` or `.tab:hover .close`
+    // selector.
+    // revert: src/lib/ui/TabFace.svelte:169 => border-top-color: transparent;
     test('a tab stands at the editor tab height, the shown one on an accent line over a gap, its close control where it is pressed', async ({
         page
     }) => {
@@ -248,7 +250,8 @@ test.describe('the look', () => {
     });
 
     // Revert: drop `focused={activePane}` from shell/PaneView.svelte, or the
-    // `.strip.unfocused .tab.current` rule from ui/Tabs.svelte.
+    // `:global(.strip.unfocused) .tab.current` rule from ui/TabFace.svelte.
+    // revert: src/lib/ui/TabFace.svelte:177 => border-top-color: var(--accent);
     test("only the active pane's shown tab carries the accent line; another pane's draws it in the line colour", async ({
         page
     }) => {
@@ -274,7 +277,8 @@ test.describe('the look', () => {
 
     // Revert: drop `dirty: unsaved(instance.id)` from shell/PaneView.svelte, set `dirty` to false
     // in shell/PageStrip.svelte's tabOf, drop the tab face's `aria-label` or the
-    // `.tab.dirty:not(:hover) .dot` rule from ui/Tabs.svelte.
+    // `.tab.dirty:not(:hover) .dot` rule from ui/TabFace.svelte.
+    // revert: src/lib/ui/TabFace.svelte:289 => display: none;
     test('a tab or a page holding unsaved text shows a dot in the close control place until hovered, and says so in its name', async ({
         page
     }) => {

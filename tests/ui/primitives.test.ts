@@ -789,14 +789,16 @@ describe('the marks a tab carries', () => {
         return /^<div class="([^"]*)"/.exec(tab)?.[1].replace(/\s*svelte-\S+/g, '') ?? '';
     }
 
-    // Revert: drop `class:current` from ui/Tabs.svelte, and the shown tab loses its mark.
+    // Revert: drop `class:current` from ui/TabFace.svelte, and the shown tab loses its mark.
+    // revert: src/lib/ui/TabFace.svelte:77 => class:current={false}
     it('marks the shown tab current and no other', () => {
         const body = strip();
         expect(classOf(tabOf(body, 'Shown'))).toBe('tab current');
         expect(classOf(tabOf(body, 'Other'))).toBe('tab');
     });
 
-    // Revert: drop `class:dirty` or the dot's block from ui/Tabs.svelte.
+    // Revert: drop `class:dirty` or the dot's block from ui/TabFace.svelte.
+    // revert: src/lib/ui/TabFace.svelte:78 => class:dirty={false}
     it('marks a tab holding unsaved text and draws its dot, and draws no dot on a clean tab', () => {
         const body = strip();
         const held = tabOf(body, 'Held');
@@ -809,7 +811,8 @@ describe('the marks a tab carries', () => {
         }
     });
 
-    // Revert: drop the `aria-label` of the tab face in ui/Tabs.svelte.
+    // Revert: drop the `aria-label` of the tab face in ui/TabFace.svelte.
+    // revert: src/lib/ui/TabFace.svelte:89 => aria-label={undefined}
     it('names a tab holding unsaved text with the catalog word, and leaves a clean tab its label', () => {
         const body = strip();
         const face = (label: string): string =>
@@ -863,7 +866,8 @@ describe('the marks a tab carries', () => {
         expect(opener(false)).not.toMatch(/class="opener[^"]*\bbare\b/);
     });
 
-    // Revert: drop the Glyph before the label in ui/Tabs.svelte.
+    // Revert: drop the Glyph before the label in ui/TabFace.svelte.
+    // revert: src/lib/ui/TabFace.svelte:100 => delete
     it('draws the glyph before the label, and the preview mark on the preview tab alone', () => {
         const body = strip();
         const shown = tabOf(body, 'Shown');

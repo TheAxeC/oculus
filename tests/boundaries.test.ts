@@ -502,6 +502,7 @@ describe('layer boundaries', () => {
         ]);
     });
 
+    // revert: tests/allow-styling.ts:72 => line: 'views/search/Results.svelte styles .label of ui/Chip.svelte, ui/Tabs.svelte, ui/Tag.svelte through .hit :global(.label)',
     it('lets no view or shell component style a primitive own class', () => {
         // revert: tests/boundaries.test.ts:348 => delete
         expect(

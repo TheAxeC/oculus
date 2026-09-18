@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40, Q48 03:56, Q49 05:31, Q50 06:25, Q51 06:48, R14 10:44, Q52 12:1x; in flight: Q53 from 99ea1b96 and Q54 from 8d8426df, verified and next to land; next to dispatch: Q56; briefs written and waiting: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36; next: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36, O31, Q35; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40, Q48 03:56, Q49 05:31, Q50 06:25, Q51 06:48, R14 10:44, Q52 12:1x, Q54 12:2x; in flight: Q53 from 99ea1b96 and Q56 from 521c938c; next to dispatch: Q58; briefs written and waiting: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36; next: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36, O31, Q35; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2
 - package: Q53
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -44,20 +44,20 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   reviewer: a44cc2705dd951f81                # claude:opus through the Agent tool, read-only, launched 10:52, scratch folder scratchpad/q53-review (review earned: the shell's drawing and a new reactive cell)
   landing: not-started
   round: 0
-- package: Q54
-  executor: agent                          # the configuration default, chosen for the step
-  worker: claude:opus
-  worktree: .agents/worktrees/q54
-  base: 8d8426df
-  launched: 2026-09-18T10:55
-  prompt: the Agent tool's prompt, the brief's paths plus the nine lines Q53 adds to ui/Tabs.svelte beside it, and the revert rules the checks keep catching
-  report: tools/oculus/.scratch/migration/agents/reviews/Q54-report.md
-  pid: none                                 # a native Claude worker has no process of its own
-  session_id: aaf7573578b7f9cb5            # the Agent tool id, launched 10:55
-  landing: not-started
-  round: 0
 ```
 
+- package: Q56
+  executor: agent                          # the configuration default, chosen for the step
+  worker: claude:opus
+  worktree: .agents/worktrees/q56
+  base: 521c938c
+  launched: 2026-09-18T12:22
+  prompt: the Agent tool's prompt, the brief plus the machine-readable revert rule and the no-shortcut rule
+  report: tools/oculus/.scratch/migration/agents/reviews/Q56-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: a0910fc1937c6860e            # the Agent tool id, launched 12:22
+  landing: not-started
+  round: 0
 ## The standing demands (from Axel, in force)
 - The run of 2026-09-17 10:46 (Axel: "You may continue with the orchestration. Important is to keep 3 tasks running in parallel. No pause point is set for now."): three steps in flight at all times, a new one dispatched at each landing, the queue as plan.md's line; one repair round per step; the look at each landing on the TEST page.
 - A second repair round only when the one round's delta leaves a verification command red or an acceptance item of the brief unbuilt and the fix is too large for landing, never for a new review finding (Axel, 2026-09-17 11:33, agreeing with the Fable session's reading of the ledger's rows); in the plan-orchestration skill's step 8.

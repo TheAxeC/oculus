@@ -9,7 +9,6 @@ src/lib/server/audit.ts 940
 tests/server/writes.test.ts 930
 src/lib/data/sources/config.ts 908
 tests/shell/rail.test.ts 906
-src/lib/ui/Tabs.svelte 596
 src/lib/views/Files.svelte 587
 src/lib/ui/Menu.svelte 557
 src/lib/views/focus/Lanes.svelte 547

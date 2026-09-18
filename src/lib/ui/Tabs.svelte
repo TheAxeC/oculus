@@ -3,10 +3,6 @@
     // the layout tree: the caller passes labels and ids and is called back with an id, which is why
     // the same strip serves a pane of views and anything else with tabs.
     //
-    // A tab is a button and its close control is a second button beside it, since a button inside a
-    // button is not valid HTML. The pair sits in a presentation wrapper so the tab list still has
-    // its tabs as its only meaningful children.
-    //
     // The strip is one stop of the browser's focus order: one tab carries tabindex 0 and everything
     // else in the strip carries -1, so a reader tabs past the whole strip in one press. The menu
     // the caller puts at the right keeps its own stop, being a control of the pane rather than of
@@ -22,20 +18,17 @@
     // where it stops. The strip's end is the browser's largest offset, so a control press or a
     // reveal there may rest short of a tab start. How it scrolls is ui/tab-scroll.svelte.ts.
     //
-    // It is drawn as an editor's tab strip, every measure a token of themes/tokens.css: tabs of one
-    // height with a line between them; the shown tab on the surface it heads, over a gap in the line
-    // under the strip, with an accent line along its top on a focused strip only; a close control
-    // on the shown tab and under the pointer, keeping its room on every tab; and a tab holding
-    // unsaved text showing a dot there until hovered, and named for it, since a dot says nothing to
-    // a screen reader. The scroll controls are bare icons, as the caller's buttons at the right are.
+    // It is drawn as an editor's tab strip, every measure a token of themes/tokens.css: the surface
+    // the strip sits on, the line under it with a gap where the shown tab heads it, the mark where a
+    // dragged tab would land, and the scroll controls as bare icons, as the caller's buttons at the
+    // right are. One tab's own face, marks and close control are ui/TabFace.svelte.
 
     import { type Tab, insertionIndex } from '$lib/ui/tab-strip';
     import { createTabScroll } from '$lib/ui/tab-scroll.svelte';
     import { heldStop, nextStop } from '$lib/ui/roving';
     import { type Snippet } from 'svelte';
-    import Glyph from './Glyph.svelte';
+    import TabFace from './TabFace.svelte';
     import ToolButton from './ToolButton.svelte';
-    import Tooltip from './Tooltip.svelte';
     import { t } from '$lib/state/text';
 
     type Props = {
@@ -214,18 +207,6 @@
     function out(): void {
         onhoverindex?.(null);
     }
-
-    /** The theme token pair for a count badge. */
-    function badgeStyle(tone: string | undefined): string | undefined {
-        return tone === undefined
-            ? undefined
-            : `--tab-badge-bg: var(--c-${tone}); --tab-badge-fg: var(--on-c-${tone})`;
-    }
-
-    /** The theme token pair for one configured split cell. */
-    function cellStyle(color: string): string {
-        return `--cell-bg: var(--c-${color}); --cell-fg: var(--on-c-${color})`;
-    }
 </script>
 
 <!-- The two pointer handlers report where a dragged tab would be inserted and do nothing else. They
@@ -267,83 +248,19 @@
             {#if dropIndex === index}
                 <span class="mark" aria-hidden="true"></span>
             {/if}
-            <div
-                class="tab"
-                class:current={tab.id === active}
-                class:dirty={tab.dirty === true}
-                role="presentation"
-                bind:this={faces[index]}
-            >
-                <Tooltip text={tab.hint ?? tab.label} presentational>
-                    <button
-                        type="button"
-                        class="face"
-                        class:preview={tab.preview === true}
-                        role="tab"
-                        aria-selected={tab.id === active}
-                        aria-label={tab.dirty === true ? t('ui.tab_unsaved', tab.label) : undefined}
-                        data-tab-preview={tab.preview === true ? '' : undefined}
-                        data-drag-handle={onpointerdown === undefined ? undefined : ''}
-                        bind:this={heads[index]}
-                        tabindex={tab.id === stop ? 0 : -1}
-                        onclick={() => press(index)}
-                        ondblclick={() => ondblclick?.(tab.id)}
-                        onkeydown={(event) => keys(event, index)}
-                        onpointerdown={(event) => down(tab.id, event)}
-                    >
-                        {#if tab.glyph !== undefined}
-                            <Glyph name={tab.glyph} />
-                        {/if}
-                        <span class="label">{tab.label}</span>
-                        {#if (tab.badgeGlyph ?? '') !== ''}
-                            <span
-                                class="tab-badge"
-                                style={badgeStyle(tab.badgeTone)}
-                                title={tab.badgeTitle}
-                                aria-hidden="true"
-                            >
-                                <Glyph name={tab.badgeGlyph ?? ''} />{tab.badge}
-                            </span>
-                        {:else if (tab.badge ?? '') !== ''}
-                            <span
-                                class="tab-badge"
-                                style={badgeStyle(tab.badgeTone)}
-                                title={tab.badgeTitle}
-                                aria-hidden="true"
-                            >
-                                {tab.badge}
-                            </span>
-                        {/if}
-                        {#if tab.cells !== undefined && tab.cells.length > 0}
-                            <span class="cells" title={tab.badgeTitle} aria-hidden="true">
-                                {#each tab.cells as cell (cell.label)}
-                                    <span class="cell" style={cellStyle(cell.color)}>
-                                        {cell.count}
-                                    </span>
-                                {/each}
-                            </span>
-                        {/if}
-                    </button>
-                </Tooltip>
-                <Tooltip text={t('ui.close_tab')} presentational>
-                    <button
-                        type="button"
-                        class="close"
-                        aria-label={t('ui.close_tab')}
-                        tabindex={-1}
-                        onclick={() => onclose(tab.id)}
-                    >
-                        {#if tab.dirty === true}
-                            <span class="dot">
-                                <Glyph name={t('ui.dirty_glyph')} />
-                            </span>
-                        {/if}
-                        <span class="cross">
-                            <Glyph name={t('ui.close_glyph')} />
-                        </span>
-                    </button>
-                </Tooltip>
-            </div>
+            <TabFace
+                {tab}
+                current={tab.id === active}
+                stop={tab.id === stop}
+                handle={onpointerdown !== undefined}
+                onselect={() => press(index)}
+                ondblclick={() => ondblclick?.(tab.id)}
+                onclose={() => onclose(tab.id)}
+                onkeydown={(event: KeyboardEvent) => keys(event, index)}
+                onpointerdown={(event: PointerEvent) => down(tab.id, event)}
+                bind:face={faces[index]}
+                bind:head={heads[index]}
+            />
         {/each}
         {#if dropIndex !== null && dropIndex >= tabs.length}
             <span class="mark" aria-hidden="true"></span>
@@ -434,66 +351,6 @@
         transform: rotate(180deg);
     }
 
-    .tab {
-        display: flex;
-        align-items: stretch;
-        flex: 0 0 auto;
-        box-sizing: border-box;
-        height: var(--tab-height);
-        border-top: var(--tab-accent-line) solid transparent;
-        border-right: 1px solid var(--line);
-        border-bottom: 1px solid var(--line);
-        color: var(--muted-txt, var(--muted));
-        white-space: nowrap;
-    }
-
-    .tab.current {
-        background: var(--panel);
-        border-top-color: var(--accent);
-        border-bottom-color: transparent;
-        color: var(--ink-txt, var(--ink));
-    }
-
-    .strip.unfocused .tab.current {
-        border-top-color: var(--line);
-    }
-
-    /* The current tab sits inside the strip, which is already translucent, so it paints nothing of
-       its own: its borders and the picture showing through it are what tell it apart. */
-    :global(body.wall) .tab.current {
-        background: transparent;
-    }
-
-    .tab-badge {
-        display: inline-block;
-        min-width: 16px;
-        padding: 0 5px;
-        border-radius: var(--radius-pill);
-        background: var(--tab-badge-bg, var(--chip));
-        color: var(--tab-badge-fg, var(--accent-txt, var(--accent)));
-        font-family: var(--font-num);
-        font-size: var(--fs-xs);
-        font-weight: 700;
-        line-height: 16px;
-        text-align: center;
-    }
-
-    .cells {
-        display: inline-flex;
-        overflow: hidden;
-        border-radius: var(--radius-sm);
-        font-family: var(--font-num);
-        font-size: var(--fs-xxs);
-        font-weight: 700;
-    }
-
-    .cell {
-        padding: 1px 5px;
-        background: var(--cell-bg);
-        color: var(--cell-fg);
-        line-height: 1.5;
-    }
-
     /* Where a dragged tab would land. It takes part in the strip's layout rather than floating over
        it, so the tabs part around it and the mark is never drawn over a label. */
     .mark {
@@ -501,96 +358,5 @@
         width: 2px;
         align-self: stretch;
         background: var(--accent);
-    }
-
-    .face {
-        display: flex;
-        align-items: center;
-        gap: var(--tab-icon-gap);
-        border: none;
-        background: none;
-        color: inherit;
-        font: inherit;
-        font-size: var(--fs-lg);
-        padding: 0 0 0 var(--tab-pad);
-        cursor: pointer;
-    }
-
-    /* Seen only on the shown tab, under the pointer and as the unsaved dot. It takes no stop, so it
-       has no keyboard look; Delete on the tab is the keyboard's close. */
-    .close {
-        display: flex;
-        align-items: center;
-        align-self: center;
-        justify-content: center;
-        box-sizing: border-box;
-        width: var(--tab-close);
-        height: var(--tab-close);
-        margin: 0 calc((var(--tab-actions) - var(--tab-close)) / 2);
-        padding: 0;
-        border: none;
-        border-radius: var(--radius-sm);
-        background: none;
-        color: inherit;
-        font: inherit;
-        font-size: var(--fs-lg);
-        cursor: pointer;
-        opacity: 0;
-    }
-
-    .tab.current .close,
-    .tab.dirty .close,
-    .tab:hover .close {
-        opacity: 1;
-    }
-
-    .close:hover {
-        background: var(--chip);
-    }
-
-    .dot,
-    .cross {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    /* The dot is centred on the cross's box at any icon size, and its icon, larger than the control,
-       takes no press. It shows on a tab holding unsaved text until the pointer is over the tab. */
-    .dot {
-        position: relative;
-        display: none;
-        width: 1em;
-        height: 1em;
-    }
-
-    .close .dot :global(svg) {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        width: var(--tab-dot-size);
-        height: var(--tab-dot-size);
-        fill: currentColor;
-        transform: translate(-50%, -50%);
-        pointer-events: none;
-    }
-
-    .tab.dirty:not(:hover) .dot {
-        display: flex;
-    }
-
-    .tab.dirty:not(:hover) .cross {
-        display: none;
-    }
-
-    /* The tab the next single click replaces. Italics rather than a colour of its own: it says the
-       tab is provisional without taking a hue that stands for a status somewhere else. */
-    .face.preview .label {
-        font-style: italic;
-    }
-
-    .face:focus-visible {
-        outline: 2px solid var(--accent);
-        outline-offset: -2px;
     }
 </style>

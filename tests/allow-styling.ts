@@ -69,7 +69,7 @@ export const HELD: Styling[] = [
         why: 'the rule at src/lib/views/radar/Bucket.svelte:78 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/search/Results.svelte styles .label of ui/Chip.svelte, ui/Tabs.svelte, ui/Tag.svelte through .hit :global(.label)',
+        line: 'views/search/Results.svelte styles .label of ui/Chip.svelte, ui/TabFace.svelte, ui/Tag.svelte through .hit :global(.label)',
         why: 'the rule at src/lib/views/search/Results.svelte:137 reaches into the primitive rather than asking it for the difference'
     },
     {
@@ -93,7 +93,7 @@ export const HELD: Styling[] = [
         why: 'the rule at src/lib/views/shared/CardDocs.svelte:161 reaches into the primitive rather than asking it for the difference'
     },
     {
-        line: 'views/shared/CrossLinks.svelte styles .label of ui/Chip.svelte, ui/Tabs.svelte, ui/Tag.svelte through .member :global(.label)',
+        line: 'views/shared/CrossLinks.svelte styles .label of ui/Chip.svelte, ui/TabFace.svelte, ui/Tag.svelte through .member :global(.label)',
         why: 'the rule at src/lib/views/shared/CrossLinks.svelte:147 reaches into the primitive rather than asking it for the difference'
     },
     {
