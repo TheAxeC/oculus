@@ -445,6 +445,15 @@ describe('a path told from an address', () => {
         expect(hubPathsOf({ link: 3, folder: ['a'] })).toEqual([]);
     });
 
+    // Revert: drop the `!HOSTED.test(value)` term from isHubPath of state/collection.ts.
+    it('takes no path from a `url` that is a web address written without a scheme', () => {
+        expect(hubPathsOf({ url: 'github.com/x' })).toEqual([]);
+        expect(hubPathsOf({ url: 'www.example.org' })).toEqual([]);
+        expect(hubPathsOf({ url: 'projects/active/x/README.md' })).toEqual([
+            'projects/active/x/README.md'
+        ]);
+    });
+
     // Revert: drop the `path === ''` test in hubPathsOf, or the dedupe.
     it('takes no path from an empty value, and one from two values naming the same place', () => {
         expect(hubPathsOf({ link: '' })).toEqual([]);

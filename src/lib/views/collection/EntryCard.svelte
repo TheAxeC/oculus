@@ -206,9 +206,11 @@
         openView('person', { key, label: personName(portfolio(), key) });
     }
 
-    /** Whether a link names a local HTML file, which the document view can hold as a tab. */
+    /** Whether a link names an HTML file of the hub, which the document view can hold as a tab. */
     function isDocument(link: string): boolean {
-        return /^[^:]*\.html?$/i.test(link) && !link.startsWith('/');
+        // The same rule the Show in Files control is drawn from, so one value is one answer: an
+        // address is not a document, and neither is a path climbing out of the hub.
+        return hubPathsOf({ link }).length > 0 && /^[^:]*\.html?$/i.test(link);
     }
 
     /** One local HTML file of the hub as its own tab, the way a bookmark of the rail opens one. */

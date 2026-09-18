@@ -3,9 +3,10 @@
     // The project list is already restricted to real users, and concentration arrives as a flag.
     //
     // A `link` is told a path of the hub from an address by the rule the collection cards use
-    // (state/collection.ts's hubPathsOf): a path opens through api/file in this tab and the card
+    // (state/collection.ts's hubPathsOf): a path opens through api/file in a tab of its own and the card
     // carries the control that selects it in the Files view; an address opens in a tab of the
-    // browser's own.
+    // browser's own. Both links the card draws, the site and the call, go through `hrefOf`, so
+    // neither is left relative to the page's own address.
 
     import Card from '$lib/ui/Card.svelte';
     import Tag from '$lib/ui/Tag.svelte';
@@ -76,12 +77,17 @@
                 ? {
                       label: t('venues.site'),
                       glyph: 'launch',
-                      href: linkPath === undefined ? venue.link : hrefOf(linkPath),
+                      href: hrefOf(linkPath ?? venue.link),
                       external: true
                   }
                 : null,
             venue.call
-                ? { label: t('venues.call'), glyph: 'paper', href: venue.call, external: true }
+                ? {
+                      label: t('venues.call'),
+                      glyph: 'paper',
+                      href: hrefOf(venue.call),
+                      external: true
+                  }
                 : null,
             venue.email
                 ? { label: t('venues.contact'), glyph: 'email', href: `mailto:${venue.email}` }

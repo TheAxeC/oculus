@@ -57,7 +57,9 @@
     const folder = $derived(join.folder);
     /** The folder as a path of the hub, which Show in Files can select, or nothing for one outside it. */
     const folderPath = $derived(hubPathsOf({ folder }).at(0));
-    const files = $derived(folder === '' ? null : listing(HUB_ROOT, folder));
+    // The listing is asked for the hub path and never for the raw value, so a folder that is an
+    // address or climbs above the hub asks the file route for nothing.
+    const files = $derived(folderPath === undefined ? null : listing(HUB_ROOT, folderPath));
     // The block offers what a source tab can hold, so a folder inside the supervision folder is not
     // a row: opening one would ask the file route for bytes a directory has none of.
     const documents = $derived((files?.entries ?? []).filter((entry) => entry.kind === 'file'));
@@ -114,7 +116,8 @@
 
     /** Open one file of a student's supervision folder in the source tab. */
     function openFile(name: string): void {
-        openSourceFile(client, { root: HUB_ROOT, path: `${folder}/${name}` });
+        if (folderPath === undefined) return;
+        openSourceFile(client, { root: HUB_ROOT, path: `${folderPath}/${name}` });
     }
 </script>
 
@@ -209,7 +212,9 @@
                             />
                         {/if}
                     </div>
-                    {#if files === null || files.loading}
+                    {#if files === null}
+                        <Empty message={t('person.folder_outside')} glyph="warn" />
+                    {:else if files.loading}
                         <Empty message={t('person.folder_loading')} />
                     {:else if files.error !== ''}
                         <Empty message={files.error} glyph="warn" />

@@ -28,5 +28,6 @@ text:
         show_in_files: Show in Files
         show_in_files_tip: 'Select {0} in the Files view'
         folder_loading: Reading the folder ...
+        folder_outside: That is not a folder of the hub, so there is nothing to list.
         folder_empty: The folder holds no files.
         open_file: 'Open {0} in a source tab'

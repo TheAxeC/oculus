@@ -46,7 +46,7 @@ const entries = [
         authors: 'Ada',
         venue: 'Nature',
         year: 2026,
-        url: 'https://example.org/risk',
+        url: 'papers.example.org/risk',
         bucket: 'preemption',
         project: 'alpha',
         relevance: 'high',
@@ -131,6 +131,10 @@ describe('the Lit Watch view', () => {
         expect(body).toContain('4 tracked');
         expect(body).not.toContain('{G.');
         expect(body).toContain(catalog['radar.search']);
+        // revert: src/lib/views/radar/RadarCard.svelte:83 => return href.startsWith('https://e') ? href : undefined;
+        // Revert: in posting of RadarCard.svelte, draw only a value that already carries its scheme,
+        // and a paper written as `papers.example.org/x` draws no link at all.
+        expect(body).toContain('href="https://papers.example.org/risk"');
         for (const label of ['Pre-emption risk', 'Idea sparks', 'Cite / baseline', 'Adjacent'])
             expect(body).toContain(label);
         expect(body).toContain('<strong>Risk</strong> paper');

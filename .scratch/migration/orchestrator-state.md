@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40, Q48 03:56, Q49 05:31; in flight: Q50 from 84fd99e1, R14 (the eleven checks of the pass) from ec7bc6e5 and Q51 from aa6a918b; next to dispatch: Q52; briefs written and waiting: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36; next: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36, O31, Q35; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40, Q48 03:56, Q49 05:31, Q50 06:25; in flight: R14 (the eleven checks of the pass) from ec7bc6e5 and Q51 from aa6a918b; next to dispatch: Q52; briefs written and waiting: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36; next: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36, O31, Q35; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2
 - package: Q51
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -44,23 +44,6 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   reviewer: a2cd905622b557c86                # claude:opus through the Agent tool, read-only, launched 06:31, scratch folder scratchpad/q51-review (review earned: the shell's whole layout store); its brief is to compare every moved function body against the base
   landing: not-started
   round: 0
-- package: Q50
-  executor: agent                          # the configuration default, chosen for the step
-  worker: claude:opus
-  worktree: .agents/worktrees/q50
-  base: 84fd99e1
-  launched: 2026-09-18T04:05
-  prompt: the Agent tool's prompt, the shape of Q48's with the brief's own paths
-  report: tools/oculus/.scratch/migration/agents/reviews/Q50-report.md
-  pid: none                                 # a native Claude worker has no process of its own
-  session_id: a181fc7855d996f4e            # the Agent tool id, launched 04:05
-  reported: 2026-09-18T04:34                # everything in the brief done; `HOSTED` beside `ADDRESSED` reads a first segment that is a host as a web address, `hrefOf` puts `https://` in front of one, and the probe over the real hub says no value of the 257 at a link, url or folder key changes meaning. Two ambiguities stated: a bare host with no path (`github.com`) still reads as a hub path, since a lone dotted segment cannot be told from `README.md`, and a hub folder like `my.docs/notes.md` now reads as an address; the hub holds neither shape
-  reviewer: aae362464a67b5703                # claude:opus through the Agent tool, read-only, launched 04:36, scratch folder scratchpad/q50-review (review earned: a state module every card reads)
-  reviewer_done: 2026-09-18T05:10            # fifteen findings, agents/reviews/Q50-refuter.md: the venue card renders the raw value as a relative href when it stops being a hub path, so a press lands under the page's own address; `theaxec.github.io` is a real top-level folder of this hub whose paths the rule now reads as web addresses; the head comment is false for a bare host; two claims of the report contradicted by the reviewer's run. Its own probe over a larger set agrees that no value in the hub changes meaning
-  round: 1                                  # sent 05:30: five rulings (the venue card's href through `hrefOf`, every other caller asked the same question, the head comment made true, `theaxec.github.io` stated as live with a case that prints and asserts nothing, and the two report claims corrected); round base: scratchpad/q50-round1
-  reported2: 2026-09-18T05:52                # the round's report, appended to agents/reviews/Q50-report.md: all five done, and two more wrong surfaces found by the caller sweep the ruling asked for (`EntryCard.svelte`'s `isDocument` opened a web address in the document view, and the venue card's call link was raw). Ten files now. Raised for me: the Person view's folder block draws a heading and no body for a folder that is not a hub path, which needs a key in `config/text/views/person.yml`, a file outside the builder's paths; a landing fix, unreached by any value in the hub
-  reviewer2: a25a40af12ad975b8               # the run over round 1, claude:opus, read-only, launched 05:53, scratch folder scratchpad/q50-review2; its brief is the four view changes in the page, the silent folder block, the integrity case and the seven reverts
-  landing: not-started
 - package: R14
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -275,7 +258,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-09-18 05:31. Landed on 2026-09-17: Q37, Q31, Q39, Q32, Q30, Q42, Q34, Q43, Q44, Q45, Q41, D22, Q38, Q46 and Q47, fifteen steps; on 2026-09-18: Q48 at 03:56 and Q49 at 06:05, their landing reports `agents/reviews/Q48-landing.md` and `agents/reviews/Q49-landing.md`. In flight: R14 (the eleven checks of the recurring pass, its second round of thirteen rulings, beyond the cap under its one exception) and Q50 (its round of five rulings). Q51 was dispatched at 05:40 to bring the count back to three; next to dispatch is Q52. Briefs written and committed ahead of the queue: Q36, Q51, Q52, Q53, Q54, Q56, Q58, Q59. Three rulings wait on Axel: the write with no timeout, the absent-document tag, and the tap on a hybrid device.
+- 2026-09-18 06:25. Landed on 2026-09-17: Q37, Q31, Q39, Q32, Q30, Q42, Q34, Q43, Q44, Q45, Q41, D22, Q38, Q46 and Q47, fifteen steps; on 2026-09-18: Q48 at 03:56, Q49 at 05:31 and Q50 at 06:25, their landing reports in `agents/reviews/`. In flight: R14 (the eleven checks of the recurring pass, its second round reviewed a third time) and Q51 (the layout store split, under review). Next to dispatch, to bring the count back to three: Q52. Briefs written and committed ahead of the queue: Q36, Q52, Q53, Q54, Q56, Q58, Q59. Three rulings wait on Axel: the write with no timeout, the absent-document tag, and the tap on a hybrid device.
 
 - 2026-09-10. C1 to C13, R1 and O0 are done and committed: fc6d299 (C12 and C13, one commit because H1 and H2 both touched eight of the same files) and f8af492 (R1 and O0). Working tree clean after both.
 - Verified before fc6d299: `python3 build.py --selftest` PASS, `python3 build.py --dummy` builds, `bash tests/run.sh` PASS (5 + 29 + 24 + 19 Python tests, 11 JS modules). `grep -rn os.environ tools/cockpit/src tools/cockpit/build.py` finds only the `ANTHROPIC_API_KEY` read. The 8787 server answers 200 with zero `COCKPIT_` variables in its environment.
@@ -884,3 +867,6 @@ Per package, one row per run: the harness, model and effort; tokens in / cached 
 - Q49, reviewer runs, claude:opus read-only: first review 00:52 to 01:12, six findings; run over round 1 (a30170d629179a822) 185,880 tokens, 64 tool uses, 3,587 s (04:12 to 05:10), eighteen findings, all closed at the landing or recorded there.
 - Q49, builder round 1, claude:opus through the Agent tool: 560,521 tokens, 141 tool uses, 10,210 s (01:21 to 05:05).
 - Q49 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from Q48's landing (2026-09-18T03:56) to 06:05: 94 messages, 69,390 output tokens, 173,933 cache-write tokens, 40,948,101 cache-read tokens, 188 fresh input tokens, 94 minutes; shared with R14's and Q50's reviews and rounds.
+- Q50, builder claude:opus through the Agent tool: first run 145,176 tokens, 65 tool uses, 1,749 s (04:05 to 04:34); repair round 259,269 tokens, 78 tool uses, 1,361 s (05:30 to 05:52).
+- Q50, reviewer runs, claude:opus read-only: first review (aae362464a67b5703) 206,217 tokens, 123 tool uses, 3,278 s (04:18 to 05:10), fifteen findings; the run over round 1 (a25a40af12ad975b8) 194,218 tokens, 77 tool uses, 1,139 s, sixteen findings, all closed at the landing.
+- Q50 landing, orchestrator claude:opus (this session), `land/templates/usage.py` from Q49's landing (2026-09-18T05:31:32) to 06:25: 84 messages, 52,680 output tokens, 108,756 cache-write tokens, 47,538,964 cache-read tokens, 168 fresh input tokens, 53 minutes; shared with R14's second round and review and with Q51's dispatch, build and review.

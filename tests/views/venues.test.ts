@@ -329,6 +329,28 @@ describe('the journal section and venue card', () => {
         expect(journal).toContain('target="_blank"');
     });
 
+    // Revert: in views/venues/VenueCard.svelte, put the site link back to
+    // `linkPath === undefined ? venue.link : hrefOf(linkPath)`.
+    it('sends a site link written without a scheme through hrefOf, so the press leaves the page', () => {
+        const scheming = VENUES.map((one) =>
+            one.id === 'journal' ? { ...one, link: 'github.com/TheAxeC/x' } : one
+        );
+        const journal = venueCard(html(scheming), 'journal');
+        expect(journal).toContain('href="https://github.com/TheAxeC/x"');
+        expect(journal).not.toContain('href="github.com/TheAxeC/x"');
+        expect(journal).not.toContain(catalog['venues.show_in_files']);
+    });
+
+    // Revert: in views/venues/VenueCard.svelte, send the call link to `venue.call` raw.
+    it('sends the call link through hrefOf too, so neither venue link is relative', () => {
+        const scheming = VENUES.map((one) =>
+            one.id === 'journal' ? { ...one, call: 'conf.example.org/cfp' } : one
+        );
+        const journal = venueCard(html(scheming), 'journal');
+        expect(journal).toContain('href="https://conf.example.org/cfp"');
+        expect(journal).not.toContain('href="conf.example.org/cfp"');
+    });
+
     // Revert: in hubPathsOf of state/collection.ts, take every `link` value.
     it('offers no Show in Files for a link that is a web address, and opens it in a tab of its own', () => {
         const journal = venueCard(html(), 'journal');

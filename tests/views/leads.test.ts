@@ -69,7 +69,7 @@ const entries = [
         fit: 'strong because methods align',
         status: 'open',
         deadline: 'apply by 2099-01-02',
-        url: 'https://example.org/strong'
+        url: 'jobs.example.org/strong'
     },
     {
         title: 'Undated role',
@@ -243,6 +243,10 @@ describe('the Position Leads view', () => {
         expect(body).toContain('2099-01-02');
         expect(body).toContain(catalog['leads.posting']);
         expect(body).not.toContain('ftp://example.org/not-shown');
+        // revert: src/lib/views/leads/LeadCard.svelte:103 => return href.startsWith('https://e') ? href : undefined;
+        // Revert: in posting of LeadCard.svelte, draw only a value that already carries its scheme,
+        // and a posting written as `jobs.example.org/x` draws no link at all.
+        expect(body).toContain('href="https://jobs.example.org/strong"');
         expect(body).toContain(catalog['leads.action.applied']);
         expect(body).toContain(catalog['leads.action.decline']);
         expect(body).toContain(catalog['leads.expired_sec'].replace('{0}', '3'));

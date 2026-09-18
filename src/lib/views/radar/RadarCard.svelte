@@ -18,6 +18,7 @@
         type Project,
         type RadarEntry
     } from '$lib/state/radar';
+    import { hrefOf } from '$lib/state/collection';
     import { t } from '$lib/state/text';
     import { useState } from '$lib/state/use';
 
@@ -68,6 +69,18 @@
 
     async function created(): Promise<void> {
         await mark(true);
+    }
+
+    /**
+     * The web page a posting address names, or nothing for a value that names no web page. A value
+     * written without its scheme is one, since `hrefOf` puts `https://` in front of a host; a hub
+     * path and any other scheme are not, which is what this card drew before.
+     */
+    function posting(value: string): string | undefined {
+        const held = value.trim();
+        if (held === '') return undefined;
+        const href = hrefOf(held);
+        return href.startsWith('http') ? href : undefined;
     }
 </script>
 
@@ -148,10 +161,10 @@
             {/if}
         </div>
     {/if}
-    {#if text('url').startsWith('http')}
+    {#if posting(text('url')) !== undefined}
         <p class="paper">
             <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
-            <a href={text('url')} target="_blank" rel="noreferrer">
+            <a href={posting(text('url'))} target="_blank" rel="noreferrer">
                 <Glyph name="link" />
                 {t('radar.paper')}
             </a>

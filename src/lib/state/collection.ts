@@ -238,17 +238,37 @@ export function drawnFields(entry: Entry, schema: SchemaField[] | undefined): Dr
 /** The root api/file serves the hub itself under, for a link that is a path inside the hub. */
 export const HUB_ROOT = 'hub';
 
-/** A value that already names where it goes: a scheme, or an absolute path of the page's own. */
+/**
+ * A value that already names where it goes: a scheme, or an absolute path of the page's own. With
+ * HOSTED below it this is the whole rule: an address is a value carrying a scheme, a leading slash,
+ * a `www.` first segment, or any other host with a path behind it. A lone dotted segment stays a
+ * path inside the hub, since `github.com` and `README.md` are one shape and separating them would
+ * take the hub root's own listing, which lands after the card is drawn and would take a control
+ * away again.
+ */
 const ADDRESSED = /^([a-z][a-z0-9+.-]*:|\/)/i;
 
 /**
+ * A web address written without a scheme, told by its first segment being a host: a `www.` prefix,
+ * or a dotted first segment ending in a letters-only suffix of two or more with an optional port
+ * and a path behind it. A hub path's first segment holds a dot without being either (`README.md`,
+ * `notes.v2/plan.md`), so it stays a path.
+ */
+const HOSTED = /^(www\.[^/]+|[^/:]+\.[a-z]{2,}(:[0-9]+)?\/.*)$/i;
+
+/** The scheme put in front of a web address written without one. */
+const HOSTED_SCHEME = 'https://';
+
+/**
  * Where a `link` or `url` field goes. A value with a scheme (`https:`, `mailto:`) or a leading
- * slash is an address and is kept; anything else is a path inside the hub, which the seven files
+ * slash is an address and is kept; one whose first segment is a host is the same address written
+ * without its scheme and gets one; anything else is a path inside the hub, which the seven files
  * write as `network/<event>/deck.html` and the like, and is served through api/file's hub root so
  * a click opens the file rather than a 404 under the page's own address.
  */
 export function hrefOf(value: string): string {
     if (ADDRESSED.test(value)) return value;
+    if (HOSTED.test(value)) return `${HOSTED_SCHEME}${value}`;
     const parts = value
         .split('/')
         .filter((one) => one !== '')
@@ -258,7 +278,7 @@ export function hrefOf(value: string): string {
 
 /** Whether a `link` or `url` value is a path inside the hub, which hrefOf serves through api/file. */
 export function isHubPath(value: string): boolean {
-    return value !== '' && !ADDRESSED.test(value);
+    return value !== '' && !ADDRESSED.test(value) && !HOSTED.test(value);
 }
 
 /**
@@ -283,17 +303,32 @@ export function normalisePath(path: string): string {
 const PATH_FIELDS = ['link', 'url', 'folder'];
 
 /**
+ * The fields whose value is a path of the hub whatever its first segment looks like. A `folder`
+ * names a folder and never a web address, and this hub has a folder whose name is host-shaped
+ * (`theaxec.github.io`), which the address rule would otherwise read as a site.
+ */
+const HUB_ONLY_FIELDS = ['folder'];
+
+/**
  * The hub paths an entry's fields name, each once, in field order, which is what a card offers to
- * show in the Files view. A value counts when isHubPath says it is not an address and, by its
- * segments, it names something under the hub: not the hub itself and nothing above it. Whether
- * anything is there is decided when the file browser opens it.
+ * show in the Files view. A `link` or a `url` counts when isHubPath says it is not an address; a
+ * `folder` counts unless it carries a scheme or a leading slash, since it names a folder either
+ * way. Then, by its segments, it must name something under the hub: not the hub itself and nothing
+ * above it. Whether anything is there is decided when the file browser opens it.
  */
 export function hubPathsOf(fields: Record<string, unknown>): string[] {
     const found: string[] = [];
     for (const field of PATH_FIELDS) {
         const value = fields[field];
-        if (typeof value !== 'string' || !isHubPath(value.trim())) continue;
-        const path = normalisePath(value.trim());
+        if (typeof value !== 'string') continue;
+        const held = value.trim();
+        const path = HUB_ONLY_FIELDS.includes(field)
+            ? held !== '' && !ADDRESSED.test(held)
+                ? normalisePath(held)
+                : ''
+            : isHubPath(held)
+              ? normalisePath(held)
+              : '';
         if (path === '' || path === '..' || path.startsWith('../')) continue;
         if (!found.includes(path)) found.push(path);
     }

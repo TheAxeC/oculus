@@ -381,6 +381,21 @@ describe('a card', () => {
         expect(card).not.toContain('href="/api/file/hub/network/a-talk/slides.html"');
     });
 
+    // Revert: in isDocument of views/collection/EntryCard.svelte, drop the isHubPath test and put
+    // back the `!link.startsWith('/')` one.
+    it('draws an HTML link written as a web address as a link that leaves the page', () => {
+        const snap = snapshot();
+        snap.version = 9;
+        snap.entities.collections.events.entries = [
+            entry(0, 'A page', { link: 'www.example.org/index.html' })
+        ];
+        receive({ channel: 'portfolio', version: 9, payload: snap });
+        const [page] = cards(html());
+        expect(page).toContain('href="https://www.example.org/index.html"');
+        expect(page).not.toContain('href="/api/file/hub/www.example.org/index.html"');
+        expect(page).toContain('target="_blank"');
+    });
+
     it('draws a hub link the list lets open as the ui/ToolButton that opens it in its program', () => {
         const snap = snapshot();
         snap.version = 7;

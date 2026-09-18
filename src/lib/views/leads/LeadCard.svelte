@@ -25,6 +25,7 @@
         leadId,
         type LeadEntry
     } from '$lib/state/leads';
+    import { hrefOf } from '$lib/state/collection';
     import { t } from '$lib/state/text';
     import type { WriteAnswer } from '$lib/state/writes.svelte';
     import { useState } from '$lib/state/use';
@@ -88,6 +89,18 @@
         sure = false;
         if (title === '') return;
         say(await deleteFeedEntry('leads', title));
+    }
+
+    /**
+     * The web page a posting address names, or nothing for a value that names no web page. A value
+     * written without its scheme is one, since `hrefOf` puts `https://` in front of a host; a hub
+     * path and any other scheme are not, which is what this card drew before.
+     */
+    function posting(value: string): string | undefined {
+        const held = value.trim();
+        if (held === '') return undefined;
+        const href = hrefOf(held);
+        return href.startsWith('http') ? href : undefined;
     }
 </script>
 
@@ -174,10 +187,10 @@
             <!-- eslint-disable-next-line svelte/no-at-html-tags -- inline Markdown sanitises what it renders -->
             <p class="note">{@html inlineMarkdown(note)}</p>
         {/if}
-        {#if url.startsWith('http')}
+        {#if posting(url) !== undefined}
             <p class="posting">
                 <!-- eslint-disable-next-line svelte/no-navigation-without-resolve -- the address is data, an external link or the api/file endpoint, rather than a route id resolve() takes -->
-                <a href={url} target="_blank" rel="noreferrer">
+                <a href={posting(url)} target="_blank" rel="noreferrer">
                     <Glyph name="link" />
                     <span>{t('leads.posting')}</span>
                 </a>

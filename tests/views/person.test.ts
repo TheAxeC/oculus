@@ -142,6 +142,11 @@ function snapshot(): Snapshot {
                     name: 'Outsider',
                     role: 'student',
                     folder: 'education/../../elsewhere/thesis'
+                }),
+                hosted: person('hosted', {
+                    name: 'Hosted',
+                    role: 'student',
+                    folder: 'theaxec.github.io/_data'
                 })
             },
             organisations: {
@@ -289,6 +294,27 @@ describe('one person as their own tab', () => {
         const body = drawn(client, { key: 'outsider' });
         expect(body).toContain('data-block="folder"');
         expect(body).not.toContain(catalog['person.show_in_files']);
+    });
+
+    // revert: src/lib/views/Person.svelte:216 => <!-- nothing to draw -->
+    // Revert: in views/Person.svelte, draw nothing where the folder is not one of the hub, and the
+    // block is a heading over an empty space that says nothing about why.
+    it('says so when the folder is not one of the hub, rather than drawing an empty block', () => {
+        const body = drawn(client, { key: 'outsider' });
+        expect(body).toContain(catalog['person.folder_outside']);
+        expect(body).not.toContain(catalog['person.folder_loading']);
+    });
+
+    // revert: src/lib/state/collection.ts:310 => const HUB_ONLY_FIELDS: string[] = [];
+    // Revert: in hubPathsOf of state/collection.ts, read a `folder` through the address rule like a
+    // link, and a folder of this hub whose name is host-shaped becomes a web address.
+    it('reads a folder whose first segment is host-shaped as the folder of the hub it is', () => {
+        const body = drawn(client, { key: 'hosted' });
+        expect(body).toContain('data-block="folder"');
+        expect(body).toContain('theaxec.github.io/_data');
+        // `theaxec.github.io` is a folder of this hub, so the block selects it and reads it.
+        expect(body).toContain(catalog['person.show_in_files']);
+        expect(body).toContain(catalog['person.folder_loading']);
     });
 
     it('says the folder is empty when every entry in it is a directory', async () => {

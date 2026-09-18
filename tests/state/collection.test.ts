@@ -329,6 +329,28 @@ describe('isHubPath', () => {
             expect(isHubPath(one), one).toBe(hrefOf(one).startsWith('/api/file/hub/'));
         }
     });
+
+    // Revert: drop the `!HOSTED.test(value)` term from isHubPath of state/collection.ts, or the
+    // HOSTED branch from hrefOf beside it; either one turns this red.
+    it('reads a host as a web address, and a first segment that merely holds a dot as a path', () => {
+        const addresses = [
+            'github.com/TheAxeC/x',
+            'www.example.org',
+            'example.co.uk/a/b',
+            'localhost:8790/x'
+        ];
+        const paths = [
+            'README.md',
+            'notes.v2/plan.md',
+            'projects/active/x',
+            'funding/2026-nwo-enw-xs/call.pdf'
+        ];
+        for (const one of addresses) expect(isHubPath(one), one).toBe(false);
+        for (const one of paths) expect(isHubPath(one), one).toBe(true);
+        for (const one of [...addresses, ...paths]) {
+            expect(isHubPath(one), one).toBe(hrefOf(one).startsWith('/api/file/hub/'));
+        }
+    });
 });
 
 describe('hrefOf', () => {
@@ -347,6 +369,25 @@ describe('hrefOf', () => {
         expect(hrefOf('education/a course/notes.pdf')).toBe(
             '/api/file/hub/education/a%20course/notes.pdf'
         );
+    });
+
+    // Revert: drop the `(:[0-9]+)?` group from HOSTED in state/collection.ts. A host whose
+    // characters all fit a scheme is taken by ADDRESSED before HOSTED is reached; one carrying an
+    // underscore is not, so the port is the group's work.
+    it('reads a host carrying a port as an address when the host is no scheme', () => {
+        expect(isHubPath('my_host.com:8080/x')).toBe(false);
+        expect(hrefOf('my_host.com:8080/x')).toBe('https://my_host.com:8080/x');
+    });
+
+    // Revert: drop the HOSTED branch from hrefOf of state/collection.ts.
+    it('puts https in front of a web address written without a scheme', () => {
+        expect(hrefOf('github.com/x')).toBe('https://github.com/x');
+        expect(hrefOf('www.example.org')).toBe('https://www.example.org');
+        expect(hrefOf('projects/active/x/README.md')).toBe(
+            '/api/file/hub/projects/active/x/README.md'
+        );
+        expect(hrefOf('https://x.y')).toBe('https://x.y');
+        expect(hrefOf('/absolute')).toBe('/absolute');
     });
 });
 
