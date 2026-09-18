@@ -68,8 +68,10 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/Q36-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a8198e29299849f65            # the Agent tool id, launched 12:31
+  reviewer: aba564453d42708e7             # claude:opus through the Agent tool, read-only, launched 13:0x, scratch folder scratchpad/q36-review
+  reviewer_done: 2026-09-18T13:40            # agents/reviews/Q36-refuter.md: every check reproduced, and the bound is stronger than the builder's own 3x revert showed (1.1x red 5 of 5 at load 14-20). Against it: a comment carrying history, a head comment whose coverage figure is two to four times too generous, the blind spot scaling with load (a 1.1x regression passed 3 of 5 at load 48-91) and stated nowhere, two shared helpers with no case, the second case's bound assertion not load-bearing while the report says it is, and a residual machine-reason flake not named
   landing: not-started
-  round: 0
+  round: 1                                  # sent 13:4x: six rulings, chiefly that a green run must mean the bound was tight enough to catch a 1.1x regression, so a machine too loaded to prove the rule makes the case red and says so, rather than passing weakly
 ## The standing demands (from Axel, in force)
 - The run of 2026-09-17 10:46 (Axel: "You may continue with the orchestration. Important is to keep 3 tasks running in parallel. No pause point is set for now."): three steps in flight at all times, a new one dispatched at each landing, the queue as plan.md's line; one repair round per step; the look at each landing on the TEST page.
 - A second repair round only when the one round's delta leaves a verification command red or an acceptance item of the brief unbuilt and the fix is too large for landing, never for a new review finding (Axel, 2026-09-17 11:33, agreeing with the Fable session's reading of the ledger's rows); in the plan-orchestration skill's step 8.
