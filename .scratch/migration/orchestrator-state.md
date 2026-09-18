@@ -40,6 +40,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/Q50-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a181fc7855d996f4e            # the Agent tool id, launched 04:05
+  reported: 2026-09-18T04:34                # everything in the brief done; `HOSTED` beside `ADDRESSED` reads a first segment that is a host as a web address, `hrefOf` puts `https://` in front of one, and the probe over the real hub says no value of the 257 at a link, url or folder key changes meaning. Two ambiguities stated: a bare host with no path (`github.com`) still reads as a hub path, since a lone dotted segment cannot be told from `README.md`, and a hub folder like `my.docs/notes.md` now reads as an address; the hub holds neither shape
+  reviewer: aae362464a67b5703                # claude:opus through the Agent tool, read-only, launched 04:36, scratch folder scratchpad/q50-review (review earned: a state module every card reads)
   landing: not-started
   round: 0
 - package: R14
