@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40, Q48 03:56, Q49 05:31, Q50 06:25, Q51 06:48, R14 10:44, Q52 12:1x, Q54 12:2x; in flight: Q53 from 99ea1b96 and Q56 from 521c938c; next to dispatch: Q58; briefs written and waiting: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36; next: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36, O31, Q35; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40, Q48 03:56, Q49 05:31, Q50 06:25, Q51 06:48, R14 10:44, Q52 12:1x, Q54 12:2x; in flight: Q53 from 99ea1b96, Q56 from 521c938c and Q36 from 2ddd4a8b; next to dispatch: Q58, which waits for Q56 because both write src/lib/views/Files.svelte and a step is never split to avoid the wait; briefs written and waiting: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36; next: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36, O31, Q35; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2
 - package: Q53
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -56,6 +56,18 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/Q56-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a0910fc1937c6860e            # the Agent tool id, launched 12:22
+  landing: not-started
+  round: 0
+- package: Q36
+  executor: agent                          # the configuration default, chosen for the step
+  worker: claude:opus
+  worktree: .agents/worktrees/q36
+  base: 2ddd4a8b
+  launched: 2026-09-18T12:31
+  prompt: the Agent tool's prompt, the brief plus the no-widening rule, the machine-readable revert rule and the two premises rechecked on main
+  report: tools/oculus/.scratch/migration/agents/reviews/Q36-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: a8198e29299849f65            # the Agent tool id, launched 12:31
   landing: not-started
   round: 0
 ## The standing demands (from Axel, in force)
