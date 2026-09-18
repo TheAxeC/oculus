@@ -29,7 +29,19 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40, Q48 03:56; in flight: R14 (the eleven checks of the pass) from ec7bc6e5 and Q49 from 2ac73578; briefs written and waiting: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36; next: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36, O31, Q35; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40, Q48 03:56; in flight: Q50 from 84fd99e1, R14 (the eleven checks of the pass) from ec7bc6e5 and Q49 from 2ac73578; briefs written and waiting: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36; next: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36, O31, Q35; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2
+- package: Q50
+  executor: agent                          # the configuration default, chosen for the step
+  worker: claude:opus
+  worktree: .agents/worktrees/q50
+  base: 84fd99e1
+  launched: 2026-09-18T04:05
+  prompt: the Agent tool's prompt, the shape of Q48's with the brief's own paths
+  report: tools/oculus/.scratch/migration/agents/reviews/Q50-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: a181fc7855d996f4e            # the Agent tool id, launched 04:05
+  landing: not-started
+  round: 0
 - package: R14
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
