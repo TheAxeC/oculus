@@ -40,6 +40,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/Q53-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: ab66a4e0d269be811            # the Agent tool id, launched 08:25
+  reported: 2026-09-18T09:37                # everything in the brief done, Axel's tap ruling included: one accent line over the pane strips, following the reader into an embedded page and marking a folded pane; the pane menu's list given a depth of its own under `body.wall`, where the strip's own blur was the stacking context that trapped it; and a ticker row opened by the click a tap raises, so the first tap draws the buttons and the second presses one. Two brief premises found wrong on the tree and worked around; one committed revert found not to redden its own test and replaced
+  reviewer: a44cc2705dd951f81                # claude:opus through the Agent tool, read-only, launched 10:52, scratch folder scratchpad/q53-review (review earned: the shell's drawing and a new reactive cell)
   landing: not-started
   round: 0
 - package: Q52
@@ -60,6 +62,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   reviewer2: ab831a51ce633f000               # the run over round 1, claude:opus, read-only, launched 07:47, scratch folder scratchpad/q52-review2; its brief was to probe every path a workspace can be and to look for the reverse race
   reviewer2_done: 2026-09-18T08:11           # the race is closed, reproduced with a mechanism of the reviewer's own rather than the test hook, and the reverse race is not open; eight shapes probed, only a path with nothing at it reading `missing`. Six findings, all small: revert B reddens two cases not one, the ssh flake not carried, a false comment in `server/watch/git.ts`, one clause of `exists()`'s comment untrue of ENAMETOOLONG, the before-and-after item 3 giving the round's own earlier version as its before, and a pre-existing sentence a bad `.git/config` draws
   round2: 1                                 # sent 08:35, under the cap's one exception (an acceptance item unreachable in the shipped app, too large for a landing fix): six rulings, the first Axel's picker ruling of 08:15
+  reported3: 2026-09-18T09:58                # the second round's report: the picker offers every root the channel carries a state for, each row badged with what its state comes to and git's reason as its hover words, and the reader's pick survives a deletion; `ENAMETOOLONG` joins the codes `exists()` answers false for; three new catalog keys and `repositories.empty` reworded; eleven reverts rerun
+  reviewer3: a051713367cbe0815               # the run over round 2, claude:opus, read-only, launched 10:50, scratch folder scratchpad/q52-review3; its brief is to drive the picker in the page
   landing: not-started
 ```
 

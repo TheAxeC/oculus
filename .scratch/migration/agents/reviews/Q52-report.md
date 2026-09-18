@@ -159,3 +159,64 @@ A (`ch_insync` whenever the list is empty): 3 node red and, after a rebuild, 2 b
 - `exists()` costs one `lstat` per root that is not a directory and one per root git refuses; it runs on no readable repository, so the watcher's ordinary path is unchanged. Not separately timed.
 - The walled-folder case sets a parent to mode `0o000` and restores it in a `finally`; it would pass vacuously for a user who can traverse regardless of mode, that is, as root. The suite is not run as root here, and the case is red under revert E.
 - Still open: the Repositories picker offers only `repository === true`, so the `missing` and `none` drawings are not reader-reachable; `DESIGN.md:334`'s "whose state has no error" is wrong and the orchestrator fixes it at the landing.
+
+---
+
+# Repair round 2 (builder a4d2d5b3b40564ca1, sent 08:35, reported 09:5x)
+
+All six rulings built and verified. The builder could not read the review's round-1 section: the file on the main checkout ended at the round-0 review when it looked, so it worked from the six rulings, each of which names its probe.
+
+| Ruling | State | Command and its output |
+| --- | --- | --- |
+| 1. The picker offers every root, each row saying what its state is | DONE | `state/repositories.ts:93` is `pickerRoots`, filtering on `stateOf(root) !== null`; two new node cases in each of two files; browser cases at `repositories.spec.ts:97` and `:177`, both red under revert K |
+| 2. Both DESIGN.md lines written out | DONE | four lines carried in full, each with the current text beside it |
+| 3. `Repo.svelte`'s head comment | DONE | `:16-20` |
+| 4. `ENAMETOOLONG` | DONE, as the third code that answers false | `server/git.ts:394`; new case red under revert G |
+| 5. The comment in `server/watch/git.ts` | DONE | `:202-205` |
+| 6. Two report claims | DONE | revert B rerun, reddening two cases; the rerun-alone line carried |
+| Node suite | DONE | 251 files, 4287 tests, all passed |
+| `npm run check` | DONE | `COMPLETED 1223 FILES 0 ERRORS 0 WARNINGS` |
+| `build`, `format:check`, `lint`, the ASCII gate, both catalogs | DONE | exit 0; Prettier clean; eslint silent; the gate printed nothing; both parse |
+| Browser specs | DONE | `npx playwright test repositories changes` -> 12 passed (29.2s) |
+
+## What the picker does now
+
+```ts
+export function pickerRoots(roots: string[], stateOf: (root: string) => GitState | null): string[] {
+    return roots.filter((root) => stateOf(root) !== null);
+}
+```
+
+Renamed from `repositoryRoots`, because a name saying "repositories" over a list of every root is a false name and because `server/roots.ts:39` exports a different `repositoryRoots`. Each row carries its label, a badge of what its state comes to (`shapeBadge`: `gone`, `no repository`, `unreadable`, nothing for a repository that reads) and git's reason as the row's hover words.
+
+**A hub with one repository and one deleted root**: two rows in channel order, the hub's with no badge and the deleted one badged `gone` with `no such directory` as its hover words; whichever the reader picked stays picked, and the view draws `This workspace folder is not there.` **Every root gone**: one row each, all badged `gone`; the empty line is drawn only when the channel carries no root at all.
+
+Three user-visible choices the ruling needed, each reversible: the badge words (`pick_failed: unreadable`, `pick_missing: gone`, `pick_norepo: no repository`); no tone on the badge, since `--on-c-*` resolves to nothing in both theme files; and `repositories.empty` reworded to `Nothing is on the channel yet.`
+
+The ruling also made reachable, and the round fixed, the round-0 review's Behaviour 6: git's reason is now the row's own `title`, the attribute the Changes panel carries it on, since `ui/TreeItem.svelte` draws its own tooltip only for a row that is pressed and this row is text.
+
+## Every revert, rerun on the final tree
+
+A 3 node + 2 browser; B 2 node (`tests/keys.test.ts` among them, as the ruling said); C 3 node + 2 browser; D 2 node + 2 browser; E 1; F 1; G 1; H 5 node + 2 browser; I 3; J 1; K 5 node + 2 browser; L 1 node + 2 browser. The tree was restored after each and re-verified green.
+
+## Before and after, against the base
+
+1. **The picker**: only the roots git reads as repositories, so a folder of notes was absent and a deleted root left the list silently; now every root the channel carries, badged, with the reader's pick surviving all of them.
+2. **The empty line**: `No repository is on the channel yet.` whenever no root was a repository; now `Nothing is on the channel yet.`, only when the channel carries no root.
+3. **The branch line for a branch with no upstream**: `in step with the upstream`; now nothing.
+4. **A workspace folder that has gone**: `This workspace is not a git repository.`; now `This workspace folder is not there.`
+5. **A regular file, a dangling symlink, a folder nothing may enter**: all three read as no repository at the base and still do; only the hover words change, from `no such directory` to git's own line.
+6. **A workspace removed while the watcher reads it**: now the missing sentence.
+7. **The Repositories row for a state with no repository**: the error-hue line for every such state with no hover words; now the sentence the state comes to, muted except the failed one, each with git's reason as hover words.
+8. **A workspace whose path is longer than the system will carry**: now the missing sentence.
+9. Markup only: `data-repo="failed"` for `data-repo-failed`.
+
+## Files changed in this round
+
+`state/repositories.ts` 233, `views/Repositories.svelte` 213, `views/shared/repo-shape.ts` 44, `views/repositories/Repo.svelte` 247, `config/text/views/repositories.yml` 56, `server/git.ts` 421, `server/watch/git.ts` 380, `tests/state/repositories.test.ts` 494, `tests/views/repositories.test.ts` 539, `tests/browser/repositories.spec.ts` 420, `tests/server/git.test.ts` 720.
+
+## Things worth knowing
+
+- The picker's rows cannot be checked in the node suite: a server rendering leaves the menu closed, so the badges are proven only in the browser.
+- The new browser case deletes a watched folder and waits for the channel; the watcher noticed the deletion with no nudge.
+- `pickerRoots` still drops a root the channel names with no state at all, which cannot arise today and is what keeps the function a rule rather than the identity.
