@@ -6,7 +6,7 @@
 
 import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { expect, describe, it } from 'vitest';
+import { afterAll, expect, describe, it } from 'vitest';
 import { parse } from 'yaml';
 import { handleWrite } from '../../src/lib/server/writes.ts';
 import type { Change } from '../../src/lib/server/changes.ts';
@@ -26,6 +26,9 @@ import {
     target,
     tasksOf
 } from './write-fixture.ts';
+import { sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 describe('taking a change back', () => {
     /** One write, and the change it left at the head of the log. */

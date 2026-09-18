@@ -37,6 +37,7 @@ test.describe('tooltips', () => {
         const entry = page.locator('nav button[data-view]').first();
         await entry.click();
         await page.waitForTimeout(SETTLE);
+        // a press closes the bubble, so none is left over the control it was pressed on
         await expect(bubbles(page)).toHaveCount(0);
 
         await page.mouse.move(700, 400);
@@ -49,6 +50,7 @@ test.describe('tooltips', () => {
         await openView(page, 'projects', t('views.projects'));
         await page.getByRole('tab', { name: t('views.status') }).click();
         await page.waitForTimeout(SETTLE);
+        // a press closes the bubble, so none is left over the tab it was pressed on
         await expect(bubbles(page)).toHaveCount(0);
     });
 
@@ -166,9 +168,11 @@ test.describe('the rail list', () => {
             const rail = page.locator('nav.rail');
             await rail.locator('.views').evaluate((views) => (views.scrollTop = 0));
             await expect(rail.locator('[data-fade="below"]')).toBeVisible();
+            // the list is at its top, so there is nothing above it to fade
             await expect(rail.locator('[data-fade="above"]')).toHaveCount(0);
 
             await atEnd(page);
+            // the list is at its end, so there is nothing below it to fade
             await expect(rail.locator('[data-fade="below"]')).toHaveCount(0);
             await expect(rail.locator('[data-fade="above"]')).toBeVisible();
         });

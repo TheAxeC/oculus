@@ -5,13 +5,16 @@
 // What this does NOT cover: the feed views themselves. This reads the counts and run dates the
 // command center needs, and the Inbox, Lit Watch and Position Leads views read the entries.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { readFeeds } from '../../src/lib/data/sources/feeds.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import type { FeedFiles } from '../../src/lib/data/model.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 /** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
@@ -24,7 +27,7 @@ const FILES: FeedFiles = {
 
 /** A hub of its own, with the given files written into it. */
 function hub(files: Record<string, string>): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-feeds-'));
+    const dir = scratchDir('oculus-feeds-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     for (const [rel, body] of Object.entries(files)) {
         const full = join(dir, rel);

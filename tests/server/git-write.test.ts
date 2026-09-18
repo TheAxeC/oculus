@@ -10,15 +10,7 @@
 // subprocess both handed in, which is what its options exist for.
 
 import { execFileSync } from 'node:child_process';
-import {
-    existsSync,
-    mkdirSync,
-    mkdtempSync,
-    readFileSync,
-    rmSync,
-    symlinkSync,
-    writeFileSync
-} from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -45,6 +37,9 @@ import {
 } from '../../src/lib/server/git-write.ts';
 import { worktreePath } from '../../src/lib/data/worktrees.ts';
 import { suggestMessage } from '../../src/lib/server/git-message.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const MODULE = resolve(
     dirname(fileURLToPath(import.meta.url)),
@@ -113,7 +108,7 @@ function write(root: string, name: string, body: string): void {
 }
 
 beforeAll(() => {
-    dir = mkdtempSync(join(tmpdir(), 'oculus-git-write-'));
+    dir = scratchDir('oculus-git-write-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     repo = join(dir, 'repo');
     remote = join(dir, 'remote.git');

@@ -56,6 +56,7 @@ test('a feed title carrying a script and a handler is drawn as words', async ({ 
 
     const card = page.locator('[data-lead]').filter({ hasText: LEAD_HEAD }).first();
     await expect(card).toBeVisible();
+    // the title is markup somebody else wrote, so the filter takes the script out of it
     await expect(card.locator('script')).toHaveCount(0);
     const image = card.locator('img');
     await expect(image).toHaveCount(1);
@@ -110,6 +111,7 @@ test('a task list keeps its checkbox and no other input survives', async ({ page
     await expect(box).toBeChecked();
     await expect(box).toBeDisabled();
     await expect(document.locator('input')).toHaveCount(1);
+    // the filter keeps a task list's checkbox and takes every other input out
     await expect(document.locator('input[type="password"]')).toHaveCount(0);
 });
 

@@ -7,7 +7,7 @@
 // typed comes back without a shell interpreting anything.
 
 import { spawnSync } from 'node:child_process';
-import { mkdtempSync, realpathSync, rmSync } from 'node:fs';
+import { realpathSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, expect, it, vi } from 'vitest';
@@ -28,6 +28,9 @@ import {
 } from '../../../src/lib/server/pty/sessions.ts';
 import { control, run } from '../../../src/lib/server/pty/tmux.ts';
 import { noop } from '../../doubles.ts';
+import { scratchDir, sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 vi.setConfig({ testTimeout: 30000 });
 
@@ -42,7 +45,7 @@ const TMUX = (() => {
 
 if (!TMUX) console.error('tests/server/pty/sessions.test.ts: skipped, tmux is not on the PATH');
 
-const dir = mkdtempSync(join(tmpdir(), 'oculus-tmux-'));
+const dir = scratchDir('oculus-tmux-');
 expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
 const options = { socket: join(dir, 'server.sock') };
 

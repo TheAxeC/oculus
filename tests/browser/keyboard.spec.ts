@@ -28,6 +28,7 @@ test('the direct chord opens a rail view, ? toggles the sheet', async ({ page })
     await expect(sheet).toBeVisible();
     await expect(sheet.getByText(t('app.keys.hint'))).toBeVisible();
     await page.keyboard.press('Escape');
+    // Escape closed the sheet
     await expect(sheet).toHaveCount(0);
 });
 
@@ -51,6 +52,7 @@ test('the card cursor, the search key and the scroll keys act on the focused pan
     await expect(pane.locator('[data-card][data-cursor]')).toHaveCount(1);
     expect(await pane.locator('[data-card][data-cursor]').getAttribute('data-card')).toBe(secondId);
     await page.keyboard.press('Escape');
+    // Escape clears the cursor
     await expect(pane.locator('[data-card][data-cursor]')).toHaveCount(0);
     expect(firstId).not.toBeNull();
     expect(secondId).not.toBeNull();
@@ -93,6 +95,7 @@ test('a pointer press keeps the cursor in one pane and clears it on a pane chang
     await expect(pane.locator('[data-card][data-cursor]')).toHaveCount(1);
 
     await other.dispatchEvent('pointerdown');
+    // the press landed in the other pane, and the cursor belongs to the pane the keyboard is in
     await expect(pane.locator('[data-card][data-cursor]')).toHaveCount(0);
 });
 
@@ -187,6 +190,7 @@ test('the rail and a tab strip are each one stop, the arrows moving inside them'
     await expect(strip.locator('[role="tab"][tabindex="0"]')).toHaveCount(1);
     await expect(
         pane.getByRole('button', { name: t('ui.pane_menu'), exact: true })
+        // the pane menu keeps a stop of its own, so it is not taken out of the tab order
     ).not.toHaveAttribute('tabindex', '-1');
 
     const projects = pane.getByRole('tab', { name: t('views.projects') });
@@ -235,6 +239,7 @@ test('Delete closes the focused tab and the keyboard lands on the tab that takes
     await projects.focus();
     await page.keyboard.press('Delete');
     await expect(pane.getByRole('tab')).toHaveCount(count - 1);
+    // Delete closed the tab it was focused on
     await expect(projects).toHaveCount(0);
     // The focus is on a tab of the strip, not on the document, and that tab is the strip's stop.
     expect(await page.evaluate(() => document.activeElement?.getAttribute('role') ?? '')).toBe(

@@ -133,6 +133,7 @@ describe('the Present view', () => {
         expect(body).toContain('everywhere they hide');
         expect(body).toContain('Liver | imaging');
         expect(body).toContain('for the overview');
+        // every glyph is filled in from the catalog, so no placeholder is left in the words
         expect(body).not.toContain('{G.');
     });
 
@@ -153,6 +154,7 @@ describe('the Present view', () => {
         expect(body).toContain('HCCNet-FL');
         // The summary's own inline mathematics is typeset rather than shown as its source.
         expect(body).toContain('katex');
+        // the mathematics is typeset, so its source is not drawn as text
         expect(body).not.toContain('$\\sqrt');
     });
 
@@ -191,9 +193,11 @@ describe('the Present view', () => {
         expect(body).toContain('border-color:#2563eb');
         // A figure the folder does not hold is named in place of a dead image.
         expect(body).toContain(catalog['present.figure_missing'].replace('{0}', 'gone.png'));
+        // the folder does not hold that figure, so it is named rather than drawn as a dead image
         expect(body).not.toContain('present/gone.png');
         // The equation is LaTeX rather than an image name, so the page typesets it.
         expect(body).toContain('katex');
+        // the equation is LaTeX the page typesets, so no image of it is drawn
         expect(body).not.toContain('<img src="/api/file/hub/tools/present');
     });
 
@@ -201,6 +205,7 @@ describe('the Present view', () => {
         const body = at('alpha/plain');
         expect(body).toContain('A narrative heading');
         expect(body).toContain('A paragraph of the narrative.');
+        // the slide carries a narrative alone, so the method heading is not drawn
         expect(body).not.toContain(catalog['present.method']);
     });
 
@@ -231,6 +236,7 @@ describe('the Present view', () => {
         client.entities.receive({ channel: 'portfolio', version: 3, payload: snapshot([gone]) });
         const body = at('alpha');
         expect(body).toContain(catalog['present.equation_missing'].replace('{0}', 'eq_gone.png'));
+        // the image was found in neither place, so it is named rather than drawn as a dead image
         expect(body).not.toContain('eq_gone.png"');
     });
 

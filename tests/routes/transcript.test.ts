@@ -3,22 +3,25 @@
 // owns instead of the bridge to the last published payload: no session store, no registry and no hub
 // is read, and the only file any case opens is the one written under mkdtemp.
 
-import { mkdtempSync, statSync, writeFileSync } from 'node:fs';
+import { statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { FIRST_READ_TURNS, handleTranscript } from '../../src/lib/server/transcript-routes.ts';
 import { record } from '../sessions-fixture.ts';
 import type { SessionRecord } from '../../src/lib/data/model.ts';
 import { sessionRecord } from '../../src/lib/server/sessions/hooks.ts';
 import { contextFixture } from '../server/context-fixture.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const HOST = '127.0.0.1:8791';
 const SESSION = '3f2504e0-4f89-11d3-9a0c-0305e82c3301';
 
 /** One synthetic transcript: a prompt and an answer, under the system temporary root. */
 function transcript(): string {
-    const root = mkdtempSync(join(tmpdir(), 'oculus-transcript-route-'));
+    const root = scratchDir('oculus-transcript-route-');
     expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const path = join(root, `${SESSION}.jsonl`);
     const lines = [
@@ -40,7 +43,7 @@ function transcript(): string {
 
 /** A transcript of `turns` prompts, for the cap on what a first read answers with. */
 function longTranscript(turns: number): string {
-    const root = mkdtempSync(join(tmpdir(), 'oculus-transcript-long-'));
+    const root = scratchDir('oculus-transcript-long-');
     expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const path = join(root, `${SESSION}.jsonl`);
     const lines: string[] = [];

@@ -7,10 +7,10 @@
 // the scan, which is tests/watch/portfolio.test.ts, and the view drawing it, which is
 // tests/views/audit.test.ts.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import {
     auditFindings,
     auditRules,
@@ -23,6 +23,9 @@ import {
 } from '../../src/lib/server/audit.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import type { AuditFinding, Collection, Project } from '../../src/lib/data/model.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const catalog = textCatalog(loadConfig(engineDir()).config);
 
@@ -45,7 +48,7 @@ const RULES = auditRules({
 });
 
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-audit-'));
+    const dir = scratchDir('oculus-audit-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }

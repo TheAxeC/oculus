@@ -5,14 +5,16 @@
 // Five cases: the connect options the poll uses, a command that never returns, a command that
 // ignores the polite signal, and the two stderr lines a dead multiplexed master and a route that
 // has gone answer with.
-import { existsSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import type { HpcPayload } from '../../../src/lib/data/model.ts';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import { watchHpc } from '../../../src/lib/server/hpc/poll.ts';
 import { KILL_GRACE_MS, run } from '../../../src/lib/server/hpc/ssh.ts';
+import { scratchDir, sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 const PATH_BEFORE = process.env.PATH ?? '';
 const options = { host: 'fixture', days: 3, pollMin: 20, quotaMin: 60, prewarm: false };
@@ -20,7 +22,7 @@ const options = { host: 'fixture', days: 3, pollMin: 20, quotaMin: 60, prewarm: 
 /** A directory of this case's own, which is the only place a case writes. */
 const made: string[] = [];
 function caseDir(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-ssh-'));
+    const dir = scratchDir('oculus-ssh-');
     made.push(dir);
     return dir;
 }

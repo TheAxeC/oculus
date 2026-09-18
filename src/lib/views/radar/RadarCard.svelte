@@ -18,7 +18,7 @@
         type Project,
         type RadarEntry
     } from '$lib/state/radar';
-    import { hrefOf } from '$lib/state/collection';
+    import { posting } from '$lib/views/shared/posting';
     import { t } from '$lib/state/text';
     import { useState } from '$lib/state/use';
 
@@ -69,18 +69,6 @@
 
     async function created(): Promise<void> {
         await mark(true);
-    }
-
-    /**
-     * The web page a posting address names, or nothing for a value that names no web page. A value
-     * written without its scheme is one, since `hrefOf` puts `https://` in front of a host; a hub
-     * path and any other scheme are not, which is what this card drew before.
-     */
-    function posting(value: string): string | undefined {
-        const held = value.trim();
-        if (held === '') return undefined;
-        const href = hrefOf(held);
-        return href.startsWith('http') ? href : undefined;
     }
 </script>
 

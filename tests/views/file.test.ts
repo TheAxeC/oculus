@@ -50,6 +50,7 @@ describe('one file as its own tab', () => {
         const body = drawn({});
 
         expect(body).toContain('No file chosen.');
+        // the instance names no file, so there is nothing to draw
         expect(body).not.toContain('<img');
     });
 
@@ -66,6 +67,7 @@ describe('one file as its own tab', () => {
 
         const frame = /<iframe[^>]*>/.exec(body)?.[0] ?? '';
         expect(frame).not.toBe('');
+        // a sandboxed frame is one Chrome's own PDF viewer does not draw in
         expect(frame).not.toContain('sandbox');
         expect(body).toContain('src="/api/file/hub/paper.pdf"');
     });
@@ -85,6 +87,7 @@ describe('one file as its own tab', () => {
         // A download offered over a file that is about to open in an editor would say the wrong
         // thing for as long as the read takes.
         expect(body).toContain('Reading...');
+        // the first bytes have not been read, so what the file is is still unknown and no download is offered over it
         expect(body).not.toContain('download="set.npz"');
     });
 
@@ -122,6 +125,7 @@ describe('one file as its own tab', () => {
     it('offers no control that opens an editor: every text file opens in one already', () => {
         const body = drawn({ root: 'hub', path: 'README.md', label: 'README.md' });
 
+        // every text file opens in an editor already, so there is no control that opens another
         expect(body).not.toContain('source tab');
         expect(
             Object.keys(textCatalog(config)).filter((key) => key.startsWith('file.edit'))
@@ -276,6 +280,7 @@ describe('the star on the open file', () => {
         const body = shown(fresh, { root: 'hub', path: 'code/run.py', label: 'run.py' });
 
         expect(body).toContain('Bookmark this file');
+        // no bookmark names this file, so there is none to take out
         expect(body).not.toContain('Take this bookmark out');
     });
 
@@ -284,6 +289,7 @@ describe('the star on the open file', () => {
         const body = shown(fresh, { root: 'hub', path: 'code/run.py', label: 'run.py' });
 
         expect(body).toContain('Take this bookmark out');
+        // a bookmark names this file already, so it is not offered a second one
         expect(body).not.toContain('Bookmark this file');
         expect(body).toContain('aria-pressed="true"');
     });

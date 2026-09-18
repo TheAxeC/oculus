@@ -400,7 +400,9 @@ test('an archive card is offered no Ideas lane in its menu and its drop there is
     await expect.poll(() => readHubFile(MANIFEST), { timeout: 5000 }).toContain('priority:');
     const after = readHubFile(MANIFEST);
     expect(after).toContain(`focus: ${LANE}`);
+    // the drop landed on the named lane, so the manifest names that lane and no other
     expect(after).not.toContain('focus: holding');
     await expect(archived(page)).toHaveCount(1);
+    // the control must be what set the flame, so the manifest started without that key
     expect(before).not.toContain('priority:');
 });

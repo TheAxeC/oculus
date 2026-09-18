@@ -286,6 +286,7 @@ describe('the real registrations', () => {
             label: 'views.data',
             glyph: 'views.data_glyph'
         });
+        // Data is registered as a view of its own, so the generic collection list does not carry it
         expect(COLLECTIONS).not.toContain('data');
     });
 
@@ -384,6 +385,7 @@ describe('the real registrations', () => {
             label: 'views.venues',
             glyph: 'views.venues_glyph'
         });
+        // Venues is registered as a view of its own, so the generic collection list does not carry it
         expect(COLLECTIONS).not.toContain('venues');
     });
 
@@ -397,7 +399,9 @@ describe('the real registrations', () => {
             glyph: 'views.domains_glyph'
         });
         expect(viewFor('map')).toMatchObject({ label: 'views.map', glyph: 'views.map_glyph' });
+        // Pillars is registered as a view of its own, so the generic collection list does not carry it
         expect(COLLECTIONS).not.toContain('pillars');
+        // and Domains is too
         expect(COLLECTIONS).not.toContain('domains');
     });
 

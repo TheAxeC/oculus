@@ -6,10 +6,10 @@
 // for writing, and the schema it checks against is the real config/manifest-schema.yml, so what the
 // form offers and what the write accepts are the same list.
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import {
     coerce,
     createEntry,
@@ -28,6 +28,9 @@ import {
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { PortfolioConfig } from '../../src/lib/data/model.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const MANIFEST = [
     'id: alpha',
@@ -50,7 +53,7 @@ function configFor(): PortfolioConfig {
 
 /** A hub with one project in it, under the system temporary directory. */
 function hub(manifest = MANIFEST): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-writes-'));
+    const dir = scratchDir('oculus-writes-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const folder = join(dir, 'projects', 'manuscripts', 'alpha');
     expect(resolve(folder).startsWith(resolve(dir) + sep)).toBe(true);

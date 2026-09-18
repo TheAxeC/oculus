@@ -265,9 +265,11 @@ describe('the session list', () => {
         // Two of the five are ended and not dismissed: the observed one and the bare one.
         const shut = html(SessionList);
         expect(shut).toContain(catalog['sessions.ended_section'].replace('{0}', '2'));
+        // the ended section is closed, so the sessions in it are not drawn
         expect(shut).not.toContain('The ended one');
         const open = html(SessionList, { ended: true });
         expect(open).toContain('The ended one');
+        // a dismissed session stays out of the list until it is asked for by name
         expect(open).not.toContain('The dismissed one');
     });
 
@@ -351,7 +353,9 @@ describe('the session detail', () => {
         // ALPHA is a known project folder of the hub workspace; the scratch area is not one, and
         // the other workspace's area belongs to another workspace.
         expect(body).toContain(`<option value="${ALPHA}"`);
+        // the scratch area is no project folder of this workspace, so it is not offered
         expect(body).not.toContain(`<option value="${UNKNOWN}"`);
+        // and this area belongs to another workspace
         expect(body).not.toContain('<option value="/other"');
     });
 
@@ -566,6 +570,7 @@ describe('the terminal toolbar pin', () => {
         expect(found).toHaveLength(1);
         expect(found[0]).toContain('compact');
         expect(found[0]).toContain(glyphs[catalog['sessions.pin_glyph']]);
+        // it is drawn as a glyph among the glyph buttons, so it carries no label span
         expect(found[0]).not.toContain('<span class="label">');
     });
 
@@ -704,6 +709,7 @@ describe('a terminal in the payload', () => {
             return html(Terminal);
         });
         expect(body).toContain(`data-terminal="${pane.id}"`);
+        // the grid is the selection, and the composer belongs to a session's own pane
         expect(body).not.toContain('textarea');
         select(null);
     });
@@ -739,6 +745,7 @@ describe('resuming a session into a terminal', () => {
         const body = html(SessionDetail);
         expect(body).toContain(catalog['sessions.resume_label']);
         expect(body).toContain(catalog['sessions.resume']);
+        // the session has ended, so the control is offered rather than the sentence saying why it cannot be
         expect(body).not.toContain(catalog['sessions.resume_live']);
         select(null);
     });
@@ -747,6 +754,7 @@ describe('resuming a session into a terminal', () => {
         select('live-one');
         const body = html(SessionDetail);
         expect(body).toContain(catalog['sessions.resume_live']);
+        // the session is live, so the sentence is drawn in place of the control
         expect(body).not.toContain(catalog['sessions.resume']);
         select(null);
     });
@@ -825,7 +833,9 @@ describe('the pin control over the portfolio', () => {
         const body = html(SessionDetail);
         expect(body).toContain(`<option value="${ALPHA}"`);
         expect(body).toContain(`<option value="${HUB}/projects/active/quiet"`);
+        // the scratch area is no project folder of this workspace, so it is not offered
         expect(body).not.toContain(`<option value="${UNKNOWN}"`);
+        // and this area belongs to another workspace
         expect(body).not.toContain('<option value="/other"');
     });
 });

@@ -7,10 +7,10 @@
 // iframe, and roots() reading the machine's own config/sources.yml, which is exercised by the curl in
 // the package's verification and by tests/config.test.ts.
 
-import { mkdirSync, mkdtempSync, symlinkSync, writeFileSync } from 'node:fs';
+import { mkdirSync, symlinkSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import {
     ENGINE_ROOT,
     HUB_ROOT,
@@ -25,6 +25,9 @@ import {
 } from '../../src/lib/server/files.ts';
 import { ENGINE_ROOT as CLIENT_ENGINE_ROOT } from '../../src/lib/state/fs.ts';
 import type { Root } from '../../src/lib/server/files.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const HOST = '127.0.0.1:8791';
 
@@ -34,7 +37,7 @@ const SHEET = 'body { margin: 0; }\n';
 
 /** A directory under the temporary directory, with a file written at each of the paths named. */
 function folder(files: Record<string, string>): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-file-'));
+    const dir = scratchDir('oculus-file-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     for (const [name, body] of Object.entries(files)) {
         const full = join(dir, name);

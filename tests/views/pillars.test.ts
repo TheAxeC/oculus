@@ -78,6 +78,7 @@ describe('the Pillars view', () => {
         expect(body).toContain('Funded by <strong>Tests</strong>.');
         expect(body).toContain('class="label">active</span>');
         expect(body).toContain('aria-expanded="false"');
+        // the project list is closed, so its members are named only once it is expanded
         expect(body).not.toContain('>ALPHA</span>');
         expect(body).toContain('data-pillar="dormant"');
         expect(body).toMatch(/data-pillar="dormant"[^>]*class="[^"]*dormant/);
@@ -89,8 +90,10 @@ describe('the Pillars view', () => {
         expect(body).toContain(catalog['pillars.orphans']);
         expect(body).toContain('1 untagged');
         expect(body).toContain('class="label">active</span>');
+        // the orphans section counts the untagged projects of one type, and this snapshot has one
         expect(body).not.toContain('class="label">manuscript</span>');
         expect(body).toContain('aria-expanded="false"');
+        // its list is closed too, so the project is named only once it is expanded
         expect(body).not.toContain('>ORPHAN</span>');
         expect(body).toContain(catalog['pillars.provisional_h']);
         expect(body).toContain('Candidate line');
@@ -105,6 +108,7 @@ describe('the Pillars view', () => {
         const body = html();
         expect(card(body, 'candidate')).toContain('class="metrics ');
         expect(card(body, 'candidate')).toContain(catalog['pillars.in_flight']);
+        // an off-pillar card stands for a line the portfolio does not run, so it carries no metrics
         expect(card(body, 'outside')).not.toContain('class="metrics ');
     });
 
@@ -119,6 +123,7 @@ describe('the Pillars view', () => {
 
     it('draws a plain card when the registry entry has no color, including when dormant', () => {
         const body = html(withPillarTypes(['published']));
+        // the registry entry carries no colour, so the card is drawn plain
         expect(card(body, 'dormant')).not.toContain('--tone:');
     });
 
@@ -128,6 +133,7 @@ describe('the Pillars view', () => {
         const body = card(html(snapshot), 'pillar');
         const article = /<article\b[^>]*>/.exec(body)?.[0];
         expect(article).toBeDefined();
+        // the colour is off the palette, so the card is drawn plain rather than in a hue no theme paints
         expect(article).not.toContain('--tone:');
     });
 

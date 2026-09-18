@@ -45,8 +45,11 @@ describe('the Domains view', () => {
         expect(body).toContain('class="label">active</span>');
         expect(body).toContain('class="label">published</span>');
         expect(body).toContain('aria-expanded="false"');
+        // the project list is closed, so its members are named only once it is expanded
         expect(body).not.toContain('>ALPHA</span>');
+        // nor the archived one
         expect(body).not.toContain('>OLD</span>');
+        // a domain no project names is not drawn
         expect(body).not.toContain('data-domain="empty"');
         expect(body).toContain('--tone: var(--c-crimson)');
     });

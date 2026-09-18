@@ -48,6 +48,7 @@ test('the panel lists the manuscript and says its PDF has not been built', async
 test('a project whose folder holds no manuscript draws no panel', async ({ page }) => {
     await openProject(page, BANDITS);
 
+    // the folder holds no manuscript, so the panel is not drawn at all
     await expect(page.locator('[data-latex]')).toHaveCount(0);
     await expect(page.getByRole('heading', { name: t('project.documents') })).toBeVisible();
 });

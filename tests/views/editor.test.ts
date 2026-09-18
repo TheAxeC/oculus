@@ -206,14 +206,17 @@ describe('the edits the instance kept', () => {
         client.manifestDraft.editManifest('editor-one', 'alpha', 'status.line', 'typed earlier');
         const body = html({ id: 'alpha' });
         expect(body).toContain('value="typed earlier"');
+        // the edit is drawn over the project's own value, which is what the reader typed over
         expect(body).not.toContain('value="submit-ready, 16 pp"');
         expect(body).toContain(t('editor.dirty', 1));
     });
 
     it('draws none of them in the editor of another instance or another project', () => {
         client.manifestDraft.editManifest('editor-two', 'alpha', 'status.line', 'typed earlier');
+        // an edit belongs to the instance it was typed in, and this is another instance
         expect(html({ id: 'alpha' })).not.toContain('typed earlier');
         client.manifestDraft.editManifest('editor-one', 'beta', 'status.line', 'for beta');
+        // and an edit of another project is not drawn on this one either
         expect(html({ id: 'alpha' })).not.toContain('for beta');
     });
 });

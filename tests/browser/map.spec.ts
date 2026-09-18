@@ -152,6 +152,7 @@ test('the connected toggle takes out a project left with no line the map still d
     const loose = await nodes(page);
 
     await row.locator('[data-map-connected] button').click();
+    // the connected toggle drops a project no line in force reaches, and this one has no membership left
     await expect(node).toHaveCount(0);
     await expect.poll(() => nodes(page)).toBeLessThan(loose);
 });

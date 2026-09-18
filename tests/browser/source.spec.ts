@@ -6,16 +6,19 @@
 // Closing a tab is here too, because the question a tab holding an unsaved edit asks is the pane's
 // answer to what the instance holds, which only a rendered page has.
 
-import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { chmodSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect, test } from '@playwright/test';
 import { boot, openView } from './rail.ts';
 import { t, tabNamed } from './words.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+test.afterAll(sweepScratch);
 
 /** A folder of the spec's own, under the system temporary directory and asserted to be inside it. */
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-source-spec-'));
+    const dir = scratchDir('oculus-source-spec-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }
@@ -39,6 +42,7 @@ test('the toolbar control opens the feed file and an unsaved edit survives a tab
     await expect(area).toHaveValue(`${before} typed-in-the-spec`);
 
     await page.getByRole('tab', { name: t('views.radar') }).click();
+    // the tab was switched away, so the editor of the other tab is not on the page
     await expect(editor).toHaveCount(0);
     await page.getByRole('tab', { name: 'literature-radar.yml' }).click();
     await expect(page.locator('[data-source-editor]').getByRole('textbox')).toHaveValue(
@@ -72,11 +76,13 @@ test('a Markdown file opens for editing and the preview follows what is typed', 
     // A script the file carries is markup somebody else wrote, so the filter takes it out.
     await area.fill('# Heading\n\n<script>window.specScriptRan = true;</' + 'script>\n');
     await expect(preview.locator('h1')).toHaveText('Heading');
+    // a script in a file is markup somebody else wrote, so the filter takes it out of the preview
     await expect(preview.locator('script')).toHaveCount(0);
     expect(await page.evaluate(() => 'specScriptRan' in window)).toBe(false);
 
     // The toggle takes the half away and gives it back, and the editor stays as it was.
     await page.getByRole('button', { name: t('source.preview'), exact: true }).click();
+    // the toggle closed the preview half
     await expect(preview).toHaveCount(0);
     await page.getByRole('button', { name: t('source.preview'), exact: true }).click();
     await expect(preview.locator('h1')).toHaveText('Heading');
@@ -108,7 +114,9 @@ test('a file this machine locks opens read only, says so, and offers nothing to 
         t('source.readonly')
     );
     await expect(page.locator('[data-fs-code="locked.py"]')).toBeVisible();
+    // this machine locks the file, so there is nothing to type into
     await expect(page.locator('[data-source-editor="locked.py"]')).toHaveCount(0);
+    // and nothing to save either
     await expect(page.getByRole('button', { name: t('editor.save'), exact: true })).toHaveCount(0);
 });
 
@@ -132,7 +140,9 @@ test('a tab holding an unsaved edit asks before it closes, and a clean one goes 
     // Nothing has been typed, so the close control takes the tab away with no question.
     await open();
     await closeControl.click();
+    // nothing was typed, so the close takes the tab away without asking
     await expect(page.getByRole('alertdialog')).toHaveCount(0);
+    // and the tab it was pressed on is gone with it
     await expect(tab).toHaveCount(0);
 
     // With an edit in it the same control asks, and a cancel leaves both the tab and the edit.
@@ -147,6 +157,7 @@ test('a tab holding an unsaved edit asks before it closes, and a clean one goes 
     await expect(asked).toBeVisible();
     await expect(asked).toContainText(t('ui.tab_close_dirty'));
     await asked.getByRole('button', { name: t('ui.confirm_cancel'), exact: true }).click();
+    // cancel closes the question and keeps the tab
     await expect(asked).toHaveCount(0);
     await expect(tab).toHaveCount(1);
     await expect(page.locator('[data-source-editor]').getByRole('textbox')).toHaveValue(
@@ -163,6 +174,7 @@ test('a tab holding an unsaved edit asks before it closes, and a clean one goes 
     await expect(asked).toContainText(t('ui.tab_close_dirty'));
     await expect(tab).toHaveCount(1);
     await asked.getByRole('button', { name: t('ui.confirm_cancel'), exact: true }).click();
+    // cancel closes the question and keeps the tab
     await expect(asked).toHaveCount(0);
     await expect(tab).toBeFocused();
 
@@ -170,7 +182,9 @@ test('a tab holding an unsaved edit asks before it closes, and a clean one goes 
     await page.keyboard.press('Delete');
     await expect(asked).toBeVisible();
     await asked.getByRole('button', { name: t('ui.confirm_ok'), exact: true }).click();
+    // the yes closes the question and takes the tab with it
     await expect(asked).toHaveCount(0);
+    // the yes took the tab away
     await expect(tab).toHaveCount(0);
 
     // The closed tab's button went with it, so the tab that now sits where it sat takes the
@@ -215,6 +229,7 @@ test('a pane holding one tab with an unsaved edit asks before its menu closes it
     // One tab is the tab's own question, in the tab's own words rather than the pane's count.
     await expect(asked).toContainText(t('ui.tab_close_dirty'));
     await asked.getByRole('button', { name: t('ui.confirm_cancel'), exact: true }).click();
+    // cancel closes the question and keeps the pane
     await expect(asked).toHaveCount(0);
     await expect(beside.getByRole('tab')).toHaveCount(1);
     // The keyboard goes back to the control the question was raised from.
@@ -226,6 +241,7 @@ test('a pane holding one tab with an unsaved edit asks before its menu closes it
         .getByRole('alertdialog')
         .getByRole('button', { name: t('ui.confirm_ok'), exact: true })
         .click();
+    // the yes closed the pane, and its tab went with it
     await expect(page.getByRole('tab', { name: 'literature-radar.yml' })).toHaveCount(0);
 
     // Nothing is saved: the demo hub's feed file stays as it was.
@@ -269,6 +285,7 @@ test('a page holding one tab with an unsaved edit asks before it closes', async 
     await expect(asked).toBeVisible();
     await expect(asked).toContainText(t('ui.tab_close_dirty'));
     await asked.getByRole('button', { name: t('ui.confirm_cancel'), exact: true }).click();
+    // cancel closes the question and keeps the page
     await expect(asked).toHaveCount(0);
     await expect(strip.getByRole('tab')).toHaveCount(2);
     await expect(editor.getByRole('textbox')).toHaveValue(/ typed-in-the-spec$/);

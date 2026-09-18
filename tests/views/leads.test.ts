@@ -182,6 +182,7 @@ describe('the Position Leads view', () => {
             context: clientContext(client),
             props: { instance: instance('leads-hidden', true) }
         }).body;
+        // the instance hides the dismissed ones, which is what the count beside the control offers back
         expect(hidden).not.toContain('data-lead="Dismissed role"');
         expect(hidden).toContain(catalog['leads.show_dismissed'].replace('{0}', '1'));
 
@@ -213,6 +214,7 @@ describe('the Position Leads view', () => {
         expect(body.indexOf('data-lead="Dismissed role"')).toBeGreaterThan(
             body.indexOf(catalog['leads.expired_sec'].replace('{0}', '4'))
         );
+        // the lead is already dismissed, so it is offered reopen instead
         expect(dropped).not.toContain(`aria-label="${catalog['leads.action.dismiss']}"`);
     });
 
@@ -242,6 +244,7 @@ describe('the Position Leads view', () => {
         expect(body).toContain('Clinical <strong>AI</strong> - strong because methods align');
         expect(body).toContain('2099-01-02');
         expect(body).toContain(catalog['leads.posting']);
+        // a posting link is drawn only for a scheme a browser opens, and ftp is not one
         expect(body).not.toContain('ftp://example.org/not-shown');
         // revert: src/lib/views/leads/LeadCard.svelte:103 => return href.startsWith('https://e') ? href : undefined;
         // Revert: in posting of LeadCard.svelte, draw only a value that already carries its scheme,
@@ -251,7 +254,9 @@ describe('the Position Leads view', () => {
         expect(body).toContain(catalog['leads.action.decline']);
         expect(body).toContain(catalog['leads.expired_sec'].replace('{0}', '3'));
         expect(body).toContain(catalog['leads.runlog']);
+        // the instance keeps the expired section closed, and an applied lead is expired
         expect(body).not.toContain('Applied role');
+        // and the run log is closed too, so its lines are not drawn
         expect(body).not.toContain('first</strong> run');
     });
 
@@ -273,6 +278,7 @@ describe('the Position Leads view', () => {
         expect(body).toContain(catalog['leads.action.reopen']);
         expect(body).toContain('log <strong>1</strong>');
         expect(body).toContain('log <strong>6</strong>');
+        // the log is cut to six lines until the control opens the rest
         expect(body).not.toContain('log <strong>7</strong>');
         expect(body).toContain('show all 7 lines');
         expect(body).toContain('expired');
@@ -352,6 +358,7 @@ describe('the Position Leads view', () => {
         const label = catalog['leads.action.dismiss'];
         expect(card(body, '**Strong** role')).toContain(`aria-label="${label}"`);
         for (const title of ['Applied role', 'Declined role', 'Dismissed role']) {
+            // each of these is already out of the running, so none of them is offered the dismiss control
             expect(card(body, title)).not.toContain(`aria-label="${label}"`);
         }
     });
@@ -400,6 +407,7 @@ describe('the Position Leads view', () => {
             props: { instance: instance('leads-live-only') }
         }).body;
         expect(body).toContain('2 live');
+        // the feed carries live leads alone, so there is no expired section to hide
         expect(body).not.toContain('expired (hidden)');
     });
 
@@ -416,7 +424,9 @@ describe('the Position Leads view', () => {
             context: clientContext(client),
             props: { instance: instance('leads-zero-search', false, false, 'does-not-match') }
         }).body;
+        // nothing matches the search, so no card is drawn
         expect(body).not.toContain('data-lead=');
+        // and the empty line is the search's own, not the one for a feed with no live lead
         expect(body).not.toContain('No live leads');
     });
 
@@ -434,6 +444,7 @@ describe('the Position Leads view', () => {
             props: { instance: instance('leads-empty') }
         }).body;
         expect(empty).toContain('<code>/research-cockpit scout</code>');
+        // the code span is drawn as markup, so its angle brackets are not escaped into the text
         expect(empty).not.toContain('&lt;code>');
 
         serve({
@@ -480,6 +491,7 @@ describe('the Position Leads view', () => {
             context: clientContext(client),
             props: { instance: instance('leads-no-source') }
         }).body;
+        // the file is not on this machine, so there is no path for the source control to name
         expect(body).not.toContain('data-source-path');
     });
 });

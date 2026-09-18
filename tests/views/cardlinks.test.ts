@@ -153,8 +153,10 @@ describe('the card tag lines', () => {
         expect(datasets.match(/class="tag/g)).toHaveLength(SHOWN);
         expect(datasets).toContain(`>${more(1)}<`);
         expect(pillars.match(/class="tag/g)).toHaveLength(2);
+        // this kind is no longer than SHOWN, so there is no control offering the rest
         expect(pillars).not.toContain('class="tool');
         expect(collaborations.match(/class="tag/g)).toHaveLength(1);
+        // nor this one, which is shorter still
         expect(collaborations).not.toContain('class="tool');
     });
 
@@ -166,7 +168,9 @@ describe('the card tag lines', () => {
         expect(funding).toContain('class="crosslink');
         expect(collaborations).toContain(`title="${openIn(LABELS[3])}"`);
         expect(collaborations).toContain('class="crosslink');
+        // a pillar is not a kind that opens a view of its own, so its tags stay plain
         expect(pillars).not.toContain('class="crosslink');
+        // nor is a dataset
         expect(datasets).not.toContain('class="crosslink');
     });
 
@@ -183,6 +187,7 @@ describe('the card tag lines', () => {
         const [funding] = lines(draw({ item: FIVE_FUNDING_TWO_DATASETS }));
         expect(funding.match(/class="tag/g)).toHaveLength(SHOWN);
         expect(funding).toContain('FUND-2');
+        // the kind is cut to SHOWN entries, and this one is past that
         expect(funding).not.toContain('FUND-3');
         expect(funding).toContain(`>${more(2)}<`);
     });
@@ -191,6 +196,7 @@ describe('the card tag lines', () => {
         const datasets = lines(draw({ item: FIVE_FUNDING_TWO_DATASETS })).at(1) ?? '';
         expect(datasets.match(/class="tag/g)).toHaveLength(2);
         expect(datasets).toContain('DATA-1');
+        // the kind is no longer than SHOWN, so it is drawn whole and offers no control
         expect(datasets).not.toContain('class="tool');
     });
 
@@ -203,6 +209,7 @@ describe('the card tag lines', () => {
 
     it('draws nothing at all for an item with no tag of any kind', () => {
         const bare = item({ funding: 0, pillars: 0, datasets: 0, collaborators: 0 });
+        // the item carries no tag of any kind, so the block is not drawn at all
         expect(draw({ item: bare })).not.toContain('class="links');
     });
 

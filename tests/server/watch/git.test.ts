@@ -8,12 +8,12 @@
 // What was run is read by recording the process module's calls, which is how "only the root that
 // changed is re-read" is checked by the thing that would fail if it were false.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { byKey } from '../../../src/lib/data/guards.ts';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import type { Sink } from '../../../src/lib/server/channels.ts';
 import { IGNORED, relevant, rootsOf, watchGit } from '../../../src/lib/server/watch/git.ts';
@@ -26,6 +26,9 @@ import type {
     SessionsPayload
 } from '../../../src/lib/data/model.ts';
 import { noop } from '../../doubles.ts';
+import { scratchDir, sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 // A watcher test waits on real file events and on git, and the suite runs several files at once, so
 // the waits are generous: they are how long a failure takes, not how long a pass takes.
@@ -55,7 +58,7 @@ vi.mock('node:child_process', async (importOriginal) => {
 });
 
 beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'oculus-watch-git-'));
+    dir = scratchDir('oculus-watch-git-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     ran.length = 0;
 });

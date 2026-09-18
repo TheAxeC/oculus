@@ -2,11 +2,15 @@
 // directory holding one file of each kind the tree opens differently, the row of the tree a root or a
 // path is drawn as, and the same root added through the page's own control.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { expect, type Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { t } from './words.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+// Every spec that takes a fixture from here has its scratch roots swept when the file is done.
+test.afterAll(sweepScratch);
 
 /** The smallest PDF with a drawable page, so the type and not the size is what is exercised. */
 const PDF = [
@@ -23,7 +27,7 @@ const PDF = [
 
 /** A folder of the calling spec's own, under the system temporary directory and asserted to be inside it. */
 export function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-files-spec-'));
+    const dir = scratchDir('oculus-files-spec-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     writeFileSync(join(dir, 'page.html'), '<!doctype html><title>a page</title><h1>A page</h1>\n');
     writeFileSync(join(dir, 'paper.pdf'), PDF);

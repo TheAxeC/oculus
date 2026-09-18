@@ -11,15 +11,7 @@
 // the three `gh` shapes, and the force option appears exactly once in the source of deposit-git.ts.
 
 import { execFileSync } from 'node:child_process';
-import {
-    existsSync,
-    mkdirSync,
-    mkdtempSync,
-    readFileSync,
-    readdirSync,
-    rmSync,
-    writeFileSync
-} from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -48,6 +40,9 @@ import { knownIds } from '../../src/lib/server/deposit-routes.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { WriteTarget } from '../../src/lib/server/writes.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const MODULE = resolve(
     dirname(fileURLToPath(import.meta.url)),
@@ -176,7 +171,7 @@ function remoteCommits(repo: string): string[] {
 }
 
 beforeAll(() => {
-    dir = mkdtempSync(join(tmpdir(), 'oculus-deposit-test-'));
+    dir = scratchDir('oculus-deposit-test-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     hub = join(dir, 'hub');
     mirrors = join(dir, 'mirrors');

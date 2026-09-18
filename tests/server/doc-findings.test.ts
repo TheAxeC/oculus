@@ -2,14 +2,17 @@
 // each finding names. Every hub here is synthetic, under the system temporary directory, and every
 // path written is asserted to be inside it first.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { docFindings } from '../../src/lib/server/docs.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-docs-'));
+    const dir = scratchDir('oculus-docs-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }

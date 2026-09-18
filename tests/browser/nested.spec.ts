@@ -61,6 +61,7 @@ test('the pane menu shows the second page in the first, and its control stops sh
     // The page a pane is in is never offered to itself: only the other page is on the list.
     await expect(
         page.getByRole('menuitem', { name: t('ui.embed_page', t('ui.page_default', 1)) })
+        // the page a pane is in is never offered to itself
     ).toHaveCount(0);
     await page
         .getByRole('menuitem', { name: t('ui.embed_page', t('ui.page_default', 2)), exact: true })
@@ -81,6 +82,7 @@ test('the pane menu shows the second page in the first, and its control stops sh
         .locator('[data-page-leaf]')
         .getByRole('button', { name: t('ui.page_leaf_close') })
         .click();
+    // the control took the shown page away
     await expect(page.locator('[data-page-leaf]')).toHaveCount(0);
     await expect(page.locator('[data-pane]')).toHaveCount(1);
 });
@@ -108,6 +110,7 @@ test('a view opened while reading inside the shown page is open on that page', a
 
     // It is the same page and not a copy: the strip switched to it shows the tabs that were opened.
     await page.keyboard.press('2');
+    // the strip switched to the page itself, so it is no longer shown inside another
     await expect(page.locator('[data-page-leaf]')).toHaveCount(0);
     await expect(page.getByRole('tab', { name: t('views.funding') })).toHaveCount(1);
     await expect(page.getByRole('tab', { name })).toHaveCount(1);
@@ -195,6 +198,7 @@ test('a pane menu inside the shown page acts on that page', async ({ page }) => 
     const only = page.locator('[data-page-leaf] [data-pane]');
     await only.getByRole('button', { name: t('ui.pane_menu'), exact: true }).click();
     await page.getByRole('menuitem', { name: t('ui.pane_maximise'), exact: true }).click();
+    // the pane was maximised, which is what takes the fold away
     await expect(page.locator('[data-page-leaf] [data-fold]')).toHaveCount(0);
     await expect(page.locator('[data-pane]')).toHaveCount(2);
 
@@ -226,12 +230,15 @@ test('a page that would show itself is offered nowhere', async ({ page }) => {
         .getByRole('button', { name: t('ui.pane_menu'), exact: true })
         .click();
     await expect(page.getByRole('menuitem', { name: t('ui.pane_maximise') })).toBeVisible();
+    // page 1 already shows page 2, so page 2's pane has no page left to offer
     await expect(page.getByRole('menuitem', { name: t('ui.embed_page_list') })).toHaveCount(0);
     await expect(
         page.getByRole('menuitem', { name: t('ui.embed_page', t('ui.page_default', 1)) })
+        // not the page that shows it, which would make each page show the other
     ).toHaveCount(0);
     await expect(
         page.getByRole('menuitem', { name: t('ui.embed_page', t('ui.page_default', 2)) })
+        // and not its own page either
     ).toHaveCount(0);
 });
 

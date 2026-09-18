@@ -127,7 +127,9 @@ describe('the control that opens a note', () => {
         const body = from.slice(0, from.indexOf('\n    }'));
 
         expect(body).toContain("openView('note', { id: noteId(new Date()), fresh: true })");
+        // the control opens the tab and nothing else, so no save is reached from it
         expect(body).not.toContain('saveNote');
+        // and the view holds no save of a note anywhere else either
         expect(source).not.toContain('saveNote');
     });
 });
@@ -173,6 +175,7 @@ describe('the tree', () => {
         const { body } = render(Tree, { context: clientContext(client), props: treeProps() });
 
         expect(rowOf(body, 'hub:')).toContain('heading');
+        // a root line is the head of its tree and every other line is a row under it
         expect(rowOf(body, 'hub:code')).not.toContain('heading');
     });
 
@@ -180,6 +183,7 @@ describe('the tree', () => {
     it('offers a removal on a reader-added root and none on a configured one', () => {
         const { body } = render(Tree, { context: clientContext(client), props: treeProps() });
 
+        // the hub root is configured, and only a root the reader added is offered a removal
         expect(rowOf(body, 'hub:')).not.toContain('Take hub out of this workspace');
         expect(rowOf(body, 'notes:')).toContain('Take notes out of this workspace');
     });
@@ -190,7 +194,9 @@ describe('the tree', () => {
         const head = rowOf(body, 'notes:');
         const actions = head.slice(head.indexOf('class="actions'));
 
+        // the workspace is chosen from the header menu, not from a control on a root head
         expect(body).not.toContain('aria-label="Workspace"');
+        // and a root is added from the header too, not from a control here
         expect(body).not.toContain('aria-label="+ root"');
         expect(actions).toContain('aria-label="refresh"');
         expect(actions).toContain('aria-label="collapse all"');
@@ -204,7 +210,9 @@ describe('the tree', () => {
 
         expect(rowOf(body, 'hub:README.md')).toContain('aria-label="bookmark"');
         expect(rowOf(body, 'hub:README.md')).toContain('aria-label="open in a new tab"');
+        // the bookmark is of a file, so a folder row is not offered it
         expect(rowOf(body, 'hub:code')).not.toContain('aria-label="bookmark"');
+        // nor the new-tab control, which opens a file
         expect(rowOf(body, 'hub:code')).not.toContain('aria-label="open in a new tab"');
     });
 
@@ -241,6 +249,7 @@ describe('the tree', () => {
         });
 
         expect(rowOf(body, 'hub:')).toContain('tabindex="0"');
+        // the selected row is of a root the tree no longer draws, so no drawn row is selected
         expect(body).not.toContain('aria-selected="true"');
     });
 });
@@ -290,6 +299,7 @@ describe('the workspaces section', () => {
 
         expect(body).toContain('Workspaces');
         expect(body).toContain('aria-expanded="false"');
+        // the menu is closed, so the workspaces it lists are not drawn
         expect(body).not.toContain('data-fs-workspace="thesis"');
     });
 });
@@ -369,6 +379,7 @@ describe('a root nothing saved', () => {
         });
 
         expect(body).toContain('data-fs-row="workspace:"');
+        // a configured root is not offered a removal
         expect(body).not.toContain('Take workspace out of this workspace');
     });
 });
@@ -416,6 +427,7 @@ describe('a read the server refused', () => {
         });
 
         expect(body).toContain('The roots could not be read: origin');
+        // the roots could not be read, which is said in its own words rather than as an empty list
         expect(body).not.toContain('No roots yet');
     });
 
@@ -462,6 +474,7 @@ describe('a read the server refused', () => {
             props: { instance: instance() }
         });
 
+        // the roots read, and the folder the instance remembers of a root that is gone is dropped without a word
         expect(body).not.toContain('could not be read');
         expect(body).toContain('data-fs-row="hub:"');
     });
@@ -609,7 +622,9 @@ describe("the reader's own bookmarks and notes", () => {
 
         expect(body).toContain('data-fs-bookmarks');
         expect(body).toContain('data-fs-notes');
+        // neither section holds an entry yet, so the heads are drawn and no row under them
         expect(body).not.toContain('data-fs-bookmark=');
+        // and the notes section holds none either
         expect(body).not.toContain('data-fs-note=');
         expect(body.split('>0</span>').length - 1).toBe(2);
         expect(body).toContain('No bookmark yet.');
@@ -682,6 +697,7 @@ describe("the reader's own bookmarks and notes", () => {
             }).body;
         };
 
+        // the instance holds no form, so no form is drawn
         expect(drawn({})).not.toContain('data-form=');
         const adding = drawn({ form: 'bookmark' });
         expect(adding).toContain('data-form="add"');
@@ -697,7 +713,9 @@ describe("the reader's own bookmarks and notes", () => {
             context: clientContext(client),
             props: { instance: instance() }
         }).body;
+        // the bookmarks have not been read, so the bookmark the form names is not there to edit
         expect(unread).not.toContain('data-form=');
+        // and a form naming an entry the read list does not hold draws none either
         expect(drawn({ form: 'bookmark', editing: 'no such bookmark' })).not.toContain(
             'data-form='
         );
@@ -851,7 +869,9 @@ describe('the outcome line of an ask to show a path', () => {
     it('draws no line for a path found as asked, or before any ask', () => {
         expect(
             drawn({ revealed: { kind: 'found', asked, shown: asked, error: '' } })
+            // the path was found where it was asked for, which is the outcome that needs no line
         ).not.toContain('data-fs-revealed');
+        // and nothing was asked for yet in the second one
         expect(drawn({})).not.toContain('data-fs-revealed');
     });
 });

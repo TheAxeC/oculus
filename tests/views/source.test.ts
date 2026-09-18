@@ -94,6 +94,7 @@ describe('the source editor', () => {
             props: { instance }
         }).body;
         expect(restored).toContain('unsaved working copy');
+        // the draft is the unsaved working copy, which is what the editor opens on rather than the saved text
         expect(restored).not.toContain('saved original');
         expect(instanceState(instance.id)).toMatchObject({
             text: 'unsaved working copy',
@@ -147,6 +148,7 @@ describe('the source editor', () => {
         expect(body).toContain(`>${catalog['editor.revert']}</span>`);
         expect(body).toContain(glyphCatalog(config)[catalog['editor.revert_glyph']]);
         expect(body).toContain(catalog['source.saved']);
+        // a file the reader may change is drawn without the flag that locks the editor
         expect(body).not.toContain('readonly');
     });
 
@@ -164,6 +166,7 @@ describe('the source editor', () => {
             }).body;
         const words = `<span class="label">${catalog['file.open_program']}</span>`;
         expect(tab('letters/cover.rtf')).toContain(words);
+        // a .md is read in the tab itself, so it is offered no program control
         expect(tab('notes.md')).not.toContain(words);
     });
 
@@ -200,6 +203,7 @@ describe('the source editor', () => {
         expect(large.length).toBeGreaterThan(cap);
         expect(painted(small)).toContain('hljs-keyword');
         const plain = painted(large);
+        // the file is over the paint limit, so it is drawn as plain text
         expect(plain).not.toContain('hljs-keyword');
         expect(plain).toContain('&lt;one&gt;');
     });
@@ -225,6 +229,7 @@ describe('the source editor', () => {
             }
         });
         expect(paintLimit({ ...config, editor: { paint_limit_kb: 0.01 } })).toBe(10.24);
+        // the limit the configuration carries is under the file's size, so nothing is painted
         expect(painted()).not.toContain('hljs-keyword');
 
         const bare = createClientState();
@@ -234,6 +239,7 @@ describe('the source editor', () => {
                 context: clientContext(bare),
                 props: { path: 'code/run.py', text, ...actions }
             }).body
+            // a client that was sent no configuration has no limit to paint under
         ).not.toContain('hljs-keyword');
     });
 
@@ -258,7 +264,9 @@ describe('the source editor', () => {
         expect(markdown).toContain(`>${catalog['source.preview']}</span>`);
 
         const yaml = drawn('notes.yml');
+        // a .yml has no rendered form, so no preview is drawn for it
         expect(yaml).not.toContain('data-source-preview');
+        // and the control that would open one is not drawn either
         expect(yaml).not.toContain(`>${catalog['source.preview']}</span>`);
     });
 
@@ -273,7 +281,9 @@ describe('the source editor', () => {
         }).body;
         const preview = body.slice(body.indexOf('data-source-preview'));
         expect(preview).toContain('<h1>Prose</h1>');
+        // the front matter is the deck's own data, so the preview draws the prose alone
         expect(preview).not.toContain('title: A deck');
+        // and no rule where the front matter ended
         expect(preview).not.toContain('<hr');
         expect(preview).toContain('src="figures/a.png"');
     });
@@ -295,6 +305,7 @@ describe('the source editor', () => {
         toggleSourceRendered(instance.id);
         expect(instanceState(instance.id)).toMatchObject({ rendered: false });
         const hidden = render(Source, { context: clientContext(client), props: { instance } }).body;
+        // the instance was toggled to the plain form, so the preview is not drawn
         expect(hidden).not.toContain('data-source-preview');
         expect(hidden).toContain(catalog['source.preview']);
     });
@@ -336,6 +347,7 @@ describe('a file the source tab may not write', () => {
         expect(body).toContain('data-language="python"');
         // No editor at all: no textarea to type into and no Save to press.
         expect(body).not.toContain('data-source-editor');
+        // this machine locks the file, so there is nothing to save
         expect(body).not.toContain(`>${catalog['editor.save']}</span>`);
     });
 
@@ -345,6 +357,7 @@ describe('a file the source tab may not write', () => {
 
         expect(body).toContain(catalog['source.truncated']);
         expect(body).toContain('data-fs-code="big.log"');
+        // the read was cut, so what is drawn is the code window rather than an editor over half a file
         expect(body).not.toContain('data-source-editor');
     });
 
@@ -354,12 +367,14 @@ describe('a file the source tab may not write', () => {
 
         expect(body).toContain('data-source-editor="notes.md"');
         expect(body).toContain(`>${catalog['editor.save']}</span>`);
+        // the mode leaves the file writable, so the read-only sentence is not drawn
         expect(body).not.toContain(catalog['source.readonly']);
     });
 
     it('carries the line a tab was opened at into the editor, and none for a tab opened at none', async () => {
         const instance = await holding('at-line', 'notes.md', 'one\ntwo\nthree\n', false);
         const plain = render(Source, { context: clientContext(client), props: { instance } }).body;
+        // this tab was opened at no line
         expect(plain).not.toContain('data-source-line');
 
         const opened = {
@@ -394,6 +409,7 @@ describe('the code window', () => {
 
         expect(painted).toContain('hljs-keyword');
         expect(painted).toContain('hljs-string');
+        // the file's own text is escaped, so its angle brackets reach the reader as words
         expect(painted).not.toContain('<b>');
         expect(painted).toContain('&lt;b&gt;');
     });

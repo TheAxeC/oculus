@@ -4,10 +4,10 @@
 // machine's checkouts; the only directories touched are the temporary ones a case makes for the
 // `.git` markers it needs. Real transcripts hold private research content and never enter a test.
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import {
     GENERAL,
     UNKNOWN_NAME,
@@ -17,6 +17,9 @@ import {
 } from '../../../src/lib/server/sessions/group.ts';
 import { defaultOverridesPath } from '../../../src/lib/server/sessions/overrides.ts';
 import type { Area, SessionRecord, Workspace } from '../../../src/lib/data/model.ts';
+import { scratchDir, sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 const WS = '/synthetic/space/hub';
 const OTHER = '/synthetic/space/other';
@@ -52,7 +55,7 @@ function record(
 
 /** One temporary directory per case, for the `.git` markers and the overrides file. */
 function fixture(): { dir: string; overrides: string } {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-group-'));
+    const dir = scratchDir('oculus-group-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return { dir, overrides: join(dir, 'sessions.json') };
 }

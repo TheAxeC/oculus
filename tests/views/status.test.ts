@@ -59,6 +59,7 @@ describe('the status view hooks section', () => {
     it('draws nothing where there is no origin to post to', () => {
         const body = render(Hooks, { context: clientContext(client), props: { origin: '' } }).body;
         expect(pre(body)).toBeNull();
+        // there is no origin to post a hook to, so the block is not drawn at all
         expect(body).not.toContain(catalog['status.hooks_title']);
     });
 

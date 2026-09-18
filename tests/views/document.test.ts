@@ -89,6 +89,7 @@ describe('a document as its own tab', () => {
             context: clientContext(client),
             props: { instance: instance({}) }
         });
+        // the instance names no file, so there is nothing to frame
         expect(body).not.toContain('<iframe');
         expect(body).toContain('No document chosen.');
     });

@@ -403,6 +403,7 @@ beforeEach(() => {
 
 describe('the Live HPC pill', () => {
     it('is absent before a reachable non-empty queue arrives', () => {
+        // no queue has arrived, and the pill is drawn only for a queue that reads and holds a job
         expect(body).not.toContain('HPC job');
     });
 
@@ -483,6 +484,7 @@ describe('a card', () => {
     it('draws the short handle, the priority flames and the first sentence of next', () => {
         expect(body).toContain('Alpha');
         expect(body).toContain('Run the sweep.');
+        // the card draws the first sentence of next and stops there
         expect(body).not.toContain('Then write it up.');
         const flames = body.split((config.glyphs as Record<string, string>).fire).length - 1;
         expect(flames).toBeGreaterThanOrEqual(3);
@@ -579,6 +581,7 @@ describe('the command center', () => {
         expect(commandBody).toContain(catalog['project.action.done']);
         expect(commandBody).toContain(catalog['project.action.del']);
         expect(commandBody).toContain('ping the editor');
+        // a dated follow-up is the command center's, so the tasks section below does not draw it too
         expect(tasksBody).not.toContain('ping the editor');
     });
 
@@ -666,6 +669,7 @@ describe('the strip and the band', () => {
 
     it('draws the first sentence of a band card note and not the rest of it', () => {
         expect(body).toContain('The concept is written.');
+        // the band card draws the first sentence of its note and stops there
         expect(body).not.toContain('The budget is not.');
     });
 });
@@ -685,6 +689,7 @@ describe('the career panel', () => {
         );
         expect(body).toContain('>warm<');
         expect(body).toContain('>candidate<');
+        // the host is warm, and the statuses offered are the ones it can be moved to
         expect(body).not.toContain('>awaiting<');
     });
 
@@ -702,7 +707,9 @@ describe('an empty portfolio', () => {
         receive({ channel: 'portfolio', version: 2, payload: bare() });
         const empty = html();
         expect(empty).toContain(catalog['focus.none']);
+        // the portfolio is empty, so there is no card to draw
         expect(empty).not.toContain('Alpha');
+        // and nothing is awaiting a response either
         expect(empty).not.toContain(catalog['focus.awaiting_response']);
     });
 
@@ -724,7 +731,9 @@ describe('an empty portfolio', () => {
             }
         });
         const empty = html();
+        // nothing dated is left, so the command center is not drawn at all
         expect(empty).not.toContain(catalog['focus.command.command_center']);
+        // and the tasks section under it is not drawn either
         expect(empty).not.toContain('<section class="tasks');
         expect(empty).toContain(catalog['focus.career_empty']);
     });
@@ -737,6 +746,7 @@ describe('a lane card under the keyboard cursor', () => {
         for (const id of ['alpha', 'bravo', 'charlie']) {
             expect(drawn).toContain(`data-card="${id}"`);
         }
+        // the cursor is the workbench's, and no key has moved it onto a card yet
         expect(drawn).not.toContain('data-cursor');
     });
 
@@ -803,12 +813,14 @@ describe('the tasks section', () => {
             tasksBody.indexOf(catalog['focus.tasks.grp_subtasks_label'])
         );
         expect(followups).toContain('ask the officer');
+        // a follow-up with no date belongs to the tasks section, not to the command center
         expect(commandBody).not.toContain('ask the officer');
     });
 
     it('draws the undated follow-up, subtask and task entry the command center no longer has', () => {
         for (const label of ['chase the coauthor', 'write the cover letter', 'A standing chore']) {
             expect(tasksBody).toContain(label);
+            // each of these is undated, so it belongs to the tasks section alone
             expect(commandBody).not.toContain(label);
         }
         for (const key of [
@@ -823,7 +835,9 @@ describe('the tasks section', () => {
     it('keeps the dated subtask and the dated task entry on the command center', () => {
         expect(commandBody).toContain('redraw figure 2');
         expect(commandBody).toContain('A dated chore');
+        // a dated subtask stays on the command center, so the tasks section does not draw it too
         expect(tasksBody).not.toContain('redraw figure 2');
+        // nor the dated task entry beside it
         expect(tasksBody).not.toContain('A dated chore');
     });
 
@@ -841,6 +855,7 @@ describe('the tasks section', () => {
         }
         const note = rows.find((row) => row.includes('chase the coauthor')) ?? '';
         expect(note).toContain(catalog['project.action.done']);
+        // a follow-up is answered or dropped by its own control, so no delete is offered on the line
         expect(note).not.toContain(catalog['project.action.del']);
     });
 
@@ -850,6 +865,7 @@ describe('the tasks section', () => {
         expect(chore).toContain('>doing<');
         expect(chore).toContain('>done<');
         expect(chore).toContain(catalog['project.action.snooze_1w']);
+        // a task row moves through the lifecycle statuses of the file, so it carries no delete either
         expect(chore).not.toContain(catalog['project.action.del']);
     });
 });

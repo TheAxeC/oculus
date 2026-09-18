@@ -71,6 +71,7 @@ test('a theme facet draws its label and hides the venues with its word until pre
     for (const id of [...CARRYING, KEPT]) await expect(card(page, id)).toHaveCount(1);
 
     await facet.click();
+    // the facet was switched off, so the cards carrying that theme are not drawn
     for (const id of CARRYING) await expect(card(page, id)).toHaveCount(0);
     await expect(card(page, KEPT)).toHaveCount(1);
     await expect(facet).toBeVisible();

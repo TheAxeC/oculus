@@ -19,7 +19,9 @@ test('every glyph in the rail is a line icon and none of them carries anything t
     const rail = page.locator('nav');
     const icons = rail.locator('.glyph svg');
     expect(await icons.count()).toBeGreaterThan(4);
+    // the icons are inlined markup from the icon set, which carries nothing that runs
     await expect(rail.locator('.glyph script')).toHaveCount(0);
+    // and nothing that fetches a second file either
     await expect(rail.locator('.glyph image, .glyph use, .glyph foreignObject')).toHaveCount(0);
 
     const first = icons.first();
@@ -56,6 +58,7 @@ test('a terminal theme draws the ASCII stand-in and no icon, until the glyphs ar
     await boot(page);
     await page.getByRole('button', { name: t('ui.theme') }).click();
     await page.getByRole('menuitem', { name: /mocha/ }).click();
+    // a terminal theme draws the ASCII stand-in, so no icon is drawn until the glyphs are asked for
     await expect(page.locator('nav .glyph svg')).toHaveCount(0);
     await expect(page.locator('nav .glyph').first()).not.toBeEmpty();
 

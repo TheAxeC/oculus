@@ -243,5 +243,6 @@ test('a slide unticked and a slide moved reach the deck when the catalog is save
     await expect(page.locator('[data-overview]')).toBeVisible();
     await expect(
         page.getByRole('button', { name: 'Probing the node that tells you most' })
+        // the overview lists the slides of the deck the reader is in, and that slide belongs to another deck
     ).toHaveCount(0);
 });

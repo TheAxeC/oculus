@@ -31,16 +31,19 @@
 // the inline `style` a component writes for a tone, which is the one place a token name is built at
 // run time.
 
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { deriveTokens, ratio } from '../../src/lib/themes/derive.ts';
 import { parseBlocks, resolveTheme } from '../../src/lib/themes/parse.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import { byKey } from '../../src/lib/data/guards.ts';
 import { setAppearance, themeClass, themes } from '../../src/lib/state/appearance.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const SRC = resolve(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src');
 
@@ -550,7 +553,7 @@ describe('the colour rule', () => {
     });
 
     it('refuses a raw colour, a hue as text, and a token nothing sets', () => {
-        const dir = mkdtempSync(join(tmpdir(), 'oculus-colours-'));
+        const dir = scratchDir('oculus-colours-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
 
         const write = (rel: string, body: string) => {

@@ -6,10 +6,10 @@
 // files under the system temporary directory and asserts each write stays inside it. This does not
 // cover the browser painting the image.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it, vi } from 'vitest';
+import { afterAll, describe, expect, it, vi } from 'vitest';
 import {
     choose,
     images,
@@ -18,10 +18,13 @@ import {
     wallpaperMemory
 } from '../../src/lib/server/wallpaper.ts';
 import { noop } from '../doubles.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 /** A directory holding the named files, each one byte, inside the system temporary directory. */
 function folder(names: string[]): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-wallpaper-'));
+    const dir = scratchDir('oculus-wallpaper-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     mkdirSync(dir, { recursive: true });
     for (const name of names) {
@@ -141,7 +144,7 @@ describe('the response', () => {
 describe('the configured settings', () => {
     /** An engine directory of this case's own: its config folder, its appearance and its local.yml. */
     function fixture(body: string): { engine: string; hub: string } {
-        const root = mkdtempSync(join(tmpdir(), 'oculus-wallpaper-config-'));
+        const root = scratchDir('oculus-wallpaper-config-');
         expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const engine = join(root, 'engine');
         const hub = join(root, 'hub');

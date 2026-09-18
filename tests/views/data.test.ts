@@ -235,6 +235,7 @@ describe('the Data view', () => {
         expect(tags).toContain('private');
         expect(tags).toContain('credentialed');
         expect(tags).toContain('public');
+        // an access word keeps the hue its chip had, which is set on the tag's own property rather than as a tone
         expect(html).not.toContain('--tone: var(--c-');
         // Each access word keeps the hue its chip had, on the tag's own custom property.
         for (const hue of ['green', 'amber', 'red', 'slate', 'grey']) {
@@ -248,6 +249,7 @@ describe('the Data view', () => {
         expect(html).toContain('data-project-group="work"');
         expect(html).toContain('class="label">active</span>');
         expect(html).toContain('aria-expanded="false"');
+        // the project list is closed, so its members are named only once it is expanded
         expect(html).not.toContain('>LP</span>');
         expect(html).toContain('href="https://example.org/open"');
         expect(html).toContain('target="_blank"');
@@ -264,6 +266,7 @@ describe('the Data view', () => {
         const start = html.indexOf('data-dataset="public"');
         const card = html.slice(start);
         expect(start).toBeGreaterThan(0);
+        // no project names this dataset, so there is no group to draw
         expect(card).not.toContain('data-project-group=');
     });
 
@@ -274,6 +277,7 @@ describe('the Data view', () => {
             props: { instance: instance() }
         }).body;
         expect(html).toContain('No datasets yet - add some to registries/data.yml.');
+        // the file holds no entry, so there is no card to draw
         expect(html).not.toContain('data-dataset=');
     });
 });
@@ -290,6 +294,7 @@ describe('the dataset facets under their data_themes labels', () => {
             props: { instance: instance() }
         }).body;
         expect(html).toContain(`${ecg} 3`);
+        // the theme is drawn under its label, so the bare key and its count are not the pair drawn
         expect(html).not.toContain('ecg 3');
         expect(html).toContain('scans 2');
     });
@@ -303,6 +308,7 @@ describe('the dataset card as a card primitive', () => {
             props: { instance: instance() }
         }).body;
         for (const item of DATASETS) expect(html).toContain(`data-card="${item.id}"`);
+        // the cursor is the workbench's, and no key has moved it onto a card yet
         expect(html).not.toContain('data-cursor');
     });
 

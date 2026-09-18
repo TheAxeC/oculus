@@ -77,6 +77,7 @@ test('the pin control writes pin: true, moves the card first, and unpin restores
 }) => {
     const file = `${SPARSE}/project.yml`;
     const before = readHubFile(file);
+    // the manifest carries no pin before the case presses one
     expect(before).not.toContain('pin:');
     await boot(page);
     await openView(page, 'projects', t('views.projects'));
@@ -122,6 +123,7 @@ test('the new-idea form scaffolds a manifest and a README and the card appears',
     await expect(page.locator('.slot').filter({ hasText: IDEA_TITLE })).toHaveCount(1);
 
     removeFromHub(`projects/ideas/${IDEA}`);
+    // the folder was taken out of the hub, and the board follows what the hub holds
     await expect(page.locator('.slot').filter({ hasText: IDEA_TITLE })).toHaveCount(0);
 });
 

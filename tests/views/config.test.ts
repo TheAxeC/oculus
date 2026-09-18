@@ -138,6 +138,7 @@ describe('the Config view', () => {
 
     it('shows the raw text only for a file the tab was left open on', () => {
         const closed = drawn([file('layout.yml')], text(LAYOUT));
+        // the tab was left closed on this file, so its raw text is not drawn
         expect(closed).not.toContain('data-file="layout.yml"');
 
         client.ui.setInstanceState(instance.id, { open: ['layout.yml'] });
@@ -209,6 +210,7 @@ describe('the Config view', () => {
     });
 
     it('says nothing about a cut for a file the window holds whole', () => {
+        // the window holds the file whole, so nothing says it was cut
         expect(drawn([file('layout.yml')])).not.toContain('data-cut=');
     });
 
@@ -236,6 +238,7 @@ describe('the Config view', () => {
         // The words themselves, so an intro that goes back to saying the file is not served fails.
         expect(body).toContain('in local.yml of the same folder');
         expect(body).toContain("which is this machine's own");
+        // the intro names the machine-local file and where it sits, rather than saying it is not served
         expect(body).not.toContain('not served here');
     });
 
@@ -250,8 +253,11 @@ describe('the Config view', () => {
             body.indexOf('data-card="local.yml"')
         );
         const without = drawn([file('layout.yml')]);
+        // this folder holds no local.yml, so there is no card for it
         expect(without).not.toContain('data-card="local.yml"');
+        // and no tag marking one either
         expect(without).not.toContain(catalog['config.local_tag']);
+        // and the words describing that file are not drawn either, since the folder holds none
         expect(without).not.toContain(catalog['config.desc_local']);
     });
 });

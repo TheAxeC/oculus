@@ -11,13 +11,16 @@
 
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
-import { existsSync, mkdirSync, mkdtempSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { gitIn } from './git.ts';
 import { hubDir } from './hub.ts';
 import { boot, openView } from './rail.ts';
 import { t } from './words.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+test.afterAll(sweepScratch);
 
 /** Every folder this case made, taken away when it ends however it ended. */
 const made: string[] = [];
@@ -30,7 +33,7 @@ function inside(path: string): string {
 
 /** A fresh folder under the temporary directory, registered for removal before anything writes it. */
 function folder(name: string): string {
-    const dir = inside(mkdtempSync(join(tmpdir(), `oculus-changes-spec-${name}-`)));
+    const dir = inside(scratchDir(`oculus-changes-spec-${name}-`));
     made.push(dir);
     return dir;
 }
@@ -172,12 +175,14 @@ test.describe('the Changes panel', () => {
         await expect(readable.getByRole('button', { name: 'start', exact: true })).toBeVisible();
         await expect(readable.getByText('loose.txt')).toBeVisible();
         await expect(readable.getByText(t('git.push_none'))).toBeVisible();
+        // this workspace has something to push, so it is not drawn as in sync
         await expect(panel.getByText(t('sessions.ch_insync'))).toHaveCount(0);
         await expect.poll(() => asked.get(fresh) ?? 0).toBeGreaterThan(0);
 
         await showChanges(page, 'Changes spec plain');
         await expect(panel.locator('[data-repo="none"]')).toBeVisible({ timeout: 15000 });
         await expect(panel.getByText(t('sessions.ch_norepo'))).toBeVisible();
+        // the panel draws the workspace it was shown, which is this one alone
         await expect(panel.locator('[data-repo="readable"]')).toHaveCount(0);
 
         await showChanges(page, 'Changes spec broken');
@@ -185,7 +190,9 @@ test.describe('the Changes panel', () => {
         await expect(failed).toBeVisible({ timeout: 15000 });
         await expect(failed).toContainText(t('sessions.ch_failed', '').trim());
         await expect(failed).toContainText('index');
+        // the workspace is a repository whose read failed, not a folder without one
         await expect(panel.getByText(t('sessions.ch_norepo'))).toHaveCount(0);
+        // and the panel draws the workspace it was shown, which is this one alone
         await expect(panel.locator('[data-repo="readable"]')).toHaveCount(0);
 
         expect(asked.get(plain) ?? 0).toBe(0);
@@ -235,6 +242,7 @@ test.describe('the Changes panel', () => {
 
         await readable.getByRole('button', { name: 'main', exact: true }).click();
         await expect(page.getByRole('menuitem', { name: 'main', exact: true })).toBeVisible();
+        // the listing that answered with it was the older one, which a later listing has replaced
         await expect(page.getByRole('menuitem', { name: 'stale', exact: true })).toHaveCount(0);
         await page.keyboard.press('Escape');
     });

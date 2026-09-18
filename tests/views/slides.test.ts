@@ -224,6 +224,7 @@ describe('the slide catalog', () => {
                 said: catalog[key]
             });
             expect(status(html)).toBe(catalog[key]);
+            // the words drawn are the catalog sentence for the outcome, never the key it is held under
             expect(html).not.toContain('invalid_order');
         }
     });

@@ -5,7 +5,7 @@
 // the reader's own home is read or written, and no provider is called at all.
 
 import { readFileSync, writeFileSync } from 'node:fs';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import {
     KEEP_DAYS,
     pruneNotes,
@@ -14,6 +14,9 @@ import {
     writeNote
 } from '../../../src/lib/server/mail/triage.ts';
 import { cleanup, scratch } from './fixture.ts';
+import { sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 afterEach(cleanup);
 

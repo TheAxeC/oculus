@@ -1,9 +1,8 @@
 // Layer 4, test. Synthetic account, rollout, transcript, cache, window, dedupe, live-hour and watcher coverage.
 
-import { mkdirSync, mkdtempSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UsageAccountConfig, UsagePayload } from '../../../src/lib/data/model.ts';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import {
@@ -19,12 +18,15 @@ import { UsageTranscriptFold } from '../../../src/lib/server/usage/transcripts.t
 import { watchUsage } from '../../../src/lib/server/usage/watch.ts';
 import { noop } from '../../doubles.ts';
 import { present } from '../../present.ts';
+import { scratchDir, sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 const NOW = Date.parse('2026-09-13T12:00:00.000Z');
 const made: string[] = [];
 
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-usage-'));
+    const dir = scratchDir('oculus-usage-');
     made.push(dir);
     return dir;
 }

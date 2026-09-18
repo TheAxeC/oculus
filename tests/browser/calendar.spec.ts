@@ -24,5 +24,6 @@ test('the configured account is drawn not connected, with its Connect control an
 
     // The window holds nothing, since the account has no token and the poller called no provider.
     await expect(page.getByText(t('calendar.agenda_empty'))).toBeVisible();
+    // the account has no token, so the poller called no provider and the window holds nothing
     await expect(page.locator('[data-event]')).toHaveCount(0);
 });

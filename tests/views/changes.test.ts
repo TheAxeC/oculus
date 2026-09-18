@@ -221,6 +221,7 @@ describe('the changes view', () => {
         const body = html(Changes);
         expect(said(body)).toEqual(['unplaced']);
         expect(body).toContain(catalog['sessions.ch_noworkspace']);
+        // the session names no folder at all, which is a different thing from a folder that is no repository
         expect(body).not.toContain(catalog['sessions.ch_norepo']);
         expect(repoShape('', null)).toBe('unplaced');
     });
@@ -274,6 +275,7 @@ describe('the changes view', () => {
         const body = html(Changes);
         expect(body).toContain(catalog['git.push']);
         expect(body).toContain(catalog['git.push_none']);
+        // the branch has no upstream, which is said in its own words rather than as a lookup still running
         expect(body).not.toContain(catalog['git.push_pending']);
         expect(body).toContain('disabled');
     });
@@ -288,6 +290,7 @@ describe('the changes view', () => {
         select('live-one');
         const body = html(Changes);
         expect(body).toContain(catalog['git.push_pending']);
+        // git has not answered yet, so the lookup is what is said rather than that there is no upstream
         expect(body).not.toContain(catalog['git.push_none']);
         expect(body).toContain('disabled');
         receive({ channel: 'git', version: 4, payload: { [HUB]: HUB_GIT, '/other': other } });

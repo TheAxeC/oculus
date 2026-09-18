@@ -136,6 +136,7 @@ describe('the Inbox view', () => {
         expect(at.every((one) => one >= 0)).toBe(true);
         expect(at).toEqual([...at].sort((one, two) => one - two));
         expect(body).toContain(`${catalog['inbox.triaged_sec']} (1)`);
+        // a triaged thread sits under the triaged section, which is closed
         expect(body).not.toContain('data-inbox="google-work-done"');
     });
 
@@ -149,6 +150,7 @@ describe('the Inbox view', () => {
         expect(reply).toContain(catalog['inbox.reply']);
         expect(reply).toContain('work');
         expect(reply).toContain(catalog['inbox.show_draft']);
+        // the draft editor is closed, so the draft's own text is not drawn
         expect(reply).not.toContain('Beste Ada');
         expect(reply).toContain('target="_blank"');
         expect(reply).toContain(catalog['inbox.open_provider']);
@@ -168,6 +170,7 @@ describe('the Inbox view', () => {
         serve();
         const closed = draw('inbox-draft-closed');
         expect(closed).toContain(catalog['inbox.show_draft']);
+        // the draft editor is closed, so the draft's own text is not drawn
         expect(closed).not.toContain('Beste Ada');
 
         const open = draw('inbox-draft', false, '', ['google-work-reply']);
@@ -184,6 +187,7 @@ describe('the Inbox view', () => {
         // Neither write happens on a press of its control: each opens a confirmation, which is
         // drawn only once it has been asked for, so the card carries neither confirmation's words.
         expect(open).not.toContain(catalog['inbox.send_confirm'].split('{0}')[0]);
+        // and the archive confirmation is drawn only once it has been asked for too
         expect(open).not.toContain(catalog['inbox.archive_confirm'].split('{0}')[0]);
         // The card's other editors stay closed, so one open editor is one thread's.
         expect(card(open, 'action')).not.toContain(catalog['inbox.draft_label']);
@@ -212,6 +216,7 @@ describe('the Inbox view', () => {
     it('offers Archive on the card itself, outside the draft editor', () => {
         serve();
         const closed = card(draw('inbox-archive'), 'action');
+        // the card is the one outside the editor, so the draft label is not on it
         expect(closed).not.toContain(catalog['inbox.draft_label']);
         expect(hasAction(closed, catalog['inbox.archive'])).toBe(true);
         expect(closed).toContain(catalog['inbox.archive_tip']);
@@ -249,6 +254,7 @@ describe('the Inbox view', () => {
         expect(body).toContain(catalog['inbox.unconfigured']);
         // The head carries the state word and the body the sentence, so the sentence is drawn once.
         expect(body.split(catalog['inbox.no_accounts']).length).toBe(2);
+        // no account is configured, so there is no thread to put in a section
         expect(body).not.toContain(catalog['inbox.sec_reply']);
     });
 
@@ -262,8 +268,11 @@ describe('the Inbox view', () => {
 
         const searched = draw('inbox-search', true, 'upload bob');
         expect(searched).toContain('data-inbox="google-work-action"');
+        // the search holds the cards whose words it matches, and this thread's do not
         expect(searched).not.toContain('data-inbox="google-work-reply"');
+        // nor the card of the second thread, whose words the search does not match either
         expect(searched).not.toContain('data-inbox="google-work-info"');
+        // nor the card of the triaged thread, for the same reason
         expect(searched).not.toContain('data-inbox="google-work-done"');
     });
 
@@ -271,7 +280,9 @@ describe('the Inbox view', () => {
         serve({ threads: [THREADS[0]] });
         const body = draw('inbox-one-kind');
         expect(body).toContain(`${catalog['inbox.sec_reply']} (1)`);
+        // only one kind of thread is on the plate, so the other sections are not drawn
         expect(body).not.toContain(catalog['inbox.sec_action']);
+        // and the plate is not clear either, since that one thread is on it
         expect(body).not.toContain(catalog['inbox.clear']);
 
         serve({ threads: [THREADS[4]] });
@@ -294,6 +305,7 @@ describe('the Inbox view', () => {
     it('offers no control over a feed file, since the plate is not read from one', () => {
         serve();
         const body = draw('inbox-no-source');
+        // the plate is read from the mail account rather than from a file, so there is no source to open
         expect(body).not.toContain('data-source-path');
     });
 

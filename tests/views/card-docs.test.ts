@@ -152,6 +152,7 @@ describe('the file list of a project card', () => {
             expect(found[name]).toContain('<button type="button" class="tool');
             expect(found[name]).toContain(catalog['file.open_program']);
             expect(found[name]).toContain(glyphs[catalog['file.open_program_glyph']]);
+            // the file opens in its program, so the row is a control rather than a link to the bytes
             expect(found[name]).not.toContain('<a ');
         }
     });
@@ -159,7 +160,9 @@ describe('the file list of a project card', () => {
     it('draws a .md as the ui/ToolButton that opens the document view, and not the program control', () => {
         const row = rows()['notes.md'];
         expect(row).toContain('<button type="button" class="tool');
+        // a .md is read in the document view, so the program control is not offered on it
         expect(row).not.toContain(catalog['file.open_program']);
+        // and the row is a control either way, so it is no link
         expect(row).not.toContain('<a ');
     });
 
@@ -168,7 +171,9 @@ describe('the file list of a project card', () => {
         expect(found['plot.png']).toContain(`href="/api/file/hub/${FOLDER}/figures/plot.png"`);
         expect(found['paper.pdf']).toContain(`href="/api/file/hub/${FOLDER}/paper.pdf"`);
         for (const name of ['plot.png', 'paper.pdf']) {
+            // a picture and a PDF are read in a tab, so their rows stay links
             expect(found[name]).not.toContain('<button');
+            // and neither is offered the program control
             expect(found[name]).not.toContain(catalog['file.open_program']);
         }
     });
@@ -178,7 +183,9 @@ describe('the file list of a project card', () => {
         expect(found['setup.pkg']).toContain(`href="/api/file/hub/${FOLDER}/dist/setup.pkg"`);
         expect(found['run.log']).toContain(`href="/api/file/hub/${FOLDER}/logs/run.log"`);
         for (const name of ['setup.pkg', 'run.log']) {
+            // neither of these opens in a program, so the row stays a link
             expect(found[name]).not.toContain('<button');
+            // and neither is offered the program control
             expect(found[name]).not.toContain(catalog['file.open_program']);
         }
     });
@@ -195,6 +202,7 @@ describe('the file list of a project card', () => {
         });
         const found = rows();
         expect(found['run.log']).toContain(catalog['file.open_program']);
+        // the configuration now names one extension, and a name it does not name is offered no program
         expect(found['report.docx']).not.toContain(catalog['file.open_program']);
         expect(found['report.docx']).toContain(`href="/api/file/hub/${FOLDER}/drafts/report.docx"`);
     });
@@ -204,6 +212,7 @@ describe('the file list of a project card', () => {
         early.files.files('one');
         await new Promise((resolve) => setTimeout(resolve, 0));
         const found = rows(early);
+        // the configuration has not arrived, so no extension is known to open in a program yet
         expect(found['report.docx']).not.toContain(catalog['file.open_program']);
         expect(found['report.docx']).toContain(`href="/api/file/hub/${FOLDER}/drafts/report.docx"`);
     });

@@ -14,9 +14,8 @@ import { ENTITY_KINDS } from '../../src/lib/data/normalise.ts';
 import { sessions } from '../../src/lib/server/sessions/index.ts';
 import { statusFor } from '../../src/lib/server/git.ts';
 import type { Finding, RegistryName } from '../../src/lib/data/model.ts';
-import { mkdtempSync } from 'node:fs';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { scratchDir, sweepScratch } from '../scratch.ts';
 
 const REGISTRIES: RegistryName[] = ['venues', 'datasets', 'pillars', 'domains', 'funding'];
 
@@ -92,8 +91,10 @@ for (const [name, table] of Object.entries(snapshot.relations)) {
 report('snapshot', snapshot.findings);
 
 // The session stores, read only. The cache and the overrides live in a temporary directory, never
-// in ~/.oculus: a probe measures what a scan costs and leaves no state of its own behind.
-const scratch = mkdtempSync(join(tmpdir(), 'oculus-probe-'));
+// in ~/.oculus: a probe measures what a scan costs and leaves no state of its own behind. This file
+// has no runner and no hook, so it sweeps its own directory when the run ends, however it ends.
+process.on('exit', sweepScratch);
+const scratch = scratchDir('oculus-probe-');
 const options = {
     hub,
     snapshot,

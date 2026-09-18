@@ -11,7 +11,6 @@
 import {
     existsSync,
     mkdirSync,
-    mkdtempSync,
     readFileSync,
     readdirSync,
     rmSync,
@@ -22,6 +21,7 @@ import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { afterAll, describe, expect, it } from 'vitest';
+import { scratchDir, sweepScratch } from '../scratch.ts';
 import {
     handleTerminal,
     handleTerminalList,
@@ -33,6 +33,8 @@ import { taskSkipPermissions } from '../../src/lib/data/tasks.ts';
 import { record } from '../sessions-fixture.ts';
 import type { SessionRecord } from '../../src/lib/data/model.ts';
 import { contextFixture } from '../server/context-fixture.ts';
+
+afterAll(sweepScratch);
 
 /** This file's own directory, for reading the route module beside the source it tests. */
 const HERE_FILE = fileURLToPath(import.meta.url);
@@ -54,7 +56,7 @@ const GONE = join(HERE, 'oculus-no-such-directory-for-o19');
 expect(GONE.startsWith(HERE + sep)).toBe(true);
 expect(existsSync(GONE)).toBe(false);
 
-const TASK_CONFIG = mkdtempSync(join(HERE, 'oculus-task-route-'));
+const TASK_CONFIG = scratchDir('oculus-task-route-');
 expect(resolve(TASK_CONFIG).startsWith(HERE + sep)).toBe(true);
 
 /**

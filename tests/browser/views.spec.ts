@@ -53,6 +53,7 @@ test('a tooltip on a hovered control closes when the palette takes the focus', a
 
     await page.keyboard.press('ControlOrMeta+k');
     await expect(page.getByRole('dialog', { name: t('app.search') })).toBeVisible();
+    // the palette took the focus, and the bubble belongs to the control the pointer is on
     await expect(bubble).toHaveCount(0);
 });
 
@@ -115,6 +116,7 @@ test('an intro filters a hub value and draws a catalog line as it is written', a
     const hubIntro = page.locator('.intro').first();
     await expect(hubIntro).toBeVisible();
     await expect(hubIntro).toContainText('Standing tasks');
+    // the intro is markup from the hub file, so the filter takes the script out of it
     await expect(hubIntro.locator('script')).toHaveCount(0);
     await expect(hubIntro).not.toContainText('alert(1)');
 

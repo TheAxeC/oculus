@@ -372,6 +372,7 @@ test('the one Filter control groups every facet, ticks what is in force and filt
     const openers = page.locator('button[aria-haspopup="menu"]');
     await expect(page.getByRole('button', { name: t('board.filter'), exact: true })).toHaveCount(1);
     for (const facet of ['board.facet_status', 'board.facet_compute', 'board.facet_dataset']) {
+        // the facets live inside the one filter menu now, so no facet has an opener of its own
         await expect(openers.filter({ hasText: t(facet) })).toHaveCount(0);
     }
     await page.getByRole('button', { name: t('board.filter'), exact: true }).click();

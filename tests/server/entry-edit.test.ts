@@ -11,11 +11,11 @@
 // rule that holds on a fixture and not on the hub's own collection files is not a rule. Nothing
 // there is written; when the hub is not on this machine the whole block skips and says so.
 
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { parse } from 'yaml';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import {
     addSubtask,
     appendEntry,
@@ -34,6 +34,9 @@ import {
 import { engineDir, loadConfig, loadLocal } from '../../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { fieldNames } from '../../src/lib/data/validate.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const ENTRIES = [
     'title: Things',
@@ -198,7 +201,7 @@ describe('entry raw maps', () => {
         expect(out.refused).toEqual([]);
         expect(out.changed).toEqual(['retrieval']);
 
-        const dir = mkdtempSync(join(tmpdir(), 'oculus-entry-edit-'));
+        const dir = scratchDir('oculus-entry-edit-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const file = join(dir, 'data.yml');
         writeFileSync(file, out.text, 'utf8');

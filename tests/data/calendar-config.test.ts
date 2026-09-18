@@ -2,10 +2,10 @@
 // file, and the `calendar:` block of behavior.yml. Every sentence either of them throws is named
 // here, and the machine that names neither is checked to read as it did before.
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import {
     LOCAL_NAME,
     calendarSettings,
@@ -13,6 +13,9 @@ import {
     loadConfig,
     loadLocal
 } from '../../src/lib/data/sources/config.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const made: string[] = [];
 
@@ -22,7 +25,7 @@ afterEach(() => {
 
 /** An engine directory of this case's own, asserted to be inside the temporary directory. */
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-calendar-config-'));
+    const dir = scratchDir('oculus-calendar-config-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(dir);
     return dir;

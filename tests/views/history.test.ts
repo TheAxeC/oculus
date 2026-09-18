@@ -118,6 +118,7 @@ describe('what an undo is said to have done', () => {
         ]) {
             const outcome = undoSaid({ ok: false, changed: [], error: word }, 'x');
             expect(outcome).toEqual({ undone: false, said: catalog[key] });
+            // the outcome is worded from the catalog, so the endpoint's own word is not in it
             expect(outcome.said).not.toContain(word);
         }
         // A refusal from before the undo branch, the origin or the token, reads as its own sentence
@@ -167,6 +168,7 @@ describe('the History view', () => {
         // The label is drawn once on the control and once in its tooltip.
         expect(controls).toBeGreaterThan(0);
         expect(body).toContain('Put back what alpha / status.line held before this write');
+        // this write cannot be taken back, so no undo is offered over it
         expect(body).not.toContain('Put back what fresh / entries held before this write');
     });
 
@@ -182,6 +184,7 @@ describe('the History view', () => {
         ]);
         expect(body).toContain(catalog['history.items']);
         expect(body).toContain(catalog['history.nothing_there']);
+        // the row holds the deleted item, so there is no value to draw as what it became
         expect(body).not.toContain('data-value="a:before"');
     });
 
@@ -196,6 +199,7 @@ describe('the History view', () => {
         }
         // The kind is on the row as data for a spec to select on, and never as the reader's word.
         expect(body).toContain('data-kind="new-entry"');
+        // the kind is on the row as data for a spec to select on, never as the reader's word
         expect(body).not.toContain('>new-entry</span>');
     });
 
@@ -206,6 +210,7 @@ describe('the History view', () => {
         ];
         const body = drawn(rows, { filter: 'tasks' });
         expect(body).toContain('data-change="b"');
+        // the filter holds the rows whose file carries its text, and this one does not
         expect(body).not.toContain('data-change="a"');
     });
 

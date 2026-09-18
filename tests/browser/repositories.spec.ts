@@ -7,13 +7,16 @@
 // made. Nothing reaches the machine's own checkout.
 
 import { expect, test, type Page } from '@playwright/test';
-import { existsSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { gitIn } from './git.ts';
 import { boot, openView } from './rail.ts';
 import { hubDir } from './hub.ts';
 import { t } from './words.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+test.afterAll(sweepScratch);
 
 /** The file the browser layer leaves changed in the copy it serves, which the diff pane opens. */
 const CHANGED = 'feeds/position-leads.yml';
@@ -87,6 +90,7 @@ test.describe('the Repositories view', () => {
         await row.getByRole('button', { name: t('repositories.remove'), exact: true }).click();
         await page.getByRole('button', { name: t('ui.confirm_ok') }).click();
 
+        // the confirm removed the worktree, so its row is gone
         await expect(row).toHaveCount(0);
         await expect.poll(() => existsSync(worktree())).toBe(false);
     });
@@ -98,7 +102,7 @@ test.describe('the Repositories view', () => {
         // Two repositories whose last folders are both `repo`, and a folder that is none, all under
         // this case's own temporary folders and added as roots through the file browser.
         const made = [0, 1].map(() => {
-            const parent = mkdtempSync(join(tmpdir(), 'oculus-repositories-spec-'));
+            const parent = scratchDir('oculus-repositories-spec-');
             expect(resolve(parent).startsWith(resolve(tmpdir()) + sep)).toBe(true);
             const dir = join(parent, 'repo');
             mkdirSync(dir);
@@ -108,7 +112,7 @@ test.describe('the Repositories view', () => {
             gitIn(dir, 'commit', '--quiet', '-m', 'one');
             return { dir, label: `${parent.split(sep).at(-1) ?? ''}/repo` };
         });
-        const loose = mkdtempSync(join(tmpdir(), 'oculus-repositories-loose-'));
+        const loose = scratchDir('oculus-repositories-loose-');
         expect(resolve(loose).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const looseName = loose.split(sep).at(-1) ?? '';
 
@@ -118,6 +122,7 @@ test.describe('the Repositories view', () => {
             await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
             await page.getByRole('textbox', { name: t('files.root_dir') }).fill(dir);
             await page.getByRole('button', { name: t('files.add'), exact: true }).click();
+            // the add closed the form, which is what says it was taken
             await expect(page.getByRole('textbox', { name: t('files.root_dir') })).toHaveCount(0);
         }
 
@@ -145,11 +150,13 @@ test.describe('the Repositories view', () => {
         await expect(page.getByRole('menuitem', { name: made[0].label, exact: true })).toHaveCount(
             1
         );
+        // git reads this folder as no repository, so the picker does not offer it
         await expect(page.getByRole('menuitem', { name: looseName })).toHaveCount(0);
         await page.keyboard.press('Escape');
 
         await pick(page, made[1].label);
         await expect(shown).toHaveAttribute('data-root', new RegExp(`${made[1].label}$`));
+        // one repository is drawn at a time, and the pick moved it to another one
         await expect(page.locator(`[data-root="${hubDir()}"]`)).toHaveCount(0);
 
         // Back to the hub, which the other cases of this file draw.
@@ -160,7 +167,7 @@ test.describe('the Repositories view', () => {
     // Revert: drop the `symbolic-ref --short HEAD` read from state() in server/git.ts, so the
     // repository with no commit is drawn as its error row rather than its branch and its files.
     test('lists a repository with no commit yet and switches to it', async ({ page }) => {
-        const fresh = mkdtempSync(join(tmpdir(), 'oculus-repositories-fresh-'));
+        const fresh = scratchDir('oculus-repositories-fresh-');
         expect(resolve(fresh).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         // The folder goes when the case ends, whatever the case did, so no repository is left
         // behind.
@@ -174,6 +181,7 @@ test.describe('the Repositories view', () => {
             await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
             await page.getByRole('textbox', { name: t('files.root_dir') }).fill(fresh);
             await page.getByRole('button', { name: t('files.add'), exact: true }).click();
+            // the add closed the form, which is what says it was taken
             await expect(page.getByRole('textbox', { name: t('files.root_dir') })).toHaveCount(0);
 
             await openView(page, 'repositories', t('views.repositories'));
@@ -224,11 +232,13 @@ test.describe('the Repositories view', () => {
         await expect(log.getByText('The demo hub as it is shipped')).toBeVisible();
         await head.getByRole('button').first().click();
         await expect(head).toHaveAttribute('aria-expanded', 'false');
+        // the log section is closed, so its commits are not drawn
         await expect(log.getByText('The demo hub as it is shipped')).toHaveCount(0);
 
         await openView(page, 'files', t('views.files'));
         await page.getByRole('tab', { name: t('views.repositories') }).click();
         await expect(head).toHaveAttribute('aria-expanded', 'false');
+        // the tab switch brought the section back closed, so its commits are still not drawn
         await expect(log.getByText('The demo hub as it is shipped')).toHaveCount(0);
 
         // Opened again, so the page this run saves draws the log as the first case expects it.

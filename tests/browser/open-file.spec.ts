@@ -10,13 +10,16 @@
 // page's end, the body it posts and the sentence it shows for a refusal. The server's end is
 // tests/routes/open.test.ts.
 
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect, test, type Page, type Route } from '@playwright/test';
 import { copyIntoHub, readHubFile, removeFromHub, shortOf, writeHubFile } from './hub.ts';
 import { boot, openView } from './rail.ts';
 import { t } from './words.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+test.afterAll(sweepScratch);
 
 /** The folder of the hub copy this spec adds, and the two files in it. */
 const FOLDER = 'open-file-spec';
@@ -42,7 +45,7 @@ const OUTSIDE = 'the path is outside the configured roots';
 let events = '';
 
 test.beforeAll(() => {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-open-file-spec-'));
+    const dir = scratchDir('oculus-open-file-spec-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const zip = join(dir, 'zip');
     writeFileSync(zip, ZIP);
@@ -143,6 +146,7 @@ test('a .docx opens in its program from the File view by its root and its path',
         .click();
     await expect.poll(() => posted.length).toBe(2);
     expect(posted[1]).toEqual({ root: 'hub', path: `${FOLDER}/${REPORT}` });
+    // the open was answered, so no refusal is said
     await expect(page.getByText(t('file.open_failed', OUTSIDE))).toHaveCount(0);
 });
 
@@ -160,6 +164,7 @@ test('a refused open is said in the view, and a later press that opens takes the
 
     await toolbarControl(page).click();
     await expect.poll(() => posted.length).toBe(2);
+    // the second press was answered, so the sentence the first one left goes
     await expect(page.getByText(t('file.open_failed', OUTSIDE))).toHaveCount(0);
 });
 
@@ -184,6 +189,7 @@ test('a refusal that lands after a later press has opened the file is never show
     // The page reads the answer's body after the response event, so the sentence would land a turn
     // later; the wait gives it that turn before asserting it never came.
     await page.waitForTimeout(500);
+    // the refusal is the older press's, which a later press has already answered
     await expect(page.getByText(t('file.open_failed', OUTSIDE))).toHaveCount(0);
 });
 
@@ -210,6 +216,7 @@ test("a project card's .docx row opens in its program, and a refusal is said on 
     await control.click();
     await expect.poll(() => posted.length).toBe(1);
     expect(posted).toEqual([{ root: 'hub', path: PROJECT_FILE }]);
+    // the open was answered, so no refusal is said on the line
     await expect(page.getByText(t('file.open_failed', OUTSIDE))).toHaveCount(0);
 
     await control.click();
@@ -237,6 +244,7 @@ test("a project card's refusal that lands after a later press has opened the fil
     // The card reads the answer's body after the response event, so the sentence would land a turn
     // later; the wait gives it that turn before asserting it never came.
     await page.waitForTimeout(500);
+    // the refusal is the older press's, which a later press has already answered
     await expect(page.getByText(t('file.open_failed', OUTSIDE))).toHaveCount(0);
 });
 
@@ -263,11 +271,13 @@ test("a collection card's hub link to a .xlsx opens in its program, and a refusa
     await openView(page, 'events', t('views.events'));
     const card = page.locator('.cards [data-entry]').filter({ hasText: ENTRY });
     const control = card.getByRole('button', { name: LINKED, exact: true });
+    // the entry's link opens in its program, so the card carries a control rather than a link to the bytes
     await expect(card.locator(`a[href="/api/file/hub/${LINKED}"]`)).toHaveCount(0);
 
     await control.click();
     await expect.poll(() => posted.length).toBe(1);
     expect(posted).toEqual([{ root: 'hub', path: LINKED }]);
+    // the open was answered, so no refusal is said on the line
     await expect(page.getByText(t('file.open_failed', OUTSIDE))).toHaveCount(0);
 
     await control.click();
@@ -297,5 +307,6 @@ test("a collection card's refusal that lands after a later press has opened the 
     // The card reads the answer's body after the response event, so the sentence would land a turn
     // later; the wait gives it that turn before asserting it never came.
     await page.waitForTimeout(500);
+    // the refusal is the older press's, which a later press has already answered
     await expect(page.getByText(t('file.open_failed', OUTSIDE))).toHaveCount(0);
 });

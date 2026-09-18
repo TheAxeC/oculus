@@ -1,23 +1,18 @@
 // Layer 2, server tests. The private portfolio index uses a temporary hub whose project tiers and
 // collection files make the order, missing-file behavior and exact byte size observable.
 
-import {
-    chmodSync,
-    mkdirSync,
-    mkdtempSync,
-    readFileSync,
-    rmSync,
-    statSync,
-    writeFileSync
-} from 'node:fs';
+import { chmodSync, mkdirSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { portfolioContext } from '../../../src/lib/server/pty/context.ts';
 import { engineDir } from '../../../src/lib/data/sources/config.ts';
 import { writeTextAtomic } from '../../../src/lib/server/sessions/json.ts';
+import { scratchDir, sweepScratch } from '../../scratch.ts';
 
-const ROOT = mkdtempSync(join(resolve(tmpdir()), 'oculus-chat-context-'));
+afterAll(sweepScratch);
+
+const ROOT = scratchDir('oculus-chat-context-');
 expect(ROOT.startsWith(resolve(tmpdir()) + sep)).toBe(true);
 
 function write(path: string, content: string): void {

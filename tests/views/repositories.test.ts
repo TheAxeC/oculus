@@ -127,6 +127,7 @@ describe('the Repositories view', () => {
     it('draws one repository, the first root the channel carries while the instance keeps none', () => {
         const body = html({ [HUB]: HUB_GIT, [OTHER]: git({ branch: 'work' }) });
         expect(body).toContain(`data-root="${HUB}"`);
+        // one repository is drawn at a time, and the instance keeps none, so it is the first root
         expect(body).not.toContain(`data-root="${OTHER}"`);
         expect(count(body, 'data-root=')).toBe(1);
     });
@@ -137,6 +138,7 @@ describe('the Repositories view', () => {
             root: OTHER
         });
         expect(kept).toContain(`data-root="${OTHER}"`);
+        // one repository is drawn at a time, and the instance keeps the other one
         expect(kept).not.toContain(`data-root="${HUB}"`);
 
         const gone = html({ [HUB]: HUB_GIT }, 'repositories', { root: OTHER });
@@ -190,8 +192,10 @@ describe('the Repositories view', () => {
     // Revert: render a group's rows whether or not its id is in `collapsed`.
     it('draws no row of a group or a section the instance keeps closed', () => {
         const body = html({ [HUB]: HUB_GIT }, 'repositories', { collapsed: ['staged', 'log'] });
+        // the staged group is closed, so its rows are not drawn
         expect(body).not.toContain('data-entry="code/one.py"');
         expect(body).toContain('data-entry="README.md"');
+        // the log is closed too, so no commit subject is drawn
         expect(body).not.toContain('Add the thing');
         expect(group(body, 'log')).toContain('aria-expanded="false"');
     });
@@ -238,16 +242,19 @@ describe('the Repositories view', () => {
     it('offers no merge back while the repository has no branch checked out', () => {
         const body = html({ [HUB]: HUB_GIT });
         expect(body).toContain(catalog['repositories.merge_title']);
+        // a branch is checked out, so the merge control is offered by its plain title
         expect(body).not.toContain(catalog['repositories.merge_detached']);
 
         // A detached HEAD has nothing to merge into, so the control says so and is not pressable.
         const loose = html({ [HUB]: { ...HUB_GIT, detached: true } });
         expect(loose).toContain(catalog['repositories.merge_detached']);
+        // a detached HEAD has nothing to merge into, so the plain title is not drawn
         expect(loose).not.toContain(catalog['repositories.merge_title']);
         expect(group(loose, 'worktrees')).toContain('disabled');
     });
 
     it('warns about a repository whose .gitignore does not keep the folder out', () => {
+        // this repository's .gitignore keeps the worktree folder out, so there is nothing to warn about
         expect(html({ [HUB]: HUB_GIT })).not.toContain(catalog['repositories.worktrees_unignored']);
         const loose = html({ [HUB]: { ...HUB_GIT, ignoresWorktrees: false } });
         expect(loose).toContain(catalog['repositories.worktrees_unignored']);
@@ -266,6 +273,7 @@ describe('the Repositories view', () => {
 
         const payload = { [HUB]: HUB_GIT, [OTHER]: git({ branch: 'work' }) };
         expect(count(html(payload), catalog['git.busy'])).toBe(1);
+        // the write is on the other repository, and the busy mark belongs to the one it is running on
         expect(html(payload, 'repositories', { root: OTHER })).not.toContain(catalog['git.busy']);
 
         release();
@@ -278,7 +286,9 @@ describe('the Repositories view', () => {
         const folder = git({ branch: '', repository: false, error: 'not a git repository' });
         const body = html({ [HUB]: folder, [OTHER]: git({ branch: 'work' }) });
         expect(body).toContain(`data-root="${OTHER}"`);
+        // git says this root is no repository, so the picker does not offer it
         expect(body).not.toContain(`data-root="${HUB}"`);
+        // and the reason git gave is the picker's to swallow, not to draw
         expect(body).not.toContain('not a git repository');
         const none = html({ [HUB]: folder });
         expect(none).toContain(catalog['repositories.empty']);
@@ -293,6 +303,7 @@ describe('the Repositories view', () => {
             { root: OTHER }
         );
         expect(body).toContain(`data-root="${OTHER}"`);
+        // one repository is drawn at a time, and the instance keeps the one whose read failed
         expect(body).not.toContain(`data-root="${HUB}"`);
         const row = catalog['repositories.error'].replace('{0}', reason);
         const failed = body.slice(body.indexOf('data-repo-failed'));
@@ -301,8 +312,10 @@ describe('the Repositories view', () => {
         expect(failed).toContain(`>${row}</span>`);
         expect(failed).toMatch(/class="item[^"]*\berror\b/);
         for (const id of ['changes', 'log', 'branches', 'worktrees']) {
+            // the read failed, so there is no listing to draw a section from
             expect(body).not.toContain(`data-group="${id}"`);
         }
+        // and with no section there is no tree either
         expect(body).not.toContain('role="tree"');
         // The picker still names the repository it is on.
         const picker = body.slice(body.indexOf('data-repo-picker'));
@@ -324,6 +337,7 @@ describe('the Repositories view', () => {
         // A root whose check timed out names no branch, so the row has the path alone above it.
         const unnamed = html({ [OTHER]: git({ branch: '', error: 'git timed out' }) });
         expect(unnamed).toContain('data-repo-failed');
+        // the check timed out before it read a branch, so there is no branch to name
         expect(unnamed).not.toContain(catalog['sessions.ch_branch']);
         expect(unnamed).toContain('class="path');
     });
@@ -334,6 +348,7 @@ describe('the Repositories view', () => {
         const fresh = git({ branch: 'start', branches: [], log: [] });
         const branches = group(html({ [HUB]: fresh }), 'branches');
         expect(branches).toContain(catalog['repositories.branches_unborn'].replace('{0}', 'start'));
+        // the repository has no commit yet, which is said in its own words rather than as an empty list
         expect(branches).not.toContain(catalog['repositories.branches_empty']);
         const form = branches.slice(branches.indexOf('data-form="branch"'));
         const create = form.slice(
@@ -343,6 +358,7 @@ describe('the Repositories view', () => {
             )
         );
         // git switch -c, which the control runs, works on a branch with no commit.
+        // git switch -c works on a branch with no commit, so the control stays pressable
         expect(create.slice(0, create.indexOf('>'))).not.toContain('disabled');
 
         // A repository with commits whose branch listing came back empty keeps the plain line.
@@ -350,6 +366,7 @@ describe('the Repositories view', () => {
             html({ [HUB]: git({ branch: 'main', branches: [], log: HUB_GIT.log }) }),
             'branches'
         );
+        // this repository has commits, so the unborn line is not the one it draws
         expect(unread).not.toContain(
             catalog['repositories.branches_unborn'].replace('{0}', 'main')
         );
@@ -363,6 +380,7 @@ describe('the Repositories view', () => {
                 liveForm.indexOf(`aria-label="${catalog['git.branch_new_create']}"`)
             )
         );
+        // the repository has commits, so nothing holds the control back
         expect(liveCreate.slice(0, liveCreate.indexOf('>'))).not.toContain('disabled');
     });
 
@@ -385,6 +403,7 @@ describe('the Repositories view', () => {
             }),
             'changes'
         );
+        // nothing is staged, so the staged group is not drawn at all
         expect(changes).not.toContain('data-changes="staged"');
         expect(changes).toContain('data-changes="changed"');
         expect(changes).toContain('data-changes="untracked"');

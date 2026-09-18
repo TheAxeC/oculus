@@ -13,7 +13,6 @@
 import {
     existsSync,
     mkdirSync,
-    mkdtempSync,
     readFileSync,
     realpathSync,
     symlinkSync,
@@ -22,7 +21,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import {
     addedRoots,
     listDir,
@@ -52,10 +51,13 @@ import { createEntry, removeEntry, writeEntry } from '../../src/lib/server/write
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { Root } from '../../src/lib/server/files.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 /** A directory under the temporary directory, with a file written at each of the paths named. */
 function folder(files: Record<string, string> = {}, dirs: string[] = []): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-fs-'));
+    const dir = scratchDir('oculus-fs-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     for (const name of dirs) {
         const full = join(dir, name);
@@ -75,7 +77,7 @@ function folder(files: Record<string, string> = {}, dirs: string[] = []): string
 
 /** The path of a workspaces file inside a fresh temporary directory. */
 function savedFile(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-workspaces-'));
+    const dir = scratchDir('oculus-workspaces-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return join(dir, 'workspaces.json');
 }
@@ -360,7 +362,7 @@ describe("the reader's own bookmarks", () => {
 
     /** A bookmarks path inside a fresh temporary directory, with nothing written at it yet. */
     function bookmarksFile(): { hub: string; file: string } {
-        const dir = mkdtempSync(join(tmpdir(), 'oculus-bookmarks-'));
+        const dir = scratchDir('oculus-bookmarks-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         return { hub: dir, file: join(dir, 'bookmarks.yml') };
     }
@@ -533,7 +535,7 @@ describe("the reader's own bookmarks", () => {
 describe('the scratch notes', () => {
     /** A notes folder inside a fresh temporary directory, with nothing in it yet. */
     function notesDir(): string {
-        const dir = mkdtempSync(join(tmpdir(), 'oculus-notes-'));
+        const dir = scratchDir('oculus-notes-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         return join(dir, 'notes');
     }
@@ -589,7 +591,7 @@ describe('the scratch notes', () => {
     it('refuses a note whose file is a link out of the folder, and reads nothing through it', () => {
         const dir = notesDir();
         mkdirSync(dir, { recursive: true });
-        const outside = mkdtempSync(join(tmpdir(), 'oculus-notes-out-'));
+        const outside = scratchDir('oculus-notes-out-');
         expect(resolve(outside).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         writeFileSync(join(outside, 'secret.md'), 'a secret title\nthe secret\n');
         symlinkSync(join(outside, 'secret.md'), join(dir, 'link.md'));
@@ -606,7 +608,7 @@ describe('the scratch notes', () => {
 
     it('refuses an id that would leave the folder, and writes nothing outside it', () => {
         const dir = notesDir();
-        const outside = mkdtempSync(join(tmpdir(), 'oculus-notes-out-'));
+        const outside = scratchDir('oculus-notes-out-');
 
         for (const id of ['', '../away', `..${sep}away`, 'sub/deep', 'a'.repeat(65)]) {
             expect(noteFile(dir, id)).toBe(null);

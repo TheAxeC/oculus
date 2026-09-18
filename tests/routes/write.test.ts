@@ -8,7 +8,7 @@
 
 import { existsSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { handleWrite } from '../../src/lib/server/writes.ts';
 import { localDate } from '../../src/lib/data/dates.ts';
@@ -28,6 +28,9 @@ import {
     request,
     target
 } from './write-fixture.ts';
+import { sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 describe('the write endpoint', () => {
     it('adds and promotes LinkedIn files through the two write kinds', async () => {

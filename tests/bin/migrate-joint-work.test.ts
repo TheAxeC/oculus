@@ -3,17 +3,20 @@
 // run writes the same bytes, and `--from` carries the rows of a file the hub no longer has onto people
 // the registry already holds.
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { parse } from 'yaml';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const made: string[] = [];
 
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-migrate-'));
+    const dir = scratchDir('oculus-migrate-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(dir);
     return dir;

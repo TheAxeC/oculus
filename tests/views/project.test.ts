@@ -194,7 +194,9 @@ describe('a project as its own tab', () => {
     });
 
     it('draws no subtasks block for a project with none, and offers adding the first on the card', () => {
+        // the project has no subtasks, so the block is not drawn
         expect(body).not.toContain('class="subtasks');
+        // and with no block there is no subtasks heading to name it
         expect(body).not.toContain(catalog['project.action.subtasks']);
         expect(body).toContain(`aria-label="${catalog['project.action.add_subtask']}"`);
     });
@@ -225,11 +227,14 @@ describe('a project as its own tab', () => {
         expect(group).toContain('>code/README.md</span>');
         // The PDF is not a document this tab renders, and the LaTeX source is not there.
         expect(group).not.toContain('>manuscript/main.pdf</span>');
+        // the LaTeX source is not a document this tab renders either
         expect(group).not.toContain('>manuscript/main.tex</span>');
     });
 
     it('offers no PRESENT.md and no deck control for a project that has no slide', () => {
+        // the project has no slide, so there is no deck file to offer
         expect(segment(body)).not.toContain('>PRESENT.md</span>');
+        // and no deck control on the card either
         expect(body).not.toContain(catalog['project.card.present']);
     });
 
@@ -257,6 +262,7 @@ describe('a project as its own tab', () => {
     it('draws the sessions working in the project folder, and no others', () => {
         expect(body).toContain(catalog['project.sessions']);
         expect(body).toContain('A session in alpha');
+        // the sessions drawn are the ones working in this project's folder, and that one works in another
         expect(body).not.toContain('elsewhere');
     });
 
@@ -361,6 +367,7 @@ describe('the LaTeX panel of a project tab', () => {
             catalog['project.latex.warnings'].replace('{0}', '1')
         );
         expect(row(body, 'supplement.tex')).toContain(catalog['project.latex.no_pdf']);
+        // this main file has no log yet, so there is no error count on its row
         expect(row(body, 'supplement.tex')).not.toContain(catalog['project.latex.errors']);
     });
 
@@ -372,6 +379,7 @@ describe('the LaTeX panel of a project tab', () => {
         expect(row(body, 'main.tex')).toContain(catalog['project.latex.clean']);
         expect(row(body, 'main.tex')).toContain(catalog['project.latex.open_pdf_tip']);
         expect(row(body, 'supplement.tex')).toContain(catalog['project.latex.build']);
+        // this main file has no PDF built, so there is nothing to open
         expect(row(body, 'supplement.tex')).not.toContain(catalog['project.latex.open_pdf_tip']);
     });
 
@@ -379,6 +387,7 @@ describe('the LaTeX panel of a project tab', () => {
         answering(MAINS);
         const body = await settled();
 
+        // the errors sit behind their count until the disclosure is opened
         expect(body).not.toContain('Undefined control sequence.');
     });
 
@@ -386,7 +395,9 @@ describe('the LaTeX panel of a project tab', () => {
         answering([]);
         const body = await settled();
 
+        // the folder holds no main file, so the panel is not drawn at all
         expect(body).not.toContain(catalog['project.latex.heading']);
+        // and no row of it either
         expect(body).not.toContain('data-latex=');
     });
 });
@@ -439,6 +450,7 @@ describe('a software project and the paper it names', () => {
         const body = html('kit');
         expect(body).toContain(catalog['project.card.software_papers']);
         expect(body).toContain('Alpha, the whole title');
+        // this is the software's own tab, so it names the papers rather than the software of a paper
         expect(body).not.toContain(catalog['project.card.software']);
     });
 

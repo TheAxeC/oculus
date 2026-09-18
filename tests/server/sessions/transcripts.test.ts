@@ -8,7 +8,6 @@
 import {
     appendFileSync,
     mkdirSync,
-    mkdtempSync,
     readFileSync,
     statSync,
     utimesSync,
@@ -16,7 +15,7 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import {
     readSession,
     scan,
@@ -30,6 +29,9 @@ import {
 import { hiddenIds, setHidden } from '../../../src/lib/server/sessions/overrides.ts';
 import { CACHE_VERSION } from '../../../src/lib/server/sessions/cache.ts';
 import type { SessionRecord } from '../../../src/lib/data/model.ts';
+import { scratchDir, sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 const SLUG = '-tmp-fixture-workspace';
 const SID = 'aaaaaaaa-1111-2222-3333-bbbbbbbbbbbb';
@@ -148,7 +150,7 @@ class Fixture {
     starts = new Map<number, number>();
 
     constructor() {
-        this.root = mkdtempSync(join(tmpdir(), 'oculus-sessions-'));
+        this.root = scratchDir('oculus-sessions-');
         expect(resolve(this.root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         this.store = join(this.root, 'projects');
         mkdirSync(join(this.store, SLUG), { recursive: true });

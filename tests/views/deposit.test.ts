@@ -94,6 +94,7 @@ describe('the deposit panel', () => {
             props: { instance: instance('alpha') }
         });
         expect(body).toContain(catalog['deposit.no_mirror']);
+        // there is no mirror yet, so there is nothing to commit to
         expect(body).not.toContain(catalog['deposit.commit_label']);
     });
 

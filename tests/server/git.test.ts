@@ -13,16 +13,19 @@
 // The recorder can also stand in for git on one vector, answering as a git that timed out or never
 // started would, since neither can be made to happen on demand with a real repository.
 
-import { mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { spawnSync } from 'node:child_process';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LOG_ENTRIES, MAX_ENTRIES, capped, empty, statusFor } from '../../src/lib/server/git.ts';
 import { BRANCH_FORMAT } from '../../src/lib/server/git-parse.ts';
 import { repositoryRoots, shownRoot } from '../../src/lib/state/repositories.ts';
 import type { GitEntry, GitState } from '../../src/lib/data/model.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const MODULE = resolve(
     dirname(fileURLToPath(import.meta.url)),
@@ -194,7 +197,7 @@ function byPath(entries: GitEntry[]): Record<string, GitEntry> {
 }
 
 beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'oculus-git-'));
+    dir = scratchDir('oculus-git-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     repo = join(dir, 'repo');
     mkdirSync(repo);
@@ -337,19 +340,25 @@ describe('the shape', () => {
 });
 
 describe('the log, the branches and the worktrees', () => {
-    it('carries the newest commits, newest first, capped at the constant', () => {
-        for (let i = 0; i < LOG_ENTRIES; i += 1) {
-            write(`later${String(i).padStart(3, '0')}.txt`, 'x\n');
-            git(repo, 'add', '.');
-            git(repo, 'commit', '-m', `later ${i}`);
+    // LOG_ENTRIES commits, each one a git process of its own, so the case gets a budget of its own:
+    // under the load of a second worktree running its suite it passes five seconds without it.
+    it(
+        'carries the newest commits, newest first, capped at the constant',
+        { timeout: 60000 },
+        () => {
+            for (let i = 0; i < LOG_ENTRIES; i += 1) {
+                write(`later${String(i).padStart(3, '0')}.txt`, 'x\n');
+                git(repo, 'add', '.');
+                git(repo, 'commit', '-m', `later ${i}`);
+            }
+            const found = state();
+            expect(found.log.length).toBe(LOG_ENTRIES);
+            expect(found.log[0].subject).toBe(`later ${LOG_ENTRIES - 1}`);
+            expect(found.log[0].hash).toMatch(/^[0-9a-f]{40}$/);
+            expect(found.log[0].short.length).toBeGreaterThan(3);
+            expect(found.log[0].when).toMatch(/^\d{4}-\d{2}-\d{2}T/);
         }
-        const found = state();
-        expect(found.log.length).toBe(LOG_ENTRIES);
-        expect(found.log[0].subject).toBe(`later ${LOG_ENTRIES - 1}`);
-        expect(found.log[0].hash).toMatch(/^[0-9a-f]{40}$/);
-        expect(found.log[0].short.length).toBeGreaterThan(3);
-        expect(found.log[0].when).toMatch(/^\d{4}-\d{2}-\d{2}T/);
-    });
+    );
 
     // Revert: drop the `symbolic-ref --short HEAD` read from state() in server/git.ts, so a HEAD
     // that does not resolve is an error again.

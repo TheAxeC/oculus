@@ -4,19 +4,21 @@
 // The log is a file under the system temporary directory, asserted to be inside it before anything
 // is written, so nothing here reads or writes ~/.oculus/changes.jsonl.
 
-import { mkdtempSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { PAGE, handleChanges, logChanges } from '../../src/lib/server/changes.ts';
 import { fsWrites } from '../../src/lib/server/fs.ts';
 import type { Change, ChangeLog } from '../../src/lib/server/changes.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const HOST = '127.0.0.1:8791';
 
 /** A log of its own, under the system temporary directory. */
 function log(keep = 500): ChangeLog {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-changes-route-'));
+    const dir = scratchDir('oculus-changes-route-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const file = join(dir, 'changes.jsonl');
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);

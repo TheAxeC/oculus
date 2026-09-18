@@ -6,10 +6,10 @@
 // word. The last group runs the real binary of the `@vscode/ripgrep` dependency over mkdtemp folders,
 // which is where the dependency itself and ripgrep's own --max-count are exercised.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import {
     TIMED_OUT,
     createFold,
@@ -21,6 +21,9 @@ import {
 } from '../../src/lib/server/search.ts';
 import { ALL_ROOTS, type SearchQuery } from '../../src/lib/data/search.ts';
 import type { Root } from '../../src/lib/server/files.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const ROOTS: Root[] = [
     { key: 'hub', dir: '/hub' },
@@ -92,7 +95,7 @@ function file(path: string, matches: string[], counted = matches.length): string
 
 /** A folder of this case's own, under the system temporary directory and asserted to be inside it. */
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-search-'));
+    const dir = scratchDir('oculus-search-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }

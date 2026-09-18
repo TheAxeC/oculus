@@ -1,16 +1,19 @@
 // sources/career.ts and the career half of normalise and validate, over a synthetic hub written
 // under mkdtemp. Nothing here touches the real hub.
 
-import { mkdtempSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { CAREER_FILE, readCareer } from '../../src/lib/data/sources/career.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { career } from '../../src/lib/data/normalise.ts';
 import { validate } from '../../src/lib/data/validate.ts';
 import { NO_FEEDS } from '../entities-fixture.ts';
 import type { RawPortfolio, ValidationRules } from '../../src/lib/data/model.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 /** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
@@ -43,7 +46,7 @@ dropped:
 `;
 
 function hub(body: string | null): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-career-'));
+    const dir = scratchDir('oculus-career-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     if (body !== null) {
         const full = join(dir, 'CAREER.yml');

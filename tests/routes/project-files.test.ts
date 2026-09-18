@@ -6,14 +6,17 @@
 // be inside it first. What this does NOT cover: filesTarget() reading the machine's own local.yml,
 // which is exercised by the curl in the package's verification.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { handleProjectFiles } from '../../src/lib/server/project-files.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { FilesTarget } from '../../src/lib/server/project-files.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\n';
 
@@ -21,7 +24,7 @@ const HOST = '127.0.0.1:8791';
 
 /** A hub holding one project with the files named, each with the same body. */
 function target(files: string[] = ['README.md', 'code/run.py']): FilesTarget {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-pfiles-'));
+    const dir = scratchDir('oculus-pfiles-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const folder = join(dir, 'projects', 'manuscripts', 'alpha');
     expect(resolve(folder).startsWith(resolve(dir) + sep)).toBe(true);

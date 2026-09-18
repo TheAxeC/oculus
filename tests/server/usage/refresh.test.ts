@@ -1,10 +1,10 @@
 // Layer 4, server test. Synthetic account files and a recorded tmux runner exercise refresh,
 // recovery, cadence, live filtering and route authorization without starting processes.
 
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UsageAccountConfig, UsagePayload } from '../../../src/lib/data/model.ts';
 import {
     paneReason,
@@ -27,6 +27,9 @@ import { watchUsage } from '../../../src/lib/server/usage/watch.ts';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import { contextFixture } from '../context-fixture.ts';
 import { noop } from '../../doubles.ts';
+import { scratchDir, sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 const NOW = Date.parse('2026-09-13T12:00:00Z');
 const BIN = '/opt/Claude Code/claude';
@@ -48,7 +51,7 @@ function fetched(timestamp: number): void {
 }
 
 beforeEach(() => {
-    root = mkdtempSync(join(tmpdir(), 'oculus-refresh-'));
+    root = scratchDir('oculus-refresh-');
     expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     vi.stubEnv('HOME', root);
     vi.stubEnv('CLAUDE_CONFIG_DIR', join(root, '.claude'));

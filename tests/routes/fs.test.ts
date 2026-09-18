@@ -7,17 +7,10 @@
 // every path written is asserted to be inside it first. What this does NOT cover: the route module
 // reading the machine's own config/local.yml, which is exercised by the browser layer.
 
-import {
-    existsSync,
-    mkdirSync,
-    mkdtempSync,
-    realpathSync,
-    symlinkSync,
-    writeFileSync
-} from 'node:fs';
+import { existsSync, mkdirSync, realpathSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import {
     addedRoots,
     fsWrites,
@@ -32,13 +25,16 @@ import { createEntry } from '../../src/lib/server/writes/entries.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { Root } from '../../src/lib/server/files.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const HOST = '127.0.0.1:8791';
 const TOKEN = 'a-write-token';
 
 /** A directory under the temporary directory, holding the files and folders named. */
 function folder(files: Record<string, string> = {}, dirs: string[] = []): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-fsroute-'));
+    const dir = scratchDir('oculus-fsroute-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     for (const name of dirs) {
         const full = join(dir, name);
@@ -63,7 +59,7 @@ function folder(files: Record<string, string> = {}, dirs: string[] = []): string
  */
 function target(): FsTarget & { hub: string } {
     const hub = folder({ 'README.md': '# hub\n' }, ['code']);
-    const store = mkdtempSync(join(tmpdir(), 'oculus-fsstore-'));
+    const store = scratchDir('oculus-fsstore-');
     expect(resolve(store).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const fixed: Root[] = [{ key: 'hub', dir: hub }];
     return {

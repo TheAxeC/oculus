@@ -1,0 +1,15 @@
+# The files over the size line, each with the count it was recorded at. A listed file that grows past
+# its count fails the check, a listed file that falls back under the line comes off the list, and a
+# file not named here that crosses the line fails. tests/size.test.ts holds the same rule.
+tests/state/board.test.ts 980
+tests/views/collection.test.ts 973
+tests/state/layout.test.ts 970
+tests/routes/terminal.test.ts 970
+src/lib/server/audit.ts 940
+tests/server/writes.test.ts 930
+src/lib/data/sources/config.ts 908
+tests/shell/rail.test.ts 906
+src/lib/ui/Tabs.svelte 596
+src/lib/views/Files.svelte 587
+src/lib/ui/Menu.svelte 557
+src/lib/views/focus/Lanes.svelte 547

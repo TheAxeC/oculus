@@ -55,6 +55,7 @@ test('a wallpaper theme paints the cards through and the toggle takes it away', 
     expect(await backgroundAlpha(viewBox)).toBe(0);
 
     await page.getByRole('button', { name: t('ui.wallpaper') }).click();
+    // the toggle took the wallpaper away, so there is no layer left to paint through
     await expect(layer).toHaveCount(0);
     await expect.poll(() => backgroundAlpha(card)).toBe(1);
 });

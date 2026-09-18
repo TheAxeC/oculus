@@ -260,6 +260,7 @@ describe('the theme words under their venue_themes labels', () => {
         expect(label('clinical')).not.toBe('clinical');
         expect(row).toContain(`${label('clinical')} 2`);
         expect(row).toContain(`${label('systems')} 1`);
+        // the facet is drawn under its label, so the bare word and its count are not the pair drawn
         expect(row).not.toContain('clinical 2');
         expect(row).toContain('ml 2');
     });
@@ -267,6 +268,7 @@ describe('the theme words under their venue_themes labels', () => {
     it('draws a venue card theme tag under its label', () => {
         const card = venueCard(html(), 'untimed');
         expect(card).toContain(`>${label('systems')}</span>`);
+        // the tag is drawn under its label, so the bare word is not drawn
         expect(card).not.toContain('>systems</span>');
     });
 
@@ -281,6 +283,7 @@ describe('the theme words under their venue_themes labels', () => {
         const instance: Instance = { id: INSTANCE, view: 'venues', state: {} };
         const body = render(Venues, { context: clientContext(client), props: { instance } }).body;
         expect(body).toContain(`${label('systems')} 1`);
+        // the instance switched this theme off, so the card of the venue carrying it is not drawn
         expect(body).not.toContain('data-card="untimed"');
         expect(body).toContain('data-card="timed"');
     });
@@ -300,16 +303,20 @@ describe('the journal section and venue card', () => {
         const journal = venueCard(body, 'journal');
         expect(journal).toMatch(/class="slot [^"]*concentrated"/);
         expect(journal).toMatch(/class="tag /);
+        // a venue concentrated by the portfolio is drawn in the tone the concentration gives it, not in a hue of its own
         expect(journal).not.toContain('--tone: var(--c-');
         expect(journal).toContain(catalog['venues.conc']);
         expect(journal).toContain(catalog['venues.conc_tip']);
         expect(journal).toContain('class="label">active</span>');
         expect(journal).toContain('class="count">2</strong>');
         expect(journal).toContain('aria-expanded="false"');
+        // the project list is closed, so the venue's papers are named only once it is expanded
         expect(journal).not.toContain('>ALPHA</span>');
+        // nor the second one
         expect(journal).not.toContain('>BETA</span>');
         expect(journal).toContain('>Clinical</span>');
         expect(journal).toContain('>ml</span>');
+        // the theme is drawn under its label, so the bare word is not drawn
         expect(journal).not.toContain('>clinical</span>');
     });
 
@@ -337,7 +344,9 @@ describe('the journal section and venue card', () => {
         );
         const journal = venueCard(html(scheming), 'journal');
         expect(journal).toContain('href="https://github.com/TheAxeC/x"');
+        // a relative address would land under the page's own URL, which reaches no file at all
         expect(journal).not.toContain('href="github.com/TheAxeC/x"');
+        // the link is a web address, which names no file of the hub to select
         expect(journal).not.toContain(catalog['venues.show_in_files']);
     });
 
@@ -348,12 +357,14 @@ describe('the journal section and venue card', () => {
         );
         const journal = venueCard(html(scheming), 'journal');
         expect(journal).toContain('href="https://conf.example.org/cfp"');
+        // the same for the call link, which was rendered raw before both went through hrefOf
         expect(journal).not.toContain('href="conf.example.org/cfp"');
     });
 
     // Revert: in hubPathsOf of state/collection.ts, take every `link` value.
     it('offers no Show in Files for a link that is a web address, and opens it in a tab of its own', () => {
         const journal = venueCard(html(), 'journal');
+        // the link is a web address, which no folder holds, so there is nothing to show in the file browser
         expect(journal).not.toContain(catalog['venues.show_in_files']);
         expect(journal).toMatch(/href="https:\/\/example.org\/journal"[^>]*target="_blank"/);
     });
@@ -369,6 +380,7 @@ describe('the journal section and venue card', () => {
     });
 
     it('omits the project cross-link block from a venue with no users', () => {
+        // no project aims at this venue, so there is no cross-link block to draw
         expect(venueCard(html(), 'untimed')).not.toContain('class="users"');
     });
 });
@@ -414,6 +426,7 @@ describe('the venue card as a card primitive', () => {
         for (const id of ['journal', 'timed', 'untimed', 'biennial']) {
             expect(body).toContain(`data-card="${id}"`);
         }
+        // the cursor is the workbench's, and no key has moved it onto a card yet
         expect(body).not.toContain('data-cursor');
     });
 
@@ -435,6 +448,7 @@ describe('the concentration legend chip', () => {
         const row = /<div class="facets[^"]*"[\s\S]*?<\/div>/.exec(body)?.[0] ?? '';
         expect(row).toContain(catalog['venues.themes_facet']);
         expect(row).toContain(catalog['venues.conc']);
+        // the chip sits in the facet row itself, so no row of its own is drawn for it
         expect(body).not.toContain('class="facet-row"');
     });
 });

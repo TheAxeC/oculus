@@ -4,10 +4,13 @@
 // The case that matters most is the last one: no draft is ever created at either provider, which is
 // asserted by the drafts endpoints never being among the addresses either write called.
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { archiveGoogle, rawMessage, replyGoogle } from '../../../src/lib/server/mail/google.ts';
 import { archiveMicrosoft, replyMicrosoft } from '../../../src/lib/server/mail/microsoft.ts';
 import { ACCESS, addresses, cleanup, fakeFetcher, type Fake } from './fixture.ts';
+import { sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 afterEach(cleanup);
 

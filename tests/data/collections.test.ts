@@ -1,13 +1,16 @@
 // readCollections against synthetic collection files in a temporary directory. Nothing outside it
 // is read or written, and every write asserts its path is inside the temporary directory first.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import type { CollectionFile } from '../../src/lib/data/sources/collections.ts';
 import { readCollections } from '../../src/lib/data/sources/collections.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 /** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
@@ -23,7 +26,7 @@ const FILES: CollectionFile[] = [
 ];
 
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-collections-'));
+    const dir = scratchDir('oculus-collections-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }

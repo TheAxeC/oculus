@@ -43,6 +43,7 @@ describe('CrossLinks', () => {
         expect(body).toContain('class="label">active</span>');
         expect(body).toContain('aria-expanded="false"');
         expect(body).toContain('data-project-group="work"');
+        // the group is closed, so its members are named only once it is expanded
         expect(body).not.toContain('>ALPHA</span>');
     });
 });

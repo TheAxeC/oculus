@@ -5,11 +5,14 @@
 // nothing is written anywhere else. Real transcripts hold private research content and never enter a
 // test.
 
-import { appendFileSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { appendFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { TURN_CHARS, readTurns } from '../../../src/lib/server/sessions/turns.ts';
+import { scratchDir, sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 type Json = Record<string, unknown>;
 
@@ -72,7 +75,7 @@ function item(timestamp: string, body: Json): Json {
 
 /** One temporary directory, checked to be under the system temporary root before anything is written. */
 function store(): string {
-    const root = mkdtempSync(join(tmpdir(), 'oculus-turns-'));
+    const root = scratchDir('oculus-turns-');
     expect(resolve(root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return root;
 }

@@ -5,7 +5,7 @@
 
 import { existsSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join, relative, resolve, sep } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { scalar } from '../../src/lib/data/guards.ts';
 import { invalidateAll } from '$app/navigation';
 import { handleOpen } from '../../src/lib/server/open.ts';
@@ -24,6 +24,9 @@ import {
     withFiles,
     writeOpenConfig
 } from './open-fixture.ts';
+import { sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 let client: ClientState;
 let openFolder: ClientState['writes']['openFolder'];

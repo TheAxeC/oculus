@@ -232,6 +232,7 @@ describe('the Calendar view', () => {
     it('says the machine names no account, and draws no agenda, when it is unconfigured', () => {
         const body = draw({ ...payload, status: 'unconfigured', accounts: [], events: [] });
         expect(body).toContain('No calendar account is configured');
+        // no account is configured, so the sentence drawn is that one rather than the empty agenda's
         expect(body).not.toContain('No events in this window.');
     });
 
@@ -276,7 +277,9 @@ describe('the Calendar view', () => {
 
     it('draws no token, secret or address of its own in the markup', () => {
         const body = draw(payload);
+        // the request carries the token, so the markup drawn from the answer holds none of it
         expect(body).not.toContain('x-oculus-token');
+        // nor an address of the calendar it came from
         expect(body).not.toContain('https://www.google.com/calendar/event');
     });
 });

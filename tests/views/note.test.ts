@@ -69,6 +69,7 @@ describe('one note as its own tab', () => {
         const body = drawn(client, {});
 
         expect(body).toContain('No note chosen.');
+        // the instance names no note, so there is nothing to type into
         expect(body).not.toContain('<textarea');
     });
 
@@ -113,6 +114,7 @@ describe('one note as its own tab', () => {
         const body = drawn(client, { id: '20260915-120000-001', fresh: true });
 
         expect(body).toContain('Not saved yet');
+        // the file is not written yet, so there is no save to name a time for
         expect(body).not.toContain('Saved 20');
     });
 
@@ -121,6 +123,7 @@ describe('one note as its own tab', () => {
         const body = drawn(fresh, { id: '20260915-120000-001' });
 
         expect(body).toContain('The note could not be read: no-such-note');
+        // the note could not be read, so there is nothing to type into
         expect(body).not.toContain('<textarea');
     });
 
@@ -205,12 +208,15 @@ describe('what one keystroke does', () => {
         const save = fn('save');
 
         expect(fn('typed')).toContain('tab = instance.id;');
+        // the id and the label are taken while the reader types, so the save reads no live prop
         expect(save).not.toContain('instance.');
     });
 
     it('deletes no note and closes no tab when one is left', () => {
         expect(fn('leave')).toContain('autosave.flush();');
+        // the note is left rather than deleted, so no delete is reached from here
         expect(source).not.toContain('deleteNote');
+        // and the tab is left open too
         expect(source).not.toContain('closeRecord');
     });
 });

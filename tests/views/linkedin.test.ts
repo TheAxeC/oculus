@@ -150,7 +150,9 @@ describe('the LinkedIn view', () => {
     // control and the card's own control above is the way into the text.
     it('carries no toolbar control over its own source, its cards carrying one each', () => {
         const body = draw('linkedin-source', entries, '', false);
+        // the view is drawn from a folder of one file per post, so there is no one file for a toolbar control to name
         expect(body).not.toContain('data-source-path');
+        // and no words offering it either
         expect(body).not.toContain(catalog['views.open_source']);
         expect(body).toContain(catalog['linkedin.edit']);
     });
@@ -197,6 +199,7 @@ describe('the LinkedIn view', () => {
         ];
         const drawn = card(draw('linkedin-bare', bare), '03-bare.md');
         expect(drawn).toContain('Bare post');
+        // the post carries no date, so no date is drawn for it
         expect(drawn).not.toContain('class="date"');
         // The number tag is the only one left; a card with a category draws a second one.
         expect(drawn.match(/class="tag/g)?.length ?? 0).toBe(1);
@@ -207,9 +210,11 @@ describe('the LinkedIn view', () => {
     it('searches title, category, and body without drawing an unrelated card', () => {
         const category = draw('linkedin-category', entries, 'mentorship');
         expect(category).toContain('Alpha idea');
+        // the search holds the cards whose words it matches, and this one's do not
         expect(category).not.toContain('Zeta idea');
         const body = draw('linkedin-body', entries, 'tensor milestone');
         expect(body).toContain('Zeta idea');
+        // nor this one's under the other search
         expect(body).not.toContain('Alpha idea');
     });
 

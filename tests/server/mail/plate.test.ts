@@ -4,12 +4,15 @@
 //
 // Every provider call goes through an injected fetcher. No network call is made here.
 
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { isChainSubject } from '../../../src/lib/data/mail.ts';
 import { readGoogleMail } from '../../../src/lib/server/mail/google.ts';
 import { readMicrosoftMail } from '../../../src/lib/server/mail/microsoft.ts';
 import { kept, plate, type Candidate } from '../../../src/lib/server/mail/plate.ts';
 import { ACCESS, addresses, cleanup, fakeFetcher, urlOf } from './fixture.ts';
+import { sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 afterEach(cleanup);
 

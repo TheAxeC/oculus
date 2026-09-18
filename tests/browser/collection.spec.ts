@@ -47,6 +47,7 @@ test('the add form writes a block and the delete behind the confirm takes it awa
     page
 }) => {
     const before = readHubFile(TASKS);
+    // the file carries no such entry before the form writes one
     expect(before).not.toContain(ADDED);
     await openTasks(page);
 
@@ -73,6 +74,7 @@ test('the add form writes a block and the delete behind the confirm takes it awa
         .getByRole('button', { name: t('collection.form_delete'), exact: true })
         .click();
     await expect.poll(() => readHubFile(TASKS), { timeout: 5000 }).toBe(before);
+    // the confirm deleted the entry, so its card is gone
     await expect(card(page, ADDED)).toHaveCount(0);
 });
 

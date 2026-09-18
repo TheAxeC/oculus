@@ -5,7 +5,6 @@
 import {
     chmodSync,
     mkdirSync,
-    mkdtempSync,
     readFileSync,
     readdirSync,
     rmSync,
@@ -15,11 +14,14 @@ import {
 } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { mintToken, TOKEN_HEADER } from '../../src/lib/server/auth.ts';
 import { handleSource, handleSourceInfo, isBinaryFile } from '../../src/lib/server/source.ts';
 import { ENGINE_ROOT, engineRoot } from '../../src/lib/server/files.ts';
 import type { Root } from '../../src/lib/server/files.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const HOST = '127.0.0.1:8790';
 const temporary: string[] = [];
@@ -29,7 +31,7 @@ afterEach(() => {
 });
 
 function fixture(): { dir: string; root: Root; file: string; outside: string } {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-source-'));
+    const dir = scratchDir('oculus-source-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     temporary.push(dir);
     const rootDir = join(dir, 'root');
@@ -282,7 +284,7 @@ describe('GET /api/source', () => {
 describe('a config file of the engine', () => {
     /** An engine directory with its config folder, which is what the `engine` root serves. */
     function engineFixture(): { engine: string; file: string } {
-        const dir = mkdtempSync(join(tmpdir(), 'oculus-source-engine-'));
+        const dir = scratchDir('oculus-source-engine-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         temporary.push(dir);
         const folder = join(dir, 'config');

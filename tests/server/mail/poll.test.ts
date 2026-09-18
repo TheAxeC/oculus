@@ -7,7 +7,7 @@
 
 import { existsSync, statSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import type { InboxPayload } from '../../../src/lib/data/model.ts';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import { RETRY_MIN, watchMail } from '../../../src/lib/server/mail/poll.ts';
@@ -26,6 +26,9 @@ import {
     urlOf,
     writeAccount
 } from './fixture.ts';
+import { sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 const MINUTE = 60000;
 const POLL_MIN = 10;

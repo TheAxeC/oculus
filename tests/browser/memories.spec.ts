@@ -9,7 +9,7 @@
 // picture at all, and one PNG whose own eXIf chunk turns it a quarter.
 
 import { crc32, deflateSync } from 'node:zlib';
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -17,6 +17,9 @@ import { expect, test, type Page } from '@playwright/test';
 import { boot, openView } from './rail.ts';
 import { copyIntoHub, removeFromHub, writeHubFile } from './hub.ts';
 import { t } from './words.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+test.afterAll(sweepScratch);
 
 /** Where the wall reads from, which config/appearance.yml names relative to the hub. */
 const FOLDER = 'tools/oculus/assets/memories';
@@ -109,7 +112,7 @@ function turnedPicture(width: number, height: number): string {
         chunk('IDAT', deflateSync(raw)),
         chunk('IEND', Buffer.alloc(0))
     ]);
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-memories-'));
+    const dir = scratchDir('oculus-memories-');
     if (!resolve(dir).startsWith(resolve(tmpdir()))) throw new Error(`${dir} is not temporary`);
     made.push(dir);
     const path = join(dir, 'turned.png');
@@ -252,6 +255,7 @@ test('a tile opens the picture over the pane and Escape closes it', async ({ pag
     );
 
     await page.keyboard.press('Escape');
+    // Escape closes the picture
     await expect(shown).toHaveCount(0);
     // The tile that opened it has the keyboard back, so the wall is where the reader left it.
     await expect(page.locator(`[data-tile="${first}"]`)).toBeFocused();
@@ -264,6 +268,7 @@ test('the close control and a press outside the picture both put it away', async
     await page.locator(`[data-tile="${first}"]`).click();
     const shown = page.getByRole('dialog', { name: t('memories.lightbox', first) });
     await shown.getByRole('button', { name: t('memories.close'), exact: true }).click();
+    // the close control puts the picture away
     await expect(shown).toHaveCount(0);
 
     await page.locator(`[data-tile="${first}"]`).click();
@@ -271,5 +276,6 @@ test('the close control and a press outside the picture both put it away', async
     await shown
         .getByRole('button', { name: t('memories.close_outside'), exact: true })
         .click({ position: { x: 5, y: 5 } });
+    // a press outside the picture puts it away too
     await expect(shown).toHaveCount(0);
 });

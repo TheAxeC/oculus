@@ -4,19 +4,15 @@
 // listed below by file and expression with the reason it is safe, or this test fails. Adding a
 // {@html} to a view is therefore a choice a reader of this file can see.
 
-import {
-    mkdirSync,
-    mkdtempSync,
-    readdirSync,
-    readFileSync,
-    statSync,
-    writeFileSync
-} from 'node:fs';
+import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { byKey } from '../src/lib/data/guards.ts';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
+import { scratchDir, sweepScratch } from './scratch.ts';
+
+afterAll(sweepScratch);
 
 const LIB = resolve(fileURLToPath(import.meta.url), '..', '..', 'src', 'lib');
 
@@ -293,7 +289,7 @@ describe('every {@html} site', () => {
     });
 
     it('catches a site that draws a value nothing filtered', () => {
-        const dir = mkdtempSync(join(tmpdir(), 'oculus-html-sites-'));
+        const dir = scratchDir('oculus-html-sites-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const write = (rel: string, body: string) => {
             const full = join(dir, rel);

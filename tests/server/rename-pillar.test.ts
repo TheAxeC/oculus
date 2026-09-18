@@ -5,15 +5,17 @@
 // list and a nested map. What each case checks is the bytes: one line differs and no other, and a
 // second run over the same folder writes nothing at all.
 
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { RENAMED_FIELDS } from '../../src/lib/data/validate.ts';
 import { manifestsUnder, migrateHub, theRename } from '../../bin/rename-program-to-pillar.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 // The fixture hub, under the system temporary directory; nothing outside it is read or written.
-const root = mkdtempSync(join(tmpdir(), 'oculus-pillar-'));
+const root = scratchDir('oculus-pillar-');
 
 /** Write one manifest under the fixture hub, asserting the path stays inside it before any write. */
 function manifest(where: string, text: string): string {

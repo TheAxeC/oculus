@@ -5,10 +5,10 @@
 // first, and the liveness probes are stubs, so no process is signalled and `ps` is never run. Every
 // watcher a test opens is closed when the test ends.
 
-import { appendFileSync, mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import type { Sink } from '../../../src/lib/server/channels.ts';
 import {
@@ -22,6 +22,9 @@ import type { Message, SessionsPayload, Terminal } from '../../../src/lib/data/m
 import type { Probe } from '../../../src/lib/server/sessions/registry.ts';
 import type { CodexProbe } from '../../../src/lib/server/sessions/codex.ts';
 import { noop } from '../../doubles.ts';
+import { scratchDir, sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 // A watcher test waits on real file events, and the suite runs several files at once, so the waits
 // are generous: they are how long a failure takes, not how long a pass takes.
@@ -90,7 +93,7 @@ class Fixture {
     alive = new Set<number>();
 
     constructor() {
-        this.root = mkdtempSync(join(tmpdir(), 'oculus-watch-sessions-'));
+        this.root = scratchDir('oculus-watch-sessions-');
         expect(resolve(this.root).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         this.store = join(this.root, 'projects');
         this.codexStore = join(this.root, 'codex');

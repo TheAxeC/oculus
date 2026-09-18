@@ -2,10 +2,10 @@
 // outside them is read or written, every write asserts its path is inside first, and every watcher
 // is closed when the test ends.
 
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { Hub } from '../../src/lib/server/channels.ts';
 import { handleWrite } from '../../src/lib/server/writes.ts';
 import { handleSource } from '../../src/lib/server/source.ts';
@@ -29,6 +29,9 @@ import type {
     Snapshot
 } from '../../src/lib/data/model.ts';
 import { noop } from '../doubles.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const LAYOUT = [
     'scan:',
@@ -75,7 +78,7 @@ afterEach(() => {
 });
 
 function scratch(name: string): string {
-    const dir = mkdtempSync(join(tmpdir(), `oculus-${name}-`));
+    const dir = scratchDir(`oculus-${name}-`);
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }

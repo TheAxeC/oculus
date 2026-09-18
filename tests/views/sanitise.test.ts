@@ -79,12 +79,14 @@ describe('a body rendered from a file on disk', () => {
     it('is drawn through the sanitiser in the project tab', () => {
         const source = readFileSync(join(VIEWS, 'Project.svelte'), 'utf8');
         expect(source).toContain('{@html sanitise(shown.html)}');
+        // every rendered body goes through the sanitiser, so the raw one is never drawn
         expect(source).not.toContain('{@html shown.html}');
     });
 
     it('is drawn through the sanitiser in the transcript', () => {
         const source = readFileSync(join(VIEWS, 'sessions/Transcript.svelte'), 'utf8');
         expect(source).toContain('{@html sanitise(turn.html)}');
+        // every rendered body goes through the sanitiser, so the raw one is never drawn
         expect(source).not.toContain('{@html turn.html}');
     });
 

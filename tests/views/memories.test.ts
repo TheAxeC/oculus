@@ -79,6 +79,7 @@ describe('the wall', () => {
     it('addresses every picture at the route and inlines none of them', () => {
         const body = drawn([unsized('mem-01.png')]);
         expect(body).toContain('src="/api/memories?file=mem-01.png"');
+        // every picture is addressed at the route, so no bytes are inlined into the markup
         expect(body).not.toContain('data:image');
     });
 
@@ -89,6 +90,7 @@ describe('the wall', () => {
     it('says the wall is empty when the folder holds no picture', () => {
         const body = drawn([]);
         expect(body).toContain(catalog['memories.empty']);
+        // the folder holds no picture, so there is no tile to draw
         expect(body).not.toContain('data-tile=');
     });
 
@@ -100,6 +102,7 @@ describe('the wall', () => {
     });
 
     it('draws no overlay until a tile is pressed', () => {
+        // the overlay is drawn for a tile the reader pressed, and nothing has been pressed
         expect(drawn([unsized('mem-01.png')])).not.toContain('role="dialog"');
     });
 
@@ -117,7 +120,9 @@ describe('the wall', () => {
             unsized('unread.webp'),
             { name: 'half.png', width: 870, height: null }
         ]);
+        // this picture's size was never read, so there is no ratio to set on its tile
         expect(tile(body, 'unread.webp')).not.toContain('aspect-ratio');
+        // and this one carries a width without a height, which is no ratio either
         expect(tile(body, 'half.png')).not.toContain('aspect-ratio');
     });
 
@@ -218,6 +223,7 @@ const source = readFileSync('src/lib/views/Memories.svelte', 'utf8');
 describe('the wall as it is written', () => {
     it('posts one picture through the writes store rather than its own fetch', () => {
         expect(source).toContain('writes: { addMemory }');
+        // the upload goes through the writes store, so the view holds no request of its own
         expect(source).not.toContain('fetch(');
     });
 
@@ -227,6 +233,7 @@ describe('the wall as it is written', () => {
 
     it('lays the wall out in CSS columns, with no library measuring anything', () => {
         expect(source).toContain('column-width:');
+        // the columns are the stylesheet's, so nothing measures the wall as it draws
         expect(source).not.toContain('ResizeObserver');
     });
 
@@ -235,6 +242,7 @@ describe('the wall as it is written', () => {
             "import { readMessage, tooLarge, uploadMessage } from '$lib/state/memories'"
         );
         expect(source).toContain('uploadMessage(answer)');
+        // the refusal is worded from the catalog, so the endpoint's own word is not read
         expect(source).not.toContain('answer.error');
     });
 
@@ -245,6 +253,7 @@ describe('the wall as it is written', () => {
         expect(body).toContain(
             catalog['memories.read_failed'].replace('{0}', catalog['memories.read_not_a_list'])
         );
+        // the read failed, which is said with its reason in place of the empty line
         expect(body).not.toContain(catalog['memories.empty']);
     });
 
@@ -262,6 +271,7 @@ describe('the wall as it is written', () => {
 
     it('looks for the tile to refocus inside its own pane', () => {
         expect(source).toContain('box?.querySelector(');
+        // the tile is looked for inside the pane's own box, so a second wall on the page is not reached
         expect(source).not.toContain('document.querySelector(');
     });
 });

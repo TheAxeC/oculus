@@ -1,10 +1,10 @@
 // loadLocal, checkLocal and loadConfig against synthetic files in a temporary directory. The config
 // folder oculus ships is read by tests/config-folder.test.ts.
 
-import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { cpSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { homedir, tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { MockInstance } from 'vitest';
 import {
     DEFAULT_PORT,
@@ -22,9 +22,12 @@ import { ENGINE_ROOT, engineRoot, rootsFile } from '../src/lib/server/files.ts';
 import { layoutFile } from '../src/lib/server/docs.ts';
 import { parse } from 'yaml';
 import { noop } from './doubles.ts';
+import { scratchDir, sweepScratch } from './scratch.ts';
+
+afterAll(sweepScratch);
 
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-config-'));
+    const dir = scratchDir('oculus-config-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }

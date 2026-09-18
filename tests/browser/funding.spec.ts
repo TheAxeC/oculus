@@ -51,6 +51,7 @@ test('a scheme cross-link opens the project tab', async ({ page }) => {
     await expect(group).toHaveAttribute('aria-expanded', 'true');
     await group.click();
     await expect(group).toHaveAttribute('aria-expanded', 'false');
+    // the group is closed again, so its members are not drawn
     await expect(card.getByRole('button', { name, exact: true })).toHaveCount(0);
     await group.click();
     await card.getByRole('button', { name, exact: true }).click();

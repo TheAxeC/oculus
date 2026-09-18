@@ -57,6 +57,7 @@ test('the configuration is one card per file, each opening its own text', async 
     // The line count is the file's own, read through the file route under the engine root.
     const reveal = layout.locator('button[aria-expanded]');
     await expect(reveal).toHaveAttribute('aria-expanded', 'false');
+    // the card is closed, so the raw text of the file is not drawn
     await expect(page.locator('pre[data-file="layout.yml"]')).toHaveCount(0);
 
     await reveal.click();

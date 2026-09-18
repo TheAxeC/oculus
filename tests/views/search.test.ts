@@ -100,6 +100,7 @@ describe('the results', () => {
     it('names the file without its root when the run was over one root', () => {
         const body = drawn({ q: 'needle', root: 'hub', answer: ANSWER });
         expect(body).toContain('>src/one.ts<');
+        // the run was over one root, so the file is named without it
         expect(body).not.toContain('src/one.ts (hub)');
     });
 
@@ -129,6 +130,7 @@ describe('the results', () => {
     it('says the answer was cut, and says nothing about a cap when it was not', () => {
         const cut = drawn({ q: 'needle', max: 500, answer: { ...ANSWER, truncated: true } });
         expect(cut).toContain('cut at 500');
+        // the answer was not cut, so nothing is said about a cap
         expect(drawn({ q: 'needle', answer: ANSWER })).not.toContain('cut at');
     });
 
@@ -156,6 +158,7 @@ describe('the results', () => {
     });
 
     it('draws no such line when every root answered', () => {
+        // every root answered, so there is no failure to name
         expect(drawn({ q: 'needle', answer: ANSWER })).not.toContain('data-search-failed');
     });
 

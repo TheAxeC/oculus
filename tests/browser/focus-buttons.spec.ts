@@ -44,6 +44,7 @@ const NOTE = 'ask the coauthor';
 
 test('a deadline line snoozes to the Snoozed group and wakes back unchanged', async ({ page }) => {
     const before = readHubFile(`${TRANSFER}/project.yml`);
+    // the manifest carries no snooze before the case presses one
     expect(before).not.toContain('snooze:');
     await boot(page);
     await openView(page, 'focus', t('views.focus'));
@@ -68,6 +69,7 @@ test('a deadline line snoozes to the Snoozed group and wakes back unchanged', as
     await asleep.getByRole('button', { name: t('project.action.unsnooze'), exact: true }).click();
     await expect(
         page.locator('details').filter({ hasText: t('focus.command.snoozed', 1) })
+        // the wake took the last line out of the group, so the group goes with it
     ).toHaveCount(0);
     expect(readHubFile(`${TRANSFER}/project.yml`)).toBe(before);
 });
@@ -86,6 +88,7 @@ test('a lead line opens and reveals its card in the Leads view', async ({ page }
 
 test('the flame badge and the card menu drive the manifest priority', async ({ page }) => {
     const before = readHubFile(`${BANDITS}/project.yml`);
+    // the case must set the flame from nothing, so the manifest starts without that key
     expect(before).not.toContain('priority:');
     await boot(page);
     await openView(page, 'focus', t('views.focus'));
@@ -114,6 +117,7 @@ test('the flame badge and the card menu drive the manifest priority', async ({ p
 
 test('quick add writes a follow-up and the ticker shows it', async ({ page }) => {
     const before = readHubFile(`${BANDITS}/project.yml`);
+    // quick add must be what writes the line, so the manifest starts without that key
     expect(before).not.toContain('followup:');
     await boot(page);
     await openView(page, 'focus', t('views.focus'));

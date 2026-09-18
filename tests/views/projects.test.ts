@@ -353,6 +353,7 @@ describe('a card', () => {
         expect(body).toContain(catalog['project.card.eli5']);
         expect(body).toContain('what it is, in one line');
         expect(body).toContain('Run the sweep.');
+        // the card draws the first sentence of next and stops there
         expect(body).not.toContain('Then write it up.');
     });
 
@@ -364,6 +365,7 @@ describe('a card', () => {
     it('draws the date rather than a countdown once the work has been submitted', () => {
         const submitted = html('coauthor');
         expect(submitted).toContain('2000-01-01');
+        // the work is submitted, so the deadline is drawn as its date rather than as a countdown
         expect(submitted).not.toContain('overdue');
     });
 
@@ -419,7 +421,9 @@ describe('an open card', () => {
     });
 
     it('adds none of it to a card that is not open', () => {
+        // the card is closed, so what the open card adds is not drawn
         expect(closed).not.toContain('the latest thing');
+        // nor the status line, which is part of what the open card adds
         expect(closed).not.toContain('submit-ready, 16 pp');
     });
 });
@@ -428,9 +432,11 @@ describe('a long description', () => {
     it('is cut to its clamp until the instance holds the card open', () => {
         const cut = html('projects');
         expect(cut).toContain('data-clamp="cut"');
+        // no instance holds this card open, so every clamp on the board is cut
         expect(cut).not.toContain('data-clamp="open"');
         const open = html('projects', { more: ['alpha'] });
         expect(open).toContain('data-clamp="open"');
+        // the instance holds this card open, so its body is drawn whole
         expect(open).not.toContain('data-clamp="cut"');
     });
 
@@ -477,6 +483,7 @@ describe('the list mode', () => {
             expect(drawn).toHaveLength(2);
             for (const cell of drawn) expect(cell.match(/<svg/g)).toHaveLength(1);
             for (const name of marks) {
+                // the list mode draws the mark as an icon, so the glyph the terminal mode would draw is not in the body
                 expect(body).not.toContain(glyphCatalog(config)[name]);
             }
             // Each mark is drawn in its own status's hue with its words as the title, so the
@@ -505,14 +512,17 @@ describe('the facets', () => {
         const labels = [...body.matchAll(opener)].map((one) => one[1]);
         expect(labels.filter((one) => one === catalog['board.filter'])).toHaveLength(1);
         for (const facet of ['status', 'compute', 'dataset', 'sessions']) {
+            // the facets live inside the one filter menu now, so no facet has an opener of its own
             expect(labels).not.toContain(catalog[`board.facet_${facet}`]);
         }
+        // and the strip of filter controls that stood beside the toolbar is gone with them
         expect(body).not.toContain('class="filters');
     });
 
     it('counts the values in force on the control', () => {
         const held = html('projects', { filters: { compute: ['hpc', 'local'], status: ['lead'] } });
         expect(held).toContain(`aria-label="${words('board.filter_count', '3')}"`);
+        // values are in force, so the control carries the counted label rather than the plain one
         expect(held).not.toContain(`aria-label="${catalog['board.filter']}"`);
     });
 
@@ -552,7 +562,9 @@ describe('the stats strip', () => {
     });
 
     it('is not drawn on the archive board or the coauthor board', () => {
+        // the venue line is drawn for work in flight, which neither the archive nor the coauthor board holds
         expect(html('archive')).not.toContain(catalog['board.stat_venues_tip']);
+        // nor on the board of somebody else's work, which aims at no venue of its own
         expect(html('coauthor')).not.toContain(catalog['board.stat_venues_tip']);
     });
 });
@@ -568,6 +580,7 @@ describe('the controls beside the search', () => {
     it('offers the two quick filters on the projects board and on no other', () => {
         expect(html('projects')).toContain(catalog['board.quick_stale']);
         expect(html('projects')).toContain(catalog['board.quick_deadline']);
+        // the quick filters are for the projects board, which is the only board whose cards go stale
         expect(html('archive')).not.toContain(catalog['board.quick_stale']);
     });
 
@@ -622,6 +635,7 @@ describe('the card controls', () => {
             }
         });
         expect(body).toContain(words('project.card.stale_behind', '3'));
+        // the behind-count is drawn from the docs this case handed in, which the standing snapshot does not carry
         expect(html('projects')).not.toContain(words('project.card.stale_behind', '3'));
     });
 
@@ -674,9 +688,13 @@ describe('the card controls', () => {
         receive({ channel: 'portfolio', version: 1, payload: snapshot() });
         expect(body).toContain(catalog['project.card.no_manifest']);
         expect(body).toContain('No manifest yet');
+        // a ghost folder has no manifest to pin from, so the pin control is not offered
         expect(body).not.toContain(catalog['project.card.pin_to_top']);
+        // and there is no manifest to edit either
         expect(body).not.toContain(catalog['project.card.edit_manifest']);
+        // the helper asks over a manifest, so a folder without one is offered neither its tooltip
         expect(body).not.toContain(catalog['project.helper.ask_tip']);
+        // nor the control that tooltip belongs to
         expect(body).not.toContain(`aria-label="${catalog['project.helper.ask']}"`);
         expect(body).toContain(catalog['project.helper.copy_context']);
         expect(body).toContain(catalog['project.helper.folder']);
@@ -730,10 +748,12 @@ describe('the subtasks block', () => {
         expect(open).not.toHaveLength(0);
         for (const line of done) {
             expect(line).toContain(catalog['project.action.reopen']);
+            // a done line is offered the reopen control instead
             expect(line).not.toContain(catalog['project.action.mark_done']);
         }
         for (const line of open) {
             expect(line).toContain(catalog['project.action.mark_done']);
+            // an open line is offered the done control instead
             expect(line).not.toContain(catalog['project.action.reopen']);
         }
     });
@@ -743,6 +763,7 @@ describe('the subtasks block', () => {
             body.indexOf('data-card-actions'),
             body.indexOf('class="folder')
         );
+        // the add-subtask control is for a card with none, and this card already has subtasks
         expect(actions).not.toContain(catalog['project.action.add_subtask']);
     });
 });
@@ -751,8 +772,11 @@ describe('a card with no subtasks', () => {
     it('draws no subtasks block, open or closed', () => {
         for (const state of [{}, { expanded: ['alpha', 'bravo'] }]) {
             const body = html('projects', state);
+            // the card has no subtasks, so the block is drawn neither open nor closed
             expect(body).not.toContain('class="subtasks');
+            // with no block drawn there is no subtasks heading to name it
             expect(body).not.toContain(catalog['project.action.subtasks']);
+            // nor the open-count that heading carries
             expect(body).not.toContain(words('project.action.n_open', '0'));
         }
     });

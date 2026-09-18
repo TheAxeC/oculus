@@ -8,10 +8,10 @@
 // complete once the route has stamped the time and the body kind on it: what a case asserts is the
 // line the log holds, which is what the History view reads.
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { handleWrite } from '../../src/lib/server/writes.ts';
 import { PAGE, logChanges, readChanges } from '../../src/lib/server/changes.ts';
 import { fsWrites } from '../../src/lib/server/fs.ts';
@@ -22,6 +22,9 @@ import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import type { Project, Tier } from '../../src/lib/data/model.ts';
 import type { Change, ChangeLog, ChangeRecord } from '../../src/lib/server/changes.ts';
 import type { WriteTarget } from '../../src/lib/server/writes.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const MANIFEST = 'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line: "the line"\n';
 
@@ -47,7 +50,7 @@ const HOST = '127.0.0.1:8791';
 
 /** A synthetic hub with a log beside it, every path asserted to be under the temporary directory. */
 function target(keep = 500): WriteTarget {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-changes-'));
+    const dir = scratchDir('oculus-changes-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const folder = join(dir, 'projects', 'manuscripts', 'alpha');
     mkdirSync(folder, { recursive: true });
@@ -123,7 +126,7 @@ function slideProject(id: string, tier: Tier): Project {
 
 /** A target whose deck file and log are both under the system temporary directory. */
 function deckTarget(): WriteTarget {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-changes-deck-'));
+    const dir = scratchDir('oculus-changes-deck-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const file = join(dir, 'present.yml');
     const log = join(dir, 'changes.jsonl');

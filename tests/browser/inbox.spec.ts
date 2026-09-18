@@ -25,6 +25,7 @@ test('the configured mail account is drawn not connected, with its Connect contr
 
     // The plate holds nothing, since the account has no token and the poller called no provider.
     await expect(page.getByText(t('inbox.clear'))).toBeVisible();
+    // the account has no token, so the poller called no provider and the plate holds nothing
     await expect(page.locator('[data-inbox]')).toHaveCount(0);
     // The view is no longer drawn from a file of the hub, so it offers no control over one.
     await expect(page.locator('[data-source-path]')).toHaveCount(0);

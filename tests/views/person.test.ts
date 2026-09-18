@@ -255,6 +255,7 @@ describe('one person as their own tab', () => {
         expect(body).toContain(catalog['person.no_joint_work']);
         expect(body).toContain(catalog['person.no_projects']);
         expect(body).toContain(catalog['person.self']);
+        // this person has no supervision folder, so the block is not drawn
         expect(body).not.toContain('data-block="folder"');
     });
 
@@ -286,6 +287,7 @@ describe('one person as their own tab', () => {
                 'education/student-supervision/ward-2024'
             )
         );
+        // this person has no supervision folder, so there is none to show in the file browser
         expect(drawn(client, { key: 'naesens' })).not.toContain(catalog['person.show_in_files']);
     });
 
@@ -293,6 +295,7 @@ describe('one person as their own tab', () => {
     it('offers no Show in Files for a folder that climbs above the hub', () => {
         const body = drawn(client, { key: 'outsider' });
         expect(body).toContain('data-block="folder"');
+        // the folder climbs above the hub, so there is nothing the file browser can be sent to
         expect(body).not.toContain(catalog['person.show_in_files']);
     });
 
@@ -302,6 +305,7 @@ describe('one person as their own tab', () => {
     it('says so when the folder is not one of the hub, rather than drawing an empty block', () => {
         const body = drawn(client, { key: 'outsider' });
         expect(body).toContain(catalog['person.folder_outside']);
+        // no listing was asked for, so the block never claims a read is on its way
         expect(body).not.toContain(catalog['person.folder_loading']);
     });
 
@@ -320,6 +324,7 @@ describe('one person as their own tab', () => {
     it('says the folder is empty when every entry in it is a directory', async () => {
         const body = await listed([{ name: 'drafts', kind: 'dir', size: 0, mtime: 0 }]);
         expect(body).toContain(catalog['person.folder_empty']);
+        // the folder holds directories alone, and the block lists the files in it
         expect(body).not.toContain('drafts');
     });
 });

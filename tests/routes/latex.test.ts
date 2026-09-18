@@ -2,15 +2,18 @@
 // project. The hub is a synthetic folder under the system temporary directory and the snapshot is
 // the case's own, so nothing of the real hub is read and nothing at all is written outside it.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { handleLatex, type LatexAnswer, type LatexTarget } from '../../src/lib/server/latex.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const HOST = '127.0.0.1:8791';
 
-const HUB = mkdtempSync(join(tmpdir(), 'oculus-latex-route-'));
+const HUB = scratchDir('oculus-latex-route-');
 expect(resolve(HUB).startsWith(resolve(tmpdir()) + sep)).toBe(true);
 
 const FOLDER = 'projects/manuscripts/alpha';

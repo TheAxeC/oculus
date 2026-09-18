@@ -167,6 +167,7 @@ describe('the muted section', () => {
     });
 
     it('is not drawn at all when nothing is parked', () => {
+        // nothing is muted, so the parked section is not drawn at all
         expect(sections(drawn([finding()]))).not.toContain('muted');
     });
 });
@@ -218,12 +219,14 @@ describe('the view as it is written', () => {
 
     it('posts the mute through the writes store rather than its own fetch', () => {
         expect(source).toContain('writes: { muteFinding }');
+        // the mute goes through the writes store, so the view holds no request of its own
         expect(source).not.toContain('fetch(');
     });
 
     it('draws a sentence of its own for a refusal, never the endpoint word', () => {
         expect(source).toContain("import { muteMessage } from '$lib/state/audit'");
         expect(source).toContain('failed = muteMessage(answer);');
+        // the refusal is worded from the catalog, so the endpoint's own word is not read
         expect(source).not.toContain('answer.error');
     });
 });

@@ -36,6 +36,7 @@ test('the tray draws the four tasks and marks none of them as confirming', async
     for (const kind of ['litwatch', 'scout', 'linkedin', 'inbox']) {
         await expect(tray.locator(`[data-task="${kind}"]`)).toHaveCount(1);
     }
+    // no task has been pressed, and the mark is drawn on the one waiting for an answer
     await expect(tray.locator('[data-confirms]')).toHaveCount(0);
 });
 
@@ -60,6 +61,7 @@ test('a task control reaches the endpoint with no confirmation in front of it', 
     // This layer has no tmux, so what comes back is the refusal rather than a running terminal.
     console.log('tasks.spec: this layer starts no process, so the task itself is not run here');
     await expect(tray).toContainText(t('editor.failed', '').trim());
+    // this layer starts no process, so no terminal tab is opened by the refusal
     await expect(page.getByRole('tab', { name: t('sessions.view_terminal') })).toHaveCount(0);
 });
 
@@ -94,12 +96,14 @@ test('with the setting on a press asks first, and the confirmation starts the ta
 
         // Escape is the dialog's, not the tray's: the question goes and the tray stays.
         await page.keyboard.press('Escape');
+        // Escape closes the question
         await expect(asked).toHaveCount(0);
         await expect(tray).toBeVisible();
         expect(calls).toEqual([]);
 
         // The next Escape is the tray's again.
         await page.keyboard.press('Escape');
+        // the next Escape closes the tray
         await expect(tray).toHaveCount(0);
 
         const reopened = await openTray(page);
@@ -107,6 +111,7 @@ test('with the setting on a press asks first, and the confirmation starts the ta
         await page
             .getByRole('button', { name: t('app.tasks.skip_confirm_ok'), exact: true })
             .click();
+        // the yes closes the question
         await expect(page.getByRole('alertdialog')).toHaveCount(0);
 
         // This layer has no tmux, so the task ends at the refusal line, as the case above does.

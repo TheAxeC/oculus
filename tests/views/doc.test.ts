@@ -79,6 +79,7 @@ describe('a hub document as its own tab', () => {
         const body = drawn({}, READY);
 
         expect(body).toContain('No document chosen.');
+        // the instance names no document, so there is nothing to draw
         expect(body).not.toContain('<h1>Approach</h1>');
     });
 
@@ -102,6 +103,7 @@ describe('a hub document as its own tab', () => {
         });
 
         expect(body).toContain('The document could not be read: document does not exist');
+        // the read failed, so there is no document to draw
         expect(body).not.toContain('<h1>Approach</h1>');
     });
 });

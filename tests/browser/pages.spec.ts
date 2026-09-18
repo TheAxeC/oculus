@@ -27,6 +27,7 @@ test('the menu adds a page and renames it', async ({ page }) => {
     await box.fill('Renamed');
     await box.press('Enter');
     await expect(strip.getByRole('tab', { name: 'Renamed' })).toBeVisible();
+    // the page carries the name it was given, so the default one is no longer drawn
     await expect(strip.getByRole('tab', { name: t('ui.page_default', 2) })).toHaveCount(0);
 
     // A name typed away to nothing is not a name: the page keeps the one it has.
@@ -123,6 +124,7 @@ test('closing a page asks first: cancel keeps it, confirm removes it', async ({ 
     const dialog = page.getByRole('alertdialog');
     await expect(dialog).toBeVisible();
     await dialog.getByRole('button', { name: t('ui.confirm_cancel') }).click();
+    // cancel closes the question and keeps the page
     await expect(dialog).toHaveCount(0);
     await expect(strip.getByRole('tab')).toHaveCount(2);
 

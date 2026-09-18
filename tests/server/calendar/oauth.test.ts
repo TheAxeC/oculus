@@ -5,10 +5,10 @@
 // file made under mkdtemp is read or written, and every path is asserted to be inside it first.
 
 import { createHash } from 'node:crypto';
-import { mkdtempSync, readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import { readFileSync, rmSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { resolve, sep } from 'node:path';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import type { CalendarAccountConfig } from '../../../src/lib/data/model.ts';
 import {
     CONNECT_MS,
@@ -20,6 +20,9 @@ import {
 import { handleCalendar, handleCalendarCallback } from '../../../src/lib/server/calendar/routes.ts';
 import { credentialFile } from '../../../src/lib/server/connect/store.ts';
 import { noop } from '../../doubles.ts';
+import { scratchDir, sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 const TOKEN = 'the-write-token-of-this-case';
 const GOOGLE: CalendarAccountConfig = { provider: 'google', label: 'work' };
@@ -36,7 +39,7 @@ afterEach(() => {
 
 /** A calendar directory of this case's own, asserted to be inside the temporary directory. */
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-calendar-oauth-'));
+    const dir = scratchDir('oculus-calendar-oauth-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(dir);
     return dir;

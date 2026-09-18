@@ -164,13 +164,16 @@ describe('the Map view', () => {
         expect(body).toContain('data-node="project::alpha"');
         expect(body).toContain('data-node="line::pillar"');
         expect(body).toContain('data-edge="membership::alpha::pillar"');
+        // a dropped project is left out of the graph
         expect(body).not.toContain('data-node="project::dead"');
+        // and the collaborators are off, so no person is a node
         expect(body).not.toContain('data-node="collaborator::person"');
     });
 
     it('draws the catalogued empty state without an SVG when no pillar or related exists', () => {
         const body = html(true);
         expect(body).toContain(catalog['map.empty']);
+        // there is nothing to draw, so the empty line stands in place of the canvas
         expect(body).not.toContain('data-map-graph');
     });
 
@@ -189,6 +192,7 @@ describe('the Map view', () => {
         const oneWay = edgeTag(body, 'related::alpha::candidate-project');
         const mutual = edgeTag(body, 'related::alpha::outside-project');
         expect(oneWay).toContain('marker-end="url(#map-arrow-map-markers)"');
+        // the relation goes one way, so the line carries an arrow at one end alone
         expect(oneWay).not.toContain('marker-start=');
         expect(mutual).toContain('marker-end="url(#map-arrow-map-markers)"');
         expect(mutual).toContain('marker-start="url(#map-arrow-map-markers)"');
@@ -221,6 +225,7 @@ describe('the Map view', () => {
         expect(pressed(whole, counted('active', 2))).toBe('true');
         expect(nodes(filtered)).toBeLessThan(nodes(whole));
         expect(filtered).toContain('data-node="project::candidate-project"');
+        // the type filter holds the ideas, and this project is not one
         expect(filtered).not.toContain('data-node="project::alpha"');
     });
 
@@ -228,10 +233,12 @@ describe('the Map view', () => {
         const body = html(false, { lines: ['pillar'] });
         expect(body).toContain('Pillar **One**');
         expect(body).toContain('data-node="line::pillar"');
+        // the line filter holds the pillar, and this line is another one
         expect(body).not.toContain('data-node="line::outside"');
         expect(body).toContain('data-node="project::outside-project"');
 
         const joined = html(false, { lines: ['pillar'], connected: true });
+        // the connected toggle drops a project no line in force reaches
         expect(joined).not.toContain('data-node="project::outside-project"');
         expect(joined).toContain('data-node="project::alpha"');
     });
@@ -248,9 +255,11 @@ describe('the Map view', () => {
     it('says so in place of the canvas when the filters leave nothing, and keeps the row', () => {
         const body = html(false, { types: ['idea'], lines: ['pillar'], connected: true });
         expect(body).toContain(catalog['map.empty_filtered']);
+        // the filters leave nothing, so the empty line stands in place of the canvas
         expect(body).not.toContain('data-map-graph');
         expect(body).toContain('data-map-filters');
         expect(body).toContain(catalog['map.all']);
+        // nothing is filtered out when no filter is in force, so that line is not drawn
         expect(html()).not.toContain(catalog['map.empty_filtered']);
     });
 
@@ -258,6 +267,7 @@ describe('the Map view', () => {
         const body = html(false, { types: ['idea'] });
         expect(classes(body, counted('candidate', 1))).toContain('active');
         expect(pressed(body, counted('candidate', 1))).toBe('true');
+        // another filter emptied this line, so it is not drawn as one in force
         expect(classes(body, counted('pillar', 0))).not.toContain('active');
         expect(pressed(body, counted('pillar', 0))).toBe('true');
     });
@@ -356,6 +366,7 @@ describe('the Map view', () => {
                 ontuned: noop
             }
         }).body;
+        // the collaborators toggle is off, so no person is a node
         expect(hidden).not.toContain('data-node="collaborator::person"');
         expect(shown).toContain('data-node="collaborator::person"');
         expect(shown).toContain('data-edge="collaborator::alpha::person"');
@@ -432,6 +443,7 @@ describe('the Map instance state', () => {
         setInstanceState(INSTANCE, { collaborators: true, enabled: [], linkMode: false });
         const on = render(MapView, { context: clientContext(client), props: { instance } }).body;
         const box = /<input[^>]*type="checkbox"[^>]*>/;
+        // the instance says the toggle is off, so the box is not ticked
         expect(box.exec(off)?.[0]).not.toContain('checked');
         expect(box.exec(on)?.[0]).toContain('checked');
     });

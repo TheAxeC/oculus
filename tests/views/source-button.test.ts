@@ -39,6 +39,7 @@ describe("the control over a view's own file", () => {
         expect(body).toContain(
             catalog['views.open_source_tip'].replace('{0}', 'feeds/literature-radar.yml')
         );
+        // every glyph is filled in from the catalog, so no placeholder is left in the words
         expect(body).not.toContain('{G.');
     });
 

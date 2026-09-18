@@ -145,7 +145,9 @@ describe('Live HPC view', () => {
     it('leaves a fresh answer unmarked', () => {
         const body = drawAt('2026-09-11T12:10:00.000Z', payload, 10);
         expect(body).toContain('as of');
+        // the answer is fresh, so nothing is late
         expect(body).not.toContain('the next poll is late');
+        // and nothing carries the late mark either
         expect(body).not.toMatch(/class="[^"]*\blate\b[^"]*"/);
     });
     it('marks the as of part late once the next poll is overdue', () => {
@@ -185,8 +187,10 @@ describe('Live HPC view', () => {
             },
             13
         );
+        // the cluster has never been reached, so there is no time to name
         expect(body).not.toContain('last reached');
         expect(body).toContain('Cluster unreachable');
+        // and it carries no finished job to list
         expect(body).not.toContain('Recent (finished)');
     });
     it('goes late on the minute tick, with no new publish', () => {
@@ -204,7 +208,9 @@ describe('Live HPC view', () => {
             const untold = again();
             vi.advanceTimersByTime(60000);
             const aged = again();
+            // the head reads the minute clock, which has not ticked yet
             expect(fresh).not.toContain('the next poll is late');
+            // and the wall clock moving on its own does not make it tick
             expect(untold).not.toContain('the next poll is late');
             expect(aged).toContain('the next poll is late');
         } finally {
@@ -221,7 +227,9 @@ describe('Live HPC view', () => {
         expect(down).toContain('the cluster is not answering');
         expect(down).toMatch(/<button[^>]*\sdisabled[^>]*>/);
         const live = draw(payload, 17);
+        // the cluster is answering, so nothing says otherwise
         expect(live).not.toContain('the cluster is not answering');
+        // and nothing holds the controls back
         expect(live).not.toMatch(/<button[^>]*\sdisabled[^>]*>/);
     });
     it('keeps the partition and disk rows on a failed poll whose queue is empty', () => {
@@ -241,6 +249,7 @@ describe('Live HPC view', () => {
             15
         );
         expect(body).toContain('partition capacity');
+        // the payload carries no finished job, so the section is not drawn
         expect(body).not.toContain('Recent (finished)');
     });
     it('says nothing about retrying when the payload carries no retry cadence', () => {
@@ -248,6 +257,7 @@ describe('Live HPC view', () => {
         delete held.retryMin;
         const body = drawAt('2026-09-11T12:23:00.000Z', held, 16);
         expect(body).toContain('Cluster unreachable');
+        // the payload carries no retry cadence, so there is none to name
         expect(body).not.toContain('retrying every');
     });
     it.each(['starting', 'unreachable', 'error'] as const)('draws the %s head state', (status) => {

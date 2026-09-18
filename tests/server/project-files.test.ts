@@ -2,17 +2,20 @@
 // listed, what is skipped, the cap, and the order. Nothing outside that directory is read or
 // written, and every path written is asserted to be inside it first.
 
-import { mkdirSync, mkdtempSync, utimesSync, writeFileSync } from 'node:fs';
+import { mkdirSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { SKIP_DIRS, fileIndex, projectFiles } from '../../src/lib/server/project-files.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 /** The config the walk is given unless a case wants another. */
 const SETTINGS = { file_index: { enabled: true, max_per_project: 400, ext: ['.md', '.py'] } };
 
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-files-'));
+    const dir = scratchDir('oculus-files-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }

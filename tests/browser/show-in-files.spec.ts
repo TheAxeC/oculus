@@ -164,6 +164,7 @@ test('Show in Files on a project card selects its folder in the Files tab, in vi
     const owner = await filesId(page);
     await expect.poll(async () => recordOf(await uiInstances(page), owner).reveal).toBeNull();
     expect(recordOf(await uiInstances(page), owner).revealing).toBe(1);
+    // the row was reached, and a line is drawn only for an ask that could not be
     await expect(page.locator('[data-fs-revealed]')).toHaveCount(0);
 
     // A second ask from the board goes to the same Files tab, not a second one.
@@ -203,6 +204,7 @@ test('Show in Files on a collection card selects the file its link names, and th
             'aria-expanded',
             'true'
         );
+        // the row was reached, and a line is drawn only for an ask that could not be
         await expect(page.locator('[data-fs-revealed]')).toHaveCount(0);
 
         await page.getByRole('tab', { name: t('views.funding'), exact: true }).click();
@@ -226,6 +228,7 @@ test('Show in Files on a collection card selects the file its link names, and th
         );
         // Selecting another row takes the line away, since it was about the row the ask selected.
         await treeItem(page, 'hub:projects').getByRole('button').first().click();
+        // the line was about the row the ask selected, and another row is selected now
         await expect(page.locator('[data-fs-revealed]')).toHaveCount(0);
     } finally {
         writeHubFile(FUNDING, before);
@@ -245,6 +248,7 @@ test('a read on the way to a path lands after a later ask and writes nothing', a
         await held.sent;
         // In flight: the Files tab is open and nothing is selected yet.
         await expect(page.locator('.files[data-instance]')).toBeVisible();
+        // the listing is still in flight, so there is no row to select yet
         await expect(page.locator('[role="treeitem"][aria-selected="true"]')).toHaveCount(0);
 
         await page.getByRole('tab', { name: t('views.funding'), exact: true }).click();
@@ -261,6 +265,7 @@ test('a read on the way to a path lands after a later ask and writes nothing', a
         await held.answered;
         await drain(page);
         await expect(later).toHaveAttribute('aria-selected', 'true');
+        // the listing that was in flight was for a folder the later ask left, so its rows are never drawn
         await expect(page.locator('[data-fs-row="hub:projects/active"]')).toHaveCount(0);
     } finally {
         writeHubFile(FUNDING, before);
@@ -285,12 +290,15 @@ test('a read on the way to a path lands after the Files tab was closed and write
         .locator('.tab', { has: page.getByRole('tab', { name: t('views.files'), exact: true }) })
         .getByRole('button', { name: t('ui.close_tab') })
         .click();
+    // the close took the tab away
     await expect(page.getByRole('tab', { name: t('views.files'), exact: true })).toHaveCount(0);
+    // the instance went with the tab, so nothing is left to hold the answer
     await expect.poll(async () => Object.keys(await uiInstances(page))).not.toContain(owner);
 
     held.release();
     await held.answered;
     await drain(page);
+    // and the answer that landed after it brings the instance back neither
     expect(Object.keys(await uiInstances(page))).not.toContain(owner);
 });
 
@@ -341,7 +349,9 @@ test('an ask made while the roots could not be read says so at once and is not a
     await page.reload();
     await expect(treeItem(page, 'hub:')).toBeVisible();
     await drain(page);
+    // the roots read this time, and the ask that was waiting for them is gone with the reload
     await expect(page.locator('[role="treeitem"][aria-selected="true"]')).toHaveCount(0);
+    // so no folder was opened for it either
     await expect(page.locator(`[data-fs-row="hub:projects/active"]`)).toHaveCount(0);
     // The line that said the roots could not be read goes once they read.
     await expect(page.locator('[data-fs-revealed]')).toHaveCount(0);

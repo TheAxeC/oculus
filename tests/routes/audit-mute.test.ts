@@ -5,10 +5,10 @@
 // thousand-line limit. The behavior file is a copy under the system temporary directory, asserted to
 // be inside it before anything is written, so no case here writes the engine's own configuration.
 
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import { handleWrite } from '../../src/lib/server/writes.ts';
 import { mintToken } from '../../src/lib/server/auth.ts';
@@ -16,6 +16,9 @@ import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import { mutedSignatures } from '../../src/lib/server/audit.ts';
 import type { WriteTarget } from '../../src/lib/server/writes.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const TOKEN = mintToken();
 const HOST = '127.0.0.1:8791';
@@ -56,7 +59,7 @@ const OTHER = 'fedcba987654';
  * writes the engine's own config/behavior.yml.
  */
 function muteTarget(body = BEHAVIOR): WriteTarget {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-mute-'));
+    const dir = scratchDir('oculus-mute-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const file = join(dir, 'behavior.yml');
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);

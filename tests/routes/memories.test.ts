@@ -5,7 +5,7 @@
 // builds its own directory under the system temporary directory and asserts each write stays inside
 // it, so no case can write into the checkout. This does not cover the browser drawing the wall.
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
@@ -22,6 +22,9 @@ import {
     upload,
     write
 } from '../../src/lib/server/memories.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const TOKEN = mintToken();
 
@@ -35,7 +38,7 @@ afterAll(() => {
 
 /** A directory of this file's own inside the system temporary directory, remembered for removal. */
 function scratch(prefix: string): string {
-    const dir = mkdtempSync(join(tmpdir(), prefix));
+    const dir = scratchDir(prefix);
     made.push(dir);
     return dir;
 }

@@ -60,6 +60,7 @@ test('a dismissed lead is dismissed in the file, after a reload, until it is reo
         .getByRole('button', { name: t('leads.action.dismiss') })
         .click();
     await expect.poll(() => statusOf(INST)).toBe('dismissed');
+    // the lead was dismissed, and a dismissed lead is held back until it is asked for
     await expect(cardOf(page)).toHaveCount(0);
 
     // boot() waits for the socket line of the Status view, which the opened tab has replaced, so the
@@ -69,6 +70,7 @@ test('a dismissed lead is dismissed in the file, after a reload, until it is reo
     await openView(page, 'leads', t('views.leads'));
     const toggle = page.getByRole('button', { name: t('leads.show_dismissed', 1) });
     await expect(toggle).toBeVisible();
+    // the reload reads the file, which holds the dismissal, so it is still held back
     await expect(cardOf(page)).toHaveCount(0);
 
     await toggle.click();

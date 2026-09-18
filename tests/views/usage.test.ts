@@ -129,6 +129,7 @@ describe('Usage', () => {
             render(Usage, { context: clientContext(client), props: { instance } }).body
         ).toContain('refresh refused: the write token was refused');
         const next = draw(refreshPayload('refreshing'));
+        // a refusal belongs to the answer it came with, and a later answer replaces it
         expect(next).not.toContain('refresh refused:');
         expect(next).toContain('refresher: refreshing');
     });
@@ -297,6 +298,7 @@ describe('Usage', () => {
         expect(html).toContain('no window open');
         expect(html).toContain('--tone: var(--c-red)');
         expect(html).toContain('--tone: var(--c-amber)');
+        // no window is open, so there is no time to name one as of
         expect(html).not.toContain('as of');
     });
 

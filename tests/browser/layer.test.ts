@@ -5,17 +5,10 @@
 // This is a vitest file rather than a spec: Playwright's testMatch is `*.spec.ts`, so the browser
 // layer never collects it and it never starts a server.
 
-import {
-    existsSync,
-    mkdirSync,
-    mkdtempSync,
-    readFileSync,
-    utimesSync,
-    writeFileSync
-} from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
     buildState,
     copyConfig,
@@ -26,11 +19,14 @@ import {
     takeLock
 } from './layer.ts';
 import { LOCAL_NAME } from '../../src/lib/data/sources/config.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 let dir = '';
 
 beforeEach(() => {
-    dir = mkdtempSync(join(tmpdir(), 'oculus-layer-'));
+    dir = scratchDir('oculus-layer-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
 });
 

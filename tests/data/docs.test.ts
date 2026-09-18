@@ -1,16 +1,19 @@
 // readDoc and projectDocs against synthetic files in a temporary directory. Nothing outside it is
 // read or written, and every write asserts its path is inside the temporary directory first.
 
-import { mkdirSync, mkdtempSync, statSync, utimesSync, writeFileSync } from 'node:fs';
+import { mkdirSync, statSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { PROJECT_DOCS, isFinding, projectDocs, readDoc } from '../../src/lib/data/sources/docs.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import type { DocPresence } from '../../src/lib/data/model.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-docs-'));
+    const dir = scratchDir('oculus-docs-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }

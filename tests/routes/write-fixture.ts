@@ -8,7 +8,7 @@
 // each write kind answers, and tests/routes/undo.test.ts, which is what taking one of them back
 // writes.
 
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
@@ -22,6 +22,7 @@ import type { Project, Tier } from '../../src/lib/data/model.ts';
 import type { Change, ChangeLog } from '../../src/lib/server/changes.ts';
 import type { WriteTarget } from '../../src/lib/server/writes.ts';
 import { present } from '../present.ts';
+import { scratchDir } from '../scratch.ts';
 
 export const MANIFEST =
     'id: alpha\ntype: manuscript\ntitle: "A title"\nstatus:\n  line: "the line"\n';
@@ -52,7 +53,7 @@ export const HOST = '127.0.0.1:8791';
 export const URL_ = `http://${HOST}/api/write`;
 
 export function target(): WriteTarget {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-route-'));
+    const dir = scratchDir('oculus-route-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const folder = join(dir, 'projects', 'manuscripts', 'alpha');
     expect(resolve(folder).startsWith(resolve(dir) + sep)).toBe(true);
@@ -203,7 +204,7 @@ export function slideProject(id: string, tier: Tier): Project {
  * it a place in the catalog.
  */
 export function deckTarget(): WriteTarget {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-deck-'));
+    const dir = scratchDir('oculus-deck-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const file = join(dir, 'present.yml');
     expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);

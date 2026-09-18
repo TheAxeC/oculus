@@ -5,15 +5,18 @@
 // Every credential file this file reads is in a directory it made under mkdtemp and asserted to be
 // inside the temporary directory first; nothing under the reader's own home is touched.
 
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { resolve, sep } from 'node:path';
+import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import type { CalendarAccountConfig, CalendarPayload } from '../../../src/lib/data/model.ts';
 import { Hub } from '../../../src/lib/server/channels.ts';
 import { RETRY_MIN, watchCalendar } from '../../../src/lib/server/calendar/poll.ts';
 import { credentialFile } from '../../../src/lib/server/connect/store.ts';
 import type { Fetcher } from '../../../src/lib/server/connect/oauth.ts';
+import { scratchDir, sweepScratch } from '../../scratch.ts';
+
+afterAll(sweepScratch);
 
 const MINUTE = 60000;
 const POLL_MIN = 15;
@@ -28,7 +31,7 @@ afterEach(() => {
 });
 
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-calendar-poll-'));
+    const dir = scratchDir('oculus-calendar-poll-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(dir);
     return dir;

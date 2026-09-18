@@ -304,7 +304,9 @@ test.describe('the look', () => {
         await rest(page);
         expect(await marks(tasks)).toEqual({ dot: false, cross: true, close: '1' });
         expect(await marks(first)).toEqual({ dot: false, cross: true, close: '1' });
+        // nothing is unsaved, so no tab carries the unsaved name
         await expect(named(t('views.tasks'))).toHaveCount(0);
+        // and no page tab carries it either
         await expect(named(t('ui.page_default', 1))).toHaveCount(0);
 
         await typeTask(page);
@@ -372,6 +374,7 @@ test.describe('the look', () => {
             .evaluate((node) => getComputedStyle(node).color);
         expect(item).toBe(await colourOf(page, 'var(--ink-txt, var(--ink))'));
         await page.keyboard.press('Escape');
+        // Escape closed the menu
         await expect(page.getByRole('menuitem')).toHaveCount(0);
 
         await split.click();

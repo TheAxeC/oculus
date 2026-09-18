@@ -129,6 +129,7 @@ describe('the Lit Watch view', () => {
         expect(body).toMatch(/class="intro(?:\s|")/);
         expect(body).toContain('New-paper radar');
         expect(body).toContain('4 tracked');
+        // every glyph is filled in from the catalog, so no placeholder is left in the words
         expect(body).not.toContain('{G.');
         expect(body).toContain(catalog['radar.search']);
         // revert: src/lib/views/radar/RadarCard.svelte:83 => return href.startsWith('https://e') ? href : undefined;
@@ -147,6 +148,7 @@ describe('the Lit Watch view', () => {
         expect(body).toContain(catalog['radar.dismiss']);
         expect(body).toContain(catalog['radar.idea']);
         expect(body).toContain(`${catalog['radar.dismissed_sec']} (1)`);
+        // the dismissed section is closed, so the papers in it are not drawn
         expect(body).not.toContain('Dismissed paper');
     });
 
@@ -210,6 +212,7 @@ describe('the Lit Watch view', () => {
         }).body;
         expect(missing).toContain('No radar file yet');
         expect(missing).toContain('feeds/literature-radar.yml');
+        // the file is not on this machine, so there is no path for the source control to name
         expect(missing).not.toContain('data-source-path');
     });
 
@@ -245,7 +248,9 @@ describe('the Lit Watch view', () => {
             props: { instance: instance('radar-untitled') }
         }).body;
         expect(body).toContain(catalog['radar.untitled']);
+        // the entry carries no title, so there is nothing to act on and no control is offered
         expect(body).not.toContain(catalog['radar.dismiss_tip']);
+        // nor the tooltip of the other one
         expect(body).not.toContain(catalog['radar.idea_tip']);
     });
 
@@ -263,6 +268,7 @@ describe('the Lit Watch view', () => {
             props: { instance: instance('radar-error') }
         }).body;
         expect(body).toContain('Could not read feeds/literature-radar.yml: bad YAML');
+        // the read failed, which is said with its reason rather than as a file that is not there
         expect(body).not.toContain('No radar file yet');
     });
 });

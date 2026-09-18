@@ -5,11 +5,11 @@
 // whatever expression the formatter is handed the catalog through.
 
 import { statusWordKey } from '../src/lib/state/repositories.ts';
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { beforeEach, describe, expect, it } from 'vitest';
+import { afterAll, beforeEach, describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
 import {
     collectionKeys,
@@ -21,6 +21,9 @@ import { LOCAL_NAME, descriptionKey } from '../src/lib/views/config/files.ts';
 import { registerAll, registerCollections } from '../src/routes/views.ts';
 import { recordedKinds } from './kinds.ts';
 import { createClientState, type ClientState } from './client.ts';
+import { scratchDir, sweepScratch } from './scratch.ts';
+
+afterAll(sweepScratch);
 
 let client: ClientState;
 let views: ClientState['registry']['views'];
@@ -326,7 +329,7 @@ describe('text keys', () => {
     });
 
     it('reads a findings. literal whatever holds the catalog, and none written in a comment', () => {
-        const dir = mkdtempSync(join(tmpdir(), 'oculus-finding-keys-'));
+        const dir = scratchDir('oculus-finding-keys-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const file = join(dir, 'Rules.ts');
         expect(resolve(file).startsWith(resolve(dir) + sep)).toBe(true);
@@ -348,7 +351,7 @@ describe('text keys', () => {
 
     // Revert: drop the WORDS scan from calls(), or read `words` only when its first argument is `catalog`.
     it('catches a computed key and a literal key, and reads past neither', () => {
-        const dir = mkdtempSync(join(tmpdir(), 'oculus-keys-'));
+        const dir = scratchDir('oculus-keys-');
         expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
         const write = (name: string, body: string) => {
             const full = join(dir, name);

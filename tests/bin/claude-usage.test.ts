@@ -1,15 +1,17 @@
 // Layer 4, test. The Claude status-line command preserves its input atomically and prints only present status fields.
 
-import { mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { readFileSync, readdirSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const made: string[] = [];
 
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-claude-usage-'));
+    const dir = scratchDir('oculus-claude-usage-');
     made.push(dir);
     return dir;
 }

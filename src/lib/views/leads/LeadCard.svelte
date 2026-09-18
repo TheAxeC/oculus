@@ -25,7 +25,7 @@
         leadId,
         type LeadEntry
     } from '$lib/state/leads';
-    import { hrefOf } from '$lib/state/collection';
+    import { posting } from '$lib/views/shared/posting';
     import { t } from '$lib/state/text';
     import type { WriteAnswer } from '$lib/state/writes.svelte';
     import { useState } from '$lib/state/use';
@@ -89,18 +89,6 @@
         sure = false;
         if (title === '') return;
         say(await deleteFeedEntry('leads', title));
-    }
-
-    /**
-     * The web page a posting address names, or nothing for a value that names no web page. A value
-     * written without its scheme is one, since `hrefOf` puts `https://` in front of a host; a hub
-     * path and any other scheme are not, which is what this card drew before.
-     */
-    function posting(value: string): string | undefined {
-        const held = value.trim();
-        if (held === '') return undefined;
-        const href = hrefOf(held);
-        return href.startsWith('http') ? href : undefined;
     }
 </script>
 

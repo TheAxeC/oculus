@@ -22,6 +22,7 @@ test('a pane folds from its menu, shows its tab name in the strip, and expands a
     });
     await pane.getByRole('button', { name: t('ui.pane_menu'), exact: true }).click();
     await expect(page.getByRole('menuitem', { name: t('ui.pane_maximise') })).toBeVisible();
+    // a root pane sits in no split, so there is nothing to fold it into
     await expect(page.getByRole('menuitem', { name: t('ui.pane_fold') })).toHaveCount(0);
     await page.getByRole('menuitem', { name: t('ui.split_right'), exact: true }).click();
     await expect(page.locator('[data-pane]')).toHaveCount(2);
@@ -49,6 +50,7 @@ test('a pane folds from its menu, shows its tab name in the strip, and expands a
     expect(Math.abs(open.x + open.width - box.x)).toBeLessThanOrEqual(2);
 
     await strip.getByRole('button', { name: t('ui.pane_expand') }).click();
+    // the expand took the folded strip away
     await expect(page.locator('[data-fold]')).toHaveCount(0);
     await expect(page.locator('[data-pane]')).toHaveCount(2);
 });

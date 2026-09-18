@@ -41,6 +41,7 @@ test('a card dragged onto another lane lands there and the manifest follows', as
 
     await card.dragTo(lane(page, to).getByRole('list'));
     await expect(lane(page, to).getByRole('listitem').filter({ hasText: name })).toHaveCount(1);
+    // the card was dragged onto the other lane, so it is no longer on the one it came from
     await expect(lane(page, from).getByRole('listitem').filter({ hasText: name })).toHaveCount(0);
     await expect.poll(() => readHubFile(file), { timeout: 5000 }).toContain(`focus: ${to}`);
 

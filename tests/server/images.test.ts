@@ -9,11 +9,14 @@
 // tests/browser/memories.spec.ts.
 
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { readSize, sizeOf, type ReadAt } from '../../src/lib/server/images.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 /** One pixel of a real JPEG, as base64: a JFIF header, tables, a baseline frame and a scan. */
 const REAL_JPEG =
@@ -29,7 +32,7 @@ afterAll(() => {
 
 /** A directory of this file's own inside the system temporary directory, remembered for removal. */
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-images-'));
+    const dir = scratchDir('oculus-images-');
     made.push(dir);
     return dir;
 }

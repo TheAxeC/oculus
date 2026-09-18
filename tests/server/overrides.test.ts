@@ -4,18 +4,21 @@
 // directory and asserts the path is inside it before the write, so the user's own pins are never in
 // reach of this suite.
 
-import { existsSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { overrides, setHidden, setOverride } from '../../src/lib/server/sessions/overrides.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 const ID = 'sess-1';
 const AREA = '/hub/projects/manuscripts/alpha';
 
 /** A fresh overrides file that does not exist yet, inside the system temporary directory. */
 function file(body?: unknown): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-overrides-'));
+    const dir = scratchDir('oculus-overrides-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     const path = join(dir, 'sessions.json');
     expect(resolve(path).startsWith(resolve(dir) + sep)).toBe(true);

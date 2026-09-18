@@ -3,11 +3,16 @@
 // checked against the row of the table its own folder sits in. Anything the row does not
 // allow is a violation: the table's "May import" column is the whole permission.
 
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { describe, expect, it } from 'vitest';
+import { afterAll, afterEach, describe, expect, it } from 'vitest';
+import { DELIBERATE, HELD } from './allow-styling.ts';
+import { isReason } from './reason.ts';
+import { scratchDir, sweepScratch } from './scratch.ts';
+
+afterAll(sweepScratch);
 
 const LIB = resolve(fileURLToPath(import.meta.url), '..', '..', 'src', 'lib');
 const SRC = resolve(LIB, '..');
@@ -289,22 +294,114 @@ export function findShellStores(libRoot: string): string[] {
     return violations.sort();
 }
 
+/** The style block of a component, or the empty string where it has none. */
+function styleOf(text: string): string {
+    const found = /<style[^>]*>([\s\S]*?)<\/style>/.exec(text);
+    return found === null ? '' : found[1];
+}
+
+/** Every class name a selector text names. */
+function classesIn(selector: string): string[] {
+    return [...selector.matchAll(/\.([A-Za-z][\w-]*)/g)].map((found) => found[1]);
+}
+
+/**
+ * Every class a primitive declares as its own, with the primitives that declare it.
+ *
+ * What a primitive writes inside `:global(...)` is not its own: that is how it reads the theme class
+ * the body carries, and a consumer naming the same class is naming the theme, not the primitive.
+ */
+export function primitiveClasses(libRoot: string): Map<string, string[]> {
+    const owners = new Map<string, string[]>();
+    for (const name of readdirSync(join(libRoot, 'ui'))) {
+        if (!name.endsWith('.svelte')) continue;
+        const style = styleOf(readFileSync(join(libRoot, 'ui', name), 'utf8')).replace(
+            /:global\([^)]*\)/g,
+            ' '
+        );
+        for (const held of classesIn(style)) {
+            owners.set(held, [...new Set([...(owners.get(held) ?? []), `ui/${name}`])].sort());
+        }
+    }
+    return owners;
+}
+
+/**
+ * Every `:global(...)` rule in a view or a shell component that names a primitive's own class.
+ *
+ * A primitive owns how it is drawn; a consumer that reaches past its props into its markup is the
+ * coupling the layer table forbids in the one direction the import graph cannot see.
+ */
+export function findPrimitiveStyling(libRoot: string, allow: string[] = []): string[] {
+    const owners = primitiveClasses(libRoot);
+    const found = new Set<string>();
+    for (const fileRel of sourceFiles(libRoot)) {
+        if (!fileRel.endsWith('.svelte')) continue;
+        if (!fileRel.startsWith('views/') && !fileRel.startsWith('shell/')) continue;
+        const style = styleOf(readFileSync(join(libRoot, fileRel), 'utf8'));
+        for (const rule of style.matchAll(/:global\(([^)]*)\)/g)) {
+            for (const held of classesIn(rule[1])) {
+                const owned = owners.get(held);
+                if (owned === undefined) continue;
+                const where = selectorAt(style, rule.index);
+                const line = `${fileRel} styles .${held} of ${owned.join(', ')} through ${where}`;
+                if (allow.includes(line)) continue;
+                found.add(line);
+            }
+        }
+    }
+    return [...found].sort();
+}
+
+/**
+ * The whole selector a `:global(...)` sits in, from the end of the rule before it to its brace.
+ *
+ * The entry of the allow list is keyed on this rather than on the file and the class, so a second,
+ * unrelated rule for the same class in a file already on the list is a violation of its own.
+ */
+function selectorAt(style: string, at: number): string {
+    const before = Math.max(style.lastIndexOf('}', at), style.lastIndexOf('{', at));
+    const brace = style.indexOf('{', at);
+    const span = style.slice(before + 1, brace === -1 ? style.length : brace);
+    return span
+        .replace(/\/\*[\s\S]*?\*\//g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+}
+
+const made: string[] = [];
+
+afterEach(() => {
+    for (const dir of made.splice(0)) rmSync(dir, { recursive: true, force: true });
+});
+
+/** A scratch root inside the temporary directory, removed when the case ends. */
+function scratch(name: string): string {
+    const dir = scratchDir(name);
+    expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+    made.push(dir);
+    return dir;
+}
+
 describe('layer boundaries', () => {
     it('holds across src/lib', () => {
+        // revert: tests/boundaries.test.ts:75 => views: ['state/**', 'views/registry'],
         expect(findViolations(LIB)).toEqual([]);
     });
 
     it('holds no process-wide state under src', () => {
+        // revert: tests/boundaries.test.ts:239 => delete
         expect(findGlobalState(SRC)).toEqual([]);
     });
 
     it('keeps every shell file to the stores its row names', () => {
+        // revert: tests/boundaries.test.ts:261 => delete
         expect(findShellStores(LIB)).toEqual([]);
     });
 
     it('catches a shell file reading a store the shell may not read', () => {
-        const dir = mkdtempSync(join(tmpdir(), 'oculus-shell-stores-'));
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        // revert: tests/boundaries.test.ts:285 => delete
+        const dir = scratch('oculus-shell-stores-');
         mkdirSync(join(dir, 'shell'), { recursive: true });
         writeFileSync(
             join(dir, 'shell', 'Bad.svelte'),
@@ -317,8 +414,8 @@ describe('layer boundaries', () => {
     });
 
     it('catches process-wide state outside app.d.ts', () => {
-        const dir = mkdtempSync(join(tmpdir(), 'oculus-global-state-'));
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        // revert: tests/boundaries.test.ts:201 => delete
+        const dir = scratch('oculus-global-state-');
         mkdirSync(join(dir, 'lib', 'server'), { recursive: true });
         writeFileSync(join(dir, 'bad.ts'), 'declare global {}\nconst held = globalThis.value;\n');
         writeFileSync(
@@ -341,8 +438,8 @@ describe('layer boundaries', () => {
     });
 
     it('catches a violation of every row it can be shown one of', () => {
-        const dir = mkdtempSync(join(tmpdir(), 'oculus-boundaries-'));
-        expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        // revert: tests/boundaries.test.ts:165 => if (false) {
+        const dir = scratch('oculus-boundaries-');
 
         const write = (rel: string, body: string) => {
             const full = join(dir, rel);
@@ -403,5 +500,68 @@ describe('layer boundaries', () => {
             'views/focus/CommandCenter.svelte imports views/Projects.svelte',
             'views/shared/Card.svelte imports views/projects/Card.svelte'
         ]);
+    });
+
+    it('lets no view or shell component style a primitive own class', () => {
+        // revert: tests/boundaries.test.ts:348 => delete
+        expect(
+            findPrimitiveStyling(
+                LIB,
+                [...DELIBERATE, ...HELD].map((one) => one.line)
+            )
+        ).toEqual([]);
+    });
+
+    it('catches a view reaching into a primitive, and passes the theme class and its own', () => {
+        // revert: tests/boundaries.test.ts:344 => const owned = undefined;
+        const dir = scratch('oculus-primitive-styling-');
+        const write = (rel: string, body: string) => {
+            const full = join(dir, rel);
+            expect(resolve(full).startsWith(resolve(dir) + sep)).toBe(true);
+            mkdirSync(dirname(full), { recursive: true });
+            writeFileSync(full, body);
+        };
+
+        write(
+            'ui/ToolButton.svelte',
+            '<button class="tool"></button>\n<style>\n    .tool {\n        color: red;\n    }\n    :global(body.wall) .tool {\n        color: blue;\n    }\n</style>'
+        );
+        write(
+            'views/Bad.svelte',
+            '<div class="row"></div>\n<style>\n    .row :global(.tool) {\n        gap: 0;\n    }\n</style>'
+        );
+        write(
+            'shell/AlsoBad.svelte',
+            '<div class="strip"></div>\n<style>\n    .strip :global(.tool:hover) {\n        gap: 0;\n    }\n</style>'
+        );
+        write(
+            'views/Good.svelte',
+            '<div class="row"></div>\n<style>\n    :global(body.wall) .row {\n        gap: 0;\n    }\n    .row :global(.own) {\n        gap: 0;\n    }\n</style>'
+        );
+
+        const alsoBad =
+            'shell/AlsoBad.svelte styles .tool of ui/ToolButton.svelte through .strip :global(.tool:hover)';
+        const bad =
+            'views/Bad.svelte styles .tool of ui/ToolButton.svelte through .row :global(.tool)';
+        expect(findPrimitiveStyling(dir)).toEqual([alsoBad, bad]);
+        expect(findPrimitiveStyling(dir, [bad])).toEqual([alsoBad]);
+    });
+
+    it('holds every styling entry to a reason', () => {
+        // revert: tests/allow-styling.ts:17 => why: 'x'
+        const bare = [...DELIBERATE, ...HELD].filter((one) => !isReason(one.why, one.line));
+        expect(bare.map((one) => one.line)).toEqual([]);
+        expect(isReason('x')).toBe(false);
+        expect(isReason('the rule sizes the primitive inside the band')).toBe(true);
+    });
+
+    it('holds the styling lists to rules the tree still has', () => {
+        // revert: tests/boundaries.test.ts:349 => delete
+        const held = findPrimitiveStyling(LIB);
+        expect(
+            [...DELIBERATE, ...HELD]
+                .filter((one) => !held.includes(one.line))
+                .map((one) => one.line)
+        ).toEqual([]);
     });
 });

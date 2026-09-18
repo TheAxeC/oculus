@@ -35,6 +35,7 @@ test('the rail opens the file browser, a root expands, and a text file opens for
 
     const hub = row(page, 'hub');
     await expect(hub).toBeVisible();
+    // the root is drawn closed, so nothing under it is in the tree until it is expanded
     await expect(page.locator('[data-fs-row="hub:README.md"]')).toHaveCount(0);
 
     await hub.click();
@@ -86,6 +87,7 @@ test('a script opens for editing from the tree, and the save it makes lands on d
     await page.getByRole('tab', { name: t('views.files') }).click();
     await row(page, key, 'data.txt').click();
     await expect(page.getByRole('link', { name: t('file.download') })).toBeVisible();
+    // the first bytes say the file is an archive, so it is offered as a download and no editor opens on it
     await expect(page.locator('[data-source-editor="data.txt"]')).toHaveCount(0);
 });
 
@@ -121,6 +123,7 @@ test('a single click previews one file after another and a double click keeps th
     // editor holding that other file's text rather than the one the tab was opened on.
     await page.getByRole('tab', { name: t('views.files') }).click();
     await row(page, key, 'notes.md').click();
+    // a single click reuses the preview tab, so the file it held before is no longer a tab of its own
     await expect(page.getByRole('tab', { name: 'tool.py' })).toHaveCount(0);
     const second = page.getByRole('tab', { name: 'notes.md' });
     await expect(second).toHaveAttribute('data-tab-preview', '');
@@ -129,6 +132,7 @@ test('a single click previews one file after another and a double click keeps th
 
     // A keystroke in it keeps the tab: a reader typing into a file is working in it.
     await editor.getByRole('textbox').fill('# notes typed in the spec\n');
+    // a keystroke makes the tab the reader's own, so the preview mark comes off it
     await expect(page.getByRole('tab', { name: 'notes.md' })).not.toHaveAttribute(
         'data-tab-preview',
         ''
@@ -147,6 +151,7 @@ test('a single click previews one file after another and a double click keeps th
     );
     await page.getByRole('tab', { name: t('views.files') }).click();
     await row(page, key, 'tool.py').click();
+    // the second click on the same row keeps the tab, which is what takes the preview mark off
     await expect(page.getByRole('tab', { name: 'tool.py' })).not.toHaveAttribute(
         'data-tab-preview',
         ''
@@ -164,6 +169,7 @@ test('a single click previews one file after another and a double click keeps th
 
     // A double click on the tab face keeps it as a double click on its row does.
     await page.getByRole('tab', { name: 'data.txt' }).dblclick();
+    // a double click on the tab face keeps it, as a double click on its row does
     await expect(page.getByRole('tab', { name: 'data.txt' })).not.toHaveAttribute(
         'data-tab-preview',
         ''
@@ -202,6 +208,7 @@ test('a root added in the page serves its own files, each in the view its name a
     await row(page, key, 'paper.pdf').click();
     const frame = page.locator(`iframe[src="/api/file/${key}/paper.pdf"]`);
     await expect(frame).toBeVisible();
+    // the bytes come from the page's own origin through the file route, and a sandbox would stop the browser's own PDF viewer
     await expect(frame).not.toHaveAttribute('sandbox');
     const served = await page.evaluate(async (address) => {
         const answer = await fetch(address);
@@ -218,6 +225,7 @@ test('a root added in the page serves its own files, each in the view its name a
     ).toBeVisible();
     await expect(
         page.locator('[data-fs-row="hub:"]').getByRole('button', { name: t('files.remove_root') })
+        // the hub root is the configured one, not a root the reader added, so it offers no removal
     ).toHaveCount(0);
 });
 
@@ -253,6 +261,7 @@ test("a file is bookmarked from its own tab, and the rail draws the reader's own
     // Taking it out again empties both.
     await page.getByRole('tab', { name: 'README.md' }).click();
     await page.getByRole('button', { name: t('file.unbookmark'), exact: true }).click();
+    // the second press took the bookmark away, so the rail draws none for that file
     await expect(page.locator('nav button[data-bookmark="hub/README.md"]')).toHaveCount(0);
 });
 
@@ -295,7 +304,9 @@ test('a note is opened from its section, typed into, saved on its own, and delet
         .getByRole('button', { name: t('files.note_delete'), exact: true })
         .last()
         .click();
+    // the confirm deleted the note, so the section lists none
     await expect(page.locator('[data-fs-note]')).toHaveCount(0);
+    // the removal takes the note's own tab with it rather than leaving a tab over a file that is gone
     await expect(page.getByRole('tab', { name: 'a browser note' })).toHaveCount(0);
 
     // The note's own tab was closed while a save could still have been waiting on it. It stays
@@ -335,6 +346,7 @@ test("a note's file is made by the first keystroke, and the tab stays until then
     await expect(body).toBeVisible();
     await page.getByRole('tab', { name: t('views.files') }).click();
 
+    // nothing was typed, so no file was made and there is no note to list
     await expect(page.locator('[data-fs-note]')).toHaveCount(0);
     await expect(page.getByRole('tab', { name: t('views.note') })).toBeVisible();
     expect(await noteCount(page)).toBe(0);
@@ -410,6 +422,7 @@ test('the first bookmark is made from the form, and an HTML one is one tab from 
     await page.locator(`nav button[data-bookmark="${key}/page.html"]`).click();
     await expect(frame).toHaveCount(1);
     await expect(page.getByRole('tab', { name: 'the spec page' })).toBeVisible();
+    // the bookmark opens the same file in the same tab, which now carries the bookmark's own label
     await expect(page.getByRole('tab', { name: 'page.html' })).toHaveCount(0);
 });
 
@@ -457,6 +470,7 @@ test('the arrow keys move the selection, open and close a folder, and carry the 
 
     // A focus moved by a key opens no tooltip, so the row the next key goes to stays readable.
     await page.mouse.move(0, 0);
+    // the focus was moved by a key, and a tooltip opens under the pointer
     await expect(page.locator('[role="tooltip"]:not([hidden])')).toHaveCount(0);
 
     // Left steps out to the folder, Left again closes it, and Up goes back to the head.
@@ -464,6 +478,7 @@ test('the arrow keys move the selection, open and close a folder, and carry the 
     await expect(item(page, key, 'sub')).toHaveAttribute('aria-selected', 'true');
     await page.keyboard.press('ArrowLeft');
     await expect(item(page, key, 'sub')).toHaveAttribute('aria-expanded', 'false');
+    // the folder is closed again, so the entries under it are not drawn
     await expect(page.locator(`[data-fs-row="${key}:sub/inner.txt"]`)).toHaveCount(0);
     await page.keyboard.press('ArrowUp');
     await expect(item(page, key)).toHaveAttribute('aria-selected', 'true');
@@ -489,13 +504,16 @@ test('the filter narrows the rows to the names holding its text, their folders k
     await expect(row(page, key, 'sub/inner.txt')).toBeVisible();
     // The folder is closed again: its entries were read, so the filter still looks through them.
     await row(page, key, 'sub').click();
+    // the folder is closed again, so the entries under it are not drawn
     await expect(page.locator(`[data-fs-row="${key}:sub/inner.txt"]`)).toHaveCount(0);
 
     const filter = page.getByRole('searchbox', { name: t('files.filter') });
     await filter.fill('inner');
     await expect(row(page, key, 'sub/inner.txt')).toBeVisible();
     await expect(item(page, key, 'sub')).toHaveAttribute('aria-expanded', 'true');
+    // the filter holds the rows whose name carries its text, and this one does not
     await expect(page.locator(`[data-fs-row="${key}:tool.py"]`)).toHaveCount(0);
+    // the filter holds the rows whose name carries its text, and this one does not
     await expect(page.locator(`[data-fs-row="${key}:notes.md"]`)).toHaveCount(0);
 
     // A text no name holds leaves the heads and says so.
@@ -528,6 +546,7 @@ async function filteredOnFolder(page: Page, key: string, text: string): Promise<
 async function clearedClosed(page: Page, key: string): Promise<void> {
     await page.getByRole('searchbox', { name: t('files.filter') }).fill('');
     await expect(item(page, key, 'sub')).toHaveAttribute('aria-expanded', 'false');
+    // the filter is cleared and the folder is closed again, so its entries are gone with it
     await expect(page.locator(`[data-fs-row="${key}:sub/inner.txt"]`)).toHaveCount(0);
 }
 
@@ -665,6 +684,7 @@ test("a row's controls appear on hover, and bookmark the file and open it in a k
     await expect(mark).toBeVisible();
     await line.hover();
     await line.getByRole('button', { name: t('files.row_bookmark'), exact: true }).click();
+    // the second press took the bookmark away
     await expect(mark).toHaveCount(0);
 
     // The other control opens the file in a tab that stays rather than in the preview.
@@ -672,6 +692,7 @@ test("a row's controls appear on hover, and bookmark the file and open it in a k
     await line.getByRole('button', { name: t('files.row_open_tab'), exact: true }).click();
     const tab = page.getByRole('tab', { name: 'tool.py' });
     await expect(tab).toBeVisible();
+    // the row's own control opens a tab that stays, so it carries no preview mark
     await expect(tab).not.toHaveAttribute('data-tab-preview', '');
 });
 
@@ -766,12 +787,14 @@ test('removing a root the reader added asks first, and a cancel keeps it', async
     const confirm = page.getByRole('alertdialog', { name: t('files.remove_root_confirm', key) });
     await expect(confirm).toBeVisible();
     await confirm.getByRole('button', { name: t('files.cancel'), exact: true }).click();
+    // cancel closes the confirm without removing anything
     await expect(confirm).toHaveCount(0);
     await expect(row(page, key)).toBeVisible();
 
     await head.hover();
     await head.getByRole('button', { name: t('files.remove_root'), exact: true }).click();
     await confirm.getByRole('button', { name: t('files.remove_root'), exact: true }).click();
+    // the confirm removed the root, so the tree no longer draws it
     await expect(page.locator(`[data-fs-row="${key}:"]`)).toHaveCount(0);
 });
 
@@ -802,7 +825,9 @@ test('a second file of the same name is bookmarked under its path from the row s
     // Both taken away again, so the bookmarks this run saves are the ones the other cases expect.
     await star('README.md').click();
     await star('sub/README.md').click();
+    // both stars were pressed again, so neither bookmark is left in the view
     await expect(page.locator('[data-fs-bookmark="sub/README.md"]')).toHaveCount(0);
+    // the other star was pressed again too
     await expect(page.locator('[data-fs-bookmark="README.md"]')).toHaveCount(0);
 });
 
@@ -815,6 +840,7 @@ test('a section closed from its head stays closed after a tab switch', async ({ 
     await expect(head).toHaveAttribute('aria-expanded', 'true');
     await head.getByRole('button', { name: t('files.notes'), exact: true }).click();
     await expect(head).toHaveAttribute('aria-expanded', 'false');
+    // the section is closed, so the group of rows under its head is not drawn
     await expect(page.locator('[data-fs-notes] [role="group"]')).toHaveCount(0);
 
     // Another view takes the pane, and the file browser comes back with the section still closed.

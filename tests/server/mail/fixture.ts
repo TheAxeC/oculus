@@ -4,13 +4,14 @@
 // Nothing here opens a connection and nothing reads or writes outside the directory the case made,
 // which is asserted to be inside the system temporary directory before anything is written.
 
-import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve, sep } from 'node:path';
+import { resolve, sep } from 'node:path';
 import { expect } from 'vitest';
 import type { MailAccountConfig } from '../../../src/lib/data/model.ts';
 import { credentialFile } from '../../../src/lib/server/connect/store.ts';
 import type { Fetcher } from '../../../src/lib/server/connect/oauth.ts';
+import { scratchDir } from '../../scratch.ts';
 
 export const GOOGLE: MailAccountConfig = { provider: 'google', label: 'work' };
 export const MICROSOFT: MailAccountConfig = { provider: 'microsoft', label: 'uni' };
@@ -25,7 +26,7 @@ export function cleanup(): void {
 }
 
 export function scratch(name = 'oculus-mail-'): string {
-    const dir = mkdtempSync(join(tmpdir(), name));
+    const dir = scratchDir(name);
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     made.push(dir);
     return dir;

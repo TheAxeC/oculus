@@ -378,6 +378,7 @@ describe('a card', () => {
 
     it('draws a local HTML link as a control that opens it as a document tab', () => {
         expect(card).toContain('network/a-talk/slides.html');
+        // an HTML file opens as a document tab of its own, so the card names the path and carries no file link
         expect(card).not.toContain('href="/api/file/hub/network/a-talk/slides.html"');
     });
 
@@ -392,6 +393,7 @@ describe('a card', () => {
         receive({ channel: 'portfolio', version: 9, payload: snap });
         const [page] = cards(html());
         expect(page).toContain('href="https://www.example.org/index.html"');
+        // a web page is opened as one, so no address is served through the hub's own file route
         expect(page).not.toContain('href="/api/file/hub/www.example.org/index.html"');
         expect(page).toContain('target="_blank"');
     });
@@ -415,6 +417,7 @@ describe('a card', () => {
         for (const card of [budget, report]) {
             expect(card).toContain('<button type="button" class="tool');
             expect(card).toContain(catalog['file.open_program']);
+            // a .docx and a .xlsx open in their own program, so neither card offers a link to fetch the bytes
             expect(card).not.toContain('href="/api/file/hub/');
         }
         const kept: [string, string][] = [
@@ -427,6 +430,7 @@ describe('a card', () => {
         ];
         for (const [card, href] of kept) {
             expect(card).toContain(href);
+            // each of these is read in a tab, so none of them is offered the open-in-program control
             expect(card).not.toContain(catalog['file.open_program']);
         }
     });
@@ -451,7 +455,9 @@ describe('a card', () => {
         const address = drawnCards.find((one) => one.includes('data-card="A later scheme"')) ?? '';
         const path = drawnCards.find((one) => one.includes('data-card="A funded scheme"')) ?? '';
         expect(address).not.toBe('');
+        // this entry's link is a web address, which no folder holds, so there is nothing to show in the file browser
         expect(address).not.toContain('data-action="files:');
+        // and the control that would open that folder is not offered on it either
         expect(address).not.toContain(catalog['collection.show_in_files']);
         expect(path).toContain('data-action="files:funding/2026-veni"');
         expect(path).toContain(`aria-label="${catalog['collection.show_in_files']}"`);
@@ -490,6 +496,7 @@ describe('a card', () => {
     });
 
     it('skips a field the schema names and the entry does not carry', () => {
+        // the schema names a field this entry carries nothing for, and an empty field draws no row
         expect(card).not.toContain('deadline');
         expect(cards(html())[2]).toContain('2030-01-01');
     });
@@ -558,6 +565,7 @@ describe('a collection the snapshot does not carry', () => {
     });
 
     it('offers no control over a file it has not read', () => {
+        // no file has been read, so there is no path for the source control to name
         expect(body).not.toContain('data-source-path');
     });
 });
@@ -584,7 +592,9 @@ describe('the controls a card carries', () => {
     });
 
     it('draws no subtasks block for an entry with none, and offers adding the first as a control', () => {
+        // the entry carries no subtasks, so neither the block nor its heading is drawn
         expect(card).not.toContain('class="subtasks');
+        // with no block drawn there is no subtasks heading to name it
         expect(card).not.toContain(catalog['project.action.subtasks']);
         const actions = card.slice(card.indexOf('data-card-actions'), card.indexOf('class="entry'));
         expect(actions).toContain(`aria-label="${catalog['project.action.add_subtask']}"`);
@@ -599,6 +609,7 @@ describe('the controls a card carries', () => {
             funded.indexOf('data-card-actions'),
             funded.indexOf('class="entry')
         );
+        // the add-first control is for an entry with no subtasks, and this one already has them
         expect(actions).not.toContain(catalog['project.action.add_subtask']);
     });
 
@@ -607,6 +618,7 @@ describe('the controls a card carries', () => {
         expect(cut).toContain('data-clamp="cut"');
         const open = cards(html('funding', { more: ['FAIR'] }))[0];
         expect(open).toContain('data-clamp="open"');
+        // the instance holds this entry open, so the body is drawn whole rather than cut
         expect(open).not.toContain('data-clamp="cut"');
         // Another entry the instance does not hold open stays cut.
         expect(cards(html('funding', { more: ['later'] }))[0]).not.toContain('data-clamp="open"');
@@ -621,12 +633,14 @@ describe('a collection whose file has no schema', () => {
     });
 
     it('offers no add control, since there is no schema to draw a form from', () => {
+        // with no schema there is no form to add an entry with, so the control is not offered
         expect(body).not.toContain(catalog['collection.add']);
     });
 
     it("draws the file's other statuses as buttons, the current one left out", () => {
         const card = cards(body)[0];
         expect(card).toContain('>doing</span>');
+        // the edit control opens a form built from the schema, and this file has none
         expect(card).not.toContain(catalog['collection.edit_delete']);
         expect(cards(body)[1]).toContain('>todo</span>');
     });
@@ -650,6 +664,7 @@ describe('the funding view', () => {
             const mixed = html('funding');
             expect(mixed.match(/data-project-group="work"/g)).toHaveLength(1);
             expect(mixed).toMatch(/data-project-group="work"[\s\S]*?class="count">2<\/strong>/);
+            // an active and a manuscript project fold into the one work group, so no manuscript group is drawn
             expect(mixed).not.toContain('data-project-group="manuscript"');
         } finally {
             receive({ channel: 'portfolio', version: 1, payload: snapshot() });
@@ -682,6 +697,7 @@ describe('the funding view', () => {
         expect(body).toContain(catalog['collection.related']);
         expect(body).toContain('class="label">active</span>');
         expect(body).toContain('aria-expanded="false"');
+        // the related list is closed, so its members are named only once it is expanded
         expect(body).not.toContain('>Alpha</span>');
     });
 
@@ -693,6 +709,7 @@ describe('the funding view', () => {
 
     it('drops that card when its toggle is switched off', () => {
         const off = html('funding', { hidden: ['no-funding'] });
+        // the toggle is off, so the card and its sub-line are not drawn
         expect(off).not.toContain(catalog['collection.no_funding_sub']);
     });
 });
@@ -717,12 +734,14 @@ describe('the code view', () => {
         expect(card).toContain('a repo');
         expect(card).toContain('class="label">active</span>');
         expect(card).toContain('aria-expanded="false"');
+        // the related list is closed, so its members are named only once it is expanded
         expect(card).not.toContain('>Alpha</span>');
     });
 
     it('says the tier holds nothing while the portfolio has no software project', () => {
         expect(body).toContain(catalog['collection.software']);
         expect(body).toContain(catalog['collection.software_none']);
+        // the portfolio holds no software project, so there is no row to draw
         expect(body).not.toContain('data-software-row=');
     });
 
@@ -741,6 +760,7 @@ describe('the code view', () => {
                 })
             }
         );
+        // a software project is there now, so the line saying the tier holds nothing is gone
         expect(withTool).not.toContain(catalog['collection.software_none']);
         expect(withTool).toContain('data-software-row="kit"');
         expect(withTool).toContain('>A toolkit<');
@@ -788,6 +808,7 @@ describe('the entry form', () => {
     });
 
     it('offers no delete on the add form', () => {
+        // there is nothing to delete on the add form, which is the form of an entry that does not exist yet
         expect(form(null)).not.toContain(catalog['collection.form_delete']);
     });
 
@@ -814,6 +835,7 @@ describe('the entry form', () => {
         // The border and the padding are the same either way; only the fill goes, so a caller whose
         // own box already carries the surface does not draw a second one inside it.
         expect(box(form(null))).toContain('surface');
+        // the caller says its own box carries the surface, so the form paints no fill inside it
         expect(box(form(null, { surface: false }))).not.toContain('surface');
         expect(form(null, { surface: false })).toContain('data-form="add"');
     });
@@ -840,7 +862,9 @@ describe('the entry form', () => {
                 }
             }).body;
         expect(within(INSTANCE)).toContain('value="A subtitle typed earlier"');
+        // a draft belongs to the tab it was typed in, so a second tab of the view shows none of it
         expect(within('another-instance')).not.toContain('A subtitle typed earlier');
+        // a form outside every instance holds no draft either
         expect(within(null)).not.toContain('A subtitle typed earlier');
         // The add form of the same collection in the same instance is another form.
         expect(form(null)).not.toContain('A subtitle typed earlier');
@@ -867,7 +891,9 @@ describe('the entry form', () => {
             context: new Map([...clientContext(client), [INSTANCE_KEY, (): string | null => null]]),
             props
         }).body;
+        // a draft belongs to an instance, and neither of these forms is inside one
         expect(outside).not.toContain('A subtitle kept under the empty id');
+        // the form whose instance id is empty holds none either
         expect(unnamed).not.toContain('A subtitle kept under the empty id');
     });
 
@@ -903,6 +929,7 @@ describe('a field whose value is a map', () => {
         expect(card).toContain('>retrieval</span>');
         expect(card).toContain('method: wget');
         expect(card).toContain('notes: from the source');
+        // a nested value with nothing in it draws no line of its own
         expect(card).not.toContain('empty:');
         receive({ channel: 'portfolio', version: 10, payload: snapshot() });
     });
@@ -917,8 +944,11 @@ describe('what a reorder and a cleared control send', () => {
         const order = source.slice(source.indexOf('function fileOrder()'));
         const body = order.slice(0, order.indexOf('\n    }'));
         expect(body).toContain('(collection?.entries ?? [])');
+        // the order written is the file's own, so the reader that draws the pinned card first is not in it
         expect(body).not.toContain('pinnedFirst');
+        // nor a map over any other list of entries
         expect(body).not.toContain('entries.map');
+        // nor the shown list, which the filter and the pinned-first order have already changed
         expect(body).not.toContain('shown');
         // Both callers take their order from that one reader and from nothing else.
         expect(source).toContain('const order = fileOrder();');

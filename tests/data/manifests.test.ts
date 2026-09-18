@@ -1,14 +1,17 @@
 // readManifests against a synthetic hub in a temporary directory. Nothing outside it is read or
 // written, and every write asserts its path is inside the temporary directory first.
 
-import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
-import { describe, expect, it } from 'vitest';
+import { afterAll, describe, expect, it } from 'vitest';
 import { readManifests } from '../../src/lib/data/sources/manifests.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import type { RawManifest, ScanRule } from '../../src/lib/data/model.ts';
 import { present } from '../present.ts';
+import { scratchDir, sweepScratch } from '../scratch.ts';
+
+afterAll(sweepScratch);
 
 /** The catalog the findings are worded from: the one oculus ships, read as the server reads it. */
 const CATALOG = textCatalog(loadConfig(engineDir()).config);
@@ -23,7 +26,7 @@ const SCAN: ScanRule[] = [
 ];
 
 function scratch(): string {
-    const dir = mkdtempSync(join(tmpdir(), 'oculus-manifests-'));
+    const dir = scratchDir('oculus-manifests-');
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }

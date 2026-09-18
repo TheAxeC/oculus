@@ -2,7 +2,7 @@
 // temporary directory and asserted to be inside it; nothing here runs macOS `open`, and every case
 // hands the endpoint an opener of its own.
 
-import { mkdirSync, mkdtempSync, realpathSync, statSync, writeFileSync } from 'node:fs';
+import { mkdirSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { extname, join, resolve, sep } from 'node:path';
 import { expect } from 'vitest';
@@ -12,6 +12,7 @@ import { engineDir, loadConfig, openSettings } from '../../src/lib/data/sources/
 import { mintToken } from '../../src/lib/server/auth.ts';
 import type { Root } from '../../src/lib/server/files.ts';
 import type { OpenTarget } from '../../src/lib/server/open.ts';
+import { scratchDir } from '../scratch.ts';
 
 export const TOKEN = mintToken();
 
@@ -27,7 +28,7 @@ export function checkedIn(): ProgramApps {
 
 /** A directory of the case's own under the system temporary directory, asserted to be inside it. */
 export function scratch(prefix: string): string {
-    const dir = mkdtempSync(join(tmpdir(), prefix));
+    const dir = scratchDir(prefix);
     expect(resolve(dir).startsWith(resolve(tmpdir()) + sep)).toBe(true);
     return dir;
 }
