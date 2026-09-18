@@ -44,6 +44,18 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   reviewer: a44cc2705dd951f81                # claude:opus through the Agent tool, read-only, launched 10:52, scratch folder scratchpad/q53-review (review earned: the shell's drawing and a new reactive cell)
   landing: not-started
   round: 0
+- package: Q54
+  executor: agent                          # the configuration default, chosen for the step
+  worker: claude:opus
+  worktree: .agents/worktrees/q54
+  base: 8d8426df
+  launched: 2026-09-18T10:55
+  prompt: the Agent tool's prompt, the brief's paths plus the nine lines Q53 adds to ui/Tabs.svelte beside it, and the revert rules the checks keep catching
+  report: tools/oculus/.scratch/migration/agents/reviews/Q54-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: aaf7573578b7f9cb5            # the Agent tool id, launched 10:55
+  landing: not-started
+  round: 0
 - package: Q52
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -261,7 +273,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-09-18 10:44. Landed on 2026-09-17: fifteen steps; on 2026-09-18: Q48 at 03:56, Q49 at 05:31, Q50 at 06:25, Q51 at 06:48 and R14 at 10:44, their landing reports in `agents/reviews/`. In flight: Q52 (one branch-state rule for the two git views, its second round built, carrying Axel's picker ruling) and Q53 (the shell's drawing defects with his tap ruling, built). Next to dispatch, to bring the count back to three: Q54. Briefs written and committed ahead of the queue: Q36, Q54, Q56, Q58, Q59. No ruling waits on Axel: he ruled on all four at 08:15, each the non-lazy option.
+- 2026-09-18 10:44. Landed on 2026-09-17: fifteen steps; on 2026-09-18: Q48 at 03:56, Q49 at 05:31, Q50 at 06:25, Q51 at 06:48 and R14 at 10:44, their landing reports in `agents/reviews/`. In flight: Q52 (one branch-state rule for the two git views, its second round built, carrying Axel's picker ruling) and Q53 (the shell's drawing defects with his tap ruling, built). Q54 was dispatched at 10:55 to bring the count back to three; next to dispatch is Q56. Briefs written and committed ahead of the queue: Q36, Q54, Q56, Q58, Q59. No ruling waits on Axel: he ruled on all four at 08:15, each the non-lazy option.
 
 - 2026-09-10. C1 to C13, R1 and O0 are done and committed: fc6d299 (C12 and C13, one commit because H1 and H2 both touched eight of the same files) and f8af492 (R1 and O0). Working tree clean after both.
 - Verified before fc6d299: `python3 build.py --selftest` PASS, `python3 build.py --dummy` builds, `bash tests/run.sh` PASS (5 + 29 + 24 + 19 Python tests, 11 JS modules). `grep -rn os.environ tools/cockpit/src tools/cockpit/build.py` finds only the `ANTHROPIC_API_KEY` read. The 8787 server answers 200 with zero `COCKPIT_` variables in its environment.
