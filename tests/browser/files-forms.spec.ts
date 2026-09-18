@@ -5,7 +5,10 @@
 // edit moves it to another bookmark and when its bookmark is taken away; the form is mounted anew per
 // opening. A write answered after the reader opened another form, closed and opened the same form
 // again, or switched the tab away closes only the form it was made from, in the file browser it was
-// made from.
+// made from. A value typed while a save is on its way stays where it was typed, in the add form left
+// open over it and in a form whose bookmark leaves the file while that save is out; once the answer
+// has landed, a bookmark the file no longer holds closes the form over it in every file browser the
+// layout holds, including one whose tab is not shown and one on a page with no file browser drawn.
 //
 // The drafts and the open forms are the ui store's, kept in the browser's own storage. The roots are
 // folders made under the system temporary directory, and every bookmark a case writes is taken away
@@ -25,7 +28,8 @@ import { t, tabNamed } from './words.ts';
  */
 async function holdPosts(
     page: Page,
-    path: string
+    path: string,
+    holds: (body: string) => boolean = () => true
 ): Promise<{ sent: Promise<void>; answered: Promise<unknown>; release: () => void }> {
     let release = (): void => undefined;
     const released = new Promise<void>((done) => {
@@ -37,12 +41,16 @@ async function holdPosts(
     });
     const answered = page.waitForResponse(
         (response) =>
-            response.request().method() === 'POST' && new URL(response.url()).pathname === path
+            response.request().method() === 'POST' &&
+            new URL(response.url()).pathname === path &&
+            holds(response.request().postData() ?? '')
     );
     // A case that never waits for the answer does not leave a rejection behind when its page closes.
     answered.catch(() => undefined);
     await page.route(`**${path}`, async (route) => {
-        if (route.request().method() === 'POST') {
+        // A case that names which body to hold lets every other write through, so it can press a
+        // control that writes while the one it holds is still on its way.
+        if (route.request().method() === 'POST' && holds(route.request().postData() ?? '')) {
             arrived();
             await released;
         }
@@ -380,7 +388,8 @@ test('an edit form opened from the add form is the one its Cancel closes', async
     await expect(mark('notes.md')).toHaveCount(0);
 });
 
-// Revert: in views/Files.svelte, drop the $effect that closes the form over a bookmark gone.
+// revert: src/lib/state/fs.svelte.ts:667 => for (const one of forms.browsers().slice(0, 0)) {
+// Revert: in closeGoneForms of state/fs.svelte.ts, sweep no browser at all.
 test('a bookmark taken away while its typed edit form is open closes the form, and the tab closes without asking', async ({
     page
 }) => {
@@ -405,4 +414,208 @@ test('a bookmark taken away while its typed edit form is open closes the form, a
         .click();
     await expect(page.getByRole('alertdialog')).toHaveCount(0);
     await expect(page.getByRole('tab', { name: tabNamed(t('views.files')) })).toHaveCount(0);
+});
+
+// revert: src/lib/views/shared/EntryForm.svelte:263 => const took = (into.clear(which), true);
+// Revert: in save() of views/shared/EntryForm.svelte, clear the add form's draft and close it on
+// every answer, through into.clear(which) in place of into.taken(which, sent).
+test('a bookmark add form typed on while its save was out keeps the typing, open over it', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key } = await nestedRoot(page);
+    await page.getByRole('button', { name: t('files.add_bookmark'), exact: true }).click();
+    const adding = page.locator('[data-form="add"]');
+    const label = adding.getByRole('textbox', { name: 'Label' });
+    await label.fill('notes.md');
+    await adding.getByRole('combobox', { name: 'Root' }).selectOption(key);
+    await adding.getByRole('textbox', { name: 'Path' }).fill('notes.md');
+
+    const held = await holdPosts(page, '/api/write');
+    await adding.getByRole('button', { name: t('collection.form_save') }).click();
+    await held.sent;
+    await label.fill('a label typed while the save was out');
+    held.release();
+    await held.answered;
+
+    await expect(page.locator('[data-fs-bookmark="notes.md"]')).toBeVisible();
+    await expect(adding).toBeVisible();
+    await expect(label).toHaveValue('a label typed while the save was out');
+    expect(await draftKeys(page)).toHaveLength(1);
+
+    // Taken away again, so the bookmarks this run saves are the ones the other cases expect.
+    await page.getByRole('button', { name: t('files.add_bookmark'), exact: true }).click();
+    await expect(adding).toHaveCount(0);
+    await page.unroute('**/api/write');
+    await row(page, key).click();
+    const line = page.locator(`[data-fs-row="${key}:notes.md"]`);
+    await line.hover();
+    await line.getByRole('button', { name: t('files.row_bookmark'), exact: true }).click();
+    await expect(page.locator('[data-fs-bookmark="notes.md"]')).toHaveCount(0);
+});
+
+// revert: src/lib/views/Files.svelte:449 => onrenamed={() => undefined}
+// Revert: in views/Files.svelte, hand the bookmark form a rename that opens nothing, so the form
+// stays over the id its bookmark had before the save.
+test('a bookmark renamed by its form keeps what was typed, open over the bookmark it renamed', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { star, mark, edit } = await twoMarks(page);
+    const editing = page.locator('[data-form="edit"]');
+    const own = await filesId(page);
+    const typing = 'typed/while/the/save/was/out';
+
+    await edit('tool.py');
+    // The label is the bookmark's id, so the save writes the entry under another one and the id the
+    // form was opened over names nothing once the answer has landed.
+    await editing.getByRole('textbox', { name: 'Label' }).fill('tool.py renamed');
+    const held = await holdPosts(page, '/api/write');
+    await editing.getByRole('button', { name: t('collection.form_save') }).click();
+    await held.sent;
+    await editing.getByRole('textbox', { name: 'Path' }).fill(typing);
+    held.release();
+    await held.answered;
+
+    // The form is open over the bookmark where it now is, holding what was typed while the save was
+    // out, and the close of a form over a bookmark that is gone has nothing to close.
+    await expect(mark('tool.py renamed')).toBeVisible();
+    await expect
+        .poll(async () => (await uiInstances(page))[own])
+        .toMatchObject({ form: 'bookmark', editing: 'tool.py renamed' });
+    await expect(editing.getByRole('textbox', { name: 'Path' })).toHaveValue(typing);
+    await expect(editing.getByRole('textbox', { name: 'Label' })).toHaveValue('tool.py renamed');
+    expect(await draftKeys(page)).toHaveLength(1);
+
+    // The form's own Cancel still closes it: what the rename moved is the bookmark, not the opening.
+    await editing.getByRole('button', { name: t('collection.form_cancel') }).click();
+    await expect(editing).toHaveCount(0);
+    await expect.poll(() => draftKeys(page)).toEqual([]);
+
+    await page.unroute('**/api/write');
+    await star('tool.py');
+    await star('notes.md');
+    await expect(mark('tool.py renamed')).toHaveCount(0);
+    await expect(mark('notes.md')).toHaveCount(0);
+});
+
+// revert: src/lib/state/fs.ts:443 => if (marks.loading || marks.error !== '') return false;
+// Revert: in editedGone of state/fs.ts, drop `saving` from the line that answers false.
+test('a bookmark taken away while a save from its form is out leaves the form until it lands', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { star, mark, edit } = await twoMarks(page);
+    const editing = page.locator('[data-form="edit"]');
+    const own = await filesId(page);
+    const typing = 'typed/while/the/save/was/out';
+
+    await edit('tool.py');
+    await editing.getByRole('textbox', { name: 'Path' }).fill(typing);
+    // Only this form's own write is held, so the row star below is answered while it is on its way.
+    const held = await holdPosts(page, '/api/write', (body) => body.includes(typing));
+    await editing.getByRole('button', { name: t('collection.form_save') }).click();
+    await held.sent;
+
+    // The bookmark leaves the file while the save from its form is still on its way. The form has
+    // nothing to draw without its bookmark, and its opening and what was typed into it are kept: the
+    // request may yet put the bookmark back, and the reader's words are not forgotten under it.
+    await star('tool.py');
+    await expect(mark('tool.py')).toHaveCount(0);
+    expect(await draftKeys(page)).toHaveLength(1);
+    expect(await uiInstances(page)).toMatchObject({
+        [own]: { form: 'bookmark', editing: 'tool.py' }
+    });
+
+    held.release();
+    await held.answered;
+
+    // The answer has landed, so the form is read like any other and closes over the gone bookmark.
+    await expect
+        .poll(async () => (await uiInstances(page))[own])
+        .toMatchObject({
+            form: '',
+            editing: ''
+        });
+    await expect.poll(() => draftKeys(page)).toEqual([]);
+
+    await page.unroute('**/api/write');
+    await star('notes.md');
+    await expect(mark('notes.md')).toHaveCount(0);
+});
+
+// revert: src/lib/state/fs.svelte.ts:667 => for (const one of forms.browsers().slice(0, 0)) {
+// Revert: in closeGoneForms of state/fs.svelte.ts, sweep no browser, which is what the rule living
+// in an $effect of the mounted view came to for a page that draws none.
+test('a bookmark taken away closes its form with no file browser on screen at all', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key, star, mark, edit } = await twoMarks(page);
+    const hidden = await filesId(page);
+
+    await edit('tool.py');
+    await page.locator('[data-form="edit"]').getByRole('textbox', { name: 'Path' }).fill('typed');
+    expect(await draftKeys(page)).toHaveLength(1);
+
+    // The file's own tab takes the pane, so no file browser is mounted anywhere on the page, and the
+    // bookmark is taken away from that tab rather than from a tree.
+    await row(page, key, 'tool.py').click();
+    await expect(page.locator('[data-fs-bookmarks]')).toHaveCount(0);
+    await page.getByRole('button', { name: t('file.unbookmark'), exact: true }).click();
+
+    await expect
+        .poll(async () => (await uiInstances(page))[hidden])
+        .toMatchObject({
+            form: '',
+            editing: ''
+        });
+    await expect.poll(() => draftKeys(page)).toEqual([]);
+
+    await page.getByRole('tab', { name: tabNamed(t('views.files')) }).click();
+    await expect(mark('tool.py')).toHaveCount(0);
+    await star('notes.md');
+    await expect(mark('notes.md')).toHaveCount(0);
+});
+
+// revert: src/lib/state/fs.svelte.ts:667 => for (const one of forms.browsers().slice(0, 0)) {
+// Revert: in closeGoneForms of state/fs.svelte.ts, sweep no browser, which is what the rule living
+// in an $effect of the mounted view came to for a page that draws none.
+test('a bookmark taken away closes the form of a file browser whose tab is not shown', async ({
+    page
+}) => {
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    const { key, star, mark, edit } = await twoMarks(page);
+    const hidden = await filesId(page);
+    await edit('tool.py');
+    await page
+        .locator('[data-form="edit"]')
+        .getByRole('textbox', { name: 'Path' })
+        .fill('typed/in/edit');
+    expect(await draftKeys(page)).toHaveLength(1);
+
+    // A page of its own draws a file browser of its own, and the first page's is not mounted while
+    // the second is the page on screen.
+    const strip = page.getByRole('region', { name: t('ui.pages') });
+    await strip.getByRole('button', { name: t('ui.page_menu') }).click();
+    await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
+    await openView(page, 'files', t('views.files'));
+    expect(await filesId(page)).not.toBe(hidden);
+    await expect(page.locator('[data-form="edit"]')).toHaveCount(0);
+
+    await row(page, key).click();
+    await star('tool.py');
+    await expect(mark('tool.py')).toHaveCount(0);
+    await expect
+        .poll(async () => (await uiInstances(page))[hidden])
+        .toMatchObject({ form: '', editing: '' });
+    await expect.poll(() => draftKeys(page)).toEqual([]);
+
+    await star('notes.md');
+    await expect(mark('notes.md')).toHaveCount(0);
 });

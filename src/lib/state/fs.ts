@@ -428,14 +428,33 @@ export function editShown(now: FilesForms, id: string): FilesForms {
 /**
  * Whether the bookmark form is open over a bookmark the bookmarks file no longer holds, read once the
  * file has been read without an error. Such a form has nothing to draw and nothing to save into.
+ *
+ * A form with a save of its own out (`saving`) is not one of them until its answer lands: a write
+ * from elsewhere on the page can take the bookmark away while the reader is typing into that form,
+ * and closing it then would take the words out from under them. Once the answer has landed the form
+ * is read like any other.
  */
 export function editedGone(
     now: FilesForms,
-    marks: { entries: { id: string }[]; loading: boolean; error: string }
+    marks: { entries: { id: string }[]; loading: boolean; error: string },
+    saving: boolean
 ): boolean {
     if (now.form !== 'bookmark' || now.editing === '') return false;
-    if (marks.loading || marks.error !== '') return false;
+    if (marks.loading || marks.error !== '' || saving) return false;
     return !marks.entries.some((one) => one.id === now.editing);
+}
+
+/** The view id of the file browser, whose instance records are the ones holding FilesForms. */
+export const FILES_VIEW = 'files';
+
+/**
+ * One instance's record with part of a file browser's own state written over it, keeping whatever
+ * else the record holds. What the ui store has under an id is whatever was saved there, which may
+ * be anything at all, so a record that is not a map is read as an empty one.
+ */
+export function patchedFilesView(kept: unknown, part: Partial<FilesView>): Record<string, unknown> {
+    const held = typeof kept === 'object' && kept !== null && !Array.isArray(kept) ? kept : {};
+    return { ...held, ...part };
 }
 
 /**
@@ -444,7 +463,7 @@ export function editedGone(
  * checked first, since another view's record may hold keys of the same names.
  */
 export function filesLineTyped(view: string | undefined, state: unknown): boolean {
-    return view === 'files' && filesViewOf(state).typed.trim() !== '';
+    return view === FILES_VIEW && filesViewOf(state).typed.trim() !== '';
 }
 
 /**

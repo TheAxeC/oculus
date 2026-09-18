@@ -329,11 +329,52 @@ describe('writing one collection entry', () => {
         });
         expect(out).toEqual({
             found: true,
+            id: 'Review the draft',
             changed: ['status'],
             refused: [],
             records: [record(tasksPath(root), 'Review the draft', 'status', 'open', 'done')]
         });
         expect(tasksOf(root)).toBe(TASKS.replace('status: open', 'status: done'));
+    });
+
+    // revert: src/lib/server/writes/entries.ts:377 => (drop the `id:` line of the outcome)
+    // Revert: in writeEntry of server/writes/entries.ts, leave the id out of the outcome, so the
+    // answer says nothing about where the entry now is.
+    it('says the id the entry has after the write, which a write of the identity field moves', () => {
+        const root = wider();
+        const out = writeEntry(root, configFor(), 'tasks', 'Review the draft', {
+            title: 'Review the draft again'
+        });
+        expect(out.id).toBe('Review the draft again');
+        // A file whose entries carry an `id` is addressed by that id, whatever its identity field
+        // says, so a write of the identity field leaves the id where it was.
+        const venue = writeEntry(root, configFor(), 'venues', 'existing', {
+            name: 'Existing renamed'
+        });
+        expect(venue.id).toBe('existing');
+    });
+
+    // revert: src/lib/server/writes/entries.ts:325 => if (false) {
+    // Revert: in writeEntry of server/writes/entries.ts, let a write set the identity field to a
+    // value another entry already holds.
+    it('refuses a write that moves an entry onto another entry of the same file', () => {
+        const root = wider();
+        writeFileSync(tasksPath(root), `${TASKS}  - title: Another task\n    status: open\n`);
+        const out = writeEntry(root, configFor(), 'tasks', 'Review the draft', {
+            title: 'Another task'
+        });
+        expect(out).toEqual({
+            found: true,
+            changed: [],
+            refused: [{ field: 'title', reason: 'another entry is already called Another task' }]
+        });
+        expect(tasksOf(root)).toContain('  - title: "Review the draft"');
+        // The entry's own value is not another entry's, so a write that leaves it alone is written.
+        expect(
+            writeEntry(root, configFor(), 'tasks', 'Review the draft', {
+                title: 'Review the draft'
+            }).refused
+        ).toEqual([]);
     });
 
     it('says not found for a collection and for an entry the hub does not hold', () => {
@@ -358,6 +399,7 @@ describe('writing one collection entry', () => {
         });
         expect(out).toEqual({
             found: true,
+            id: 'Review the draft',
             changed: ['meta'],
             refused: [],
             records: [
@@ -380,6 +422,7 @@ describe('writing one collection entry', () => {
         // there: an empty metalist and an absent one are one thing in the file.
         expect(out).toEqual({
             found: true,
+            id: 'Review the draft',
             changed: ['meta'],
             refused: [],
             records: [record(tasksPath(root), 'Review the draft', 'meta', [], null)]
@@ -415,12 +458,14 @@ describe('a collection entry write against the schema of its own file', () => {
         const root = typed();
         expect(writeEntry(root, configFor(), 'tasks', 'One', { title: ['a', 'b'] })).toEqual({
             found: true,
+            id: 'One',
             changed: [],
             refused: [{ field: 'title', reason: 'title takes text' }],
             records: []
         });
         expect(writeEntry(root, configFor(), 'tasks', 'One', { note: { a: 1 } })).toEqual({
             found: true,
+            id: 'One',
             changed: [],
             refused: [{ field: 'note', reason: 'note takes text' }],
             records: []
@@ -432,6 +477,7 @@ describe('a collection entry write against the schema of its own file', () => {
         const root = typed();
         expect(writeEntry(root, configFor(), 'tasks', 'One', { status: 'nonesuch' })).toEqual({
             found: true,
+            id: 'One',
             changed: [],
             refused: [{ field: 'status', reason: 'status takes one of open, done' }],
             records: []
@@ -439,6 +485,7 @@ describe('a collection entry write against the schema of its own file', () => {
         expect(tasksOf(root)).toBe(TYPED);
         expect(writeEntry(root, configFor(), 'tasks', 'One', { status: 'done' })).toEqual({
             found: true,
+            id: 'One',
             changed: ['status'],
             refused: [],
             records: [record(tasksPath(root), 'One', 'status', 'open', 'done')]
@@ -450,6 +497,7 @@ describe('a collection entry write against the schema of its own file', () => {
         const root = typed();
         expect(writeEntry(root, configFor(), 'tasks', 'One', { deadline: '1 Jan' })).toEqual({
             found: true,
+            id: 'One',
             changed: [],
             refused: [{ field: 'deadline', reason: 'deadline takes a date written YYYY-MM-DD' }],
             records: []
@@ -458,6 +506,7 @@ describe('a collection entry write against the schema of its own file', () => {
         const out = writeEntry(root, configFor(), 'tasks', 'One', { deadline: '2026-09-14' });
         expect(out).toEqual({
             found: true,
+            id: 'One',
             changed: ['deadline'],
             refused: [],
             records: [record(tasksPath(root), 'One', 'deadline', null, '2026-09-14')]
@@ -469,6 +518,7 @@ describe('a collection entry write against the schema of its own file', () => {
         const root = typed();
         expect(writeEntry(root, configFor(), 'tasks', 'One', { pin: 'yes' })).toEqual({
             found: true,
+            id: 'One',
             changed: [],
             refused: [{ field: 'pin', reason: 'pin takes true or false' }],
             records: []
@@ -476,6 +526,7 @@ describe('a collection entry write against the schema of its own file', () => {
         expect(tasksOf(root)).toBe(TYPED);
         expect(writeEntry(root, configFor(), 'tasks', 'One', { pin: true })).toEqual({
             found: true,
+            id: 'One',
             changed: ['pin'],
             refused: [],
             records: [record(tasksPath(root), 'One', 'pin', null, true)]
@@ -488,6 +539,7 @@ describe('a collection entry write against the schema of its own file', () => {
         const out = writeEntry(root, configFor(), 'tasks', 'One', { status: null });
         expect(out).toEqual({
             found: true,
+            id: 'One',
             changed: ['status'],
             refused: [],
             records: [record(tasksPath(root), 'One', 'status', 'open', null)]
@@ -503,6 +555,7 @@ describe('a collection entry write against the schema of its own file', () => {
         });
         expect(out).toEqual({
             found: true,
+            id: 'One',
             changed: ['note'],
             refused: [{ field: 'status', reason: 'status takes one of open, done' }],
             records: [record(tasksPath(root), 'One', 'note', null, 'a line worth keeping')]
@@ -692,6 +745,7 @@ describe('adding an entry and an idea', () => {
         });
         expect(out).toEqual({
             found: true,
+            id: 'A new task',
             changed: ['entries'],
             refused: [],
             records: [
@@ -719,6 +773,7 @@ describe('adding an entry and an idea', () => {
         });
         expect(out).toEqual({
             found: true,
+            id: 'A metalist task',
             changed: ['entries'],
             refused: [],
             records: [
@@ -756,6 +811,7 @@ describe('adding an entry and an idea', () => {
         });
         expect(writeEntry(root, configFor(), 'venues', 'second', { id: 'second' })).toEqual({
             found: true,
+            id: 'second',
             changed: [],
             refused: [],
             records: []
@@ -795,6 +851,7 @@ describe('adding an entry and an idea', () => {
             })
         ).toEqual({
             found: true,
+            id: 'fresh',
             changed: ['venues'],
             refused: [],
             records: [

@@ -415,6 +415,7 @@ describe("the reader's own bookmarks", () => {
         );
         expect(added).toEqual({
             found: true,
+            id: 'manual',
             changed: ['entries'],
             refused: [],
             records: [
@@ -442,6 +443,7 @@ describe("the reader's own bookmarks", () => {
         );
         expect(second).toEqual({
             found: true,
+            id: 'notes',
             changed: ['entries'],
             refused: [],
             records: [
@@ -491,6 +493,7 @@ describe("the reader's own bookmarks", () => {
 
         expect(again).toEqual({
             found: true,
+            id: 'other',
             changed: ['entries'],
             refused: [],
             records: [

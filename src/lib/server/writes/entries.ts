@@ -319,6 +319,26 @@ export function writeEntry(
     if (value === null) return { found: false, changed: [], refused: [] };
     const typed = typeRefusals(held.schema, fields);
     const wanted = fitting(fields, typed);
+    if (held.ident in wanted) {
+        // The identity value is what addresses an entry in this file, so an edit may not move the
+        // entry onto another entry's value: the file would then hold two entries no write can tell
+        // apart, and every later write to it is refused.
+        const raw = wanted[held.ident];
+        const next = typeof raw === 'string' ? raw.trim() : scalar(raw);
+        if (next !== value && held.items.some((one) => scalar(one[held.ident]) === next)) {
+            return {
+                found: true,
+                changed: [],
+                refused: [
+                    ...typed,
+                    {
+                        field: held.ident,
+                        reason: `another entry is already called ${next}`
+                    }
+                ]
+            };
+        }
+    }
     const registryField = byKey(REGISTRY_IDENTITY_FIELDS, collection);
     if (registryField !== undefined && registryField in wanted) {
         // The registry keys its entities by this field, so an edit may neither clear it nor move
@@ -372,7 +392,12 @@ export function writeEntry(
         after: plain(writing[field]),
         undo: 'field'
     }));
-    return { ...out, refused: [...typed, ...out.refused], records };
+    return {
+        ...out,
+        id: entryId({ ...entry, ...writing }, held.ident),
+        refused: [...typed, ...out.refused],
+        records
+    };
 }
 
 /**
@@ -547,5 +572,10 @@ export function createEntry(
                       undo: 'create'
                   }
               ];
-    return { ...out, refused: [...refused, ...out.refused], records };
+    return {
+        ...out,
+        id: entryId(values, ident),
+        refused: [...refused, ...out.refused],
+        records
+    };
 }

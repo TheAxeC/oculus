@@ -120,6 +120,11 @@ export type WriteOutcome = {
      * the one point the writer has both. A write that changed nothing carries none.
      */
     records?: ChangeRecord[];
+    /**
+     * The id the file gives the entry this write made or edited, read after the write, so a page
+     * holding a form over that entry is told where the entry now is. Only an entry write carries it.
+     */
+    id?: string;
 };
 
 // The writers and the parsers, under the name this file gave them before the split.
@@ -466,7 +471,12 @@ async function answer(
         file: pathOf(into.hub, record.file)
     }));
     await logChanges(into.changes, kind, records, undoes);
-    return json(200, { ok: true, changed: outcome.changed, refused: outcome.refused });
+    return json(200, {
+        ok: true,
+        changed: outcome.changed,
+        refused: outcome.refused,
+        id: outcome.id
+    });
 }
 
 /** The 404 a subtask write gives: the manifest or the entry its target names is not in the hub. */

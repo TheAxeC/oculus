@@ -18,6 +18,7 @@ import {
     collapseRoot,
     crumbsOf,
     editedGone,
+    patchedFilesView,
     editShown,
     filesLineTyped,
     filesViewOf,
@@ -319,20 +320,44 @@ describe('the forms of the file browser', () => {
     // or answer for the form that adds as well.
     it('finds the edit form whose bookmark the loaded file no longer holds', () => {
         const loaded = { entries: [{ id: 'the manual' }], loading: false, error: '' };
-        expect(editedGone(manual, loaded)).toBe(false);
-        expect(editedGone({ ...manual, editing: 'the guide' }, loaded)).toBe(true);
-        expect(editedGone({ ...manual, editing: 'the guide' }, { ...loaded, entries: [] })).toBe(
-            true
-        );
+        expect(editedGone(manual, loaded, false)).toBe(false);
+        expect(editedGone({ ...manual, editing: 'the guide' }, loaded, false)).toBe(true);
+        expect(
+            editedGone({ ...manual, editing: 'the guide' }, { ...loaded, entries: [] }, false)
+        ).toBe(true);
         // Not read yet, or read with an error: nothing is known to be gone.
-        expect(editedGone({ ...manual, editing: 'x' }, { ...loaded, loading: true })).toBe(false);
-        expect(editedGone({ ...manual, editing: 'x' }, { ...loaded, error: 'refused' })).toBe(
+        expect(editedGone({ ...manual, editing: 'x' }, { ...loaded, loading: true }, false)).toBe(
             false
         );
+        expect(
+            editedGone({ ...manual, editing: 'x' }, { ...loaded, error: 'refused' }, false)
+        ).toBe(false);
         // The add form, another form and no form edit nothing.
-        expect(editedGone(adding, { ...loaded, entries: [] })).toBe(false);
-        expect(editedGone(line, loaded)).toBe(false);
-        expect(editedGone(NO_FORM, loaded)).toBe(false);
+        expect(editedGone(adding, { ...loaded, entries: [] }, false)).toBe(false);
+        expect(editedGone(line, loaded, false)).toBe(false);
+        expect(editedGone(NO_FORM, loaded, false)).toBe(false);
+    });
+
+    // revert: src/lib/state/fs.ts:457 => return { ...part };
+    // Revert: in patchedFilesView of state/fs.ts, write the part over nothing.
+    it('writes part of a file browser over whatever else its record holds', () => {
+        expect(patchedFilesView({ filter: 'x', form: 'root' }, { form: 'bookmark' })).toEqual({
+            filter: 'x',
+            form: 'bookmark'
+        });
+        // A record that is not a map is read as an empty one, so the part is all there is.
+        expect(patchedFilesView(undefined, { editing: 'one' })).toEqual({ editing: 'one' });
+        expect(patchedFilesView(['a list'], { editing: 'one' })).toEqual({ editing: 'one' });
+        expect(patchedFilesView('a word', { editing: 'one' })).toEqual({ editing: 'one' });
+    });
+
+    // revert: src/lib/state/fs.ts:443 => if (marks.loading || marks.error !== '') return false;
+    // Revert: in editedGone of state/fs.ts, drop `saving` from the line that answers false.
+    it('leaves the form a save of its own is out from until that answer lands', () => {
+        const loaded = { entries: [{ id: 'the manual renamed' }], loading: false, error: '' };
+        // The bookmark the form was opened over is gone, taken away or written under another id.
+        expect(editedGone(manual, loaded, true)).toBe(false);
+        expect(editedGone(manual, loaded, false)).toBe(true);
     });
 });
 

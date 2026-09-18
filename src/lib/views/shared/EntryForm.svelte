@@ -71,6 +71,13 @@
         /** A dedicated add write for a schema-driven file that is not a collection. */
         onadd?: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
         onclose: () => void;
+        /**
+         * The form's entry is now the file's under another id: its own save renamed it. A host that
+         * draws the form over an id of its own answers this by opening the form over the new one, so
+         * the form stays where it is with what was typed into it. A host that does not supply it
+         * leaves the form as it was, and this form's save never renames what it edits underneath it.
+         */
+        onrenamed?: (id: string) => void;
         /** What a write answered, for the one outcome line the view holds. */
         onsaid: (said: string) => void;
     };
@@ -83,6 +90,7 @@
         surface = true,
         onadd,
         onclose,
+        onrenamed,
         onsaid
     }: Props = $props();
 
@@ -112,6 +120,8 @@
     const target = $derived(draftTarget(formDrafts, within?.() ?? null, local));
     /** What the reader has typed, by field. A field nobody touched is not in here at all. */
     const edits = $derived(target.edits(form));
+    /** Whether a save from this form is out: its control is not pressable until the answer lands. */
+    const busy = $derived(target.saving(form));
     let asked = $state('');
     let sure = $state(false);
 
@@ -191,9 +201,21 @@
      * draft settled is the one the save was pressed over, with the values it sent, both taken before
      * the request goes: an answer landing after the tab was switched settles that draft and no other.
      * An edit form keeps a value typed while the request was on its way, left open over it. An add
-     * form closes and forgets its draft once the entry is added, since the form can only add another.
+     * form closes and forgets its draft only while its draft is still what the save sent: a form
+     * closed and opened again, or typed on, while the request was out holds the reader's newer text,
+     * which closing it would take away. Such a form goes on writing the entry its add made, so the
+     * words typed while the request was out are saved into that entry and not refused as a second
+     * entry under the same identity; typed away from that entry's identity it adds another, which is
+     * what an add form does. What it made is kept with the draft, in the instance's own state, so a
+     * tab switched away between the save and its answer does not turn the next save into a second
+     * add. An edit form whose save writes the entry under another id is carried onto it (renamed).
+     *
+     * The form says here that a save from it is out, and says so through the drafts rather than in
+     * the component, since the tab may be switched away before the answer lands and the rules that
+     * read a form the reader is not looking at need to know a request is still on its way for it.
      */
     async function save(): Promise<void> {
+        if (busy) return;
         const ident = identityField(schema);
         const wanted: Record<string, unknown> = {};
         for (const field of fields) {
@@ -222,18 +244,47 @@
         const into = target;
         const which = form;
         const sent = { ...edits };
-        const answer =
-            entry === null
-                ? await addFromForm(client.writes, collection, wanted, onadd)
-                : await writeEntry(collection, entry.id, wanted);
+        const own = wanted[ident];
+        const value = typeof own === 'string' || typeof own === 'number' ? String(own) : '';
+        // An add form goes on writing the entry it made only while its identity field still says
+        // what that entry was made under. Typed away from it the reader means another entry, so the
+        // form adds one, which is what an add form does.
+        const made = entry === null ? into.added(which) : null;
+        const addressed = entry === null ? (made?.value === value ? made.id : '') : entry.id;
+        into.beginSave(which);
+        const answer = await (
+            addressed === ''
+                ? addFromForm(client.writes, collection, wanted, onadd)
+                : writeEntry(collection, addressed, wanted)
+        ).finally(() => into.endSave(which));
         said(answer);
         if (!answer.ok || answer.refused.length > 0) return;
         if (entry === null) {
-            into.clear(which);
-            onclose();
-        } else if (!into.settle(which, sent)) {
-            onclose();
+            const took = into.taken(which, sent);
+            if (took) onclose();
+            else into.setAdded(which, { id: answer.id ?? '', value });
+            return;
         }
+        if (!into.settle(which, sent)) {
+            onclose();
+            return;
+        }
+        renamed(into, which, answer.id ?? '');
+    }
+
+    /**
+     * Carry the open form onto the entry its save has just written under another id. The file gives
+     * the entry the id of its `id`, `key` or `title`, so a save that writes one of those writes the
+     * entry under a new one and the id the form was opened over names nothing. The write answer says
+     * which id the entry now has. The draft goes with the form, and the host is asked to open the
+     * form over the entry where it now is; without a host that can, nothing moves and the form is
+     * left as it was.
+     */
+    function renamed(into: typeof target, which: string, after: string): void {
+        if (entry === null || onrenamed === undefined) return;
+        if (after === '' || after === entry.id) return;
+        into.move(which, formKey(collection, after));
+        onrenamed(after);
     }
 
     /** Close the form over nothing saved, forgetting what was typed into it. */
@@ -338,6 +389,8 @@
         <ToolButton
             label={t('collection.form_save')}
             glyph={t('collection.save_glyph')}
+            disabled={busy}
+            title={busy ? t('editor.saving') : undefined}
             onclick={save}
         />
         <ToolButton label={t('collection.form_cancel')} onclick={cancel} />

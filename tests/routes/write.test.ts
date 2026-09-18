@@ -420,7 +420,12 @@ describe('the kinds the write endpoint learned in P1', () => {
             TOKEN,
             into
         );
-        expect(await edited.json()).toEqual({ ok: true, changed: ['meta'], refused: [] });
+        expect(await edited.json()).toEqual({
+            ok: true,
+            changed: ['meta'],
+            refused: [],
+            id: 'Review the draft'
+        });
         expect(readFileSync(join(into.hub, 'tasks', 'tasks.yml'), 'utf8')).toContain(
             '    meta:\n      - { label: Owner, value: "Axel" }'
         );
@@ -434,7 +439,12 @@ describe('the kinds the write endpoint learned in P1', () => {
             TOKEN,
             into
         );
-        expect(await added.json()).toEqual({ ok: true, changed: ['entries'], refused: [] });
+        expect(await added.json()).toEqual({
+            ok: true,
+            changed: ['entries'],
+            refused: [],
+            id: 'Metalist task'
+        });
         expect(readFileSync(join(into.hub, 'tasks', 'tasks.yml'), 'utf8')).toContain(
             '  - title: Metalist task\n    meta:\n      - { label: Owner, value: "Axel" }'
         );
@@ -448,7 +458,12 @@ describe('the kinds the write endpoint learned in P1', () => {
             TOKEN,
             into
         );
-        expect(await edited.json()).toEqual({ ok: true, changed: ['retrieval'], refused: [] });
+        expect(await edited.json()).toEqual({
+            ok: true,
+            changed: ['retrieval'],
+            refused: [],
+            id: 'mimic-iv'
+        });
         expect(readFileSync(join(into.hub, 'registries', 'data.yml'), 'utf8')).toContain(
             '    retrieval:\n      method: wget'
         );
@@ -462,7 +477,12 @@ describe('the kinds the write endpoint learned in P1', () => {
             TOKEN,
             into
         );
-        expect(await added.json()).toEqual({ ok: true, changed: ['datasets'], refused: [] });
+        expect(await added.json()).toEqual({
+            ok: true,
+            changed: ['datasets'],
+            refused: [],
+            id: 'ptb-xl'
+        });
         expect(readFileSync(join(into.hub, 'registries', 'data.yml'), 'utf8')).toContain(
             '  - key: ptb-xl\n    retrieval:\n      method: wget'
         );
@@ -510,7 +530,8 @@ describe('the kinds the write endpoint learned in P1', () => {
         expect(await freshResponse.json()).toEqual({
             ok: true,
             changed: ['venues'],
-            refused: []
+            refused: [],
+            id: 'fresh'
         });
         expect(readFileSync(join(fresh.hub, 'registries', 'venues.yml'), 'utf8')).toContain(
             '  - name: Fresh Venue\n    id: fresh'

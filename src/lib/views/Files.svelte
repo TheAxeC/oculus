@@ -34,6 +34,9 @@
     // opened the same one again or switched the tab away. The instance id and the forms are taken
     // before the request goes, and the answer closes only that opening in that instance
     // (formSettled): once the tab is switched, the `instance` prop reads the tab the pane shows now.
+    // A bookmark the file no longer holds closes its form in every file browser the layout holds,
+    // which the fs store does on each bookmarks answer rather than this view on each render: a pane
+    // mounts only the tab it shows, so a form of a browser nobody is looking at is closed there too.
     //
     // Every root the configuration names is in every workspace and cannot be taken out of one, so a
     // workspace can only ever add. The server refuses a removal of a configured root as well; a
@@ -73,12 +76,9 @@
     import Tree from './files/Tree.svelte';
     import Workspaces from './files/Workspaces.svelte';
     import type { Entry, SchemaField } from '$lib/state/collection';
-    import { BOOKMARK_COLLECTION } from '$lib/state/fs.svelte';
     import {
-        bookmarkLeft,
         collapseRoot,
         crumbsOf,
-        editedGone,
         editShown,
         filesViewOf,
         filterRows,
@@ -86,6 +86,7 @@
         formShown,
         formsOf,
         markLabel,
+        patchedFilesView,
         nameOf,
         rowKey,
         setExpanded,
@@ -106,7 +107,6 @@
     import { useState } from '$lib/state/use';
 
     const {
-        formDrafts: { toggleAdd, toggleEdit },
         fs: {
             addBookmark,
             addRoot,
@@ -123,6 +123,7 @@
             removeRoot,
             saveWorkspace,
             selectWorkspace,
+            shiftForms,
             workspaces
         },
         layout: { closeRecord, keepPreview, openView },
@@ -210,9 +211,7 @@
 
     /** Write part of what one instance remembers, keeping the rest of it as it was. */
     function patchAt(id: string, part: Partial<FilesView>): void {
-        const kept = instanceState(id);
-        const keep = typeof kept === 'object' && kept !== null && !Array.isArray(kept) ? kept : {};
-        setInstanceState(id, { ...keep, ...part });
+        setInstanceState(id, patchedFilesView(instanceState(id), part));
     }
 
     /** Write part of what the instance on screen remembers, for a press made on it now. */
@@ -367,18 +366,9 @@
         if (answer.ok) closeRecord('note', id);
     }
 
-    /**
-     * Move to other forms. A bookmark form the move closes forgets its draft through the form drafts
-     * store: the add form's through toggleAdd, one bookmark's through toggleEdit.
-     */
+    /** Move the file browser on screen to other forms, for a press made on it now. */
     function shift(next: FilesForms): void {
-        const left = bookmarkLeft(view, next);
-        if (left !== null && left.editing === '') {
-            toggleAdd(instance.id, BOOKMARK_COLLECTION, true);
-        } else if (left !== null) {
-            toggleEdit(instance.id, BOOKMARK_COLLECTION, left.editing, next.editing);
-        }
-        patch(next);
+        shiftForms(instance.id, view, next);
     }
 
     /** Move to the forms a press asks for, clearing the lines that answered the last press. */
@@ -387,12 +377,6 @@
         note = '';
         said = '';
     }
-
-    // A bookmark taken away while its edit form is open, by the row star or on the disk, closes the
-    // form and forgets what was typed into it, so the tab does not ask about text it no longer shows.
-    $effect(() => {
-        if (editedGone(view, marks)) shift(editShown(view, view.editing));
-    });
 
     function show(which: 'root' | 'workspace' | 'bookmark'): void {
         move(formShown(view, which));
@@ -409,6 +393,16 @@
      */
     function closeMark(owner: string, forms: FilesForms): void {
         settle(owner, forms);
+    }
+
+    /**
+     * Open the bookmark form over the id its own save gave the bookmark. The form is drawn per
+     * instance and per opening, and a rename moves neither, so the form stays as it is with what was
+     * typed into it; the bookmark it edits is the one the file now holds, so the close of a form
+     * over a bookmark that is gone has nothing to close.
+     */
+    function renameMark(owner: string, id: string): void {
+        patchAt(owner, { editing: id });
     }
 </script>
 
@@ -452,6 +446,7 @@
                     initial={{ root: current.roots[0]?.key ?? '' }}
                     onadd={addBookmark}
                     onclose={closeMark}
+                    onrenamed={renameMark}
                     onsaid={(answer: string) => {
                         said = answer;
                         bookmarksChanged();

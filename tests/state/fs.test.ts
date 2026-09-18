@@ -21,8 +21,14 @@ import {
     type FsRoot
 } from '../../src/lib/state/fs.ts';
 import { fileBytesUrl, listingUrl, FS_PATH, NOTE_GONE } from '../../src/lib/state/fs.svelte.ts';
+import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import { registered } from '../../src/lib/state/languages.ts';
+import { setCatalog } from '../../src/lib/state/text.ts';
 import { createClientState, type ClientState } from '../client.ts';
+import { fakeStorage } from './layout-fixture.ts';
+
+// A case that opens a tab reads the view's own label out of the catalog, as the page does.
+setCatalog(textCatalog(loadConfig(engineDir()).config));
 
 /** One file entry, since only the name and the kind matter to these cases. */
 function file(name: string, size = 10): FsEntry {
@@ -602,6 +608,52 @@ describe('the store reading the endpoints', () => {
         await settle();
 
         expect(asked.filter((url) => url.includes('bookmarks=1'))).toHaveLength(2);
+    });
+
+    // revert: src/lib/state/fs.svelte.ts:642 => closeGoneForms(held.bookmarks); return;
+    // Revert: in loadBookmarks of state/fs.svelte.ts, sweep the forms on the branch that answers a
+    // read the server refused, by putting the call back on the line above its return.
+    it('closes no bookmark form over a read the server refused, whatever it said', async () => {
+        client.layout.loadLayout(fakeStorage());
+        const own = client.layout.openView('files');
+        client.ui.setInstanceState(own, { form: 'bookmark', editing: 'manual' });
+        // A refusal with nothing to say: the sweep would read it as a file holding no bookmark.
+        serving(
+            () =>
+                new Response(JSON.stringify({ error: '' }), {
+                    status: 500,
+                    headers: { 'content-type': 'application/json' }
+                })
+        );
+
+        client.fs.bookmarks();
+        await settle();
+
+        expect(client.ui.instanceState(own)).toMatchObject({
+            form: 'bookmark',
+            editing: 'manual'
+        });
+    });
+
+    // revert: src/lib/state/fs.svelte.ts:655 => (drop the `return;` after the catch branch's write)
+    // Revert: in loadBookmarks of state/fs.svelte.ts, let the catch branch fall through to the tail
+    // sweep by taking out its return.
+    it('closes no bookmark form over a read that never answered at all', async () => {
+        client.layout.loadLayout(fakeStorage());
+        const own = client.layout.openView('files');
+        client.ui.setInstanceState(own, { form: 'bookmark', editing: 'manual' });
+        // A throw with nothing to say: the reason reads empty, as a refusal with no text does.
+        serving(() => {
+            throw new Error('');
+        });
+
+        client.fs.bookmarks();
+        await settle();
+
+        expect(client.ui.instanceState(own)).toMatchObject({
+            form: 'bookmark',
+            editing: 'manual'
+        });
     });
 
     it('keeps the bookmarks drawn and says why when the server refuses the read', async () => {

@@ -30,12 +30,25 @@
         onadd: (fields: Record<string, unknown>) => Promise<WriteAnswer>;
         /** The form asks to close, naming the instance and the opening it was drawn for. */
         onclose: (owner: string, forms: FilesForms) => void;
+        /** The form's own save wrote its bookmark under another id, naming the instance and the id. */
+        onrenamed: (owner: string, id: string) => void;
         onsaid: (said: string) => void;
     };
 
-    let { owner, forms, schema, entry, initial, onadd, onclose, onsaid }: Props = $props();
+    let { owner, forms, schema, entry, initial, onadd, onclose, onrenamed, onsaid }: Props =
+        $props();
 
     const opened = untrack(() => ({ owner, forms }));
+
+    /**
+     * The bookmark the form edits is the file's under another id. The opening it was drawn for moves
+     * with it, so the close this partial asks for later still names the form that is open: what a
+     * rename changes is the bookmark's id, not which opening of which file browser this form is.
+     */
+    function renamed(id: string): void {
+        opened.forms = { ...opened.forms, editing: id };
+        onrenamed(opened.owner, id);
+    }
 </script>
 
 <EntryForm
@@ -46,5 +59,6 @@
     surface={false}
     {onadd}
     onclose={() => onclose(opened.owner, opened.forms)}
+    onrenamed={renamed}
     {onsaid}
 />

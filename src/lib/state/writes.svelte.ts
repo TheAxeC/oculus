@@ -20,6 +20,8 @@ export type WriteAnswer = {
     output?: string;
     /** The branch rows of a deposit `branches` action. Absent on every other write. */
     branches?: { name: string; upstream: string; current: boolean }[];
+    /** The id the file gives the entry an entry write made or edited. Absent on every other write. */
+    id?: string;
 };
 
 /** What one session write may set. A field left out is left as the overrides file has it. */
@@ -397,7 +399,8 @@ export function createWrites(): WritesStore {
                 changed: Array.isArray(body.changed) ? body.changed : [],
                 refused: Array.isArray(body.refused) ? body.refused : [],
                 output: typeof body.output === 'string' ? body.output : undefined,
-                branches: Array.isArray(body.branches) ? body.branches : undefined
+                branches: Array.isArray(body.branches) ? body.branches : undefined,
+                id: typeof body.id === 'string' ? body.id : undefined
             };
         } catch (error) {
             const message = error instanceof Error ? error.message : String(error);

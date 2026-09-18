@@ -11,12 +11,15 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { Entry, Snapshot } from '../../src/lib/data/model.ts';
 import { engineDir, loadConfig, textCatalog } from '../../src/lib/data/sources/config.ts';
 import {
+    ADDED_SUFFIX,
     FORMS_SUFFIX,
+    addedKey,
     createFormDrafts,
     draftTarget,
     formKey,
     formsKey,
     localDrafts,
+    parseAdded,
     parseDrafts,
     parseFormKey,
     snapshotEntries,
@@ -159,6 +162,78 @@ describe('a save', () => {
         drafts.setFormField('one', ADD, 'title', typed('sent'));
         expect(drafts.settleFormDraft('one', ADD, drafts.formEdits('one', ADD))).toBe(false);
         expect(client.ui.instanceState(formsKey('one'))).toBeUndefined();
+    });
+
+    // Revert: in takeFormDraft of state/form-drafts.svelte.ts, forget the draft whatever it holds.
+    it("takes an add's draft only while it is still what was sent, whole", () => {
+        drafts.setFormField('one', ADD, 'title', typed('sent'));
+        const sent = drafts.formEdits('one', ADD);
+
+        // Typed on while the request was out: nothing is taken and the form is not closed.
+        drafts.setFormField('one', ADD, 'title', typed('typed while the save was out'));
+        expect(drafts.takeFormDraft('one', ADD, sent)).toBe(false);
+        expect(drafts.formEdits('one', ADD)).toEqual({ title: 'typed while the save was out' });
+
+        // Closed and opened again, then typed into: that draft is the reader's too.
+        drafts.clearFormDraft('one', ADD);
+        drafts.setFormField('one', ADD, 'note', typed('typed into the form opened again'));
+        expect(drafts.takeFormDraft('one', ADD, sent)).toBe(false);
+        expect(drafts.formEdits('one', ADD)).toEqual({ note: 'typed into the form opened again' });
+
+        // Closed and opened again, then one of the fields sent typed back into it: still not what
+        // went, since the other field the save sent is not in it.
+        drafts.clearFormDraft('one', ADD);
+        drafts.setFormField('one', ADD, 'title', typed('sent'));
+        expect(drafts.takeFormDraft('one', ADD, { ...sent, note: 'sent too' })).toBe(false);
+        expect(drafts.formEdits('one', ADD)).toEqual({ title: 'sent' });
+
+        // Nothing touched since it went: the draft is forgotten and the form may close.
+        expect(drafts.takeFormDraft('one', ADD, sent)).toBe(true);
+        expect(drafts.formEdits('one', ADD)).toEqual({});
+        expect(client.ui.instanceState(formsKey('one'))).toBeUndefined();
+
+        // A form nobody typed into sent nothing, and its answer takes that nothing.
+        expect(drafts.takeFormDraft('one', ADD, {})).toBe(true);
+        expect(client.ui.instanceState(formsKey('one'))).toBeUndefined();
+    });
+
+    // Revert: in endFormSave of state/form-drafts.svelte.ts, leave the form in the record.
+    it('marks a form while a save from it is out, one form and one instance at a time', () => {
+        expect(drafts.formsSaving('one')).toEqual([]);
+        drafts.beginFormSave('one', EDIT);
+        expect(drafts.formsSaving('one')).toEqual([EDIT]);
+        expect(drafts.formsSaving('two')).toEqual([]);
+
+        // Two forms of one instance, each taken out by its own answer.
+        drafts.beginFormSave('one', ADD);
+        expect(drafts.formsSaving('one')).toEqual([EDIT, ADD]);
+        drafts.endFormSave('one', EDIT);
+        expect(drafts.formsSaving('one')).toEqual([ADD]);
+        drafts.endFormSave('one', ADD);
+        expect(drafts.formsSaving('one')).toEqual([]);
+
+        // A second press of a control already saving adds nothing, and an answer for a form with no
+        // save out takes nothing away.
+        drafts.beginFormSave('one', ADD);
+        drafts.beginFormSave('one', ADD);
+        expect(drafts.formsSaving('one')).toEqual([ADD]);
+        drafts.endFormSave('one', EDIT);
+        expect(drafts.formsSaving('one')).toEqual([ADD]);
+    });
+
+    // Revert: in createClientState of state/context.ts, drop the forgetForms call from the forget
+    // the layout is handed.
+    it('leaves no save mark for a tab the layout closed, whenever the answer lands', () => {
+        client.layout.loadLayout(fakeStorage());
+        const own = client.layout.openView('tasks');
+        client.formDrafts.beginFormSave(own, EDIT);
+        expect(client.formDrafts.formsSaving(own)).toEqual([EDIT]);
+        client.layout.closeInstance(own);
+        expect(client.formDrafts.formsSaving(own)).toEqual([]);
+
+        // The answer lands after the tab is gone: it takes a mark away and writes none back.
+        client.formDrafts.endFormSave(own, EDIT);
+        expect(client.formDrafts.formsSaving(own)).toEqual([]);
     });
 
     it('writes nothing back for a draft the tab close took away before the answer landed', () => {
@@ -347,11 +422,154 @@ describe('a form outside any pane', () => {
         expect(target.edits(ADD)).toEqual({});
     });
 
+    // Revert: in localDrafts of state/form-drafts.svelte.ts, have `taken` forget the draft and
+    // answer true whatever it holds.
+    it("takes an add's draft only while it is what was sent, as an instance's target does", () => {
+        const target = draftTarget(client.formDrafts, null, localDrafts());
+        target.set(ADD, 'title', typed('sent'));
+        const sent = target.edits(ADD);
+        target.set(ADD, 'title', typed('typed while the save was out'));
+        expect(target.taken(ADD, sent)).toBe(false);
+        expect(target.edits(ADD)).toEqual({ title: 'typed while the save was out' });
+        expect(target.taken(ADD, target.edits(ADD))).toBe(true);
+        expect(target.edits(ADD)).toEqual({});
+    });
+
+    // Revert: in localDrafts of state/form-drafts.svelte.ts, have beginSave record nothing.
+    it("says a save from one of its forms is out, as an instance's target does", () => {
+        const target = draftTarget(client.formDrafts, null, localDrafts());
+        expect(target.saving(ADD)).toBe(false);
+        target.beginSave(ADD);
+        expect(target.saving(ADD)).toBe(true);
+        expect(target.saving(EDIT)).toBe(false);
+        target.endSave(ADD);
+        expect(target.saving(ADD)).toBe(false);
+    });
+
     it('is handed the instance drafts inside a pane', () => {
         const target = draftTarget(client.formDrafts, 'one', localDrafts());
         target.set(ADD, 'title', typed('inside'));
         expect(client.formDrafts.formEdits('one', ADD)).toEqual({ title: 'inside' });
         target.clear(ADD);
         expect(client.ui.instanceState(formsKey('one'))).toBeUndefined();
+    });
+});
+
+describe('the entry an add form made', () => {
+    // revert: src/lib/state/form-drafts.svelte.ts:279 => return null;
+    // Revert: in setFormAdded of state/form-drafts.svelte.ts, keep what was made in a variable of
+    // the store rather than in the instance's own state.
+    it('is kept in the instance state, so a form drawn again still writes it', () => {
+        drafts.setFormAdded('one', ADD, { id: 'made', value: 'made' });
+        expect(drafts.formAdded('one', ADD)).toEqual({ id: 'made', value: 'made' });
+        expect(drafts.formAdded('one', EDIT)).toBeNull();
+        expect(drafts.formAdded('two', ADD)).toBeNull();
+        expect(addedKey('one')).toBe(`one${ADDED_SUFFIX}`);
+
+        // A store built again over the same storage, which is the form drawn again after a tab
+        // switch or a reload, reads what the first one wrote.
+        const again = createFormDrafts(client.ui, lookup);
+        expect(again.formAdded('one', ADD)).toEqual({ id: 'made', value: 'made' });
+    });
+
+    // revert: src/lib/state/form-drafts.svelte.ts:356 => if (false) forgetAdded(instance, form);
+    // Revert: in clearFormDraft of state/form-drafts.svelte.ts, drop the forgetAdded call, by
+    // dropping the line under the signature.
+    it('is forgotten when its form closes, and when its answer takes the draft whole', () => {
+        drafts.setFormAdded('one', ADD, { id: 'made', value: 'made' });
+        drafts.clearFormDraft('one', ADD);
+        expect(drafts.formAdded('one', ADD)).toBeNull();
+        expect(client.ui.instanceState(addedKey('one'))).toBeUndefined();
+
+        drafts.setFormField('one', ADD, 'title', typed('sent'));
+        const sent = drafts.formEdits('one', ADD);
+        drafts.setFormAdded('one', ADD, { id: 'sent', value: 'sent' });
+        expect(drafts.takeFormDraft('one', ADD, sent)).toBe(true);
+        expect(drafts.formAdded('one', ADD)).toBeNull();
+    });
+
+    // revert: src/lib/state/form-drafts.svelte.ts:372 => if (true) return;
+    // Revert: in moveFormDraft of state/form-drafts.svelte.ts, leave the draft where it is, by
+    // returning from the line under the guard.
+    it('goes with the draft when a save writes the entry under another id', () => {
+        // The bookmarks are not in the snapshot, so nothing there says the entry under the new id is
+        // gone. A collection the snapshot holds says so until its next push, which drops the draft:
+        // the case below pins that, and it is why only the bookmark form is carried over a rename.
+        const before = formKey('bookmarks', 'tool.py');
+        const after = formKey('bookmarks', 'tool.py renamed');
+        drafts.setFormField('one', before, 'path', typed('typed while the save was out'));
+        drafts.setFormAdded('one', before, { id: 'tool.py', value: 'tool.py' });
+
+        drafts.moveFormDraft('one', before, after);
+        expect(drafts.formEdits('one', before)).toEqual({});
+        expect(drafts.formEdits('one', after)).toEqual({
+            path: 'typed while the save was out'
+        });
+        expect(drafts.formAdded('one', before)).toBeNull();
+        expect(drafts.formAdded('one', after)).toEqual({ id: 'tool.py', value: 'tool.py' });
+
+        // A move onto the key the form is already under writes nothing.
+        drafts.moveFormDraft('one', after, after);
+        expect(drafts.formEdits('one', after)).toEqual({
+            path: 'typed while the save was out'
+        });
+    });
+
+    // revert: src/lib/state/form-drafts.svelte.ts:306 => if (Object.keys(draft).length > 0)
+    // Revert: in keep of state/form-drafts.svelte.ts, write every draft whatever the snapshot says,
+    // by dropping the gone check.
+    it('is dropped by a move onto an entry the snapshot says the collection no longer holds', () => {
+        const before = formKey('tasks', 'probe');
+        drafts.setFormField('one', before, 'status', typed('typed', 'open'));
+        drafts.moveFormDraft('one', before, formKey('tasks', 'probe renamed'));
+        expect(drafts.formEdits('one', formKey('tasks', 'probe renamed'))).toEqual({});
+    });
+
+    // revert: src/lib/state/form-drafts.svelte.ts:146-148 => kept[form] = held as AddedEntry;
+    // Revert: in parseAdded of state/form-drafts.svelte.ts, keep every entry of the record as it
+    // stands, by dropping the three guards.
+    it('is read back from a record holding anything at all, keeping only what it wrote', () => {
+        expect(parseAdded(undefined)).toEqual({});
+        expect(parseAdded('a word')).toEqual({});
+        expect(parseAdded({ [ADD]: { id: 'made', value: 'made' } })).toEqual({
+            [ADD]: { id: 'made', value: 'made' }
+        });
+        // A key no form makes, a shape no form wrote, and an empty id are each left out.
+        expect(parseAdded({ 'not a form key': { id: 'made', value: 'made' } })).toEqual({});
+        expect(parseAdded({ [ADD]: { id: 5, value: 'made' } })).toEqual({});
+        expect(parseAdded({ [ADD]: { id: '', value: 'made' } })).toEqual({});
+    });
+
+    // revert: src/lib/state/form-drafts.svelte.ts:55 => return instance;
+    // Revert: in addedKey of state/form-drafts.svelte.ts, hold the made entries under the instance's
+    // own id rather than under one of its own.
+    it('keeps an instance whose id already ends in the added suffix apart from the one it names', () => {
+        const colliding = addedKey('one');
+        drafts.setFormAdded('one', ADD, { id: 'of one', value: 'of one' });
+        drafts.setFormAdded(colliding, ADD, { id: 'of the other', value: 'of the other' });
+        expect(drafts.formAdded('one', ADD)).toEqual({ id: 'of one', value: 'of one' });
+        expect(drafts.formAdded(colliding, ADD)).toEqual({
+            id: 'of the other',
+            value: 'of the other'
+        });
+    });
+
+    // revert: src/lib/state/form-drafts.svelte.ts:509 => held.added = { ...held.added };
+    // Revert: in localDrafts of state/form-drafts.svelte.ts, have setAdded record nothing.
+    it('is kept by a form outside any pane in a target of its own', () => {
+        const target = draftTarget(client.formDrafts, null, localDrafts());
+        expect(target.added(ADD)).toBeNull();
+        target.set(ADD, 'title', typed('typed'));
+        target.setAdded(ADD, { id: 'made', value: 'made' });
+        expect(target.added(ADD)).toEqual({ id: 'made', value: 'made' });
+
+        const after = formKey('tasks', 'made');
+        target.move(ADD, after);
+        expect(target.edits(after)).toEqual({ title: 'typed' });
+        expect(target.added(after)).toEqual({ id: 'made', value: 'made' });
+        expect(target.added(ADD)).toBeNull();
+
+        target.clear(after);
+        expect(target.added(after)).toBeNull();
     });
 });

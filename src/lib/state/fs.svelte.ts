@@ -23,6 +23,13 @@
 // the way to a path it was asked to show, one after the other; that read and a render's read of the
 // same folder in the same round are one request.
 //
+// The bookmark forms of every file browser the layout holds are read on each bookmarks answer, and
+// the form over a bookmark the file no longer holds is closed there and then. It is read here rather
+// than in the view because a pane mounts only the tab it shows: a file browser on a page the reader
+// is not looking at draws nothing, and its tab would go on asking about text over a bookmark that is
+// gone. What a file browser's forms are and how one is moved come from the client's state, handed in
+// as BookmarkForms, so this module knows the rule's occasion and not the layout.
+//
 // The file text is read through the file route and stopped at the window's limit: the reader is
 // cancelled once the limit is in, so a forty-megabyte file costs two megabytes of transfer and not
 // forty. What a file opens as is read the same way and stops after the rule's window and the one
@@ -31,12 +38,36 @@
 
 import type { Entry, SchemaField } from '../data/model.ts';
 import { TEXT_SNIFF_READ } from '../data/text-kind.ts';
-import { TEXT_LIMIT, treeKey, typeOfFile, type FileType, type FsEntry, type FsRoot } from './fs.ts';
+import {
+    TEXT_LIMIT,
+    editShown,
+    editedGone,
+    treeKey,
+    typeOfFile,
+    type FileType,
+    type FilesForms,
+    type FsEntry,
+    type FsRoot
+} from './fs.ts';
 import { t } from './text.ts';
 import type { WriteAnswer, WritesStore } from './writes.svelte.ts';
 
 /** The endpoint the tree reads and the workspace actions write. */
 export const FS_PATH = '/api/fs';
+
+/**
+ * What the bookmark forms of the file browsers are read and moved through. The layout, the instance
+ * records and the form drafts are all the client's, and this store is given the three reads it needs
+ * rather than any of those stores.
+ */
+export type BookmarkForms = {
+    /** Every file browser the layout holds, mounted or not, with the forms each one has open. */
+    browsers: () => { id: string; forms: FilesForms }[];
+    /** Whether a save from one browser's bookmark form over that bookmark is out. */
+    saving: (owner: string, editing: string) => boolean;
+    /** Move one browser to other forms, forgetting the draft of the bookmark form the move closes. */
+    shift: (owner: string, now: FilesForms, next: FilesForms) => void;
+};
 
 /**
  * The collection key the write path resolves to the reader's own bookmarks file. A bookmark is
@@ -171,6 +202,11 @@ export type FsStore = {
     removeBookmark: (label: string) => Promise<WriteAnswer>;
     /** Say that the bookmarks were written by something else, such as the shared entry form. */
     bookmarksChanged: () => void;
+    /**
+     * Move one file browser to other forms, forgetting the draft of the bookmark form the move
+     * closes. A press on the view and this store's own close of a gone bookmark are the one move.
+     */
+    shiftForms: (owner: string, now: FilesForms, next: FilesForms) => void;
     saveNote: (id: string, title: string, body: string) => Promise<WriteAnswer>;
     deleteNote: (id: string) => Promise<WriteAnswer>;
     /** Whether this page deleted that note, so nothing tries to write it back. */
@@ -251,7 +287,7 @@ export async function readCappedBytes(
     return { bytes: kept, truncated: taken > limit };
 }
 
-export function createFs(writes: WritesStore): FsStore {
+export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
     const listings: Record<string, Listing | undefined> = $state({});
     const texts: Record<string, FileText | undefined> = $state({});
     const notes: Record<string, NoteState | undefined> = $state({});
@@ -615,6 +651,24 @@ export function createFs(writes: WritesStore): FsStore {
             if (!currentShared(at)) return;
             rounds[BOOKMARKS] = at;
             held.bookmarks = { ...NO_BOOKMARKS, error: reasonOf(error), loading: false };
+            return;
+        }
+        closeGoneForms(held.bookmarks);
+    }
+
+    /**
+     * Close the bookmark form of every file browser whose bookmark this answer no longer holds, and
+     * forget what was typed into it, so no tab asks about text it has nothing to show for. A form
+     * with a save of its own out is left until that answer lands.
+     *
+     * It is called for a read that answered and for no other: a read that failed knows of no
+     * bookmark, and sweeping an empty list over a failed read would close every form on the page.
+     */
+    function closeGoneForms(marks: BookmarksState): void {
+        for (const one of forms.browsers()) {
+            const saving = forms.saving(one.id, one.forms.editing);
+            if (!editedGone(one.forms, marks, saving)) continue;
+            forms.shift(one.id, one.forms, editShown(one.forms, one.forms.editing));
         }
     }
 
@@ -799,6 +853,7 @@ export function createFs(writes: WritesStore): FsStore {
         removeBookmark: (label: string) =>
             bookmarkWrite({ kind: 'delete-entry', collection: BOOKMARK_COLLECTION, id: label }),
         bookmarksChanged: invalidate,
+        shiftForms: forms.shift,
         saveNote,
         deleteNote,
         noteDeleted: (id: string) => gone.has(id),

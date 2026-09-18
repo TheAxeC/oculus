@@ -3,8 +3,11 @@
 // and back (a pane mounts only its active tab, so the component that drew the form is gone in
 // between) and after a reload; the tab holding it asks before it closes, measured against the entry
 // as the file holds it now; Cancel, the view's Add and Edit toggles and a save take the question
-// away, and they and a delete leave no draft in the browser's storage. A value typed while an edit's
-// save is on its way stays in the open form; an add form closes once its entry is added. A pane
+// away, and they and a delete leave no draft in the browser's storage. A value typed while a save is
+// on its way stays in the open form, an edit's and an add's alike, and so does the text of an add
+// form closed and opened again while its save was out; an add form nothing touched while its save
+// was out closes once its entry is added, and one left open goes on writing the entry it added
+// rather than adding a second. The Save control is not pressable while its own save is out. A pane
 // closed from its menu takes the drafts and the records of every tab in it out of the browser's
 // storage. A file browser's root line typed and not added is asked about the same way.
 //
@@ -353,11 +356,31 @@ test('an edit form keeps a value typed while its save was on its way, open over 
     }
 });
 
-test('an add form closes once its entry is added, and a second save cannot add another', async ({
+test('an add form nothing touched while its save was out closes once its entry is added', async ({
     page
 }) => {
-    // Revert: EntryForm settling an add form's draft as an edit's, which leaves it open over the
-    // later text, so a second Save adds a second entry.
+    // revert: src/lib/views/shared/EntryForm.svelte:263 => const took = (into.taken(which, sent), false);
+    // Revert: EntryForm leaving the add form open on every answer, or not clearing its draft.
+    const before = readHubFile(TASKS);
+    try {
+        await boot(page);
+        await typeTask(page);
+        await slowWrites(page);
+        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain(TYPED);
+        await expect(page.locator('[data-form="add"]')).toHaveCount(0);
+        expect(await draftKeys(page)).toEqual([]);
+    } finally {
+        writeHubFile(TASKS, before);
+    }
+});
+
+test('an add form keeps a value typed while its save was on its way, open over it', async ({
+    page
+}) => {
+    // revert: src/lib/views/shared/EntryForm.svelte:263 => const took = (into.clear(which), true);
+    // Revert: EntryForm clearing the add form's draft and closing it on every answer, through
+    // into.clear(which) in place of into.taken(which, sent).
     const before = readHubFile(TASKS);
     try {
         await boot(page);
@@ -366,9 +389,187 @@ test('an add form closes once its entry is added, and a second save cannot add a
         await page.getByRole('button', { name: t('collection.form_save') }).click();
         await titleBox(page).fill(`${TYPED} and more`);
         await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain(TYPED);
-        await expect(page.locator('[data-form="add"]')).toHaveCount(0);
-        expect(await draftKeys(page)).toEqual([]);
+        await expect(page.locator('[data-form="add"]')).toHaveCount(1);
+        await expect(titleBox(page)).toHaveValue(`${TYPED} and more`);
+        expect(await draftKeys(page)).toHaveLength(1);
         expect(readHubFile(TASKS)).not.toContain(`${TYPED} and more`);
+    } finally {
+        writeHubFile(TASKS, before);
+    }
+});
+
+test('an add form closed and opened again while its save was out keeps its new text', async ({
+    page
+}) => {
+    // revert: src/lib/views/shared/EntryForm.svelte:263 => const took = (into.clear(which), true);
+    // Revert: EntryForm clearing the add form's draft and closing it on every answer, through
+    // into.clear(which) in place of into.taken(which, sent).
+    const before = readHubFile(TASKS);
+    try {
+        await boot(page);
+        await typeTask(page);
+        await slowWrites(page);
+        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        const add = page.getByRole('button', { name: t('collection.add') });
+        await add.click();
+        await expect(page.locator('[data-form="add"]')).toHaveCount(0);
+        await add.click();
+        await titleBox(page).fill('A second task typed into the form opened again');
+        await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain(TYPED);
+        await expect(page.locator('[data-form="add"]')).toHaveCount(1);
+        await expect(titleBox(page)).toHaveValue('A second task typed into the form opened again');
+        expect(await draftKeys(page)).toHaveLength(1);
+    } finally {
+        writeHubFile(TASKS, before);
+    }
+});
+
+/** The kind control of the open add form. */
+function addKindBox(page: Page): Locator {
+    return page.locator('[data-form="add"]').getByRole('textbox', { name: 'kind', exact: true });
+}
+
+/** The entries of the tasks file carrying one title. */
+function entriesTitled(title: string): Record<string, unknown>[] {
+    const entries = readHubYaml(TASKS).entries as Record<string, unknown>[];
+    return entries.filter((one) => one.title === title);
+}
+
+test('an add form left open by its answer writes the entry it added, not a second one', async ({
+    page
+}) => {
+    // revert: src/lib/views/shared/EntryForm.svelte:253 => const addressed = entry === null ? '' : entry.id;
+    // Revert: in save() of views/shared/EntryForm.svelte, add through addFromForm whatever the form
+    // has already made, by dropping the entry it made from what the write is addressed to.
+    const before = readHubFile(TASKS);
+    try {
+        await boot(page);
+        await typeTask(page);
+        await slowWrites(page);
+        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await addKindBox(page).fill('typed while the save was out');
+        await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain(TYPED);
+
+        // The form is still open over the entry it made, and its next save writes that entry.
+        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await expect
+            .poll(() => entriesTitled(TYPED).map((one) => one.kind), { timeout: 10000 })
+            .toEqual(['typed while the save was out']);
+    } finally {
+        writeHubFile(TASKS, before);
+    }
+});
+
+test('a second save from the add form that added an entry adds no second entry', async ({
+    page
+}) => {
+    // revert: src/lib/views/shared/EntryForm.svelte:253 => const addressed = entry === null ? '' : entry.id;
+    // Revert: in save() of views/shared/EntryForm.svelte, add through addFromForm whatever the form
+    // has already made, which makes the second save a second add and the file refuse it.
+    const before = readHubFile(TASKS);
+    try {
+        await boot(page);
+        await typeTask(page);
+        await slowWrites(page);
+        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await addKindBox(page).fill('a second save');
+        await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain(TYPED);
+        await page.getByRole('button', { name: t('collection.form_save') }).click();
+
+        // The file holds the one entry the form made, and the second save went into it rather than
+        // being refused as another entry under the same title.
+        await expect
+            .poll(() => entriesTitled(TYPED).map((one) => one.kind), { timeout: 10000 })
+            .toEqual(['a second save']);
+        expect(entriesTitled(TYPED)).toHaveLength(1);
+    } finally {
+        writeHubFile(TASKS, before);
+    }
+});
+
+test('the Save control is not pressable while its own save is out, and adds nothing twice', async ({
+    page
+}) => {
+    // revert: src/lib/views/shared/EntryForm.svelte:218 => if (false) return;
+    // Revert: in views/shared/EntryForm.svelte, drop `disabled={busy}` from the Save control and the
+    // `if (busy) return;` at the top of save().
+    const before = readHubFile(TASKS);
+    let posts = 0;
+    try {
+        await boot(page);
+        await typeTask(page);
+        page.on('request', (request) => {
+            if (request.method() === 'POST' && new URL(request.url()).pathname === '/api/write') {
+                posts += 1;
+            }
+        });
+        await slowWrites(page);
+        const save = page.getByRole('button', { name: t('collection.form_save') });
+        await save.click();
+        await expect(save).toBeDisabled();
+
+        // A press the control refuses is dispatched at it anyway: the save itself turns it away.
+        await save.dispatchEvent('click');
+        await addKindBox(page).fill('typed while the save was out');
+        await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain(TYPED);
+        await expect(save).toBeEnabled();
+        expect(posts).toBe(1);
+        expect(entriesTitled(TYPED)).toHaveLength(1);
+    } finally {
+        writeHubFile(TASKS, before);
+    }
+});
+
+test('an add form whose tab was switched away before its answer still writes the entry it added', async ({
+    page
+}) => {
+    // revert: src/lib/state/form-drafts.svelte.ts:279 => return null;
+    // Revert: in formAdded of state/form-drafts.svelte.ts, answer that no form has made an entry,
+    // which is what a form keeping it in the component comes to across a tab switch.
+    const before = readHubFile(TASKS);
+    try {
+        await boot(page);
+        await typeTask(page);
+        await slowWrites(page);
+        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await addKindBox(page).fill('typed while the save was out');
+
+        // Away and back before the answer lands: the component that drew the form is gone in
+        // between, and what it made is the instance's.
+        await switchAndBack(page, t('views.tasks'), page.locator('[data-form="add"]'));
+        await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain(TYPED);
+        await expect(addKindBox(page)).toHaveValue('typed while the save was out');
+
+        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await expect
+            .poll(() => entriesTitled(TYPED).map((one) => one.kind), { timeout: 10000 })
+            .toEqual(['typed while the save was out']);
+    } finally {
+        writeHubFile(TASKS, before);
+    }
+});
+
+test('an add form typed away from the entry it added adds another, it does not rename it', async ({
+    page
+}) => {
+    // revert: src/lib/views/shared/EntryForm.svelte:253 => const addressed = entry === null ? (made?.id ?? '') : entry.id;
+    // Revert: in save() of views/shared/EntryForm.svelte, write the entry the form made whatever
+    // its identity field now says, which renames that entry instead of adding the one meant.
+    const before = readHubFile(TASKS);
+    const second = 'A second task the reader means to add';
+    try {
+        await boot(page);
+        await typeTask(page);
+        await slowWrites(page);
+        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await titleBox(page).fill(second);
+        await expect.poll(() => readHubFile(TASKS), { timeout: 10000 }).toContain(TYPED);
+
+        // The form is still the add form, over another title: the next save adds that entry.
+        await expect(page.locator('[data-form="add"]')).toHaveCount(1);
+        await page.getByRole('button', { name: t('collection.form_save') }).click();
+        await expect.poll(() => entriesTitled(second).length, { timeout: 10000 }).toBe(1);
+        expect(entriesTitled(TYPED)).toHaveLength(1);
     } finally {
         writeHubFile(TASKS, before);
     }
