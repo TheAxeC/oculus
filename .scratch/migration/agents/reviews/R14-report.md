@@ -240,3 +240,67 @@ The step's whole diff against ec7bc6e5: 150 files changed, 1076 insertions, 292 
 2. A literal counts as a restatement at eight characters; below that the rule refuses comments holding ordinary words that happen to be the asserted string.
 3. `bin/size-check.sh` and `bin/scratch-count.sh` are scripts rather than one-liners in the verification list, so the line in the ledger is the line that runs.
 4. The flaky git case got a budget, not a loosened assertion, with a comment naming why.
+
+---
+
+# Repair round 2 (builder a7dc75ae4e37c3339, sent 05:25, reported 06:2x)
+
+Every ruling is done. One the builder could not do: `agents/reviews/R14-report.md` lives under `.scratch/`, which `agents/spec.md:33` forbids a worker to write, so the two wrong citations of the round-1 report are corrected here rather than there.
+
+| # | Ruling | Command and output | The probe that now fails |
+| --- | --- | --- | --- |
+| 1 | a skipped case, one another excludes, and a shared title are unproven | `npx vitest run tests/bin/revert-check.test.ts`: 12 passed | `it.skip` and an `.only` sibling each print `unproven ... [the case was skipped]`; two cases of one name print `[the file holds 2 cases of that name]`; `2 reverts, 2 unproven`, no `red` line |
+| 2 | a revert that changes nothing is unproven | the same run | a directive naming a comment line prints `where the line it names is blank or a comment`; `return size > 2;` written over itself prints `where the replacement is the line it replaces` |
+| 3 | the scratch guard reads code, not prose | `npx vitest run tests/scratch.test.ts`: 8 passed; over a copy with the review's two plants, `findUnswept` returns both | both of the review's plants, which passed before |
+| 4 | the literals of a line holding two strings | `npx vitest run tests/negatives.test.ts`: 7 passed | `literalsIn` over a line with two quoted strings returns the literal, and the comment restating it is refused |
+| 5 | one walk under `tests/views` | `npx vitest run tests/audits.test.ts`: 6 passed | the orphan case and `findAudits` both read `everyCase`, which recurses |
+| 6 | every source file is measured | `sh bin/size-check.sh` exit 0; a planted `bin/planted-big.mjs` of 2000 lines prints `over the line and not on the list`, exit 1 | the review's 2000-line `.mjs` |
+| 7 | a red suite is a red command | over a probe tree whose `test` script is `exit 1`: prints both red lines, exit 1 | the review's probe, which exited 0 |
+| 8 | four citation misses | `npx vitest run tests/bin/cited-lines.test.ts`: 7 passed; over a four-line file, each of `1-9999`, `4-1`, `-5` and a punctuation-only line prints `MISSING` with its reason | all four |
+| 9 | a target that escapes the copy | the revert-check test | a directive naming `../escape-target-*.txt` prints `which is outside the tree`, the outside file is byte-for-byte unchanged, nothing is written outside the copy |
+| 10 | a directive above a case opens that case | the revert-check test | the directive above `it('the case the directive opens'` names that case and prints `red`; `the case above` is `unchecked` |
+| 11 | unchecked counts | `node bin/revert-check.mjs <8 files>`: `65 reverts, 0 unproven, 0 unchecked`, exit 0, 301s | a fixture of three undirected cases prints `0 reverts, 0 unproven, 3 unchecked`, exit 1 |
+| 12 | a reason is a reason | the duplication, audits and boundaries runs | `x` is refused by all three; the three share `isReason` in `tests/reason.ts:34` |
+| 13 | the two lists keep their own keys | duplication 9 passed, negatives 7 passed | a second clone between two listed files is one finding; one explained absence buys no room |
+
+## What each check now refuses
+
+- **`bin/revert-check.mjs`** reads one verdict for one case (`:259`): no case of that title, two of that title, or a skipped one is `unproven` with the reason. A revert that changes nothing is refused before the copy is run (`:152`); a target outside the tree or the copy is refused and named (`:184`); a directive on the line above a case belongs to that case (`:114`); `unchecked` is counted and decides the exit status (`:397`).
+- **`bin/cited-lines.mjs`** refuses a range that runs backwards or spans 200 lines or more (`:51`), a number below one, which the pattern now admits so it can be refused by name (`:28`), and a line holding nothing or nothing but punctuation (`:82`).
+- **The scratch guard** blanks comments and string literals before looking for a registration or a call (`tests/scratch.test.ts:70`), and the helper never counts as a file's registration (`:142`). Over the tree it now finds **zero** unregistered suites: the 82 registrations of round one are all real, and the guard is what says so.
+- **`tests/reason.ts:34`** is the one rule three checks ask: four words at least, and none of the literals its subject names (`:13`). What it still cannot tell is a sentence that reads as a reason and says nothing about the fixture; both head comments say so.
+- **The duplication floor** is keyed on the clone (`tests/duplication.test.ts:38`, `:127`), so two listed files cannot grow a second copy under the first one's entry; the allow list is read after the run suppression.
+- **The negatives floor** is keyed on the literals of each absence (`tests/negatives.test.ts:54`): 26 entries for `browser/files-forms.spec.ts` and 22 for `browser/unsaved-forms.spec.ts`, one per absence.
+- **The size rule** measures `.ts`, `.svelte`, `.mjs` and `.js` (`tests/size.test.ts:51`, `bin/size-check.sh:15`). No file under `bin/` is over the line.
+- **`bin/scratch-count.sh`** exits non-zero when either suite is red (`:30`), and waits for port 8792 before the browser run.
+
+## The verify list, each timed in the run quoted
+
+| Command | Output | Runtime |
+| --- | --- | --- |
+| `npx vitest run --reporter=dot` | `Test Files 258 passed`, `Tests 4306 passed` | 90s |
+| `sh bin/scratch-count.sh` | `node before 0 / node after 0 / browser before 0 / browser after 0`, exit 0 | 492s |
+| `npm run check` | `COMPLETED 1233 FILES 0 ERRORS 0 WARNINGS` | 19s |
+| `npm run build` | `built in 15.99s`, exit 0 | 25s |
+| `npm run format:check` | `All matched files use Prettier code style!` | 19s |
+| `npm run lint` | no output | 77s |
+| the ASCII gate | nothing, exit 0 | 1s |
+| `sh bin/size-check.sh` | nothing, exit 0 | 1s |
+
+The browser suite ran inside the count script; on its own under a private `TMPDIR` it printed `241 passed (5.4m)`.
+
+## The citation check over the report
+
+`node bin/cited-lines.mjs --root . <this report's citations>` from `tools/oculus` prints `19 cited lines, 0 missing`, exit 0. Over the round-one report as it sits on disk it prints `25 cited lines, 3 missing`: `tests/bin/claude-usage.test.ts:22` blank, `bin/revert-check.mjs:50` blank (the line has moved), and `views/shared/CardActions.svelte:202`, which wants its `src/lib/` prefix.
+
+## Files changed this round
+
+New: `tests/reason.ts` 38. Changed: `bin/revert-check.mjs` 407, `bin/cited-lines.mjs` 152, `bin/size-check.sh` 53, `bin/scratch-count.sh` 54, `tests/scratch.test.ts` 335, `tests/duplication.test.ts` 376, `tests/negatives.test.ts` 242, `tests/audits.test.ts` 258, `tests/boundaries.test.ts` 567, `tests/size.test.ts` 151, `tests/bin/revert-check.test.ts` 440, `tests/bin/cited-lines.test.ts` 123, `tests/allow-duplication.txt` 754 (744 entries, one per clone), `tests/allow-audits.txt` 160, `tests/allow-negatives.ts` 63 (48 entries, one per absence), `tests/data/real-hub.probe.ts` 130.
+
+The step's whole diff against ec7bc6e5: 150 files changed, 1082 insertions, 292 deletions, plus 18 untracked files.
+
+## What is left over
+
+- The duplication floor grew from 578 pair entries to 744 clone entries, because a pair holding more than one clone was silencing all of them under one line. Nothing new was added to the tree.
+- The audits floor's reasons are machine-derived from each case's first assertion, so they pass the four-word rule and name a fact, but they are not a human's judgment of why that case never renders.
+- `bin/scratch-count.sh` waits up to thirty minutes for port 8792 and then runs anyway; the line above the count says when the browser half was red for that reason.

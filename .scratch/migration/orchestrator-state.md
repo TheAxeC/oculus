@@ -40,6 +40,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/Q51-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: af5dd7aa1e040a660            # the Agent tool id, launched 05:40
+  reported: 2026-09-18T06:26                # everything in the brief done: the store is 440 lines from 942, split into access.ts 40, storage.ts 78, attention.ts 149, instances.ts 333, opening.ts 162 and show-in-files.ts 50, each a factory taking one `LayoutAccess` so none declares a rune; the public shape unchanged and every importer keeping its path; 16 new cases with their reverts run, and two first choices replaced because they did not turn their case red
+  reviewer: a2cd905622b557c86                # claude:opus through the Agent tool, read-only, launched 06:31, scratch folder scratchpad/q51-review (review earned: the shell's whole layout store); its brief is to compare every moved function body against the base
   landing: not-started
   round: 0
 - package: Q50
@@ -77,6 +79,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   reviewer2: a0f9ae50704b7e127               # the run over round 1, claude:opus, read-only, launched 05:17, scratch folder scratchpad/r14-review2; its brief was to fool each of the eleven checks
   reviewer2_done: 2026-09-18T05:05           # twenty-two findings, appended to agents/reviews/R14-refuter.md: four of the eleven rulings are not met. The revert check still proves a skipped case, a case another's `.only` excluded, a shared title and a drifted line; the scratch guard matches its own helper's comment, so any of the 82 suites can drop its registration and stay green; `literalsIn` pairs quotes greedily; the audits orphan case does not recurse. Plus the size check measuring no `.mjs`, the scratch count exiting 0 over a red suite, four citation shapes passing, the revert check writing outside its copy, and two lists payable down
   round2: 1                                 # sent 05:25, under the cap's one exception (four acceptance items of the brief unbuilt, too large for a landing fix): thirteen rulings; round base: scratchpad/r14-round2 (tracked.patch 6278 lines, untracked.txt 17 files)
+  reported4: 2026-09-18T06:26                # the second round's report, appended to agents/reviews/R14-report.md: every ruling done. The revert check reads one verdict for one case and refuses a skipped one, a shared title, a no-op revert and a target outside its copy; `unchecked` counts and decides the exit status; the scratch guard blanks comments and strings and now finds zero unregistered suites over the tree, which says the 82 registrations of round one are real; the duplication floor is keyed on the clone (744 entries) and the negatives floor on each absence's literals (48); the size rule measures `.mjs` and `.js` too; the count script exits non-zero over a red suite
+  reviewer3: ad56ae0ee60352bd7               # the run over round 2, claude:opus, read-only, launched 06:30, scratch folder scratchpad/r14-review3; its brief is the same attack a third time
   landing: not-started
 ```
 
