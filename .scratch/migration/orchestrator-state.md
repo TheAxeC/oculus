@@ -49,7 +49,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   round2: 1                                 # sent 01:21, under the cap's one exception (an acceptance item of the brief unbuilt, too large for a landing fix): five rulings (the form carried onto the renamed entry with its draft, `landed` kept across a tab switch, an add form that adds rather than renames, the entry addressed by its id rather than its identity value, and three smaller findings closed or stated)
   reported3: 2026-09-18T02:03                # the second round's report: all five rulings done, the rename carrying the form and its draft onto the new id. Ruling 4 is closed in behaviour by a client copy of the server's id rule (`writtenId`), pinned against `idOfIdentity` over five file shapes, because no write answer carries an id; the four-line server change that deletes the copy is written out in the report and is a landing fix. Ruling 5c is stated, not closed: a write has no timeout, so a save that never answers leaves that form's Save control disabled until Cancel or a reload
   reviewer3: a5d6d9121496a9b99               # the run over round 2, claude:opus, read-only, launched 02:04, scratch folder scratchpad/q48-review3
-  landing: not-started
+  reported4: 2026-09-18T02:49                # the run's report, appended to agents/reviews/Q48-refuter.md: five findings, all closed at the landing, since the cap's one exception was spent on round 2
+  landing: cherry-picking
 - package: R14
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus

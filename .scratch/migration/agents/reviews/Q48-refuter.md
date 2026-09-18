@@ -160,3 +160,85 @@ Checked and not findings: the `saving` mark over two forms of one instance, a ta
 Not checked: an A/B against the staged base binaries; any look at the views on screen; `HELP.md:65` and `DESIGN.md:334`, which brief decision 2 keeps out of the step and whose replacement text the report carries.
 
 Reviewer usage: 42 tool uses, about 30 minutes (00:45 to 01:12).
+
+---
+
+# The run over repair round 2 (reviewer a5d6d9121496a9b99, 02:04 to 02:49)
+
+```
+npx vitest run --reporter=dot                            (worktree, tools/oculus)
+  Test Files  1 failed | 248 passed (249)
+       Tests  1 failed | 4222 passed (4223)    Duration 114.44s
+  the one red is tests/server/git.test.ts > "carries the newest commits, newest first, capped at
+  the constant", Error: Test timed out in 5000ms; outside this step's diff. Rerun alone as a file:
+  npx vitest run tests/server/git.test.ts --reporter=dot -> Tests 1 failed | 33 passed (34), 29.26s
+  Rerun as the single test: npx vitest run tests/server/git.test.ts -t "carries the newest commits"
+  -> 1 passed, tests 4.87s of a 5000ms budget. Pre-existing and marginal, not the step's.
+
+npm run check
+  1789690139611 COMPLETED 1217 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+
+npm run lint
+  > eslint .   (no output, exit 0)
+
+npm run format:check
+  All matched files use Prettier code style!
+
+LC_ALL=C perl -ne '...' $(find src tests bin config -type f ! -name glyphs.yml)
+  (no output, exit 0)
+
+find src tests bin -type f | xargs wc -l | sort -n | tail -3
+       970 tests/state/layout.test.ts
+       980 tests/state/board.test.ts
+    172457 total
+  wc -l: src/lib/views/Files.svelte 587 (the report's figure), state/fs.svelte.ts 861,
+  state/form-drafts.svelte.ts 552, views/shared/EntryForm.svelte 481, state/fs.ts 664
+
+npm run build                                            exit 0
+
+npx playwright test files-forms unsaved-forms files cards
+  71 passed (3.4m)                                       (the report's figure)
+
+git status --short (from inside the worktree): the same twelve modified files, no new file; the
+  twelve rows of the report's "Files changed" table match git diff ac11faae --stat exactly
+  (1211 insertions, 67 deletions).
+
+grep -rn "Array.isArray(kept)" src/lib -> src/lib/state/fs.ts:456 and
+  src/lib/views/Repositories.svelte:86 only (the report's figure); patchedFilesView is read by
+  src/lib/views/Files.svelte:214 and src/lib/state/context.ts:155, both callers.
+
+Machine-readable reverts, each applied at the line its comment names, in the reviewer's own clone
+under scratchpad/q48-review3/clone (never in the worktree), restored and diffed clean after:
+  fs.ts:457 => return { ...part };                       -> explorer 1 failed | 22 passed
+  fs.ts:443 => if (marks.loading || marks.error !== '')  -> explorer 1 failed | 22 passed
+  form-drafts.svelte.ts:66 => ['title','id','key']       -> form-drafts 1 failed | 38 passed
+  form-drafts.svelte.ts:279 => return null;              -> form-drafts 3 failed | 36 passed
+  form-drafts.svelte.ts:356 => if (false) forgetAdded... -> form-drafts 1 failed | 38 passed
+  form-drafts.svelte.ts:372 => if (true) return;         -> form-drafts 1 failed | 38 passed
+  form-drafts.svelte.ts:509 => held.added = {...held.added} -> form-drafts 1 failed | 38 passed
+  fs.svelte.ts:642 => closeGoneForms(held.bookmarks); return; -> fs.test 1 failed | 51 passed
+  Files.svelte:449 => onrenamed={() => undefined}        -> files-forms 4 failed | 11 passed
+  EntryForm.svelte:253 => entry === null ? '' : entry.id -> unsaved-forms 3 failed | 17 passed
+  EntryForm.svelte:253 => (made?.id ?? '')               -> unsaved-forms 1 failed | 19 passed
+  Every one turns the test its comment names red.
+```
+
+## Findings
+
+1. `src/lib/state/fs.svelte.ts:655` with `:651-653` and the comment at `:661-665`: ruling 5a is closed on the not-ok branch only. The `catch` branch writes `held.bookmarks = { ...NO_BOOKMARKS, error: reasonOf(error), loading: false }` and does not return, so it falls through to the tail `closeGoneForms(held.bookmarks)`; `reasonOf` (`:753`) answers `''` for a thrown `Error('')` or a thrown `''`, and the only guard left is `editedGone`'s `marks.error !== ''` (`src/lib/state/fs.ts:443`). Reproduced: with `fetch` rejecting `new Error('')`, an instance holding `{form:'bookmark',editing:'manual'}` becomes `{"form":"","editing":"","typed":"","opening":1}`, its draft forgotten, over a read that never answered. The comment above `closeGoneForms` is false for that branch and no test covers it. Under Standards.
+
+2. `src/lib/views/shared/EntryForm.svelte:282-293` (`renamed`): a rename whose new id is another bookmark's id leaves the form open over an id that names two entries and unsavable from then on. Probe P1: the write answers `saved label`, the instance goes to `{"form":"bookmark","editing":"notes.md"}`, and the next Save answers `not saved: label: two entries share the label notes.md, so a write cannot address one of them`. The duplicate is the server's (`sharedIdentity`); what the round adds is carrying the open form and its draft onto the colliding id. Not in the report's table or Limitations. Under Behaviour.
+
+3. `tests/state/form-drafts.test.ts:553`, `:560`, `:572`: three new tests carry no revert, which is the round-1 finding ruled closed reopened in the same round. `agents/spec.md:54`. Under Standards.
+
+4. `agents/reviews/Q48-report.md`, "Ruling 4": the pin claim is not reproduced for one of the three reorderings. With `writtenId` reading `['key','id','title']`, `npx vitest run tests/state/form-drafts.test.ts` gives 39 passed: none of the five pinned shapes carries both `id` and `key`. The rule itself is right on this tree: `writtenId` equals `idOfIdentity` for every entry of all twelve real hub collection files. Under Proof.
+
+5. `agents/reviews/Q48-report.md`: the spec's `agents/spec.md:55` grep is quoted only for `Array.isArray(kept)`, not for this round's names. The reviewer ran it: the only hit outside the changed files is `DESIGN.md:334`, whose replacement text the report's Doc text section carries. No code change is owed. Under Standards.
+
+## Checked and not findings
+
+Ruling 1's other three cases (P2 a refused rename, P3 a second bookmark form on another page, P4 a case-only rename); ruling 2's persistence (P5 reload, P6 tab close, P7 page and pane close, P8 the entry deleted between the add and the second save); ruling 3 (P9 the identity typed back, P10 whitespace); ruling 5b `patchedFilesView` as the one merge for both callers; the disabled Save control over a never-answering write (P11), which the report states under Limitations. The delta's new comments carry no date, package id or earlier-state history.
+
+Not checked: an A/B against the staged base binaries; any look at the views on screen; `HELP.md:65` and `DESIGN.md:334`, which brief decision 2 keeps out of the step.
+
+Reviewer usage: 104 tool uses, 240,612 tokens, about 46 minutes (02:03 to 02:49).
