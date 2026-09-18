@@ -114,7 +114,6 @@ What that means, so no session can read it another way:
 - Nothing is dispatched after them. Q58's brief is written and its premises are rechecked, and it stays undispatched. The same for Q59, O31, Q35 and everything below them in the queue.
 - The worktrees of the three are removed as each lands, as usual, so the tree is left clean.
 - The pause holds until Axel lifts it in words. A new session reads this section before it reads the queue.
-- **No new agent is started, of any kind.** Axel said on 2026-09-18 at 14:1x that the pause means this, not only that no new step is dispatched. The Q56 reviewer started at 14:0x was stopped for it. The builders of Q53 and Q36, already running their repair rounds, are let finish; no review is run over either round, whatever `refute_after_repair` says, and the orchestrator reads each round's delta itself and fixes small things at landing. Q56 lands on the orchestrator's own reading of its diff, with no review.
 - One piece of work is owed **at** the pause, not after it: the `plan-orchestration` skill runs the recurring-findings pass at every pause. So once Q36 lands, read every refuter report written since R14 (`agents/reviews/Q52-refuter3.md`, `Q53-refuter.md`, `Q54-refuter.md`, and Q53's, Q56's and Q36's own), group the findings by cause, and book each cause that appears in three or more steps with the smallest change that would end it, for Axel to rule. Only then is the loop stopped.
 
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
