@@ -73,3 +73,78 @@ a timeout (1 ms):                  present=true  repository=true  error="git tim
 The look on the TEST page (the orchestrator's); the full Playwright suite; a second full node run for flakiness; per-file added and removed counts; the Repositories view against a root deleted mid-session in a browser; the reachability of the `unplaced` and `reading` shapes inside `Repo.svelte`.
 
 Reviewer usage: 25 tool calls, 07:00 to 07:16.
+
+---
+
+# The run over repair round 1 (reviewer ab831a51ce633f000, 07:44 to 08:11)
+
+```
+npx vitest run --reporter=dot   1 failed | 4283 passed (4284), 48.31s; the one red is
+                                tests/server/hpc/ssh.test.ts, green alone (5 passed)
+npm run check                   COMPLETED 1223 FILES 0 ERRORS 0 WARNINGS
+npm run build                   exit 0
+npm run format:check            All matched files use Prettier code style!
+npm run lint                    no output, exit 0
+the ASCII gate                  printed nothing, exit 0
+both catalogs                   parse, exit 0
+npx playwright test repositories changes   11 passed (25.0s)
+git diff --stat 66e22825        14 files changed, 401 insertions(+), 79 deletions(-)
+```
+
+Nothing in the worktree was edited; every revert, probe and catalog experiment ran on a copy, and the two git readings are identical to the start.
+
+## The question the round turns on
+
+**`GitState.present` over the eight shapes, the reviewer's own probe:**
+
+```
+1 regular file             present=true  repository=false shape=none    "cannot change to ...: Not a directory"
+2 dangling symlink         present=true  repository=false shape=none    "... No such file or directory"
+3 .git is a file           present=true  repository=true  shape=readable
+4 under unreadable parent  present=true  repository=false shape=none    "... Permission denied"
+5 no permission of its own present=true  repository=false shape=none    "... Permission denied"
+6 nothing at the path      present=false repository=false shape=missing "no such directory"
+7 plain folder             present=true  repository=false shape=none    "not a git repository ..."
+8 timeout (1 ms)           present=true  repository=true  shape=failed  "git timed out"
+```
+
+Only shape 6 is `missing`, and the three the first review named now carry git's own reason.
+
+**`exists()` per errno**: `ENOENT` and `ENOTDIR` answer false; `EACCES`, `ELOOP` (which never reaches it, since `lstat` reads the link itself) and `ENAMETOOLONG` answer true. `lstat` rather than `stat` is right: a link to a real directory is followed by git anyway and reads `readable`, and the dangling link is what `stat` would get wrong. `EPERM` could not be produced on this machine.
+
+**The race, reproduced with the reviewer's own mechanism** (a `git` of its own first on `PATH` that sleeps a second, with a detached shell removing the root inside that window, no test hook): `present=false repository=false shape=missing`, and the reader gets "This workspace folder is not there." with git's line in the title. **The reverse race is not open**: a root created inside the window reads `readable`.
+
+**The `between` hook** fires exactly once and disarms itself, cannot pass vacuously (making its act throw reddens the case), and revert F reddens that case and only that case.
+
+## Spec
+
+None. Each of the seven rulings is in the diff at the line the report names.
+
+## Proof
+
+1. **Revert B's count does not reproduce**: dropping the detached line reddens two, not one, the second being `tests/keys.test.ts > has a reader for every catalog key` over the orphaned `sessions.ch_detached`. The revert is real and its case is red; the number is one short.
+2. **"No test needed a rerun alone this round" did not reproduce**: `tests/server/hpc/ssh.test.ts` was red under load and green alone.
+3. Every other revert reproduces, counted over the whole suite: A 3 node + 2 browser, B 2 node, C 2 + 1, D 1 + 1, E 1, F 1, G 3 + 1, H 1.
+4. The other numbers reproduce: 4284 over 251 files, `COMPLETED 1223 FILES 0 ERRORS`, `11 passed`, every file line count, and `grep -rn "repositories\.error\|data-repo-failed"` finding none.
+
+## Standards
+
+1. **A comment the diff makes false, outside the brief's paths**: `src/lib/server/watch/git.ts:202-204` says a deleted workspace gets "the empty shape statusFor gives a directory that is not a repository"; it now gets the `missing` shape with `present` false.
+2. **One clause of `exists()`'s comment is not true of one errno**: `ENAMETOOLONG` is not a read that could not tell, and a path of that kind reads `present=true`.
+3. `DESIGN.md:340` and `HELP.md:105` are still the old text, which decision 2 reserves on the condition the report carries the lines; the report now carries both, and the replacement paragraph was read against the code and holds. `DESIGN.md:334` is still wrong and still the orchestrator's.
+4. The deleted key is honest in both directions: adding `error:` back unread reddens the keys check, and making `rowLabel` read it reddens the other direction.
+5. Clean: no history in any added line; no added comment above 100 columns and the 138-column line is gone; every file under its limit; one `data-repo` vocabulary.
+
+## Behaviour
+
+1. **The report's before-and-after item 3 gives the round's own earlier version as its "before".** At the base, a regular file, a dangling symlink and a walled folder all already read "This workspace is not a git repository."; the only reader-visible change for them is the tooltip, which was `no such directory` and is now git's own line. Not stated.
+2. The round's first version was worse than the base for two of those three paths, but the step has never landed, so no reader could reach it.
+3. **A sentence still false, unchanged from the base and covered by no ruling**: a directory nothing may enter, a repository whose `.git` may not be entered, one with a broken `.git` file and one with a bad `.git/config` all read "This workspace is not a git repository." `present` is truthful for each; `repository` is not.
+4. `ENAMETOOLONG`: `present` true for a path at which no name can exist, reachable only through a workspace string no real `cwd` can hold.
+5. Everything else in the before-and-after reproduces.
+
+## Not checked
+
+The look on the TEST page; the full browser suite; `EPERM` from `lstat`; a `safe.directory` refusal; a second full node run; the Repositories view against a root deleted mid-session in a browser; the reachability of `unplaced` and `reading`; the timing of `exists()`, which the report itself states as unmeasured.
+
+Reviewer usage: 51 tool calls, 07:44 to 08:11.
