@@ -171,7 +171,7 @@ The size check stays green, and three files on its allow list grew inside it: `t
 
 ---
 
-# Repair round 1 (builder a7dc75ae4e37c3339, sent 02:34, reported 05:1x)
+# Repair round 1 (builder a7dc75ae4e37c3339, sent 02:34, reported 04:19)
 
 All eleven rulings done. `tests/server/git.test.ts` and three of the step's own fixture cases were timing out under the load of a second worktree's suite; each was given a budget of its own rather than a loosened assertion.
 
@@ -243,7 +243,7 @@ The step's whole diff against ec7bc6e5: 150 files changed, 1076 insertions, 292 
 
 ---
 
-# Repair round 2 (builder a7dc75ae4e37c3339, sent 05:25, reported 06:2x)
+# Repair round 2 (builder a7dc75ae4e37c3339, sent 05:25, reported 06:10)
 
 Every ruling is done. One the builder could not do: `agents/reviews/R14-report.md` lives under `.scratch/`, which `agents/spec.md:33` forbids a worker to write, so the two wrong citations of the round-1 report are corrected here rather than there.
 

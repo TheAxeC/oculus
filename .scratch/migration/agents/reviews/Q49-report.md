@@ -87,7 +87,7 @@ How it is built: the buttons now sit in `<span class="acts">`, with the ones a r
 
 ---
 
-# Repair round 1 (builder ab29cfa8299cdf7f4, sent 01:21, reported 05:0x)
+# Repair round 1 (builder ab29cfa8299cdf7f4, sent 01:21, reported 04:11)
 
 Every ruling done. The overlay is gone: a row's buttons are drawn on the line, at the row's end, and what a row is not drawing is `display: none`, so it holds no width, no press and no Tab stop, and the board around the row is the same whether the row is open or not.
 

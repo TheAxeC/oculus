@@ -1,6 +1,6 @@
 # Report: Q52, one branch-state rule for the two git views
 
-Builder a4d2d5b3b40564ca1, claude:opus through the Agent tool, launched 06:35, reported 07:0x.
+Builder a4d2d5b3b40564ca1, claude:opus through the Agent tool, launched 06:35, reported 06:59.
 
 Everything in the brief is done.
 
@@ -66,7 +66,7 @@ Source: `data/model-sessions.ts` 489, `server/git.ts` 393, `views/shared/repo-sh
 
 ---
 
-# Repair round 1 (builder a4d2d5b3b40564ca1, sent 07:20, reported 07:4x)
+# Repair round 1 (builder a4d2d5b3b40564ca1, sent 07:20, reported 07:42)
 
 All seven rulings built and verified. The review file was written to the main checkout after this worktree was cut, so the builder worked from the seven rulings, each of which names its probe.
 
@@ -162,7 +162,7 @@ A (`ch_insync` whenever the list is empty): 3 node red and, after a rebuild, 2 b
 
 ---
 
-# Repair round 2 (builder a4d2d5b3b40564ca1, sent 08:35, reported 09:5x)
+# Repair round 2 (builder a4d2d5b3b40564ca1, sent 08:35, reported 08:45)
 
 All six rulings built and verified. The builder could not read the review's round-1 section: the file on the main checkout ended at the round-0 review when it looked, so it worked from the six rulings, each of which names its probe.
 

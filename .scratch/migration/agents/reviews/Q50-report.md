@@ -97,7 +97,7 @@ What a reader would see for a value of the new shape (`github.com/TheAxeC/x` in 
 
 ---
 
-# Repair round 1 (builder a181fc7855d996f4e, sent 05:30, reported 06:0x)
+# Repair round 1 (builder a181fc7855d996f4e, sent 05:30, reported 05:37)
 
 Everything in the five rulings is done.
 
