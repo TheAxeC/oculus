@@ -29,7 +29,19 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40, Q48 03:56, Q49 05:31, Q50 06:25, Q51 06:48; in flight: R14 (the eleven checks of the pass) from ec7bc6e5 and Q52 from 66e22825; next to dispatch: Q53; briefs written and waiting: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36; next: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36, O31, Q35; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40, Q48 03:56, Q49 05:31, Q50 06:25, Q51 06:48; in flight: R14 (the eleven checks of the pass) from ec7bc6e5 Q52 from 66e22825 and Q53 from 99ea1b96; next to dispatch: Q54; briefs written and waiting: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36; next: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36, O31, Q35; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2
+- package: Q53
+  executor: agent                          # the configuration default, chosen for the step
+  worker: claude:opus
+  worktree: .agents/worktrees/q53
+  base: 99ea1b96
+  launched: 2026-09-18T08:25
+  prompt: the Agent tool's prompt, the brief's two halves plus Axel's ruling of 08:15 as a third, with the revert-line rule the checks keep catching
+  report: tools/oculus/.scratch/migration/agents/reviews/Q53-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: ab66a4e0d269be811            # the Agent tool id, launched 08:25
+  landing: not-started
+  round: 0
 - package: Q52
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
