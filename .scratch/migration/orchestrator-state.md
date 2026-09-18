@@ -106,15 +106,18 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
 
 ## The pause
 
-Axel asked on 2026-09-18 at 12:5x: pause once the current three steps are done.
+Axel, 2026-09-18: no more runs. Both of these hold, and neither gives way to the other:
 
-What that means, so no session can read it another way:
+- **No new run of any kind**: no builder, no reviewer, no repair round.
+- **Nothing lands without its review.** The rules on reviews are unchanged.
 
-- Q53, Q56 and Q36 are carried all the way through: their repair rounds, their reviews, their landings on main, their bookings in `plan.md` and their landing reports under `agents/reviews/`. A pause is not a reason to leave a step half-landed.
-- Nothing is dispatched after them. Q58's brief is written and its premises are rechecked, and it stays undispatched. The same for Q59, O31, Q35 and everything below them in the queue.
-- The worktrees of the three are removed as each lands, as usual, so the tree is left clean.
-- The pause holds until Axel lifts it in words. A new session reads this section before it reads the queue.
-- One piece of work is owed **at** the pause, not after it: the `plan-orchestration` skill runs the recurring-findings pass at every pause. So once Q36 lands, read every refuter report written since R14 (`agents/reviews/Q52-refuter3.md`, `Q53-refuter.md`, `Q54-refuter.md`, and Q53's, Q56's and Q36's own), group the findings by cause, and book each cause that appears in three or more steps with the smallest change that would end it, for Axel to rule. Only then is the loop stopped.
+So the three steps are parked where they stand, in their worktrees, and wait for the pause to lift:
+
+- **Q56**: built, report saved. Its review has not run. It lands only after that review.
+- **Q36**: its builder was stopped partway through its repair round; the worktree holds the partial round. It resumes, is reviewed and lands after the pause.
+- **Q53**: its builder was stopped partway through its nine-item repair round; the worktree holds the partial round. Same.
+
+Nothing is dispatched after them. The pause holds until Axel lifts it in words.
 
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
 - A write that never answers (raised 2026-09-18 02:03 by Q48's second round): `state/writes.svelte.ts`'s `send` has no timeout and no abort, so a request that never comes back leaves that form's Save control disabled until Cancel or a reload. Closing it means choosing how long a write may take before the page gives up, which is a user-visible duration nothing in `config/` names, so it is Axel's to rule. Recommended: a write gives up after 30 seconds and says so in the form's own refusal line, the duration living beside the other timeouts in `config/behavior.yml` so it can be changed without a build. The lazy option here would be leaving it stated as a limitation, which is what the round did. Closed 2026-09-18 08:15, Axel: agreed, the non-lazy option. A write gives up after 30 seconds and says so in the form's own refusal line, the duration in `config/behavior.yml`; booked into Q59.
