@@ -45,6 +45,7 @@ text:
         ch_failed: 'git could not read this repository: {0}'
         ch_group_empty: nothing
         ch_insync: in step with the upstream
+        ch_nofolder: This workspace folder is not there.
         ch_norepo: This workspace is not a git repository.
         ch_noworkspace: This session names no workspace folder.
         ch_reading: git has not read this workspace yet.

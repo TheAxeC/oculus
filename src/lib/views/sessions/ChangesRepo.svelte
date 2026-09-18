@@ -8,6 +8,7 @@
     import TextInput from '$lib/ui/TextInput.svelte';
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import ChangeGroups from '$lib/views/shared/ChangeGroups.svelte';
+    import { branchState } from '$lib/views/shared/branch-state';
     import type { GitEntry, GitState } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
 
@@ -22,7 +23,6 @@
         branchName: string;
         outcome: string;
         shared: (path: string) => string[];
-        branchState: (state: GitState) => string;
         onswitch: (name: string) => void;
         onpush: () => void;
         onbranch: () => void;
@@ -46,7 +46,6 @@
         branchName,
         outcome,
         shared,
-        branchState,
         onswitch,
         onpush,
         onbranch,

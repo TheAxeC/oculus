@@ -20,9 +20,8 @@ text:
         diff_staged_title: Show what is staged for this path
         diff_title: Show what changed in this path
         diff_worktree_title: Show what this worktree holds that the repository does not
-        empty: No repository is on the channel yet.
+        empty: Nothing is on the channel yet.
         empty_glyph: repositories
-        error: 'git could not read this repository: {0}'
         log: Commits
         log_empty: No commit has been made here yet.
         merge: merge back
@@ -30,6 +29,9 @@ text:
         merge_detail: A conflict is taken back and reported, so nothing is left half merged.
         merge_detached: This repository has no branch checked out, so there is nothing to merge into.
         merge_title: Merge this worktree's branch into the repository's checked-out branch
+        pick_failed: unreadable
+        pick_missing: gone
+        pick_norepo: no repository
         remove: remove
         remove_confirm: Remove the worktree {0}?
         remove_detail: The worktree folder goes, and its branch with it when no work is left only there.

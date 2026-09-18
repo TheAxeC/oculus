@@ -84,32 +84,29 @@ export function repositoriesViewOf(state: unknown): RepositoriesView {
 }
 
 /**
- * The roots the picker offers: the ones git reads as repositories, a repository with no commit yet
- * and one whose last read failed among them. A root the channel carries because the file browser
- * serves it but that is no repository (a folder of notes, a data folder) is not a repository to
- * pick. A failed read stays offered, so the view draws the failure rather than losing the
- * repository.
+ * The roots the picker offers: every root the `git` channel carries a state for, in the channel's
+ * order. A folder of notes, a data folder, a repository whose read failed and a folder the reader
+ * has deleted are all offered, each row saying what its state is, so a root never leaves the picker
+ * for being quiet and the reader is told why rather than handed another repository. A root the
+ * channel names with no state at all is the one thing dropped: there is nothing for a row to say.
  */
-export function repositoryRoots(
-    roots: string[],
-    stateOf: (root: string) => GitState | null
-): string[] {
-    return roots.filter((root) => stateOf(root)?.repository === true);
+export function pickerRoots(roots: string[], stateOf: (root: string) => GitState | null): string[] {
+    return roots.filter((root) => stateOf(root) !== null);
 }
 
 /**
- * The repository the view draws: the one it keeps while the picker offers it, and the first one the
- * picker offers otherwise, so a repository that went away hands the view to another one rather than
- * to nothing. A repository whose read failed is still offered, so it stays the one drawn. The empty
- * string while there is none.
+ * The root the view draws: the one it keeps while the picker offers it, and the first one the
+ * picker offers otherwise, so a root the channel has dropped hands the view to another one rather
+ * than to nothing. A root whose folder was deleted and one whose read failed are both still
+ * offered, so the reader's pick survives either. The empty string while there is none.
  */
 export function shownRoot(roots: string[], kept: string): string {
     return roots.includes(kept) ? kept : (roots[0] ?? '');
 }
 
 /**
- * The name each repository is picked by: its last folder, and the last two where two repositories
- * share the last one, and the whole path where they share both.
+ * The name each root is picked by: its last folder, and the last two where two roots share the last
+ * one, and the whole path where they share both.
  */
 export function repositoryLabels(roots: string[]): Record<string, string> {
     const tail = (root: string, count: number): string =>

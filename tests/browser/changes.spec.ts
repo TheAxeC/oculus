@@ -1,8 +1,8 @@
 // The Sessions view's Changes panel in a real browser, over sessions whose workspaces are folders
 // this spec makes: a repository with a commit, a repository with no commit yet, a folder that is no
-// repository, and a repository whose status read fails on a broken index. Each drawn state is
-// checked with the branch listing the panel fetches from /api/git counted per workspace, since the
-// fetch runs in an effect and the node suite renders no effect.
+// repository, a folder that is not there at all, and a repository whose status read fails on a
+// broken index. Each drawn state is checked with the branch listing the panel fetches from /api/git
+// counted per workspace, since the fetch runs in an effect and the node suite renders no effect.
 //
 // A session reaches the page as a transcript in the store the served run reads: tests/browser/serve.ts
 // makes the run's own home directory beside the hub copy, and the sessions watcher reads its
@@ -197,6 +197,32 @@ test.describe('the Changes panel', () => {
 
         expect(asked.get(plain) ?? 0).toBe(0);
         expect(asked.get(broken) ?? 0).toBe(0);
+    });
+
+    // Revert: return 'none' for a root that is not there in views/shared/repo-shape.ts, or set
+    // `gone.present = true` in state() of server/git.ts where nothing is at the path. This case is
+    // over the server and the view together, so either turns it red.
+    test('says the workspace folder of a session whose folder has gone is not there', async ({
+        page
+    }) => {
+        const away = folder('gone');
+        session('Changes spec gone', away);
+        // The folder goes before the page is opened, so the first state the channel carries for the
+        // root already says it is not there.
+        rmSync(inside(away), { recursive: true, force: true });
+
+        await boot(page);
+        await openView(page, 'session-list', t('sessions.rail_title'));
+        await openView(page, 'changes', t('sessions.view_changes'));
+        const panel = page.locator('.changes[data-instance]');
+
+        await showChanges(page, 'Changes spec gone');
+        await expect(panel.locator('[data-repo="missing"]')).toBeVisible({ timeout: 15000 });
+        await expect(panel.getByText(t('sessions.ch_nofolder'))).toBeVisible();
+        // The folder has gone, so the panel must not also claim it holds no repository.
+        await expect(panel.getByText(t('sessions.ch_norepo'))).toHaveCount(0);
+        // Nothing can be read at a folder that is not there, so no reading drawing appears.
+        await expect(panel.locator('[data-repo="readable"]')).toHaveCount(0);
     });
 
     // Revert: in load() of views/sessions/Changes.svelte, write `branches = listed` whatever

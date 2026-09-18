@@ -17,7 +17,7 @@ import {
     repositoriesViewOf,
     repositoryKeyRows,
     repositoryLabels,
-    repositoryRoots,
+    pickerRoots,
     shownRoot,
     statusStyle,
     statusWordKey,
@@ -109,18 +109,42 @@ describe('the repository a view shows', () => {
         });
     });
 
-    // Revert: return `roots` whole from repositoryRoots.
-    it('offers the roots git reads as repositories and no other', () => {
+    // Revert: filter by `stateOf(root)?.repository === true` in pickerRoots.
+    it('offers every root the channel carries a state for, in the channel order', () => {
         const states: Record<string, GitState> = {
             '/hub': git({ branch: 'main' }),
-            '/notes': git({ branch: '', repository: false, error: 'not a git repository' })
+            '/notes': git({ branch: '', repository: false, error: 'not a git repository' }),
+            '/deleted': git({
+                branch: '',
+                present: false,
+                repository: false,
+                error: 'no such directory'
+            })
         };
+        // `/nostate` is a root the channel names with no state of its own, the one thing dropped.
         expect(
-            repositoryRoots(['/hub', '/notes', '/gone'], (root) => states[root] ?? null)
-        ).toEqual(['/hub']);
+            pickerRoots(['/hub', '/notes', '/deleted', '/nostate'], (root) => states[root] ?? null)
+        ).toEqual(['/hub', '/notes', '/deleted']);
     });
 
-    // Revert: keep the roots whose state has `error === null` in repositoryRoots.
+    // Revert: filter by `stateOf(root)?.repository === true` in pickerRoots.
+    it('keeps showing a root the reader picked after its folder was deleted', () => {
+        const states: Record<string, GitState> = {
+            '/hub': git({ branch: 'main' }),
+            '/deleted': git({
+                branch: '',
+                present: false,
+                repository: false,
+                error: 'no such directory'
+            })
+        };
+        const offered = pickerRoots(['/hub', '/deleted'], (root) => states[root] ?? null);
+        // The reader was on the folder that has just gone, and the view stays on it rather than
+        // handing itself to the hub without saying why.
+        expect(shownRoot(offered, '/deleted')).toBe('/deleted');
+    });
+
+    // Revert: keep the roots whose state has `error === null` in pickerRoots.
     it('offers a repository with no commit yet and one whose read failed, and keeps showing it', () => {
         const states: Record<string, GitState> = {
             '/hub': git({ branch: 'main' }),
@@ -128,23 +152,23 @@ describe('the repository a view shows', () => {
             '/broken': git({ branch: 'main', error: 'index file smaller than expected' }),
             '/notes': git({ branch: '', repository: false, error: 'not a git repository' })
         };
-        const offered = repositoryRoots(
+        const offered = pickerRoots(
             ['/hub', '/fresh', '/broken', '/notes'],
             (root) => states[root] ?? null
         );
-        expect(offered).toEqual(['/hub', '/fresh', '/broken']);
+        expect(offered).toEqual(['/hub', '/fresh', '/broken', '/notes']);
         // The reader was on the repository whose read has just failed, and the view stays on it.
         expect(shownRoot(offered, '/broken')).toBe('/broken');
     });
 
-    // Revert: keep the roots whose state has `error === null` in repositoryRoots.
+    // Revert: keep the roots whose state has `error === null` in pickerRoots.
     it('offers a root whose repository check did not answer, and keeps showing it', () => {
         // The shape server/git.ts gives a root whose `rev-parse --git-dir` timed out.
         const states: Record<string, GitState> = {
             '/hub': git({ branch: 'main' }),
             '/slow': git({ branch: '', repository: true, error: 'git timed out' })
         };
-        const offered = repositoryRoots(['/hub', '/slow'], (root) => states[root] ?? null);
+        const offered = pickerRoots(['/hub', '/slow'], (root) => states[root] ?? null);
         expect(offered).toEqual(['/hub', '/slow']);
         expect(shownRoot(offered, '/slow')).toBe('/slow');
     });

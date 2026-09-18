@@ -1,5 +1,6 @@
 // The Changes view rendered to HTML on the server: the files the session touched, the repository
-// section in each of its five drawings, and the controls the readable one carries.
+// section in each of its six drawings, and the controls the readable one carries. The branch-state
+// sentence both git views draw is checked here as the rule it is, over each of its cases.
 //
 // The catalog, glyphs and vocabulary are the real config. The sessions and git state are the test's
 // own: nothing reads ~/.claude, ~/.codex or ~/.oculus, and nothing writes anywhere.
@@ -11,7 +12,8 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import Changes from '../../src/lib/views/sessions/Changes.svelte';
-import { repoShape } from '../../src/lib/views/sessions/repo-shape.ts';
+import { branchState } from '../../src/lib/views/shared/branch-state.ts';
+import { repoShape } from '../../src/lib/views/shared/repo-shape.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -187,7 +189,22 @@ describe('the changes view', () => {
         expect(body).toContain(catalog['sessions.ch_binary']);
     });
 
-    // Revert: return 'unplaced' for a folder that is no repository in repo-shape.ts.
+    // Revert: return 'none' for a root that is not there in views/shared/repo-shape.ts. The state
+    // here is the fixture's, so what the server writes into `present` is the server test's.
+    it('says a workspace folder that is not there is not there, and not that it is no repository', () => {
+        otherGit(
+            git({ branch: '', present: false, repository: false, error: 'no such directory' })
+        );
+        select('bare-one');
+        const body = html(Changes);
+        expect(said(body)).toEqual(['missing']);
+        expect(body).toContain(catalog['sessions.ch_nofolder']);
+        // A folder that has gone is told apart from one that is there and holds no repository.
+        expect(body).not.toContain(catalog['sessions.ch_norepo']);
+        expect(body).toContain('title="no such directory"');
+    });
+
+    // Revert: return 'unplaced' for a folder that is no repository in views/shared/repo-shape.ts.
     it('says a workspace is not a repository, with git own reason in the tooltip', () => {
         select('bare-one');
         const body = html(Changes);
@@ -206,7 +223,7 @@ describe('the changes view', () => {
         expect(body).toContain(catalog['sessions.ch_failed'].replace('{0}', reason));
     });
 
-    // Revert: return 'none' for a null state in repo-shape.ts.
+    // Revert: return 'none' for a null state in views/shared/repo-shape.ts.
     it('says git has not read a workspace the channel carries no state for yet', () => {
         otherGit(null);
         select('bare-one');
@@ -215,7 +232,7 @@ describe('the changes view', () => {
         expect(body).toContain(catalog['sessions.ch_reading']);
     });
 
-    // Revert: return 'none' for an empty workspace in repo-shape.ts.
+    // Revert: return 'none' for an empty workspace in views/shared/repo-shape.ts.
     it('says a session with no workspace names no folder', () => {
         select('adrift-one');
         const body = html(Changes);
@@ -226,7 +243,7 @@ describe('the changes view', () => {
         expect(repoShape('', null)).toBe('unplaced');
     });
 
-    // Revert: return 'failed' from repo-shape.ts when `state.log` is empty.
+    // Revert: return 'failed' from views/shared/repo-shape.ts when `state.log` is empty.
     it('draws a repository with no commit with its branch and its untracked file', () => {
         const loose = { path: 'loose.txt', status: '?', added: null, deleted: null };
         otherGit(git({ branch: 'start', log: [], upstream: false, untracked: [loose] }));
@@ -238,7 +255,7 @@ describe('the changes view', () => {
         expect(body).toContain(catalog['git.push_none']);
     });
 
-    // Revert: push `sessions.ch_insync` whenever `bits` is empty in branchState in Changes.svelte.
+    // Revert: push `sessions.ch_insync` whenever `bits` is empty in views/shared/branch-state.ts.
     it('says a branch is in step only when it has an upstream', () => {
         select('bare-one');
         for (const upstream of [true, false, null]) {
@@ -308,5 +325,38 @@ describe('the changes view', () => {
     it('shows its empty state with nothing selected', () => {
         select(null);
         expect(html(Changes)).toContain(catalog['sessions.detail_empty']);
+    });
+});
+
+describe('the branch-state sentence both git views draw', () => {
+    const sep = ` ${catalog['sessions.meta_sep']} `;
+    const insync = catalog['sessions.ch_insync'];
+    const detached = catalog['sessions.ch_detached'];
+    const ahead = (count: number): string =>
+        catalog['sessions.ch_ahead'].replace('{0}', String(count));
+    const behind = (count: number): string =>
+        catalog['sessions.ch_behind'].replace('{0}', String(count));
+
+    // Revert: drop `state.detached` from views/shared/branch-state.ts, or read `ahead` and `behind`
+    // the other way round.
+    it('names detached, the distance ahead, the distance behind, and both distances in order', () => {
+        expect(branchState(git({ detached: true, upstream: false }))).toBe(detached);
+        expect(branchState(git({ ahead: 3, upstream: true }))).toBe(ahead(3));
+        expect(branchState(git({ behind: 2, upstream: true }))).toBe(behind(2));
+        expect(branchState(git({ ahead: 3, behind: 2, upstream: true }))).toBe(
+            `${ahead(3)}${sep}${behind(2)}`
+        );
+        expect(branchState(git({ detached: true, ahead: 1, upstream: false }))).toBe(
+            `${detached}${sep}${ahead(1)}`
+        );
+    });
+
+    // Revert: push `sessions.ch_insync` whenever `bits` is empty in views/shared/branch-state.ts.
+    it('says in step only for a branch the state gives an upstream', () => {
+        expect(branchState(git({ upstream: true }))).toBe(insync);
+        expect(branchState(git({ upstream: false }))).toBe('');
+        expect(branchState(git({ upstream: null }))).toBe('');
+        // A distance is stated whatever the upstream says, and never with the in-step sentence.
+        expect(branchState(git({ ahead: 1, upstream: false }))).toBe(ahead(1));
     });
 });

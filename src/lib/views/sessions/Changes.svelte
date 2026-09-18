@@ -22,12 +22,11 @@
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import Toolbar from '$lib/ui/Toolbar.svelte';
     import { pinnedSession } from '$lib/state/selection.svelte';
-    import type { GitState } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
     import type { ViewProps } from '$lib/views/registry';
+    import { repoShape } from '$lib/views/shared/repo-shape';
     import ChangesRepo from './ChangesRepo.svelte';
     import ChangesTouched from './ChangesTouched.svelte';
-    import { repoShape } from './repo-shape';
     import { useState } from '$lib/state/use';
 
     const {
@@ -101,17 +100,6 @@
     function shared(path: string): string[] {
         if (record === null || path === '') return [];
         return touchers(`${workspace}/${path}`, record.id).map((session) => session.title);
-    }
-
-    function branchState(state: GitState): string {
-        const bits: string[] = [];
-        if (state.detached) bits.push(t('sessions.ch_detached'));
-        if (state.ahead > 0) bits.push(t('sessions.ch_ahead', state.ahead));
-        if (state.behind > 0) bits.push(t('sessions.ch_behind', state.behind));
-        // In step only with an upstream there is: a branch with none, a repository with no commit
-        // among them, has no distance to state, and the push line says why.
-        if (bits.length === 0 && state.upstream === true) bits.push(t('sessions.ch_insync'));
-        return bits.join(` ${t('sessions.meta_sep')} `);
     }
 
     async function act(
@@ -224,6 +212,11 @@
                     <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
                     <p class="none">{t('sessions.ch_noworkspace')}</p>
                 </section>
+            {:else if shape === 'missing'}
+                <section class="repo" data-repo="missing">
+                    <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
+                    <p class="none" title={repo?.error ?? undefined}>{t('sessions.ch_nofolder')}</p>
+                </section>
             {:else if shape === 'none'}
                 <section class="repo" data-repo="none">
                     <div class="sec-h"><span>{t('sessions.ch_repo')}</span></div>
@@ -251,7 +244,6 @@
                     {branchName}
                     {outcome}
                     {shared}
-                    {branchState}
                     onswitch={switchTo}
                     onpush={pushIt}
                     onbranch={createBranch}

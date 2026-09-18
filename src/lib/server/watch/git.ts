@@ -199,9 +199,10 @@ export function watchGit(hub: Hub, options: GitWatchOptions = {}): GitWatcher {
 
     const open = (root: string): void => {
         const opened: FSWatcher[] = [];
-        // A session's workspace that has since been deleted is still a root the payload names. There
-        // is nothing to watch and nothing to say about it: its state is the empty shape statusFor
-        // gives a directory that is not a repository, read once below, and no error is logged.
+        // A root nothing can be opened at is still a root the payload names: a workspace the reader
+        // deleted, a link whose target was never made, a folder under a parent nothing may enter.
+        // There is nothing to watch at any of them, so no watcher is made and no error is logged;
+        // what each one is, statusFor says on its own, read once below, and the views draw that.
         if (!existsSync(root)) {
             handles.set(root, opened);
             return;

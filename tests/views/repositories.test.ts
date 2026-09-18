@@ -12,6 +12,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { render } from 'svelte/server';
 import Repositories from '../../src/lib/views/Repositories.svelte';
 import Diff from '../../src/lib/views/repositories/Diff.svelte';
+import Repo from '../../src/lib/views/repositories/Repo.svelte';
+import type { GitState } from '../../src/lib/data/model.ts';
 import {
     engineDir,
     glyphCatalog,
@@ -106,6 +108,36 @@ function count(body: string, needle: string): number {
     return body.split(needle).length - 1;
 }
 
+/**
+ * One repository partial rendered on its own, for a state the view around it would have to be put
+ * into a particular shape to hand it. The cases that go through the whole view are above.
+ */
+function repo(state: GitState, root = OTHER): string {
+    hold({ [root]: state });
+    const noop = (): void => undefined;
+    return render(Repo, {
+        context: clientContext(client),
+        props: {
+            root,
+            git: state,
+            busy: false,
+            outcome: '',
+            collapsed: [],
+            ontoggle: noop,
+            onstage: noop,
+            onunstage: noop,
+            ondiscard: noop,
+            ondiff: noop,
+            onswitch: noop,
+            onbranch: noop,
+            onworktree: noop,
+            onremove: noop,
+            onmerge: noop,
+            onterminal: noop
+        }
+    }).body;
+}
+
 /** The markup of one section of a rendering, from its group attribute to the next group. */
 function group(body: string, id: string): string {
     const at = body.indexOf(`data-group="${id}"`);
@@ -159,6 +191,39 @@ describe('the Repositories view', () => {
         const body = html({ [HUB]: HUB_GIT });
         expect(body).toContain('main');
         expect(body).toContain(catalog['sessions.ch_ahead'].replace('{0}', '2'));
+    });
+
+    // Revert: push `sessions.ch_insync` whenever `bits` is empty in views/shared/branch-state.ts.
+    it('says in step on the branch line only for a branch with an upstream', () => {
+        // A repository with no commit yet has no upstream, and reads the line saying so instead.
+        const fresh = html({ [HUB]: git({ branch: 'start', log: [], branches: [] }) });
+        expect(fresh).toContain('>start<');
+        // Nothing to be in step with, so the line about tracking must not be drawn at all.
+        expect(fresh).not.toContain(catalog['sessions.ch_insync']);
+
+        const tracked = html({ [HUB]: git({ upstream: true }) });
+        expect(tracked).toContain(catalog['sessions.ch_insync']);
+    });
+
+    // Revert: return `t('sessions.ch_failed', held.error ?? '')` from rowLabel() for every shape in
+    // repositories/Repo.svelte, which then says git could not read a repository for a folder that
+    // is not there at all and for one that is no repository.
+    it('says a folder that is not there is not there, and one that is no repository is neither', () => {
+        const reason = 'no such directory';
+        const away = repo(git({ branch: '', present: false, repository: false, error: reason }));
+        expect(away).toContain('data-repo="missing"');
+        expect(away).toContain(catalog['sessions.ch_nofolder']);
+        // One drawing per root: a folder that is gone says so and never also says a read failed.
+        expect(away).not.toContain(catalog['sessions.ch_failed'].replace('{0}', reason));
+
+        const norepo = 'not a git repository';
+        const folder = repo(git({ branch: '', repository: false, error: norepo }));
+        expect(folder).toContain('data-repo="none"');
+        expect(folder).toContain(catalog['sessions.ch_norepo']);
+        // The folder is there, so nothing may tell the reader it has gone.
+        expect(folder).not.toContain(catalog['sessions.ch_nofolder']);
+        // Being no repository is not a read that failed, and the two sentences never both appear.
+        expect(folder).not.toContain(catalog['sessions.ch_failed'].replace('{0}', norepo));
     });
 
     // Revert: drop `count={total}` from the Changes section head in Changes.svelte.
@@ -281,17 +346,48 @@ describe('the Repositories view', () => {
         vi.unstubAllGlobals();
     });
 
-    // Revert: pass `gitRoots()` to the picker unfiltered, in Repositories.svelte.
-    it('offers only the roots git reads as repositories', () => {
+    // Revert: filter by `stateOf(root)?.repository === true` in pickerRoots of
+    // state/repositories.ts; the hub leaves the picker, the view falls to the other root, and a
+    // channel carrying only folders draws the empty line instead of a root that says what it is.
+    it('draws a root that is no repository, and says nothing is on the channel only when nothing is', () => {
         const folder = git({ branch: '', repository: false, error: 'not a git repository' });
         const body = html({ [HUB]: folder, [OTHER]: git({ branch: 'work' }) });
-        expect(body).toContain(`data-root="${OTHER}"`);
-        // git says this root is no repository, so the picker does not offer it
+        // The hub is the first root the channel carries, so it is the one drawn, folder or not.
+        expect(body).toContain(`data-root="${HUB}"`);
+        // Exactly one root is drawn at a time, so the other must not be in the body beside it.
+        expect(body).not.toContain(`data-root="${OTHER}"`);
+        expect(body).toContain('data-repo="none"');
+        expect(body).toContain(catalog['sessions.ch_norepo']);
+        // A channel carrying roots is never empty, whatever those roots turn out to be.
+        expect(body).not.toContain(catalog['repositories.empty']);
+    });
+
+    // Revert: filter by `stateOf(root)?.repository === true` in pickerRoots of
+    // state/repositories.ts; the deleted root leaves the picker and shownRoot hands the view to the
+    // hub, so the reader is moved without being told why.
+    it('keeps the view on a root the reader picked after its folder was deleted', () => {
+        const away = git({
+            branch: '',
+            present: false,
+            repository: false,
+            error: 'no such directory'
+        });
+        const body = html({ [HUB]: HUB_GIT, '/gone': away }, 'repositories', { root: '/gone' });
+        expect(body).toContain('data-root="/gone"');
+        // The reader's pick is kept, so the view must not have moved itself to another root.
         expect(body).not.toContain(`data-root="${HUB}"`);
-        // and the reason git gave is the picker's to swallow, not to draw
-        expect(body).not.toContain('not a git repository');
-        const none = html({ [HUB]: folder });
-        expect(none).toContain(catalog['repositories.empty']);
+        expect(body).toContain('data-repo="missing"');
+        expect(body).toContain(catalog['sessions.ch_nofolder']);
+        // Every root deleted is still every root: the picker is drawn and the first one says so,
+        // rather than the view falling back to the line for a channel carrying nothing.
+        const all = html({ '/gone': away, '/also-gone': away });
+        expect(all).toContain('data-repo-picker');
+        expect(all).toContain(catalog['sessions.ch_nofolder']);
+        // Every root deleted is still every root, so the line for a channel with none stays away.
+        expect(all).not.toContain(catalog['repositories.empty']);
+        // Revert: drop `title` from the row's div in repositories/Repo.svelte; the row then says
+        // the folder is gone with git's own reason nowhere, where the Changes panel carries it.
+        expect(body).toContain('title="no such directory"');
     });
 
     // Revert: draw Repo.svelte whenever `held` is not null, in Repositories.svelte.
@@ -305,8 +401,9 @@ describe('the Repositories view', () => {
         expect(body).toContain(`data-root="${OTHER}"`);
         // one repository is drawn at a time, and the instance keeps the one whose read failed
         expect(body).not.toContain(`data-root="${HUB}"`);
-        const row = catalog['repositories.error'].replace('{0}', reason);
-        const failed = body.slice(body.indexOf('data-repo-failed'));
+        // The Changes panel's own key: one sentence for the fact, read by both git views.
+        const row = catalog['sessions.ch_failed'].replace('{0}', reason);
+        const failed = body.slice(body.indexOf('data-repo="failed"'));
         // One row, in the explorer's row style and the error hue.
         expect(count(body, row)).toBe(1);
         expect(failed).toContain(`>${row}</span>`);
@@ -327,7 +424,7 @@ describe('the Repositories view', () => {
     it('keeps the branch line and the path above the error row while the state names a branch', () => {
         const reason = 'index file smaller than expected';
         const named = html({ [OTHER]: git({ branch: 'work', error: reason }) });
-        const row = named.indexOf('data-repo-failed');
+        const row = named.indexOf('data-repo="failed"');
         expect(row).toBeGreaterThan(0);
         const above = named.slice(named.indexOf(`data-root="${OTHER}"`), row);
         expect(above).toContain(catalog['sessions.ch_branch']);
@@ -336,8 +433,8 @@ describe('the Repositories view', () => {
 
         // A root whose check timed out names no branch, so the row has the path alone above it.
         const unnamed = html({ [OTHER]: git({ branch: '', error: 'git timed out' }) });
-        expect(unnamed).toContain('data-repo-failed');
-        // the check timed out before it read a branch, so there is no branch to name
+        expect(unnamed).toContain('data-repo="failed"');
+        // No branch was ever read, so the row must not print a heading for one.
         expect(unnamed).not.toContain(catalog['sessions.ch_branch']);
         expect(unnamed).toContain('class="path');
     });

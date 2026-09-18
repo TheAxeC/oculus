@@ -95,8 +95,10 @@ test.describe('the Repositories view', () => {
         await expect.poll(() => existsSync(worktree())).toBe(false);
     });
 
-    // Revert: pass `gitRoots()` to the picker unfiltered, in views/Repositories.svelte.
-    test('picks among the repositories alone, two of one name told apart by their parents', async ({
+    // Revert: return `''` for every shape from shapeBadge of views/shared/repo-shape.ts, or filter
+    // by `stateOf(root)?.repository === true` in pickerRoots of state/repositories.ts; the folder
+    // that is no repository then carries no badge, or leaves the list entirely.
+    test('picks among every root, the folder that is no repository saying so on its row', async ({
         page
     }) => {
         // Two repositories whose last folders are both `repo`, and a folder that is none, all under
@@ -150,8 +152,20 @@ test.describe('the Repositories view', () => {
         await expect(page.getByRole('menuitem', { name: made[0].label, exact: true })).toHaveCount(
             1
         );
-        // git reads this folder as no repository, so the picker does not offer it
-        await expect(page.getByRole('menuitem', { name: looseName })).toHaveCount(0);
+        // The folder that is no repository is a row like any other, saying which it is. The badge
+        // is out of the accessible name, so the row is still found by its label alone.
+        const folder = page.getByRole('menuitem', { name: looseName, exact: true });
+        await expect(folder).toHaveCount(1);
+        await expect(folder).toContainText(t('repositories.pick_norepo'));
+        await expect(folder.locator('.item-badge')).toHaveAttribute(
+            'title',
+            /not a git repository/
+        );
+        // A repository that reads says its name alone.
+        await expect(
+            page.getByRole('menuitem', { name: made[0].label, exact: true }).locator('.item-badge')
+            // Nothing is wrong with this root, so no few words are drawn at the end of its row.
+        ).toHaveCount(0);
         await page.keyboard.press('Escape');
 
         await pick(page, made[1].label);
@@ -162,6 +176,71 @@ test.describe('the Repositories view', () => {
         // Back to the hub, which the other cases of this file draw.
         await pick(page, hubDir().split(sep).at(-1) ?? '');
         await expect(shown).toHaveAttribute('data-root', hubDir());
+    });
+
+    // Revert: filter by `stateOf(root)?.repository === true` in pickerRoots of
+    // state/repositories.ts; the deleted root leaves the picker and the view hands itself to the
+    // hub, so the row this case waits for never appears.
+    test('keeps a root whose folder the reader deleted, saying it is gone', async ({ page }) => {
+        const doomed = scratchDir('oculus-repositories-doomed-');
+        expect(resolve(doomed).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        const label = doomed.split(sep).at(-1) ?? '';
+        try {
+            writeFileSync(join(doomed, 'a.txt'), 'a\n');
+            gitIn(doomed, 'init', '--quiet', '--initial-branch=main');
+            gitIn(doomed, 'add', '--all');
+            gitIn(doomed, 'commit', '--quiet', '-m', 'one');
+
+            await boot(page);
+            await openView(page, 'files', t('views.files'));
+            await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
+            await page.getByRole('textbox', { name: t('files.root_dir') }).fill(doomed);
+            await page.getByRole('button', { name: t('files.add'), exact: true }).click();
+            // The form closes once the root was taken, which is how this waits for the save.
+            await expect(page.getByRole('textbox', { name: t('files.root_dir') })).toHaveCount(0);
+
+            await openView(page, 'repositories', t('views.repositories'));
+            const opener = page.locator('[data-repo-picker]').getByRole('button').first();
+            const row = page.getByRole('menuitem', { name: label, exact: true });
+
+            // The channel reads the roots again once the workspaces file has changed, and the row
+            // is a repository that reads, so it carries no badge yet.
+            await expect
+                .poll(
+                    async () => {
+                        await opener.click();
+                        const listed = await row.count();
+                        await page.keyboard.press('Escape');
+                        return listed;
+                    },
+                    { timeout: 10_000 }
+                )
+                .toBe(1);
+            await opener.click();
+            // This root reads as a repository again, so the few words about its state are gone.
+            await expect(row.locator('.item-badge')).toHaveCount(0);
+            await page.keyboard.press('Escape');
+
+            await pick(page, label);
+            const shown = page.locator('[data-view="repositories"] [data-root]');
+            await expect(shown).toHaveAttribute('data-root', new RegExp(`${label}$`));
+
+            rmSync(doomed, { recursive: true, force: true });
+
+            // The root stays picked and stays in the list; both say the folder is not there.
+            await expect(shown.locator('[data-repo="missing"]')).toBeVisible({ timeout: 20_000 });
+            await expect(shown.getByText(t('sessions.ch_nofolder'))).toBeVisible();
+            await expect(shown).toHaveAttribute('data-root', new RegExp(`${label}$`));
+            await opener.click();
+            await expect(row.locator('.item-badge')).toContainText(t('repositories.pick_missing'));
+            await page.keyboard.press('Escape');
+
+            // Back to the hub, which the other cases of this file draw.
+            await pick(page, hubDir().split(sep).at(-1) ?? '');
+            await expect(shown).toHaveAttribute('data-root', hubDir());
+        } finally {
+            rmSync(doomed, { recursive: true, force: true });
+        }
     });
 
     // Revert: drop the `symbolic-ref --short HEAD` read from state() in server/git.ts, so the
@@ -211,12 +290,74 @@ test.describe('the Repositories view', () => {
             await expect(section.getByText('start', { exact: true }).first()).toBeVisible();
             await expect(section.locator('[data-entry="loose.txt"]')).toBeVisible();
             await expect(section.getByText(t('repositories.log_empty'))).toBeVisible();
+            // Revert: push `sessions.ch_insync` whenever `bits` is empty in
+            // views/shared/branch-state.ts. The branch has no upstream, so the line says nothing.
+            await expect(section.getByText(t('sessions.ch_insync'))).toHaveCount(0);
 
             // Back to the hub, which the other cases of this file draw.
             await pick(page, hubDir().split(sep).at(-1) ?? '');
             await expect(shown).toHaveAttribute('data-root', hubDir());
         } finally {
             rmSync(fresh, { recursive: true, force: true });
+        }
+    });
+
+    // Revert: in repositories/Repo.svelte write the row's attribute as a bare attribute of its own
+    // rather than `data-repo={shape}`; the spelling the two git views share for one fact is then
+    // gone and the selector below resolves to nothing.
+    test('draws a repository whose read fails as one row under the failed spelling', async ({
+        page
+    }) => {
+        const broken = scratchDir('oculus-repositories-broken-');
+        expect(resolve(broken).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+        // The folder goes when the case ends, whatever the case did.
+        try {
+            gitIn(broken, 'init', '--quiet', '--initial-branch=main');
+            // An index git cannot parse: the root is a repository, and its status read fails.
+            writeFileSync(join(broken, '.git', 'index'), 'not an index\n');
+            const label = broken.split(sep).at(-1) ?? '';
+
+            await boot(page);
+            await openView(page, 'files', t('views.files'));
+            await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
+            await page.getByRole('textbox', { name: t('files.root_dir') }).fill(broken);
+            await page.getByRole('button', { name: t('files.add'), exact: true }).click();
+            // The form closes once the root was taken, which is how this waits for the save.
+            await expect(page.getByRole('textbox', { name: t('files.root_dir') })).toHaveCount(0);
+
+            await openView(page, 'repositories', t('views.repositories'));
+            const shown = page.locator('[data-view="repositories"] [data-root]');
+
+            // The channel reads the roots again once the workspaces file has changed, so the picker
+            // is asked until it lists the new repository.
+            const opener = page.locator('[data-repo-picker]').getByRole('button').first();
+            await expect
+                .poll(
+                    async () => {
+                        await opener.click();
+                        const listed = await page
+                            .getByRole('menuitem', { name: label, exact: true })
+                            .count();
+                        await page.keyboard.press('Escape');
+                        return listed;
+                    },
+                    { timeout: 10_000 }
+                )
+                .toBe(1);
+
+            await pick(page, label);
+            await expect(shown).toHaveAttribute('data-root', new RegExp(`${label}$`));
+            const failed = shown.locator('[data-repo="failed"]');
+            await expect(failed).toBeVisible();
+            await expect(failed).toContainText('index');
+            // A read that failed draws one sentence in place of the sections, never both.
+            await expect(shown.locator('[data-group="changes"]')).toHaveCount(0);
+
+            // Back to the hub, which the other cases of this file draw.
+            await pick(page, hubDir().split(sep).at(-1) ?? '');
+            await expect(shown).toHaveAttribute('data-root', hubDir());
+        } finally {
+            rmSync(broken, { recursive: true, force: true });
         }
     });
 

@@ -13,15 +13,18 @@
 </script>
 
 <script lang="ts">
-    // Layer 3, view. One repository at a time, read like a source control view: a picker over the
-    // roots of the `git` channel that git reads as repositories, each named by its last folder or,
-    // where two share it, by its last two, and under it the one picked, with its changes, its
-    // commits, its branches and its worktrees as collapsible sections of explorer rows.
+    // Layer 3, view. One repository at a time, read like a source control view: a picker over every
+    // root of the `git` channel, each named by its last folder or, where two share it, by its last
+    // two, and under it the one picked, with its changes, its commits, its branches and its
+    // worktrees as collapsible sections of explorer rows.
     //
-    // A repository whose read failed stays in the picker, and repositories/Repo.svelte draws git's
-    // reason as one error row in place of its sections: the failure is a fact about that
-    // repository, so the view neither hides the repository nor hands itself to another one while
-    // git cannot answer.
+    // The picker offers every root, not the repositories among them, and each row carries the few
+    // words its state comes to (`views/shared/repo-shape.ts`'s shapeBadge), the row's hover words
+    // being its path and the badge's own git's reason: a folder of notes, a repository whose read
+    // failed and a folder the reader has deleted all stay in the list and say which they are. A root that went quiet is a
+    // fact about that root, so the view neither drops it from the list nor hands itself to another
+    // one, and repositories/Repo.svelte draws the one sentence that state comes to in place of the
+    // sections.
     //
     // Which repository is shown and which sections are closed are the instance's own state, so the
     // view comes back as it was left after a tab switch, and a repository the picker no longer offers
@@ -44,14 +47,15 @@
     import Repo from './repositories/Repo.svelte';
     import { toggleExpanded } from '$lib/state/fs';
     import {
+        pickerRoots,
         plannedPath,
         repositoriesViewOf,
         repositoryLabels,
-        repositoryRoots,
         shownRoot,
         type RepositoriesView
     } from '$lib/state/repositories';
     import { t } from '$lib/state/text';
+    import { repoShape, shapeBadge } from '$lib/views/shared/repo-shape';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
@@ -65,7 +69,7 @@
 
     type Ask = { message: string; detail: string; act: () => void };
 
-    const roots = $derived(repositoryRoots(gitRoots(), gitFor));
+    const roots = $derived(pickerRoots(gitRoots(), gitFor));
     const labels = $derived(repositoryLabels(roots));
     const view = $derived(repositoriesViewOf(instanceState(instance.id)));
     const shown = $derived(shownRoot(roots, view.root));
@@ -75,7 +79,9 @@
             id: root,
             label: labels[root],
             title: root,
-            active: root === shown
+            active: root === shown,
+            badge: shapeBadge(repoShape(root, gitFor(root))),
+            badgeTitle: gitFor(root)?.error ?? undefined
         }))
     );
     let asking: Ask | null = $state(null);

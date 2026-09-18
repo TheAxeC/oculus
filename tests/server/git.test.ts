@@ -11,9 +11,19 @@
 // writing forms) and `rev-parse` held to the exact vectors the module reads with.
 //
 // The recorder can also stand in for git on one vector, answering as a git that timed out or never
-// started would, since neither can be made to happen on demand with a real repository.
+// started would, since neither can be made to happen on demand with a real repository, and it can
+// run a case's own work between the module asking for a command and the command running, which is
+// how a root that goes away while a read of it is on its way is made to happen on demand.
 
-import { mkdirSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
+import {
+    chmodSync,
+    mkdirSync,
+    readFileSync,
+    renameSync,
+    rmSync,
+    symlinkSync,
+    writeFileSync
+} from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -21,7 +31,7 @@ import { spawnSync } from 'node:child_process';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { LOG_ENTRIES, MAX_ENTRIES, capped, empty, statusFor } from '../../src/lib/server/git.ts';
 import { BRANCH_FORMAT } from '../../src/lib/server/git-parse.ts';
-import { repositoryRoots, shownRoot } from '../../src/lib/state/repositories.ts';
+import { pickerRoots, shownRoot } from '../../src/lib/state/repositories.ts';
 import type { GitEntry, GitState } from '../../src/lib/data/model.ts';
 import { scratchDir, sweepScratch } from '../scratch.ts';
 
@@ -116,6 +126,13 @@ const ran = vi.hoisted(() => [] as string[][]);
  * could not start). Null runs every command for real.
  */
 const unanswered = vi.hoisted(() => ({ on: null as { arg: string; code: string } | null }));
+
+/**
+ * What runs between the module deciding to spawn a command and the command running, so a case can
+ * make the tree change under a read that is already on its way. It fires once, on the first command
+ * carrying the argument it names, and the command then runs for real against the changed tree.
+ */
+const between = vi.hoisted(() => ({ on: null as { arg: string; act: () => void } | null }));
 vi.mock('node:child_process', async (importOriginal) => {
     const actual = await importOriginal<typeof import('node:child_process')>();
     // Only what a module under src/lib/server runs is recorded; a test's own setup command is not.
@@ -124,6 +141,11 @@ vi.mock('node:child_process', async (importOriginal) => {
         ...actual,
         spawnSync: ((file: string, args: string[], options: unknown) => {
             if (fromServer()) ran.push(file === 'git' ? args : [file, ...args]);
+            const meanwhile = between.on;
+            if (fromServer() && meanwhile !== null && args.includes(meanwhile.arg)) {
+                between.on = null;
+                meanwhile.act();
+            }
             const held = unanswered.on;
             if (fromServer() && held !== null && args.includes(held.arg)) {
                 // What node hands back for a child that timed out or never started: no status.
@@ -477,6 +499,114 @@ describe('failure', () => {
         expect(found.ahead).toBe(0);
     });
 
+    // Revert: set `gone.present = true` in state() of server/git.ts where nothing is at the path.
+    it('says which of a path that is not there and a folder that is no repository a root is', () => {
+        const plain = join(dir, 'plain');
+        mkdirSync(plain);
+
+        const away = state(join(dir, 'gone'));
+        expect([away.present, away.repository, away.error]).toEqual([
+            false,
+            false,
+            'no such directory'
+        ]);
+
+        // A folder git answered is no repository is there to read, so only `repository` is false.
+        const folder = state(plain);
+        expect([folder.present, folder.repository]).toEqual([true, false]);
+        expect(folder.error).toBeTruthy();
+
+        const found = state();
+        expect([found.present, found.repository, found.error]).toEqual([true, true, null]);
+        // Nothing read yet says nothing about the root, so it is not taken for one that is gone.
+        expect(empty().present).toBe(true);
+    });
+
+    it('keeps a repository whose config git cannot parse a repository, and says why', () => {
+        // revert: src/lib/server/git.ts:149 =>         refused.repository = false;
+        const broken = join(dir, 'broken');
+        mkdirSync(broken);
+        git(broken, 'init', '--initial-branch=work');
+        writeFileSync(join(broken, '.git', 'config'), '[core\nthis is not ini\n');
+
+        // git refuses the read, but the repository is there, so the reader is told the read failed.
+        const failed = state(broken);
+        expect([failed.present, failed.repository]).toEqual([true, true]);
+        expect(failed.error).toContain('config');
+
+        // The one refusal that does name a missing repository still answers no repository.
+        const plain = join(dir, 'nothing-here');
+        mkdirSync(plain);
+        expect(state(plain).repository).toBe(false);
+    });
+
+    // Revert: drop `'ENAMETOOLONG'` from the codes exists() answers false for in server/git.ts; a
+    // name the system will not carry then reads as a root that is there and no repository.
+    it('says a path too long to be a name is not there', () => {
+        const long = join(dir, 'x'.repeat(4096));
+        const found = state(long);
+        expect([found.present, found.repository, found.error]).toEqual([
+            false,
+            false,
+            'no such directory'
+        ]);
+    });
+
+    // Revert: return the gone shape from state() in server/git.ts whenever `directory(root)` is
+    // false, without the `exists(root)` clause; each of the three then reads as a path with nothing
+    // at it, and none of them carries git's reason.
+    it('keeps a path that is there but is no folder to enter, with git own reason', () => {
+        const file = join(dir, 'a-file');
+        writeFileSync(file, 'x\n');
+
+        // A link whose target was never made: the name is there, and nothing can be entered at it.
+        const dangling = join(dir, 'dangling');
+        symlinkSync(join(dir, 'never-made'), dangling);
+
+        // A folder under a parent nothing may enter: the read cannot tell whether it is there.
+        const walled = join(dir, 'walled');
+        const behind = join(walled, 'repo');
+        mkdirSync(behind, { recursive: true });
+        chmodSync(walled, 0o000);
+
+        try {
+            for (const path of [file, dangling, behind]) {
+                const found = state(path);
+                expect(found.present, path).toBe(true);
+                expect(found.repository, path).toBe(false);
+                expect(found.error, path).toBeTruthy();
+                expect(found.error, path).not.toBe('no such directory');
+            }
+        } finally {
+            chmodSync(walled, 0o700);
+        }
+    });
+
+    // Revert: set `refused.present = true` where git answers that a root is no repository in
+    // server/git.ts; the root that went away while the read ran then reads as a folder that is no
+    // repository, which is the race the second read of the path is there to close.
+    it('says a root that went away between the two reads is not there, not that it is no repository', () => {
+        const away = join(dir, 'away');
+        mkdirSync(away);
+        git(away, 'init', '--initial-branch=work');
+        between.on = {
+            arg: '--git-dir',
+            act: () => {
+                expect(resolve(away).startsWith(resolve(tmpdir()) + sep)).toBe(true);
+                rmSync(away, { recursive: true, force: true });
+            }
+        };
+        try {
+            const found = state(away);
+            // git ran against a path that had gone, so it answered and refused the root.
+            expect(found.repository).toBe(false);
+            expect(found.error).toBeTruthy();
+            expect(found.present).toBe(false);
+        } finally {
+            between.on = null;
+        }
+    });
+
     // Revert: return `empty(reason)` from state() when `git status` fails, as the directory that is
     // no repository returns.
     it('keeps a repository whose status cannot be read a repository, with the reason', () => {
@@ -518,7 +648,7 @@ describe('failure', () => {
                 expect(states[root].error).toBe('git timed out');
             }
             // The picker keeps both, and a view kept on the repository stays on it.
-            const offered = repositoryRoots([repo, plain], (root) => states[root] ?? null);
+            const offered = pickerRoots([repo, plain], (root) => states[root] ?? null);
             expect(offered).toEqual([repo, plain]);
             expect(shownRoot(offered, repo)).toBe(repo);
         } finally {

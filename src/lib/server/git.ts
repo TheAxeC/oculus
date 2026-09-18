@@ -28,7 +28,7 @@
 
 import { scalar } from '../data/guards.ts';
 import { spawnSync } from 'node:child_process';
-import { readFileSync, realpathSync, statSync } from 'node:fs';
+import { lstatSync, readFileSync, realpathSync, statSync } from 'node:fs';
 import { join, sep } from 'node:path';
 import type { GitBranch, GitCommit, GitEntry, GitState, GitWorktree } from '../data/model.ts';
 import { ignoresWorktrees } from '../data/worktrees.ts';
@@ -47,6 +47,8 @@ export const UNTRACKED = '?';
 const QUIET = [' ', UNTRACKED, '!'];
 /** A rename or a copy reports its old path as a second field. */
 const TWO_PATHS = ['R', 'C'];
+/** The one refusal of git's that means the root holds no repository; it opens every wording of it. */
+const NO_REPOSITORY = 'not a git repository';
 
 /** path to (added, deleted) for the worktree; null where git reported a binary file. */
 type Counts = Map<string, [number | null, number | null]>;
@@ -55,10 +57,13 @@ type Counts = Map<string, [number | null, number | null]>;
 type Row = [string, string, string];
 
 /**
- * What one command came back with. `answered` is whether git ran to its end and gave an exit
- * status; a command that timed out, could not start or was killed has not answered anything.
+ * What one command came back with. `answered` is whether anything about the root can be read from
+ * the outcome: a command that timed out or was killed has not answered anything, while a git that
+ * could not start is taken at its word, so that a plain folder never becomes a repository because
+ * git is missing. `ran` is the narrower fact, whether git itself executed and set the exit status,
+ * which is what tells git's own refusal of a root from this machine having no git to ask.
  */
-type Outcome = { ok: boolean; answered: boolean; text: string };
+type Outcome = { ok: boolean; answered: boolean; ran: boolean; text: string };
 
 /** The shape every caller can count on, with nothing in it. */
 export function empty(error: string | null = null): GitState {
@@ -76,6 +81,9 @@ export function empty(error: string | null = null): GitState {
         branches: [],
         worktrees: [],
         ignoresWorktrees: false,
+        // Nothing says a root is not there until a read of the path itself says so, so a read that
+        // threw leaves the root where it was; state() sets this from exists() at both answers.
+        present: true,
         // A root is a repository once `rev-parse --git-dir` has said so, or once that check timed out.
         repository: false,
         error
@@ -83,12 +91,15 @@ export function empty(error: string | null = null): GitState {
 }
 
 /**
- * Read-only git state for each root, keyed by root. Never throws. A root that is not a directory,
+ * Read-only git state for each root, keyed by root. Never throws. A root with nothing at its path,
  * or that git answered is not a repository, comes back as the empty shape with `error` set and
- * `repository` false. A root whose check did not answer (a timeout, a git that would not start) and
- * a repository where a later read fails keep `repository` true and say why in `error`, so a slow
- * mount does not make a repository disappear for one read. A caller renders every workspace without
- * a special case. A repeated root is read once.
+ * `repository` false; `present` is false for the first of those two alone, read at the path each
+ * time the answer is made, so a caller can say the folder is not there rather than that it is no
+ * repository. A root whose check did not answer (a timeout, a git that would not start), a root git
+ * refused for a reason other than holding no repository, and a repository where a later read fails
+ * all keep `repository` true and say why in `error`, so neither a slow mount nor an unreadable
+ * config makes a repository disappear. A caller renders every workspace without a special case. A
+ * repeated root is read once.
  */
 export function statusFor(roots: string[], timeout: number = TIMEOUT_MS): Record<string, GitState> {
     const out: Record<string, GitState> = {};
@@ -108,13 +119,36 @@ export function statusFor(roots: string[], timeout: number = TIMEOUT_MS): Record
 // ---------------------------------------------------------------- one root
 
 function state(root: string, timeout: number): GitState {
-    if (!directory(root)) return empty('no such directory');
+    // A path with nothing at it is the one root git is never asked about. A path that is there and
+    // is no directory, and one nothing may enter, are handed to git like any other, so the reader
+    // gets git's own reason for them instead of being told the folder is gone.
+    if (!directory(root) && !exists(root)) {
+        const gone = empty('no such directory');
+        gone.present = false;
+        return gone;
+    }
     // The one read that tells a repository from a folder: it names no commit, so a repository with
     // none yet answers it like any other. Only a check that timed out says nothing about the root,
     // which is then kept as the repository it was taken for; a git that cannot start or is killed is
     // taken at its word, so a plain folder never becomes a repository because git is missing.
     const gitDir = run(root, ['rev-parse', '--git-dir'], timeout);
-    if (!gitDir.ok && gitDir.answered) return empty(gitDir.text || 'not a git repository');
+    if (!gitDir.ok && gitDir.answered) {
+        const reason = gitDir.text || NO_REPOSITORY;
+        const refused = empty(reason);
+        // The root may have gone between the check above and this answer, and then git refused it
+        // for being gone rather than for being no repository. The path is read again here, so the
+        // two are told apart by what is there when the answer is made.
+        refused.present = exists(root);
+        // A refusal git itself made, over a root where a `.git` can be seen, and that does not name
+        // the root as no repository, is a repository that is there and did not read: a config it
+        // cannot parse, a file under `.git` it cannot open. The root keeps `repository`, so a reader
+        // is told the read failed rather than that there is no repository here. Every other refusal
+        // (no `.git` to be seen, a `.git` naming a gitdir that is gone, a git that could not start)
+        // leaves `repository` false.
+        const ownRefusal = gitDir.ran && !reason.includes(NO_REPOSITORY);
+        refused.repository = ownRefusal && seen(join(root, '.git'));
+        return refused;
+    }
     const found = empty(null);
     found.repository = true;
     if (!gitDir.ok) {
@@ -339,21 +373,59 @@ function run(root: string, args: string[], timeout: number): Outcome {
     if (done.error !== undefined) {
         const failure = done.error as NodeJS.ErrnoException;
         const text = failure.code === 'ETIMEDOUT' ? 'git timed out' : short(failure);
-        return { ok: false, answered: failure.code !== 'ETIMEDOUT', text };
+        return { ok: false, answered: failure.code !== 'ETIMEDOUT', ran: false, text };
     }
     if (done.status !== 0) {
-        return { ok: false, answered: true, text: short(done.stderr) || 'git failed' };
+        return { ok: false, answered: true, ran: true, text: short(done.stderr) || 'git failed' };
     }
-    return { ok: true, answered: true, text: typeof done.stdout === 'string' ? done.stdout : '' };
+    return {
+        ok: true,
+        answered: true,
+        ran: true,
+        text: typeof done.stdout === 'string' ? done.stdout : ''
+    };
 }
 
 // ---------------------------------------------------------------- small stuff
+
+/**
+ * Whether a name can be seen at the path. Unlike exists(), a read that could not tell (a parent
+ * nothing may enter) answers false: this is asked where a name has to be shown to be there, not
+ * where a root has to be shown to be gone.
+ */
+function seen(path: string): boolean {
+    try {
+        lstatSync(path);
+        return true;
+    } catch {
+        return false;
+    }
+}
 
 function directory(root: string): boolean {
     try {
         return statSync(root).isDirectory();
     } catch {
         return false;
+    }
+}
+
+/**
+ * Whether anything is at the path: a directory, a file, a symbolic link whose target is gone, or a
+ * folder under a parent nothing may enter. The link itself is read rather than what it points at,
+ * since a link that is there is a name that is there.
+ *
+ * Three codes answer false. `ENOENT` and `ENOTDIR` say no such name is there, and `ENAMETOOLONG`
+ * says no such name can be there, since the system will not carry one that long. Every other
+ * failure is a read that could not tell, and a root is never called gone on one.
+ */
+function exists(path: string): boolean {
+    try {
+        lstatSync(path);
+        return true;
+    } catch (error) {
+        const code = (error as NodeJS.ErrnoException | null)?.code ?? '';
+        return !['ENOENT', 'ENOTDIR', 'ENAMETOOLONG'].includes(code);
     }
 }
 

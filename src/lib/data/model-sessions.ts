@@ -346,6 +346,19 @@ export type GitState = {
     /** Whether the repository's .gitignore keeps the worktrees folder out of its history. */
     ignoresWorktrees: boolean;
     /**
+     * Whether anything is at the root's path. False only for a path with no such name at it, gone
+     * or never made, which is what tells a workspace folder that has gone from a folder that is no
+     * repository: `repository` alone cannot, since both carry it false. It is read at the path
+     * again when git answers that a root is no repository, so a folder that went away while the
+     * read ran is not reported as one that was never a repository.
+     *
+     * True for everything else. A regular file at the path, a symbolic link whose target is gone
+     * and a folder under a parent nothing may enter are all there, so each keeps it true and
+     * carries git's own reason in `error` ("Not a directory", "No such file or directory" for the
+     * link's target, "Permission denied"), which is what a reader needs to act on.
+     */
+    present: boolean;
+    /**
      * Whether the root is taken for a repository. False in exactly three cases: the root is not a
      * directory (or does not exist), git ran `rev-parse --git-dir` to its end and answered that the
      * root is no repository, or the read threw before git answered. True otherwise, which includes

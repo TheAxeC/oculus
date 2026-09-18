@@ -6,10 +6,19 @@
     // state/repositories.ts's repositoryKeyRows() lists, Right and Left opening and closing a head or
     // a group.
     //
-    // A repository whose read failed draws git's reason as one row in the explorer's row style and
-    // the error hue in place of the sections, which a failed read has nothing true to fill. The
-    // branch line and the path stay above it whenever the state names a branch, since the branch
-    // was read before whatever failed.
+    // A state with no repository to draw says so as one row in the explorer's row style in place of
+    // the sections, which such a state has nothing true to fill: git's reason in the error hue for
+    // a repository whose read failed, and the muted sentence for a folder that is not there and for
+    // one that is no repository. Every sentence is the one the Changes panel draws, from the one
+    // catalog key, so the two views say one thing about one state. The branch line and the path
+    // stay above the row whenever the state names a branch, since the branch was read before
+    // whatever failed.
+    //
+    // Four of the six shapes of views/shared/repo-shape.ts are drawn here, and the picker offers a
+    // root of each: state/repositories.ts's pickerRoots() offers every root the channel carries, so
+    // a folder that is not there, one that is no repository, a repository whose read failed and one
+    // that reads are all reachable. The two that are not drawn are `unplaced` and `reading`, which
+    // need a root with no name and a root with no state, and this file is drawn for neither.
     //
     // It draws and reports presses; every write is the view's, so a section knows nothing about the
     // endpoint. Which sections are closed is the view's instance state, handed in, so a section the
@@ -26,6 +35,8 @@
     import { repositoryKeyRows, type DiffSubject } from '$lib/state/repositories';
     import type { GitState } from '$lib/state/selectors.svelte';
     import { t } from '$lib/state/text';
+    import { branchState } from '$lib/views/shared/branch-state';
+    import { repoShape, type RepoShape } from '$lib/views/shared/repo-shape';
 
     type Props = {
         root: string;
@@ -67,20 +78,18 @@
     }: Props = $props();
 
     const keyRows = $derived(repositoryKeyRows(git, collapsed));
+    const shape = $derived(repoShape(root, git));
 
     /** A key's toggle names a group by its row id; the view keeps it by the group's own id. */
     function toggled(id: string): void {
         ontoggle(id.startsWith('group:') ? id.slice('group:'.length) : id);
     }
 
-    /** What the branch line says beside the name: detached, the distance, or in step. */
-    function branchState(held: GitState): string {
-        const bits: string[] = [];
-        if (held.detached) bits.push(t('sessions.ch_detached'));
-        if (held.ahead > 0) bits.push(t('sessions.ch_ahead', held.ahead));
-        if (held.behind > 0) bits.push(t('sessions.ch_behind', held.behind));
-        if (bits.length === 0) bits.push(t('sessions.ch_insync'));
-        return bits.join(` ${t('sessions.meta_sep')} `);
+    /** The one row a state with no repository to draw says in place of the sections. */
+    function rowLabel(drawn: RepoShape, held: GitState): string {
+        if (drawn === 'missing') return t('sessions.ch_nofolder');
+        if (drawn === 'none') return t('sessions.ch_norepo');
+        return t('sessions.ch_failed', held.error ?? '');
     }
 </script>
 
@@ -100,9 +109,12 @@
         <p class="outcome">{outcome}</p>
     {/if}
 
-    {#if git.error !== null}
-        <div data-repo-failed>
-            <TreeItem label={t('repositories.error', git.error)} tone="error" />
+    {#if shape !== 'readable'}
+        <!-- git's reason as the row's hover words, the attribute the Changes panel carries it on:
+             ui/TreeItem.svelte draws its own tooltip for a row that is pressed, and this row is
+             text. -->
+        <div data-repo={shape} title={git.error ?? undefined}>
+            <TreeItem label={rowLabel(shape, git)} tone={shape === 'failed' ? 'error' : 'muted'} />
         </div>
     {:else}
         <TreeView label={t('views.repositories')} rows={keyRows} ontoggle={toggled}>
