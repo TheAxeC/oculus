@@ -31,50 +31,48 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```yaml
 dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40, Q48 03:43, Q49 05:31, Q50 06:25, Q51 06:48, R14 10:44, Q52 12:09, Q54 12:19; in flight: Q53 from 99ea1b96, Q56 from 521c938c and Q36 from 2ddd4a8b; next to dispatch: Q58, which waits for Q56 because both write src/lib/views/Files.svelte and a step is never split to avoid the wait; briefs written and waiting: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36; next: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36, O31, Q35; PAUSE ASKED FOR 2026-09-18 12:48 (Axel: pause once the current three steps are done). It binds now: Q53, Q56 and Q36 are carried through their rounds, their reviews and their landings, and then the loop stops. No step is dispatched after them, Q58 included, and the pause holds until Axel lifts it in words. The three steps in flight rule stood from 2026-09-17 10:46 until this; then D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2
 - package: Q53
-  executor: agent                          # the configuration default, chosen for the step
+  status: PARKED BY THE PAUSE, builder stopped partway through round 1  # stopped by Axel on 2026-09-18 around 14:20; the worktree holds the build plus part of the round, uncommitted
+  executor: agent
   worker: claude:opus
-  worktree: .agents/worktrees/q53
-  base: 99ea1b96
-  launched: 2026-09-18T08:25
-  prompt: the Agent tool's prompt, the brief's two halves plus Axel's ruling of 08:15 as a third, with the revert-line rule the checks keep catching
-  report: tools/oculus/.scratch/migration/agents/reviews/Q53-report.md
-  pid: none                                 # a native Claude worker has no process of its own
-  session_id: ab66a4e0d269be811            # the Agent tool id, launched 08:25
-  reported: 2026-09-18T09:22                # everything in the brief done, Axel's tap ruling included: one accent line over the pane strips, following the reader into an embedded page and marking a folded pane; the pane menu's list given a depth of its own under `body.wall`, where the strip's own blur was the stacking context that trapped it; and a ticker row opened by the click a tap raises, so the first tap draws the buttons and the second presses one. Two brief premises found wrong on the tree and worked around; one committed revert found not to redden its own test and replaced
-  reviewer: a44cc2705dd951f81                # claude:opus through the Agent tool, read-only, launched 10:52, scratch folder scratchpad/q53-review (review earned: the shell's drawing and a new reactive cell)
+  worktree: .agents/worktrees/q53          # full sparse set of the configuration block; 12 files uncommitted
+  base: 99ea1b96                            # five landings behind main (Q52, Q54 and the ledger since), so the cherry-pick will conflict
+  launched: 2026-09-18T08:11
+  report: tools/oculus/.scratch/migration/agents/reviews/Q53-report.md   # the build, reported 09:22
+  review: tools/oculus/.scratch/migration/agents/reviews/Q53-refuter.md  # reviewer launched 10:45, returned 11:33
+  round: 1                                  # eight items, written out verbatim in agents/reviews/Q53-round1.md: six rulings sent 11:34, the green Ticker.svelte:231 revert directive sent 12:16, Axel's badge tones sent 12:35
+  round_report: none                        # the builder was stopped before it reported
+  session_id: ab66a4e0d269be811            # a Claude Code Agent id; it resumes only inside the session that made it
+  next: a continuation builder in the same worktree, given agents/reviews/Q53-round1.md, first says which of the eight items the worktree already holds and then finishes the rest; then a review over the round; then the landing
   landing: not-started
-  reviewer_done: 2026-09-18T11:30            # agents/reviews/Q53-refuter.md: seven findings, four of them tap defects the build report missed
-  round: 1                                  # sent 11:34 with seven rulings; two more items added inside the same round, the GREEN Ticker revert directive at 12:16 and Axel's badge-tone ruling of 12:34, sent at 12:35, nine in all
-```
-
 - package: Q56
-  executor: agent                          # the configuration default, chosen for the step
+  status: PARKED BY THE PAUSE, built and not reviewed                   # its reviewer was stopped a minute after launch and wrote nothing
+  executor: agent
   worker: claude:opus
-  worktree: .agents/worktrees/q56
+  worktree: .agents/worktrees/q56          # cut to tools/oculus alone, not the configuration block's set, and cut before 972c931c, so its node suite shows three reds in the real-hub cases that main fixed; not this step's. 26 files uncommitted
   base: 521c938c
   launched: 2026-09-18T12:10
-  prompt: the Agent tool's prompt, the brief plus the machine-readable revert rule and the no-shortcut rule
-  report: tools/oculus/.scratch/migration/agents/reviews/Q56-report.md
-  pid: none                                 # a native Claude worker has no process of its own
-  session_id: a0910fc1937c6860e            # the Agent tool id, launched 12:10
-  reported: 2026-09-18T14:00                # everything in the brief done, plus the bookmarks watcher folded in from Q64: a failed read holds no round but remembers the round it failed in, the failed line carries a read-again control, the workspaces section gains the failure sentence it never had, and src/lib/server/watch/bookmarks.ts publishes on the files channel. Path list widened well past the brief: a channel payload field, state/context.ts, data/model-sessions.ts, two new view components and a shared watcher test probe that folded three duplication entries
-  reviewer: a8dc2106e7c2fea15               # claude:opus through the Agent tool, read-only, launched 14:05, scratch folder scratchpad/q56-review (review earned: a new server watcher, a wire shape and the state store)
-  landing: not-started
+  report: tools/oculus/.scratch/migration/agents/reviews/Q56-report.md   # the build, reported 14:04
+  review: none                              # reviewer a8dc2106e7c2fea15 launched 14:05 and stopped at 14:10; no review exists
   round: 0
-- package: Q36
-  executor: agent                          # the configuration default, chosen for the step
-  worker: claude:opus
-  worktree: .agents/worktrees/q36
-  base: 2ddd4a8b
-  launched: 2026-09-18T12:31
-  prompt: the Agent tool's prompt, the brief plus the no-widening rule, the machine-readable revert rule and the two premises rechecked on main
-  report: tools/oculus/.scratch/migration/agents/reviews/Q36-report.md
-  pid: none                                 # a native Claude worker has no process of its own
-  session_id: a8198e29299849f65            # the Agent tool id, launched 12:31
-  reviewer: aba564453d42708e7             # claude:opus through the Agent tool, read-only, launched 13:06, scratch folder scratchpad/q36-review
-  reviewer_done: 2026-09-18T13:40            # agents/reviews/Q36-refuter.md: every check reproduced, and the bound is stronger than the builder's own 3x revert showed (1.1x red 5 of 5 at load 14-20). Against it: a comment carrying history, a head comment whose coverage figure is two to four times too generous, the blind spot scaling with load (a 1.1x regression passed 3 of 5 at load 48-91) and stated nowhere, two shared helpers with no case, the second case's bound assertion not load-bearing while the report says it is, and a residual machine-reason flake not named
+  session_id: a0910fc1937c6860e            # a Claude Code Agent id; it resumes only inside the session that made it
+  next: a fresh review of the whole diff against the brief; then a repair round if it finds anything (a continuation builder if this id cannot be resumed); then the landing
   landing: not-started
-  round: 1                                  # sent 13:41: six rulings, chiefly that a green run must mean the bound was tight enough to catch a 1.1x regression, so a machine too loaded to prove the rule makes the case red and says so, rather than passing weakly
+- package: Q36
+  status: PARKED BY THE PAUSE, builder stopped partway through round 1  # stopped by Axel on 2026-09-18 around 14:20; the worktree holds the build plus part of the round, uncommitted
+  executor: agent
+  worker: claude:opus
+  worktree: .agents/worktrees/q36          # cut to tools/oculus alone, not the configuration block's set, and cut before 972c931c, so its node suite shows three reds in the real-hub cases that main fixed; not this step's. 1 file uncommitted (tests/server/hpc/ssh.test.ts)
+  base: 2ddd4a8b
+  launched: 2026-09-18T12:30
+  report: tools/oculus/.scratch/migration/agents/reviews/Q36-report.md   # the build, reported 13:06
+  review: tools/oculus/.scratch/migration/agents/reviews/Q36-refuter.md  # reviewer launched 13:06, returned 13:40
+  round: 1                                  # six rulings, written out verbatim in agents/reviews/Q36-round1.md, sent 13:41
+  round_report: none                        # the builder was stopped before it reported
+  session_id: a8198e29299849f65            # a Claude Code Agent id; it resumes only inside the session that made it
+  next: a continuation builder in the same worktree, given agents/reviews/Q36-round1.md, first says which of the six rulings the worktree already holds and then finishes the rest; then a review over the round; then the landing
+  landing: not-started
+```
+
 ## The standing demands (from Axel, in force)
 - The run of 2026-09-17 10:46 (Axel: "You may continue with the orchestration. Important is to keep 3 tasks running in parallel. No pause point is set for now."): three steps in flight at all times, a new one dispatched at each landing, the queue as plan.md's line; one repair round per step; the look at each landing on the TEST page.
 - A second repair round only when the one round's delta leaves a verification command red or an acceptance item of the brief unbuilt and the fix is too large for landing, never for a new review finding (Axel, 2026-09-17 11:33, agreeing with the Fable session's reading of the ledger's rows); in the plan-orchestration skill's step 8.
@@ -111,11 +109,11 @@ Axel, 2026-09-18: no more runs. Both of these hold, and neither gives way to the
 - **No new run of any kind**: no builder, no reviewer, no repair round.
 - **Nothing lands without its review.** The rules on reviews are unchanged.
 
-So the three steps are parked where they stand, in their worktrees, and wait for the pause to lift:
+So the three steps are parked where they stand, in their worktrees, and wait for the pause to lift. The builder ids in the dispatch block are Claude Code Agent ids and resume only inside the session that made them; any other orchestrator, on either harness, starts a continuation builder in the same worktree from the round file:
 
-- **Q56**: built, report saved. Its review has not run. It lands only after that review.
-- **Q36**: its builder was stopped partway through its repair round; the worktree holds the partial round. It resumes, is reviewed and lands after the pause.
-- **Q53**: its builder was stopped partway through its nine-item repair round; the worktree holds the partial round. Same.
+- **Q56**: built, report saved, uncommitted in its worktree. Its review has not run: the reviewer launched at 14:05 was stopped at 14:10 and wrote nothing. It lands only after a review.
+- **Q36**: its builder was stopped partway through its repair round of six rulings, written out in `agents/reviews/Q36-round1.md`; the worktree holds the partial round, uncommitted. After the pause a continuation builder finishes the round from that file, a review runs over it, and it lands.
+- **Q53**: its builder was stopped partway through its repair round of eight items, written out in `agents/reviews/Q53-round1.md`; the worktree holds the partial round, uncommitted. Same order after the pause.
 
 Nothing is dispatched after them. The pause holds until Axel lifts it in words.
 
