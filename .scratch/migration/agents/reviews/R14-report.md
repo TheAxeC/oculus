@@ -168,3 +168,75 @@ The size check stays green, and three files on its allow list grew inside it: `t
 - `findUnswept` follows relative imports only. A suite that reached the helper through a package alias would not be seen; the tree has no such import today.
 - The negatives check reads the line above an assertion. A reason written on the same line, or two lines up, does not count, so the comment has to sit directly above.
 - `npm run lint` takes 96 seconds on this tree, most of it the browser specs.
+
+---
+
+# Repair round 1 (builder a7dc75ae4e37c3339, sent 02:34, reported 05:1x)
+
+All eleven rulings done. `tests/server/git.test.ts` and three of the step's own fixture cases were timing out under the load of a second worktree's suite; each was given a budget of its own rather than a loosened assertion.
+
+| # | Ruling | State | Command and output |
+| --- | --- | --- | --- |
+| 1 | the head-comment command is the one that was run | DONE | `git diff --name-only ec7bc6e5 --diff-filter=d --relative -- src config tests bin | xargs -I{} sh -c 'echo "--- {}"; sed -n "1,14p" {}'`: 149 files, 0 `No such file`, 5s; the 17 untracked files printed by the same command fed from `git status --porcelain` |
+| 2 | the revert check never calls a revert proven when the case did not run | DONE | `node bin/revert-check.mjs <8 files>`: `53 reverts, 0 unproven`, every line red, 428s; `npx vitest run tests/bin/revert-check.test.ts`: 7 passed |
+| 3 | the citation check flags a blank line, and the report's citation is right | DONE | `node bin/cited-lines.mjs <citations>`: `19 cited lines, 0 missing`, exit 0. The miss was `views/shared/CardActions.svelte:202`, which is `src/lib/views/shared/CardActions.svelte:202` |
+| 4 | the scratch count measures the run, not the machine | DONE | `sh bin/scratch-count.sh`: `node before 0 / node after 0 / browser before 0 / browser after 0`, exit 0, 626s for both suites |
+| 5 | the size list is a ratchet | DONE | `sh bin/size-check.sh` exit 0; `npx vitest run tests/size.test.ts`: 6 passed |
+| 6 | an allow entry says why, and styling keys on the selector | DONE | `npx vitest run tests/duplication.test.ts tests/audits.test.ts tests/boundaries.test.ts`: 9, 6 and 10 passed |
+| 7 | the scratch guard sees every way a directory is taken | DONE | `npx vitest run tests/scratch.test.ts`: 7 passed |
+| 8 | `explains()` refuses a restatement | DONE | `npx vitest run tests/negatives.test.ts`: 6 passed |
+| 9 | the audits check walks `tests/views` recursively | DONE | a planted case in `under/planted.test.ts`, 6 passed |
+| 10 | `agents/spec.md` left exactly as it is | DONE | `git diff --stat ec7bc6e5 -- .scratch/migration/agents/spec.md`: `1 file changed, 1 insertion(+)`, untouched this round |
+| 11 | every timing measured in the run quoted | DONE | the table below |
+
+## What each check now refuses that it accepted before
+
+- A case name holding a metacharacter: `bin/revert-check.mjs:157` escapes and anchors the name, `:203` reads the verdict from the runner's JSON report and matches the title exactly. Fixture: `calls a case whose name holds a bracket by that name, and not by it as a pattern` prints `GREEN` and `1 reverts, 1 unproven`, exit 1.
+- A build that refuses the revert, and a replacement that leaves the file unparsable: both `unproven` with the reason in the line, never red, both counted.
+- A directive naming a path the copy leaves behind: `bin/revert-check.mjs:257` names it, counts it unproven and goes on; `checkOne` is wrapped so an unexpected error becomes a line rather than a stack trace that abandons the rest. Fixture: the second directive still prints red.
+- A citation landing on a blank line is `MISSING` (`bin/cited-lines.mjs:86`).
+- Another worktree's run can no longer turn the scratch count red, and a leak of the run's own can no longer hide among the leftovers: `bin/scratch-count.sh:17` makes a fresh root per suite and points `TMPDIR` at it. The roots are made under `/tmp` because the terminal suite opens a tmux socket inside `TMPDIR` and a unix socket path is capped near 104 characters.
+- A listed file that grows: `bin/size-allow.txt` carries a count per entry (`tests/views/collection.test.ts 957`), and `bin/size-check.sh` fails when a listed file passes its count, falls back under the line, carries no count, or names a file the tree has not.
+- An allow entry with no reason: `tests/allow-duplication.txt` and `tests/allow-audits.txt` carry one per line. `tests/allow-styling.ts` is keyed on the selector, so a second unrelated `:global` rule for the same class in a listed file is a new violation; the list went from 28 to 35 entries.
+- A directory taken any other way: the guard covers every file under `tests/`, reads dynamic and double-quoted imports, and fails a `scratchDir` call at module scope whose registration comes after it. `tests/data/real-hub.probe.ts` now sweeps itself through `process.on('exit', sweepScratch)`.
+- A comment that restates the assertion: `explains` at `tests/negatives.test.ts:48` refuses a comment holding a literal the assertion names (eight characters or more) and one under four words. Eight comments failed and are rewritten.
+- A folder under `tests/views`: `findAudits` at `tests/audits.test.ts:121` recurses.
+
+## The findings the round raised for the orchestrator
+
+- `tests/views/project.test.ts:219`, `expect(body).not.toContain('>TEX</span>')`: the comment is true of the tree, and the stricter rule passes it. What is wrong is the assertion, which pins as expected behaviour a difference nobody ruled: the card draws a known document the project does not have as a plain `Tag` (`src/lib/views/shared/CardDocs.svelte:79`), the project tab draws nothing for it.
+- The 88 converted call sites carry no revert directive. The change in those 70 files is import bookkeeping and the `mkdtempSync` call it replaced; `tests/scratch.test.ts` is what makes the conversion load-bearing and it carries its own directives.
+- Two flakes not fixed, both under the load of a second worktree's suite, both green alone and on the final run: `tests/server/hpc/ssh.test.ts :: rejects a command that ignores SIGTERM at the budget...` and `tests/server/watch/git.test.ts :: reads a root added to the workspaces file while it is running` (a watcher race, not a budget).
+- `tests/server/git.test.ts :: carries the newest commits...` now has `{ timeout: 60000 }` with a comment naming why. It carries no revert directive: the revert of a budget is red only under load.
+
+## The reverts run
+
+`node bin/revert-check.mjs tests/duplication.test.ts tests/audits.test.ts tests/negatives.test.ts tests/boundaries.test.ts tests/scratch.test.ts tests/size.test.ts tests/bin/revert-check.test.ts tests/bin/cited-lines.test.ts tests/server/git.test.ts` prints `53 reverts, 0 unproven`, every line red, 428s. Unchecked: the three pre-existing `tests/boundaries.test.ts` cases the step never changed, and the 37 cases of `tests/server/git.test.ts`.
+
+## The verify list, each timed in the run quoted
+
+| Command | Output | Runtime |
+| --- | --- | --- |
+| `npx vitest run --reporter=dot` | `Test Files 258 passed`, `Tests 4297 passed` (two other worktrees running) | 139s |
+| the same, on a quiet machine | `258 passed`, `4297 passed` | 115s |
+| `npx playwright test` | inside `bin/scratch-count.sh`, which reports a red suite and reported none | in the 626s |
+| `npm run check` | `COMPLETED 1232 FILES 0 ERRORS 0 WARNINGS` | 16s |
+| `npm run build` | exit 0 | 16s |
+| `npm run format:check` | `All matched files use Prettier code style!` | 19s |
+| `npm run lint` | no output | 76s |
+| the ASCII gate | nothing, exit 0 | 0s |
+
+## Files changed
+
+New this round: `bin/size-check.sh` 52, `bin/scratch-count.sh` 37, `tests/size.test.ts` 150, `tests/allow-duplication.txt` 587, `tests/allow-audits.txt` 160. Removed: `tests/allow-duplication.ts` and `tests/allow-audits.ts`, whose entries with their reasons would have made a 2904-line source file.
+
+Changed this round: `bin/revert-check.mjs` 319, `bin/cited-lines.mjs` 116, `bin/size-allow.txt` 15, `tests/scratch.test.ts` 265, `tests/duplication.test.ts` 320, `tests/audits.test.ts` 248, `tests/negatives.test.ts` 206, `tests/boundaries.test.ts` 561, `tests/allow-styling.ts` 155, `tests/bin/revert-check.test.ts` 274, `tests/bin/cited-lines.test.ts` 92, `tests/data/real-hub.probe.ts` 130, `tests/server/git.test.ts` 616, and eight comments under `tests/views/`.
+
+The step's whole diff against ec7bc6e5: 150 files changed, 1076 insertions, 292 deletions, plus 17 untracked files.
+
+## Decisions the orchestrator may reverse
+
+1. The two long floors are text files read by their tests; as TypeScript with a reason per entry they are 2904 and 600 lines, and the first breaks the size rule the same step enforces.
+2. A literal counts as a restatement at eight characters; below that the rule refuses comments holding ordinary words that happen to be the asserted string.
+3. `bin/size-check.sh` and `bin/scratch-count.sh` are scripts rather than one-liners in the verification list, so the line in the ledger is the line that runs.
+4. The flaky git case got a budget, not a loosened assertion, with a comment naming why.
