@@ -133,3 +133,82 @@ Each of the eleven checks was planted against and shown red, then shown green wi
 - Whether the four `SWEPT_BY_FIXTURE` entries are each still needed, beyond running the case that pins them.
 
 Reviewer usage: about 300k tokens, 48 tool uses, about 75 minutes.
+
+---
+
+# The run over repair round 1 (reviewer a0f9ae50704b7e127, 04:22 to 05:05)
+
+```
+npx vitest run --reporter=dot        258 files, 4297 tests, all passed, 103.16s
+npm run check                        COMPLETED 1232 FILES 0 ERRORS 0 WARNINGS
+npm run build                        exit 0
+npm run format:check                 All matched files use Prettier code style!
+npm run lint                         no output
+the ASCII gate                       no output, exit 0
+npm run test:browser                 241 passed (5.4m), exit 0
+node bin/revert-check.mjs <9 files>  53 reverts, 0 unproven; 53 red, 40 unchecked; 354s
+the head-comment print               149 files, 0 No such file, 11.2s
+node bin/cited-lines.mjs <report>    25 cited lines, 2 missing, exit 1
+sh bin/scratch-count.sh              node before 0 / node after 0 / browser before 0 / browser after 0, exit 0, 746s
+sh bin/size-check.sh                 no output, exit 0
+git diff --stat ec7bc6e5             150 files changed, 1076 insertions(+), 292 deletions(-)
+```
+
+The worktree is untouched: every plant, revert and stub was made in a copy under `scratchpad/r14-review2/`.
+
+## Spec
+
+1. **Ruling 2 is not met: four shapes still print `red` and count `0 unproven`.** (a) A skipped case: `bin/revert-check.mjs:233` reads any status other than `passed` as red, and `CASE` at `:41` admits `it.skip(`. (b) A case another case's `.only` excludes: the same. (c) Two cases of one name: `vitestResults` at `:173-181` collects every assertion whose title matches and `:233` takes `every(Boolean)`, so a red sibling proves the directive's own case. (d) A drifted line number: a directive naming a comment line proves that some edit there breaks the case, not that the rule the case is cited for is what it holds; a revert that replaces a line with itself prints red.
+
+2. **Ruling 7 is not met, and the defect disables the guard's central case.** `tests/scratch.ts:6` is a comment holding `afterAll(sweepScratch)`, which `shapeOf` at `tests/scratch.test.ts:65` matches, so `held.get('scratch.ts').registers === true` and `swept()` at `:109-116` answers true for every file that imports the helper through any chain. A planted `tests/views/planted-scratch.test.ts` that takes a scratch directory and registers no sweep leaves `npx vitest run tests/scratch.test.ts` at `Tests 7 passed`; so does deleting `afterAll(sweepScratch);` from `tests/server/audit.test.ts`. Any of the 82 suites can drop its registration and stay green. The head comment at `tests/scratch.test.ts:2-8` is made false by it.
+
+3. **Ruling 8 is half met.** `literalsIn` at `tests/negatives.test.ts:36` pairs quotes greedily, so on a line holding two quoted strings the captured literal is the text between them and the real one is never extracted; a comment that restates the assertion passes there.
+
+4. **Ruling 9 is half met.** `findAudits` at `:121` recurses; the orphan case at `:237-246` builds its set from `readdirSync(VIEWS)` without recursing.
+
+5. **Ruling 6 is enforced only as non-empty.** `tests/boundaries.test.ts:553`, `tests/duplication.test.ts:306` and `tests/audits.test.ts:215` filter on `why.trim() === ''`, so a reason of `x` stands. The styling half holds: a second unrelated `:global` rule for a listed class gives `1 failed | 9 passed`.
+
+6. Ruling 10: the diff still carries `+1` in `.scratch/migration/agents/spec.md`, which `agents/spec.md:33` forbids a worker to touch. The orchestrator's to drop at landing.
+
+7. Brief decision 3 is departed from: the two long floors are `.txt` rather than `.ts`. The round states it as its decision 1 with the reason; both are read by their test, both carry a reason per line, both have an orphan case.
+
+Rulings 1, 3, 4 and 5 are met.
+
+## Proof
+
+8. **`19 cited lines, 0 missing` does not reproduce.** Over the whole `agents/reviews/R14-report.md`: `25 cited lines, 2 missing`, exit 1 (`tests/bin/claude-usage.test.ts:22 the line is blank`, `views/shared/CardActions.svelte:202 no such file`). The builder's run was over an extracted file of citations, which a later reader cannot rerun. The answer also depends on `--root`, which the report does not name: with the worktree's `tools/oculus` as root the same section gives `10 cited lines, 7 missing`.
+
+9. `bin/cited-lines.mjs:49`: a range wider than 200 lines collapses to its first line, so `src/one.ts:1-9999` over a four-line file passes; a reversed range `src/one.ts:4-1` passes; `src/one.ts:-5` is not read as a citation at all; a citation landing on a line holding only `}` passes, though the head comment's reason for flagging a blank line covers it equally.
+
+10. `bin/scratch-count.sh`: **the exit status does not follow a red suite.** With `"test": "exit 1"` and an empty `testDir`, the script prints `the node suite is red` and `the browser suite is red` as prose and exits 0. The verification list reads the exit status. Isolation holds (a directory planted in `$TMPDIR` mid-run did not move the count) and the script cleans up after itself. `left()` at `:21-23` counts only top-level directories named `oculus-*`, so a leak with another prefix, a leaked file or a leak one level down is not seen.
+
+11. `bin/size-check.sh` and `tests/size.test.ts:50` measure `.ts` and `.svelte` only. A planted `bin/planted.mjs` of 2000 lines leaves the check at exit 0; `bin/` already holds `migrate-joint-work.mjs` 466, `revert-check.mjs` 319 and `cited-lines.mjs` 116. All five ratchet shapes hold. Every entry is still over its line and under its count on main at `5b434d2e`.
+
+12. `tests/allow-duplication.txt` is keyed on the file pair only: a brand-new nine-line clone between two listed files leaves `tests/duplication.test.ts` at `Tests 9 passed`. 578 listed pairs may share any amount of new code.
+
+13. `tests/allow-negatives.ts` is a per-file ceiling at the current counts: explaining one bare absence and adding one brand-new bare absence in the same file leaves `Tests 6 passed`. One explained absence buys one unexplained one.
+
+14. `explains()`: four long words of filler pass (`marmalade wheelbarrow constitutional phenomenology`), and a true reason that names the attribute it is about is refused.
+
+15. `tests/audits.test.ts`: `DECLARES[2]` at `:56` takes every assignment name in the file and `reaches` at `:73-79` matches `\bname\b` anywhere in a case body, comments and strings included, so for `tests/views/projects.test.ts` any of twenty-one ordinary words (`done`, `first`, `open`, `cut`) buys a pass. `/\brender\(/` reads the text inside a string. `cases()` at `:50` needs the name on the `it(` line, so a case whose name is on the next line is not seen at all. `block()` at `:60-70` counts braces and parens inside strings and comments, so a case that does render but holds `foo))` in a comment is reported as an audit: a red it has not earned.
+
+16. `bin/revert-check.mjs`: `unchecked` is in neither the summary's numbers nor the exit status, so a case added with no directive leaves `N reverts, 0 unproven`, exit 0. `:277` writes the edited copy with no containment check: a directive naming `../escape-target.txt` reads outside the tree and writes outside the scratch copy, where the `finally` at `:288-290` does not remove it. `caseAbove` at `:102-108` searches backwards, so a directive on the line above an `it(` attaches to the previous case, which the head comment at `:76-77` says it does not.
+
+17. Timings not reproduced (load-dependent, my runs shared the machine with another step's browser suite): revert check 354s against 428s, check 24.5s against 16s, build 19.1s against 16s, lint 89s against 76s, scratch-count 746s against 626s, the head-comment print 11.2s against 5s.
+
+## Standards
+
+18. Two head comments the diff makes false: `tests/scratch.test.ts:2-8` (finding 2) and `bin/revert-check.mjs:76-77` (finding 16).
+19. No history in any comment of the fourteen new files; the ASCII gate is clean; every new module opens with its head comment naming its layer; no file over the size limit; no document sentence is made false.
+20. `tests/views/project.test.ts:220` still asserts a difference nobody ruled. (Booked as an open item for Axel at 05:15, after this review read the file.)
+
+## Behaviour
+
+21. One change to how a suite runs, which the report states: `tests/server/git.test.ts` gained `{ timeout: 60000 }` on one case. `git diff ec7bc6e5 | grep -nE "^\+.*(timeout|retries|test\.slow|\.concurrent|setConfig|testTimeout|hookTimeout)"` prints that line and nothing else; the config files are untouched; `git diff --name-only ec7bc6e5 -- src config` prints nothing.
+22. The 88 converted call sites are faithful in the sample read whole (`tests/browser/repositories.spec.ts`, `tests/server/audit.test.ts`, `tests/watch/portfolio.test.ts`, `tests/data/real-hub.probe.ts`, `tests/server/git.test.ts`): each replaces `mkdtempSync(join(tmpdir(), 'X'))` with `scratchDir('X')`, keeps the containment assertion and adds the sweep. Over the whole diff, the removed lines that are not an import, an empty line, a `mkdtempSync` or a `tmpdir()` are 52, all import-list continuations plus the one reindented git case. No assertion was removed, loosened or re-aimed.
+
+## Not checked
+
+The duplication check's own window computation; whether each of the 35 styling entries is deliberate; whether any of the 150 audits entries should now render; `require()` and package-alias import shapes against the scratch guard; the browser half of the revert check on a real browser case.
+
+Reviewer usage: about 100 tool uses, 43 minutes (04:22 to 05:05).
