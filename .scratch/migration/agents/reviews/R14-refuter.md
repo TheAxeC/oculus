@@ -1,0 +1,135 @@
+# Step R14 refuter report (on .agents/worktrees/r14, base ec7bc6e5)
+
+## Verification (rerun by the reviewer)
+
+```
+$ npx vitest run --reporter=dot                      (tools/oculus, worktree)
+ Test Files  257 passed (257)
+      Tests  4279 passed (4279)
+   Duration  57.75s
+real 59.91
+
+$ npm test                                            (second run, inside the count command)
+ Test Files  257 passed (257)
+      Tests  4279 passed (4279)
+real 84.25
+
+$ npm run check
+1789689135335 COMPLETED 1233 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS
+real 10.54
+
+$ npm run lint
+(no output)
+real 45.48
+
+$ npm run format:check
+All matched files use Prettier code style!
+real 9.58
+
+$ LC_ALL=C perl -ne 'my $l = $_; $l =~ s/\xC3[\x80-\xBF]//g if $ARGV =~ m{^config/}; print "$ARGV:$.:$_" if $l =~ /[^\x20-\x7E\n]/; close ARGV if eof' $(find src tests bin config -type f ! -name glyphs.yml)
+(no output)  exit 0   real 0.20
+
+$ npm run build
+vite v8.3.0  ... done
+real 13.90
+
+$ npx playwright test
+  241 passed (9.8m)
+real 590.43
+
+$ node bin/revert-check.mjs tests/duplication.test.ts tests/audits.test.ts tests/negatives.test.ts tests/boundaries.test.ts tests/scratch.test.ts tests/bin/revert-check.test.ts tests/bin/cited-lines.test.ts
+35 reverts, 0 unproven     (every line `red`, 3 `unchecked`)
+real 102.24   exit 0
+
+command 2, as the report lists it for the verification list:
+$ git diff --name-only ec7bc6e5 --diff-filter=d -- src config tests bin | xargs -I{} sh -c 'echo "--- {}"; sed -n "1,14p" {}'
+--- tools/oculus/tests/bin/claude-usage.test.ts
+sed: tools/oculus/tests/bin/claude-usage.test.ts: No such file or directory
+(same for every file)
+with --relative added: 149 files printed, real 2.37
+
+command 4:
+$ node bin/cited-lines.mjs <the builder's R14-report.md>
+16 cited lines, 1 missing     exit 1
+
+command 5, the exact line the report gives:
+before=648192  node exit=0  browser exit=0  after=649088  equal exit=1
+each `find` count: real 143.68 / real 136.04
+
+command 5, repeated with TMPDIR pointed at an empty directory of my own:
+node   before=0 after=0   (4278 passed, 1 failed, the failure caused by the TMPDIR override)
+browser before=0 after=0  241 passed (6.0m)  real 362.00
+
+command 6:
+$ find src tests bin -type f \( -name '*.ts' -o -name '*.svelte' \) | xargs wc -l | awk -v allow=bin/size-allow.txt '...'
+(no output)  exit 0
+with two planted files (src/lib/planted-big.ts 901, src/lib/PlantedBig.svelte 541): both printed, exit 1
+
+command 10:
+$ git diff --unified=0 ec7bc6e5 -- config | grep -E '^\+[^+]'
+(nothing, grep exit 1)   real 0.01
+```
+
+Each of the eleven checks was planted against and shown red, then shown green with the plant removed: revert check (probe fixture), head-comment print, duplication (`src/lib/dup-a.ts` + `dup-b.ts`), citation check (fixture report), scratch count (private TMPDIR), size check (two planted files), negatives (one comment stripped from `tests/views/venues.test.ts`), primitive styling (`ul :global(.tool)` added to `src/lib/views/Status.svelte`), audits (a non-rendering case added to `tests/views/status.test.ts`), config-diff print (a scratch git repo), look rule (read at `.scratch/migration/agents/spec.md:54`, verbatim against brief item 11).
+
+## 1. Spec
+
+- `R14-report.md:58`, the head-comment print handed to the verification list: `git diff --name-only <base> --diff-filter=d -- src config tests bin | xargs -I{} sh -c 'echo "--- {}"; sed -n "1,14p" {}'`. Run from `tools/oculus` it prints `sed: tools/oculus/...: No such file or directory` for every file, because `git diff --name-only` prints repository-root-relative paths. It needs `--relative`. The builder's own run (report line 143) used a different command (`git status --porcelain | ... | sed 's#^tools/oculus/##'`), so the line that lands in the ledger is not the line that was run. Brief item 2 asks for the command to be named as a verification line.
+- Brief Tests item 3 ("Each new or changed test carries the machine-readable revert line of item 1"): 88 call sites in 70 test files were changed (`mkdtempSync(join(tmpdir(), ...))` to `scratchDir(...)`, e.g. `tests/server/audit.test.ts:51`, `tests/browser/repositories.spec.ts:105`) and none carries a directive. `node bin/revert-check.mjs` was run over 7 files. The changes are mechanical, but the brief's rule is unqualified.
+- Brief item 3 ("An allow list names what is deliberate, each entry with its reason"): `tests/allow-duplication.ts` holds 578 `HELD` entries and `grep -c "why:" tests/allow-duplication.ts` prints 0; `tests/allow-audits.ts` holds 150 bare strings. Only `tests/allow-styling.ts` carries a `why` per entry, and its 28 citations all resolve (`node bin/cited-lines.mjs tests/allow-styling.ts` prints `25 cited lines, 0 missing`). The report files this as decision 6 and attributes it to a ruling I was not given.
+- Brief decision 3 ("An allow list is a file beside its test (`tests/allow-<name>.ts` or a constant in the test), never a silenced rule"): `bin/size-allow.txt` is a plain text file with no test and no orphan case. Appending `src/lib/planted-big.ts` and `src/lib/PlantedBig.svelte` to it turned my planted violation from exit 1 to exit 0. Nothing in the tree fails when a name is added to it, so its head comment's "nothing is added to this list" is prose only. The four `tests/allow-*.ts` lists each do have an orphan case (all four fired when I planted a stale entry).
+- Rule clash, for the orchestrator to note rather than a defect of the diff: `agents/spec.md:33` says "You never edit anything under `tools/oculus/.scratch/`", and `agents/spec.md:3` says "Nothing in a brief overrides anything here", while brief item 11 and decision 4 instruct the builder to edit `agents/spec.md`. The builder followed the brief.
+- Brief premise, "Files over the size line today ... `src/lib/views/Files.svelte` 592" and six others (7 files, read at db3aa942). At the worktree base ec7bc6e5 there are 12, each already over before the step (`git show ec7bc6e5:tools/oculus/<f> | wc -l` for every entry of `bin/size-allow.txt`: 980, 970, 968, 942, 940, 928, 908, 906, 596, 592, 557, 547). The builder states this at report line 34.
+
+## 2. Proof
+
+- `bin/revert-check.mjs:165`, `const run = spawnSync('npx', ['vitest', 'run', file, '-t', caseName]);`. `-t` is a regex. A case whose name holds a metacharacter is reported proven although its revert leaves it green. Fixture probe: a case named `a name with a bracket (like this one`, whose body is `expect(allowed(5)).toBe(true)` and whose revert is `src/rule.mjs:2 => return true;` (which keeps it true), prints `red ... 1 reverts, 0 unproven`, exit 0. The identical case without the bracket prints `GREEN`.
+- `bin/revert-check.mjs:159-161`, the browser path:
+  ```
+  const built = spawnSync('npm', ['run', 'build'], shared);
+  if (built.status !== 0) return { green: false, note: 'the build refused the revert' };
+  ```
+  A failed build is `green: false`, which `checkOne:208` turns into `ok: true` and a `red` line. Probe: a `tests/browser/look.spec.ts` whose only assertion is `expect(1).toBe(1)` and whose revert cannot affect it prints `red ... [the build refused the revert]` / `1 reverts, 0 unproven`, exit 0. The report (line 167) says this path is "written and not exercised"; exercised, it proves nothing and reports zero unproven.
+- `bin/revert-check.mjs:166`, `return { green: run.status === 0, note: '' }`. A replacement that makes the file unparsable is reported `red`. Probe: `// revert: src/rule.mjs:2 => return (;` over `expect(allowed(5)).toBe(true)` prints `red ... 1 reverts`. Red conflates "the assertion failed" with "the tree no longer imports".
+- `bin/revert-check.mjs:204`, `writeFileSync(join(dir, directive.target), edit.text, 'utf8');`. A directive naming a file `SKIPPED` (`bin/revert-check.mjs:38`: `node_modules`, `.svelte-kit`, `build`, `.git`, `.scratch`, `test-results`) passes the `existsSync` guard at :184 against the real root and then throws an unhandled `ENOENT` against the copy. Probe: `// revert: .scratch/plan.md:1 => changed` printed a Node stack trace and abandoned the two directives after it; no summary line was printed. Report line 84 names the limitation but not that it crashes the run.
+- `R14-report.md:144` claims `node bin/cited-lines.mjs <this report's citations>` prints `14 cited lines, 0 missing`. Run over the report itself from `tools/oculus`, the builder's own tool prints `16 cited lines, 1 missing`, exit 1:
+  - `MISSING views/shared/CardActions.svelte:202 no such file` (report line 32).
+  - `tests/bin/claude-usage.test.ts:22 | ` prints an empty line. Report line 7 cites `:22` as "the tree's shape" for a name on the line below `it(`; line 22 is blank, the `it(` is at `:25` and the name at `:26`. The tool does not flag a citation at a blank line, so the wrong-citation half of check 4 passes over it.
+- `R14-report.md:104` claims the count command printed `before 647280 after 647280`, `equal exit 0`. I ran the same command on the same tree: `before=648192`, `after=649088`, `equal exit=1`. `ps -Ao pid,lstart,command` during the window showed `.agents/worktrees/q49/tools/oculus/node_modules/.bin/playwright test ...` running, and the leftovers newer than my marker were `oculus-browser-4JXYjp` (q49's server) plus 29 `oculus-files-spec-*`. So the growth is another worktree's, not r14's. The command counts the whole shared temporary directory and therefore goes red for any concurrent run; the plan's own configuration allows two workers at once, so the check as listed will report false reds by design. Repeated with `TMPDIR` pointed at an empty directory of mine, r14's own suites do leave it equal: node `before=0 after=0`, browser `before=0 after=0` with `241 passed (6.0m)`. (The private-TMPDIR node run had one failure, `tests/server/pty/sessions.test.ts > starts, lists, feeds, resizes, captures and stops a terminal`; it is caused by the TMPDIR override, and both standard-TMPDIR runs passed 4279.) Each `find` count over 649,088 entries took `real 143.68` and `real 136.04`, not "about a minute" (report line 67).
+- `bin/size-allow.txt`: membership is binary and unbounded. `tests/views/collection.test.ts` went 928 to 957 inside the step; I raised it to 2157 lines in my clone and the check still exited 0. The report names this at line 153; it is the check's only blind spot on the very file the step grew most.
+- `tests/allow-negatives.ts:8-11`, the per-file ceiling has headroom the moment an existing bare absence is explained. Probe: in `tests/browser/files-forms.spec.ts` (cap 26) I wrote a reason above 16 existing bare absences and added 16 brand-new bare ones; `npx vitest run tests/negatives.test.ts` printed `Tests 5 passed`. Both capped files are the ones Q48 is editing. Moving an assertion between the two capped files does fail (`browser/unsaved-forms.spec.ts asserts 23 absences with no reason, over 22`), and the orphan case fires for a file the tree no longer has.
+- All four `tests/allow-*.ts` lists silence a brand-new violation when an entry is added, and only the orphan case constrains them. Shown for each: duplication (`{ a: 'src/lib/dup-a.ts', b: 'src/lib/dup-b.ts' }` added to `DELIBERATE` turned 1 failed into 8 passed), audits (an entry for a planted non-rendering case turned 1 failed into 4 passed), negatives (`'views/venues.test.ts': 5` turned 1 failed into 5 passed), styling (see next).
+- `tests/allow-styling.ts`, each entry is keyed on file plus class, not on the selector the `why` names. I added a second, unrelated rule `.brand-new-rule :global(.opener) { gap: 99px; }` to `src/lib/views/shared/CardActions.svelte`, whose entry cites `:202 [data-action-more] :global(.opener)`; `npx vitest run tests/boundaries.test.ts` printed `Tests 9 passed`. A file already on the list can add unlimited further `:global` rules for the same class.
+- Timings in the report that my runs do not reproduce: `npm run lint` 96s (mine 45.48), `npm run check` 16s (mine 10.54), the revert check "about four minutes" for 35 directives (mine 102.24s), `npx playwright test` 6.6m (mine 9.8m under concurrent load, 6.0m alone), the count's `find` "about a minute" (mine 143.68s). Load-dependent, but the report states them as measurements.
+
+## 3. Standards
+
+- `tests/views/collection.test.ts`, 928 to 957. `agents/spec.md:41` says "One source file under 1000 lines. A file approaching it is split by concern." The step added 29 comment lines to a file 43 lines from the cap, and the check it built exempts that file entirely. `tests/routes/terminal.test.ts` also grew, 968 to 970.
+- `tests/scratch.test.ts:1-3` head comment: "no test file makes one any other way, and every suite that reaches the helper registers the sweep with its own runner". False for `tests/data/real-hub.probe.ts:95`, `const scratch = scratchDir('oculus-probe-');`, which registers no sweep. `findUnswept` at `tests/scratch.test.ts:77` filters on `/\.(test|spec)\.ts$/`, so the one file in the tree that takes a directory from the helper and cannot sweep it is the one file the guard cannot see. It leaks one directory per hand-run.
+- `tests/scratch.test.ts:62`, `[...(held.get(rel) ?? '').matchAll(/from '(\.[^']+)'/g)]`. The import graph is single-quoted static imports only. Probes: a spec whose body is `const helper = await import('../scratch.ts'); helper.scratchDir(...)`, and a test file importing `from "../scratch.ts"` with double quotes, both take a directory from the helper, register no sweep, and `npx vitest run tests/scratch.test.ts` printed `Tests 5 passed`. Prettier blocks the double-quote form; nothing blocks the dynamic one. Report line 168 names only the package-alias case.
+- `tests/scratch.ts:19` used at module scope. A throw in a module-scope statement after `scratchDir` runs before any hook is registered, so the sweep never runs. Probe: a test file whose module body calls the fixture and then throws left the directory behind (`1`), where the same throw from `beforeAll` left `0`. `tests/routes/terminal.test.ts:59` has exactly that shape (`const TASK_CONFIG = scratchDir('oculus-task-route-');` followed by module-scope `expect` calls). The other three shapes the brief's sweep must survive do sweep: through a fixture, failing midway, and a Playwright `beforeAll` that throws, all left `0`.
+- `tests/audits.test.ts:99`, `for (const name of readdirSync(root))`, non-recursive, while `tests/negatives.test.ts:35-43` and `tests/duplication.test.ts:75-83` recurse. `tests/views` has no subdirectory today, so a future one would escape the audits check silently.
+- `tests/negatives.test.ts:29-32`:
+  ```
+  function explains(line: string): boolean {
+      const text = line.trim();
+      return text.startsWith('//') || text.startsWith('*') || text.startsWith('/*');
+  }
+  ```
+  Any comment satisfies it. `tests/views/project.test.ts:219-220` passes on the pre-existing `// The card's own list is where an absent document is drawn as a tag; the tab has none.` above `expect(body).not.toContain('>TEX</span>')`, which is the case Q34 named as encoding an unruled decision as the expected result. The check cannot separate a fact about the fixture from a restatement of the decision, which is the one shape it exists for. The report acknowledges the case in words (line 121) and leaves it.
+- The 447 comments, read as a sample of 60 across 20 files (`tests/views/` collection, projects, files, repositories, focus, source, inbox, leads, map, project, hpc, card-docs, file, data, pillars, present; `tests/browser/` files, source, show-in-files, nested), plus a scan of all 424 distinct added comment lines for ones carrying no causal clause. Almost all state a fact about the case's own fixture and derive the absence from it (`// the root is drawn closed, so nothing under it is in the tree until it is expanded`, `tests/browser/files.spec.ts:38`). The "nor ..." continuations (`tests/views/inbox.test.ts:273,275`, `venues.test.ts:315`, `projects.test.ts:697`, `config.test.ts:260`, `domains.test.ts:50`, `cardlinks.test.ts:173`, `radar.test.ts:249`, `linkedin.test.ts:217`, `focus.test.ts:840`, `calendar.test.ts:282`) carry no fact standing alone but read correctly under the comment above them; I do not call them findings. The comments that excuse an absence rather than explain it are three, and two of them are the pair the builder flagged: `tests/views/file.test.ts:70` and `tests/browser/files.spec.ts:211`; the third is the pre-existing `tests/views/project.test.ts:219` above.
+- The flagged case, judged. `tests/views/File.svelte:167` draws `<iframe class="frame" {title} {src}></iframe>` for `type.kind === 'pdf'` only, while `tests/views/Document.svelte:70` draws `sandbox="allow-same-origin allow-scripts"` for a local HTML file and carries its reasoning in its own head comment at `:19-24`. The absence is right: `src/lib/server/files.ts:57-59` serves the type from the extension map alone (`TYPES[extname(name).toLowerCase()] ?? FALLBACK`), so a `.pdf` is always `application/pdf` and Chrome hands the bytes to its own viewer, which does not run the file's script; and the only sandbox value that lets that viewer draw, `allow-same-origin allow-scripts`, grants exactly what no sandbox grants, so it would buy nothing. What a reader loses is that `File.svelte:167` carries no note at all: the justification lives only in two test comments, where `Document.svelte` carries its equivalent beside the markup. What is risked if it is ever wrong is bounded by that extension map: a type map change that let a framed file be served as a document would give that file the page's own origin, with no sandbox to stop it reaching `window.parent`.
+- The three cases the pass called defect-encoding are no longer in that shape, confirmed by reading each: `tests/views/venues.test.ts:336` is now `expect(journal).toContain('target="_blank"')`, a positive assertion; `tests/views/memories.test.ts:253-257` asserts `read_failed` with its reason is drawn and the empty-wall line is not, which is the complement of a positive assertion over the repaired behaviour; `tests/browser/repositories.spec.ts:154` asserts the non-repository folder is kept out of the picker, the opposite of the pinned defect, and it is green in the 241-passed run.
+
+## 4. Behaviour
+
+- None. `git diff --name-only ec7bc6e5 -- tools/oculus/src tools/oculus/config` prints nothing, and every removed line under `tests/` is import bookkeeping or the `mkdtempSync(join(tmpdir(), ...))` call it replaced; no assertion was removed, loosened or re-aimed. Diff: 150 files changed, 1033 insertions, 279 deletions, plus 14 untracked files totalling 2290 lines.
+
+## Not checked
+
+- The report's per-check tree counts I did not recompute from the check functions themselves: duplication "752 windows, 578 distinct file pairs", audits "150 cases", primitive styling "28 rules". I verified the allow-list lengths instead (`578`, `150`, `28` entries) and the absence counts directly (516 absence assertions, 468 with a reason above, 48 bare, 75 files), all matching.
+- Whether the `oculus-*` leftovers already on the machine (649,088) include any that r14's own earlier runs made; I removed none.
+- The revert check over the tree's other 150 changed test files, which carry no directives.
+- Whether the four `SWEPT_BY_FIXTURE` entries are each still needed, beyond running the case that pins them.
+
+Reviewer usage: about 300k tokens, 48 tool uses, about 75 minutes.
