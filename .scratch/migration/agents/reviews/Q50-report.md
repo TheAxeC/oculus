@@ -94,3 +94,108 @@ What a reader would see for a value of the new shape (`github.com/TheAxeC/x` in 
 2. **The mirror of the same ambiguity**: a genuine hub folder like `my.docs/notes.md` is now read as a web address and loses Show in Files. The probe measures that no such value exists in the hub.
 3. The change is proven in the node suite only: the three functions are pure and have no DOM behaviour, and no selector, control name or markup was touched.
 4. Two full-suite runs were red on files the step does not touch, each green alone, neither importing `state/collection.ts`.
+
+---
+
+# Repair round 1 (builder a181fc7855d996f4e, sent 05:30, reported 06:0x)
+
+Everything in the five rulings is done.
+
+**Raised for the orchestrator, one, user-visible:** the Person view's supervision-folder block now draws its heading and no body line when the `folder` value is not a path of the hub, because no listing is asked for one. The honest line there needs a new key in `config/text/views/person.yml`, a config file outside the builder's path list. Nothing in the hub hits it: `grep -n 'folder:' registries/people.yml` gives five values, all hub paths.
+
+| Ruling | Status | Command and output |
+| --- | --- | --- |
+| 1. Venue link goes nowhere | DONE | `VenueCard.svelte:79` is now `href: hrefOf(linkPath ?? venue.link)`; `npx vitest run tests/views/venues.test.ts` -> 18 passed; revert C turns the new case red |
+| 1b. Every venue link through `hrefOf` | DONE | `:87` is now `href: hrefOf(venue.call)`; revert G |
+| 2. Every caller read and the wrong ones fixed | DONE | the table below |
+| 3. The `ADDRESSED` comment says what the code does | DONE | quoted below |
+| 4. `theaxec.github.io` stated as live | DONE | with its measurement |
+| 4b. A case that prints every host-shaped value of the real hub | DONE | `npx vitest run tests/integrity.test.ts` prints `integrity: 256 link/url/folder values, 0 read as a web address, 0 dotted first segment`, 9 passed |
+| 5. Decision 3 corrected, with a test on the port group | DONE | new case red under revert F |
+| 5b. Files-changed numbers corrected | DONE | the reconstruction now reproduces `git diff 84fd99e1 --numstat` |
+| `npx vitest run --reporter=dot` | DONE | `Test Files 251 passed (251) / Tests 4274 passed (4274)` |
+| `npm run check` | DONE | `COMPLETED 1222 FILES 0 ERRORS 0 WARNINGS` |
+| `npm run build`, `format:check`, `lint`, the ASCII gate | DONE | built; Prettier clean; eslint silent; the gate printed nothing |
+| The probe over the real hub, rerun | DONE | 257 values, 0 read differently, 135 still a hub path, 0 with a dot in the first segment |
+
+## Every caller of the rule, and what each does with a scheme-less address
+
+| Call site | What it does with `github.com/x` or `www.example.org/index.html` | Verdict |
+| --- | --- | --- |
+| `views/collection/EntryCard.svelte:128` `hubPathsOf` | no path, so no Show in Files and no "not there" line | correct, the step's own change |
+| `views/collection/EntryCard.svelte:211` `isDocument` | **was wrong**: its own rule opened `www.example.org/index.html` in the document view under `HUB_ROOT`. Now `isHubPath(link) && /^[^:]*\.html?$/i.test(link)` | fixed, revert D |
+| `views/collection/EntryCard.svelte:218` `openDocument` | reachable only behind `isDocument` | fixed by the above |
+| `views/collection/EntryCard.svelte:226` `programLink` | `isHubPath` false, so no Open in its program control | correct already |
+| `views/collection/EntryCard.svelte:358` `hrefOf` | `https://www.example.org/index.html`, `target="_blank"` | correct already |
+| `views/venues/VenueCard.svelte:65` `hubPathsOf` | nothing, so no Show in Files | correct already |
+| `views/venues/VenueCard.svelte:79` the site link | **was wrong**: rendered `href="github.com/TheAxeC/x"`, relative to the page | fixed, revert C |
+| `views/venues/VenueCard.svelte:87` the call link | **was raw** `href: venue.call`, relative for any value without a scheme | fixed, revert G |
+| `views/venues/VenueCard.svelte:92` the contact link | builds `mailto:` itself | correct already |
+| `views/Person.svelte:59` `hubPathsOf` | nothing, so no Show in Files | correct already |
+| `views/Person.svelte:62` the listing | **was wrong**: asked the hub for a host-shaped folder | fixed, revert E |
+| `views/Person.svelte:120` `openFile` | built `${folder}/${name}`; now behind an early return | fixed with the above |
+
+No other surface builds a hub URL out of a `link`, `url` or `folder`.
+
+## `theaxec.github.io` is a live shape
+
+It is a real top-level folder of this hub and the one `config/sources.yml` points into. `hrefOf('theaxec.github.io/_data/publications.yml')` answers `https://theaxec.github.io/_data/publications.yml`. Nothing is broken today: those are config keys and never pass through this rule, and the probe measures no value read differently. The new case in `tests/integrity.test.ts` prints every such value on every run and asserts nothing about what it finds; it carries one assertion (`values.size > 0`) only because `vite.config.ts:29` sets `requireAssertions: true`.
+
+## The two corrected claims
+
+```
+  my_host.com:8080/x  isHubPath false  hrefOf https://my_host.com:8080/x
+  github.com:8080/x   isHubPath false  hrefOf github.com:8080/x
+  my_host.com:8080/x  ADDRESSED false  HOSTED with port group true  without false
+  github.com:8080/x   ADDRESSED true   HOSTED with port group true  without false
+```
+
+The `(:[0-9]+)?` group is load-bearing: `my_host.com:8080/x` is an address only because of it, since `_` is outside `ADDRESSED`'s scheme class. `hrefOf('github.com:8080/x')` answers the value unchanged, a relative href, because `ADDRESSED` takes `github.com:` for a scheme; base behaviour, unchanged by this step.
+
+## The reverts, rerun on the final tree
+
+| Revert | Result |
+| --- | --- |
+| A, `!HOSTED.test(value)` out of `isHubPath` | 5 failed of 1045: the two state cases plus `views/collection.test.ts > draws an HTML link written as a web address`, `views/person.test.ts > asks the hub for no listing`, `views/venues.test.ts > sends a site link written without a scheme through hrefOf` |
+| B, the `HOSTED` branch out of `hrefOf` | 4 failed of 1045 |
+| C, site link back to the conditional | 1 failed: `expected ... to contain 'href="https://github.com/TheAxeC/x"'` |
+| D, `isDocument` back to its own rule | 1 failed: `expected ... to contain 'href="https://www.example.org/index.h...'` |
+| E, the listing back to the raw `folder` | 1 failed: `expected ... not to contain 'Reading the folder ...'` |
+| F, the `(:[0-9]+)?` group out of `HOSTED` | 1 failed: `expected true to be false` on the port case |
+| G, call link back to `href: venue.call` | 1 failed: `expected ... to contain 'href="https://conf.example.org/cfp"'` |
+
+## Before and after
+
+The `ADDRESSED` comment now reads: an address is a value carrying a scheme, a leading slash, or a host with a path behind it; a lone dotted segment stays a path inside the hub, since `github.com` and `README.md` are one shape and separating them would take the hub root's own listing, which lands after the card is drawn and would take a control away again.
+
+`VenueCard.svelte`: `href: linkPath === undefined ? venue.link : hrefOf(linkPath)` becomes `href: hrefOf(linkPath ?? venue.link)`, and `href: venue.call` becomes `href: hrefOf(venue.call)`. No venue in the hub changes, since every `link:` and every `call:` carries a scheme.
+
+`EntryCard.svelte`: `isDocument` becomes `isHubPath(link) && /^[^:]*\.html?$/i.test(link)`. A card whose `link` is `www.example.org/index.html` drew a control that opened the document view over `api/file/hub/www.example.org/index.html`; it now draws the anchor to `https://www.example.org/index.html` with `target="_blank"`.
+
+`Person.svelte`: the listing is asked for the hub path and never the raw value, `openFile` returns early, and the markup's loading branch splits so `files === null` draws nothing.
+
+## Files changed
+
+| File | Added | Removed | Lines now |
+| --- | --- | --- | --- |
+| `src/lib/state/collection.ts` | 20 | 3 | 806 |
+| `src/lib/views/venues/VenueCard.svelte` | 9 | 3 | 240 |
+| `src/lib/views/collection/EntryCard.svelte` | 2 | 2 | 494 |
+| `src/lib/views/Person.svelte` | 8 | 3 | 306 |
+| `tests/state/collection.test.ts` | 38 | 0 | 844 |
+| `tests/state/show-in-files.test.ts` | 8 | 0 | 570 |
+| `tests/views/collection.test.ts` | 14 | 0 | 943 |
+| `tests/views/venues.test.ts` | 20 | 0 | 446 |
+| `tests/views/person.test.ts` | 15 | 0 | 315 |
+| `tests/integrity.test.ts` | 46 | 0 | 220 |
+
+`tests/views/person.test.ts` gains a fixture person `hosted` with `folder: 'theaxec.github.io/_data'`, the real host-shaped folder name.
+
+## Limitations
+
+1. A bare host still reads as a hub path, by the orchestrator's ruling that the shape-based rule stands; the reason is one clause in the `ADDRESSED` comment, and the integrity case prints any such value the day one appears.
+2. A hub path whose first segment is a host reads as an address, the `theaxec.github.io` shape.
+3. The Person folder block's silent body, the open item above; unreached by any value in the hub.
+4. `hrefOf('github.com:8080/x')` returns the value unchanged, a relative href, base behaviour unchanged by this step.
+5. The browser suite was not run by the builder; no selector, control name or markup class changed.
+6. One full-suite run was red on `tests/server/hpc/ssh.test.ts`, green alone and in the two later full runs, and it does not read the changed modules.
