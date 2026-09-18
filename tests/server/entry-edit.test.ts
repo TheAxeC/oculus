@@ -31,10 +31,11 @@ import {
     setSubtask,
     subtaskLines
 } from '../../src/lib/server/entry-edit/index.ts';
-import { engineDir, loadConfig, loadLocal } from '../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { fieldNames } from '../../src/lib/data/validate.ts';
 import { scratchDir, sweepScratch } from '../scratch.ts';
+import { realHub } from '../real-hub.ts';
 
 afterAll(sweepScratch);
 
@@ -687,10 +688,11 @@ describe('a host of the career file', () => {
 });
 
 const engine = engineDir();
-const hub = loadLocal(engine).hub;
-const present = existsSync(hub);
+const { hub, present } = realHub(engine);
 if (!present) {
-    console.warn(`entry-edit: skipped the real hub, ${hub} does not exist on this machine`);
+    console.warn(
+        `entry-edit: skipped the real hub, ${hub} carries no hub data (not on this machine, or a sparse checkout)`
+    );
 }
 
 /** Every collection file of the hub that is on this machine, with its text and its entries. */

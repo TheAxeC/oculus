@@ -10,13 +10,14 @@
 // three fixtures and not on the ninety-one is not a rule. Nothing there is written; when the hub is
 // not on this machine the whole block skips and says so.
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
 import { NOT_A_FIELD_VALUE, renameKey, setFields } from '../../src/lib/server/yaml-edit.ts';
-import { engineDir, loadConfig, loadLocal } from '../../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
+import { realHub } from '../real-hub.ts';
 
 const DOC = [
     'id: alpha',
@@ -456,10 +457,11 @@ describe('the self-verification', () => {
 });
 
 const engine = engineDir();
-const hub = loadLocal(engine).hub;
-const present = existsSync(hub);
+const { hub, present } = realHub(engine);
 if (!present) {
-    console.warn(`yaml-edit: skipped the real hub, ${hub} does not exist on this machine`);
+    console.warn(
+        `yaml-edit: skipped the real hub, ${hub} carries no hub data (not on this machine, or a sparse checkout)`
+    );
 }
 
 /** Every project.yml under a scan directory, by a plain walk; nothing here writes. */

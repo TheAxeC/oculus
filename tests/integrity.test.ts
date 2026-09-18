@@ -12,15 +12,16 @@
 // So the tree is counted a second way, without the code under test: a plain recursive walk for the
 // manifests, yaml.parse for each registry's entry list, and the collections config for the rest.
 
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
 import { describe, expect, it } from 'vitest';
 import { buildPortfolio, portfolioConfigFrom } from '../src/lib/data/index.ts';
 import { ENTITY_KINDS } from '../src/lib/data/normalise.ts';
-import { engineDir, loadConfig, loadLocal } from '../src/lib/data/sources/config.ts';
+import { engineDir, loadConfig } from '../src/lib/data/sources/config.ts';
 import { isMap } from '../src/lib/data/guards.ts';
 import { hrefOf, isHubPath } from '../src/lib/state/collection.ts';
+import { realHub } from './real-hub.ts';
 
 /** The entry fields that hold a path of the hub when their value is not an address. */
 const PATH_KEYS = ['link', 'url', 'folder'];
@@ -33,10 +34,11 @@ const PATH_KEYS = ['link', 'url', 'folder'];
 const FILES_WITH_SLIDES = 14;
 
 const engine = engineDir();
-const hub = loadLocal(engine).hub;
-const present = existsSync(hub);
+const { hub, present } = realHub(engine);
 if (!present) {
-    console.warn(`integrity: skipped, the hub ${hub} does not exist on this machine`);
+    console.warn(
+        `integrity: skipped, ${hub} carries no hub data (not on this machine, or a sparse checkout)`
+    );
 }
 
 const merged = loadConfig(engine).config;
