@@ -294,7 +294,7 @@ test('a read on the way to a path lands after the Files tab was closed and write
     expect(Object.keys(await uiInstances(page))).not.toContain(owner);
 });
 
-// Revert: in showInFiles of state/layout.svelte.ts, drop the restorePanes call, which lets openView
+// Revert: in showInFiles of state/layout/show-in-files.ts, drop the restorePanes call, which lets openView
 // open a second Files tab inside the maximised pane.
 test('Show in Files behind a maximised pane gives the panes back and uses the Files tab the page has', async ({
     page

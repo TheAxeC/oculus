@@ -78,7 +78,7 @@ function expectKept(ids: string[]): void {
 
 describe("a pane's close", () => {
     it('forgets every tab of the pane and keeps the tabs of the pane beside it', () => {
-        // Revert: drop `forgetTabs(pane.tabs)` from closePane in state/layout.svelte.ts.
+        // Revert: drop `forgetTabs(pane.tabs)` from closePane in state/layout/instances.ts.
         client.layout.apply(bench(split('row', [0.5, 0.5], [pane(['a', 'b']), pane(['c'])])));
         hold('a');
         hold('b', true);
@@ -92,7 +92,7 @@ describe("a pane's close", () => {
     });
 
     it('forgets a tab whose source read was in flight, and the read landing after writes nothing back', async () => {
-        // Revert: drop `forgetTabs(pane.tabs)` from closePane in state/layout.svelte.ts, which turns
+        // Revert: drop `forgetTabs(pane.tabs)` from closePane in state/layout/instances.ts, which turns
         // the first half red; drop the `sourceDraft(id).file !== file` return from loadSourceDraft in
         // state/source.svelte.ts, which turns the second half red.
         const { promise: body, resolve: release } = Promise.withResolvers<string>();

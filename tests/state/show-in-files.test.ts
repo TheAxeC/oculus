@@ -75,7 +75,7 @@ describe('the ask showInFiles writes', () => {
         client = createClientState();
     });
 
-    // Revert: in showInFiles of state/layout.svelte.ts, open the view with openBeside, or write the
+    // Revert: in showInFiles of state/layout/show-in-files.ts, open the view with openBeside, or write the
     // ask into an instance id of its own instead of the one openView answered.
     it('opens the Files tab of the page and writes one ask into its own state', () => {
         const before = panes(client.layout.layout()).length;
@@ -120,7 +120,7 @@ describe('the ask showInFiles writes', () => {
         expect(filesViewOf(client.ui.instanceState(away)).reveal).toBeNull();
     });
 
-    // Revert: in showInFiles of state/layout.svelte.ts, drop the restorePanes call.
+    // Revert: in showInFiles of state/layout/show-in-files.ts, drop the restorePanes call.
     it('gives the panes back and activates the Files tab a maximised pane hides, opening no second one', () => {
         const projects = client.layout.openView('projects');
         const files = client.layout.openView('files');
@@ -141,7 +141,7 @@ describe('the ask showInFiles writes', () => {
         expect(filesViewOf(client.ui.instanceState(files)).reveal?.path).toBe('funding');
     });
 
-    // Revert: in showInFiles of state/layout.svelte.ts, give the panes back whenever the page's first
+    // Revert: in showInFiles of state/layout/show-in-files.ts, give the panes back whenever the page's first
     // Files tab is outside the maximised pane, whatever that pane holds.
     it('keeps a maximised pane that holds a Files tab of its own and shows the path there', () => {
         client.layout.openView('files');

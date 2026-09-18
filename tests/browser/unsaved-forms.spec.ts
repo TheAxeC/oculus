@@ -167,7 +167,7 @@ async function instanceOf(pane: Locator, label: string, body: string): Promise<s
 test("a pane closed from its menu over a typed add form leaves none of its tabs' records in storage", async ({
     page
 }) => {
-    // Revert: drop `forgetTabs(pane.tabs)` from closePane in state/layout.svelte.ts.
+    // Revert: drop `forgetTabs(pane.tabs)` from closePane in state/layout/instances.ts.
     await boot(page);
     await typeTask(page);
     const pane = page.locator('[data-pane]', {
