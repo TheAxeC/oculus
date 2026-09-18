@@ -222,3 +222,72 @@ Under `/private/tmp/claude-502/-Users-axelfaes-workspace-research-hub/536c7cbc-b
 ## Usage
 
 Not instrumented; this session has no token counter. What it cost: 1 full node suite run, 1 `check`, 1 `lint`, 1 `format:check`, 1 ASCII gate, 6 `npm run build` (one in the worktree, five in the clone across the reverts), 1 four-spec Playwright run in the worktree, 4 Playwright probe runs and 4 Playwright revert runs in the clone, 32 screenshots. One clone of `tools/oculus` (297 MB) under the scratchpad. Waited on `lsof -iTCP:8792 -sTCP:LISTEN` before every browser run; the lock and its pid were never touched.
+
+---
+
+# The run over repair round 1 (reviewer a30170d629179a822, 04:12 to 05:10)
+
+```
+npm run check                 1789697661283 COMPLETED 1222 FILES 0 ERRORS 0 WARNINGS
+npm run format:check          All matched files use Prettier code style!
+npm run lint                  no output, exit 0
+npm run build                 exit 0
+the ASCII gate                no output, exit 0 (both forms)
+npx vitest run --reporter=dot Test Files 251 passed (251) / Tests 4248 passed (4248) / 96.92s
+npx playwright test focus-buttons focus-look cards   26 passed (1.0m)
+npx playwright test (the whole suite)                246 passed (7.2m)
+```
+
+The worktree was not written to; every revert ran in a copy at `scratchpad/q49-review2/oculus`, restored and diffed clean after each. All six reverts the report names printed the error their case names, 1 failed each. The round's whole measurement table reproduced cell for cell, including the Tab walks.
+
+**Base measurement**, the same spec against `git show 2ac73578:.../Ticker.svelte`: the name at rest is 264.67 px at 1600, **0.00 at 900**, 158.30 at 760, **0.00 at 480**. The step's headline is larger than the report claims: at 900 and 480 the base draws no name at all.
+
+## Spec
+
+1. **Brief item 1, "the `kept` button keeps its place as it does today", is not done in the drawn page, and the round's report does not say so.** `.reveal .acts { margin-left: auto }` (`src/lib/ui/Ticker.svelte:353-355`) pushes the whole group, kept button included, to the row's end. On the same task row at 1600 (row box 130 to 837): base `done` at x 495-534, now at 798-837. Round 0's report carried this with its before and after; the round's report says only "the kept button where the caller lists it", which is the markup order and not the drawn place.
+
+2. **Brief item 2, "the name under them is not reflowed", is not done; ruling 2 replaced it and the conflict is not named.** The delivered row re-cuts the name when it opens: light 900 `301.1 -> 124.3`, 1600 `301.1 -> 264.7`, 760 `301.1 -> 158.3`, 480 `294.5 -> 87.3`. Ruling 2 is the better shape; the report marks it DONE and leaves the brief's sentence standing.
+
+3. **A change no ruling asks for**: `li { position: relative; }` at `src/lib/ui/Ticker.svelte:254`, left over from the round-0 overlay. Nothing in the file is absolutely positioned. Deleted in the copy, rebuilt, `focus-buttons` gave `9 passed`.
+
+## Proof
+
+4. **A changed test that names no revert**: `tests/ui/primitives.test.ts:508`, "lists the buttons in the order the row gives them, marking the one it keeps". `grep -n "revert:"` over the two test files returns six hits, all in the browser file.
+
+5. **An audit presented as coverage.** That node case is a regex over the rendered HTML string, which the spec says is an audit and never coverage, and the report names it first among the commands that prove ruling 3. No browser case covers where a kept button sits: the row every measured case picks has no kept button (`kept 0.0` at rest, every width and theme), and `tests/browser/cards.spec.ts` reads its opacity, not its place.
+
+6. **A hazard named and not measured**: the report's "the clamp lands one frame after a row opens ... a button may be half drawn at the clip edge for one frame" carries no command. Sampled through `requestAnimationFrame` from the `pointerover` that opens the row, at 900: `frame 0: name 124.3 drawn 3`, the same for frames 1 to 7. No paint showed the unclamped state.
+
+7. **The case the clamp guard exists for, measured**: open at 1600, walk the keyboard to the last button, narrow to 900. Four drawn where three fit, name 83.2, `.acts` 250.3, every drawn button inside the row (right edge 487 against the row's 487), none clipped, all four pointable at their own centre.
+
+8. No threshold widened: the assertions are `<= 0.5` px on cover and spill, `toEqual([])` on unpointable, and an exact height equality.
+
+## Standards
+
+9. **A head comment the code makes false**, `src/lib/ui/Ticker.svelte:14-15`: "the focus landing anywhere in the row draws them". A row with `plain: true` or `id: ''` draws its name as a `<span>` and every non-kept button is `display: none`, so a plain row with no kept button has nothing focusable and its buttons are unreachable by keyboard. `grep -rn "plain" src/lib` finds no producer today.
+
+10. **A head comment wider than the code**, `:25`: "Only a pointer opens a row". `over()` at `:110` is `if (event.pointerType !== 'mouse') return;`, so a stylus is refused as well as a finger.
+
+11. **A check the diff weakened outside the brief's paths**: `tests/browser/cards.spec.ts:96-118` asserts the waiting buttons are at `opacity` 0 and 1. They are now `display: none` at rest, `getComputedStyle` still answers 0, so the case stays green and would stay green if the buttons were removed from the markup entirely.
+
+12. `DESIGN.md:336` and `HELP.md:75` carry the exact "before" sentences the report quotes and both are false of the tree; brief decision 2 keeps them out of the step, so they are the landing's.
+
+13. **The report file's earlier sections**: `agents/reviews/Q49-report.md` still carries round 0's tables, which round 1 reversed and the repair section does not retract (the `.rest` group, `--act-gap`, "the hidden ones first, the kept one last", "the revealed buttons cover the end of the name").
+
+14. Clean: no non-ASCII, no history in any comment the diff adds, four-space indent, file sizes 383 / 482 / 873, `tests/ui/wall.test.ts:119`'s entry still holds, no new dependency, no config or catalog key, no import crossing a layer.
+
+## Behaviour
+
+15. **The kept button's move is a reader-visible change the report does not state.** On every row that keeps a button it jumps about 300 px to the right edge on a wide pane. It follows from the group sitting at the row's end, so it is the right shape, and it belongs in the report and the plan with its before and after.
+
+16. **Opening a row re-cuts its name**; the report states the fact in one cell and gives no widths. Against the base the trade is good: at rest the name goes from 0.00 to 301.1 px at 900 and from 0.00 to 294.5 at 480.
+
+17. **The touch rule is a regression, not only a limit, and it is drawn wider than it needs to be.** Before the step the non-kept buttons were in the page at `opacity: 0` and hit-testable, so a tap on a hybrid raised hover and pressed the button under the finger; now they are out of the page and only `pointerType === 'mouse'` puts them back, so a hybrid's touchscreen reaches no ticker button at all. Two halves: refusing `touch` is a real design choice whose alternative (first tap opens, second presses) is a reader-visible interaction shape nothing in the brief names, so it is Axel's; refusing `pen` is the allow-list being one word too narrow, and a stylus is a hovering pointer the head comment promises to serve.
+
+18. **The one-frame clamp is not a defect and, on this measurement, not an edge**: see 6 and 7.
+
+## Not checked
+
+The look on the TEST page (the orchestrator's); any theme beyond light and mocha; any width beyond the four; a real touch or stylus device; a `plain: true` row with actions in a page; a screen reader over the row, which `display: none` also removes the buttons from at rest.
+
+Reviewer usage: about 50 tool uses, 58 minutes (04:12 to 05:10).

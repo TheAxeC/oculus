@@ -42,8 +42,9 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   session_id: a181fc7855d996f4e            # the Agent tool id, launched 04:05
   reported: 2026-09-18T04:34                # everything in the brief done; `HOSTED` beside `ADDRESSED` reads a first segment that is a host as a web address, `hrefOf` puts `https://` in front of one, and the probe over the real hub says no value of the 257 at a link, url or folder key changes meaning. Two ambiguities stated: a bare host with no path (`github.com`) still reads as a hub path, since a lone dotted segment cannot be told from `README.md`, and a hub folder like `my.docs/notes.md` now reads as an address; the hub holds neither shape
   reviewer: aae362464a67b5703                # claude:opus through the Agent tool, read-only, launched 04:36, scratch folder scratchpad/q50-review (review earned: a state module every card reads)
+  reviewer_done: 2026-09-18T05:10            # fifteen findings, agents/reviews/Q50-refuter.md: the venue card renders the raw value as a relative href when it stops being a hub path, so a press lands under the page's own address; `theaxec.github.io` is a real top-level folder of this hub whose paths the rule now reads as web addresses; the head comment is false for a bare host; two claims of the report contradicted by the reviewer's run. Its own probe over a larger set agrees that no value in the hub changes meaning
+  round: 1                                  # sent 05:30: five rulings (the venue card's href through `hrefOf`, every other caller asked the same question, the head comment made true, `theaxec.github.io` stated as live with a case that prints and asserts nothing, and the two report claims corrected); round base: scratchpad/q50-round1
   landing: not-started
-  round: 0
 - package: R14
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
