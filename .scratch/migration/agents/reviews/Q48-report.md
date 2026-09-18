@@ -267,3 +267,157 @@ File lengths after the round: `Files.svelte` 577, `fs.svelte.ts` 859, `form-draf
 3. **`FILES_VIEW` is exported from `state/fs.ts`** and now backs both `filesLineTyped` and the sweep's filter, in place of the literal `'files'` that was inside `filesLineTyped`.
 4. **The disabled Save control's tooltip reuses `t('editor.saving')`**, an existing key in a group `EntryForm.svelte` already reads (`editor.saved`, `editor.failed`). No new catalog key, per brief decision 1.
 5. **`landed` lives in the component**, not in the drafts store: a form closed and reopened is a new component and adds a new entry, which is what the reopened form should do.
+
+All five rulings are done. Ruling 4 has a part I could not build inside the step's paths: the write's answer carries no entry id, so the address is computed on the page from the fields the form sent, against a rule that lives in the server. It is pinned by a test that fails the day the server's rule changes, and the one-line server change that would delete it is below.
+
+# Second repair round
+
+| Ruling | State | Command and output |
+| --- | --- | --- |
+| 1. The brief's acceptance item, met properly | DONE | `npx playwright test tests/browser/files-forms.spec.ts tests/browser/unsaved-forms.spec.ts tests/browser/files.spec.ts tests/browser/cards.spec.ts`: `71 passed (2.4m)`, `files-forms.spec.ts:461 a bookmark renamed by its form keeps what was typed, open over the bookmark it renamed` |
+| 2. `landed` survives a tab switch | DONE | same run, `unsaved-forms.spec.ts:523 an add form whose tab was switched away before its answer still writes the entry it added`; node `npx vitest run tests/state/form-drafts.test.ts`: `is kept in the instance state, so a form drawn again still writes it` |
+| 3. Retyping the identity adds, it does not rename | DONE | same run, `unsaved-forms.spec.ts:552 an add form typed away from the entry it added adds another, it does not rename it` |
+| 4. The address is the entry's id | DONE in behaviour, NOT closed in shape | `npx vitest run tests/state/form-drafts.test.ts`: `is addressed by the id the server gives it, over every shape a file gives one`, which holds `writtenId` against the server's own `idOfIdentity` over five file shapes including the venues one. The answer carries no id; see "Ruling 4" below |
+| 5a. The `closeGoneForms` call in the not-ok branch | DONE | removed; `npx vitest run tests/state/fs.test.ts`: `closes no bookmark form over a read the server refused, whatever it said` |
+| 5b. The instance-state merge copied a third time | DONE | one `patchedFilesView` in `state/fs.ts`, read by `Files.svelte` and `state/context.ts`; `grep -rn "Array.isArray(kept)" src/lib` now gives `src/lib/state/fs.ts:456` and `src/lib/views/Repositories.svelte:86` only |
+| 5c. A save that never answers | NOT closed, stated | reason below |
+
+## What the rename now does to the form and the draft
+
+`EntryForm.save()` computes the id the file gives the entry after the write, from the entry it had plus the fields it sent, and hands it to the host:
+
+```ts
+    function renamed(into, which, wanted, ident): void {
+        if (entry === null || onrenamed === undefined) return;
+        const after = writtenId({ ...entry.fields, ...wanted }, ident);
+        if (after === '' || after === entry.id) return;
+        into.move(which, formKey(collection, after));
+        onrenamed(after);
+    }
+```
+
+`into.move` carries the draft, and what the form's add made, from `["bookmarks","tool.py"]` to `["bookmarks","tool.py renamed"]`. `BookmarkForm.svelte` answers `onrenamed` by moving the opening it captured at mount (`opened.forms.editing`) and telling `Files.svelte`, which patches `editing` on that instance. So after a rename: the form is open over the new id, the Path typed while the save was out is in it and in the drafts record, the gone-bookmark close finds nothing gone, and the form's own Cancel still closes it (the browser case asserts all four). The `saving` mark stays: it is what keeps a form open while another write takes its bookmark away mid-flight (`files-forms.spec.ts:506`).
+
+Only the bookmark form is carried. `moveFormDraft` writes through `keep()`, which drops a draft whose entry the snapshot's collection says is gone, so a move onto an id no snapshot has been told about yet keeps nothing. The bookmarks are in no snapshot, which is why they work and why a collection card's rename is not carried; `tests/state/form-drafts.test.ts` pins both halves (`goes with the draft when a save writes the entry under another id`, `is dropped by a move onto an entry the snapshot says the collection no longer holds`).
+
+## Ruling 4: what is missing and the smallest shape that carries it
+
+`WriteAnswer` is `{ ok, changed, refused, error?, network?, output?, branches? }` (`src/lib/state/writes.svelte.ts:11-23`) and the server answers `json(200, { ok: true, changed: outcome.changed, refused: outcome.refused })` (`src/lib/server/writes.ts:469`). No id, for any write. The page also cannot reuse the server's rule: `entryId` is private to `src/lib/server/writes/entries.ts:160`, which no client module may import, and the client's own id rule in `src/lib/data/normalise.ts:450-471` is not the same rule (it prefers the identity field over `title`; the server prefers `title`), so reading the added entry out of the snapshot by either would be wrong for some shape.
+
+Built instead: `writtenId(fields, ident)` in `src/lib/state/form-drafts.svelte.ts:65`, the server's four-step rule read over the fields the form sent, which for an entry a form has just made are every field that entry has. The venues shape the reviewer's probe found now works: a form that writes `id` addresses the entry by that `id`.
+
+The duplication is real and is a debt, held safe by `tests/state/form-drafts.test.ts:473`, which asserts `writtenId` equals the server's `idOfIdentity` over `{name,id}`, `{title,key}`, `{name,title}`, `{title}` and `{name}`; the day the server's order changes, that test fails.
+
+The smallest change that deletes it, all outside this step's paths:
+
+1. `src/lib/server/writes.ts:113` `WriteOutcome` gains `id?: string`.
+2. `createEntry` (`src/lib/server/writes/entries.ts:444`) and `writeEntry` (`:306`) set it from the `entryId` they already compute.
+3. `answer()` (`src/lib/server/writes.ts:469`) adds `id: outcome.id` to the JSON.
+4. `WriteAnswer` (`src/lib/state/writes.svelte.ts:11`) gains `id?: string`.
+
+Then `EntryForm` reads `answer.id` and `writtenId` and its test are deleted. I am not proposing to widen the paths; it is the orchestrator's call whether this is a step of its own.
+
+## Ruling 5c: the save that never answers, stated
+
+`send` (`src/lib/state/writes.svelte.ts:363-408`) has no timeout and no abort, so a request that never answers never reaches the `.finally` that clears the mark and the Save control stays disabled for that form. The reader is not stuck with the text: Cancel still closes the form, and a reload frees the control because the mark is not persisted. I did not close it: the fix belongs in `state/writes.svelte.ts`, which is not in this step's paths, and a timeout on every write is a user-visible behaviour with a duration nothing in `config/` names, so it is a decision, not a repair.
+
+## The reverts, each run
+
+Every one is applied at the line its machine-readable comment names and restored after; the source files were compared with their copies afterwards and all seven printed `restored`.
+
+| Machine line | Test it turned red | Output |
+| --- | --- | --- |
+| `form-drafts.svelte.ts:66 => for (const name of ['title', 'id', 'key']) {` | `is addressed by the id the server gives it, over every shape a file gives one` | `Tests 1 failed | 38 passed (39)` |
+| `form-drafts.svelte.ts:279 => return null;` | `is kept in the instance state...`, `goes with the draft...`, `keeps an instance whose id already ends in the added suffix...` | `Tests 3 failed | 36 passed (39)` |
+| `form-drafts.svelte.ts:356 => if (false) forgetAdded(instance, form);` | `is forgotten when its form closes, and when its answer takes the draft whole` | `Tests 1 failed | 38 passed (39)` |
+| `form-drafts.svelte.ts:372 => if (true) return;` | `goes with the draft when a save writes the entry under another id` | `Tests 1 failed | 38 passed (39)` |
+| `form-drafts.svelte.ts:509 => held.added = { ...held.added };` | `is kept by a form outside any pane in a target of its own` | `Tests 1 failed | 38 passed (39)` |
+| `fs.ts:457 => return { ...part };` | `writes part of a file browser over whatever else its record holds` | `Tests 1 failed | 22 passed (23)` |
+| `fs.ts:443 => if (marks.loading \|\| marks.error !== '') return false;` | node `leaves the form a save of its own is out from until that answer lands`; browser `files-forms.spec.ts:506` | `Tests 1 failed | 22 passed (23)`; `3 failed` with the next row |
+| `fs.svelte.ts:642 => closeGoneForms(held.bookmarks); return;` | `closes no bookmark form over a read the server refused, whatever it said` | `Tests 1 failed | 51 passed (52)` |
+| `fs.svelte.ts:667 => for (const one of forms.browsers().slice(0, 0)) {` | `files-forms.spec.ts:393`, `:553`, `:588` | `4 failed` with the next row |
+| `EntryForm.svelte:253 => const addressed = entry === null ? (made?.id ?? '') : entry.id;` | `unsaved-forms.spec.ts:552` | same run, `4 failed` |
+| `EntryForm.svelte:263 => const took = (into.clear(which), true);` | `files-forms.spec.ts:422`, `unsaved-forms.spec.ts:378`, `:401` | `3 failed` |
+| `EntryForm.svelte:263 => const took = (into.taken(which, sent), false);` | `unsaved-forms.spec.ts:359` | `1 failed` |
+| `Files.svelte:449 => onrenamed={() => undefined}` | `files-forms.spec.ts:461` | `3 failed` with the next two rows |
+| `EntryForm.svelte:218 => if (false) return;` | `unsaved-forms.spec.ts:490` | same run |
+| `form-drafts.svelte.ts:279 => return null;` (browser) | `unsaved-forms.spec.ts:523` | same run |
+| `EntryForm.svelte:253 => const addressed = entry === null ? '' : entry.id;` | `unsaved-forms.spec.ts:438`, `:463` | `3 failed` with the `fs.ts:443` row |
+
+## Verify before you report, on the final tree
+
+| Command | Output |
+| --- | --- |
+| `npx vitest run --reporter=dot` | `Test Files 249 passed (249) / Tests 4223 passed (4223)`, `Duration 49.63s`; no test timed out, no rerun needed |
+| `npm run check` | `COMPLETED 1217 FILES 0 ERRORS 0 WARNINGS 0 FILES_WITH_PROBLEMS` |
+| `npm run build` | `✔ done` |
+| `npm run format:check` | `All matched files use Prettier code style!` |
+| `npm run lint` | `eslint .`, no output |
+| ASCII gate | printed nothing, exit 0 |
+| `npx playwright test tests/browser/files-forms.spec.ts tests/browser/unsaved-forms.spec.ts tests/browser/files.spec.ts tests/browser/cards.spec.ts` | `71 passed (2.4m)` |
+
+## Corrected before-and-after
+
+| What the reader does | Before this round | After |
+| --- | --- | --- |
+| Renames a bookmark from its form and types into Path while the save is out | The form closed when the answer landed and the typing went with it | The form stays open over the bookmark under its new id, holding the typing; its Cancel still closes it, and the gone-bookmark close finds nothing gone |
+| Types a title into an add form, saves, fills another field while the request is out, presses Save | The second save wrote the entry the add made, unless the tab had been switched away meanwhile, in which case it was refused as a duplicate and the words could not be saved from that form | The entry the add made is remembered in the instance's own state, so the second save writes it whether or not the tab was switched |
+| Retypes the identity field of an add form still open over the entry it added, then saves | That entry was renamed, and the entry the reader meant to add was never made | A second entry is added; the first stays as it was |
+| Saves from an add form of a file whose entries carry an `id` or a `key` (`registries/venues.yml`) | The second save answered `404 no entry <name>` and the words typed while the request was out could not be saved | The entry is addressed by the id the file gives it, so the second save lands |
+| A bookmark read the server refuses | No form was closed, and a refusal that said nothing would have closed every bookmark form on the page | The sweep runs only for a read that answered |
+| Presses Save on a request that never answers | The control stays disabled for that form until Cancel or a reload | Unchanged; stated under Limitations |
+
+Every row of the previous round's table still holds, except the rename row, which this round replaces.
+
+## Corrected Limitations
+
+- **A save that never answers leaves that form's Save control disabled** until Cancel or a reload, because `send` has no timeout and no abort. Not closed; the reason is under "Ruling 5c".
+- **`writtenId` duplicates a rule that lives in `src/lib/server/writes/entries.ts`.** It is held against the server's own `idOfIdentity` by a test, and the server change that deletes it is written out above.
+- **Only the bookmark form is carried over a rename.** A collection card's edit form that renames its entry still loses its draft at the next draft write, as it did before this step; `moveFormDraft` would drop it because the snapshot says the new id is not in the collection. Pinned by a test so the next reader sees the rule rather than guessing.
+- **The entries add forms made are persisted with the drafts** under `<id>#added`, so they survive a reload as well as a tab switch. A form whose entry was deleted from the file by something else would try to write it and be answered `404 no entry`; the reader sees the refusal, the draft stays, and pressing Add again starts a fresh form.
+- **The `saving` mark is per form, not per request**, unchanged from the last round; the disabled control is what keeps one form from having two saves out.
+- **`src/lib/views/Repositories.svelte:86` still holds its own copy of the instance-state merge.** It is outside this step's paths; `patchedFilesView` is typed over `FilesView` and would need widening to `unknown` to serve it.
+- **`src/lib/views/Files.svelte` is 587 lines**, under the 600 guide; the round-1 note that Q58 has nothing left to split still holds.
+
+## Doc text (nothing edited; brief decision 2)
+
+`tools/oculus/HELP.md:65`, as it stands:
+
+> Cancel, the view's Add or Edit control closing the form, a delete, a save and Revert let them go; a value typed into an edit form while its save is on its way is kept, in the form left open, and an add form closes once its entry is added.
+
+What it should say: a value typed into either form while its save is on its way is kept, in the form left open, and so is the text of an add form closed and opened again while its save was out; an add form closes once its entry is added only while nothing touched it since the save went, and one left open goes on writing the entry it added until its identity field is typed away from it, when it adds another; a bookmark form whose save renames its bookmark stays open over the bookmark under its new name; the Save control is not pressable while its own save is out.
+
+`tools/oculus/DESIGN.md:334`, as it stands, the two clauses:
+
+> A press that closes or moves the bookmark form forgets its draft through `toggleAdd` or `toggleEdit` under the `bookmarks` collection key, and so does the edited bookmark leaving the loaded list (`editedGone`).
+
+> Cancel, a form's close by the view's Add or Edit control, a delete, Revert and a save forget the draft, an edit's save keeping what was typed after it went, and an add form closing once its entry is added.
+
+What they should say: the edited bookmark leaving the loaded list closes its form through `editedGone`, read by the fs store's `closeGoneForms` on every bookmarks answer that came back, over every file browser the layout holds (`BookmarkForms`, wired in `state/context.ts`), so a browser whose tab is not shown, or a page drawing none, is closed with the rest; a form a save of its own is out from is left until that answer lands (`beginFormSave`, `endFormSave`); a bookmark form whose own save writes the bookmark under a new id is carried onto it, draft and all (`writtenId`, `moveFormDraft`, `onrenamed`), so nothing is gone to close; and an add's save forgets its draft and closes the form only while the draft is still what the save sent (`takeFormDraft`), a form left open going on to write the entry it made, kept beside the draft under `<id>#added`, until its identity field is typed away from that entry.
+
+## Files changed
+
+| File | + | - |
+| --- | --- | --- |
+| `tools/oculus/src/lib/state/context.ts` | 39 | 5 |
+| `tools/oculus/src/lib/state/form-drafts.svelte.ts` | 258 | 2 |
+| `tools/oculus/src/lib/state/fs.svelte.ts` | 56 | 2 |
+| `tools/oculus/src/lib/state/fs.ts` | 22 | 3 |
+| `tools/oculus/src/lib/views/Files.svelte` | 19 | 24 |
+| `tools/oculus/src/lib/views/files/BookmarkForm.svelte` | 15 | 1 |
+| `tools/oculus/src/lib/views/shared/EntryForm.svelte` | 67 | 9 |
+| `tools/oculus/tests/browser/files-forms.spec.ts` | 218 | 5 |
+| `tools/oculus/tests/browser/unsaved-forms.spec.ts` | 207 | 6 |
+| `tools/oculus/tests/state/explorer.test.ts` | 35 | 10 |
+| `tools/oculus/tests/state/form-drafts.test.ts` | 244 | 0 |
+| `tools/oculus/tests/state/fs.test.ts` | 31 | 0 |
+
+`tests/state/fs.test.ts` is new to the diff this round: it is the test of `state/fs.svelte.ts`, which the first round's widening put in the paths, and it carries the refused-read case. Its module now sets the text catalog, as `tests/state/form-drafts.test.ts` does, because a case that opens a tab reads the view's label.
+
+## Decisions the orchestrator may reverse
+
+1. **`<id>#added` is a second ui-store key beside `<id>#forms`**, with `ADDED_SUFFIX`, `addedKey` and `parseAdded` mirroring the drafts; the layout's forget clears both. The alternative was changing the persisted shape of `#forms`, which would have had to read the old shape back.
+2. **`writtenId` lives in `state/form-drafts.svelte.ts`** and is exported, since that module already holds the form-key rules; it moves or goes when the answer carries the id.
+3. **`onrenamed` is an optional prop of `EntryForm`**, so a host that cannot open the form over another id gets today's behaviour and the form never renames what it edits underneath it. Only `BookmarkForm` supplies it.
+4. **`patchedFilesView` is typed over `Partial<FilesView>`** and lives in `state/fs.ts`; widening it to serve `Repositories.svelte` would make it a ui-store helper, which is a different module's business.
+5. **The add form keeps writing the entry it made only while its identity field still says what that entry was made under**, comparing the value the add sent; anything else adds.
