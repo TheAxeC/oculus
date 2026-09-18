@@ -29,7 +29,19 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40, Q48 03:56, Q49 05:31; in flight: Q50 from 84fd99e1 and R14 (the eleven checks of the pass) from ec7bc6e5; next to dispatch: Q51; briefs written and waiting: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36; next: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36, O31, Q35; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2
+dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40, Q48 03:56, Q49 05:31; in flight: Q50 from 84fd99e1, R14 (the eleven checks of the pass) from ec7bc6e5 and Q51 from aa6a918b; next to dispatch: Q52; briefs written and waiting: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36; next: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36, O31, Q35; the pause lifted 2026-09-17 10:46 (Axel: three steps in flight at all times, no pause point); then D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2
+- package: Q51
+  executor: agent                          # the configuration default, chosen for the step
+  worker: claude:opus
+  worktree: .agents/worktrees/q51
+  base: aa6a918b
+  launched: 2026-09-18T05:40
+  prompt: the Agent tool's prompt, the shape of Q50's with the brief's own paths and the two guards the reviews keep finding
+  report: tools/oculus/.scratch/migration/agents/reviews/Q51-report.md
+  pid: none                                 # a native Claude worker has no process of its own
+  session_id: af5dd7aa1e040a660            # the Agent tool id, launched 05:40
+  landing: not-started
+  round: 0
 - package: Q50
   executor: agent                          # the configuration default, chosen for the step
   worker: claude:opus
@@ -257,7 +269,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-09-18 05:31. Landed on 2026-09-17: Q37, Q31, Q39, Q32, Q30, Q42, Q34, Q43, Q44, Q45, Q41, D22, Q38, Q46 and Q47, fifteen steps; on 2026-09-18: Q48 at 03:56 and Q49 at 06:05, their landing reports `agents/reviews/Q48-landing.md` and `agents/reviews/Q49-landing.md`. In flight: R14 (the eleven checks of the recurring pass, its second round of thirteen rulings, beyond the cap under its one exception) and Q50 (its round of five rulings). Next to dispatch, to bring the count back to three: Q51. Briefs written and committed ahead of the queue: Q36, Q51, Q52, Q53, Q54, Q56, Q58, Q59. Three rulings wait on Axel: the write with no timeout, the absent-document tag, and the tap on a hybrid device.
+- 2026-09-18 05:31. Landed on 2026-09-17: Q37, Q31, Q39, Q32, Q30, Q42, Q34, Q43, Q44, Q45, Q41, D22, Q38, Q46 and Q47, fifteen steps; on 2026-09-18: Q48 at 03:56 and Q49 at 06:05, their landing reports `agents/reviews/Q48-landing.md` and `agents/reviews/Q49-landing.md`. In flight: R14 (the eleven checks of the recurring pass, its second round of thirteen rulings, beyond the cap under its one exception) and Q50 (its round of five rulings). Q51 was dispatched at 05:40 to bring the count back to three; next to dispatch is Q52. Briefs written and committed ahead of the queue: Q36, Q51, Q52, Q53, Q54, Q56, Q58, Q59. Three rulings wait on Axel: the write with no timeout, the absent-document tag, and the tap on a hybrid device.
 
 - 2026-09-10. C1 to C13, R1 and O0 are done and committed: fc6d299 (C12 and C13, one commit because H1 and H2 both touched eight of the same files) and f8af492 (R1 and O0). Working tree clean after both.
 - Verified before fc6d299: `python3 build.py --selftest` PASS, `python3 build.py --dummy` builds, `bash tests/run.sh` PASS (5 + 29 + 24 + 19 Python tests, 11 JS modules). `grep -rn os.environ tools/cockpit/src tools/cockpit/build.py` finds only the `ANTHROPIC_API_KEY` read. The 8787 server answers 200 with zero `COCKPIT_` variables in its environment.
