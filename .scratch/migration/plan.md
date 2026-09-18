@@ -202,7 +202,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 ## Could run in parallel
 
 - The feature stretch after R17, three in flight at all times (Axel 2026-09-14 17:50 for three at a time; 2026-09-15 19:58 for the rolling window: one new package dispatched at each landing, cut at main's head, its paths checked against the two still running). Alone by nature: Q18, R10, R13a, R13b, K1, R17, L1, L2 before it; R2, O29, O30, X2 after it.
-- The queue, in order (rewritten 2026-09-18 04:13; every open step is named here): in flight, R14, Q49 and Q50; then Q51; Q52; Q53; Q54; Q56; Q58; Q59; Q36; O31; Q35; D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2.
+- The queue, in order (rewritten 2026-09-18 10:58; every open step is named here): in flight, Q52, Q53 and Q54; then the fixes and cleanups, Q56, Q58, Q59, Q36, O31; then the real steps, Q35; D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2 last.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.
