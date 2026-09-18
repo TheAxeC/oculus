@@ -63,3 +63,99 @@ Source: `data/model-sessions.ts` 489, `server/git.ts` 393, `views/shared/repo-sh
 - The helper in `Repo.svelte` is named `rowLabel`, not `sentence`, because `tests/keys.test.ts`'s catalog scan reads `sentence(` as a catalog lookup. The check was not loosened; the helper was named away from the collision.
 - `tests/views/repositories.test.ts` gained a `repo()` helper that renders the partial on its own, which is the only way a state the picker filters out reaches it.
 - `npm run build` was re-run before each browser revert run.
+
+---
+
+# Repair round 1 (builder a4d2d5b3b40564ca1, sent 07:20, reported 07:4x)
+
+All seven rulings built and verified. The review file was written to the main checkout after this worktree was cut, so the builder worked from the seven rulings, each of which names its probe.
+
+| Ruling | State | Command and its output |
+| --- | --- | --- |
+| 1. The race between the directory check and git's answer | DONE | `src/lib/server/git.ts:129-136` sets `refused.present = exists(root)` at git's refusal; new case "says a root that went away between the two reads is not there, not that it is no repository", red under revert F |
+| 2. A file, a dangling link and a walled folder keep `present` true | DONE | `git.ts:115-123` returns the gone shape only when `!directory(root) && !exists(root)`; new case red under revert E; the probe's output below |
+| 3. Two reverts that left their own case green | DONE | `repositories.test.ts` now names the `rowLabel` revert, red under H; `changes.test.ts` names the repo-shape revert alone, red under C |
+| 4. The doc lines carried, not described | DONE | both written out in full, with the current line beside each |
+| 5. Two lines of prose | DONE | no line the builder authored is above 100 columns; the `changes.spec.ts` head comment is one sentence again |
+| 6. Two catalog keys for one sentence | DONE | `grep -rn "repositories\.error" src tests config HELP.md DESIGN.md README.md` finds none; `tests/keys.test.ts` green in both directions |
+| 7. Say why the four unreachable drawings stay | DONE | `Repo.svelte:16-19` |
+| Node suite | DONE | 251 files, 4284 tests, all passed, no rerun needed |
+| `npm run check` | DONE | `COMPLETED 1223 FILES 0 ERRORS 0 WARNINGS` |
+| `build`, `format:check`, `lint`, the ASCII gate, both catalogs parse | DONE | exit 0; Prettier clean; eslint silent; the gate printed nothing; both YAML files parse |
+| Browser specs | DONE | `npx playwright test repositories changes` -> 11 passed (22.2s) |
+
+## What the server does now
+
+```ts
+    // A path with nothing at it is the one root git is never asked about. A path that is there and
+    // is no directory, and one nothing may enter, are handed to git like any other, so the reader
+    // gets git's own reason for them instead of being told the folder is gone.
+    if (!directory(root) && !exists(root)) { ... }
+    ...
+    if (!gitDir.ok && gitDir.answered) {
+        const refused = empty(gitDir.text || 'not a git repository');
+        // The root may have gone between the check above and this answer, and then git refused it
+        // for being gone rather than for being no repository. The path is read again here.
+        refused.present = exists(root);
+        return refused;
+    }
+```
+
+`exists()` uses `lstatSync`, so a dangling symlink is a name that is there, and only `ENOENT` and `ENOTDIR` answer false; `EACCES`, `EPERM` and `ELOOP` are reads that could not tell, and a root is never called gone on one.
+
+**The ruling-2 probe, rerun over all four paths** (the script makes them under the system temporary directory, calls `statusFor`, restores the mode and removes the folder, leaving none behind):
+
+```
+regular file        present=true  repository=false  error="cannot change to '.../a-file': Not a directory"
+dangling symlink    present=true  repository=false  error="cannot change to '.../dangling': No such file or di"
+parent denies walk  present=true  repository=false  error="cannot change to '.../walled/repo': Permission deni"
+nothing at path     present=false repository=false  error="no such directory"
+```
+
+The three that exist read as `none` with git's own reason; only the fourth reads as `missing`. The reasons are cut at the module's own `short()` cap.
+
+**How the race is made to happen on demand**: the test file's `spawnSync` mock gained a hook that fires once, on the first command carrying the argument it names, and then lets the command run for real against the changed tree. The case makes a repository, arms the hook on `--git-dir` to remove that folder, and calls `statusFor`; the recorded-command gates at the end of the file still pass.
+
+## One key for one sentence
+
+`config/text/views/repositories.yml` no longer carries `error`; `rowLabel` reads `sessions.ch_failed`, the key the Changes panel reads. The row's words are byte-identical, since the two keys held the same sentence.
+
+## The clause in `Repo.svelte`'s head comment
+
+```
+    // All six shapes of views/shared/repo-shape.ts are drawn here while the picker offers two of
+    // them: state/repositories.ts's repositoryRoots() keeps a root whose state is not a repository
+    // out of the picker, so a reader reaches only the failed and the readable drawing. The other
+    // four are what this file says if it is handed such a state, and they are not dead.
+```
+
+## Doc text, as the lines to put in the files
+
+**`HELP.md:105`**, the `changes` row, gains "that the workspace folder is not there," after "no workspace folder,".
+
+**`DESIGN.md:340`**, replaced whole:
+
+> - 2026-09-17, the Changes panel over the repository facts. `views/shared/repo-shape.ts` `repoShape(root, state)` answers which of six a root's git state is drawn as, and the Changes panel's markup, its branch listing and the Repositories view's `repositories/Repo.svelte` all read it: a session naming no workspace folder, a workspace the `git` channel has no state for yet, a workspace folder that is not there (`GitState.present` false, drawn as `sessions.ch_nofolder` with git's reason beside it), a root that is no repository, a repository whose read failed (drawn with git's reason in `sessions.ch_failed`, which is the one key both views read for that row) and a repository that reads, one with no commit yet included, which alone draws the branch, the change groups and the commit box and fetches `/api/git` for its branches. Each drawing writes its own name as `data-repo`, one spelling across both views; the Repositories view draws all six while `repositoryRoots` offers it the failed and the readable one. `GitState.present` is false only for a path with no such name at it, read by `exists()` of `server/git.ts` with `lstat` and set both where nothing is at the path and again where git answers that a root is no repository, so a folder that goes away while the read runs is told from one that never was a repository; a regular file, a dangling symbolic link and a folder under a parent nothing may enter are all there, and each carries git's own reason instead. A listing that answers after a newer one was asked for is dropped. The branch line's sentence is `views/shared/branch-state.ts` `branchState(state)`, read by both views: "in step with the upstream" is drawn only for a branch that has an upstream, so a branch with none, every repository with no commit among them, reads only the sentence saying there is nowhere to push. Packages Q47, Q52.
+
+## Every revert, rerun on the final tree
+
+A (`ch_insync` whenever the list is empty): 3 node red and, after a rebuild, 2 browser. B (drop the detached line): 1. C (drop the `missing` branch): 2 node and 1 browser. D (`gone.present = true`): 1 node and 1 browser. E (drop `&& !exists(root)`): 1. F (`refused.present = true`): 1. G (the bare `data-repo-failed`): 3 node and 1 browser. H (`rowLabel` returns the failed sentence for every shape): 1. The tree was restored after each and re-verified green.
+
+## Before and after, as it stands now
+
+1. **Repositories, a branch with no upstream**: the branch line's right end was `in step with the upstream` and is now empty.
+2. **Changes panel, a workspace folder that has gone**: was `This workspace is not a git repository.`, now `This workspace folder is not there.` with git's reason in the title.
+3. **Changes panel, a workspace that is a regular file, a dangling symlink, or a folder nothing may enter**: all three read `This workspace folder is not there.` after the first round and now read `This workspace is not a git repository.` with git's own reason in the title.
+4. **Changes panel, a folder removed while the watcher is reading it**: was `This workspace is not a git repository.`, now `This workspace folder is not there.`
+5. **Repositories, a failed read**: `data-repo="failed"`, same words from `sessions.ch_failed` instead of the deleted `repositories.error`.
+6. No other change.
+
+## Files changed in this round
+
+`src/lib/server/git.ts` 419, `src/lib/data/model-sessions.ts` 494, `src/lib/views/repositories/Repo.svelte` 243, `config/text/views/repositories.yml` 53, `tests/server/git.test.ts` 708, `tests/views/repositories.test.ts` 511, `tests/views/changes.test.ts` 358, `tests/browser/changes.spec.ts` 265, `src/lib/views/shared/repo-shape.ts` 29.
+
+## Things worth knowing
+
+- `exists()` costs one `lstat` per root that is not a directory and one per root git refuses; it runs on no readable repository, so the watcher's ordinary path is unchanged. Not separately timed.
+- The walled-folder case sets a parent to mode `0o000` and restores it in a `finally`; it would pass vacuously for a user who can traverse regardless of mode, that is, as root. The suite is not run as root here, and the case is red under revert E.
+- Still open: the Repositories picker offers only `repository === true`, so the `missing` and `none` drawings are not reader-reachable; `DESIGN.md:334`'s "whose state has no error" is wrong and the orchestrator fixes it at the landing.
