@@ -212,3 +212,70 @@ Rulings 1, 3, 4 and 5 are met.
 The duplication check's own window computation; whether each of the 35 styling entries is deliberate; whether any of the 150 audits entries should now render; `require()` and package-alias import shapes against the scratch guard; the browser half of the revert check on a real browser case.
 
 Reviewer usage: about 100 tool uses, 43 minutes (04:22 to 05:05).
+
+---
+
+# The run over repair round 2 (reviewer ad56ae0ee60352bd7, 06:13 to 06:53)
+
+```
+npx vitest run --reporter=dot        258 files, 4306 tests, all passed, 54.38s
+npm run check                        COMPLETED 1233 FILES 0 ERRORS 0 WARNINGS
+npm run build                        built in 5.88s, exit 0
+npm run format:check                 All matched files use Prettier code style!
+npm run lint                         no output, exit 0
+the ASCII gate                       no output, exit 0
+TMPDIR=<private> npx playwright test 241 passed (6.5m), exit 0
+node bin/revert-check.mjs <8 files>  65 reverts, 0 unproven, 0 unchecked, exit 0, 242.5s
+the head-comment print               149 files, 0 "No such file", 1.7s
+sh bin/size-check.sh                 no output, exit 0
+sh bin/scratch-count.sh              node before 0 / the node suite is red / node after 0 /
+                                     browser before 0 / browser after 0, exit 1, 494s
+node bin/cited-lines.mjs --root . <the round-2 section>   10 cited lines, 4 missing, exit 1
+git diff --stat ec7bc6e5             150 files changed, 1082 insertions(+), 292 deletions(-)
+```
+
+The worktree is untouched; every plant was made in a copy under `scratchpad/r14-review3/`.
+
+## Spec
+
+1. **The negatives floor still buys room.** `findGrowth` (`tests/negatives.test.ts:85`) matches each absence against a multiset of that file's entries, and 15 of the 26 entries for `browser/files-forms.spec.ts` are the empty key, an absence naming no literal of eight characters or more, so the 15 are interchangeable: explaining one frees a slot a new one fills. Proven in a copy; adding the same absence without explaining one is caught. `tests/negatives.test.ts:16` says the opposite.
+2. **The negatives floor never ratchets down**: explaining one listed absence and adding nothing leaves a stale entry nothing reports. The duplication, audits, styling and size lists each have a stale-entry case; this one is held only to files that still exist.
+3. **The audits scan reports passes and reds it has not earned.** `reaches` (`:74`) matches `\brender\(` inside a string, so a case asserting `toContain('render(Files)')` counts as coverage; it also matches any declared name, and those names are ordinary words (`at`, `from`, `done`, `open`, `first`), so a case holding one of twenty-one words passes; `block` (`:61`) counts brackets inside comments, so a case that does render is reported as an audit, a red it has not earned; `CASE` (`:51`) needs the title on the `it(` line, so a case named on the next line is invisible.
+4. **The scratch guard is blind to three shapes**: `mkdtemp` from `node:fs/promises`, `mkdirSync(join(tmpdir(), ...))`, and an import specifier without its `.ts`. Each planted leaves the guard green. The eight shapes the brief named are all caught.
+5. **The revert check writes outside its copy through a symlink**: `inside()` (`:184-186`) compares lexically, so a symlink inside the tree passes and `writeFileSync` (`:363`) writes through it. `find src tests bin config -type l` prints nothing today.
+6. **`bin/size-check.sh` and `tests/size.test.ts` do not hold the same rule, and neither measures a shell script.** A 1200-line extensionless file under `bin/` is caught by neither; a 2000-line symlink by the test only; the tree's own three `.sh` files are unmeasured, against `bin/size-check.sh:6`.
+7. **`bin/cited-lines.mjs` has no containment check**: a report citing `../outside/secret.md:1` is read and counted among the good lines. The other four shapes behave.
+8. **`tests/reason.ts` accepts filler and any restatement that changes one character**: `closed closed closed closed` passes, and against `not.toContain('data-open')` the comments `no Data-Open drawn at all`, `no data open is drawn here` and `no data.open drawn at all` are all accepted while the exact string is refused.
+9. **`agents/spec.md` still carries the `+1`** the previous round withdrew; the orchestrator's to drop at the landing.
+10. **`0 unchecked` is a property of the eight-file argument list, not of the step's diff**: over the 162 changed script files the command would print `65 reverts, 0 unproven, 2111 unchecked`. Disclosed in the head comment and the report's row.
+
+**What held**: the duplication floor keyed on the clone (a brand-new clone between two listed files is reported; changing a listed clone turns the stale-entry case red); the revert check refusing a skipped case, an `.only` sibling, two of one title, a comment line, an identical replacement and a target outside the tree, reading a directive above a case as that case, printing `red` for titles holding `$`, `.`, `(` and an apostrophe, and `unproven [the case did not run]` for a file the runner never loads; `unchecked` in the summary and the exit status; the count script exiting 1 when a half is red.
+
+## Proof
+
+11. **`19 cited lines, 0 missing` does not reproduce**: over the round-2 section as it sits on disk, `10 cited lines, 4 missing`, exit 1 (`agents/spec.md:33` no such file, two blank lines, and `views/shared/CardActions.svelte:202` wanting its prefix). The six citations of the form `(:259)` carry no path and are not read as citations at all.
+12. **The duplication floor is 743 entries, not 744**, counted exactly as `readHeld` does. The negatives floor is 48, which matches.
+13. **`sh bin/scratch-count.sh` exited 1, not 0**: the four counts reproduce, and the node half printed `the node suite is red`. `TMPDIR=<private> npm test` immediately afterwards was green; three other worktrees' suites were running (load averages 11.46 12.73 12.80) and eight cases carry 60 to 120 s budgets, so contention is the likely cause. The command as written is red on this machine under the load the plan runs at.
+14. **`left()` sees only top-level `oculus-*` directories**: of five planted shapes it counts two. After the reviewer's own runs the private roots held `node-compile-cache` and `playwright-transform-cache-502`, and the count read 0; nothing requires a scratch prefix of `oculus-`.
+15. Timings, all load-dependent, none reproduced: node suite 54.38s against 90s, revert check 242.5s against 301s, build 5.88s against 25s, lint 35.0s against 77s, browser 6.5m against 5.4m.
+
+Reproduced: `258 passed`, `4306 passed`, `COMPLETED 1233 FILES 0 ERRORS`, `241 passed`, `65 reverts, 0 unproven, 0 unchecked`, the head-comment print, `size-check.sh` silent, the ASCII gate silent, and the diff stat.
+
+## Standards
+
+16. **History in a comment**: `bin/cited-lines.mjs:49` names an earlier bug ("which is how `:1-9999` over a four-line file used to read as a hit"), which `agents/spec.md:39` forbids. The only such hit across the fourteen new and changed files.
+17. **A stale doc comment**: `tests/audits.test.ts:121` describes `findAudits` while sitting above `everyCase`.
+18. **Head comments the diff makes false**: `bin/revert-check.mjs:183-186` (finding 5), `tests/scratch.test.ts:2` (4), `bin/size-check.sh:6` and `tests/size.test.ts:11` (6), `tests/reason.ts:4-6` (8), `tests/negatives.test.ts:16` (1).
+19. Clean: the ASCII gate, the size rule as written, every new module's head comment, Prettier and eslint.
+
+## Behaviour
+
+20. **`npm test` now starts child processes and no report states it**: `tests/bin/revert-check.test.ts` runs `node bin/revert-check.mjs` twelve times, each copying a fixture tree and starting a nested `npx vitest`; `tests/size.test.ts:143` runs the shell script over the whole tree.
+21. **Eight case budgets are outside the tracked diff**, since `tests/bin/revert-check.test.ts` is untracked; the file's own comment gives the reason.
+22. Nothing else changed how a suite runs: no `src` or `config` file in the diff, no config key added, and the one tracked budget is the `git.test.ts` case the report names.
+
+## Not checked
+
+The duplication window computation; whether each styling and audits entry is right on the merits; the browser half of the revert check, which no directive exercises; `require()` and package-alias import shapes; whether the count script's node half is red on an idle machine; the 30-minute port wait; the 447 absence comments beyond a sample of the 25 most repeated, which are real reasons.
+
+Reviewer usage: about 45 tool calls, 40 minutes (06:13 to 06:53).

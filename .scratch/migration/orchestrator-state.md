@@ -40,6 +40,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   report: tools/oculus/.scratch/migration/agents/reviews/Q52-report.md
   pid: none                                 # a native Claude worker has no process of its own
   session_id: a4d2d5b3b40564ca1            # the Agent tool id, launched 06:35
+  reported: 2026-09-18T07:07                # everything in the brief done: one `branchState` in `views/shared/branch-state.ts` read by both views, `repo-shape.ts` moved to `views/shared/` with a sixth shape `missing`, `GitState.present` set false only where the directory check fails, `data-repo="failed"` one spelling, and a new key `sessions.ch_nofolder`. Four things raised: the shared rule had to go in `views/shared/` because the boundary rule forbids the brief's own instruction; the Repositories picker filters by `repository === true`, so two shapes are unreachable there; a brief premise about which spec reads the old spelling was wrong; and `DESIGN.md:334` was already wrong before the step
+  reviewer: a966a73bca89c9035                # claude:opus through the Agent tool, read-only, launched 07:08, scratch folder scratchpad/q52-review (review earned: a server field every git view reads)
   landing: not-started
   round: 0
 - package: R14
