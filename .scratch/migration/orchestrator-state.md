@@ -73,8 +73,8 @@ dispatch:                                  # resumed 2026-09-20; in flight: Q53 
   round: 1                                  # six rulings, written out verbatim in agents/reviews/Q36-round1.md, sent 13:41
   round_report: none                        # the builder was stopped before it reported
   session_id: /root/q36_finish
-  round_review_session: 01a0be7d-621c-72f1-8379-f868ec3bc3ff
-  round_review_exec_session: 63698
+  round_review_session: 01a0be7f-b693-7fd2-8f2f-a8b5c8191705
+  round_review_exec_session: 56182
   next: wait for the continuation report; then a fresh review over the round; then the landing
   landing: not-started
 ```
