@@ -29,7 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # resumed 2026-09-20; in flight: Q53 round 1 continuation from 99ea1b96, Q56 fresh review from 521c938c and Q36 round 1 continuation from 2ddd4a8b; next to dispatch after a landing: Q58, then Q59, O31 and Q35; the later queue continues with D11 + D13 + D14, D15 + D17 + D18, D20 + M3, M4, then R2, O29, O30 and X2
+dispatch:                                  # finish-and-pause run of 2026-09-20; in flight: Q53 round 1 continuation from 99ea1b96, Q56 round 1 from 521c938c and Q36 round 1 review from 2ddd4a8b; no replacement step is dispatched after a landing; pause after Q36, Q56 and Q53 are landed
 - package: Q53
   status: RESUMED, detached Codex continuation running over round 1
   executor: agent
@@ -109,6 +109,8 @@ dispatch:                                  # resumed 2026-09-20; in flight: Q53 
 - `plan.md` stays lean (Axel, 2026-09-13, after two rounds of bloat): a package line is one sentence, the decision, its date and the pointer to its brief, at most 400 characters; a ruling line the same; every explanation, rationale, line number, premise and landing detail lives in the brief or in this file's landing notes, never in `plan.md`. Before any commit that touches `plan.md`: `awk 'length > 400' tools/oculus/.scratch/migration/plan.md` must print nothing but the header paragraph. And not one piece of information may be lost by shortening (Axel, 2026-09-13 22:10): when a `plan.md` line is shortened or rewritten, its previous text is first appended whole to the package's `agents/briefs/<package>.md` (a ruling's or a note's to the section "Rulings in full" below), and the commit that shortens it carries both; a line whose previous text is not in a file of this ledger is not shortened. The check: every line of the committed `plan.md` before the change is found verbatim in the ledger after it.
 
 ## The pause
+
+Axel, 2026-09-20: finish and land Q36, Q56 and Q53 only, then pause. Their required builders, reviewers, verification and landing looks continue; no step after them is dispatched.
 
 Lifted 2026-09-20 by Axel's `/plan-orchestration oculus/migration` instruction. Q53 and Q36 resume through continuation builders in their existing worktrees, Q56 resumes at its fresh review, and the rolling queue continues after their landings.
 
