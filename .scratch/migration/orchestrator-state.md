@@ -62,7 +62,7 @@ dispatch:                                  # finish-and-pause run of 2026-09-20;
   next: continuation builder closes all five findings; then a fresh review over the round; then the landing
   landing: not-started
 - package: Q36
-  status: RESUMED, continuation builder running over round 1
+  status: ROUND 1 REFUTED, landing fix required before verification
   executor: agent
   worker: codex:gpt-5.6-sol                    # continuation worker selected by the resumed Codex orchestrator
   worktree: .agents/worktrees/q36          # cut to tools/oculus alone, not the configuration block's set, and cut before 972c931c, so its node suite shows three reds in the real-hub cases that main fixed; not this step's. 1 file uncommitted (tests/server/hpc/ssh.test.ts)
@@ -71,11 +71,12 @@ dispatch:                                  # finish-and-pause run of 2026-09-20;
   report: tools/oculus/.scratch/migration/agents/reviews/Q36-report.md   # the build, reported 13:06
   review: tools/oculus/.scratch/migration/agents/reviews/Q36-refuter.md  # reviewer launched 13:06, returned 13:40
   round: 1                                  # six rulings, written out verbatim in agents/reviews/Q36-round1.md, sent 13:41
-  round_report: none                        # the builder was stopped before it reported
+  round_report: tools/oculus/.scratch/migration/agents/reviews/Q36-round1-report.md
   session_id: /root/q36_finish
   round_review_session: 01a0be7f-b693-7fd2-8f2f-a8b5c8191705
   round_review_exec_session: 56182
-  next: wait for the continuation report; then a fresh review over the round; then the landing
+  round_review: tools/oculus/.scratch/migration/agents/reviews/Q36-round1-refuter.md
+  next: land with the small in-brief fix that removes stale probe-pid state before each measurement
   landing: not-started
 ```
 
