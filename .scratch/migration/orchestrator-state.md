@@ -31,19 +31,19 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```yaml
 dispatch:                                  # finish-and-pause run of 2026-09-20; in flight: Q53 round 1 continuation from 99ea1b96 and Q56 round 1 from 521c938c; Q36 landed; no replacement step is dispatched after a landing; pause after Q56 and Q53 are landed
 - package: Q53
-  status: RESUMED, detached Codex continuation running over round 1
+  status: REPAIR ROUND 1 VERIFYING in the resumed Codex continuation
   executor: agent
   worker: codex:gpt-5.6-sol                    # continuation worker selected by the resumed Codex orchestrator
   worktree: .agents/worktrees/q53          # full sparse set of the configuration block; 12 files uncommitted
-  base: 99ea1b96                            # five landings behind main (Q52, Q54 and the ledger since), so the cherry-pick will conflict
+  base: bd09ddb1                            # current main merged into the worktree after preserving the pre-merge repair as f6a6ded1
   launched: 2026-09-18T08:11
   report: tools/oculus/.scratch/migration/agents/reviews/Q53-report.md   # the build, reported 09:22
   review: tools/oculus/.scratch/migration/agents/reviews/Q53-refuter.md  # reviewer launched 10:45, returned 11:33
   round: 1                                  # eight items, written out verbatim in agents/reviews/Q53-round1.md: six rulings sent 11:34, the green Ticker.svelte:231 revert directive sent 12:16, Axel's badge tones sent 12:35
   round_report: none                        # the builder was stopped before it reported
   session_id: 01a0be7b-bf44-7681-81e1-c99cd9f36f2c
-  exec_session: 56267
-  next: wait for the continuation report; then a fresh review over the round; then the landing
+  exec_session: 11170
+  next: continuation builder completes the repository badge tones and serialized node and shimmed browser proofs; then a fresh review over the round; then the landing
   landing: not-started
 - package: Q56
   status: REPAIR ROUND 1 VERIFYING in the resumed Codex continuation
