@@ -19,7 +19,8 @@
     // worktrees as collapsible sections of explorer rows.
     //
     // The picker offers every root, not the repositories among them, and each row carries the few
-    // words its state comes to (`views/shared/repo-shape.ts`'s shapeBadge), the row's hover words
+    // words and tone its state comes to (`views/shared/repo-shape.ts`'s shapeBadge and
+    // shapeBadgeTone), the row's hover words
     // being its path and the badge's own git's reason: a folder of notes, a repository whose read
     // failed and a folder the reader has deleted all stay in the list and say which they are. A root that went quiet is a
     // fact about that root, so the view neither drops it from the list nor hands itself to another
@@ -55,7 +56,7 @@
         type RepositoriesView
     } from '$lib/state/repositories';
     import { t } from '$lib/state/text';
-    import { repoShape, shapeBadge } from '$lib/views/shared/repo-shape';
+    import { repoShape, shapeBadge, shapeBadgeTone } from '$lib/views/shared/repo-shape';
     import type { ViewProps } from './registry';
     import { useState } from '$lib/state/use';
 
@@ -81,6 +82,7 @@
             title: root,
             active: root === shown,
             badge: shapeBadge(repoShape(root, gitFor(root))),
+            badgeTone: shapeBadgeTone(repoShape(root, gitFor(root))),
             badgeTitle: gitFor(root)?.error ?? undefined
         }))
     );

@@ -3,8 +3,7 @@
 //
 // The command center and the tasks section draw the same rows over different lists, so the shape of
 // a row lives here once rather than in each partial. It holds no markup and no list: a caller keeps
-// its own numbered index of the lines it drew, because two lines of one group can name the same
-// project and a button has to reach the one it sits on.
+// its own index of the lines it drew, because a button has to reach the line it sits on.
 //
 // A row's buttons are drawn only under the pointer or the keyboard (ui/Ticker.svelte's `reveal`),
 // except the one the row exists for, which the builder names by the row's id: a subtask's or a
@@ -24,7 +23,7 @@ const STATUS = 'status:';
 /** The lines one partial drew, by the row id each was given. */
 export type RowIndex = Record<string, TickerItem | undefined>;
 
-/** A numbered index of the lines a partial draws, and the row builder that fills it. */
+/** An index of the lines a partial draws, and the row builder that fills it. */
 export type Rows = {
     index: RowIndex;
     row: (line: TickerItem, tail: string) => TickerRow;
@@ -135,9 +134,18 @@ export function dateTail(line: TickerItem): string {
         : t('focus.command.in_days', line.days);
 }
 
+/** The stable part of a row id for a line whose buttons write a target. */
+function targetId(target: TickerTarget): string {
+    return [target.kind, target.collection ?? '', target.id, target.subtask ?? '']
+        .map((part) => encodeURIComponent(part))
+        .join(':');
+}
+
 /**
- * A fresh index and the builder that fills it. The rows are numbered rather than named by what they
- * point at; the prefix keeps two partials of one board from numbering a row the same.
+ * A fresh index and the builder that fills it. A row whose buttons write a target is named by that
+ * target, so removing an earlier row cannot transfer a tap-open state to the line that follows it.
+ * A targetless row has no hidden button and keeps the ordinal that only its immediate render uses.
+ * The prefix keeps the two partials of one board from naming a row the same.
  */
 export function rowMaker(prefix: string): Rows {
     const index: RowIndex = {};
@@ -148,7 +156,9 @@ export function rowMaker(prefix: string): Rows {
         kept: (row) => keeps[row.id],
         row(line: TickerItem, tail: string): TickerRow {
             const actions = actionsFor(line);
-            const id = `${prefix}${at++}`;
+            // An ordinal would let a line that moves up inherit the id of a row a tap just removed.
+            const identity = line.target === undefined ? String(at++) : targetId(line.target);
+            const id = `${prefix}${identity}`;
             index[id] = line;
             keeps[id] = keptAction(actions);
             const name = line.venue === undefined ? line.label : `${line.label} ${line.venue}`;

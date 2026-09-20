@@ -77,7 +77,7 @@ export type { LayoutAccess } from './access.ts';
 export { LAYOUT_KEY, PREVIOUS_KEY, createStorage } from './storage.ts';
 export type { LayoutStorage, Storable } from './storage.ts';
 export { createAttention } from './attention.ts';
-export type { Attention, Beside } from './attention.ts';
+export type { Attention, Beside, Touched } from './attention.ts';
 export { createInstances } from './instances.ts';
 export type { Instances } from './instances.ts';
 export { createOpening } from './opening.ts';

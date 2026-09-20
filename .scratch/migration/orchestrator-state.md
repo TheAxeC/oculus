@@ -10,7 +10,7 @@ verify:                      # from tools/oculus in the worktree and again on ma
 - npm run format:check
 - npm run lint
 - LC_ALL=C grep -rna '[^ -~]' src tests
-- npm run test:browser        # orchestrator only, on main, after the build; needs the installed Chrome.
+- npm run test:browser        # orchestrator only, on main, after the build; use the isolated Playwright headless-shell, never installed Chrome.
 worktree_root: .agents/worktrees
 worktree_paths: [tools/oculus, tools/cockpit, feeds, registries, projects, funding, network, education, applications, tasks]
 standards: [tools/oculus/.scratch/migration/agents/spec.md]
@@ -29,38 +29,24 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # finish-and-pause run of 2026-09-20; in flight: Q53 round 1 continuation from 99ea1b96 and Q56 round 1 from 521c938c; Q36 landed; no replacement step is dispatched after a landing; pause after Q56 and Q53 are landed
-- package: Q53
-  status: REPAIR ROUND 1 VERIFYING in the resumed Codex continuation
-  executor: agent
-  worker: codex:gpt-5.6-sol                    # continuation worker selected by the resumed Codex orchestrator
-  worktree: .agents/worktrees/q53          # full sparse set of the configuration block; 12 files uncommitted
-  base: bd09ddb1                            # current main merged into the worktree after preserving the pre-merge repair as f6a6ded1
-  launched: 2026-09-18T08:11
-  report: tools/oculus/.scratch/migration/agents/reviews/Q53-report.md   # the build, reported 09:22
-  review: tools/oculus/.scratch/migration/agents/reviews/Q53-refuter.md  # reviewer launched 10:45, returned 11:33
-  round: 1                                  # eight items, written out verbatim in agents/reviews/Q53-round1.md: six rulings sent 11:34, the green Ticker.svelte:231 revert directive sent 12:16, Axel's badge tones sent 12:35
-  round_report: none                        # the builder was stopped before it reported
-  session_id: 01a0be7b-bf44-7681-81e1-c99cd9f36f2c
-  exec_session: 94503
-  next: continuation builder completes the repository badge tones and non-browser proofs; the orchestrator uses a separate headless-shell binary for browser proofs; then a fresh review over the round; then the landing
-  landing: not-started
+dispatch:                                  # finish-and-pause run of 2026-09-20; Q36 and Q53 landed; Q56 is next; no later step is dispatched
 - package: Q56
-  status: REPAIR ROUND 1 VERIFYING in the resumed Codex continuation
+  status: ready for repository landing
   executor: agent
   worker: claude:opus
-  worktree: .agents/worktrees/q56          # cut to tools/oculus alone, not the configuration block's set, and cut before 972c931c, so its node suite shows three reds in the real-hub cases that main fixed; not this step's. 26 files uncommitted
+  worktree: .agents/worktrees/q56          # clean at c78b934c; f4bd595d is the package commit and c78b934c is its merge commit
   base: 521c938c
   launched: 2026-09-18T12:10
   report: tools/oculus/.scratch/migration/agents/reviews/Q56-report.md   # the build, reported 14:04
   review: tools/oculus/.scratch/migration/agents/reviews/Q56-refuter.md
   round: 1
   round_instructions: tools/oculus/.scratch/migration/agents/reviews/Q56-round1.md
-  round_report: none
+  round_report: /private/tmp/q56-nonbrowser-final.md
   session_id: 01a0be7b-bf44-7e41-972a-29af46f251a4
   exec_session: 67976
-  next: continuation builder completes non-browser proofs; the orchestrator uses a separate headless-shell binary for browser proofs; then a fresh review over the round; then the landing
-  landing: not-started
+  round_review: tools/oculus/.scratch/migration/agents/reviews/Q56-round1-refuter.md
+  next: cherry-pick f4bd595d without its merge commit; run every main gate including the browser suite; look at Files on TEST; book, commit and remove the worktree
+  landing: next
 ```
 
 ## The standing demands (from Axel, in force)
@@ -279,7 +265,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-09-20. Q36 landed after its repair review and the stale probe-pid finding was closed on main. Q53 and Q56 remain in flight. No later step will be dispatched, and the plan pauses after both land. Nothing waits on Axel's ruling.
+- 2026-09-20. Q36 and Q53 landed. Q53 passed 4,380 node tests, type checking, build, format, lint, the ASCII gate, nine revert checks and 269 isolated browser cases on main; its native Chrome look on TEST covered Focus, Repositories, the pane menu and gruvbox wallpaper layering. Q56 is next for its repository landing. No later step is dispatched. Nothing waits on Axel's ruling.
 
 - 2026-09-10. C1 to C13, R1 and O0 are done and committed: fc6d299 (C12 and C13, one commit because H1 and H2 both touched eight of the same files) and f8af492 (R1 and O0). Working tree clean after both.
 - Verified before fc6d299: `python3 build.py --selftest` PASS, `python3 build.py --dummy` builds, `bash tests/run.sh` PASS (5 + 29 + 24 + 19 Python tests, 11 JS modules). `grep -rn os.environ tools/cockpit/src tools/cockpit/build.py` finds only the `ANTHROPIC_API_KEY` read. The 8787 server answers 200 with zero `COCKPIT_` variables in its environment.
@@ -555,6 +541,7 @@ No night log is running. Nothing has been left for Axel to read here.
 - Q36, continuation worker codex:gpt-5.6-sol at high effort: exact token and tool accounting unavailable from the completed continuation; one test file changed.
 - Q36, round reviewer codex:gpt-5.6-sol at high effort, thread `01a0be7f-b693-7fd2-8f2f-a8b5c8191705`: exact token accounting unavailable; one material stale-pid finding reproduced five times and closed at landing.
 - Q36, orchestrator codex:gpt-6-astra: usage not measured separately; shared with the active Q53 and Q56 continuations.
+- Q53, orchestrator codex:gpt-6-astra at high effort: 1,073,875 fresh input tokens, 79,930,752 cached input tokens, 124,277 output tokens, 583 messages and 435 minutes from the preceding landing through the Q53 booking; one landing integration fix and one browser test correction.
 
 Per package, one row per run: the harness, model and effort; tokens in / cached / out; completed items; seconds; lines added and removed; whether the first report passed its bar; repair rounds; fixes at landing; the orchestrator's own minutes. The orchestrator's own tokens are summed from its session transcript between the package's start and its commit.
 - O24a, worker codex:gpt-5.6-sol at high, first run: 12,514,280 in / 12,215,168 cached / 54,364 out (16,778 reasoning), 107 items, 1,567 s (20:00:09 to 20:26:16); repair round on the same thread: 18,334,572 in / 17,903,616 cached / 78,631 out (27,018 reasoning), 63 items, 710 s; +3,043 -932 over 39 files (the wip commit, landing fixes included); first report passed its bar: no; 1 repair round (7 items); 7 fixes at landing.

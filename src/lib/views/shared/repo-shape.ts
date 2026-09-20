@@ -42,3 +42,14 @@ export function shapeBadge(shape: RepoShape): string {
     if (shape === 'failed') return t('repositories.pick_failed');
     return '';
 }
+
+/**
+ * The status hue for the few words at a repository picker's row end. A repository that reads has
+ * no badge and therefore no tone; the two shapes the picker cannot receive answer none as well.
+ */
+export function shapeBadgeTone(shape: RepoShape): string | undefined {
+    if (shape === 'missing') return 'red';
+    if (shape === 'failed') return 'amber';
+    if (shape === 'none') return 'blue';
+    return undefined;
+}

@@ -18,6 +18,10 @@
     // where it stops. The strip's end is the browser's largest offset, so a control press or a
     // reveal there may rest short of a tab start. How it scrolls is ui/tab-scroll.svelte.ts.
     //
+    // A surface that blurs what is behind it is the stacking context of everything inside it, so the
+    // strip carries a depth of its own wherever it blurs, over the pane body beside it, and a menu
+    // opened from its right end is drawn over what the pane holds rather than under it.
+    //
     // It is drawn as an editor's tab strip, every measure a token of themes/tokens.css: the surface
     // the strip sits on, the line under it with a gap where the shown tab heads it, the mark where a
     // dragged tab would land, and the scroll controls as bare icons, as the caller's buttons at the
@@ -300,8 +304,13 @@
         background: var(--card);
     }
 
-    /* The strip is the pane's own top edge over a wallpaper: the shell's pane paints nothing behind it, so the picture reads through here too. */
+    /* The strip is the pane's own top edge over a wallpaper: the shell's pane paints nothing behind it, so the picture reads through here too.
+       The blur makes the strip the stacking context of every list opened inside it, so the strip takes
+       a depth of its own: above the view's own blurred box in the pane body, which is drawn after it
+       and would otherwise cover an open menu, and below the rail at 5 and the drag layer at 10. */
     :global(body.wall) .strip {
+        position: relative;
+        z-index: 1;
         background: color-mix(in srgb, var(--bg) var(--wall-panel), transparent);
         backdrop-filter: blur(var(--wall-blur));
     }

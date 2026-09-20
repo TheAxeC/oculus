@@ -615,3 +615,215 @@ test.describe('the look', () => {
         await expect.poll(async () => (await lineOf(handle)).colour).toBe(accent);
     });
 });
+
+// Where the rail opens a view, and nothing else, carries the accent line: one shown tab in the
+// window at a time, whichever page the reader is in, and the folded strip of a pane the rail would
+// open into rather than no mark at all.
+test.describe('the one accent line', () => {
+    /** The top border colour of every shown pane tab drawn, in the order the panes are drawn. */
+    async function paneTops(page: Page): Promise<string[]> {
+        return page
+            .locator('[data-pane] .tab.current')
+            .evaluateAll((nodes) => nodes.map((node) => getComputedStyle(node).borderTopColor));
+    }
+
+    /** Press the empty end of a pane's tab strip, which activates nothing and writes no tree. */
+    async function pressStrip(pane: Locator): Promise<void> {
+        const spot = await pane.locator('.tabs').evaluate((node) => {
+            const box = node.getBoundingClientRect();
+            return { x: box.right - 6, y: box.top + box.height / 2 };
+        });
+        await pane.page().mouse.click(spot.x, spot.y);
+        await rest(pane.page());
+    }
+
+    /** A second page from the strip's menu, with the strip left on the first one. */
+    async function twoPages(page: Page): Promise<void> {
+        const strip = page.getByRole('region', { name: t('ui.pages') });
+        await strip.getByRole('button', { name: t('ui.page_menu') }).click();
+        await page.getByRole('menuitem', { name: t('ui.page_new') }).click();
+        const tabs = strip.getByRole('tab');
+        await expect(tabs).toHaveCount(2);
+        await page.keyboard.press('1');
+        await expect(tabs.filter({ hasText: t('ui.page_default', 1) })).toHaveAttribute(
+            'aria-selected',
+            'true'
+        );
+    }
+
+    // Answer with the active instance of the page the strip is on and the accent never follows the
+    // reader into the page drawn inside it.
+    // revert: src/lib/state/layout.svelte.ts:417 => return instances.activeInstance();
+    test('one shown tab carries it, and it follows the reader into a page drawn inside another', async ({
+        page
+    }) => {
+        await boot(page);
+        await twoPages(page);
+        await page
+            .locator('[data-pane]')
+            .first()
+            .getByRole('button', { name: t('ui.pane_menu'), exact: true })
+            .click();
+        await page.getByRole('menuitem', { name: t('ui.embed_page_list'), exact: true }).click();
+        await page
+            .getByRole('menuitem', {
+                name: t('ui.embed_page', t('ui.page_default', 2)),
+                exact: true
+            })
+            .click();
+        await expect(page.locator('[data-page-leaf]')).toHaveCount(1);
+        await expect(page.locator('[data-pane]')).toHaveCount(2);
+
+        const accent = await colourOf(page, 'var(--accent)');
+        const line = await colourOf(page, 'var(--line)');
+        const host = page.locator('[data-pane]').first();
+        const inside = page.locator('[data-page-leaf] [data-pane]');
+
+        await host.getByRole('tab').first().click();
+        await rest(page);
+        await expect.poll(() => paneTops(page)).toEqual([accent, line]);
+
+        await inside.getByRole('tab').first().click();
+        await rest(page);
+        await expect.poll(() => paneTops(page)).toEqual([line, accent]);
+
+        // A press that activates no tab moves the reader all the same: the empty end of a strip
+        // changes nothing about the arrangement, and the mark follows it.
+        // revert: src/lib/state/layout.svelte.ts:203 => const where: Touched = { page: null };
+        // Hold where the reader is outside a rune and a press that changes no tree redraws nothing,
+        // so the mark stays on the pane the reader has left.
+        await pressStrip(host);
+        await expect.poll(() => paneTops(page)).toEqual([accent, line]);
+        await pressStrip(inside);
+        await expect.poll(() => paneTops(page)).toEqual([line, accent]);
+    });
+
+    // Leave the folded strip unmarked and the window says nowhere while the rail still opens into
+    // the pane the strip stands for.
+    // revert: src/lib/shell/FoldedPane.svelte:51 => const marked = $derived(false);
+    test('a folded pane the rail opens into carries it on its strip, and no shown tab does', async ({
+        page
+    }) => {
+        await boot(page);
+        await openView(page, 'projects', t('views.projects'));
+        await splitRight(page, t('views.projects'));
+        const accent = await colourOf(page, 'var(--accent)');
+        const line = await colourOf(page, 'var(--line)');
+
+        const right = page.locator('[data-pane]').nth(1);
+        await right.getByRole('tab', { name: t('views.projects') }).click();
+        await rest(page);
+        await expect.poll(() => paneTops(page)).toEqual([line, accent]);
+
+        await right.getByRole('button', { name: t('ui.pane_menu'), exact: true }).click();
+        await page.getByRole('menuitem', { name: t('ui.pane_fold'), exact: true }).click();
+        const folded = page.locator('[data-fold]');
+        await expect(folded).toHaveCount(1);
+        await rest(page);
+
+        // The mark on a folded strip is the accent along its own top edge, the line and the width a
+        // shown tab draws it at; every other edge of the strip keeps the line colour.
+        await expect
+            .poll(() =>
+                folded.evaluate((node) => {
+                    const style = getComputedStyle(node);
+                    return {
+                        top: style.borderTopColor,
+                        width: style.borderTopWidth,
+                        side: style.borderLeftColor
+                    };
+                })
+            )
+            .toEqual({ top: accent, width: '1px', side: line });
+        expect(await paneTops(page)).toEqual([line]);
+    });
+});
+
+/** Where the centre of a menu list's first item lands, and whether that is inside the list. */
+async function hitOf(list: Locator): Promise<{ inside: boolean; hit: string }> {
+    await expect(list).toBeVisible();
+    return list.evaluate((node) => {
+        const item = node.querySelector('.item') ?? node;
+        const box = item.getBoundingClientRect();
+        const hit = document.elementFromPoint(box.left + box.width / 2, box.top + box.height / 2);
+        return {
+            inside: hit !== null && node.contains(hit),
+            hit:
+                hit === null
+                    ? 'nothing'
+                    : `${hit.tagName}.${[...hit.classList].find((one) => !one.startsWith('svelte-')) ?? ''}`
+        };
+    });
+}
+
+// A blurred surface is the stacking context of every list opened inside it, so a menu can be drawn
+// under what the surface's own siblings paint. Every opener the shell has is pressed here, under two
+// themes that carry a wallpaper and one that carries none.
+test.describe('a menu list over what is beside it', () => {
+    test.use({ viewport: { width: 1200, height: 900 } });
+
+    // Leave the blurred strip at the depth of the pane body and the view's own blurred box, drawn
+    // after the strip inside the pane, covers the list the pane menu opens.
+    // revert: src/lib/ui/Tabs.svelte:313 => z-index: auto;
+    test('every opener draws a list that answers a press, in a pane, in the page strip, in the rail and on a card', async ({
+        page
+    }) => {
+        await boot(page);
+        await openView(page, 'focus', t('views.focus'));
+        await splitRight(page, t('views.focus'));
+
+        // The rice themes carry a wallpaper and light does not, which is what `wallpaper.themes` of
+        // config/appearance.yml says; each is asserted, so the case cannot pass over a tree that
+        // draws no wallpaper at all.
+        for (const [paint, wall] of [
+            ['gruvbox', 1],
+            ['mocha', 1],
+            ['light', 0]
+        ] as [string, number][]) {
+            await theme(page, new RegExp(`^\\S+\\s+${paint}$`));
+            await expect(page.locator('.wallpaper')).toHaveCount(wall);
+            const where = `${paint}, wallpaper ${wall === 1 ? 'on' : 'off'}`;
+
+            const pane = page.locator('[data-pane]').first();
+            await pane.getByRole('button', { name: t('ui.pane_menu'), exact: true }).click();
+            expect(
+                await hitOf(page.getByRole('menu', { name: t('ui.pane_menu') })),
+                `the pane menu under ${where}`
+            ).toEqual({ inside: true, hit: 'BUTTON.item' });
+            // The press acts: the pane is maximised and the same menu puts every pane back.
+            await page.getByRole('menuitem', { name: t('ui.pane_maximise'), exact: true }).click();
+            await expect(page.locator('[data-pane]')).toHaveCount(1);
+            await page
+                .locator('[data-pane]')
+                .getByRole('button', { name: t('ui.pane_menu'), exact: true })
+                .click();
+            await page.getByRole('menuitem', { name: t('ui.pane_restore'), exact: true }).click();
+            await expect(page.locator('[data-pane]')).toHaveCount(2);
+
+            const pages = page.getByRole('region', { name: t('ui.pages') });
+            await pages.getByRole('button', { name: t('ui.page_menu') }).click();
+            expect(
+                await hitOf(page.getByRole('menu', { name: t('ui.page_menu') })),
+                `the page menu under ${where}`
+            ).toEqual({ inside: true, hit: 'BUTTON.item' });
+            await page.keyboard.press('Escape');
+
+            await page.getByRole('button', { name: t('ui.theme') }).click();
+            expect(
+                await hitOf(page.getByRole('menu', { name: t('ui.theme') })),
+                `the rail's theme menu under ${where}`
+            ).toEqual({ inside: true, hit: 'BUTTON.item' });
+            await page.keyboard.press('Escape');
+
+            await page
+                .getByRole('button', { name: t('focus.move_to') })
+                .first()
+                .click();
+            expect(
+                await hitOf(page.getByRole('menu', { name: t('focus.move_to') }).first()),
+                `a card's menu under ${where}`
+            ).toEqual({ inside: true, hit: 'BUTTON.item' });
+            await page.keyboard.press('Escape');
+        }
+    });
+});

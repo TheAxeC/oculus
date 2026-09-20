@@ -5,7 +5,7 @@
 //
 // Every test here restores the manifest it changed and asserts the bytes are the ones it found.
 
-import { expect, test, type Locator, type Page } from '@playwright/test';
+import { expect, test, type CDPSession, type Locator, type Page } from '@playwright/test';
 import { readHubFile, shortOf } from './hub.ts';
 import { boot, openView } from './rail.ts';
 import { t, vocabulary } from './words.ts';
@@ -37,6 +37,7 @@ async function away(page: Page): Promise<void> {
 
 const TRANSFER = 'projects/active/graph-transfer';
 const BANDITS = 'projects/active/graph-bandits';
+const ANOMALY = 'projects/active/streaming-anomaly';
 const LEAD = 'Assistant Professor, Machine Learning';
 
 /** What quick add types into the follow-up box, and what the manifest must then hold. */
@@ -263,7 +264,7 @@ test('a row keeps its name while its buttons wait, and drawing them covers none 
 }) => {
     await boot(page);
     await openView(page, 'focus', t('views.focus'));
-    // revert: src/lib/ui/Ticker.svelte:358 => display: inline-block;
+    // revert: src/lib/ui/Ticker.svelte:459 => display: inline-block;
     // Draw the waiting buttons at rest and they take the name's room, which is the cut the reader
     // saw in a narrow pane.
     for (const paint of ['light', 'mocha']) {
@@ -289,7 +290,7 @@ test('a row keeps its name while its buttons wait, and drawing them covers none 
                 .toBe(true);
             await drawnOf(row);
             const open = await whileOpen(row);
-            // revert: src/lib/ui/Ticker.svelte:312 => align-self: baseline;
+            // revert: src/lib/ui/Ticker.svelte:413 => align-self: baseline;
             // A row that changed height as its buttons came onto the line would move the rows the
             // board's columns hold around it, and the pointer would land on another row.
             expect(
@@ -311,7 +312,7 @@ test('the keyboard walks the buttons a row draws, in the order the row lists the
 }) => {
     await boot(page);
     await openView(page, 'focus', t('views.focus'));
-    // revert: src/lib/ui/Ticker.svelte:374 => display: inline-block;
+    // revert: src/lib/ui/Ticker.svelte:475 => display: inline-block;
     // Draw the buttons a row has no room for and the walk reaches one the row cannot show.
     for (const wide of WIDTHS) {
         await page.setViewportSize({ width: wide, height: 900 });
@@ -362,6 +363,7 @@ test('a button the keyboard reaches writes what it names, and the row wakes back
     page
 }) => {
     const before = readHubFile(`${TRANSFER}/project.yml`);
+    // The fixture must begin awake so this case can prove that the button writes the change.
     expect(before).not.toContain('snooze:');
     await boot(page);
     await openView(page, 'focus', t('views.focus'));
@@ -370,7 +372,7 @@ test('a button the keyboard reaches writes what it names, and the row wakes back
     const short = shortOf(TRANSFER);
     const line = page.getByRole('listitem').filter({ hasText: short }).first();
     await expect(line).toBeVisible();
-    // revert: src/lib/ui/Ticker.svelte:362 => display: none;
+    // revert: src/lib/ui/Ticker.svelte:463 => display: none;
     // Leave a button undrawn while its row is open and the keyboard never reaches it to press it.
     const wanted = t('project.action.snooze_1w');
     await line.locator('.name').focus();
@@ -390,9 +392,9 @@ test('a button the keyboard reaches writes what it names, and the row wakes back
     const woken = asleep.getByRole('listitem').filter({ hasText: short });
     await onto(page, woken);
     await woken.getByRole('button', { name: t('project.action.unsnooze'), exact: true }).click();
-    await expect(
-        page.locator('details').filter({ hasText: t('focus.command.snoozed', 1) })
-    ).toHaveCount(0);
+    const sleeping = page.locator('details').filter({ hasText: t('focus.command.snoozed', 1) });
+    // Waking its final member removes the empty group from the list.
+    await expect(sleeping).toHaveCount(0);
     expect(readHubFile(`${TRANSFER}/project.yml`)).toBe(before);
 });
 
@@ -401,8 +403,11 @@ test('a press at the end of a name reaches the name while the buttons are not dr
 }) => {
     await boot(page);
     await openView(page, 'focus', t('views.focus'));
-    // revert: src/lib/ui/Ticker.svelte:358 => position: absolute; right: 0;
+    // revert: src/lib/ui/Ticker.svelte:459 => position: absolute; right: 0;
     // Stack the waiting buttons over the row's end instead and the end of a name presses one.
+    // revert: src/lib/ui/Ticker.svelte:284 => onpointerdown={reveal ? tap : undefined}
+    // Open the row on the press under the finger instead of on the click that press raises, and the
+    // buttons arrive before the click is aimed, so the tap presses one of them.
     expect(await page.evaluate(() => matchMedia('(hover: hover)').matches)).toBe(true);
     let spot = { x: 0, y: 0 };
     for (const wide of WIDTHS) {
@@ -435,8 +440,9 @@ test('a press at the end of a name reaches the name while the buttons are not dr
         spot = spots[0];
     }
 
-    // A tap on a device that also has a pointer: the page answers `hover: hover`, so a tap raises
-    // hover before it presses, and what it presses is what the reader could see.
+    // A tap on a device that also has a pointer: the page answers `hover: hover`, so the row's
+    // buttons are not drawn, the tap opens the row instead of pressing through it, and what the
+    // click reports is the name the finger landed on and never a button.
     const session = await page.context().newCDPSession(page);
     await page.evaluate(() => {
         document.addEventListener(
@@ -478,7 +484,7 @@ async function keeping(page: Page): Promise<Locator> {
 test('the button a row keeps is drawn at the row end, waiting or not', async ({ page }) => {
     await boot(page);
     await openView(page, 'focus', t('views.focus'));
-    // revert: src/lib/ui/Ticker.svelte:355 => margin-left: 0;
+    // revert: src/lib/ui/Ticker.svelte:455 => margin-left: 0;
     // Let the button group follow the name instead of sitting at the row's end, and the kept button
     // lands wherever the name happens to stop.
     for (const wide of WIDTHS) {
@@ -540,7 +546,7 @@ test.describe('on a device with no pointer', () => {
         await boot(page);
         await openView(page, 'focus', t('views.focus'));
         const row = await busiest(page);
-        // revert: src/lib/ui/Ticker.svelte:348 => @media (hover: none) {
+        // revert: src/lib/ui/Ticker.svelte:449 => @media (hover: none) {
         // Hide the waiting buttons on a device with no pointer and nothing can ever be pressed.
         const drawn = row.locator('.act');
         await expect
@@ -552,4 +558,176 @@ test.describe('on a device with no pointer', () => {
             'the buttons hold no room on a device that always draws them'
         ).toBeGreaterThan(box.held + 0.5);
     });
+});
+
+// A device that has a finger and a pointer both. Chrome answers `hover: none` out of the device
+// emulation `hasTouch` turns on, so the taps below are dispatched through the debugging protocol on
+// an ordinary page, which keeps `hover: hover` and with it the rule that leaves a waiting button out
+// of the page until its row is open.
+type Spot = { x: number; y: number };
+
+/** A finger tap at a point, on a page whose primary pointer is still a mouse. */
+async function tapAt(session: CDPSession, spot: Spot): Promise<void> {
+    await session.send('Input.dispatchTouchEvent', {
+        type: 'touchStart',
+        touchPoints: [{ x: spot.x, y: spot.y }]
+    });
+    await session.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+}
+
+/** The middle of what a locator draws, as the point a tap lands on. */
+async function centre(target: Locator): Promise<Spot> {
+    const box = await target.boundingBox();
+    expect(box, 'the target is not on the page').not.toBeNull();
+    return {
+        x: (box?.x ?? 0) + (box?.width ?? 0) / 2,
+        y: (box?.y ?? 0) + (box?.height ?? 0) / 2
+    };
+}
+
+test('the first tap opens a row, the next presses what it lands on, and a tap off the row closes it', async ({
+    page
+}) => {
+    const before = readHubFile(`${ANOMALY}/project.yml`);
+    expect(before).not.toContain('snooze:');
+    await boot(page);
+    await openView(page, 'focus', t('views.focus'));
+    expect(await page.evaluate(() => matchMedia('(hover: hover)').matches)).toBe(true);
+    await away(page);
+    const session = await page.context().newCDPSession(page);
+
+    const short = shortOf(ANOMALY);
+    const row = page.getByRole('listitem').filter({ hasText: short }).first();
+    await expect(row).toBeVisible();
+    const ticker = row.locator('xpath=..');
+    const lines = ticker.locator(':scope > li');
+    const position = await lines.evaluateAll(
+        (nodes, label) => nodes.findIndex((node) => node.textContent.includes(label)),
+        short
+    );
+    expect(position).toBeGreaterThanOrEqual(0);
+    expect(position).toBeLessThan((await lines.count()) - 1);
+    const successor = await lines
+        .nth(position + 1)
+        .locator('.name')
+        .innerText();
+    const snooze = row.getByRole('button', { name: t('project.action.snooze_1w'), exact: true });
+    await expect(snooze).toBeHidden();
+    const tabs = page.locator('[data-pane] [role="tab"]');
+    const opened = await tabs.count();
+
+    // revert: src/lib/ui/Ticker.svelte:168 => return;
+    // Take a tap in a closed row as an ordinary press and the row's buttons stay out of the page,
+    // so the next tap reaches none of them either.
+    const name = await centre(row.locator('.name'));
+    await tapAt(session, name);
+    await expect(snooze).toBeVisible();
+    // The tap that opened the row pressed nothing: the name under it opens a tab of its own.
+    await expect(tabs).toHaveCount(opened);
+
+    // A tap in another row closes this one and opens that one, and a tap off every row closes
+    // whichever is open: nothing says the finger has moved on, so the next press that misses it does.
+    const other = page
+        .locator('.ticker li')
+        .filter({ hasNotText: short })
+        .filter({ has: page.locator('.act') })
+        .first();
+    await tapAt(session, await centre(other.locator('.name')));
+    await expect(snooze).toBeHidden();
+    await expect(other.locator('.act').first()).toBeVisible();
+    const filler = await page
+        .getByRole('region', { name: t('ui.pages') })
+        .locator('.tabs')
+        .evaluate((node) => {
+            const box = node.getBoundingClientRect();
+            return { x: box.right - 8, y: box.top + box.height / 2 };
+        });
+    await tapAt(session, filler);
+    await expect(other.locator('.act').first()).toBeHidden();
+
+    // Open the row once more and the next tap presses the button under the finger.
+    await tapAt(session, name);
+    await expect(snooze).toBeVisible();
+    await tapAt(session, await centre(snooze));
+    await expect
+        .poll(() => readHubFile(`${ANOMALY}/project.yml`), { timeout: 5000 })
+        .toContain('snooze:');
+
+    // revert: src/lib/ui/Ticker.svelte:85 => return held === null ? -1 : 0;
+    // revert: src/lib/views/focus/rows.ts:160 => const identity = String(at++);
+    // Hold the row a tap opened by a place in the list instead of by the row itself, and the line
+    // that moves into that place draws open in its stead.
+    // The write took the row out of the group, and the line that moved up into its place keeps its
+    // own stable id and stays closed.
+    await expect(page.locator('.ticker li.open')).toHaveCount(0);
+    await expect(page.locator('.ticker li').filter({ hasText: successor }).first()).not.toHaveClass(
+        /open/
+    );
+
+    const asleep = page.locator('details').filter({ hasText: t('focus.command.snoozed', 1) });
+    await expect(asleep).toBeVisible();
+    await asleep.click();
+    const woken = asleep.getByRole('listitem').filter({ hasText: short });
+    await onto(page, woken);
+    await woken.getByRole('button', { name: t('project.action.unsnooze'), exact: true }).click();
+    await expect(
+        page.locator('details').filter({ hasText: t('focus.command.snoozed', 1) })
+    ).toHaveCount(0);
+    expect(readHubFile(`${ANOMALY}/project.yml`)).toBe(before);
+});
+
+test('the pointer and the finger open the same one row, whichever opened it', async ({ page }) => {
+    await boot(page);
+    await openView(page, 'focus', t('views.focus'));
+    await away(page);
+    const session = await page.context().newCDPSession(page);
+
+    // Two rows of one list, each holding a button it draws only once the row is open.
+    const held = page.locator('.ticker').first();
+    const rows = held.locator('li').filter({ has: page.locator('.act:not(.kept)') });
+    // The fixture supplies several actionable lines so the two input modes can move between them.
+    await expect(rows).not.toHaveCount(0);
+    const one = rows.first();
+    const two = rows.nth(2);
+    await expect(two).toBeVisible();
+    const open = page.locator('.ticker li.open');
+
+    // revert: src/lib/ui/Ticker.svelte:254 => if (false && missed(event.target)) tapped = null;
+    // Leave the row a tap opened open while the pointer arrives in another, and two rows draw their
+    // buttons at once.
+    await tapAt(session, await centre(one.locator('.name')));
+    await expect(open).toHaveCount(1);
+    await expect(one).toHaveClass(/open/);
+
+    await onto(page, two);
+    await expect(open).toHaveCount(1);
+    await expect(two).toHaveClass(/open/);
+
+    // revert: src/lib/ui/Ticker.svelte:286 => onpointerleave={undefined}
+    // Keep the row the pointer was in open when the finger takes the pointer off the list, and the
+    // row a tap then opens is the second one drawing its buttons.
+    await tapAt(session, await centre(one.locator('.name')));
+    await expect(open).toHaveCount(1);
+    await expect(one).toHaveClass(/open/);
+    await away(page);
+});
+
+test('a row with no button to draw opens what it names on the first tap', async ({ page }) => {
+    await boot(page);
+    await openView(page, 'focus', t('views.focus'));
+    await away(page);
+    const session = await page.context().newCDPSession(page);
+
+    // The lead line draws no button of its own, so there is nothing for a tap to open.
+    const row = page.locator('.ticker li').filter({ hasText: LEAD });
+    // This fixture line has a direct destination and therefore needs no trailing control.
+    await expect(row.locator('.act')).toHaveCount(0);
+
+    // revert: src/lib/ui/Ticker.svelte:172 => if (false) return;
+    // Open a row that draws nothing and the tap that opened it is spent, so the line takes two taps
+    // where the pointer takes one press.
+    await tapAt(session, await centre(row.getByRole('button', { name: LEAD })));
+    await expect(page.getByRole('tab', { name: t('views.leads') })).toBeVisible();
+    // Following the direct destination leaves no transient action state behind.
+    await expect(page.locator('.ticker li.open')).toHaveCount(0);
 });

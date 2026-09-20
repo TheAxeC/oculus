@@ -3,6 +3,10 @@
     // and, for a pane, the name of the tab it is showing, so a reader can tell two collapsed panes
     // apart without expanding either. That name is the one the document title uses, so this reads
     // the registry as PaneView does, which is why the strip is drawn here and not in SplitView.
+    //
+    // A folded pane the rail's next view would open into draws the accent line a shown tab draws,
+    // along the strip's top edge, so folding a pane never leaves the window with nothing saying
+    // where a view will land.
 
     import ToolButton from '$lib/ui/ToolButton.svelte';
     import { activeLabel } from '$lib/shell/workbench-title';
@@ -14,7 +18,7 @@
     const client = useState();
 
     const {
-        layout: { pages }
+        layout: { openingInstance, pages }
     } = client;
 
     type Props = {
@@ -42,9 +46,12 @@
         if (node.kind === 'page') return pageNameOf(pages(), node.page);
         return shown === null ? '' : activeLabel(client.registry, shown);
     });
+
+    /** Whether this folded pane is the one the rail's next view opens into. */
+    const marked = $derived(shown !== null && openingInstance()?.id === shown.id);
 </script>
 
-<div class="fold {dir}" data-fold>
+<div class="fold {dir}" class:marked data-fold>
     <ToolButton
         label={t('ui.pane_expand')}
         glyph={t('ui.pane_expand_glyph')}
@@ -69,6 +76,12 @@
         border: 1px solid var(--line);
         border-radius: var(--radius);
         overflow: hidden;
+    }
+
+    /* The mark a folded strip carries is the line a shown tab carries: the accent along its top edge,
+       at the strip's own border width, which is the width a tab draws it at. */
+    .fold.marked {
+        border-top-color: var(--accent);
     }
 
     /* A strip beside its neighbours is a column of controls; one under them is a row of them. */

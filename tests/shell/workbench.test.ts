@@ -799,6 +799,29 @@ describe('a page shown inside another', () => {
         expect(host).not.toBe(shown);
     });
 
+    // Answer with the active instance of the page the strip is on and the pane inside the leaf
+    // never draws its strip focused, wherever the reader is.
+    // revert: src/lib/state/layout.svelte.ts:417 => return instances.activeInstance();
+    it('draws the strip of the one pane the rail opens into, on whichever page the reader is in', () => {
+        const { host, shown } = nested();
+        /** The strip class of the pane the named page draws, the host's first and the leaf's after it. */
+        const strips = (body: string): string[] =>
+            [host, shown].map((id) => {
+                const pane = body.slice(body.indexOf(`data-pane-page="${id}"`));
+                return (
+                    /<div class="(strip[^"]*)"/.exec(pane)?.[1].replace(/\s*svelte-\S+/g, '') ?? ''
+                );
+            });
+        const drawn = (): string =>
+            render(Workbench, { context: clientContext(client), props: { groups: [] } }).body;
+
+        // The reader is in the page the strip is on, so its own active pane is the one marked.
+        expect(strips(drawn())).toEqual(['strip', 'strip unfocused']);
+        // A press inside the page drawn at the leaf moves where a view lands, and the mark with it.
+        client.layout.touchPane(shown);
+        expect(strips(drawn())).toEqual(['strip unfocused', 'strip']);
+    });
+
     it('draws the tabs of both pages at once, the ones of the nested page among them', () => {
         const { body } = nested();
         expect(body).toContain('Status');

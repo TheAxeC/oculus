@@ -35,6 +35,66 @@ function worktree(): string {
 }
 
 test.describe('the Repositories view', () => {
+    test('draws the missing, failed and non-repository picker badges in their own tones', async ({
+        page
+    }) => {
+        const missing = scratchDir('oculus-repositories-missing-tone-');
+        const failed = scratchDir('oculus-repositories-failed-tone-');
+        const none = scratchDir('oculus-repositories-none-tone-');
+        const labels = {
+            missing: missing.split(sep).at(-1) ?? '',
+            failed: failed.split(sep).at(-1) ?? '',
+            none: none.split(sep).at(-1) ?? ''
+        };
+
+        writeFileSync(join(missing, 'a.txt'), 'a\n');
+        gitIn(missing, 'init', '--quiet', '--initial-branch=main');
+        gitIn(missing, 'add', '--all');
+        gitIn(missing, 'commit', '--quiet', '-m', 'one');
+        gitIn(failed, 'init', '--quiet', '--initial-branch=main');
+        writeFileSync(join(failed, '.git', 'index'), 'not an index\n');
+
+        await boot(page);
+        await openView(page, 'files', t('views.files'));
+        for (const dir of [missing, failed, none]) {
+            await page.getByRole('button', { name: t('files.add_root'), exact: true }).click();
+            await page.getByRole('textbox', { name: t('files.root_dir') }).fill(dir);
+            await page.getByRole('button', { name: t('files.add'), exact: true }).click();
+            // Saving each entry closes the form, which confirms that the files view accepted it.
+            await expect(page.getByRole('textbox', { name: t('files.root_dir') })).toHaveCount(0);
+        }
+
+        await openView(page, 'repositories', t('views.repositories'));
+        const opener = page.locator('[data-repo-picker]').getByRole('button').first();
+        await expect
+            .poll(
+                async () => {
+                    await opener.click();
+                    const listed = await page
+                        .getByRole('menuitem', { name: labels.missing, exact: true })
+                        .count();
+                    await page.keyboard.press('Escape');
+                    return listed;
+                },
+                { timeout: 10_000 }
+            )
+            .toBe(1);
+        rmSync(missing, { recursive: true, force: true });
+
+        await opener.click();
+        const badge = (label: string) =>
+            page.getByRole('menuitem', { name: label, exact: true }).locator('.item-badge');
+        await expect(badge(labels.missing)).toContainText(t('repositories.pick_missing'), {
+            timeout: 20_000
+        });
+
+        // revert: src/lib/views/Repositories.svelte:85 => badgeTone: undefined,
+        await expect(badge(labels.missing)).toHaveAttribute('style', /--badge-bg: var\(--c-red\)/);
+        await expect(badge(labels.failed)).toHaveAttribute('style', /--badge-bg: var\(--c-amber\)/);
+        await expect(badge(labels.none)).toHaveAttribute('style', /--badge-bg: var\(--c-blue\)/);
+        await page.keyboard.press('Escape');
+    });
+
     test('draws the served hub with its branch line and its log', async ({ page }) => {
         await boot(page);
         await openView(page, 'repositories', t('views.repositories'));

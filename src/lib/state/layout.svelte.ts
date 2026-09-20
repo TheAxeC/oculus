@@ -52,6 +52,7 @@ import {
     type Page,
     type Pages,
     type Storable,
+    type Touched,
     type ViewId,
     type Workbench
 } from './layout/index.ts';
@@ -73,6 +74,8 @@ export type LayoutStore = {
     workbench: (page?: string) => Workbench;
     layout: (page?: string) => Layout;
     activeInstance: (page?: string) => Instance | null;
+    /** The instance the rail's next view would join, which is the pane it would open into. */
+    openingInstance: () => Instance | null;
     instanceLayoutState: (id: string) => unknown;
     restateInstance: (id: string, state: unknown) => void;
     pinInstance: (id: string, session: string, label: string) => void;
@@ -192,7 +195,14 @@ export function createLayout(ui: UiStore): LayoutStore {
         ui
     };
 
-    const attention = createAttention(access);
+    /**
+     * Where the reader is, held as a rune so what is drawn from it redraws: a press that moves the
+     * reader from one pane to another changes no tree, and the mark saying where the rail opens a
+     * view has nothing else to follow.
+     */
+    const where: Touched = $state({ page: null });
+
+    const attention = createAttention(access, where);
     const instances = createInstances(access, attention);
     const opening = createOpening(access, attention, instances.keepPreview);
     const files = createShowInFiles(access, attention, opening.openView);
@@ -398,6 +408,15 @@ export function createLayout(ui: UiStore): LayoutStore {
         return focusedPane(workbench(page));
     }
 
+    /**
+     * The instance the next view opened without a page named would join: the active instance of the
+     * page the reader is in. It is the one pane in the window the rail opens into, whether that page
+     * is the one the strip is on or one drawn inside it.
+     */
+    function openingInstance(): Instance | null {
+        return instances.activeInstance(attention.touched().id);
+    }
+
     return {
         currentPage,
         pages,
@@ -406,6 +425,7 @@ export function createLayout(ui: UiStore): LayoutStore {
         workbench,
         layout,
         activeInstance: instances.activeInstance,
+        openingInstance,
         instanceLayoutState: instances.instanceLayoutState,
         restateInstance: instances.restateInstance,
         pinInstance: instances.pinInstance,

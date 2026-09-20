@@ -497,6 +497,8 @@ describe('Ticker', () => {
         expect(body).toContain('in 3d');
     });
 
+    // Revert: in Ticker.svelte, draw a row's buttons whether or not the caller said what one means.
+    // revert: src/lib/ui/Ticker.svelte:324 => {#if row.actions !== undefined}
     it('draws a row action as a button only when the caller says what one means', () => {
         expect(html(Ticker, { rows })).not.toContain('1w');
         const body = html(Ticker, { rows, onaction: noop });
@@ -505,8 +507,8 @@ describe('Ticker', () => {
         expect(body).toContain('>hide<');
     });
 
-    // revert: src/lib/ui/Ticker.svelte:231 => class:kept={false}
     // Revert: in Ticker.svelte, mark no button as the one the row keeps.
+    // revert: src/lib/ui/Ticker.svelte:331 => class:kept={false}
     it('lists the buttons in the order the row gives them, marking the one it keeps', () => {
         const body = html(Ticker, {
             rows,

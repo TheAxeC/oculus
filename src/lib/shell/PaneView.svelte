@@ -24,8 +24,10 @@
     //
     // The strip's right end is the pane's header, drawn as an editor group's: the split to the right
     // as a bare icon button, drawn while the pane shows a tab, and the menu as its bare more-actions
-    // opener. Only the page's active pane, the one its active instance is in, draws its strip
-    // focused, so the accent over a shown tab says where the rail opens a view.
+    // opener. The one pane the rail's next view would open into draws its strip focused, and it is
+    // the active pane of the page the reader is in, so one pane strip in the window carries the
+    // accent and that tab is where a view will land. The page strip's own accent is a different
+    // mark, on a different strip: it says which page is shown, not where a view opens.
     // The split button is the pointer's shortcut to an item the menu already holds, so it takes no
     // stop of its own and the pane's stops stay the strip and the menu.
 
@@ -49,7 +51,6 @@
     const {
         layout: {
             activateInstance,
-            activeInstance,
             closeInstance,
             closePane,
             currentPage,
@@ -60,6 +61,7 @@
             layout,
             maximisePane,
             moveInstanceToPage,
+            openingInstance,
             pages,
             restorePanes,
             splitInstance,
@@ -92,8 +94,8 @@
     const shown = $derived(instances.find((instance) => instance.id === active));
     const registration = $derived(shown === undefined ? undefined : viewFor(shown.view));
     const maximised = $derived(focused(page) !== null);
-    /** Whether this is the page's active pane, the one whose shown tab the page resolves as active. */
-    const activePane = $derived(active !== '' && activeInstance(page)?.id === active);
+    /** Whether this is the pane the rail's next view opens into: the one holding the instance it joins. */
+    const activePane = $derived(active !== '' && openingInstance()?.id === active);
 
     // What the mounted view and its partials read as the instance they are drawn in. It is a reader
     // of the active tab rather than its id at mount, since a tab switch between two instances of one

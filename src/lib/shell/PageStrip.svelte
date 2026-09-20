@@ -13,6 +13,10 @@
     // panes fill, at the strip's low height and on the card surface. A page holding a tab with text
     // no save has taken shows the unsaved dot and name, since closing the page would lose that text.
     //
+    // The strip spans the whole width above the panes, so what it opens is drawn over them: where a
+    // blurred surface makes every strip its own stacking context, this one carries the depth that
+    // puts its list above the strips of the panes underneath.
+    //
     // A page dragged within the strip is reordered here. One carried out of the strip becomes the
     // drag store's, which is what every pane reports a drop for, so it lands on a pane's edge and is
     // shown there.
@@ -336,6 +340,14 @@
         flex: 0 0 auto;
         min-width: 0;
         box-sizing: border-box;
+    }
+
+    /* Over a wallpaper the pane strips blur and take a depth of their own, and one of them is drawn
+       after this strip, so the page menu's list would be under it. This strip takes the depth above
+       them, and stays under the rail at 5 and the drag layer at 10. */
+    :global(body.wall) .strip {
+        position: relative;
+        z-index: 2;
     }
 
     .strip > :global(*) {

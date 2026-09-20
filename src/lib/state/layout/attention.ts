@@ -19,6 +19,13 @@ import { showsPage } from './nested.ts';
  */
 export type Beside = { made: string; from: string | null };
 
+/**
+ * The page of the pane the reader last acted in, as one cell the caller owns. The factory hands in
+ * a cell of its own so that what is drawn from where the reader is redraws when a press moves it;
+ * a caller that draws nothing from it takes the cell below and never sees the difference.
+ */
+export type Touched = { page: string | null };
+
 export type Attention = {
     /** The instance activated last on a page. */
     active: (page?: string) => string | null;
@@ -44,15 +51,12 @@ export type Attention = {
     besidePath: (tree: Layout, page: string) => number[] | null;
 };
 
-export function createAttention(access: LayoutAccess): Attention {
+export function createAttention(access: LayoutAccess, where: Touched = { page: null }): Attention {
     /**
      * The instance activated last on each page, which is what makes one of its panes the active one,
      * keyed by page id so returning to a page finds the pane it was left on.
      */
     const lastActive: Record<string, string | null> = {};
-
-    /** The page of the pane the reader last acted in, or null when none has been acted in yet. */
-    let lastTouched: string | null = null;
 
     /** The pane the last openBeside made on each page, keyed by page id. */
     const lastBeside = new Map<string, Beside>();
@@ -75,7 +79,7 @@ export function createAttention(access: LayoutAccess): Attention {
      */
     function touched(): Page {
         const current = access.currentPage();
-        const held = lastTouched === null ? null : access.pageOf(lastTouched);
+        const held = where.page === null ? null : access.pageOf(where.page);
         if (held === null) return current;
         // A page the screen no longer draws is not where the reader is, whatever was pressed last.
         return showsPage(access.held().pages, current.id, held.id) || held.id === current.id
@@ -85,17 +89,17 @@ export function createAttention(access: LayoutAccess): Attention {
 
     /** The reader acted in a pane of this page. It is not saved: a load starts from the strip. */
     function touchPane(page: string): void {
-        if (access.pageOf(page) !== null) lastTouched = page;
+        if (access.pageOf(page) !== null) where.page = page;
     }
 
     function forgetTouched(): void {
-        lastTouched = null;
+        where.page = null;
     }
 
     /** Forget the pane last acted in unless it is on this page: what hid the rest hid it too. */
     function forgetTouchedOutside(page: string | undefined): void {
         const id = access.at(page)?.id;
-        if (lastTouched !== null && lastTouched !== id) lastTouched = null;
+        if (where.page !== null && where.page !== id) where.page = null;
     }
 
     function forgetPage(id: string): void {

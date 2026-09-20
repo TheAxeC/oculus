@@ -1,7 +1,7 @@
 // Layer 3, view helper tests. The button a Focus ticker row keeps drawn while its other buttons
 // wait for the pointer: a subtask's and a follow-up's done, a task entry's `done` status, and none
-// on any other row (an event, an application, a project, a lead). The builder
-// answers it by the row's own id, and the id still finds its line.
+// on any other row (an event, an application, a project, a lead). The builder answers it by the
+// row's own id, the id still finds its line, and a target keeps that id when earlier rows leave.
 //
 // What this does NOT cover: the buttons shown under the pointer or the keyboard, which need a page
 // and are tests/browser/cards.spec.ts.
@@ -44,6 +44,21 @@ describe('the button a row keeps drawn', () => {
         expect(one.id).not.toBe(two.id);
         expect(index[one.id]).toBe(subtask);
         expect(two.plain).toBe(true);
+    });
+
+    it('audits that a target row keeps its id when an earlier row leaves the list', () => {
+        const first = line({ target: { kind: 'manifest', id: 'first' } });
+        const second = line({ target: { kind: 'manifest', id: 'second' } });
+        const before = rowMaker('r');
+        const firstId = before.row(first, '').id;
+        const secondId = before.row(second, '').id;
+        const after = rowMaker('r');
+
+        // revert: src/lib/views/focus/rows.ts:160 => const identity = String(at++);
+        // Number rows by their current place and the second line inherits the removed first line's
+        // id instead of keeping its own.
+        expect(after.row(second, '').id).toBe(secondId);
+        expect(secondId).not.toBe(firstId);
     });
 
     // Revert: keep an entry's first status the palette marks terminal, as the kept button.

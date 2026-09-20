@@ -13,6 +13,7 @@ import { render } from 'svelte/server';
 import Repositories from '../../src/lib/views/Repositories.svelte';
 import Diff from '../../src/lib/views/repositories/Diff.svelte';
 import Repo from '../../src/lib/views/repositories/Repo.svelte';
+import { shapeBadgeTone } from '../../src/lib/views/shared/repo-shape.ts';
 import type { GitState } from '../../src/lib/data/model.ts';
 import {
     engineDir,
@@ -147,6 +148,16 @@ function group(body: string, id: string): string {
 }
 
 describe('the Repositories view', () => {
+    it('maps each repository picker status to its own tone and a readable repository to none', () => {
+        // revert: src/lib/views/shared/repo-shape.ts:51 => if (shape === 'missing') return 'blue';
+        expect([
+            shapeBadgeTone('missing'),
+            shapeBadgeTone('failed'),
+            shapeBadgeTone('none'),
+            shapeBadgeTone('readable')
+        ]).toEqual(['red', 'amber', 'blue', undefined]);
+    });
+
     it('says nothing is on the channel before the first payload', () => {
         const body = render(Repositories, {
             context: clientContext(client),
