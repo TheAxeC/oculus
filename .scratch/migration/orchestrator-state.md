@@ -29,11 +29,11 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # landed today: Q37 12:06, Q31 12:46, Q39 12:57, Q32 13:26, Q30 14:28, Q42 15:04, Q34 16:20, Q43 16:36, Q44 17:05; Q45 18:50, Q41 19:01, D22 19:37, Q38 21:08, Q46 22:26, Q47 22:40, Q48 03:43, Q49 05:31, Q50 06:25, Q51 06:48, R14 10:44, Q52 12:09, Q54 12:19; in flight: Q53 from 99ea1b96, Q56 from 521c938c and Q36 from 2ddd4a8b; next to dispatch: Q58, which waits for Q56 because both write src/lib/views/Files.svelte and a step is never split to avoid the wait; briefs written and waiting: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36; next: Q50, Q51, Q52, Q53, Q54, Q56, Q58, Q59, Q36, O31, Q35; PAUSE ASKED FOR 2026-09-18 12:48 (Axel: pause once the current three steps are done). It binds now: Q53, Q56 and Q36 are carried through their rounds, their reviews and their landings, and then the loop stops. No step is dispatched after them, Q58 included, and the pause holds until Axel lifts it in words. The three steps in flight rule stood from 2026-09-17 10:46 until this; then D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2
+dispatch:                                  # resumed 2026-09-20; in flight: Q53 round 1 continuation from 99ea1b96, Q56 fresh review from 521c938c and Q36 round 1 continuation from 2ddd4a8b; next to dispatch after a landing: Q58, then Q59, O31 and Q35; the later queue continues with D11 + D13 + D14, D15 + D17 + D18, D20 + M3, M4, then R2, O29, O30 and X2
 - package: Q53
-  status: PARKED BY THE PAUSE, builder stopped partway through round 1  # stopped by Axel on 2026-09-18 around 14:20; the worktree holds the build plus part of the round, uncommitted
+  status: RESUMED, continuation builder running over round 1
   executor: agent
-  worker: claude:opus
+  worker: codex:gpt-5.6-sol                    # continuation worker selected by the resumed Codex orchestrator
   worktree: .agents/worktrees/q53          # full sparse set of the configuration block; 12 files uncommitted
   base: 99ea1b96                            # five landings behind main (Q52, Q54 and the ledger since), so the cherry-pick will conflict
   launched: 2026-09-18T08:11
@@ -41,26 +41,26 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   review: tools/oculus/.scratch/migration/agents/reviews/Q53-refuter.md  # reviewer launched 10:45, returned 11:33
   round: 1                                  # eight items, written out verbatim in agents/reviews/Q53-round1.md: six rulings sent 11:34, the green Ticker.svelte:231 revert directive sent 12:16, Axel's badge tones sent 12:35
   round_report: none                        # the builder was stopped before it reported
-  session_id: ab66a4e0d269be811            # a Claude Code Agent id; it resumes only inside the session that made it
-  next: a continuation builder in the same worktree, given agents/reviews/Q53-round1.md, first says which of the eight items the worktree already holds and then finishes the rest; then a review over the round; then the landing
+  session_id: /root/q53_continuation
+  next: wait for the continuation report; then a fresh review over the round; then the landing
   landing: not-started
 - package: Q56
-  status: PARKED BY THE PAUSE, built and not reviewed                   # its reviewer was stopped a minute after launch and wrote nothing
+  status: RESUMED, fresh reviewer running over the whole diff
   executor: agent
   worker: claude:opus
   worktree: .agents/worktrees/q56          # cut to tools/oculus alone, not the configuration block's set, and cut before 972c931c, so its node suite shows three reds in the real-hub cases that main fixed; not this step's. 26 files uncommitted
   base: 521c938c
   launched: 2026-09-18T12:10
   report: tools/oculus/.scratch/migration/agents/reviews/Q56-report.md   # the build, reported 14:04
-  review: none                              # reviewer a8dc2106e7c2fea15 launched 14:05 and stopped at 14:10; no review exists
+  review: /root/q56_reviewer
   round: 0
   session_id: a0910fc1937c6860e            # a Claude Code Agent id; it resumes only inside the session that made it
-  next: a fresh review of the whole diff against the brief; then a repair round if it finds anything (a continuation builder if this id cannot be resumed); then the landing
+  next: wait for the fresh review; then a repair round if it finds anything; then the landing
   landing: not-started
 - package: Q36
-  status: PARKED BY THE PAUSE, builder stopped partway through round 1  # stopped by Axel on 2026-09-18 around 14:20; the worktree holds the build plus part of the round, uncommitted
+  status: RESUMED, continuation builder running over round 1
   executor: agent
-  worker: claude:opus
+  worker: codex:gpt-5.6-sol                    # continuation worker selected by the resumed Codex orchestrator
   worktree: .agents/worktrees/q36          # cut to tools/oculus alone, not the configuration block's set, and cut before 972c931c, so its node suite shows three reds in the real-hub cases that main fixed; not this step's. 1 file uncommitted (tests/server/hpc/ssh.test.ts)
   base: 2ddd4a8b
   launched: 2026-09-18T12:30
@@ -68,8 +68,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
   review: tools/oculus/.scratch/migration/agents/reviews/Q36-refuter.md  # reviewer launched 13:06, returned 13:40
   round: 1                                  # six rulings, written out verbatim in agents/reviews/Q36-round1.md, sent 13:41
   round_report: none                        # the builder was stopped before it reported
-  session_id: a8198e29299849f65            # a Claude Code Agent id; it resumes only inside the session that made it
-  next: a continuation builder in the same worktree, given agents/reviews/Q36-round1.md, first says which of the six rulings the worktree already holds and then finishes the rest; then a review over the round; then the landing
+  session_id: /root/q36_continuation
+  next: wait for the continuation report; then a fresh review over the round; then the landing
   landing: not-started
 ```
 
@@ -103,6 +103,8 @@ dispatch:                                  # landed today: Q37 12:06, Q31 12:46,
 - `plan.md` stays lean (Axel, 2026-09-13, after two rounds of bloat): a package line is one sentence, the decision, its date and the pointer to its brief, at most 400 characters; a ruling line the same; every explanation, rationale, line number, premise and landing detail lives in the brief or in this file's landing notes, never in `plan.md`. Before any commit that touches `plan.md`: `awk 'length > 400' tools/oculus/.scratch/migration/plan.md` must print nothing but the header paragraph. And not one piece of information may be lost by shortening (Axel, 2026-09-13 22:10): when a `plan.md` line is shortened or rewritten, its previous text is first appended whole to the package's `agents/briefs/<package>.md` (a ruling's or a note's to the section "Rulings in full" below), and the commit that shortens it carries both; a line whose previous text is not in a file of this ledger is not shortened. The check: every line of the committed `plan.md` before the change is found verbatim in the ledger after it.
 
 ## The pause
+
+Lifted 2026-09-20 by Axel's `/plan-orchestration oculus/migration` instruction. Q53 and Q36 resume through continuation builders in their existing worktrees, Q56 resumes at its fresh review, and the rolling queue continues after their landings.
 
 Axel, 2026-09-18: no more runs. Both of these hold, and neither gives way to the other:
 
