@@ -42,8 +42,8 @@ dispatch:                                  # finish-and-pause run of 2026-09-20;
   round: 1                                  # eight items, written out verbatim in agents/reviews/Q53-round1.md: six rulings sent 11:34, the green Ticker.svelte:231 revert directive sent 12:16, Axel's badge tones sent 12:35
   round_report: none                        # the builder was stopped before it reported
   session_id: 01a0be7b-bf44-7681-81e1-c99cd9f36f2c
-  exec_session: 11170
-  next: continuation builder completes the repository badge tones and serialized node and shimmed browser proofs; then a fresh review over the round; then the landing
+  exec_session: 94503
+  next: continuation builder completes the repository badge tones and non-browser proofs; the orchestrator uses a separate headless-shell binary for browser proofs; then a fresh review over the round; then the landing
   landing: not-started
 - package: Q56
   status: REPAIR ROUND 1 VERIFYING in the resumed Codex continuation
@@ -58,8 +58,8 @@ dispatch:                                  # finish-and-pause run of 2026-09-20;
   round_instructions: tools/oculus/.scratch/migration/agents/reviews/Q56-round1.md
   round_report: none
   session_id: 01a0be7b-bf44-7e41-972a-29af46f251a4
-  exec_session: 137
-  next: continuation builder completes the serialized node and shimmed browser proofs; then a fresh review over the round; then the landing
+  exec_session: 67976
+  next: continuation builder completes non-browser proofs; the orchestrator uses a separate headless-shell binary for browser proofs; then a fresh review over the round; then the landing
   landing: not-started
 ```
 
