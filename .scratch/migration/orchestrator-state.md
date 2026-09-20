@@ -41,7 +41,7 @@ dispatch:                                  # resumed 2026-09-20; in flight: Q53 
   review: tools/oculus/.scratch/migration/agents/reviews/Q53-refuter.md  # reviewer launched 10:45, returned 11:33
   round: 1                                  # eight items, written out verbatim in agents/reviews/Q53-round1.md: six rulings sent 11:34, the green Ticker.svelte:231 revert directive sent 12:16, Axel's badge tones sent 12:35
   round_report: none                        # the builder was stopped before it reported
-  session_id: /root/q53_continuation
+  session_id: /root/q53_finish
   next: wait for the continuation report; then a fresh review over the round; then the landing
   landing: not-started
 - package: Q56
@@ -52,7 +52,7 @@ dispatch:                                  # resumed 2026-09-20; in flight: Q53 
   base: 521c938c
   launched: 2026-09-18T12:10
   report: tools/oculus/.scratch/migration/agents/reviews/Q56-report.md   # the build, reported 14:04
-  review: /root/q56_reviewer
+  review: /root/q36_continuation
   round: 0
   session_id: a0910fc1937c6860e            # a Claude Code Agent id; it resumes only inside the session that made it
   next: wait for the fresh review; then a repair round if it finds anything; then the landing
@@ -68,7 +68,7 @@ dispatch:                                  # resumed 2026-09-20; in flight: Q53 
   review: tools/oculus/.scratch/migration/agents/reviews/Q36-refuter.md  # reviewer launched 13:06, returned 13:40
   round: 1                                  # six rulings, written out verbatim in agents/reviews/Q36-round1.md, sent 13:41
   round_report: none                        # the builder was stopped before it reported
-  session_id: /root/q36_continuation
+  session_id: /root/q36_finish
   next: wait for the continuation report; then a fresh review over the round; then the landing
   landing: not-started
 ```
