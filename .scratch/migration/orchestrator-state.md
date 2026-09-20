@@ -45,17 +45,19 @@ dispatch:                                  # resumed 2026-09-20; in flight: Q53 
   next: wait for the continuation report; then a fresh review over the round; then the landing
   landing: not-started
 - package: Q56
-  status: RESUMED, fresh reviewer running over the whole diff
+  status: REPAIR ROUND 1 READY, expanded worktree and five findings recorded
   executor: agent
   worker: claude:opus
   worktree: .agents/worktrees/q56          # cut to tools/oculus alone, not the configuration block's set, and cut before 972c931c, so its node suite shows three reds in the real-hub cases that main fixed; not this step's. 26 files uncommitted
   base: 521c938c
   launched: 2026-09-18T12:10
   report: tools/oculus/.scratch/migration/agents/reviews/Q56-report.md   # the build, reported 14:04
-  review: /root/q36_continuation
-  round: 0
+  review: tools/oculus/.scratch/migration/agents/reviews/Q56-refuter.md
+  round: 1
+  round_instructions: tools/oculus/.scratch/migration/agents/reviews/Q56-round1.md
+  round_report: none
   session_id: a0910fc1937c6860e            # a Claude Code Agent id; it resumes only inside the session that made it
-  next: wait for the fresh review; then a repair round if it finds anything; then the landing
+  next: continuation builder closes all five findings; then a fresh review over the round; then the landing
   landing: not-started
 - package: Q36
   status: RESUMED, continuation builder running over round 1
