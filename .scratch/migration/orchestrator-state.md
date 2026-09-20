@@ -46,7 +46,7 @@ dispatch:                                  # finish-and-pause run of 2026-09-20;
   next: wait for the continuation report; then a fresh review over the round; then the landing
   landing: not-started
 - package: Q56
-  status: REPAIR ROUND 1 RUNNING in a detached Codex continuation
+  status: REPAIR ROUND 1 VERIFYING in the resumed Codex continuation
   executor: agent
   worker: claude:opus
   worktree: .agents/worktrees/q56          # cut to tools/oculus alone, not the configuration block's set, and cut before 972c931c, so its node suite shows three reds in the real-hub cases that main fixed; not this step's. 26 files uncommitted
@@ -58,8 +58,8 @@ dispatch:                                  # finish-and-pause run of 2026-09-20;
   round_instructions: tools/oculus/.scratch/migration/agents/reviews/Q56-round1.md
   round_report: none
   session_id: 01a0be7b-bf44-7e41-972a-29af46f251a4
-  exec_session: 91605
-  next: continuation builder closes all five findings; then a fresh review over the round; then the landing
+  exec_session: 137
+  next: continuation builder completes the serialized node and shimmed browser proofs; then a fresh review over the round; then the landing
   landing: not-started
 ```
 
