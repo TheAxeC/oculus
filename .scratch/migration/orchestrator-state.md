@@ -41,9 +41,8 @@ dispatch:                                  # resumed 2026-09-20; in flight: Q53 
   review: tools/oculus/.scratch/migration/agents/reviews/Q53-refuter.md  # reviewer launched 10:45, returned 11:33
   round: 1                                  # eight items, written out verbatim in agents/reviews/Q53-round1.md: six rulings sent 11:34, the green Ticker.svelte:231 revert directive sent 12:16, Axel's badge tones sent 12:35
   round_report: none                        # the builder was stopped before it reported
-  session_id: pending in /private/tmp/q53-cli-events.jsonl
-  pid_file: /private/tmp/q53-cli-pid
-  exit_file: /private/tmp/q53-cli-exit
+  session_id: 01a0be7b-bf44-7681-81e1-c99cd9f36f2c
+  exec_session: 56267
   next: wait for the continuation report; then a fresh review over the round; then the landing
   landing: not-started
 - package: Q56
@@ -58,9 +57,8 @@ dispatch:                                  # resumed 2026-09-20; in flight: Q53 
   round: 1
   round_instructions: tools/oculus/.scratch/migration/agents/reviews/Q56-round1.md
   round_report: none
-  session_id: pending in /private/tmp/q56-cli-events.jsonl
-  pid_file: /private/tmp/q56-cli-pid
-  exit_file: /private/tmp/q56-cli-exit
+  session_id: 01a0be7b-bf44-7e41-972a-29af46f251a4
+  exec_session: 91605
   next: continuation builder closes all five findings; then a fresh review over the round; then the landing
   landing: not-started
 - package: Q36
@@ -75,6 +73,8 @@ dispatch:                                  # resumed 2026-09-20; in flight: Q53 
   round: 1                                  # six rulings, written out verbatim in agents/reviews/Q36-round1.md, sent 13:41
   round_report: none                        # the builder was stopped before it reported
   session_id: /root/q36_finish
+  round_review_session: 01a0be7d-621c-72f1-8379-f868ec3bc3ff
+  round_review_exec_session: 63698
   next: wait for the continuation report; then a fresh review over the round; then the landing
   landing: not-started
 ```
