@@ -13,7 +13,8 @@
 // a byte stream, where an overwritten message is output the terminal never shows again. A channel
 // may therefore name how two of its messages combine, which is what the `pty:` channels do:
 // their held chunk and the next one are concatenated rather than replaced, so a page that falls
-// behind sees every byte, late, rather than a hole.
+// behind sees every byte, late, rather than a hole. The `files` channel also registers a merge: its
+// newest root and its bookmark-change marker are independent facts in one payload.
 
 import type { Message } from '../data/model.ts';
 

@@ -28,9 +28,11 @@ import { watchMail, type MailOptions, type MailWatcher } from './mail/poll.ts';
 import { macOpenAddress, macOpenPath, type Opener, type PathOpener } from './open.ts';
 import { docFindings, layoutFile } from './docs.ts';
 import { Hub } from './channels.ts';
+import { registerFilesChannel } from './files-channel.ts';
 import { RateLimiter, notifyConfig, type HookTarget } from './hooks.ts';
 import type { LogPaths } from './hpc/actions.ts';
 import type { Plan } from './deposit.ts';
+import { defaultBookmarksPath } from './fs/bookmarks.ts';
 import { defaultWorkspacesPath, fsWrites, type FsWrites } from './fs.ts';
 import { memoriesMemory, type MemoriesMemory } from './memories.ts';
 import { repositoryRoots } from './roots.ts';
@@ -42,6 +44,7 @@ import { HookStore, sessionRecord } from './sessions/hooks.ts';
 import type { ProjectFolder } from './sessions/group.ts';
 import { watchUsageRefresh, type UsageRefreshWatcher } from './usage/refresh.ts';
 import { watchUsage, type UsageWatcher } from './usage/watch.ts';
+import { watchBookmarks, type BookmarksWatchOptions } from './watch/bookmarks.ts';
 import { watchGit, type GitWatcher, type GitWatchOptions } from './watch/git.ts';
 import { watchPortfolio, type Watcher } from './watch/portfolio.ts';
 import { watchSessions } from './watch/sessions.ts';
@@ -116,6 +119,7 @@ export type ContextDependencies = {
     ) => Watcher;
     watchSessions: typeof watchSessions;
     watchGit: (hub: Hub, options: GitWatchOptions) => GitWatcher;
+    watchBookmarks: (hub: Hub, options: BookmarksWatchOptions) => Watcher;
     watchHpc: (hub: Hub, options: HpcOptions) => HpcWatcher;
     watchCalendar: (hub: Hub, options: CalendarOptions) => CalendarWatcher;
     watchMail: (hub: Hub, options: MailOptions) => MailWatcher;
@@ -132,6 +136,7 @@ const dependencies: ContextDependencies = {
     watchPortfolio,
     watchSessions,
     watchGit: (hub, options) => watchGit(hub, options),
+    watchBookmarks,
     watchHpc,
     watchCalendar,
     watchMail,
@@ -157,6 +162,7 @@ export function createServerContext(
     requirePaintLimit(config);
     openSettings(config);
     const hub = make.createHub();
+    registerFilesChannel(hub);
     const terminals = make.createTerminals(hub);
     const token = make.mintToken();
     const store = new HookStore();
@@ -215,6 +221,11 @@ export function createServerContext(
         always: local.hub,
         roots: () => repositoryRoots({ config: make.loadConfig(engine).config, engine, local }),
         workspacesFile
+    });
+    // The reader's own bookmarks lie under no root, so the git watcher's handles say nothing about
+    // them: this one carries a bookmark written outside oculus to every open page.
+    const bookmarks = make.watchBookmarks(hub, {
+        file: local.bookmarks ?? defaultBookmarksPath()
     });
     // One map, two writers: the log action writes what a press resolved, the watcher's prewarm what
     // it resolved behind the page, and neither replaces the other's answer.
@@ -283,6 +294,7 @@ export function createServerContext(
             mail.close();
             calendar.close();
             hpc.close();
+            bookmarks.close();
             git.close();
             usage.close();
             sessions.close();

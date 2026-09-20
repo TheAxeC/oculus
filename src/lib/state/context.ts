@@ -135,26 +135,31 @@ export function createClientState(): ClientState {
     // The file browser's bookmark forms are the fs store's to close: it is what learns that a
     // bookmark has left the file, and a form over one that is gone has nothing to draw and nothing to
     // save into. Which file browsers there are, what each one has open and how one is moved are the
-    // layout's, the ui store's and the form drafts' and are handed to it here.
-    const fs = createFs(writes, {
-        browsers: () =>
-            layout
-                .pages()
-                .flatMap((page) => tabsOf(page.workbench.root))
-                .filter((tab) => tab.view === FILES_VIEW)
-                .map((tab) => ({ id: tab.id, forms: filesViewOf(ui.instanceState(tab.id)) })),
-        saving: (owner: string, editing: string) =>
-            formDrafts.formsSaving(owner).includes(formKey(BOOKMARK_COLLECTION, editing)),
-        shift: (owner: string, now: FilesForms, next: FilesForms) => {
-            const left = bookmarkLeft(now, next);
-            if (left !== null && left.editing === '') {
-                formDrafts.toggleAdd(owner, BOOKMARK_COLLECTION, true);
-            } else if (left !== null) {
-                formDrafts.toggleEdit(owner, BOOKMARK_COLLECTION, left.editing, next.editing);
+    // layout's, the ui store's and the form drafts' and are handed to it here. The entities store is
+    // handed to it for the `files` channel, which is what says the bookmarks file changed on disk.
+    const fs = createFs(
+        writes,
+        {
+            browsers: () =>
+                layout
+                    .pages()
+                    .flatMap((page) => tabsOf(page.workbench.root))
+                    .filter((tab) => tab.view === FILES_VIEW)
+                    .map((tab) => ({ id: tab.id, forms: filesViewOf(ui.instanceState(tab.id)) })),
+            saving: (owner: string, editing: string) =>
+                formDrafts.formsSaving(owner).includes(formKey(BOOKMARK_COLLECTION, editing)),
+            shift: (owner: string, now: FilesForms, next: FilesForms) => {
+                const left = bookmarkLeft(now, next);
+                if (left !== null && left.editing === '') {
+                    formDrafts.toggleAdd(owner, BOOKMARK_COLLECTION, true);
+                } else if (left !== null) {
+                    formDrafts.toggleEdit(owner, BOOKMARK_COLLECTION, left.editing, next.editing);
+                }
+                ui.setInstanceState(owner, patchedFilesView(ui.instanceState(owner), next));
             }
-            ui.setInstanceState(owner, patchedFilesView(ui.instanceState(owner), next));
-        }
-    });
+        },
+        entities
+    );
     const docs = createDocs(entities);
     const latex = createLatex(entities, terminals, fs);
     const deposit = createDeposit();

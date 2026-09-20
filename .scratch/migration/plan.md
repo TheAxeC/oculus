@@ -141,7 +141,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 - ✅ Q52 the two git views tell one story, the picker over every root (Axel 2026-09-18 08:15; brief `agents/briefs/Q52.md`; reviews `agents/reviews/Q52-refuter.md`, `Q52-refuter3.md`; landing `agents/reviews/Q52-landing.md`); landed 2026-09-18 12:09
 - ✅ Q53 the shell's drawing defects: the accent line over pane strips, the pane menu under a wallpaper, a tap on a hybrid device, and the picker badge tones (Axel 2026-09-18; brief `agents/briefs/Q53.md`; review `agents/reviews/Q53-refuter.md`; landing `agents/reviews/Q53-landing.md`); landed 2026-09-20
 - ✅ Q54 `src/lib/ui/Tabs.svelte` split by concern, 596 lines to 362 with `ui/TabFace.svelte` (brief `agents/briefs/Q54.md`; review `agents/reviews/Q54-refuter.md`; landing `agents/reviews/Q54-landing.md`); landed 2026-09-18 12:19
-- Q56 the Files view asks again after a read that failed, and the bookmarks file is watched (seen 2026-09-17 on the TEST page; brief `agents/briefs/Q56.md`; report `agents/reviews/Q56-report.md`)
+- ✅ Q56 the Files view asks again after a read that failed, and the bookmarks file is watched (seen 2026-09-17 on the TEST page; brief `agents/briefs/Q56.md`; review `agents/reviews/Q56-refuter.md`; landing `agents/reviews/Q56-landing.md`); landed 2026-09-20
 - ✅ R14 the eleven checks of the recurring-findings pass of 2026-09-17 (brief `agents/briefs/R14.md`; review `agents/reviews/R14-refuter.md`; landing `agents/reviews/R14-landing.md`); landed 2026-09-18 10:44
 - Q58 the files over the size line split by concern, with the four Q56 pushes over it (brief `agents/briefs/Q58.md`)
 - Q59 every outstanding finding of the recurring pass and the closure audit, closed in one step (brief `agents/briefs/Q59.md`, which holds the list whole)
@@ -202,7 +202,7 @@ One line per package: the status mark, the id, the title, and where the rest is 
 ## Could run in parallel
 
 - The feature stretch after R17, three in flight at all times (Axel 2026-09-14 17:50 for three at a time; 2026-09-15 19:58 for the rolling window: one new package dispatched at each landing, cut at main's head, its paths checked against the two still running). Alone by nature: Q18, R10, R13a, R13b, K1, R17, L1, L2 before it; R2, O29, O30, X2 after it.
-- The queue, in order: paused 2026-09-18 by Axel (the pause is in `orchestrator-state.md`); Q53, Q56 and Q36 parked; then Q58, Q59, O31; Q35; D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2 last.
+- The queue, in order: Q58, Q59, O31; Q35; D11 + D13 + D14; D15 + D17 + D18; D20 + M3; M4; then R2, O29, O30, X2 last.
 Independent of each other; two may run side by side under R9's rule when their briefs name disjoint paths and different views, else they run one at a time.
 - S1 with anything after R1.
 - O5 with O2 to O4.

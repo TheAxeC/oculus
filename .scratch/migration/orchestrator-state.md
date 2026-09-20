@@ -29,24 +29,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch:                                  # finish-and-pause run of 2026-09-20; Q36 and Q53 landed; Q56 is next; no later step is dispatched
-- package: Q56
-  status: ready for repository landing
-  executor: agent
-  worker: claude:opus
-  worktree: .agents/worktrees/q56          # clean at c78b934c; f4bd595d is the package commit and c78b934c is its merge commit
-  base: 521c938c
-  launched: 2026-09-18T12:10
-  report: tools/oculus/.scratch/migration/agents/reviews/Q56-report.md   # the build, reported 14:04
-  review: tools/oculus/.scratch/migration/agents/reviews/Q56-refuter.md
-  round: 1
-  round_instructions: tools/oculus/.scratch/migration/agents/reviews/Q56-round1.md
-  round_report: /private/tmp/q56-nonbrowser-final.md
-  session_id: 01a0be7b-bf44-7e41-972a-29af46f251a4
-  exec_session: 67976
-  round_review: tools/oculus/.scratch/migration/agents/reviews/Q56-round1-refuter.md
-  next: cherry-pick f4bd595d without its merge commit; run every main gate including the browser suite; look at Files on TEST; book, commit and remove the worktree
-  landing: next
+dispatch: []                               # Q36, Q53 and Q56 landed; Axel asked to pause after them; no later step is dispatched
 ```
 
 ## The standing demands (from Axel, in force)
@@ -265,7 +248,7 @@ Until O1 lands there is no oculus toolchain; the cockpit's commands are the gate
 
 ## Current position (rewrite at every package)
 
-- 2026-09-20. Q36 and Q53 landed. Q53 passed 4,380 node tests, type checking, build, format, lint, the ASCII gate, nine revert checks and 269 isolated browser cases on main; its native Chrome look on TEST covered Focus, Repositories, the pane menu and gruvbox wallpaper layering. Q56 is next for its repository landing. No later step is dispatched. Nothing waits on Axel's ruling.
+- 2026-09-20. Q36, Q53 and Q56 landed. Q56 passed 4,395 node tests, type checking, build, format, lint, the ASCII and YAML gates, 24 revert checks and 271 isolated browser cases on main. Its native Chrome look on TEST showed the four roots, empty Bookmarks and Notes sections, Configured roots, and clean alignment with no overlap or clipping. No later step is dispatched. The plan is paused. Nothing waits on Axel's ruling.
 
 - 2026-09-10. C1 to C13, R1 and O0 are done and committed: fc6d299 (C12 and C13, one commit because H1 and H2 both touched eight of the same files) and f8af492 (R1 and O0). Working tree clean after both.
 - Verified before fc6d299: `python3 build.py --selftest` PASS, `python3 build.py --dummy` builds, `bash tests/run.sh` PASS (5 + 29 + 24 + 19 Python tests, 11 JS modules). `grep -rn os.environ tools/cockpit/src tools/cockpit/build.py` finds only the `ANTHROPIC_API_KEY` read. The 8787 server answers 200 with zero `COCKPIT_` variables in its environment.
@@ -542,6 +525,7 @@ No night log is running. Nothing has been left for Axel to read here.
 - Q36, round reviewer codex:gpt-5.6-sol at high effort, thread `01a0be7f-b693-7fd2-8f2f-a8b5c8191705`: exact token accounting unavailable; one material stale-pid finding reproduced five times and closed at landing.
 - Q36, orchestrator codex:gpt-6-astra: usage not measured separately; shared with the active Q53 and Q56 continuations.
 - Q53, orchestrator codex:gpt-6-astra at high effort: 1,073,875 fresh input tokens, 79,930,752 cached input tokens, 124,277 output tokens, 583 messages and 435 minutes from the preceding landing through the Q53 booking; one landing integration fix and one browser test correction.
+- Q56, orchestrator codex:gpt-6-astra at high effort: 237,804 fresh input tokens, 8,231,936 cached input tokens, 9,234 output tokens, 68 messages and 20 minutes from the Q53 commit through the Q56 booking; no source fix at landing.
 
 Per package, one row per run: the harness, model and effort; tokens in / cached / out; completed items; seconds; lines added and removed; whether the first report passed its bar; repair rounds; fixes at landing; the orchestrator's own minutes. The orchestrator's own tokens are summed from its session transcript between the package's start and its commit.
 - O24a, worker codex:gpt-5.6-sol at high, first run: 12,514,280 in / 12,215,168 cached / 54,364 out (16,778 reasoning), 107 items, 1,567 s (20:00:09 to 20:26:16); repair round on the same thread: 18,334,572 in / 17,903,616 cached / 78,631 out (27,018 reasoning), 63 items, 710 s; +3,043 -932 over 39 files (the wip commit, landing fixes included); first report passed its bar: no; 1 repair round (7 items); 7 fixes at landing.

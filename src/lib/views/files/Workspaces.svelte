@@ -8,8 +8,15 @@
     // roots and whatever the reader added without saving, which is exactly what a cleared field
     // means everywhere else in this tree, so its row carries the words for it instead. The section is
     // one stop of the focus order through ui/TreeView.svelte.
+    //
+    // The head is drawn in every state, since it is where the roots in force are saved: a read that
+    // failed says why in one row in place of the list, with the control that reads it again beside
+    // it, so the reader is never offered the configured roots as the whole truth about a read that
+    // never landed. That read is the roots' as well, so the view says above the tree that the roots
+    // could not be read, and this control asks again for both.
 
     import { workspaceChoices } from '$lib/state/fs';
+    import Failed from './Failed.svelte';
     import TreeItem from '$lib/ui/TreeItem.svelte';
     import TreeSection from '$lib/ui/TreeSection.svelte';
     import TreeView from '$lib/ui/TreeView.svelte';
@@ -20,6 +27,8 @@
     type Props = {
         current: string;
         names: string[];
+        /** What reading the workspaces failed with, or the empty string. */
+        error: string;
         /** Whether the section is open. */
         open: boolean;
         /** Whether the form that names a workspace is open. */
@@ -27,11 +36,14 @@
         ontoggle: () => void;
         onsave: () => void;
         onselect: (name: string) => void;
+        /** Ask for the workspaces again, which the failed line's own control offers. */
+        onretry: () => void;
     };
 
-    let { current, names, open, saving, ontoggle, onsave, onselect }: Props = $props();
+    let { current, names, error, open, saving, ontoggle, onsave, onselect, onretry }: Props =
+        $props();
 
-    const rows = $derived(workspaceChoices(names));
+    const rows = $derived(error === '' ? workspaceChoices(names) : []);
 
     const keyRows = $derived([
         { id: 'head', parent: null, open },
@@ -65,6 +77,15 @@
                         onclick={onsave}
                     />
                 {/snippet}
+                {#if error !== ''}
+                    <li role="none">
+                        <Failed
+                            label={t('files.workspaces_failed', error)}
+                            title={t('files.read_again_workspaces')}
+                            {onretry}
+                        />
+                    </li>
+                {/if}
                 {#each rows as name (name)}
                     <li role="none" data-fs-workspace={name}>
                         <TreeItem

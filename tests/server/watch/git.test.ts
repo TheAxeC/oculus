@@ -15,7 +15,6 @@ import { spawnSync } from 'node:child_process';
 import { byKey } from '../../../src/lib/data/guards.ts';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { Hub } from '../../../src/lib/server/channels.ts';
-import type { Sink } from '../../../src/lib/server/channels.ts';
 import { IGNORED, relevant, rootsOf, watchGit } from '../../../src/lib/server/watch/git.ts';
 import type { Clock } from '../../../src/lib/server/watch/git.ts';
 import type { Watcher } from '../../../src/lib/server/watch/portfolio.ts';
@@ -25,6 +24,7 @@ import type {
     Message,
     SessionsPayload
 } from '../../../src/lib/data/model.ts';
+import { recording } from './probe.ts';
 import { noop } from '../../doubles.ts';
 import { scratchDir, sweepScratch } from '../../scratch.ts';
 
@@ -209,20 +209,6 @@ async function arming(root: string, clock: Manual): Promise<void> {
         await until(() => clock.pending() > 0, 2500);
     }
     expect(clock.pending()).toBeGreaterThan(0);
-}
-
-function recording(): { sink: Sink; got: Message[] } {
-    const got: Message[] = [];
-    return {
-        got,
-        sink: {
-            send: (text: string) => {
-                got.push(JSON.parse(text) as Message);
-                return Promise.resolve();
-            },
-            close: noop
-        }
-    };
 }
 
 /** A sessions payload naming the given roots, which is all of one this watcher reads. */

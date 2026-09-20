@@ -122,7 +122,7 @@ describe('the file browser as a tab', () => {
 describe('the control that opens a note', () => {
     const source = readFileSync('src/lib/views/Files.svelte', 'utf8');
 
-    it('opens the tab and writes no file, so a note nothing was typed into leaves nothing', () => {
+    it('audits that opening the tab writes no file, so an untouched note leaves nothing', () => {
         const from = source.slice(source.indexOf('function addNote('));
         const body = from.slice(0, from.indexOf('\n    }'));
 
@@ -262,11 +262,13 @@ describe('the workspaces section', () => {
             props: {
                 current: 'thesis',
                 names: ['', 'thesis', 'grant'],
+                error: '',
                 open: true,
                 saving: false,
                 ontoggle: noop,
                 onsave: noop,
-                onselect: noop
+                onselect: noop,
+                onretry: noop
             }
         });
 
@@ -282,6 +284,54 @@ describe('the workspaces section', () => {
         expect(body).not.toContain('aria-selected="true"');
     });
 
+    // revert: src/lib/views/files/Workspaces.svelte:80 => {#if false}
+    it('says why the workspaces could not be read, with the control that reads them again', () => {
+        const { body } = render(Workspaces, {
+            context: clientContext(client),
+            props: {
+                current: '',
+                names: [],
+                error: 'origin',
+                open: true,
+                saving: false,
+                ontoggle: noop,
+                onsave: noop,
+                onselect: noop,
+                onretry: noop
+            }
+        });
+
+        expect(body).toContain('The workspaces could not be read: origin');
+        expect(body).toContain('aria-label="read again"');
+        expect(body).toContain('Read the workspaces again');
+        // the control that saves the roots in force is drawn in every state, as the other heads are
+        expect(body).toContain('aria-label="save as"');
+    });
+
+    // revert: src/lib/views/files/Workspaces.svelte:46 => const rows = $derived(workspaceChoices(names));
+    it('draws no workspace row at all over a read that failed, not even the configured roots', () => {
+        const { body } = render(Workspaces, {
+            context: clientContext(client),
+            props: {
+                current: '',
+                names: [],
+                error: 'origin',
+                open: true,
+                saving: false,
+                ontoggle: noop,
+                onsave: noop,
+                onselect: noop,
+                onretry: noop
+            }
+        });
+
+        // the read never landed, so no workspace of this machine is offered as one it holds
+        expect(body).not.toContain('data-fs-workspace=""');
+        // the row for the roots the configuration names is a row about a read that answered
+        expect(body).not.toContain('Configured roots');
+        expect(body).toContain('>0</span>');
+    });
+
     // Revert: render the list whether or not `open` is set, in ui/TreeSection.svelte.
     it('draws the head alone while the section is closed', () => {
         const { body } = render(Workspaces, {
@@ -289,11 +339,13 @@ describe('the workspaces section', () => {
             props: {
                 current: '',
                 names: ['', 'thesis'],
+                error: '',
                 open: false,
                 saving: false,
                 ontoggle: noop,
                 onsave: noop,
-                onselect: noop
+                onselect: noop,
+                onretry: noop
             }
         });
 
@@ -663,6 +715,36 @@ describe("the reader's own bookmarks and notes", () => {
         expect(held).toContain('The notes could not be read: origin');
     });
 
+    // revert: src/lib/views/files/Failed.svelte:27 => label={t('files.bookmarks_empty')}
+    it('carries the control that reads it again on the line that says a read failed', async () => {
+        vi.stubGlobal('window', {});
+        vi.stubGlobal('fetch', (url: string) =>
+            Promise.resolve(
+                url.includes('bookmarks=1') || url.includes('notes=1')
+                    ? new Response(JSON.stringify({ error: 'origin' }), {
+                          status: 403,
+                          headers: { 'content-type': 'application/json' }
+                      })
+                    : json(ROOTS)
+            )
+        );
+        const fresh = createClientState();
+        fresh.fs.bookmarks();
+        fresh.fs.notes();
+        await settle();
+        const { body } = render(Files, {
+            context: clientContext(fresh),
+            props: { instance: instance() }
+        });
+
+        const marks = body.slice(body.indexOf('data-fs-bookmarks'), body.indexOf('data-fs-notes'));
+        const held = body.slice(body.indexOf('data-fs-notes'), body.indexOf('data-fs-workspaces'));
+        expect(marks).toContain('aria-label="read again"');
+        expect(marks).toContain('Read the bookmarks again');
+        expect(held).toContain('aria-label="read again"');
+        expect(held).toContain('Read the notes again');
+    });
+
     // Revert: give a bookmark row the bookmark's title rather than its place as its tooltip.
     it('says where each bookmark points, so two labels on one path are told apart', async () => {
         const fresh = await loaded();
@@ -677,7 +759,8 @@ describe("the reader's own bookmarks and notes", () => {
                 ontoggle: noop,
                 onadd: noop,
                 onopen: noop,
-                onedit: noop
+                onedit: noop,
+                onretry: noop
             }
         });
 
@@ -803,75 +886,5 @@ describe("the reader's own bookmarks and notes", () => {
         expect(body).toContain('aria-label="Label"');
         expect(body).toContain('aria-label="Root"');
         expect(body).toContain('aria-label="Path"');
-    });
-});
-
-describe('the outcome line of an ask to show a path', () => {
-    const catalog = textCatalog(config);
-
-    /** The file browser drawn over one saved record. */
-    function drawn(state: Record<string, unknown>): string {
-        client.ui.setInstanceState('files-one', state);
-        return render(Files, { context: clientContext(client), props: { instance: instance() } })
-            .body;
-    }
-
-    /** The words of one catalog key with its arguments filled in. */
-    function words(key: string, ...args: string[]): string {
-        return args.reduce((held, arg, at) => held.replace(`{${at}}`, arg), catalog[key]);
-    }
-
-    const asked = { root: 'hub', path: 'funding/gone/CALL.md' };
-
-    // Revert: in lineOf of views/files/ShowPath.svelte, answer '' for every outcome.
-    it('says a path is not there and names the nearest folder selected in its place', () => {
-        const body = drawn({
-            revealed: { kind: 'missing', asked, shown: { root: 'hub', path: 'funding' }, error: '' }
-        });
-        expect(body).toContain('data-fs-revealed');
-        expect(body).toContain(
-            words('files.reveal_missing', 'hub/funding/gone/CALL.md', 'hub/funding')
-        );
-    });
-
-    // Revert: in lineOf, say `reveal_missing` for an unread folder too.
-    it('says which folder on the way could not be read, and why', () => {
-        const body = drawn({
-            revealed: { kind: 'unread', asked, shown: { root: 'hub', path: '' }, error: 'EACCES' }
-        });
-        expect(body).toContain(
-            words('files.reveal_unread', 'hub/funding/gone/CALL.md', 'hub', 'EACCES')
-        );
-    });
-
-    // Revert: in lineOf, say `reveal_missing` for a root the workspace lacks.
-    it('says the workspace has no such root', () => {
-        const body = drawn({
-            revealed: {
-                kind: 'no-root',
-                asked: { root: 'gone', path: 'a' },
-                shown: null,
-                error: ''
-            }
-        });
-        expect(body).toContain(words('files.reveal_no_root', 'gone/a', 'gone'));
-    });
-
-    // Revert: in lineOf of views/files/ShowPath.svelte, drop the `no-roots` line.
-    it('says the file browser could not read its roots, and why', () => {
-        const body = drawn({
-            revealed: { kind: 'no-roots', asked, shown: null, error: 'boom' }
-        });
-        expect(body).toContain(words('files.reveal_no_roots', 'hub/funding/gone/CALL.md', 'boom'));
-    });
-
-    // Revert: in lineOf, draw a line for a `found` outcome.
-    it('draws no line for a path found as asked, or before any ask', () => {
-        expect(
-            drawn({ revealed: { kind: 'found', asked, shown: asked, error: '' } })
-            // the path was found where it was asked for, which is the outcome that needs no line
-        ).not.toContain('data-fs-revealed');
-        // and nothing was asked for yet in the second one
-        expect(drawn({})).not.toContain('data-fs-revealed');
     });
 });

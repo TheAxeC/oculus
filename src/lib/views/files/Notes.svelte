@@ -6,12 +6,14 @@
     //
     // The head is drawn in every state, since it is where a note is started: with no note the section
     // says so in one muted row, and with notes that could not be read it says why in that row
-    // instead. The section is one stop of the focus order through ui/TreeView.svelte.
+    // instead, with the control that reads them again beside it, as every other row of the tree
+    // carries its controls. The section is one stop of the focus order through ui/TreeView.svelte.
     //
     // It holds nothing of its own but which row the confirm is open for, and even that is the id
     // rather than a flag, so the dialog names the note it is about to remove.
 
     import Confirm from '$lib/ui/Confirm.svelte';
+    import Failed from './Failed.svelte';
     import TreeItem from '$lib/ui/TreeItem.svelte';
     import TreeSection from '$lib/ui/TreeSection.svelte';
     import TreeView from '$lib/ui/TreeView.svelte';
@@ -30,9 +32,11 @@
         onadd: () => void;
         onopen: (id: string) => void;
         onremove: (id: string) => void;
+        /** Ask for the notes again, which the failed line's own control offers. */
+        onretry: () => void;
     };
 
-    let { rows, error, open, ontoggle, onadd, onopen, onremove }: Props = $props();
+    let { rows, error, open, ontoggle, onadd, onopen, onremove, onretry }: Props = $props();
 
     /** The note the confirm is open for, and the empty string while it is closed. */
     let asked = $state('');
@@ -73,7 +77,11 @@
                 {/snippet}
                 {#if error !== ''}
                     <li role="none">
-                        <TreeItem label={t('files.notes_failed', error)} tone="error" />
+                        <Failed
+                            label={t('files.notes_failed', error)}
+                            title={t('files.read_again_notes')}
+                            {onretry}
+                        />
                     </li>
                 {:else if rows.length === 0}
                     <li role="none">

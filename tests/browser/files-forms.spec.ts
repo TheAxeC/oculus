@@ -388,8 +388,8 @@ test('an edit form opened from the add form is the one its Cancel closes', async
     await expect(mark('notes.md')).toHaveCount(0);
 });
 
-// revert: src/lib/state/fs.svelte.ts:667 => for (const one of forms.browsers().slice(0, 0)) {
 // Revert: in closeGoneForms of state/fs.svelte.ts, sweep no browser at all.
+// revert: src/lib/state/fs.svelte.ts:685 => for (const one of forms.browsers().slice(0, 0)) {
 test('a bookmark taken away while its typed edit form is open closes the form, and the tab closes without asking', async ({
     page
 }) => {
@@ -416,9 +416,9 @@ test('a bookmark taken away while its typed edit form is open closes the form, a
     await expect(page.getByRole('tab', { name: tabNamed(t('views.files')) })).toHaveCount(0);
 });
 
-// revert: src/lib/views/shared/EntryForm.svelte:263 => const took = (into.clear(which), true);
 // Revert: in save() of views/shared/EntryForm.svelte, clear the add form's draft and close it on
 // every answer, through into.clear(which) in place of into.taken(which, sent).
+// revert: src/lib/views/shared/EntryForm.svelte:263 => const took = (into.clear(which), true);
 test('a bookmark add form typed on while its save was out keeps the typing, open over it', async ({
     page
 }) => {
@@ -455,9 +455,9 @@ test('a bookmark add form typed on while its save was out keeps the typing, open
     await expect(page.locator('[data-fs-bookmark="notes.md"]')).toHaveCount(0);
 });
 
-// revert: src/lib/views/Files.svelte:449 => onrenamed={() => undefined}
 // Revert: in views/Files.svelte, hand the bookmark form a rename that opens nothing, so the form
 // stays over the id its bookmark had before the save.
+// revert: src/lib/views/Files.svelte:449 => onrenamed={() => undefined}
 test('a bookmark renamed by its form keeps what was typed, open over the bookmark it renamed', async ({
     page
 }) => {
@@ -501,8 +501,8 @@ test('a bookmark renamed by its form keeps what was typed, open over the bookmar
     await expect(mark('notes.md')).toHaveCount(0);
 });
 
-// revert: src/lib/state/fs.ts:443 => if (marks.loading || marks.error !== '') return false;
 // Revert: in editedGone of state/fs.ts, drop `saving` from the line that answers false.
+// revert: src/lib/state/fs.ts:443 => if (marks.loading || marks.error !== '') return false;
 test('a bookmark taken away while a save from its form is out leaves the form until it lands', async ({
     page
 }) => {
@@ -547,9 +547,9 @@ test('a bookmark taken away while a save from its form is out leaves the form un
     await expect(mark('notes.md')).toHaveCount(0);
 });
 
-// revert: src/lib/state/fs.svelte.ts:667 => for (const one of forms.browsers().slice(0, 0)) {
 // Revert: in closeGoneForms of state/fs.svelte.ts, sweep no browser, which is what the rule living
 // in an $effect of the mounted view came to for a page that draws none.
+// revert: src/lib/state/fs.svelte.ts:685 => for (const one of forms.browsers().slice(0, 0)) {
 test('a bookmark taken away closes its form with no file browser on screen at all', async ({
     page
 }) => {
@@ -582,9 +582,9 @@ test('a bookmark taken away closes its form with no file browser on screen at al
     await expect(mark('notes.md')).toHaveCount(0);
 });
 
-// revert: src/lib/state/fs.svelte.ts:667 => for (const one of forms.browsers().slice(0, 0)) {
 // Revert: in closeGoneForms of state/fs.svelte.ts, sweep no browser, which is what the rule living
 // in an $effect of the mounted view came to for a page that draws none.
+// revert: src/lib/state/fs.svelte.ts:685 => for (const one of forms.browsers().slice(0, 0)) {
 test('a bookmark taken away closes the form of a file browser whose tab is not shown', async ({
     page
 }) => {

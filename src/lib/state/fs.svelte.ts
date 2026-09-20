@@ -6,13 +6,25 @@
 // is held. The request is scheduled on a microtask rather than run inside the call, so reading this
 // from a $derived never writes state while a derived is running.
 //
-// Nothing re-fetches on its own. A write moves the round on, which is what makes the next render ask
+// Nothing polls. A write moves the round on, which is what makes the next render ask
 // again for everything held; a bookmark is written through /api/write rather than here, since it is
 // a collection entry, so that write moves the round on too; what is held stays drawn until the fresh
 // answer lands, so a tree does not blink out on every add or removal, and an answer from an earlier
 // round is dropped rather than written in over the newer request's. A folder whose contents changed
 // on disk is re-read by closing it and opening it, since a poller over an open tree would read the
 // disk for a reader who is looking at one line of it.
+//
+// A read of the workspaces, the bookmarks or the notes that ended in an error holds nothing: the
+// round is written by the answer that arrived and not by the one that failed, so the next ask reads
+// again and a sentence saying why goes as soon as one succeeds. What keeps that from being a request
+// per frame while the endpoint is down is the failed round, remembered per key: the ask of the round
+// that failed is made once, and asking again is what clears it. The view's own control clears it,
+// and so does mounting the view, which is the reader coming back to it.
+//
+// The bookmarks file is also read again when it changes on the disk. The `files` channel carries a
+// message for it, published by the watcher over ~/.oculus, and the round the bookmarks belong to is
+// the shared round plus the version of that message: a bookmark added by hand or by another tool
+// reaches an open page without a write from it.
 //
 // One root alone is re-read by refresh(root, version): the round a key belongs to is the shared
 // round plus the version that root was last refreshed at, so a view watching a channel (the Config
@@ -36,8 +48,17 @@
 // byte it tells a cut by, and the answer is held for the round, so the tree, the tab it opens and a
 // second click on the same row ask the server once.
 
-import type { Entry, SchemaField } from '../data/model.ts';
+import type { Entry, FilesPayload, SchemaField } from '../data/model.ts';
 import { TEXT_SNIFF_READ } from '../data/text-kind.ts';
+import type { EntitiesStore } from './entities.svelte.ts';
+import {
+    fileBytesUrl,
+    FS_PATH,
+    listingUrl,
+    noteUrl,
+    readCapped,
+    readCappedBytes
+} from './fs-transport.ts';
 import {
     TEXT_LIMIT,
     editShown,
@@ -52,8 +73,7 @@ import {
 import { t } from './text.ts';
 import type { WriteAnswer, WritesStore } from './writes.svelte.ts';
 
-/** The endpoint the tree reads and the workspace actions write. */
-export const FS_PATH = '/api/fs';
+export { fileBytesUrl, FS_PATH, listingUrl, readCapped } from './fs-transport.ts';
 
 /**
  * What the bookmark forms of the file browsers are read and moved through. The layout, the instance
@@ -202,6 +222,12 @@ export type FsStore = {
     removeBookmark: (label: string) => Promise<WriteAnswer>;
     /** Say that the bookmarks were written by something else, such as the shared entry form. */
     bookmarksChanged: () => void;
+    /** Ask for the workspaces again after a read that failed, for the control that offers it. */
+    retryWorkspaces: () => void;
+    /** Ask for the bookmarks again after a read that failed. */
+    retryBookmarks: () => void;
+    /** Ask for the notes again after a read that failed. */
+    retryNotes: () => void;
     /**
      * Move one file browser to other forms, forgetting the draft of the bookmark form the move
      * closes. A press on the view and this store's own close of a gone bookmark are the one move.
@@ -215,79 +241,11 @@ export type FsStore = {
     invalidate: () => void;
 };
 
-/**
- * The address one file's bytes are read at, each segment escaped without escaping the separators.
- * A version above zero rides on the query, which is what makes the address of a rewritten file a
- * new address: the browser has the old one cached, and a frame pointed at an address it already
- * holds draws what it holds rather than fetching the new bytes.
- */
-export function fileBytesUrl(root: string, path: string, version = 0): string {
-    const parts = path
-        .split('/')
-        .filter((part) => part !== '')
-        .map((part) => encodeURIComponent(part));
-    const at = `/api/file/${encodeURIComponent(root)}/${parts.join('/')}`;
-    return version > 0 ? `${at}?v=${version}` : at;
-}
-
-/** The address one directory's entries are read at. */
-export function listingUrl(root: string, path: string): string {
-    return `${FS_PATH}?root=${encodeURIComponent(root)}&path=${encodeURIComponent(path)}`;
-}
-
-/** The address one note's own text is read at. */
-export function noteUrl(id: string): string {
-    return `${FS_PATH}?note=${encodeURIComponent(id)}`;
-}
-
-/**
- * At most `limit` bytes of a response, with the transfer stopped once the limit is in: the reader is
- * cancelled, so the rest of the file never crosses the socket. The limit is bytes, which is what the
- * window's note claims; a multi-byte character split by the cut decodes as the replacement character,
- * which is what any reader of a truncated file sees.
- */
-export async function readCapped(
-    response: Response,
-    limit: number
-): Promise<{ text: string; truncated: boolean }> {
-    const held = await readCappedBytes(response, limit);
-    return { text: new TextDecoder().decode(held.bytes), truncated: held.truncated };
-}
-
-/** The same cut, before it is decoded: what a rule over the file's own bytes is handed. */
-export async function readCappedBytes(
-    response: Response,
-    limit: number
-): Promise<{ bytes: Uint8Array; truncated: boolean }> {
-    const body = response.body;
-    if (body === null) {
-        return { bytes: new Uint8Array(await response.arrayBuffer()), truncated: false };
-    }
-    const reader = body.getReader();
-    const chunks: Uint8Array[] = [];
-    let taken = 0;
-    try {
-        while (taken <= limit) {
-            const { done, value } = await reader.read();
-            if (done) break;
-            chunks.push(value);
-            taken += value.byteLength;
-        }
-    } finally {
-        if (taken > limit) await reader.cancel();
-    }
-    const kept = new Uint8Array(Math.min(taken, limit));
-    let at = 0;
-    for (const chunk of chunks) {
-        if (at >= kept.length) break;
-        const part = chunk.subarray(0, kept.length - at);
-        kept.set(part, at);
-        at += part.byteLength;
-    }
-    return { bytes: kept, truncated: taken > limit };
-}
-
-export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
+export function createFs(
+    writes: WritesStore,
+    forms: BookmarkForms,
+    entities: EntitiesStore
+): FsStore {
     const listings: Record<string, Listing | undefined> = $state({});
     const texts: Record<string, FileText | undefined> = $state({});
     const notes: Record<string, NoteState | undefined> = $state({});
@@ -315,6 +273,16 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
 
     /** The round each held answer was fetched in. Not reactive: only requests read it. */
     const rounds: Record<string, number> = {};
+
+    /**
+     * The round a read of one of the three whole-file keys failed in. A failure writes no round, so
+     * the next round asks again on its own; this says that the ask of the round that failed has been
+     * made, which is what keeps a page whose endpoint is down from sending a request per frame.
+     *
+     * A rune because the getters read it: clearing a key is what makes the view ask again, and the
+     * control that offers the reader a second read clears it.
+     */
+    const failed: Record<string, number | undefined> = $state({});
 
     /** The requests in flight, by round and key, so one render does not send two. */
     const inflight = new Set<string>();
@@ -381,6 +349,53 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
         queueMicrotask(() => {
             void load().finally(() => inflight.delete(ticket));
         });
+    }
+
+    /**
+     * Schedule one of the three whole-file reads, unless the read this round already made ended in
+     * an error. The failed round is cleared by a retry, and a later round is asked for on its own.
+     */
+    function askShared(key: string, at: number, load: () => Promise<void>): void {
+        if (failed[key] === at) return;
+        schedule(key, at, load);
+    }
+
+    /** Hold the round one answer arrived in, and forget that an earlier read of it failed. */
+    function answered(key: string, at: number): void {
+        rounds[key] = at;
+        if (failed[key] !== undefined) failed[key] = undefined;
+    }
+
+    /** Say that a read failed, which holds no round: the next ask for the key reads again. */
+    function refused(key: string, at: number): void {
+        failed[key] = at;
+    }
+
+    /** Ask again for one of the three whole-file reads after a read of it failed. */
+    function retry(key: string): void {
+        if (failed[key] === undefined) return;
+        failed[key] = undefined;
+    }
+
+    /**
+     * How far the disk has moved the bookmarks on. The `files` channel carries one message at a
+     * time, and a message about a root must not take the round back, so the version of the last
+     * message naming the bookmarks file is remembered here rather than read off the channel each
+     * time. It is read inside the getter, so a message about the file redraws whoever asked.
+     */
+    let onDisk = 0;
+    function diskRound(): number {
+        const message = entities.message('files');
+        const payload = message?.payload as FilesPayload | undefined;
+        if (message !== null && payload?.bookmarks === true && message.version > onDisk) {
+            onDisk = message.version;
+        }
+        return onDisk;
+    }
+
+    /** The round the bookmarks belong to: the shared round, and what the disk has said since. */
+    function bookmarksRound(): number {
+        return clock.round + diskRound();
     }
 
     /** Whether an answer from round `at` of the given clock may still be written in. */
@@ -477,7 +492,7 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
     function workspaces(): WorkspacesState {
         const at = clock.round;
         if (held.workspaces === null || rounds[WORKSPACES] !== at) {
-            schedule(WORKSPACES, at, () => loadWorkspaces(at));
+            askShared(WORKSPACES, at, () => loadWorkspaces(at));
         }
         return held.workspaces ?? NO_WORKSPACES;
     }
@@ -492,8 +507,8 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
                 error?: unknown;
             };
             if (!currentShared(at)) return;
-            rounds[WORKSPACES] = at;
             if (!response.ok) {
+                refused(WORKSPACES, at);
                 held.workspaces = {
                     ...NO_WORKSPACES,
                     error: typeof body.error === 'string' ? body.error : String(response.status),
@@ -501,6 +516,7 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
                 };
                 return;
             }
+            answered(WORKSPACES, at);
             held.workspaces = {
                 current: typeof body.current === 'string' ? body.current : '',
                 workspaces: Array.isArray(body.workspaces)
@@ -512,7 +528,7 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
             };
         } catch (error) {
             if (!currentShared(at)) return;
-            rounds[WORKSPACES] = at;
+            refused(WORKSPACES, at);
             held.workspaces = { ...NO_WORKSPACES, error: reasonOf(error), loading: false };
         }
     }
@@ -616,9 +632,9 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
 
     /** The reader's own bookmarks, asked for once a round and held until the next one. */
     function bookmarks(): BookmarksState {
-        const at = clock.round;
+        const at = bookmarksRound();
         if (held.bookmarks === null || rounds[BOOKMARKS] !== at) {
-            schedule(BOOKMARKS, at, () => loadBookmarks(at));
+            askShared(BOOKMARKS, at, () => loadBookmarks(at));
         }
         return held.bookmarks ?? NO_BOOKMARKS;
     }
@@ -631,9 +647,9 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
                 schema?: unknown;
                 error?: unknown;
             };
-            if (!currentShared(at)) return;
-            rounds[BOOKMARKS] = at;
+            if (at !== bookmarksRound()) return;
             if (!response.ok) {
+                refused(BOOKMARKS, at);
                 held.bookmarks = {
                     ...NO_BOOKMARKS,
                     error: typeof body.error === 'string' ? body.error : String(response.status),
@@ -641,6 +657,7 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
                 };
                 return;
             }
+            answered(BOOKMARKS, at);
             held.bookmarks = {
                 entries: Array.isArray(body.entries) ? (body.entries as Entry[]) : [],
                 schema: Array.isArray(body.schema) ? (body.schema as SchemaField[]) : [],
@@ -648,8 +665,8 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
                 loading: false
             };
         } catch (error) {
-            if (!currentShared(at)) return;
-            rounds[BOOKMARKS] = at;
+            if (at !== bookmarksRound()) return;
+            refused(BOOKMARKS, at);
             held.bookmarks = { ...NO_BOOKMARKS, error: reasonOf(error), loading: false };
             return;
         }
@@ -675,7 +692,7 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
     /** Every scratch note, asked for once a notes round and held until the next one. */
     function noteList(): NotesState {
         const at = clock.notes;
-        if (held.notes === null || rounds[NOTES] !== at) schedule(NOTES, at, () => loadNotes(at));
+        if (held.notes === null || rounds[NOTES] !== at) askShared(NOTES, at, () => loadNotes(at));
         return held.notes ?? NO_NOTES;
     }
 
@@ -684,8 +701,8 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
             const response = await fetch(`${FS_PATH}?notes=1`);
             const body = (await response.json()) as { notes?: unknown; error?: unknown };
             if (!fresh(at, 'notes')) return;
-            rounds[NOTES] = at;
             if (!response.ok) {
+                refused(NOTES, at);
                 held.notes = {
                     ...NO_NOTES,
                     error: typeof body.error === 'string' ? body.error : String(response.status),
@@ -693,6 +710,7 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
                 };
                 return;
             }
+            answered(NOTES, at);
             held.notes = {
                 notes: Array.isArray(body.notes) ? (body.notes as NoteRow[]) : [],
                 error: '',
@@ -700,7 +718,7 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
             };
         } catch (error) {
             if (!fresh(at, 'notes')) return;
-            rounds[NOTES] = at;
+            refused(NOTES, at);
             held.notes = { ...NO_NOTES, error: reasonOf(error), loading: false };
         }
     }
@@ -853,6 +871,9 @@ export function createFs(writes: WritesStore, forms: BookmarkForms): FsStore {
         removeBookmark: (label: string) =>
             bookmarkWrite({ kind: 'delete-entry', collection: BOOKMARK_COLLECTION, id: label }),
         bookmarksChanged: invalidate,
+        retryWorkspaces: () => retry(WORKSPACES),
+        retryBookmarks: () => retry(BOOKMARKS),
+        retryNotes: () => retry(NOTES),
         shiftForms: forms.shift,
         saveNote,
         deleteNote,

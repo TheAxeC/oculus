@@ -10,7 +10,6 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { afterAll, afterEach, describe, expect, it, vi } from 'vitest';
 import { Hub } from '../../../src/lib/server/channels.ts';
-import type { Sink } from '../../../src/lib/server/channels.ts';
 import {
     liveSignature,
     watchSessions,
@@ -21,6 +20,7 @@ import type { Watcher } from '../../../src/lib/server/watch/portfolio.ts';
 import type { Message, SessionsPayload, Terminal } from '../../../src/lib/data/model.ts';
 import type { Probe } from '../../../src/lib/server/sessions/registry.ts';
 import type { CodexProbe } from '../../../src/lib/server/sessions/codex.ts';
+import { recording } from './probe.ts';
 import { noop } from '../../doubles.ts';
 import { scratchDir, sweepScratch } from '../../scratch.ts';
 
@@ -230,20 +230,6 @@ async function quiet(got: Message[], ms = 400): Promise<number> {
         await sleep(ms);
     }
     return held;
-}
-
-function recording(): { sink: Sink; got: Message[] } {
-    const got: Message[] = [];
-    return {
-        got,
-        sink: {
-            send: (text: string) => {
-                got.push(JSON.parse(text) as Message);
-                return Promise.resolve();
-            },
-            close: noop
-        }
-    };
 }
 
 /** A started watcher over a fresh fixture, with a sink already subscribed to the channel. */

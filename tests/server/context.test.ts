@@ -23,9 +23,11 @@ const driver = (close: () => void = noop): TerminalDriver => ({
 });
 
 describe('ServerContext', () => {
+    // revert: src/lib/server/context.ts:302 => delete
     it('builds and closes each process-owned object once and carries its token', () => {
-        const closes = Array.from({ length: 9 }, () => vi.fn());
+        const closes = Array.from({ length: 10 }, () => vi.fn());
         const hub = new Hub();
+        const merge = vi.spyOn(hub, 'merge');
         const terminals = new Terminals(hub, { driver: driver(closes[6]), poll: 0 });
         const createHub = vi.fn(() => hub);
         const createTerminals = vi.fn(() => terminals);
@@ -36,6 +38,9 @@ describe('ServerContext', () => {
         const watchGit = vi.fn((_hub: Hub, _options: unknown) => ({
             refresh: vi.fn(),
             close: closes[2]
+        }));
+        const watchBookmarks = vi.fn<ContextDependencies['watchBookmarks']>(() => ({
+            close: closes[9]
         }));
         const watchHpc = vi.fn<ContextDependencies['watchHpc']>(() => ({
             refresh: vi.fn(noopAsync),
@@ -90,6 +95,7 @@ describe('ServerContext', () => {
                 hub: '/hub',
                 port: 8791,
                 claudeBin: 'claude',
+                bookmarks: '/machine/.oculus/bookmarks.yml',
                 accounts: [],
                 calendars: [],
                 mail: []
@@ -101,6 +107,7 @@ describe('ServerContext', () => {
             watchPortfolio,
             watchSessions,
             watchGit,
+            watchBookmarks,
             watchHpc,
             watchCalendar,
             watchMail,
@@ -108,6 +115,8 @@ describe('ServerContext', () => {
             watchUsage
         });
 
+        // revert: src/lib/server/context.ts:165 => delete
+        expect(merge).toHaveBeenCalledWith('files', expect.any(Function));
         expect(context.token).toBe('context-token');
         for (const built of [
             createHub,
@@ -115,6 +124,7 @@ describe('ServerContext', () => {
             watchPortfolio,
             watchSessions,
             watchGit,
+            watchBookmarks,
             watchHpc,
             watchCalendar,
             watchMail,
@@ -123,6 +133,9 @@ describe('ServerContext', () => {
         ]) {
             expect(built).toHaveBeenCalledTimes(1);
         }
+        // The bookmarks watcher is given the file this machine's own local.yml names, so a served
+        // test run watches its own folder and never the reader's.
+        expect(watchBookmarks.mock.calls[0][1]).toEqual({ file: '/machine/.oculus/bookmarks.yml' });
         // The git watcher is given the hub root as well as the channel bus: the hub's own state is
         // on the `git` channel whether or not a session names it, which is what the deposit and the
         // pin controls read.
@@ -153,6 +166,7 @@ describe('ServerContext', () => {
         for (const close of closes) expect(close).toHaveBeenCalledTimes(1);
     });
 
+    // revert: src/lib/server/context.ts:213 => onSessionsChange: undefined
     it('keeps session rescan signals inside their owning context', () => {
         const rescans: (() => void)[] = [];
         const refreshes = [vi.fn(noopAsync), vi.fn(noopAsync)];
@@ -209,6 +223,7 @@ describe('ServerContext', () => {
                 };
             },
             watchGit: () => ({ refresh: noopAsync, close: noop }),
+            watchBookmarks: () => ({ close: noop }),
             watchHpc: () => ({ refresh: noopAsync, close: noop }),
             watchUsageRefresh: () => ({
                 ready: Promise.resolve(),

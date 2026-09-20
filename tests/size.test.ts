@@ -96,7 +96,7 @@ function planted(rel: string, lines: number): string {
 
 describe('a file over the size line', () => {
     it('is on the list with a count it has not passed', () => {
-        // revert: bin/size-allow.txt:7 => tests/views/collection.test.ts 900
+        // revert: bin/size-allow.txt:5 => tests/views/collection.test.ts 900
         expect(findOversize(ROOT, readFileSync(ALLOW, 'utf8'))).toEqual([]);
     });
 

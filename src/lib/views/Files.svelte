@@ -38,6 +38,11 @@
     // which the fs store does on each bookmarks answer rather than this view on each render: a pane
     // mounts only the tab it shows, so a form of a browser nobody is looking at is closed there too.
     //
+    // The three sections are files/Sections.svelte's, which reads the workspaces, the bookmarks and
+    // the notes for itself and answers a read of any of them that failed. What this view reads of
+    // them is what its tree and its bookmark form are built on: the roots of the workspace in force,
+    // and the bookmarks the tree draws its stars from.
+    //
     // Every root the configuration names is in every workspace and cannot be taken out of one, so a
     // workspace can only ever add. The server refuses a removal of a configured root as well; a
     // refusal that lives only in a view is a refusal that disappears with the next caller.
@@ -67,14 +72,12 @@
     import Pane from '$lib/ui/Pane.svelte';
     import Search from '$lib/ui/Search.svelte';
     import BookmarkForm from './files/BookmarkForm.svelte';
-    import Bookmarks from './files/Bookmarks.svelte';
     import Controls from './files/Controls.svelte';
-    import Notes from './files/Notes.svelte';
     import RootForm from './files/RootForm.svelte';
+    import Sections from './files/Sections.svelte';
     import ShowPath from './files/ShowPath.svelte';
     import { refusal } from './files/refusal';
     import Tree from './files/Tree.svelte';
-    import Workspaces from './files/Workspaces.svelte';
     import type { Entry, SchemaField } from '$lib/state/collection';
     import {
         collapseRoot,
@@ -117,7 +120,6 @@
             heldEntries,
             invalidate,
             listing,
-            notes,
             readFileKind,
             removeBookmark,
             removeRoot,
@@ -157,7 +159,6 @@
     );
 
     const marks = $derived(bookmarks());
-    const held = $derived(notes());
     const editedMark = $derived(marks.entries.find((one) => one.id === view.editing) ?? null);
     /**
      * Whether the bookmark form is drawn. A form open over a bookmark waits for the bookmarks to be
@@ -353,10 +354,9 @@
         openView('note', { id: noteId(new Date()), fresh: true });
     }
 
-    /** Open one note as its own tab, under the title it carries now. */
-    function openNote(id: string): void {
-        const row = held.notes.find((one) => one.id === id);
-        openView('note', { id, label: row?.title ?? '' });
+    /** Open one note as its own tab, under the title the list carries for it now. */
+    function openNote(id: string, label: string): void {
+        openView('note', { id, label });
     }
 
     /** Take one note off the disk, and take its tab with it: what it drew is not there any more. */
@@ -514,38 +514,17 @@
                 <p class="said">{t('files.filter_none')}</p>
             {/if}
         {/if}
-        <Bookmarks
-            rows={marks.entries}
-            error={marks.error}
-            open={!view.collapsed.includes('bookmarks')}
-            editing={view.editing}
-            adding={view.form === 'bookmark' && view.editing === ''}
-            ontoggle={() => toggleSection('bookmarks')}
-            onadd={() => {
-                show('bookmark');
-            }}
-            onopen={openMark}
-            onedit={edit}
-        />
-        <Notes
-            rows={held.notes}
-            error={held.error}
-            open={!view.collapsed.includes('notes')}
-            ontoggle={() => toggleSection('notes')}
-            onadd={addNote}
-            onopen={openNote}
-            onremove={(id: string) => void dropNote(id)}
-        />
-        <Workspaces
-            current={saved.current}
-            names={saved.workspaces.map((one) => one.name)}
-            open={!view.collapsed.includes('workspaces')}
-            saving={view.form === 'workspace'}
-            ontoggle={() => toggleSection('workspaces')}
-            onsave={() => {
-                show('workspace');
-            }}
-            onselect={(name: string) => void select(name)}
+        <Sections
+            {view}
+            onsection={toggleSection}
+            onaddmark={() => show('bookmark')}
+            onopenmark={openMark}
+            oneditmark={edit}
+            onaddnote={addNote}
+            onopennote={openNote}
+            onremovenote={(id: string) => void dropNote(id)}
+            onsaveworkspace={() => show('workspace')}
+            onselectworkspace={(name: string) => void select(name)}
         />
     </div>
 </Pane>

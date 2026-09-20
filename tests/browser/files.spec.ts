@@ -831,41 +831,59 @@ test('a second file of the same name is bookmarked under its path from the row s
     await expect(page.locator('[data-fs-bookmark="README.md"]')).toHaveCount(0);
 });
 
-// Revert: open the Notes section whatever `view.collapsed` holds, in views/Files.svelte.
-test('a section closed from its head stays closed after a tab switch', async ({ page }) => {
-    await boot(page);
-    await openView(page, 'files', t('views.files'));
-
-    const head = page.locator('[data-fs-notes] [role="treeitem"]').first();
-    await expect(head).toHaveAttribute('aria-expanded', 'true');
-    await head.getByRole('button', { name: t('files.notes'), exact: true }).click();
-    await expect(head).toHaveAttribute('aria-expanded', 'false');
-    // the section is closed, so the group of rows under its head is not drawn
-    await expect(page.locator('[data-fs-notes] [role="group"]')).toHaveCount(0);
-
-    // Another view takes the pane, and the file browser comes back with the section still closed.
-    await openView(page, 'repositories', t('views.repositories'));
-    await page.getByRole('tab', { name: t('views.files') }).click();
-    await expect(head).toHaveAttribute('aria-expanded', 'false');
-
-    // Opened again, so the page this run saves draws the section as the other cases expect it.
-    await head.getByRole('button', { name: t('files.notes'), exact: true }).click();
-    await expect(head).toHaveAttribute('aria-expanded', 'true');
-});
-
-// Revert: set `active: false` on every choice in views/files/Controls.svelte.
-test('the workspace menu on the header lists the configured roots, drawn as in force', async ({
+// revert: src/lib/state/fs.svelte.ts:652 => answered(BOOKMARKS, at);
+test('a bookmarks read that failed is asked again by its own control, without a reload', async ({
     page
 }) => {
+    const reason = 'the bookmarks file could not be read';
+    await page.route('**/api/fs?bookmarks=1', (route) =>
+        route.fulfill({
+            status: 500,
+            contentType: 'application/json',
+            body: JSON.stringify({ error: reason })
+        })
+    );
+
     await boot(page);
     await openView(page, 'files', t('views.files'));
-    await page.getByRole('button', { name: t('files.workspace'), exact: true }).click();
-    const choice = page.getByRole('menuitem', { name: t('files.workspace_default'), exact: true });
-    await expect(choice).toBeVisible();
-    await expect(choice).toHaveAttribute('aria-current', 'true');
-    await choice.click();
-    await expect(page.locator('[data-fs-workspace=""] [role="treeitem"]')).toHaveAttribute(
-        'aria-current',
-        'true'
+    const marks = page.locator('[data-fs-bookmarks]');
+    const failed = marks.getByText(t('files.bookmarks_failed', reason), { exact: true });
+    await expect(failed).toBeVisible();
+
+    await page.unroute('**/api/fs?bookmarks=1');
+    const answered = page.waitForResponse(
+        (response) => new URL(response.url()).search === '?bookmarks=1' && response.status() === 200
     );
+    const again = marks.getByRole('button', { name: t('files.read_again'), exact: true });
+    await again.click();
+    await answered;
+
+    // the successful answer clears the failure row
+    await expect(failed).toHaveCount(0);
+    // the retry control exists only beside a failed read
+    await expect(again).toHaveCount(0);
+});
+
+// revert: src/lib/server/watch/bookmarks.ts:83 => () => undefined
+test('a bookmark written by one page reaches a second page that wrote nothing', async ({
+    page
+}) => {
+    const watching = await page.context().newPage();
+    await boot(watching);
+    const mark = watching.locator('nav button[data-bookmark="hub/README.md"]');
+    // the second page has not seen a bookmark write yet
+    await expect(mark).toHaveCount(0);
+
+    await boot(page);
+    await openView(page, 'files', t('views.files'));
+    await row(page, 'hub').click();
+    await row(page, 'hub', 'README.md').click();
+    await page.getByRole('button', { name: t('file.bookmark'), exact: true }).click();
+    await expect(page.locator('nav button[data-bookmark="hub/README.md"]')).toBeVisible();
+    await expect(mark).toBeVisible();
+
+    await page.getByRole('button', { name: t('file.unbookmark'), exact: true }).click();
+    // the removal is delivered to the second open page
+    await expect(mark).toHaveCount(0);
+    await watching.close();
 });

@@ -42,6 +42,10 @@ text:
         notes_empty: No note yet.
         notes_failed: 'The notes could not be read: {0}'
         open_title: Open {0} as a tab
+        read_again: read again
+        read_again_bookmarks: Read the bookmarks again
+        read_again_notes: Read the notes again
+        read_again_workspaces: Read the workspaces again
         read_failed: 'The roots could not be read: {0}'
         read_offline: there is no page to read from
         refresh: refresh
@@ -86,6 +90,7 @@ text:
         workspace_name: Name for the workspace
         workspace_open_title: Switch to the workspace {0}
         workspaces: Workspaces
+        workspaces_failed: 'The workspaces could not be read: {0}'
     views:
         files: Files
         files_glyph: applications

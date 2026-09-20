@@ -374,12 +374,15 @@ export type GitState = {
 export type GitPayload = Record<string, GitState>;
 
 /**
- * The payload of the `files` channel: the root that has just been re-read, absolute. A message says
- * a write landed somewhere under that root, so every file listing taken under it may be stale. The
- * portfolio snapshot does not say this: it is rebuilt only for a file the config names, and a file
- * written inside a project folder moves no version of it.
+ * The payload of the `files` channel: what on the disk the file browser reads has just changed. A
+ * message naming a root says a write landed somewhere under that root, so every file listing taken
+ * under it may be stale. The portfolio snapshot does not say this: it is rebuilt only for a file the
+ * config names, and a file written inside a project folder moves no version of it.
+ *
+ * A message with `bookmarks` is the reader's own bookmarks file, which lies under no root and is
+ * watched on its own; it names no root, and the page reads the bookmarks again for it.
  */
-export type FilesPayload = { root: string };
+export type FilesPayload = { root: string; bookmarks?: boolean };
 
 // ------------------------------------------------------------------ hpc
 export type HpcStatus = 'starting' | 'ok' | 'unreachable' | 'error';

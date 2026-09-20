@@ -13,7 +13,6 @@ import { mintToken } from '../../src/lib/server/auth.ts';
 import { ENGINE_ROOT, engineRoot } from '../../src/lib/server/files.ts';
 import { portfolioConfigFrom } from '../../src/lib/data/index.ts';
 import { engineDir, loadConfig, type IconMemory } from '../../src/lib/data/sources/config.ts';
-import type { Sink } from '../../src/lib/server/channels.ts';
 import {
     namedByConfig,
     relevant,
@@ -28,7 +27,7 @@ import type {
     Message,
     Snapshot
 } from '../../src/lib/data/model.ts';
-import { noop } from '../doubles.ts';
+import { recording } from '../server/watch/probe.ts';
 import { scratchDir, sweepScratch } from '../scratch.ts';
 
 afterAll(sweepScratch);
@@ -131,25 +130,6 @@ function buildHub(): string {
         '---\ntitle: "Start"\ndate: 2026-09-01\n---\n\nFirst post.\n'
     );
     return hub;
-}
-
-type Recording = {
-    sink: Sink;
-    got: Message[];
-};
-
-function recording(): Recording {
-    const got: Message[] = [];
-    return {
-        got,
-        sink: {
-            send: (text: string) => {
-                got.push(JSON.parse(text) as Message);
-                return Promise.resolve();
-            },
-            close: noop
-        }
-    };
 }
 
 /** The messages of one channel, newest last. */
