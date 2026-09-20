@@ -31,7 +31,7 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```yaml
 dispatch:                                  # resumed 2026-09-20; in flight: Q53 round 1 continuation from 99ea1b96, Q56 fresh review from 521c938c and Q36 round 1 continuation from 2ddd4a8b; next to dispatch after a landing: Q58, then Q59, O31 and Q35; the later queue continues with D11 + D13 + D14, D15 + D17 + D18, D20 + M3, M4, then R2, O29, O30 and X2
 - package: Q53
-  status: RESUMED, continuation builder running over round 1
+  status: RESUMED, detached Codex continuation running over round 1
   executor: agent
   worker: codex:gpt-5.6-sol                    # continuation worker selected by the resumed Codex orchestrator
   worktree: .agents/worktrees/q53          # full sparse set of the configuration block; 12 files uncommitted
@@ -41,11 +41,13 @@ dispatch:                                  # resumed 2026-09-20; in flight: Q53 
   review: tools/oculus/.scratch/migration/agents/reviews/Q53-refuter.md  # reviewer launched 10:45, returned 11:33
   round: 1                                  # eight items, written out verbatim in agents/reviews/Q53-round1.md: six rulings sent 11:34, the green Ticker.svelte:231 revert directive sent 12:16, Axel's badge tones sent 12:35
   round_report: none                        # the builder was stopped before it reported
-  session_id: /root/q53_finish
+  session_id: pending in /private/tmp/q53-cli-events.jsonl
+  pid_file: /private/tmp/q53-cli-pid
+  exit_file: /private/tmp/q53-cli-exit
   next: wait for the continuation report; then a fresh review over the round; then the landing
   landing: not-started
 - package: Q56
-  status: REPAIR ROUND 1 RUNNING, expanded worktree and five findings recorded
+  status: REPAIR ROUND 1 RUNNING in a detached Codex continuation
   executor: agent
   worker: claude:opus
   worktree: .agents/worktrees/q56          # cut to tools/oculus alone, not the configuration block's set, and cut before 972c931c, so its node suite shows three reds in the real-hub cases that main fixed; not this step's. 26 files uncommitted
@@ -56,7 +58,9 @@ dispatch:                                  # resumed 2026-09-20; in flight: Q53 
   round: 1
   round_instructions: tools/oculus/.scratch/migration/agents/reviews/Q56-round1.md
   round_report: none
-  session_id: /root/q56_repair
+  session_id: pending in /private/tmp/q56-cli-events.jsonl
+  pid_file: /private/tmp/q56-cli-pid
+  exit_file: /private/tmp/q56-cli-exit
   next: continuation builder closes all five findings; then a fresh review over the round; then the landing
   landing: not-started
 - package: Q36
