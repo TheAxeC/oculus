@@ -417,18 +417,21 @@ printf '%s\n' 'Usage rows:'
 cat "$landing_tmp/usage.txt"
 if [ -n "$landing_session" ]; then
     # The orchestrator's row, from its own session log between the previous landing and now. The
-    # script is looked for beside this one, then in the land skill's templates of this repository.
+    # script is looked for beside this one, then in the land skill's templates wherever the skill
+    # is installed: the repository, the user's agent skills, the user's Claude Code skills.
     landing_usage_script=''
     landing_script_dir=$(CDPATH= cd "$(dirname "$0")" && pwd -P)
-    if [ -f "$landing_script_dir/usage.py" ]; then
-        landing_usage_script=$landing_script_dir/usage.py
-    else
-        landing_script_repo=$(cd "$landing_script_dir" && git rev-parse --show-toplevel 2>/dev/null)
-        if [ -n "$landing_script_repo" ] && [ -f "$landing_script_repo/.agents/skills/land/templates/usage.py" ]; then
-            landing_usage_script=$landing_script_repo/.agents/skills/land/templates/usage.py
+    for landing_usage_dir in \
+        "$landing_script_dir" \
+        "$landing_root/.agents/skills/land/templates" \
+        "$HOME/.agents/skills/land/templates" \
+        "${CLAUDE_CONFIG_DIR:-$HOME/.claude}/skills/land/templates"; do
+        if [ -f "$landing_usage_dir/usage.py" ]; then
+            landing_usage_script=$landing_usage_dir/usage.py
+            break
         fi
-    fi
-    [ -n "$landing_usage_script" ] || fail "booking usage failed: usage.py not found beside this script or in .agents/skills/land/templates"
+    done
+    [ -n "$landing_usage_script" ] || fail "booking usage failed: usage.py not found beside this script or in the land skill's templates"
     landing_now=$(date -Iseconds)
     landing_row=$(python3 "$landing_usage_script" "$landing_session" "$landing_since" "$landing_now") || fail "booking usage failed: usage.py on $landing_session"
     printf 'Orchestrator row (%s to %s): %s\n' "$landing_since" "$landing_now" "$landing_row"
