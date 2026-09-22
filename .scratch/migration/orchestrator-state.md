@@ -29,10 +29,11 @@ workers_at_once: 3           # R9 (Axel, 2026-09-13 22:45), raised to three for 
 ```
 
 ```yaml
-dispatch: none                       # Q59 landed 2026-09-22; the plan is paused after it, as Axel asked
+dispatch: none                       # the run of 2026-09-23 starts; nothing in flight
 ```
 
 ## The standing demands (from Axel, in force)
+- The run of 2026-09-23 (Axel: `/plan-orchestration oculus/migration`, agent mode, "No stop time, but do stop when you need me to make a decision or anything like that", "only commit on important events, not on every file write, brief write and such", "properly report to me, as the skills say"): the pause after Q59 is lifted; the loop runs the queue unattended overnight, up to `workers_at_once` steps in flight, and ends its turn only at a stop, which goes to Axel with one recommendation. Commits at important events only: a dispatch (the block with the builder's identity, which the handoff rule requires before the builder starts) and a landing; a brief, a report or a review is written without a commit of its own and goes in with the next of those.
 - The run of 2026-09-22 (Axel: `/plan-orchestration oculus/migration inline`, "Pause after Q58", "only commit on important events, not on every file write, brief write and such", "properly report to me, as the skills say"): the pause of 2026-09-20 is lifted for Q58 alone; Q58 is built inline by the orchestrating session in its worktree; after Q58 lands the plan pauses again and nothing later is specced or dispatched. Commits are made at important events only: the landing commit of a step carries its brief, the state file, the refuter and landing reports and the booking; the brief, the dispatch block and a refuter report get no commit of their own, so a worktree is cut from main's head and the uncommitted ledger on main is the handoff until the landing.
 - The run of 2026-09-17 10:46 (Axel: "You may continue with the orchestration. Important is to keep 3 tasks running in parallel. No pause point is set for now."): three steps in flight at all times, a new one dispatched at each landing, the queue as plan.md's line; one repair round per step; the look at each landing on the TEST page.
 - A second repair round only when the one round's delta leaves a verification command red or an acceptance item of the brief unbuilt and the fix is too large for landing, never for a new review finding (Axel, 2026-09-17 11:33, agreeing with the Fable session's reading of the ledger's rows); in the plan-orchestration skill's step 8.
@@ -64,29 +65,10 @@ dispatch: none                       # Q59 landed 2026-09-22; the plan is paused
 
 ## The pause
 
-Axel, 2026-09-22, `/plan-orchestration oculus/migration inline`: "Please do Q59 and then pause once it has landed." Q59 is landed, so the plan is paused: nothing later is specced, dispatched or landed until Axel says to continue. The next in the queue is Q65 + O31. Commits at important events only, as for Q58.
-
-Axel, 2026-09-22: pause after Q58. Q58 is landed; nothing after it is specced, dispatched or landed until Axel says to continue. The next in the queue is Q59 + Q65 + O31.
-
-Axel, 2026-09-20: finish and land Q36, Q56 and Q53 only, then pause. Their required builders, reviewers, verification and landing looks continue; no step after them is dispatched.
-
-Lifted 2026-09-20 by Axel's `/plan-orchestration oculus/migration` instruction. Q53 and Q36 resume through continuation builders in their existing worktrees, Q56 resumes at its fresh review, and the rolling queue continues after their landings.
-
-Axel, 2026-09-18: no more runs. Both of these hold, and neither gives way to the other:
-
-- **No new run of any kind**: no builder, no reviewer, no repair round.
-- **Nothing lands without its review.** The rules on reviews are unchanged.
-
-So the three steps are parked where they stand, in their worktrees, and wait for the pause to lift. The builder ids in the dispatch block are Claude Code Agent ids and resume only inside the session that made them; any other orchestrator, on either harness, starts a continuation builder in the same worktree from the round file:
-
-- **Q56**: built, report saved, uncommitted in its worktree. Its review has not run: the reviewer launched at 14:05 was stopped at 14:10 and wrote nothing. It lands only after a review.
-- **Q36**: its builder was stopped partway through its repair round of six rulings, written out in `agents/reviews/Q36-round1.md`; the worktree holds the partial round, uncommitted. After the pause a continuation builder finishes the round from that file, a review runs over it, and it lands.
-- **Q53**: its builder was stopped partway through its repair round of eight items, written out in `agents/reviews/Q53-round1.md`; the worktree holds the partial round, uncommitted. Same order after the pause.
-
-Nothing is dispatched after them. The pause holds until Axel lifts it in words.
+None. Axel lifted it on 2026-09-23 with `/plan-orchestration oculus/migration` and no stop time: the loop runs until nothing unblocked is left or a decision is his. The earlier pauses (after Q58, after Q59) are over; both steps are landed.
 
 ## Open items (only what Axel must rule on; every report opens with this list verbatim and repeats it until he has ruled)
-Nothing is waiting on a ruling.
+- Q65, how the Files view's two new toggles reach the server (raised 2026-09-23 by `/spec oculus/migration Q65`; no brief, no worktree and no dispatch exist for Q65 until it is ruled). The tree hides every dotfile and `node_modules`, `__pycache__`, `.git` on the server (`src/lib/server/files/fs.ts:210`, `skipped()`), and nothing reads `.gitignore` (`grep -rn check-ignore src/lib/server/files` prints nothing), so the ruled toggles "hidden files" and "ignored files" need the server to send or filter entries by a flag it does not have today: a wire shape of the page's own file endpoint, which the rules keep for you. Options: (a) the listing request carries the tab's two flags as query keys beside the endpoint's existing ones (`hidden=1`, `ignored=1`, next to today's `notes=1` and `bookmarks=1`), and the server leaves out what the flags do not let through, reading ignored entries with one `git check-ignore --stdin` per listed folder in a root that is a repository; (b) the server always sends every entry with two booleans on each (`hidden`, `ignored`) and the tab filters. Recommended (a): with both toggles off, which is the ruled default, the server sends no `node_modules` or ignored folder at all rather than thousands of rows the tab then drops, and the two keys follow the endpoint's own query vocabulary. Neither option is the lazy one; they cost about the same to build. The rest of Q65's premises were checked the same day and hold, except item 8 (the Config cards' Open file button), which Q58's landing already fixed: all 11 cards draw it inside the card (measured on the TEST page, 11 buttons, 11 inside).
 
 An entry leaves this list for the closed log the moment Axel rules on it. What a review or a look found and no brief covered is not an open item: it is booked as its own step in `plan.md` and carried in the Booked section below, since it needs no ruling from him.
 
