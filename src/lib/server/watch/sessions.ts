@@ -11,11 +11,11 @@
 // sessions/cache.ts is what makes the rescan cost the appended bytes rather than the whole store.
 //
 // The 15 s liveness re-check is the fourth thing that can change the payload and the only one no
-// file event announces. A process can die without its registry file changing, and a Codex rollout is
-// live only while a codex process runs and the file is fresh (sessions/codex.ts, codexLive), so a
-// session goes from live to ended with nothing written anywhere. The re-check therefore rescans on a
-// timer and publishes only when the set of live ids or one of their states changed, so a quiet
-// machine sees no traffic on the channel.
+// file event announces. A process can die without its registry file changing, and a Codex rollout
+// is live only while a codex process runs and the file is fresh (sessions/stores/codex.ts,
+// codexLive), so a session goes from live to ended with nothing written anywhere. The re-check
+// therefore rescans on a timer and publishes only when the set of live ids or one of their states
+// changed, so a quiet machine sees no traffic on the channel.
 //
 // The slow clock beside it is the fifth: a full rescan every few minutes whatever the events said.
 // A write that lands while a watch is being opened is announced to nobody, and a re-check that sees
@@ -26,14 +26,14 @@ import { watch } from 'node:fs';
 import { basename, dirname } from 'node:path';
 import type { FSWatcher } from 'node:fs';
 import type { SessionRecord, SessionsPayload, Terminal } from '../../data/model.ts';
-import type { Hub } from '../channels.ts';
+import type { Hub } from '../core/channels.ts';
 import { sessions } from '../sessions/index.ts';
-import { defaultStore } from '../sessions/transcripts.ts';
-import { defaultCodexStore, type CodexProbe } from '../sessions/codex.ts';
+import { defaultStore } from '../sessions/stores/transcripts.ts';
+import { defaultCodexStore, type CodexProbe } from '../sessions/stores/codex.ts';
 import { defaultRegistry, type Probe } from '../sessions/registry.ts';
 import { defaultOverridesPath } from '../sessions/overrides.ts';
 import type { ProjectFolder } from '../sessions/group.ts';
-import type { HookStore } from '../sessions/hooks.ts';
+import type { HookStore } from '../sessions/stores/hooks.ts';
 import type { Watcher } from './portfolio.ts';
 
 /** Milliseconds of quiet after the last file event before one rescan runs. */
@@ -52,7 +52,10 @@ export const RESCAN = 300000;
 export const WINDOW_DAYS = 2;
 export const MAX_SESSIONS = 40;
 
-/** What the watcher needs of server/pty/channel.ts's Terminals: the list, and when it changed. */
+/**
+ * What the watcher needs of server/machine/pty/channel.ts's Terminals: the list, and when it
+ * changed.
+ */
 export type TerminalSource = {
     list(): Terminal[];
     onChange: (listener: () => void) => () => void;
@@ -214,10 +217,10 @@ export function watchSessions(hub: Hub, options: SessionsWatchOptions = {}): Ses
 
     /**
      * The overrides file, watched through its own directory: fs.watch on a file that is replaced by
-     * a rename, which is how server/sessions/json.ts writes it, stops seeing the new inode. The
-     * watch is not recursive and fires only for that one name, because the transcript cache sits
-     * beside it in ~/.oculus and every scan rewrites it, so watching the directory as a whole would
-     * make each scan cause the next one.
+     * a rename, which is how server/sessions/stores/json.ts writes it, stops seeing the new inode.
+     * The watch is not recursive and fires only for that one name, because the transcript cache
+     * sits beside it in ~/.oculus and every scan rewrites it, so watching the directory as a whole
+     * would make each scan cause the next one.
      */
     const openOverrides = (file: string): void => {
         const name = basename(file);

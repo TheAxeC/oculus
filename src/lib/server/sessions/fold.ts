@@ -21,7 +21,7 @@ import {
     stampOf,
     touch
 } from './record.ts';
-import { isMap, list, whole } from './json.ts';
+import { isMap, list, whole } from './stores/json.ts';
 
 /** The tools whose call is an edit rather than a read. */
 export const EDIT_TOOLS = ['Edit', 'Write', 'NotebookEdit', 'MultiEdit'];

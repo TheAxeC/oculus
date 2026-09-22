@@ -12,9 +12,9 @@ import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve, sep } from 'node:path';
 import { spawnSync } from 'node:child_process';
-import { byKey } from '../../../src/lib/data/guards.ts';
+import { byKey } from '../../../src/lib/data/helpers/guards.ts';
 import { afterAll, afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { Hub } from '../../../src/lib/server/channels.ts';
+import { Hub } from '../../../src/lib/server/core/channels.ts';
 import { IGNORED, relevant, rootsOf, watchGit } from '../../../src/lib/server/watch/git.ts';
 import type { Clock } from '../../../src/lib/server/watch/git.ts';
 import type { Watcher } from '../../../src/lib/server/watch/portfolio.ts';
@@ -25,8 +25,8 @@ import type {
     SessionsPayload
 } from '../../../src/lib/data/model.ts';
 import { recording } from './probe.ts';
-import { noop } from '../../doubles.ts';
-import { scratchDir, sweepScratch } from '../../scratch.ts';
+import { noop } from '../../fixtures/doubles.ts';
+import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
 
@@ -228,7 +228,7 @@ function announce(hub: Hub, roots: string[]): void {
 
 describe('relevant', () => {
     it('drops the git object store and every ignored folder', () => {
-        expect(relevant('src/lib/server/git.ts')).toBe(true);
+        expect(relevant('src/lib/server/git/git.ts')).toBe(true);
         expect(relevant('.git/index')).toBe(true);
         expect(relevant('.git/refs/heads/main')).toBe(true);
         expect(relevant('.git/objects/ab/cdef')).toBe(false);
@@ -332,9 +332,9 @@ describe('watchGit', () => {
             'third.txt'
         ]);
         expect(payload[second].untracked).toEqual([]);
-        // Revert: drop the `rev-parse --git-dir` read from state() in server/git.ts. Eight commands
-        // make one read of the first root (the repository check, the status four, the log, the
-        // branch listing and the worktree listing), and the second root was not read at all.
+        // Revert: drop the `rev-parse --git-dir` read from state() in server/git/git.ts. Eight
+        // commands make one read of the first root (the repository check, the status four, the log,
+        // the branch listing and the worktree listing), and the second root was not read at all.
         expect(reads(first) - before.first).toBe(8);
         expect(reads(second) - before.second).toBe(0);
     });
@@ -367,8 +367,8 @@ describe('watchGit', () => {
         const since = client.got.slice(before.got);
         const named = since.filter((message) => message.channel === 'files');
         expect(named.map((message) => (message.payload as FilesPayload).root)).toEqual([first]);
-        // Revert: drop the `rev-parse --git-dir` read from state() in server/git.ts. The cost of
-        // one write under one watched root: eight git commands, none for the other root.
+        // Revert: drop the `rev-parse --git-dir` read from state() in server/git/git.ts. The cost
+        // of one write under one watched root: eight git commands, none for the other root.
         expect(reads(first) - before.first).toBe(8);
         expect(reads(second) - before.second).toBe(0);
     });
@@ -463,7 +463,7 @@ describe('watchGit', () => {
 
     it('watches nothing and logs nothing for a root that no longer exists', async () => {
         // A session's workspace that was deleted after the session ran: the payload still names
-        // it, and the watcher used to log two ENOENT errors for it on every rescan.
+        // it, and a rescan logs no error for it.
         const gone = join(dir, 'gone');
         const quiet = vi.spyOn(console, 'error').mockImplementation(() => undefined);
         try {

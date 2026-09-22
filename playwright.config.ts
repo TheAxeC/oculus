@@ -2,7 +2,7 @@
 // the served application in Chrome and press the controls, which is the only way the two HTML5 drags
 // (a Focus card onto a lane, a collection card onto another) can be checked at all.
 //
-// It does not build, and it does not have to be told to: tests/browser/serve.ts refuses to serve a
+// It does not build, and it does not have to be told to: tests/browser/helpers/serve.ts refuses to serve a
 // build that is older than src/ or config/, since src/server.ts imports build/handler.js.
 //
 // Only `*.spec.ts` is collected. tests/browser/ also holds the vitest file over the layer's own
@@ -21,7 +21,7 @@ export default defineConfig({
     retries: 0,
     reporter: 'list',
     webServer: {
-        command: 'node tests/browser/serve.ts',
+        command: 'node tests/browser/helpers/serve.ts',
         url: 'http://127.0.0.1:8792/',
         reuseExistingServer: false,
         timeout: 60000,

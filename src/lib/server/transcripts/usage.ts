@@ -1,6 +1,6 @@
 // Layer 2, server. Normalize Claude and Codex transcript usage records for every server consumer.
 
-import { isMap } from '../../data/guards.ts';
+import { isMap } from '../../data/helpers/guards.ts';
 
 export type UsageEvent = {
     model: string;

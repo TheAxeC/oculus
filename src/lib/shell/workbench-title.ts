@@ -1,10 +1,10 @@
 // Layer 3, shell. The document title: the words on the active main tab and the count of sessions
 // waiting in front of them. Apart from the component so the DOM-free string contract is testable.
 
-import { t as catalogText } from '$lib/state/text';
+import { t as catalogText } from '$lib/state/words/text';
 import { registrationLabel } from '$lib/views/registry';
 import type { RegistryStore } from '$lib/views/registry';
-import type { Instance } from '$lib/state/layout';
+import type { Instance } from '$lib/state/workbench/layout';
 
 /** The words on the active main tab, including the per-instance label when it has one. */
 export function activeLabel(registry: RegistryStore, instance: Instance | null): string {

@@ -2,10 +2,10 @@
 // watched so a bookmark added or taken away outside oculus reaches an open page.
 //
 // The page holds the bookmarks for a round and asks for them again when a write from the page moves
-// that round on (state/fs.svelte.ts). A write from anywhere else moves nothing, so without this
-// handle a bookmark added by hand, by another tool or by a second oculus page waits for the next
-// write this page happens to make, and the Files view's close of a form over a bookmark that is gone
-// waits with it.
+// that round on (state/sources/fs.svelte.ts). A write from anywhere else moves nothing, so without
+// this handle a bookmark added by hand, by another tool or by a second oculus page waits for the
+// next write this page happens to make, and the Files view's close of a form over a bookmark that
+// is gone waits with it.
 //
 // It is the `files` channel rather than one of its own because that channel already carries what has
 // changed on the disk under the file browser: a message names a root when a write landed under it,
@@ -26,7 +26,7 @@
 import { existsSync, mkdirSync, unwatchFile, watchFile } from 'node:fs';
 import { dirname } from 'node:path';
 import type { FilesPayload } from '../../data/model.ts';
-import type { Hub } from '../channels.ts';
+import type { Hub } from '../core/channels.ts';
 import type { Watcher } from './portfolio.ts';
 
 /**

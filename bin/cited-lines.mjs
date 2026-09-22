@@ -10,7 +10,7 @@
 // a citation stands for a line a reader can read back, and a line number that has drifted by one
 // lands on the blank or the brace between two blocks as often as on a line of code.
 //
-// A citation may name one line (`src/lib/server/git.ts:345`), a range (`:138-144`) or a list
+// A citation may name one line (`src/lib/server/git/git.ts:345`), a range (`:138-144`) or a list
 // (`:55,185,193`); every line named is printed. Usage:
 //
 //     node bin/cited-lines.mjs [--root <dir>] <report>

@@ -22,7 +22,7 @@ import type {
     RegistryName,
     ScanRule,
     Venue
-} from './model-entities.ts';
+} from './model/model-entities.ts';
 import type {
     Career,
     Collection,
@@ -30,9 +30,9 @@ import type {
     FeedKind,
     Feeds,
     RawFeeds
-} from './model-collections.ts';
+} from './model/model-collections.ts';
 
-export type { FeedData, FeedEntry, FeedKind } from './model-collections.ts';
+export type { FeedData, FeedEntry, FeedKind } from './model/model-collections.ts';
 
 export type RawPortfolio = {
     manifests: RawManifest[];
@@ -312,7 +312,7 @@ export type {
     Subtask,
     Tier,
     Venue
-} from './model-entities.ts';
+} from './model/model-entities.ts';
 
 export type {
     Career,
@@ -323,7 +323,7 @@ export type {
     Lead,
     RawFeeds,
     SchemaField
-} from './model-collections.ts';
+} from './model/model-collections.ts';
 
 export type {
     ConnectAccountConfig,
@@ -331,7 +331,7 @@ export type {
     ConnectKind,
     ConnectProvider,
     ConnectStatus
-} from './model-connect.ts';
+} from './model/model-connect.ts';
 
 export type {
     InboxKind,
@@ -345,7 +345,7 @@ export type {
     MailStatus,
     TriageFile,
     TriageNote
-} from './model-mail.ts';
+} from './model/model-mail.ts';
 
 export type {
     CalendarAccount,
@@ -357,7 +357,7 @@ export type {
     CalendarPayload,
     CalendarProvider,
     CalendarStatus
-} from './model-calendar.ts';
+} from './model/model-calendar.ts';
 
 export type {
     Area,
@@ -403,6 +403,6 @@ export type {
     Turn,
     TurnTool,
     Workspace
-} from './model-sessions.ts';
+} from './model/model-sessions.ts';
 
-export type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from './model-search.ts';
+export type { SearchAnswer, SearchFailure, SearchFile, SearchHit } from './model/model-search.ts';

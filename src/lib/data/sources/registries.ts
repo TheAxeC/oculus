@@ -6,7 +6,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import { findingText, type TextCatalog } from '../finding-text.ts';
+import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import type {
     Finding,
     RawRegistry,

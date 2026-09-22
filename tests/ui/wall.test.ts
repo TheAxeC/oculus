@@ -95,46 +95,48 @@ function audit(file: string): { painted: string[]; answered: Set<string> } {
  * would take away.
  */
 const SOLID: Record<string, string> = {
-    'src/lib/ui/Chip.svelte .chip': 'a control, read at the size of a word',
-    'src/lib/ui/Chip.svelte .chip.filled:not(.toned)': 'the same control, filled',
-    'src/lib/ui/Confirm.svelte .row button': 'a button inside a box that is already translucent',
-    'src/lib/ui/DateInput.svelte .date': 'an input, whose text is typed and read back',
-    'src/lib/ui/Disclosure.svelte .disclosure': 'a control, pressed to open a section',
-    'src/lib/ui/Menu.svelte .opener': 'a control, the button a list hangs off',
-    'src/lib/ui/Menu.svelte .opener.bare:hover':
+    'src/lib/ui/controls/Chip.svelte .chip': 'a control, read at the size of a word',
+    'src/lib/ui/controls/Chip.svelte .chip.filled:not(.toned)': 'the same control, filled',
+    'src/lib/ui/controls/Confirm.svelte .row button':
+        'a button inside a box that is already translucent',
+    'src/lib/ui/forms/DateInput.svelte .date': 'an input, whose text is typed and read back',
+    'src/lib/ui/tree/Disclosure.svelte .disclosure': 'a control, pressed to open a section',
+    'src/lib/ui/menu/MenuOpener.svelte .opener': 'a control, the button a list hangs off',
+    'src/lib/ui/menu/MenuOpener.svelte .opener.bare:hover':
         'a hover response, saying the bare opener is under the pointer',
-    'src/lib/views/shared/CardActions.svelte [data-action-more] :global(.opener)':
+    'src/lib/views/shared/card/CardActions.svelte [data-action-more] :global(.opener)':
         'a control, the More opener drawn as the card controls beside it are',
-    'src/lib/ui/Menu.svelte .item:hover': 'a hover response inside a list that is translucent',
-    'src/lib/ui/Meter.svelte .track': 'a track, read as the proportion of it the fill covers',
-    'src/lib/ui/MultiSelect.svelte .filter': 'an input, whose text is typed and read back',
-    'src/lib/ui/Search.svelte .search': 'an input, whose text is typed and read back',
-    'src/lib/ui/Select.svelte .select': 'an input, whose choice is read back',
-    'src/lib/ui/Table.svelte tbody tr:hover td':
-        'a hover response, saying which row the pointer is on',
-    'src/lib/ui/TextArea.svelte .area': 'an input, whose text is typed and read back',
-    'src/lib/ui/TextInput.svelte .text': 'an input, whose text is typed and read back',
-    'src/lib/ui/TabFace.svelte .close:hover':
-        'a hover response, saying the close control is under the pointer',
-    'src/lib/ui/Ticker.svelte .act': 'a control, pressed to run what it names',
-    'src/lib/ui/ToolButton.svelte .tool': 'a control, read at the size of a word',
-    'src/lib/ui/ToolButton.svelte .tool.bare:hover:not(:disabled)':
-        'a hover response, saying which bare icon the pointer is on',
-    'src/lib/ui/Breadcrumb.svelte .crumb:hover':
-        'a hover response, saying which segment the pointer is on',
-    'src/lib/ui/TreeItem.svelte .item:not(.muted, .warn, .error):hover':
-        'a hover response, saying which row the pointer is on',
-    'src/lib/views/hpc/Capacity.svelte .bar':
+    'src/lib/ui/menu/Menu.svelte .item:hover': 'a hover response inside a list that is translucent',
+    'src/lib/ui/display/Meter.svelte .track':
         'a track, read as the proportion of it the fill covers',
-    'src/lib/views/sessions/SessionWorkspace.svelte .pick:hover, .hide:hover':
+    'src/lib/ui/forms/MultiSelect.svelte .filter': 'an input, whose text is typed and read back',
+    'src/lib/ui/controls/Search.svelte .search': 'an input, whose text is typed and read back',
+    'src/lib/ui/forms/Select.svelte .select': 'an input, whose choice is read back',
+    'src/lib/ui/display/Table.svelte tbody tr:hover td':
         'a hover response, saying which row the pointer is on',
-    'src/lib/views/sessions/TerminalRows.svelte .pick:hover, .hide:hover':
+    'src/lib/ui/forms/TextArea.svelte .area': 'an input, whose text is typed and read back',
+    'src/lib/ui/forms/TextInput.svelte .text': 'an input, whose text is typed and read back',
+    'src/lib/ui/tabs/TabFace.svelte .close:hover':
+        'a hover response, saying the close control is under the pointer',
+    'src/lib/ui/display/Ticker.svelte .act': 'a control, pressed to run what it names',
+    'src/lib/ui/controls/ToolButton.svelte .tool': 'a control, read at the size of a word',
+    'src/lib/ui/controls/ToolButton.svelte .tool.bare:hover:not(:disabled)':
+        'a hover response, saying which bare icon the pointer is on',
+    'src/lib/ui/tabs/Breadcrumb.svelte .crumb:hover':
+        'a hover response, saying which segment the pointer is on',
+    'src/lib/ui/tree/TreeItem.svelte .item:not(.muted, .warn, .error):hover':
         'a hover response, saying which row the pointer is on',
-    'src/lib/views/shared/CardDetails.svelte .crosslink:hover':
+    'src/lib/views/system/hpc/Capacity.svelte .bar':
+        'a track, read as the proportion of it the fill covers',
+    'src/lib/views/sessions/session-list/SessionWorkspace.svelte .pick:hover, .hide:hover':
+        'a hover response, saying which row the pointer is on',
+    'src/lib/views/sessions/session-list/TerminalRows.svelte .pick:hover, .hide:hover':
+        'a hover response, saying which row the pointer is on',
+    'src/lib/views/shared/card/CardDetails.svelte .crosslink:hover':
         'a hover response, saying which tag the pointer is on',
-    'src/lib/views/shared/CardLinks.svelte .crosslink:hover':
+    'src/lib/views/shared/card/CardLinks.svelte .crosslink:hover':
         'a hover response, saying which link the pointer is on',
-    'src/lib/views/shared/CardSessions.svelte .session:hover':
+    'src/lib/views/shared/card/CardSessions.svelte .session:hover':
         'a hover response, saying which session the pointer is on'
 };
 
@@ -148,7 +150,7 @@ describe('the wallpaper rule', () => {
                 .map((selector) => `${file} ${selector}`);
         });
 
-    // revert: src/lib/ui/TabFace.svelte:258 => delete
+    // revert: src/lib/ui/tabs/TabFace.svelte:258 => delete
     it('answers every surface a component paints, or names it as solid with its reason', () => {
         expect([...new Set(unpaired)].sort()).toEqual(Object.keys(SOLID).sort());
     });

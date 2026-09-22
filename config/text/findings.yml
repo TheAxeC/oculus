@@ -38,7 +38,7 @@ text:
             defined_twice: key {0} is already defined in {1}; {2} wins
             text_not_a_map: 'text catalog: {0} is not a map'
             glyph_no_icon: glyph {0} has no icon
-            icon_not_glyph: '{0} is not a name in config/glyphs.yml'
+            icon_not_glyph: '{0} is not a name in config/catalogs/glyphs.yml'
             icon_not_shipped: the icon package ships no {0}.svg
             skip_permissions_retired: 'chat.skip_permissions is not read; the key is tasks.skip_permissions'
             paint_limit: editor.paint_limit_kb must be a number above zero; the editor paints without colour until it is
@@ -86,4 +86,4 @@ text:
             host_status: host status "{0}" is not one of the host status vocabulary
             venue_theme: theme "{0}" is not one of the venue themes
             dataset_theme: theme "{0}" is not one of the dataset themes
-            theme_labels_retired: 'theme_labels is not read; the labels are data_themes in config/vocab.yml'
+            theme_labels_retired: 'theme_labels is not read; the labels are data_themes in config/catalogs/vocab.yml'

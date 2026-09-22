@@ -5,36 +5,37 @@
 // What this does NOT cover: anything that needs a DOM. There is no browser in this suite, so a sort
 // is not clicked, Escape is not pressed and no $effect runs; the sort itself is checked through the
 // exported order() and the interactions are checked in a browser. The colours are covered by
-// tests/ui/colours.test.ts and tests/contrast.test.ts, which read the style rather than the markup.
+// tests/ui/colours.test.ts and tests/checks/look/contrast.test.ts, which read the style rather than
+// the markup.
 
 import { readFileSync } from 'node:fs';
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
 import { createRawSnippet } from 'svelte';
 import type { Component } from 'svelte';
-import Card from '../../src/lib/ui/Card.svelte';
-import Chip from '../../src/lib/ui/Chip.svelte';
-import Confirm from '../../src/lib/ui/Confirm.svelte';
-import Empty from '../../src/lib/ui/Empty.svelte';
-import KeySheet from '../../src/lib/ui/KeySheet.svelte';
-import { sheetRows } from '../../src/lib/ui/key-rows.ts';
-import Menu from '../../src/lib/ui/Menu.svelte';
-import Meter from '../../src/lib/ui/Meter.svelte';
-import { menuPlacement } from '../../src/lib/ui/menu-items.ts';
-import Pane from '../../src/lib/ui/Pane.svelte';
-import { heldStop, nextStop } from '../../src/lib/ui/roving.ts';
-import Search from '../../src/lib/ui/Search.svelte';
-import Segment from '../../src/lib/ui/Segment.svelte';
-import Tabs from '../../src/lib/ui/Tabs.svelte';
-import Table from '../../src/lib/ui/Table.svelte';
-import { order, type Column } from '../../src/lib/ui/table-rows.ts';
-import Ticker from '../../src/lib/ui/Ticker.svelte';
-import type { TickerRow } from '../../src/lib/ui/ticker-rows.ts';
-import Toolbar from '../../src/lib/ui/Toolbar.svelte';
-import ToolButton from '../../src/lib/ui/ToolButton.svelte';
-import Tooltip from '../../src/lib/ui/Tooltip.svelte';
-import { describedBy, describedControl } from '../../src/lib/ui/tooltip-target.ts';
-import Gallery from '../../src/lib/views/Gallery.svelte';
+import Card from '../../src/lib/ui/frame/Card.svelte';
+import Chip from '../../src/lib/ui/controls/Chip.svelte';
+import Confirm from '../../src/lib/ui/controls/Confirm.svelte';
+import Empty from '../../src/lib/ui/frame/Empty.svelte';
+import KeySheet from '../../src/lib/ui/menu/KeySheet.svelte';
+import { sheetRows } from '../../src/lib/ui/menu/key-rows.ts';
+import Menu from '../../src/lib/ui/menu/Menu.svelte';
+import Meter from '../../src/lib/ui/display/Meter.svelte';
+import { menuPlacement } from '../../src/lib/ui/menu/menu-items.ts';
+import Pane from '../../src/lib/ui/frame/Pane.svelte';
+import { heldStop, nextStop } from '../../src/lib/ui/tree/roving.ts';
+import Search from '../../src/lib/ui/controls/Search.svelte';
+import Segment from '../../src/lib/ui/controls/Segment.svelte';
+import Tabs from '../../src/lib/ui/tabs/Tabs.svelte';
+import Table from '../../src/lib/ui/display/Table.svelte';
+import { order, type Column } from '../../src/lib/ui/display/table-rows.ts';
+import Ticker from '../../src/lib/ui/display/Ticker.svelte';
+import type { TickerRow } from '../../src/lib/ui/display/ticker-rows.ts';
+import Toolbar from '../../src/lib/ui/frame/Toolbar.svelte';
+import ToolButton from '../../src/lib/ui/controls/ToolButton.svelte';
+import Tooltip from '../../src/lib/ui/menu/Tooltip.svelte';
+import { describedBy, describedControl } from '../../src/lib/ui/menu/tooltip-target.ts';
+import Gallery from '../../src/lib/views/system/gallery/Gallery.svelte';
 import {
     asciiCatalog,
     engineDir,
@@ -50,10 +51,10 @@ import {
     setGlyphMode,
     setGlyphs,
     t
-} from '../../src/lib/state/text.ts';
-import { setVocab } from '../../src/lib/state/tones.ts';
-import { noop } from '../doubles.ts';
-import { clientContext, createClientState, type ClientState } from '../client.ts';
+} from '../../src/lib/state/words/text.ts';
+import { setVocab } from '../../src/lib/state/words/tones.ts';
+import { noop } from '../fixtures/doubles.ts';
+import { clientContext, createClientState, type ClientState } from '../fixtures/client.ts';
 
 let client: ClientState;
 
@@ -200,7 +201,7 @@ describe('Chip', () => {
     // The cut itself is a layout effect no server render measures; what is read here is the rule
     // that makes a long value end in an ellipsis inside the chip rather than at the card's edge.
     it('cuts a long label at its own edge', () => {
-        const source = readFileSync('src/lib/ui/Chip.svelte', 'utf8');
+        const source = readFileSync('src/lib/ui/controls/Chip.svelte', 'utf8');
         const label = source.slice(source.indexOf('.chip .label {'));
         const rule = label.slice(0, label.indexOf('}'));
         expect(rule).toContain('overflow: hidden');
@@ -498,7 +499,7 @@ describe('Ticker', () => {
     });
 
     // Revert: in Ticker.svelte, draw a row's buttons whether or not the caller said what one means.
-    // revert: src/lib/ui/Ticker.svelte:324 => {#if row.actions !== undefined}
+    // revert: src/lib/ui/display/Ticker.svelte:324 => {#if row.actions !== undefined}
     it('draws a row action as a button only when the caller says what one means', () => {
         expect(html(Ticker, { rows })).not.toContain('1w');
         const body = html(Ticker, { rows, onaction: noop });
@@ -508,7 +509,7 @@ describe('Ticker', () => {
     });
 
     // Revert: in Ticker.svelte, mark no button as the one the row keeps.
-    // revert: src/lib/ui/Ticker.svelte:331 => class:kept={false}
+    // revert: src/lib/ui/display/Ticker.svelte:331 => class:kept={false}
     it('lists the buttons in the order the row gives them, marking the one it keeps', () => {
         const body = html(Ticker, {
             rows,
@@ -622,7 +623,7 @@ describe('Tooltip', () => {
     // There is no DOM in this suite, so the listener is read off the source rather than fired: an
     // overlay taking focus while the pointer rests on a control is a browser-suite check.
     it('puts an open bubble away when focus lands outside its own wrapper', () => {
-        const source = readFileSync('src/lib/ui/Tooltip.svelte', 'utf8');
+        const source = readFileSync('src/lib/ui/menu/Tooltip.svelte', 'utf8');
         expect(source).toContain("document.addEventListener('focusin', elsewhere)");
         expect(source).toContain("document.removeEventListener('focusin', elsewhere)");
         expect(source).toContain('if (target instanceof Node && box.contains(target)) return;');
@@ -763,7 +764,7 @@ describe('one strip, one stop of the focus order', () => {
 
 // What a node render can show of the tab look: the classes a tab carries for being the one shown and
 // for holding unsaved text, the dot drawn only for the latter, and a preview's mark. The pointer's
-// hover, and what each class paints, are tests/browser/tabs.spec.ts.
+// hover, and what each class paints, are tests/browser/workbench/tabs.spec.ts.
 describe('the marks a tab carries', () => {
     function strip(): string {
         return html(Tabs, {
@@ -791,16 +792,16 @@ describe('the marks a tab carries', () => {
         return /^<div class="([^"]*)"/.exec(tab)?.[1].replace(/\s*svelte-\S+/g, '') ?? '';
     }
 
-    // Revert: drop `class:current` from ui/TabFace.svelte, and the shown tab loses its mark.
-    // revert: src/lib/ui/TabFace.svelte:77 => class:current={false}
+    // Revert: drop `class:current` from ui/tabs/TabFace.svelte, and the shown tab loses its mark.
+    // revert: src/lib/ui/tabs/TabFace.svelte:77 => class:current={false}
     it('marks the shown tab current and no other', () => {
         const body = strip();
         expect(classOf(tabOf(body, 'Shown'))).toBe('tab current');
         expect(classOf(tabOf(body, 'Other'))).toBe('tab');
     });
 
-    // Revert: drop `class:dirty` or the dot's block from ui/TabFace.svelte.
-    // revert: src/lib/ui/TabFace.svelte:78 => class:dirty={false}
+    // Revert: drop `class:dirty` or the dot's block from ui/tabs/TabFace.svelte.
+    // revert: src/lib/ui/tabs/TabFace.svelte:78 => class:dirty={false}
     it('marks a tab holding unsaved text and draws its dot, and draws no dot on a clean tab', () => {
         const body = strip();
         const held = tabOf(body, 'Held');
@@ -813,8 +814,8 @@ describe('the marks a tab carries', () => {
         }
     });
 
-    // Revert: drop the `aria-label` of the tab face in ui/TabFace.svelte.
-    // revert: src/lib/ui/TabFace.svelte:89 => aria-label={undefined}
+    // Revert: drop the `aria-label` of the tab face in ui/tabs/TabFace.svelte.
+    // revert: src/lib/ui/tabs/TabFace.svelte:89 => aria-label={undefined}
     it('names a tab holding unsaved text with the catalog word, and leaves a clean tab its label', () => {
         const body = strip();
         const face = (label: string): string =>
@@ -826,7 +827,8 @@ describe('the marks a tab carries', () => {
         }
     });
 
-    // Revert: drop `class:unfocused`, `class:low` or `class:card` from the strip in ui/Tabs.svelte.
+    // Revert: drop `class:unfocused`, `class:low` or `class:card` from the strip in
+    // ui/tabs/Tabs.svelte.
     it('marks the strip unfocused, low and on the card surface only when asked', () => {
         const classes = (body: string): string =>
             /<div class="(strip[^"]*)"/.exec(body)?.[1].replace(/\s*svelte-\S+/g, '') ?? '';
@@ -843,7 +845,8 @@ describe('the marks a tab carries', () => {
         expect(classes(asked)).toBe('strip unfocused low card');
     });
 
-    // Revert: drop `class:bare` from ui/ToolButton.svelte or from the opener of ui/Menu.svelte.
+    // Revert: drop `class:bare` from ui/controls/ToolButton.svelte or from the opener of
+    // ui/menu/Menu.svelte.
     it('draws a bare tool button and a bare menu opener only when asked', () => {
         const tool = (bare: boolean): string =>
             html(ToolButton, {
@@ -868,8 +871,8 @@ describe('the marks a tab carries', () => {
         expect(opener(false)).not.toMatch(/class="opener[^"]*\bbare\b/);
     });
 
-    // Revert: drop the Glyph before the label in ui/TabFace.svelte.
-    // revert: src/lib/ui/TabFace.svelte:100 => delete
+    // Revert: drop the Glyph before the label in ui/tabs/TabFace.svelte.
+    // revert: src/lib/ui/tabs/TabFace.svelte:100 => delete
     it('draws the glyph before the label, and the preview mark on the preview tab alone', () => {
         const body = strip();
         const shown = tabOf(body, 'Shown');

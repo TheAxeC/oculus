@@ -6,7 +6,7 @@
 import { readFileSync, readdirSync, statSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 import { parse } from 'yaml';
-import { findingText, type TextCatalog } from '../finding-text.ts';
+import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import type { Finding, RawManifest, ScanRule, Tier } from '../model.ts';
 
 /** Folder names the walk never descends into: a project's own code and attic hold no manifests. */

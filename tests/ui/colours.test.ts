@@ -1,4 +1,4 @@
-// Every colour a component paints is inside the set tests/contrast.test.ts measured.
+// Every colour a component paints is inside the set tests/checks/look/contrast.test.ts measured.
 //
 // That test walks every `--<x>-txt` on `--bg`, `--panel`, `--card` and `--chip`, every `--c-<hue>-txt` on its
 // own tint, every `--c-<hue>-lane-txt` on its lane surface `--c-<hue>-lane`, and every `--on-c-<hue>` on `--c-<hue>`, under all seventeen themes. A component that only
@@ -39,9 +39,9 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { deriveTokens, ratio } from '../../src/lib/themes/derive.ts';
 import { parseBlocks, resolveTheme } from '../../src/lib/themes/parse.ts';
 import { engineDir, loadConfig } from '../../src/lib/data/sources/config.ts';
-import { byKey } from '../../src/lib/data/guards.ts';
-import { setAppearance, themeClass, themes } from '../../src/lib/state/appearance.ts';
-import { scratchDir, sweepScratch } from '../scratch.ts';
+import { byKey } from '../../src/lib/data/helpers/guards.ts';
+import { setAppearance, themeClass, themes } from '../../src/lib/state/words/appearance.ts';
+import { scratchDir, sweepScratch } from '../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
 
@@ -434,10 +434,11 @@ export function findColourViolations(base: string, roots: string[]): string[] {
 }
 
 /**
- * The one pair the rule allows that tests/contrast.test.ts does not walk: an `--on-<surface>` on the
- * surface it is named after, which is what a ToolButton in force paints. That test measures only the
- * `--on-c-<hue>` half of the `--on-` family, so this measures the other half here rather than
- * editing it. It fails if a theme is ever given a surface no black and no white reads on.
+ * The one pair the rule allows that tests/checks/look/contrast.test.ts does not walk: an
+ * `--on-<surface>` on the surface it is named after, which is what a ToolButton in force paints.
+ * That test measures only the `--on-c-<hue>` half of the `--on-` family, so this measures the other
+ * half here rather than editing it. It fails if a theme is ever given a surface no black and no
+ * white reads on.
  */
 describe('the surfaces a component may fill and paint on', () => {
     const THEMES_DIR = resolve(SRC, 'lib', 'themes');
@@ -523,7 +524,7 @@ describe('the code window palette', () => {
     });
 
     // Each is an authored hue of the palette, which is what makes derive.ts mint its `-txt` against
-    // every theme's own surfaces and tests/contrast.test.ts measure the pair.
+    // every theme's own surfaces and tests/checks/look/contrast.test.ts measure the pair.
     it('gives each one a colour of its own rather than a reference to another token', () => {
         expect(tokens.filter((name) => !/^#[0-9a-f]{6}$/i.test(root[name]))).toEqual([]);
     });
@@ -533,7 +534,10 @@ describe('the code window palette', () => {
     it.each(['Code.svelte', 'Editor.svelte'])(
         'paints %s through those six and nothing else',
         (file) => {
-            const source = readFileSync(join(SRC, 'lib', 'views', 'source', file), 'utf8');
+            const source = readFileSync(
+                join(SRC, 'lib', 'views', 'sources', 'source', file),
+                'utf8'
+            );
             const painted = [...source.matchAll(/color:\s*var\((--c-code-[a-z-]+)-txt\)/g)].map(
                 (found) => found[1]
             );

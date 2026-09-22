@@ -17,7 +17,7 @@ import {
 } from '../../../src/lib/server/sessions/group.ts';
 import { defaultOverridesPath } from '../../../src/lib/server/sessions/overrides.ts';
 import type { Area, SessionRecord, Workspace } from '../../../src/lib/data/model.ts';
-import { scratchDir, sweepScratch } from '../../scratch.ts';
+import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
 

@@ -2,16 +2,17 @@
 // the route loader registers them, so no shell module imports a view by name and no view knows
 // where it is mounted. It is the one module the shell and the views share.
 //
-// A registration's label and glyph are catalog keys rather than words: the label reads through
-// t() at the call site that draws it, and the glyph key's value is a name in config/glyphs.yml. A
-// view is therefore renamed or re-iconed in config, and tests/views/registry.test.ts checks that
-// both keys resolve, which is the gate tests/keys.test.ts cannot give a key that comes from data.
+// A registration's label and glyph are catalog keys rather than words: the label reads through t()
+// at the call site that draws it, and the glyph key's value is a name in
+// config/catalogs/glyphs.yml. A view is therefore renamed or re-iconed in config, and
+// tests/views/whole/registry.test.ts checks that both keys resolve, which is the gate
+// tests/checks/source/keys.test.ts cannot give a key that comes from data.
 
 import type { Component } from 'svelte';
-import type { Instance, ViewId } from '$lib/state/layout';
-import type { LayoutStore } from '$lib/state/layout.svelte';
-import type { ClientState } from '$lib/state/context';
-import { glyph, lookup, t } from '$lib/state/text';
+import type { Instance, ViewId } from '$lib/state/workbench/layout';
+import type { LayoutStore } from '$lib/state/workbench/layout.svelte';
+import type { ClientState } from '$lib/state/client/context';
+import { glyph, lookup, t } from '$lib/state/words/text';
 
 /** A split cell carries a theme hue, its count and its configured label. */
 export type BadgeCell = { count: number; color: string; label: string };
@@ -35,7 +36,9 @@ export type Registration = {
     id: ViewId;
     /** A key in the text catalog holding the view's name. */
     label: string;
-    /** A text-catalog key whose value is a name in the `glyphs:` map of config/glyphs.yml. */
+    /**
+     * A text-catalog key whose value is a name in the `glyphs:` map of config/catalogs/glyphs.yml.
+     */
     glyph: string;
     component: Component<ViewProps>;
     /** The stable id of the rail group that owns this view. */
@@ -52,7 +55,7 @@ export type Registration = {
     badge?: (state: ClientState) => string;
     /** A glyph name drawn in the badge before its text, for a badge that is a mark, not a count. */
     badgeGlyph?: (state: ClientState) => string;
-    /** A hue name from state/tones.ts; absent keeps the rail's accent badge. */
+    /** A hue name from state/words/tones.ts; absent keeps the rail's accent badge. */
     badgeTone?: (state: ClientState) => string;
     /** The badge's hover words, supplied by the registration's state selectors. */
     badgeTitle?: (state: ClientState) => string;

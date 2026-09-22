@@ -5,26 +5,20 @@ package-lock.json
 .scratch/
 *.md
 
-# The configuration is oculus's own: regrouped one concern to a file in O10c, written in the
-# two-space style the cockpit's copies arrived in and kept there so a key still reads beside the
-# comment block that explains it. A formatter pass would rewrite the indentation and the comment
-# columns of all eight. meta.yml is not listed: it is oculus's own from the start and is formatted.
-# manifest-schema.yml carries the form's structure as well as its words since O11 (`type`, `section`,
-# `from`, `options` per field), so it is no longer the cockpit's file with different words in it.
-# The demo hub is data, not source: it is the cockpit's dummy/ ported across, and a formatter pass
-# would rewrite the indentation and the quoting of every manifest and every collection file, which is
-# what tests/data/demo-hub.test.ts and the browser specs read.
+# The configuration is written in two-space YAML with each key beside the comment block that explains
+# it, and a formatter pass would rewrite the indentation and the comment columns of every file listed.
+# meta.yml and icons.yml are formatted. The demo hub is data, not source: a formatter pass would
+# rewrite the indentation and the quoting of every manifest and every collection file, which is what
+# tests/data/demo-hub.test.ts and the browser specs read.
 demo/
 
 config/appearance.yml
 config/behavior.yml
-config/glyphs.yml
+config/catalogs/glyphs.yml
 config/layout.yml
-config/manifest-schema.yml
+config/catalogs/manifest-schema.yml
 config/sources.yml
-config/text.yml
-config/text-oculus.yml
-config/vocab.yml
+config/catalogs/vocab.yml
 
 # The machine's own file is not the tool's source: it is written by hand on the machine it belongs to
 # and is never tracked, so a formatter has no say over it and a check must not go red over it.

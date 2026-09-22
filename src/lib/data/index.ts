@@ -6,7 +6,7 @@
 // what the socket carries; the caller owns the version number and increments it on every rebuild.
 
 import { join } from 'node:path';
-import { isMap } from './guards.ts';
+import { isMap } from './helpers/guards.ts';
 import { readManifests } from './sources/manifests.ts';
 import { REGISTRY_FILES, readRegistries } from './sources/registries.ts';
 import { readCollections } from './sources/collections.ts';
@@ -15,9 +15,9 @@ import { readFeeds } from './sources/feeds.ts';
 import { projectDocs } from './sources/docs.ts';
 import { deckFindings, readPresent } from './sources/present.ts';
 import { configDir, textCatalog } from './sources/config.ts';
-import { normalise } from './normalise.ts';
-import { validate } from './validate.ts';
-import type { TextCatalog } from './finding-text.ts';
+import { normalise } from './snapshot/normalise.ts';
+import { validate } from './snapshot/validate.ts';
+import type { TextCatalog } from './helpers/finding-text.ts';
 import type {
     CollectionFile,
     DocPresence,

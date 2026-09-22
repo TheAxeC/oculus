@@ -23,7 +23,7 @@ import type {
     SessionRecord,
     Workspace
 } from '../../data/model.ts';
-import { isMap } from './json.ts';
+import { isMap } from './stores/json.ts';
 import { overrides as readOverrides, type Override } from './overrides.ts';
 
 export const GENERAL = '(general)';
@@ -410,7 +410,7 @@ function readRoots(roots: string[] | null): string[] {
     return [...cleaned].sort(byDepth);
 }
 
-/** Longest first, then reverse alphabetical, which is the cockpit's order and is deterministic. */
+/** Longest first, then reverse alphabetical, which is deterministic. */
 function byDepth(a: string, b: string): number {
     if (a.length !== b.length) return b.length - a.length;
     return a < b ? 1 : a > b ? -1 : 0;

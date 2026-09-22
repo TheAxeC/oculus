@@ -33,10 +33,10 @@
 import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { basename, dirname, join } from 'node:path';
-import { byKey } from '../../data/guards.ts';
+import { byKey } from '../../data/helpers/guards.ts';
 import type { FilesPayload, GitPayload, Message, SessionsPayload } from '../../data/model.ts';
-import type { Hub, Sink } from '../channels.ts';
-import { statusFor, TIMEOUT_MS } from '../git.ts';
+import type { Hub, Sink } from '../core/channels.ts';
+import { statusFor, TIMEOUT_MS } from '../git/git.ts';
 import type { Watcher } from './portfolio.ts';
 
 /** Milliseconds one root is re-read at most once in. */
@@ -68,7 +68,7 @@ export type GitWatchOptions = {
     throttle?: number;
     /** The timer pair the throttle runs on; the globals when absent. */
     clock?: Clock;
-    /** Milliseconds one git command is given; server/git.ts's default when absent. */
+    /** Milliseconds one git command is given; server/git/git.ts's default when absent. */
     timeout?: number;
     /**
      * A root watched whether or not a session names it. The hub itself is one: the deposit and the
@@ -123,7 +123,8 @@ function reason(error: unknown): string {
 /**
  * Watch the workspaces the `sessions` channel names and publish on the `git` channel. A root that
  * stops being named is unwatched and drops out of the payload; a root that cannot be watched still
- * gets its state read once, since server/git.ts answers for a directory that is not a repository.
+ * gets its state read once, since server/git/git.ts answers for a directory that is not a
+ * repository.
  */
 /** A git watcher: a portfolio watcher that can also be told to re-read one root at once. */
 export type GitWatcher = Watcher & {

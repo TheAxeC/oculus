@@ -12,7 +12,7 @@
 // the portfolio on every write. An event counts only when its filename ends in .yml or is the one
 // Markdown file the build reads, a project's PRESENT.md, and no segment of its path is `code` or
 // `attic`, which also drops an editor's swap and lock files. The flat LinkedIn folder also accepts
-// the post filenames read by server/feeds.ts.
+// the post filenames read by server/content/feeds.ts.
 //
 // One rebuild too many is possible and harmless: the first fs.watch of a process on darwin can
 // deliver an event for a write that happened shortly before the watch was opened, so a start that
@@ -23,7 +23,7 @@ import { existsSync, watch } from 'node:fs';
 import type { FSWatcher } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
 import { buildPortfolio, portfolioConfigFrom } from '../../data/index.ts';
-import { AUDIT_PATHS, auditFindings, auditRules, mutedSignatures } from '../audit.ts';
+import { AUDIT_PATHS, auditFindings, auditRules, mutedSignatures } from '../content/audit.ts';
 import {
     behaviorFindings,
     configDir,
@@ -35,11 +35,11 @@ import {
 } from '../../data/sources/config.ts';
 import { MANIFEST } from '../../data/sources/manifests.ts';
 import { PRESENT_DOC } from '../../data/sources/present.ts';
-import { docFindings, layoutFile } from '../docs.ts';
-import { readRoots, rootsFile } from '../files.ts';
-import { buildFeeds, isLinkedinFile } from '../feeds.ts';
+import { docFindings, layoutFile } from '../content/docs.ts';
+import { readRoots, rootsFile } from '../files/files.ts';
+import { buildFeeds, isLinkedinFile } from '../content/feeds.ts';
 import type { AuditPayload, ConfigPayload, PortfolioConfig } from '../../data/model.ts';
-import type { Hub } from '../channels.ts';
+import type { Hub } from '../core/channels.ts';
 
 export type WatchPaths = {
     /** Absolute path of the research hub whose YAML the snapshot is built from. */

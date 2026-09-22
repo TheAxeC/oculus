@@ -17,8 +17,8 @@
 // Focus lane fills with, beside `--c-<hue>-lane-txt`, the hue's text colour made readable on that
 // surface, which the header's name and count are drawn in, so every other hue text is left as it is.
 //
-// The numbers come from the cockpit's build-time tools/cockpit/src/cockpit/contrast.py: the same WCAG
-// relative luminance, the same 0.02 lightness step, the same 50-step bound, the same order of grounds.
+// The rule is WCAG relative luminance, a 0.02 lightness step, a bound of 50 steps, and the grounds
+// tried in a fixed order.
 // Nothing here touches the document; ui/theme.ts sets the theme class and applies these tokens.
 // Pure functions, no imports, so the contrast test can run them over every theme in a plain node run.
 
@@ -45,8 +45,9 @@ const ACCENT_SHARE = 0.2;
  * How much of a hue a lane header's surface carries, the rest being the panel. At half, with every
  * Focus cluster open and every band column drawn, the headers drawn next to each other, stacked in
  * a column and beside the full-width Ideas lane stay a CIEDE2000 of 10 apart under every theme in
- * the colours config/vocab.yml gives them, which tests/lane-distance.test.ts holds. A smaller share
- * folds those neighbours into one colour in a theme that gives two hues near values.
+ * the colours config/catalogs/vocab.yml gives them, which tests/checks/look/lane-distance.test.ts
+ * holds. A smaller share folds those neighbours into one colour in a theme that gives two hues near
+ * values.
  */
 const LANE_SHARE = 0.5;
 

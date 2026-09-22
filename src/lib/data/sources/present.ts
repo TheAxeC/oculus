@@ -14,9 +14,9 @@
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
-import { PRESENT_DOC } from '../deck.ts';
-import { byKey, fields, isMap, str, strings } from '../guards.ts';
-import { findingText, type TextCatalog } from '../finding-text.ts';
+import { PRESENT_DOC } from '../helpers/deck.ts';
+import { byKey, fields, isMap, str, strings } from '../helpers/guards.ts';
+import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import { readFrontmatter, splitFrontmatter } from './docs.ts';
 import type {
     Finding,
@@ -30,7 +30,10 @@ import type {
 
 export { PRESENT_DOC };
 
-/** The folder a project's slide figures live in; the file itself is data/deck.ts's PRESENT_DOC. */
+/**
+ * The folder a project's slide figures live in; the file itself is data/helpers/deck.ts's
+ * PRESENT_DOC.
+ */
 export const PRESENT_DIR = 'present';
 
 /** The heading the deck strips off the body, so the narrative starts at its first paragraph. */

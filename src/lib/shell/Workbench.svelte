@@ -11,29 +11,29 @@
     // and which of the two glyph vocabularies renders.
 
     import { activeLabel, windowTitle } from '$lib/shell/workbench-title';
-    import ActivityRail from './ActivityRail.svelte';
-    import { docState, railOrder, type Bookmark, type DocEntry, type NavGroup } from './rail';
-    import DropLayer from './DropLayer.svelte';
-    import { createWorkbenchKeys } from './workbench-keys.svelte';
-    import PageStrip from './PageStrip.svelte';
-    import type { Arrangement } from './page-strip';
-    import Palette from './Palette.svelte';
-    import FoldedPane from './FoldedPane.svelte';
-    import PageLeaf from './PageLeaf.svelte';
-    import PaneView from './PaneView.svelte';
-    import SplitView from './SplitView.svelte';
-    import UpdateTray from './UpdateTray.svelte';
-    import KeySheet from '$lib/ui/KeySheet.svelte';
+    import ActivityRail from './rail/ActivityRail.svelte';
+    import { docState, railOrder, type Bookmark, type DocEntry, type NavGroup } from './rail/rail';
+    import DropLayer from './panes/DropLayer.svelte';
+    import { createWorkbenchKeys } from './keys/workbench-keys.svelte';
+    import PageStrip from './panes/PageStrip.svelte';
+    import type { Arrangement } from './panes/page-strip';
+    import Palette from './keys/Palette.svelte';
+    import FoldedPane from './panes/FoldedPane.svelte';
+    import PageLeaf from './panes/PageLeaf.svelte';
+    import PaneView from './panes/PaneView.svelte';
+    import SplitView from './panes/SplitView.svelte';
+    import UpdateTray from './rail/UpdateTray.svelte';
+    import KeySheet from '$lib/ui/menu/KeySheet.svelte';
     import { WALL_CLASS, applyTheme, applyWallpaper } from '$lib/ui/theme';
-    import { paneAt, resize, type Layout } from '$lib/state/layout';
-    import { setGlyphMode, t } from '$lib/state/text';
+    import { paneAt, resize, type Layout } from '$lib/state/workbench/layout';
+    import { setGlyphMode, t } from '$lib/state/words/text';
     import {
         terminalTheme,
         themeClass,
         wallpaperOnTheme,
         wallpaperSettings
-    } from '$lib/state/appearance';
-    import { useState } from '$lib/state/use';
+    } from '$lib/state/words/appearance';
+    import { useState } from '$lib/state/client/use';
 
     const client = useState();
 
@@ -163,7 +163,7 @@
         applyTheme(document, [themeClass(theme()), wall ? WALL_CLASS : ''].join(' '), crt());
         applyWallpaper(document, paper, wall);
         // The terminal palettes draw the ASCII stand-ins unless the viewer asked for the real
-        // glyphs; every other theme draws what config/glyphs.yml names.
+        // glyphs; every other theme draws what config/catalogs/glyphs.yml names.
         setGlyphMode(terminalTheme(theme()) && !unicode() ? 'ascii' : 'unicode');
     });
 

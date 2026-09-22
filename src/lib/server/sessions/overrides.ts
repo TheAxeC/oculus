@@ -10,9 +10,9 @@
 
 import { homedir } from 'node:os';
 import { isAbsolute, join } from 'node:path';
-import { plain } from '../changes.ts';
-import { isMap, readJson, writeJsonAtomic } from './json.ts';
-import type { ChangeRecord } from '../changes.ts';
+import { plain } from '../git/changes.ts';
+import { isMap, readJson, writeJsonAtomic } from './stores/json.ts';
+import type { ChangeRecord } from '../git/changes.ts';
 
 /** What one session's entry may hold. Any other key the file carries is kept but not read. */
 export type Override = {

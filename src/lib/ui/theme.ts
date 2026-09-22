@@ -33,7 +33,10 @@ export const WALL_PANEL = '--wall-panel';
 export const WALL_POPOVER = '--wall-popover';
 export const WALL_BLUR = '--wall-blur';
 
-/** What applyWallpaper needs of the configuration: state/appearance.ts's Wallpaper, structurally. */
+/**
+ * What applyWallpaper needs of the configuration: state/words/appearance.ts's Wallpaper,
+ * structurally.
+ */
 export type WallpaperStyle = {
     panel: number;
     popover: number;

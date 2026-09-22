@@ -5,8 +5,8 @@
 // wait is how long a failure takes and not how long a pass takes.
 
 import type { Message } from '../../../src/lib/data/model.ts';
-import type { Sink } from '../../../src/lib/server/channels.ts';
-import { noop } from '../../doubles.ts';
+import type { Sink } from '../../../src/lib/server/core/channels.ts';
+import { noop } from '../../fixtures/doubles.ts';
 
 /** A subscriber that keeps every message it is sent, in the order the hub sent them. */
 export function recording(): { sink: Sink; got: Message[] } {

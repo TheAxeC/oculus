@@ -11,13 +11,13 @@ import { existsSync, mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve, sep } from 'node:path';
 import { afterAll, afterEach, beforeEach, expect, it, vi } from 'vitest';
-import { Hub } from '../../../src/lib/server/channels.ts';
+import { Hub } from '../../../src/lib/server/core/channels.ts';
 import { watchBookmarks } from '../../../src/lib/server/watch/bookmarks.ts';
 import type { FilesPayload, Message } from '../../../src/lib/data/model.ts';
 import type { Watcher } from '../../../src/lib/server/watch/portfolio.ts';
-import { noop } from '../../doubles.ts';
+import { noop } from '../../fixtures/doubles.ts';
 import { recording, sleep, until } from './probe.ts';
-import { scratchDir, sweepScratch } from '../../scratch.ts';
+import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
 

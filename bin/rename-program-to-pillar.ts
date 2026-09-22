@@ -4,7 +4,7 @@
 // hub that has already been migrated it writes nothing, so a folder of manifests restored from an
 // older copy is brought forward by the same command.
 //
-// The edit is server/yaml-edit.ts's renameKey, which replaces the bytes of the key token and
+// The edit is server/edit/yaml-edit.ts's renameKey, which replaces the bytes of the key token and
 // nothing else, so the comments, the ordering and the quoting a hand-written manifest carries come
 // through untouched. A manifest the rename is refused over is reported and left alone.
 //
@@ -13,8 +13,8 @@
 import { readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import type { Dirent } from 'node:fs';
 import { join } from 'node:path';
-import { RENAMED_FIELDS } from '../src/lib/data/validate.ts';
-import { renameKey } from '../src/lib/server/yaml-edit.ts';
+import { RENAMED_FIELDS } from '../src/lib/data/snapshot/validate.ts';
+import { renameKey } from '../src/lib/server/edit/yaml-edit.ts';
 
 /** The manifest filename every project folder holds. */
 const MANIFEST = 'project.yml';

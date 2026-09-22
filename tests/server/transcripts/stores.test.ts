@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { basename, dirname, join, resolve, sep } from 'node:path';
 import { afterAll, afterEach, describe, expect, it } from 'vitest';
 import { claudeTranscripts, codexRollouts } from '../../../src/lib/server/transcripts/stores.ts';
-import { scratchDir, sweepScratch } from '../../scratch.ts';
+import { scratchDir, sweepScratch } from '../../fixtures/scratch.ts';
 
 afterAll(sweepScratch);
 

@@ -1,7 +1,7 @@
-// The demo hub, read the way tests/integrity.test.ts reads the real one: build the portfolio over
-// demo/ and assert the model finds nothing wrong with it. The difference is that this hub is
-// oculus's own file, so a finding here is corrected in demo/ rather than reported and left; the real
-// hub's findings belong to the hub.
+// The demo hub, read the way tests/checks/config/integrity.test.ts reads the real one: build the
+// portfolio over demo/ and assert the model finds nothing wrong with it. The difference is that
+// this hub is oculus's own file, so a finding here is corrected in demo/ rather than reported and
+// left; the real hub's findings belong to the hub.
 //
 // The counts are pinned here, unlike the real hub's, because this folder does not grow: eleven
 // manifests over the six tiers, the seven registries, and the eleven collection files. A count that

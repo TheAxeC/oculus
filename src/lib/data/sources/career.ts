@@ -8,7 +8,7 @@
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { parse } from 'yaml';
-import { findingText, type TextCatalog } from '../finding-text.ts';
+import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import type { Finding } from '../model.ts';
 
 /** The path on the hub today, which the config falls back to when it names none. */

@@ -8,7 +8,7 @@
 // The caps below are what stops a long session growing without bound: they are applied when the
 // accumulator is pruned, so the cache entry stays small, and again when the record is finished.
 
-import { byKey } from '../../data/guards.ts';
+import { byKey } from '../../data/helpers/guards.ts';
 import type {
     SessionAgent,
     SessionCache,

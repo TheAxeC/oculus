@@ -6,15 +6,15 @@
 
     import { onMount, untrack } from 'svelte';
     import Workbench from '$lib/shell/Workbench.svelte';
-    import type { Bookmark, DocEntry, NavGroup } from '$lib/shell/rail';
-    import type { Arrangement } from '$lib/shell/page-strip';
-    import { configGeneration } from '$lib/state/generation.svelte';
-    import { collectionKeys } from '$lib/data/normalise';
-    import { typeOfFile } from '$lib/state/fs';
-    import { t } from '$lib/state/text';
-    import { createClientState } from '$lib/state/context';
-    import { provideState } from '$lib/state/use';
-    import { provideTipIds } from '$lib/ui/tip-ids';
+    import type { Bookmark, DocEntry, NavGroup } from '$lib/shell/rail/rail';
+    import type { Arrangement } from '$lib/shell/panes/page-strip';
+    import { configGeneration } from '$lib/state/client/generation.svelte';
+    import { collectionKeys } from '$lib/data/snapshot/normalise';
+    import { typeOfFile } from '$lib/state/sources/fs';
+    import { t } from '$lib/state/words/text';
+    import { createClientState } from '$lib/state/client/context';
+    import { provideState } from '$lib/state/client/use';
+    import { provideTipIds } from '$lib/ui/menu/tip-ids';
     import { registerAll, registerCollections } from './views.ts';
     import type { PageData } from './$types';
 
@@ -93,7 +93,7 @@
      * The reader's own bookmarks, from ~/.oculus/bookmarks.yml through the fs store. They are read
      * here rather than in the rail because the shell's row of the boundary table does not name that
      * store; the rail is handed what to draw, as it is handed the configured ones. Which view opens
-     * one is a question about a file name, which state/fs.ts answers.
+     * one is a question about a file name, which state/sources/fs.ts answers.
      */
     const saved = $derived<Bookmark[]>(
         savedBookmarks().entries.flatMap((entry) => {
@@ -157,8 +157,8 @@
 
     /**
      * The `arrangements:` of config/layout.yml, each with the words a page opened from it carries.
-     * The node itself is handed on untouched: state/layout.ts reads its shape and refuses one that
-     * does not add up, so nothing here knows what is in it.
+     * The node itself is handed on untouched: state/workbench/layout/ reads its shape and refuses
+     * one that does not add up, so nothing here knows what is in it.
      */
     const arrangements = $derived(readArrangements(config()?.config.arrangements));
 

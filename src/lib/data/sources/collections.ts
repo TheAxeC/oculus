@@ -10,8 +10,8 @@
 
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
-import { byKey } from '../guards.ts';
-import { findingText, type TextCatalog } from '../finding-text.ts';
+import { byKey } from '../helpers/guards.ts';
+import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 import { parse } from 'yaml';
 import type { CollectionFile, Finding, RawCollection, RawEntry } from '../model.ts';
 

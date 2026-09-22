@@ -1,6 +1,6 @@
 import { loadConfig, textCatalog } from '$lib/data/sources/config';
-import { byKey } from '$lib/data/guards';
-import { reportFindings, serverContext } from '$lib/server/context';
+import { byKey } from '$lib/data/helpers/guards';
+import { reportFindings, serverContext } from '$lib/server/core/context';
 import type { Handle } from '@sveltejs/kit';
 
 // The route renders in the browser, so the served HTML is a shell. The document title is the one
@@ -16,7 +16,7 @@ export const handle: Handle = ({ event, resolve }) => {
 
     const catalog = textCatalog(config);
     // The lookup t() gives a component, in the one place that runs before the catalog reaches the
-    // page. The key stays a literal so tests/keys.test.ts checks it like every other.
+    // page. The key stays a literal so tests/checks/source/keys.test.ts checks it like every other.
     const t = (key: string): string => {
         const value = byKey(catalog, key);
         if (value === undefined) {

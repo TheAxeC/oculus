@@ -10,10 +10,10 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 import { load } from '../../src/routes/+page.ts';
-import { configGeneration } from '../../src/lib/state/generation.svelte.ts';
-import { defaultTheme } from '../../src/lib/state/appearance.ts';
-import { asciiOf, glyph, t } from '../../src/lib/state/text.ts';
-import { toneOf } from '../../src/lib/state/tones.ts';
+import { configGeneration } from '../../src/lib/state/client/generation.svelte.ts';
+import { defaultTheme } from '../../src/lib/state/words/appearance.ts';
+import { asciiOf, glyph, t } from '../../src/lib/state/words/text.ts';
+import { toneOf } from '../../src/lib/state/words/tones.ts';
 const ROUTES = join(dirname(fileURLToPath(import.meta.url)), '..', '..', 'src', 'routes');
 
 /** The hex the palette below writes as a tone. */

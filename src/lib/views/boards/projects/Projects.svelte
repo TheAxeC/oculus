@@ -1,0 +1,370 @@
+<script module lang="ts">
+    // Layer 3, view registration. One board component owns the three portfolio board registrations.
+    import type { ViewRegistration } from '../../registry';
+
+    const boardRegistration = (id: string, order: number): ViewRegistration => ({
+        id,
+        label: `views.${id}`,
+        glyph: `views.${id}_glyph`,
+        group: 'boards',
+        order,
+        badge: (client) => client.railBadges.boardBadge(id),
+        badgeTitle: (client) => client.railBadges.boardBadgeTitle(id),
+        badgeCells: (client) => client.railBadges.boardCells(id)
+    });
+
+    export const registration: ViewRegistration[] = [
+        boardRegistration('projects', 1),
+        boardRegistration('coauthor', 2),
+        boardRegistration('archive', 3)
+    ];
+</script>
+
+<script lang="ts">
+    // Layer 3, view. The project board: cards or a table, a search, quick filters, type toggles,
+    // one filter menu headed by every way the board can be split, and a short or full title. It is
+    // registered three times, as `projects`, `archive` and `coauthor`, and reads which board it is
+    // from the instance it was mounted as, so the three board tabs over separate tier sets are one
+    // component here.
+    //
+    // It joins nothing and counts nothing itself: the projects come from the board selector already
+    // joined, and the facets, the filter menu's groups, the filters, the counts and the sentence
+    // cut are the pure functions of state/board. The strip is views/boards/projects/Stats.svelte
+    // and the new-idea form views/boards/projects/NewIdea.svelte, which is the partials rule of
+    // DESIGN.md's boundary table: a view too large for one file is split into its own folder. The
+    // card is views/shared/card/ProjectCard.svelte, since views/boards/project/Project.svelte draws
+    // the same one.
+
+    import Empty from '$lib/ui/frame/Empty.svelte';
+    import Glyph from '$lib/ui/controls/Glyph.svelte';
+    import Menu from '$lib/ui/menu/Menu.svelte';
+    import Pane from '$lib/ui/frame/Pane.svelte';
+    import Search from '$lib/ui/controls/Search.svelte';
+    import Segment from '$lib/ui/controls/Segment.svelte';
+    import type { SegmentItem } from '$lib/ui/controls/segment-items';
+    import Table from '$lib/ui/display/Table.svelte';
+    import { type Column, cellText } from '$lib/ui/display/table-rows';
+    import Toolbar from '$lib/ui/frame/Toolbar.svelte';
+    import ToolButton from '$lib/ui/controls/ToolButton.svelte';
+    import Card from '../../shared/card/ProjectCard.svelte';
+    import NewIdea from './NewIdea.svelte';
+    import Stats from './Stats.svelte';
+    import {
+        applyFilters,
+        facets,
+        filterGroups,
+        filterLabel,
+        firstSentence,
+        parseBoardState,
+        typeCounts,
+        type BoardItem,
+        type BoardState
+    } from '$lib/state/boards/board';
+    import { cardCursor } from '$lib/state/client/instance';
+    import { lookup, t } from '$lib/state/words/text';
+    import { chipGlyphName, chipLabel, statusMarkTone } from '$lib/state/words/tones';
+    import type { ViewProps } from '../../registry';
+    import { useState } from '$lib/state/client/use';
+
+    const {
+        selectors: { board, boardPreset, boardStats, staleLag },
+        ui: { instanceState, setInstanceState }
+    } = useState();
+
+    let { instance }: ViewProps = $props();
+
+    /** How much of `next` a list row shows. */
+    const ROW_NEXT = 110;
+
+    /** The board the stats strip and the two quick filters belong to. */
+    const STATS_BOARD = 'projects';
+
+    const preset = $derived(boardPreset(instance.view));
+    const held = $derived(parseBoardState(instanceState(instance.id), preset.labels));
+    const cursor = $derived(cardCursor(instance.state));
+    const items = $derived(board(preset));
+    const groups = $derived(filterGroups(facets(items, preset), held.filters, preset));
+    const types = $derived(typeCounts(items, preset.typeOrder));
+    const lag = $derived(staleLag());
+    const shown = $derived(
+        applyFilters(items, held.filters, held.search, {
+            stale: held.stale,
+            dated: held.dated,
+            hiddenTypes: held.hiddenTypes,
+            staleLag: lag
+        })
+    );
+    const rows = $derived(shown.map(row));
+    const strip = $derived(boardStats(items));
+
+    /** What the last write on this board answered, shown under the toolbar until the next one. */
+    let said = $state('');
+
+    /** True while the new-idea form is open under the toolbar. */
+    let adding = $state(false);
+
+    /**
+     * Today, for the deadline badge. It is read when the board is opened and not again, so a page
+     * left open across midnight counts the day it was opened on until it is reloaded.
+     */
+    const now = Date.now();
+
+    const modes: SegmentItem[] = [
+        { id: 'cards', label: t('board.view_cards'), glyph: t('board.view_cards_glyph') },
+        { id: 'list', label: t('board.view_list'), glyph: t('board.view_list_glyph') }
+    ];
+
+    const labelModes: SegmentItem[] = [
+        { id: 'short', label: t('project.helper.short') },
+        { id: 'full', label: t('project.helper.full') }
+    ];
+
+    function write(next: Partial<BoardState>): void {
+        setInstanceState(instance.id, { ...held, ...next });
+    }
+
+    /** Add or remove one value of one facet, which is what a pick in the filter menu means. */
+    function toggleFilter(facet: string, value: string): void {
+        const selected = held.filters[facet] ?? [];
+        const next = selected.includes(value)
+            ? selected.filter((one) => one !== value)
+            : [...selected, value];
+        const filters = { ...held.filters };
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete -- a Map here would change the shape every reader of this record depends on
+        if (next.length === 0) delete filters[facet];
+        else filters[facet] = next;
+        write({ filters });
+    }
+
+    function toggleCard(id: string): void {
+        const open = held.expanded.includes(id);
+        write({
+            expanded: open ? held.expanded.filter((one) => one !== id) : [...held.expanded, id]
+        });
+    }
+
+    /** Draw one card's long description whole, or cut it to its clamp again. */
+    function toggleMore(id: string): void {
+        const open = held.more.includes(id);
+        write({ more: open ? held.more.filter((one) => one !== id) : [...held.more, id] });
+    }
+
+    /** Every type is on until it is clicked off, so the state holds the ones that are off. */
+    function toggleType(type: string): void {
+        const off = held.hiddenTypes.includes(type);
+        write({
+            hiddenTypes: off
+                ? held.hiddenTypes.filter((one) => one !== type)
+                : [...held.hiddenTypes, type]
+        });
+    }
+
+    /** Open or close every card of the board at once, which is what the two bulk controls do. */
+    function bulk(expand: boolean): void {
+        write({ expanded: expand ? shown.map((item) => item.id) : [] });
+    }
+
+    /** The board's own name, the key the registry names it by. */
+    function title(): string {
+        return lookup(`views.${preset.id}`);
+    }
+
+    /** The label a card and a row carry: the short handle in short mode, else the full title. */
+    function label(item: BoardItem): string {
+        const short = item.project.short;
+        if (held.labels === 'full' || short === undefined || short === '') {
+            return item.project.title;
+        }
+        return short;
+    }
+
+    /** What the project's own tab is called in the strip: the short handle whenever there is one. */
+    function tabLabel(item: BoardItem): string {
+        const short = item.project.short;
+        return short === undefined || short === '' ? item.project.title : short;
+    }
+
+    /**
+     * The status keys one row's marks are drawn for. They ride beside the row's sortable words
+     * rather than in them, since a mark is a component and a cell's value is text; each is drawn
+     * in its own hue with its words as the title, as a lane draws it.
+     */
+    function statusMarks(row: Record<string, unknown>): string[] {
+        const marks = row.statusMarks;
+        if (!Array.isArray(marks)) return [];
+        return marks.filter((chip): chip is string => typeof chip === 'string');
+    }
+
+    /** One row of the list mode. Every column key of both presets is filled here. */
+    function row(item: BoardItem): Record<string, unknown> {
+        const next = item.project.next;
+        return {
+            id: item.id,
+            title: label(item),
+            authors: item.authors,
+            venue: item.venue?.short ?? '',
+            status: item.chips.map((chip) => chipLabel(chip)).join(' '),
+            statusMarks: item.chips.filter((chip) => chipGlyphName(chip) !== ''),
+            focus: item.project.focus ?? '',
+            next: next === undefined ? '' : firstSentence(next, ROW_NEXT),
+            domain: item.domain?.label ?? '',
+            pillar: item.pillars.map((tag) => tag.label).join(' | '),
+            funding: item.funding.map((tag) => tag.label).join(' | ')
+        };
+    }
+</script>
+
+{#snippet statusCell(row: Record<string, unknown>, column: Column)}
+    {#if column.key === 'status'}
+        {#each statusMarks(row) as chip (chip)}
+            <span
+                class="mark"
+                title={chipLabel(chip)}
+                style={`--mark: var(--c-${statusMarkTone(chip)}-txt)`}
+            >
+                <Glyph name={chipGlyphName(chip)} />
+            </span>
+        {/each}
+    {:else}
+        {cellText(row[column.key])}
+    {/if}
+{/snippet}
+
+{#snippet tools()}
+    <Toolbar label={t('board.toolbar')}>
+        <Search
+            value={held.search}
+            placeholder={preset.search === '' ? t('board.search_default') : preset.search}
+            oninput={(value: string) => write({ search: value })}
+        />
+        <Menu
+            label={filterLabel(held.filters)}
+            items={[]}
+            {groups}
+            onpick={(value: string, _event: MouseEvent, facet?: string) => {
+                if (facet !== undefined) toggleFilter(facet, value);
+            }}
+            placement="down"
+        />
+        <ToolButton
+            label={t('board.new_idea')}
+            title={t('board.new_idea_tip')}
+            active={adding}
+            onclick={() => (adding = !adding)}
+        />
+        {#if preset.id === STATS_BOARD}
+            <ToolButton
+                label={t('board.quick_stale')}
+                title={t('board.quick_stale_tip')}
+                glyph={t('board.stale_glyph')}
+                active={held.stale}
+                onclick={() => write({ stale: !held.stale })}
+            />
+            <ToolButton
+                label={t('board.quick_deadline')}
+                title={t('board.quick_deadline_tip')}
+                glyph={t('project.card.deadline_glyph')}
+                active={held.dated}
+                onclick={() => write({ dated: !held.dated })}
+            />
+        {/if}
+        {#each types as one (one.type)}
+            <ToolButton
+                label={`${one.type} ${one.count}`}
+                title={t('board.type_toggle_tip', one.type)}
+                active={!held.hiddenTypes.includes(one.type)}
+                onclick={() => toggleType(one.type)}
+            />
+        {/each}
+        <Segment
+            label={t('board.view')}
+            items={modes}
+            value={held.mode}
+            onchange={(id) => write({ mode: id === 'list' ? 'list' : 'cards' })}
+        />
+        <Segment
+            label={t('board.labels')}
+            items={labelModes}
+            value={held.labels}
+            onchange={(id) => write({ labels: id === 'full' ? 'full' : 'short' })}
+        />
+        <ToolButton
+            label={t('board.expand_all')}
+            glyph={t('project.card.expand_glyph')}
+            onclick={() => bulk(true)}
+        />
+        <ToolButton
+            label={t('board.collapse')}
+            glyph={t('project.card.collapse_glyph')}
+            onclick={() => bulk(false)}
+        />
+    </Toolbar>
+{/snippet}
+
+<Pane title={title()} toolbar={tools}>
+    <div class="board" data-instance={instance.id} data-board={preset.id}>
+        {#if adding}
+            <NewIdea
+                onclose={() => (adding = false)}
+                onsaid={(answer: string) => (said = answer)}
+            />
+        {/if}
+        {#if preset.id === STATS_BOARD}
+            <Stats stats={strip} />
+        {/if}
+        {#if said !== ''}
+            <p class="said">{said}</p>
+        {/if}
+        {#if shown.length === 0}
+            <Empty message={t('board.empty')} glyph={t('board.empty_glyph')} />
+        {:else if held.mode === 'list'}
+            <Table columns={preset.columns} {rows} rowKey="id" sortable cell={statusCell} />
+        {:else}
+            <div class="cards">
+                {#each shown as item (item.id)}
+                    <Card
+                        {item}
+                        {now}
+                        cursor={cursor === item.id}
+                        open={held.expanded.includes(item.id)}
+                        more={held.more.includes(item.id)}
+                        onmore={() => toggleMore(item.id)}
+                        label={label(item)}
+                        tab={tabLabel(item)}
+                        staleLag={lag}
+                        ontoggle={() => toggleCard(item.id)}
+                        onsaid={(answer: string) => (said = answer)}
+                    />
+                {/each}
+            </div>
+        {/if}
+    </div>
+</Pane>
+
+<style>
+    /* A status mark is a line icon, so it is drawn in the hue of its own status. */
+    .mark {
+        color: var(--mark, var(--muted-txt));
+    }
+
+    /* The cards of one row stretch to the row's height, in file order, so no empty cell is left
+       under a short card and nothing is reordered to fill one. */
+    .cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+        gap: 10px;
+        align-items: stretch;
+    }
+
+    .said {
+        margin: 0 0 8px;
+        font-size: var(--fs-md);
+        color: var(--muted-txt, var(--muted));
+    }
+
+    /* The terminal shape: the folder is the only monospace line in a card by default, so under the
+       rice themes the whole card follows it rather than mixing two faces. */
+    :global(body.rice) .board {
+        font-family: var(--font-mono);
+    }
+</style>

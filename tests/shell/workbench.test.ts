@@ -5,22 +5,23 @@
 //
 // What this does NOT cover: the theme effect, the menus opening, the drags. There is no DOM in this
 // suite, so an $effect never runs and a pointer is never pressed; applyTheme is covered on its own
-// in tests/ui/theme.test.ts, the drag store is tests/state/drag.test.ts, and the drag itself is
-// checked in a browser. The insertion mark below is rendered from a prop, not from a pointer.
+// in tests/ui/theme.test.ts, the drag store is tests/state/workbench/drag.test.ts, and the drag
+// itself is checked in a browser. The insertion mark below is rendered from a prop, not from a
+// pointer.
 
 import { readFileSync } from 'node:fs';
 import { beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { render } from 'svelte/server';
-import DropLayer from '../../src/lib/shell/DropLayer.svelte';
+import DropLayer from '../../src/lib/shell/panes/DropLayer.svelte';
 import Workbench from '../../src/lib/shell/Workbench.svelte';
 import { activeLabel, windowTitle } from '../../src/lib/shell/workbench-title.ts';
-import Tabs from '../../src/lib/ui/Tabs.svelte';
+import Tabs from '../../src/lib/ui/tabs/Tabs.svelte';
 import {
     horizontalWheelDelta,
     insertionIndex,
     tabScrollState
-} from '../../src/lib/ui/tab-strip.ts';
-import { THRESHOLD, type Drop } from '../../src/lib/state/drag.svelte.ts';
+} from '../../src/lib/ui/tabs/tab-strip.ts';
+import { THRESHOLD, type Drop } from '../../src/lib/state/workbench/drag.svelte.ts';
 import Alpha from './fixtures/Alpha.svelte';
 import Beta from './fixtures/Beta.svelte';
 import {
@@ -30,13 +31,13 @@ import {
     loadConfig,
     textCatalog
 } from '../../src/lib/data/sources/config.ts';
-import { glyph, setCatalog, setGlyphs, setIcons, t } from '../../src/lib/state/text.ts';
-import { installBadges } from '../state/rail-badges-fixture.ts';
-import { setVocab } from '../../src/lib/state/tones.ts';
-import type { Layout, Workbench as Bench } from '../../src/lib/state/layout/index.ts';
-import { noop } from '../doubles.ts';
-import { present } from '../present.ts';
-import { clientContext, createClientState, type ClientState } from '../client.ts';
+import { glyph, setCatalog, setGlyphs, setIcons, t } from '../../src/lib/state/words/text.ts';
+import { installBadges } from '../state/workbench/rail-badges-fixture.ts';
+import { setVocab } from '../../src/lib/state/words/tones.ts';
+import type { Layout, Workbench as Bench } from '../../src/lib/state/workbench/layout/index.ts';
+import { noop } from '../fixtures/doubles.ts';
+import { present } from '../fixtures/present.ts';
+import { clientContext, createClientState, type ClientState } from '../fixtures/client.ts';
 
 let client: ClientState;
 let cancel: ClientState['drag']['cancel'];
@@ -801,7 +802,7 @@ describe('a page shown inside another', () => {
 
     // Answer with the active instance of the page the strip is on and the pane inside the leaf
     // never draws its strip focused, wherever the reader is.
-    // revert: src/lib/state/layout.svelte.ts:417 => return instances.activeInstance();
+    // revert: src/lib/state/workbench/layout.svelte.ts:418 => return instances.activeInstance();
     it('draws the strip of the one pane the rail opens into, on whichever page the reader is in', () => {
         const { host, shown } = nested();
         /** The strip class of the pane the named page draws, the host's first and the leaf's after it. */

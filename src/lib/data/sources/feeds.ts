@@ -16,10 +16,10 @@ import type { Feeds, FeedFiles, Finding, Lead, RawFeeds } from '../model.ts';
 // `str` here is the shared `text`: this file's reading of a missing or mistyped value has always
 // been the empty string rather than undefined, and the alias keeps that reading at every call it
 // makes. The lead's status is the one value it does not read for itself, since the rule that closes
-// a lead reads it in data/leads.ts.
-import { isMap, text as str } from '../guards.ts';
-import { isLeadClosed } from '../leads.ts';
-import { findingText, type TextCatalog } from '../finding-text.ts';
+// a lead reads it in data/accounts/leads.ts.
+import { isMap, text as str } from '../helpers/guards.ts';
+import { isLeadClosed } from '../accounts/leads.ts';
+import { findingText, type TextCatalog } from '../helpers/finding-text.ts';
 
 /** An ISO date anywhere inside a string; the leads feed writes prose around its dates. */
 const DATE = /\d{4}-\d{2}-\d{2}/;

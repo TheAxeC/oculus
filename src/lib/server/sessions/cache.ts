@@ -9,7 +9,7 @@
 import { existsSync } from 'node:fs';
 import type { SessionTool } from '../../data/model.ts';
 import type { TranscriptFile } from '../transcripts/stores.ts';
-import { isMap, readJson, whole, writeJsonAtomic } from './json.ts';
+import { isMap, readJson, whole, writeJsonAtomic } from './stores/json.ts';
 import { newAcc, type Acc } from './record.ts';
 
 /** One transcript on disk: its path, and the three facts that say whether a cache entry still fits. */

@@ -4,9 +4,9 @@
 import { join } from 'node:path';
 import type { SessionsPayload, Snapshot, Terminal } from '../../data/model.ts';
 import { group, type ProjectFolder } from './group.ts';
-import { HookStore, mergeHooks } from './hooks.ts';
+import { HookStore, mergeHooks } from './stores/hooks.ts';
 import { defaultOverridesPath } from './overrides.ts';
-import { scan, type ScanOptions } from './transcripts.ts';
+import { scan, type ScanOptions } from './stores/transcripts.ts';
 
 export type SessionsOptions = ScanOptions & {
     /** Absolute path of the research hub, which is what a project's folder is relative to. */

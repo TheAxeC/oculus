@@ -6,11 +6,11 @@ import { createServer } from 'node:http';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { join } from 'node:path';
 import { engineDir } from './lib/data/sources/config.ts';
-import { parseEngineArgs } from './lib/server/args.ts';
-import { carryingHandler, createServerContext } from './lib/server/context.ts';
-import { BODY_LIMIT_BYTES } from './lib/server/memories.ts';
-import { onShutdown } from './lib/server/shutdown.ts';
-import { attachSocket } from './lib/server/socket.ts';
+import { parseEngineArgs } from './lib/server/core/args.ts';
+import { carryingHandler, createServerContext } from './lib/server/core/context.ts';
+import { BODY_LIMIT_BYTES } from './lib/server/content/memories.ts';
+import { onShutdown } from './lib/server/core/shutdown.ts';
+import { attachSocket } from './lib/server/core/socket.ts';
 
 type Handler = (req: IncomingMessage, res: ServerResponse) => void;
 
@@ -33,7 +33,7 @@ if ('error' in parsed) {
 // process sets it before the import below; it is not a setting the reader has, which is why it is
 // not in config/. Left alone the parser refuses a body over 512K, which is any photograph the
 // Memories wall's own control sends, and the page would meet a refused request rather than a
-// sentence. server/memories.ts holds the size and enforces the picture's own half of it.
+// sentence. server/content/memories.ts holds the size and enforces the picture's own half of it.
 process.env.BODY_SIZE_LIMIT = String(BODY_LIMIT_BYTES);
 
 const built = new URL('../build/handler.js', import.meta.url).href;

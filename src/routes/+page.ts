@@ -1,7 +1,7 @@
-import { setAscii, setCatalog, setGlyphs, setIcons } from '$lib/state/text';
-import { setAppearance } from '$lib/state/appearance';
-import { setVocab } from '$lib/state/tones';
-import { configInstalled } from '$lib/state/generation.svelte';
+import { setAscii, setCatalog, setGlyphs, setIcons } from '$lib/state/words/text';
+import { setAppearance } from '$lib/state/words/appearance';
+import { setVocab } from '$lib/state/words/tones';
+import { configInstalled } from '$lib/state/client/generation.svelte';
 import type { PageLoad } from './$types';
 
 // The catalog, the glyphs and their ASCII stand-ins, the tone vocabulary and the appearance the

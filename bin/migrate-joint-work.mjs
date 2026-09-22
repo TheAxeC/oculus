@@ -385,7 +385,7 @@ function migrate(hub, self, from) {
         });
     }
 
-    // The Institution rows of a file the hub no longer has: every organisation a row names becomes a
+    // The Institution rows of the file named by --from: every organisation a row names becomes a
     // key of that person's list, which is what a hub whose entries hold the first one alone is missing.
     for (const entry of entriesOf(from === '' ? {} : read('', from))) {
         const key = typeof entry.key === 'string' ? entry.key : '';

@@ -13,7 +13,7 @@ import { homedir } from 'node:os';
 import { join } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import type { LiveEntry, SessionRecord } from '../../data/model.ts';
-import { isMap, readJson, text, whole } from './json.ts';
+import { isMap, readJson, text, whole } from './stores/json.ts';
 
 /** Seconds of disagreement allowed between the registry's stamp and what `ps` reports. */
 export const PROC_START_SLACK = 2;

@@ -3,7 +3,7 @@
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vitest/config';
 import { engineDir, loadLocal } from './src/lib/data/sources/config.ts';
-import { oculusViteServer } from './src/lib/server/vite-plugin.ts';
+import { oculusViteServer } from './src/lib/server/core/vite-plugin.ts';
 
 const development = oculusViteServer(engineDir());
 

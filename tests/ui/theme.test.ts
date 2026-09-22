@@ -4,7 +4,7 @@
 //
 // The document is a plain object recording what was set, so this runs in the node environment with
 // no DOM. What it does NOT cover: that a browser then paints those tokens. The sheets themselves are
-// covered by tests/contrast.test.ts, which measures every pair under every theme.
+// covered by tests/checks/look/contrast.test.ts, which measures every pair under every theme.
 
 import { readFileSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
@@ -33,8 +33,8 @@ import {
     themeLabel,
     themes,
     wallpaperSettings
-} from '../../src/lib/state/appearance.ts';
-import { setAscii, setGlyphMode, setGlyphs } from '../../src/lib/state/text.ts';
+} from '../../src/lib/state/words/appearance.ts';
+import { setAscii, setGlyphMode, setGlyphs } from '../../src/lib/state/words/text.ts';
 import { parseBlocks } from '../../src/lib/themes/parse.ts';
 
 const THEMES_DIR = resolve(
@@ -130,7 +130,9 @@ describe('applyTheme', () => {
 });
 
 describe('applyWallpaper', () => {
-    /** The three numbers a wallpaper is drawn through, as state/appearance.ts resolves them. */
+    /**
+     * The three numbers a wallpaper is drawn through, as state/words/appearance.ts resolves them.
+     */
     const CONFIG = { panel: 76, popover: 97, panelBlur: 2 };
 
     it('sets the three custom properties from the config', () => {
