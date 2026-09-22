@@ -39,6 +39,15 @@ dispatch:
     report: tools/oculus/.scratch/migration/agents/reviews/Q65-report.md (the builder returns it as its final message; the orchestrator saves it)
     landing: not-started
     round: 0
+  - step: O31
+    executor: agent
+    worker: claude:opus, a native background agent; its id is this session's agent a2f3f81960429c57f
+    worktree: .agents/worktrees/O31
+    base: 10c2852c
+    launched: 2026-09-23
+    report: tools/oculus/.scratch/migration/agents/reviews/O31-report.md (the builder returns it as its final message; the orchestrator saves it)
+    landing: not-started
+    round: 0
 ```
 
 ## The standing demands (from Axel, in force)
